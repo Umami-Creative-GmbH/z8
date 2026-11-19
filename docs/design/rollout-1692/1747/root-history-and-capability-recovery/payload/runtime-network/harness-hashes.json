@@ -1,0 +1,210 @@
+{
+  "files": [
+    {
+      "file": "arrival-v2.js",
+      "bytes": 1796,
+      "sha256": "d521458d3d99611ab17c7a566fa57a176dfe55fc4eac4b6237800ba33bd7ad12"
+    },
+    {
+      "file": "arrival.js",
+      "bytes": 1702,
+      "sha256": "a06955f88071a961696bc37c59787b55b16d31326f0e1c08a1123c6b014cd857"
+    },
+    {
+      "file": "call-quiet.mjs",
+      "bytes": 531,
+      "sha256": "63214d6bc18d7ad20170835ef52dd2b4e6949aa9cf0e011e7c4d6dc8c2c78606"
+    },
+    {
+      "file": "call2.mjs",
+      "bytes": 448,
+      "sha256": "6e297851b2b16c01243f339122620e4a9a02eca1d936135fc2857b04f3577904"
+    },
+    {
+      "file": "close-all.js",
+      "bytes": 257,
+      "sha256": "8f548f09abde3c2c280f27257a10f07e0e30a412c1526f47a6f7d049be006de7"
+    },
+    {
+      "file": "close-browser.js",
+      "bytes": 206,
+      "sha256": "4198ae912db24cf9f829182d3e76e35f07a2b7ed58c64693718e9074c3867f6f"
+    },
+    {
+      "file": "controller2.mjs",
+      "bytes": 1625,
+      "sha256": "f565b5b4448be2044a3cb218d39ee846741fe858ae0d57cb62aa0174a9424bf2"
+    },
+    {
+      "file": "create.js",
+      "bytes": 1681,
+      "sha256": "963f1d773a350741f62034241468a73fff5b5f630bbaf298d80f28a5a8a3fd7c"
+    },
+    {
+      "file": "database-after.js",
+      "bytes": 2010,
+      "sha256": "81646fb5f9af60de00fc1f3621dbe905aa1d0a400c46560c1fa9e854e5da1e53"
+    },
+    {
+      "file": "database-before.js",
+      "bytes": 1237,
+      "sha256": "b5283b7cfc13fb299039363d9840bf52d56a457b88551292faea03f50f746266"
+    },
+    {
+      "file": "database-before2.js",
+      "bytes": 1240,
+      "sha256": "e8ce6e6d3fad782123f5637efe82e80995ec89620aa0adc25ab015ffbebd0f84"
+    },
+    {
+      "file": "delete.js",
+      "bytes": 2277,
+      "sha256": "986d463bdf4979941ceb9ba55d06fd7a24f6a5e1531662258e522beb2e818404"
+    },
+    {
+      "file": "diagnostics-v2.js",
+      "bytes": 2409,
+      "sha256": "3dcb4270df2b70fa59a80b6b6cb8c485af3c46d80e0826f2efecb641626e9a35"
+    },
+    {
+      "file": "filters.js",
+      "bytes": 1458,
+      "sha256": "5d37f32adf9d7b71d30c3235aae6ea4b8b17511504062d843fb6b5d52f2cf30a"
+    },
+    {
+      "file": "final-listing.js",
+      "bytes": 780,
+      "sha256": "d0ffb6ae106bc2e9a5faf008661c4bcfb24d4cd129bfd0f9a9f66d60f518752f"
+    },
+    {
+      "file": "hold-create.js",
+      "bytes": 2159,
+      "sha256": "a73f594f3b2b4a51d219e5448ade7023f5668fc9b6fd9030e5a7a717def4002b"
+    },
+    {
+      "file": "inventory.ps1",
+      "bytes": 2158,
+      "sha256": "4db41dc2501adc8cab9e111629050eca4a2decca2c27339a9f10b33b0e864de0"
+    },
+    {
+      "file": "keyboard-captures.js",
+      "bytes": 2484,
+      "sha256": "c6a81cff9e7a227a992808ffce6ff991f61e8ce0586a6ee970c35fdc94a48b41"
+    },
+    {
+      "file": "layout.js",
+      "bytes": 2662,
+      "sha256": "1385202a8feb9ee73980f87d79cb440bb97e96e96a84bb2acc03f5364de6a399"
+    },
+    {
+      "file": "listing.js",
+      "bytes": 778,
+      "sha256": "d9be6148697c83febe51f69a95d8bbd2a5ffbfb78af2409754431fa2a606051a"
+    },
+    {
+      "file": "login-exact.js",
+      "bytes": 960,
+      "sha256": "ef0e9c2d75a93fb36662f963bea3d29d0826f508e227a6a1d50308dc8e5d94ce"
+    },
+    {
+      "file": "manager-destination.js",
+      "bytes": 957,
+      "sha256": "12c52e8d2852f8b09c0584e7f69d7746a79d5ebb5ae93db6cbda7db54ae286f4"
+    },
+    {
+      "file": "manager.js",
+      "bytes": 2396,
+      "sha256": "378db0064a0ece08efa51e9ba075aae511505e5d5c459d6d6a8341a98b4a7833"
+    },
+    {
+      "file": "mcp-final.js",
+      "bytes": 2344,
+      "sha256": "153dc7b540734c0a975d585330dc0cbb58b647c7eb8df3f1b413e603985f09a5"
+    },
+    {
+      "file": "mcp-list.js",
+      "bytes": 606,
+      "sha256": "14cc31efda1ab20ba35c5a0f5e568ffd044d6e2035bc29bb78fcc5a29d82ffc3"
+    },
+    {
+      "file": "originals-before.js",
+      "bytes": 703,
+      "sha256": "258371d76c540d45bcb2a43e133c9c902b6a16c63d5aa3d7c7a61629044c4a2f"
+    },
+    {
+      "file": "preferences-error.js",
+      "bytes": 594,
+      "sha256": "864670bc25430a480679d2418a0a49c5ab59e34c10c99f98e5ee95ac1839ed23"
+    },
+    {
+      "file": "preferences-v2.js",
+      "bytes": 2403,
+      "sha256": "c5f921275edcac346a557a693bf7cbcbd9f86f483c41bb80fed853adfd54c731"
+    },
+    {
+      "file": "preferences.js",
+      "bytes": 1678,
+      "sha256": "4dd672ea0d49aa7153d4fe0d81ce1d7f5f25b8ded0e7b8f9edb26e4e895c8bb1"
+    },
+    {
+      "file": "preflight.mjs",
+      "bytes": 3807,
+      "sha256": "7a147bd57be67907d8cf8d10c7ba9db412c0c0636bfe2f24364b0072060e8269"
+    },
+    {
+      "file": "prepare-seal.mjs",
+      "bytes": 7256,
+      "sha256": "82017ee44b842e308382e7db003b01909e3f97c5bbb9004358e96b823b75d9b7"
+    },
+    {
+      "file": "preservation-final.mjs",
+      "bytes": 3189,
+      "sha256": "17d93e679babb5e6a05d0f36b7a0dee7e4d04935819ce6a9ffc30a6d9d8c090a"
+    },
+    {
+      "file": "readback.js",
+      "bytes": 2741,
+      "sha256": "8adf7ea2439fc889692d31a6cc9380b2db3401cb066e344261cbc5b296106d85"
+    },
+    {
+      "file": "refresh.js",
+      "bytes": 1508,
+      "sha256": "8910df966d902dc70984a4cfdae8ae2ffe5283527dc7b47891952d0c125de6f5"
+    },
+    {
+      "file": "release-create.js",
+      "bytes": 1711,
+      "sha256": "b76202bce68940df684f725803815b05f3861f4b34691189f370978b6c34dcae"
+    },
+    {
+      "file": "runtime.mjs",
+      "bytes": 2352,
+      "sha256": "46cdeee8f13eeb2ee1de73aa7ff1ad52dd8b3dae6934d706150bcfc18b4995e2"
+    },
+    {
+      "file": "seal.mjs",
+      "bytes": 20839,
+      "sha256": "64d202acaea4702da09d50b7315812e658486bec2cf0d7d7dadf852f973e46ca"
+    },
+    {
+      "file": "seed.ts",
+      "bytes": 4406,
+      "sha256": "7515b14c07a8beb7c9d0ee50ba144dbd685c3c826e19f95a3e1c594ad9850c83"
+    },
+    {
+      "file": "select-org.js",
+      "bytes": 675,
+      "sha256": "b8de9e0fc7db4c066990edfc6da89b76638c92543c98f4fe9a14b74a8bdf7cfc"
+    },
+    {
+      "file": "start-browser.js",
+      "bytes": 1705,
+      "sha256": "1a667795576c0efdc6dbbc522d704c60ec66ea712da790b68b5fca80ca845c77"
+    },
+    {
+      "file": "status.js",
+      "bytes": 477,
+      "sha256": "fd9998a04e904599e5e04ff92f87bfe693c633d09dbe4625781961363fbeb360"
+    }
+  ],
+  "qualification": "New ignored scripts only. Old helper CODE read and adapted; no old driver execution, private state/profile/account/auth transfer. Drivers not published; hashes and literal commands only."
+}

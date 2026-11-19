@@ -1,0 +1,389 @@
+{
+  "checks": [
+    "Feature enabled through existing organization settings UI, real scoped database readback."
+  ],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\before-desktop-light.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "headings": [
+        "Z8",
+        "Personnel Files"
+      ],
+      "links": [
+        {
+          "text": "Payslip batch",
+          "href": "/en/personnel-files/payslip-batches"
+        },
+        {
+          "text": "Document requests",
+          "href": "/en/personnel-files/document-requests"
+        },
+        {
+          "text": "Sick leave",
+          "href": "/en/personnel-files/sick-leave"
+        },
+        {
+          "text": "Due for deletion",
+          "href": "/en/personnel-files/due-for-deletion"
+        },
+        {
+          "text": "Personnel file officers",
+          "href": "/en/settings/personnel-files"
+        },
+        {
+          "text": "R045 certificate 2CertificatePerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 other 2OtherPerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 certificate 3CertificatePerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 other 3OtherPerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 certificate 1CertificatePerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "R045 other 1OtherPerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "Person 1",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "Person 2",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "Person 3",
+          "href": "/en/personnel-files/bd5e091e-4bf3-48c9-a7fa-8aa7ad8d3d99"
+        },
+        {
+          "text": "Person 4",
+          "href": "/en/personnel-files/e8940f7b-e585-48c9-856c-5034e37bd253"
+        },
+        {
+          "text": "Person 5",
+          "href": "/en/personnel-files/db89b29d-6ecf-4520-8a8c-c8b34c3720a2"
+        },
+        {
+          "text": "Person 6",
+          "href": "/en/personnel-files/f5acbcf7-849a-467f-ae6d-fa2cf34a72bc"
+        },
+        {
+          "text": "Person 7",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        }
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\before-wide-dark.png",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "headings": [
+        "Z8",
+        "Personnel Files"
+      ],
+      "links": [
+        {
+          "text": "Payslip batch",
+          "href": "/en/personnel-files/payslip-batches"
+        },
+        {
+          "text": "Document requests",
+          "href": "/en/personnel-files/document-requests"
+        },
+        {
+          "text": "Sick leave",
+          "href": "/en/personnel-files/sick-leave"
+        },
+        {
+          "text": "Due for deletion",
+          "href": "/en/personnel-files/due-for-deletion"
+        },
+        {
+          "text": "Personnel file officers",
+          "href": "/en/settings/personnel-files"
+        },
+        {
+          "text": "R045 certificate 2CertificatePerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 other 2OtherPerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 certificate 3CertificatePerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 other 3OtherPerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 certificate 1CertificatePerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "R045 other 1OtherPerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "Person 1",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "Person 2",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "Person 3",
+          "href": "/en/personnel-files/bd5e091e-4bf3-48c9-a7fa-8aa7ad8d3d99"
+        },
+        {
+          "text": "Person 4",
+          "href": "/en/personnel-files/e8940f7b-e585-48c9-856c-5034e37bd253"
+        },
+        {
+          "text": "Person 5",
+          "href": "/en/personnel-files/db89b29d-6ecf-4520-8a8c-c8b34c3720a2"
+        },
+        {
+          "text": "Person 6",
+          "href": "/en/personnel-files/f5acbcf7-849a-467f-ae6d-fa2cf34a72bc"
+        },
+        {
+          "text": "Person 7",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        }
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\before-phone-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "headings": [
+        "Z8",
+        "Personnel Files"
+      ],
+      "links": [
+        {
+          "text": "Payslip batch",
+          "href": "/en/personnel-files/payslip-batches"
+        },
+        {
+          "text": "Document requests",
+          "href": "/en/personnel-files/document-requests"
+        },
+        {
+          "text": "Sick leave",
+          "href": "/en/personnel-files/sick-leave"
+        },
+        {
+          "text": "Due for deletion",
+          "href": "/en/personnel-files/due-for-deletion"
+        },
+        {
+          "text": "Personnel file officers",
+          "href": "/en/settings/personnel-files"
+        },
+        {
+          "text": "R045 certificate 2CertificatePerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 other 2OtherPerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 certificate 3CertificatePerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 other 3OtherPerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 certificate 1CertificatePerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "R045 other 1OtherPerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "Person 1",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "Person 2",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "Person 3",
+          "href": "/en/personnel-files/bd5e091e-4bf3-48c9-a7fa-8aa7ad8d3d99"
+        },
+        {
+          "text": "Person 4",
+          "href": "/en/personnel-files/e8940f7b-e585-48c9-856c-5034e37bd253"
+        },
+        {
+          "text": "Person 5",
+          "href": "/en/personnel-files/db89b29d-6ecf-4520-8a8c-c8b34c3720a2"
+        },
+        {
+          "text": "Person 6",
+          "href": "/en/personnel-files/f5acbcf7-849a-467f-ae6d-fa2cf34a72bc"
+        },
+        {
+          "text": "Person 7",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        }
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\before-phone-dark-large.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "headings": [
+        "Z8",
+        "Personnel Files"
+      ],
+      "links": [
+        {
+          "text": "Payslip batch",
+          "href": "/en/personnel-files/payslip-batches"
+        },
+        {
+          "text": "Document requests",
+          "href": "/en/personnel-files/document-requests"
+        },
+        {
+          "text": "Sick leave",
+          "href": "/en/personnel-files/sick-leave"
+        },
+        {
+          "text": "Due for deletion",
+          "href": "/en/personnel-files/due-for-deletion"
+        },
+        {
+          "text": "Personnel file officers",
+          "href": "/en/settings/personnel-files"
+        },
+        {
+          "text": "R045 certificate 2CertificatePerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 other 2OtherPerson 1 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "R045 certificate 3CertificatePerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 other 3OtherPerson 2 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "R045 certificate 1CertificatePerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "R045 other 1OtherPerson 7 · Expires Nov 15, 2026",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        },
+        {
+          "text": "Person 1",
+          "href": "/en/personnel-files/8816cbd8-e067-47a8-b87a-be6a62f16342"
+        },
+        {
+          "text": "Person 2",
+          "href": "/en/personnel-files/a94a7261-ffdf-4f25-bdb1-039bf4c15848"
+        },
+        {
+          "text": "Person 3",
+          "href": "/en/personnel-files/bd5e091e-4bf3-48c9-a7fa-8aa7ad8d3d99"
+        },
+        {
+          "text": "Person 4",
+          "href": "/en/personnel-files/e8940f7b-e585-48c9-856c-5034e37bd253"
+        },
+        {
+          "text": "Person 5",
+          "href": "/en/personnel-files/db89b29d-6ecf-4520-8a8c-c8b34c3720a2"
+        },
+        {
+          "text": "Person 6",
+          "href": "/en/personnel-files/f5acbcf7-849a-467f-ae6d-fa2cf34a72bc"
+        },
+        {
+          "text": "Person 7",
+          "href": "/en/personnel-files/66fc884c-e6d5-43db-a654-49aa663f07c1"
+        }
+      ]
+    }
+  ],
+  "errors": [
+    "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <div className=\"flex min-w...\" data-slot=\"card\" id=\"organizati...\">\n      <CardHeader>\n      <CardContent>\n        <div className=\"min-w-0 px-6\" data-slot=\"card-content\">\n          <form ref={{current:null}} noValidate={true} onSubmit={function OrganizationProfileCard[<form>.onSubmit]} ...>\n            <fieldset disabled={false} className=\"grid min-w...\">\n              <legend>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField name=\"country\">\n                <Field name=\"country\" form={{options:{...}, ...}}>\n                  <TFormItem className={undefined}>\n                    <div data-slot=\"form-item\" className=\"grid conte...\">\n                      <TFormLabel>\n                      <TFormControl hasError={false}>\n                        <Slot data-slot=\"form-control\" id=\"_R_1sql5et...\" aria-describedby=\"_R_1sql5et...\" ...>\n                          <select aria-label=\"Country\" className=\"rounded-md...\" name=\"country\" autoComplete=\"country\" ...>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option value=\"FK\">\n+                             Falkland Islands (Islas Malvinas)\n-                             Falkland Islands\n                            ...\n                      ...\n              ...\n            ...\n"
+  ],
+  "head": "3c7bc534edeb355d862c3f38759444658863af20",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+      "sha256": "a10a60802010a4c25c09c20aeef333b60bde32ea9e935b8a1f6187abe4a0f57d",
+      "canonicalSha256": "cdd61f6f3faa9d5576e91f754b96d0c4b4699166cd9f49ffef6a88ae177e6d95"
+    },
+    {
+      "path": "apps/webapp/src/components/employees/employee-directory-card.tsx",
+      "sha256": "c3a9b3314ad60f84d70538280dfd6d748cf74cc783cb711b120e40bfe2c18a76",
+      "canonicalSha256": "46a73b586214d23099a1eedb0cb3a2b637cabcf8e59fc0dbfca10c7282147fe1"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+      "sha256": "0223b2294311ddaae07b45fa330d150d9c335823027377456e544bea12c27e1f",
+      "canonicalSha256": "a6ba00cf36835b7e59a651426451b30e77cc73365a62cea35e1e545bdd7db2af"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c",
+      "canonicalSha256": "44b3f3f82719e29c62715d62aa65e8bbf87565634c8188017e46f6cfcfe97ffd"
+    }
+  ]
+}

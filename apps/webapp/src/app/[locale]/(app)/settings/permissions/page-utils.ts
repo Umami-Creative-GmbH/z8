@@ -14,6 +14,8 @@ export interface PermissionsPageState {
 		organizationId: string;
 	} | null;
 	noEmployee: boolean;
+	/** The last bootstrap load failed; distinct from an organization without employees. */
+	loadFailed: boolean;
 	isAdmin: boolean;
 	searchQuery: string;
 	selectedEmployee: SelectableEmployee | null;
@@ -26,7 +28,8 @@ export type PermissionsPageAction =
 			payload: Pick<
 				PermissionsPageState,
 				"employees" | "teams" | "permissions" | "currentEmployee" | "isAdmin" | "noEmployee"
-			>;
+			> &
+				Partial<Pick<PermissionsPageState, "loadFailed">>;
 	  }
 	| { type: "setEmployees"; employees: SelectableEmployee[] }
 	| { type: "setPermissions"; permissions: Record<string, EmployeePermissions> }
@@ -41,6 +44,7 @@ export const initialPermissionsPageState: PermissionsPageState = {
 	loading: true,
 	currentEmployee: null,
 	noEmployee: false,
+	loadFailed: false,
 	isAdmin: false,
 	searchQuery: "",
 	selectedEmployee: null,
@@ -57,6 +61,7 @@ export function permissionsPageReducer(
 			return {
 				...state,
 				...action.payload,
+				loadFailed: action.payload.loadFailed ?? false,
 				loading: false,
 			};
 		case "setEmployees":
@@ -128,6 +133,6 @@ export function getPermissionSummary(
 
 	return {
 		count: enabledCount,
-		scope: permission.teamId ? "Team-specific" : "Organization-wide",
+		scope: permission.teamId ? ("team" as const) : ("organization" as const),
 	};
 }

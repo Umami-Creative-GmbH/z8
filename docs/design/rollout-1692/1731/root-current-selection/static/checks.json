@@ -1,0 +1,35 @@
+{
+  "source": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
+  "provisionalIntegration": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
+  "lastVerified": "8e3876c39725b7a8ef5218439766395401d64b80",
+  "status": "source checks passed; runtime verification pending",
+  "rootPaths": [
+    "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+    "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx"
+  ],
+  "behavior": "Derive active selection and capacity from current due/unknown records. Individual and due-select-all operations intersect previous IDs with current records. Existing cross-page selection, current selected IDs, unknown-start opt-in and server-authorized confirmation remain intact. No extra reconciliation effect or new domain policy.",
+  "red": {"file": "selection-red.json", "physicalFiles": 1, "cases": 13, "passed": 12, "failed": 1, "observed": "Newly due checkbox has aria-disabled=true after selected 500 old documents disappear."},
+  "firstGreen": {"file": "selection-green.json", "physicalFiles": 1, "cases": 13, "passed": 13, "boundary": "An intermediate effect-based solution; removed after two new Doctor diagnostics. Not the final source or an additional test count."},
+  "finalUnit": {"file": "unit-final.json", "physicalFiles": 51, "cases": 346, "passed": 346, "failed": 0, "skipped": 0, "exit": 0, "boundary": "Includes the permanent cap regression. The 13-case focused run overlaps; all tests use the unchanged default timeout."},
+  "types": {"log": "typecheck-final.log", "typegen": true, "projects": 3, "exit": 0, "provenance": "Root observed completed shell session85542 exit0; this record attests the real tool result, not a reconstructed raw shell record."},
+  "quality": {
+    "rootExplicitCrlf": {"log": "biome-final.log", "files": 2, "exit": 0},
+    "allLint": {"log": "biome-all-lint.log", "files": 9, "exit": 0},
+    "allFormat": {"log": "biome-all-format.log", "files": 9, "exit": 1, "formattingFailures": ["src/lib/navigation/route-metadata.test.ts", "src/lib/navigation/route-metadata.ts"], "boundary": "Both files are unchanged by this root correction. The merger handoff undercounted its own raw explicit-format log as one failing file; that log actually reports two. Existing #1730 proof also records both formatting boundaries. No formatter rewrite applied."},
+    "doctor": {"log": "doctor-final.log", "files": 9, "exit": 0, "errors": 0, "warnings": 1, "review": "Existing Activity before-paint reset at line357; final correction adds no diagnostics and no suppressions."},
+    "whitespace": {"exit": 0, "scope": "Root correction diff"}
+  },
+  "mergerPostgres": {"source": "ae0755e8385206e84f98ac52b5d3a0fb7f030513", "physicalFiles": 5, "cases": 83, "passed": 83, "boundary": "Fresh earlier merger execution, not rerun by root. Retention actions/stores/PG sources are unchanged by the two-file UI correction. Later runtime verifier must label any rerun nonadditive."},
+  "commands": [
+    "Every pnpm shell uses pnpm_config_verify_deps_before_run=false and --config.verify-deps-before-run=false before node/exec/run.",
+    "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit --maxWorkers 2 src/components/personnel-file/due-for-deletion-list.test.tsx --reporter=json --outputFile=../../.tmp/1731-root-checks/selection-red.json",
+    "Same focused command after initial effect-based implementation, output selection-green.json.",
+    "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --config-path=./biome.jsonc --line-ending=crlf --write src/components/personnel-file/due-for-deletion-list.tsx src/components/personnel-file/due-for-deletion-list.test.tsx",
+    "Final units: same unit command with exact51physical paths read from .tmp/merge1731-audit/unit-expanded.json testResults.name, output unit-final.json.",
+    "pnpm --config.verify-deps-before-run=false --filter webapp typecheck",
+    "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope changed --base 8e3876c39725b7a8ef5218439766395401d64b80 --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+    "Final root Biome check without --write; all-nine format and lint commands read exact files from .tmp/merge1731-audit/quality-commands.json, with --formatter-enabled=false for lint."
+  ],
+  "provenance": "Root red/first-green intermediate working stages were not separately committed or hash-sealed. Final unit/type/quality production and permanent test bytes are exactly the subsequently committed source shown above. No intermediate pin is fabricated.",
+  "limits": ["Runtime/browser/native/captures and true physical storage cleanup remain pending.", "Broad four-path current-roster guard remains unresolved and unrun.", "Full production generation, remote catalogs, providers, devices and true zoom remain unpassed."]
+}

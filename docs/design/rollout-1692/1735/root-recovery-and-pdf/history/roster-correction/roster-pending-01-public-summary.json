@@ -1,0 +1,51 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-roster-checks/roster-pending-01.json",
+    "bytes": 4006,
+    "sha256": "a0dde448713a97005d331f4a8d38e4d8eb6192554a31dc99c21f681f7eb2e999"
+  },
+  "reported": {
+    "total": 7,
+    "passed": 5,
+    "failed": 2,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "failed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster refusal through local Retry without generating a report",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster rejection through local Retry without generating a report",
+          "status": "passed"
+        },
+        {
+          "fullName": "shows pending roster recovery and keeps a rejected retry recoverable without duplicate transport",
+          "status": "failed"
+        },
+        {
+          "fullName": "does not let a roster Retry retired by Activity replace the new opening's options",
+          "status": "failed"
+        },
+        {
+          "fullName": "keeps failed settings recoverable and prevents duplicate transport while Retry is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the selected period across a failed settings refresh without permitting generation until Retry succeeds",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

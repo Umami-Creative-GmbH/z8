@@ -7,7 +7,7 @@ import {
 } from "@/lib/billable-time/billable-rates";
 import { requireBillableTimeSettingsAccess } from "@/lib/billable-time/settings-access";
 import { BillableTimeSettingsShell } from "../billable-time-settings-shell";
-import { BillableRatesOverview } from "./billable-rates-overview";
+import { AddBillableRateAction, BillableRatesOverview } from "./billable-rates-overview";
 
 async function BillableRatesPageContent() {
 	const { organizationId, settings } = await requireBillableTimeSettingsAccess();
@@ -17,8 +17,11 @@ async function BillableRatesPageContent() {
 	]);
 
 	return (
-		<BillableTimeSettingsShell activePageId="rates">
-			<BillableRatesOverview currency={settings.currency} series={series} options={options} />
+		<BillableTimeSettingsShell
+			activePageId="rates"
+			actions={<AddBillableRateAction options={options} />}
+		>
+			<BillableRatesOverview currency={settings.currency} series={series} />
 		</BillableTimeSettingsShell>
 	);
 }

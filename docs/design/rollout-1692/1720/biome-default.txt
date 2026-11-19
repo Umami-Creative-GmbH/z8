@@ -1,0 +1,1092 @@
+src\app\[locale]\(app)\my-documents\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    48 48 │           />
+    49 49 │           {requests.success ? (
+    50    │ - → → → → → <RequestedDocuments·requests={requests.data}·capability={uploadCapability}·/>
+       50 │ + → → → → → <RequestedDocuments
+       51 │ + → → → → → → requests={requests.data}
+       52 │ + → → → → → → capability={uploadCapability}
+       53 │ + → → → → → />
+    51 54 │           ) : (
+    52 55 │             <MyDocumentsRetry />
+  
+
+src\components\personnel-file\document-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     59  59 │     valuesFromDocument,
+     60  60 │   } from "./document-form-values";
+     61     │ - import·{·usePersonnelFileLabels,·usePersonnelFileProblemMessages·}·from·"./document-labels";
+         61 │ + import·{
+         62 │ + → usePersonnelFileLabels,
+         63 │ + → usePersonnelFileProblemMessages,
+         64 │ + }·from·"./document-labels";
+     62  65 │   
+     63     │ - const·MONTHS·=·["1",·"2",·"3",·"4",·"5",·"6",·"7",·"8",·"9",·"10",·"11",·"12"]·as·const;
+         66 │ + const·MONTHS·=·[
+         67 │ + → "1",
+         68 │ + → "2",
+         69 │ + → "3",
+         70 │ + → "4",
+         71 │ + → "5",
+         72 │ + → "6",
+         73 │ + → "7",
+         74 │ + → "8",
+         75 │ + → "9",
+         76 │ + → "10",
+         77 │ + → "11",
+         78 │ + → "12",
+         79 │ + ]·as·const;
+     64  80 │   
+     65  81 │   type DocumentDialogProps = {
+    ······· │ 
+    123 139 │     const pendingMetadata = useRef<DocumentMetadataPayload | null>(null);
+    124 140 │     const asEmployee = props.mode === "upload" && props.uploadAs === "employee";
+    125     │ - → const·documentRequest·=·(asEmployee·&&·props.mode·===·"upload"·&&·props.documentRequest)·||·null;
+        141 │ + → const·documentRequest·=
+        142 │ + → → (asEmployee·&&·props.mode·===·"upload"·&&·props.documentRequest)·||·null;
+    126 143 │     const fileProblemMessages = usePersonnelFileProblemMessages();
+    127 144 │     const initialValues: DocumentFormValues =
+    ······· │ 
+    153 170 │         pending.current = false;
+    154 171 │         setWorking(false);
+    155     │ - → → → toast.success(t("settings.personnelFiles.upload.success",·"Document·uploaded"));
+        172 │ + → → → toast.success(
+        173 │ + → → → → t("settings.personnelFiles.upload.success",·"Document·uploaded"),
+        174 │ + → → → );
+    156 175 │         close();
+    157 176 │         onSaved();
+    ······· │ 
+    160 179 │         pending.current = false;
+    161 180 │         setWorking(false);
+    162     │ - → → → setError(error.message·||·t("settings.personnelFiles.upload.failed",·"Upload·failed"));
+        181 │ + → → → setError(
+        182 │ + → → → → error.message·||
+        183 │ + → → → → → t("settings.personnelFiles.upload.failed",·"Upload·failed"),
+        184 │ + → → → );
+    163 185 │       },
+    164 186 │     });
+    ······· │ 
+    172 194 │         if (props.mode === "upload") {
+    173 195 │           if (!file) {
+    174     │ - → → → → → setFileError(t("settings.personnelFiles.upload.fileRequired",·"Choose·a·file."));
+        196 │ + → → → → → setFileError(
+        197 │ + → → → → → → t("settings.personnelFiles.upload.fileRequired",·"Choose·a·file."),
+        198 │ + → → → → → );
+    175 199 │             return;
+    176 200 │           }
+    ······· │ 
+    202 226 │           return;
+    203 227 │         }
+    204     │ - → → → toast.success(t("settings.personnelFiles.edit.success",·"Document·updated"));
+        228 │ + → → → toast.success(
+        229 │ + → → → → t("settings.personnelFiles.edit.success",·"Document·updated"),
+        230 │ + → → → );
+    205 231 │         pending.current = false;
+    206 232 │         close();
+    ······· │ 
+    301 327 │     } = useDocumentDialog(props);
+    302 328 │     return (
+    303     │ - → → <ActionPanel·open={open}·onOpenChange={(next)·=>·(next·?·onOpenChange(true)·:·close())}>
+        329 │ + → → <ActionPanel
+        330 │ + → → → open={open}
+        331 │ + → → → onOpenChange={(next)·=>·(next·?·onOpenChange(true)·:·close())}
+        332 │ + → → >
+    304 333 │         <ActionPanelContent>
+    305 334 │           <form
+    ······· │ 
+    365 394 │                 </Alert>
+    366 395 │               ) : null}
+    367     │ - → → → → → → <Button·type="button"·variant="outline"·onClick={close}·disabled={busy}>
+        396 │ + → → → → → → <Button
+        397 │ + → → → → → → → type="button"
+        398 │ + → → → → → → → variant="outline"
+        399 │ + → → → → → → → onClick={close}
+        400 │ + → → → → → → → disabled={busy}
+        401 │ + → → → → → → >
+    368 402 │                 {t("common.cancel", "Cancel")}
+    369 403 │               </Button>
+    ······· │ 
+    372 406 │                   <Button type="submit" disabled={busy || isSubmitting}>
+    373 407 │                     {busy || isSubmitting ? (
+    374     │ - → → → → → → → → → → <IconLoader2·aria-hidden="true"·className="size-4·animate-spin"·/>
+        408 │ + → → → → → → → → → → <IconLoader2
+        409 │ + → → → → → → → → → → → aria-hidden="true"
+        410 │ + → → → → → → → → → → → className="size-4·animate-spin"
+        411 │ + → → → → → → → → → → />
+    375 412 │                     ) : null}
+    376 413 │                     {props.mode === "upload"
+    ······· │ 
+    429 466 │               disabled={busy}
+    430 467 │               aria-invalid={fileError ? true : undefined}
+    431     │ - → → → → → → aria-describedby={fileError·?·"personnel-document-file-error"·:·undefined}
+    432     │ - → → → → → → onChange={(event)·=>·handleFileChange(event.target.files?.[0]·??·null)}
+        468 │ + → → → → → → aria-describedby={
+        469 │ + → → → → → → → fileError·?·"personnel-document-file-error"·:·undefined
+        470 │ + → → → → → → }
+        471 │ + → → → → → → onChange={(event)·=>
+        472 │ + → → → → → → → handleFileChange(event.target.files?.[0]·??·null)
+        473 │ + → → → → → → }
+    433 474 │             />
+    434 475 │             {fileError ? (
+    435     │ - → → → → → → <p·id="personnel-document-file-error"·role="alert"·className="text-sm·text-destructive">
+        476 │ + → → → → → → <p
+        477 │ + → → → → → → → id="personnel-document-file-error"
+        478 │ + → → → → → → → role="alert"
+        479 │ + → → → → → → → className="text-sm·text-destructive"
+        480 │ + → → → → → → >
+    436 481 │                 {fileError}
+    437 482 │               </p>
+    ······· │ 
+    448 493 │               <Select
+    449 494 │                 value={field.state.value}
+    450     │ - → → → → → → → onValueChange={(value)·=>·changeCategory(value·as·DocumentCategory)}
+        495 │ + → → → → → → → onValueChange={(value)·=>
+        496 │ + → → → → → → → → changeCategory(value·as·DocumentCategory)
+        497 │ + → → → → → → → }
+    451 498 │                 disabled={busy}
+    452 499 │               >
+    ······· │ 
+    472 519 │           validators={{
+    473 520 │             onSubmit: ({ value }) =>
+    474     │ - → → → → → → value.trim()·?·undefined·:·required(t("settings.personnelFiles.form.title",·"Title")),
+        521 │ + → → → → → → value.trim()
+        522 │ + → → → → → → → ?·undefined
+        523 │ + → → → → → → → :·required(t("settings.personnelFiles.form.title",·"Title")),
+    475 524 │           }}
+    476 525 │         >
+    ······· │ 
+    500 549 │               value
+    501 550 │                 ? undefined
+    502     │ - → → → → → → → :·required(t("settings.personnelFiles.form.documentDate",·"Document·date")),
+        551 │ + → → → → → → → :·required(
+        552 │ + → → → → → → → → → t(
+        553 │ + → → → → → → → → → → "settings.personnelFiles.form.documentDate",
+        554 │ + → → → → → → → → → → "Document·date",
+        555 │ + → → → → → → → → → ),
+        556 │ + → → → → → → → → ),
+    503 557 │           }}
+    504 558 │         >
+    ······· │ 
+    537 591 │                       value
+    538 592 │                         ? undefined
+    539     │ - → → → → → → → → → → → :·required(t("settings.personnelFiles.form.payPeriod",·"Pay·period")),
+        593 │ + → → → → → → → → → → → :·required(
+        594 │ + → → → → → → → → → → → → → t(
+        595 │ + → → → → → → → → → → → → → → "settings.personnelFiles.form.payPeriod",
+        596 │ + → → → → → → → → → → → → → → "Pay·period",
+        597 │ + → → → → → → → → → → → → → ),
+        598 │ + → → → → → → → → → → → → ),
+  78 more lines truncated
+  
+
+src\components\personnel-file\document-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     27  27 │       return (
+     28  28 │         <div className="flex size-12 shrink-0 items-center justify-center rounded-md border bg-muted">
+     29     │ - → → → → <IconFileText·aria-hidden="true"·className="size-5·text-muted-foreground"·/>
+         29 │ + → → → → <IconFileText
+         30 │ + → → → → → aria-hidden="true"
+         31 │ + → → → → → className="size-5·text-muted-foreground"
+         32 │ + → → → → />
+     30  33 │         </div>
+     31  34 │       );
+    ······· │ 
+     59  62 │       <ul className="divide-y rounded-md border">
+     60  63 │         {documents.map((document) => (
+     61     │ - → → → → <li·key={document.id}·className="flex·flex-wrap·items-center·gap-3·p-3·sm:flex-nowrap">
+         64 │ + → → → → <li
+         65 │ + → → → → → key={document.id}
+         66 │ + → → → → → className="flex·flex-wrap·items-center·gap-3·p-3·sm:flex-nowrap"
+         67 │ + → → → → >
+     62  68 │             <DocumentThumbnail document={document} />
+     63  69 │             <div className="min-w-0 flex-1 space-y-1 break-words [overflow-wrap:anywhere]">
+     64  70 │               <div className="flex flex-wrap items-center gap-2">
+     65  71 │                 <span className="min-w-0 font-medium">{document.title}</span>
+     66     │ - → → → → → → → <Badge·variant="secondary">{labels.categories[document.category]}</Badge>
+         72 │ + → → → → → → → <Badge·variant="secondary">
+         73 │ + → → → → → → → → {labels.categories[document.category]}
+         74 │ + → → → → → → → </Badge>
+     67  75 │                 {showVisibility ? (
+     68     │ - → → → → → → → → <Badge·variant={document.visibility·===·"shared"·?·"outline"·:·"secondary"}>
+         76 │ + → → → → → → → → <Badge
+         77 │ + → → → → → → → → → variant={
+         78 │ + → → → → → → → → → → document.visibility·===·"shared"·?·"outline"·:·"secondary"
+         79 │ + → → → → → → → → → }
+         80 │ + → → → → → → → → >
+     69  81 │                     {labels.visibilities[document.visibility]}
+     70  82 │                   </Badge>
+    ······· │ 
+     73  85 │               <p className="text-sm text-muted-foreground">
+     74  86 │                 {document.payPeriod
+     75     │ - → → → → → → → → ?·t("settings.personnelFiles.list.payPeriod",·"Pay·period·{period}",·{
+     76     │ - → → → → → → → → → → period:·formatPayPeriod(document.payPeriod,·locale),
+     77     │ - → → → → → → → → → })
+         87 │ + → → → → → → → → ?·t(
+         88 │ + → → → → → → → → → → "settings.personnelFiles.list.payPeriod",
+         89 │ + → → → → → → → → → → "Pay·period·{period}",
+         90 │ + → → → → → → → → → → {
+         91 │ + → → → → → → → → → → → period:·formatPayPeriod(document.payPeriod,·locale),
+         92 │ + → → → → → → → → → → },
+         93 │ + → → → → → → → → → )
+     78  94 │                   : formatDateOnly(document.documentDate, locale)}
+     79  95 │                 {document.expiryDate
+     80     │ - → → → → → → → → ?·`···${t("settings.personnelFiles.list.expires",·"Expires·{date}",·{
+     81     │ - → → → → → → → → → → date:·formatDateOnly(document.expiryDate,·locale),
+     82     │ - → → → → → → → → → })}`
+         96 │ + → → → → → → → → ?·`···${t(
+         97 │ + → → → → → → → → → → "settings.personnelFiles.list.expires",
+         98 │ + → → → → → → → → → → "Expires·{date}",
+         99 │ + → → → → → → → → → → {
+        100 │ + → → → → → → → → → → → date:·formatDateOnly(document.expiryDate,·locale),
+        101 │ + → → → → → → → → → → },
+        102 │ + → → → → → → → → → )}`
+     83 103 │                   : null}
+     84 104 │                 {` · ${document.fileName} (${formatFileSize(document.sizeBytes, locale)})`}
+    ······· │ 
+     87 107 │                 <p className="flex items-center gap-1 text-sm text-muted-foreground">
+     88 108 │                   <IconCalendarOff aria-hidden="true" className="size-3.5" />
+     89     │ - → → → → → → → → {t("settings.personnelFiles.list.absence",·"For·sick·leave·{dateRange}",·{
+     90     │ - → → → → → → → → → dateRange:·formatAbsenceDateRange(
+     91     │ - → → → → → → → → → → document.absence.startDate,
+     92     │ - → → → → → → → → → → document.absence.endDate,
+     93     │ - → → → → → → → → → → locale,
+     94     │ - → → → → → → → → → ),
+     95     │ - → → → → → → → → })}
+        109 │ + → → → → → → → → {t(
+        110 │ + → → → → → → → → → "settings.personnelFiles.list.absence",
+        111 │ + → → → → → → → → → "For·sick·leave·{dateRange}",
+        112 │ + → → → → → → → → → {
+        113 │ + → → → → → → → → → → dateRange:·formatAbsenceDateRange(
+        114 │ + → → → → → → → → → → → document.absence.startDate,
+        115 │ + → → → → → → → → → → → document.absence.endDate,
+        116 │ + → → → → → → → → → → → locale,
+        117 │ + → → → → → → → → → → ),
+        118 │ + → → → → → → → → → },
+        119 │ + → → → → → → → → )}
+     96 120 │                 </p>
+     97 121 │               ) : null}
+    ······· │ 
+     99 123 │                 <p className="flex items-center gap-1 text-sm text-muted-foreground">
+    100 124 │                   <IconCertificate aria-hidden="true" className="size-3.5" />
+    101     │ - → → → → → → → → {t("settings.personnelFiles.list.provesSkill",·"Proves·{skill}",·{
+    102     │ - → → → → → → → → → skill:·document.skill.name,
+    103     │ - → → → → → → → → })}
+        125 │ + → → → → → → → → {t(
+        126 │ + → → → → → → → → → "settings.personnelFiles.list.provesSkill",
+        127 │ + → → → → → → → → → "Proves·{skill}",
+        128 │ + → → → → → → → → → {
+        129 │ + → → → → → → → → → → skill:·document.skill.name,
+        130 │ + → → → → → → → → → },
+        131 │ + → → → → → → → → )}
+    104 132 │                 </p>
+    105 133 │               ) : null}
+    ······· │ 
+    111 139 │                   target="_blank"
+    112 140 │                   rel="noopener noreferrer"
+    113     │ - → → → → → → → → aria-label={t("settings.personnelFiles.list.open",·"Open·{title}",·{
+    114     │ - → → → → → → → → → title:·document.title,
+    115     │ - → → → → → → → → })}
+        141 │ + → → → → → → → → aria-label={t(
+        142 │ + → → → → → → → → → "settings.personnelFiles.list.open",
+        143 │ + → → → → → → → → → "Open·{title}",
+        144 │ + → → → → → → → → → {
+        145 │ + → → → → → → → → → → title:·document.title,
+        146 │ + → → → → → → → → → },
+        147 │ + → → → → → → → → )}
+    116 148 │                 >
+    117 149 │                   <IconExternalLink aria-hidden="true" className="size-4" />
+    ······· │ 
+    121 153 │                 <a
+    122 154 │                   href={personnelDocumentUrl(document.id, { download: true })}
+    123     │ - → → → → → → → → aria-label={t("settings.personnelFiles.list.download",·"Download·{title}",·{
+    124     │ - → → → → → → → → → title:·document.title,
+    125     │ - → → → → → → → → })}
+        155 │ + → → → → → → → → aria-label={t(
+        156 │ + → → → → → → → → → "settings.personnelFiles.list.download",
+        157 │ + → → → → → → → → → "Download·{title}",
+        158 │ + → → → → → → → → → {
+        159 │ + → → → → → → → → → → title:·document.title,
+        160 │ + → → → → → → → → → },
+        161 │ + → → → → → → → → )}
+    126 162 │                 >
+    127 163 │                   <IconDownload aria-hidden="true" className="size-4" />
+  
+
+src\components\personnel-file\document-request-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";
+      2   2 │   
+      3     │ - import·{·IconAlertTriangle,·IconExternalLink,·IconRefresh·}·from·"@tabler/icons-react";
+          3 │ + import·{
+          4 │ + → IconAlertTriangle,
+          5 │ + → IconExternalLink,
+          6 │ + → IconRefresh,
+          7 │ + }·from·"@tabler/icons-react";
+      4   8 │   import { useTranslate } from "@tolgee/react";
+      5   9 │   import type { ReactNode } from "react";
+    ······· │ 
+      8  12 │   import { formatDateOnly } from "@/components/ui/date-picker-utils";
+      9  13 │   import { parseInstant } from "@/lib/datetime/temporal-core";
+     10     │ - import·{·formatInstant,·localeDefaultTimeFormat·}·from·"@/lib/datetime/temporal-format";
+         14 │ + import·{
+         15 │ + → formatInstant,
+         16 │ + → localeDefaultTimeFormat,
+         17 │ + }·from·"@/lib/datetime/temporal-format";
+     11  18 │   import {
+     12  19 │     type DocumentRequestDocumentView,
+    ······· │ 
+     15  22 │     isActiveDocumentRequestStatus,
+     16  23 │   } from "@/lib/personnel-file/document-request.types";
+     17     │ - import·{·personnelDocumentUrl,·usePersonnelFileLabels·}·from·"./document-labels";
+         24 │ + import·{
+         25 │ + → personnelDocumentUrl,
+         26 │ + → usePersonnelFileLabels,
+         27 │ + }·from·"./document-labels";
+     18  28 │   import { useDocumentRequestLabels } from "./document-request-labels";
+     19  29 │   
+    ······· │ 
+     42  52 │       "dateTimeMedium",
+     43  53 │     );
+     44     │ - → const·reason·=·event.reasonCode·?·labels.reasonCodes[event.reasonCode]·:·event.reason;
+         54 │ + → const·reason·=·event.reasonCode
+         55 │ + → → ?·labels.reasonCodes[event.reasonCode]
+         56 │ + → → :·event.reason;
+     45  57 │     return (
+     46  58 │       <li className="space-y-0.5">
+    ······· │ 
+     55  67 │         {event.changes?.deadline ? (
+     56  68 │           <p className="text-muted-foreground">
+     57     │ - → → → → → {t("settings.personnelFiles.requests.history.deadlineChanged",·"Deadline·{from}·→·{to}",·{
+     58     │ - → → → → → → from:·formatDateOnly(event.changes.deadline.from,·locale),
+     59     │ - → → → → → → to:·formatDateOnly(event.changes.deadline.to,·locale),
+     60     │ - → → → → → })}
+         69 │ + → → → → → {t(
+         70 │ + → → → → → → "settings.personnelFiles.requests.history.deadlineChanged",
+         71 │ + → → → → → → "Deadline·{from}·→·{to}",
+         72 │ + → → → → → → {
+         73 │ + → → → → → → → from:·formatDateOnly(event.changes.deadline.from,·locale),
+         74 │ + → → → → → → → to:·formatDateOnly(event.changes.deadline.to,·locale),
+         75 │ + → → → → → → },
+         76 │ + → → → → → )}
+     61  77 │           </p>
+     62  78 │         ) : null}
+     63  79 │         {event.changes?.noteChanged ? (
+     64  80 │           <p className="text-muted-foreground">
+     65     │ - → → → → → {t("settings.personnelFiles.requests.history.noteChanged",·"Note·changed")}
+         81 │ + → → → → → {t(
+         82 │ + → → → → → → "settings.personnelFiles.requests.history.noteChanged",
+         83 │ + → → → → → → "Note·changed",
+         84 │ + → → → → → )}
+     66  85 │           </p>
+     67  86 │         ) : null}
+     68     │ - → → → {reason·?·<p·className="whitespace-pre-line·text-muted-foreground">{reason}</p>·:·null}
+         87 │ + → → → {reason·?·(
+         88 │ + → → → → <p·className="whitespace-pre-line·text-muted-foreground">{reason}</p>
+         89 │ + → → → )·:·null}
+     69  90 │       </li>
+     70  91 │     );
+     71  92 │   }
+     72  93 │   
+     73     │ - function·DocumentLinks({·documents·}:·{·documents:·readonly·DocumentRequestDocumentView[]·})·{
+         94 │ + function·DocumentLinks({
+         95 │ + → documents,
+         96 │ + }:·{
+         97 │ + → documents:·readonly·DocumentRequestDocumentView[];
+         98 │ + })·{
+     74  99 │     return (
+     75 100 │       <ul className="mt-1 space-y-0.5">
+    ······· │ 
+    119 144 │       <ul className="divide-y rounded-md border">
+    120 145 │         {requests.map((request) => (
+    121     │ - → → → → <li·key={request.id}·className="min-w-0·space-y-2·break-words·p-3·[overflow-wrap:anywhere]">
+        146 │ + → → → → <li
+        147 │ + → → → → → key={request.id}
+        148 │ + → → → → → className="min-w-0·space-y-2·break-words·p-3·[overflow-wrap:anywhere]"
+        149 │ + → → → → >
+    122 150 │             <div className="flex flex-wrap items-start justify-between gap-2">
+    123 151 │               <div className="min-w-0 space-y-1">
+    ······· │ 
+    125 153 │                 <div className="flex flex-wrap items-center gap-2">
+    126 154 │                   <span className="font-medium">{request.title}</span>
+    127     │ - → → → → → → → → <Badge·variant="secondary">{fileLabels.categories[request.category]}</Badge>
+        155 │ + → → → → → → → → <Badge·variant="secondary">
+        156 │ + → → → → → → → → → {fileLabels.categories[request.category]}
+        157 │ + → → → → → → → → </Badge>
+    128 158 │                   <Badge variant={statusVariant(request)}>
+    129 159 │                     {request.overdue ? (
+    ······· │ 
+    145 175 │                   <p className="flex items-center gap-1 text-sm text-muted-foreground">
+    146 176 │                     <IconRefresh aria-hidden="true" className="size-3.5" />
+    147     │ - → → → → → → → → → {t("settings.personnelFiles.requests.renews",·"Renews·{title}",·{
+    148     │ - → → → → → → → → → → title:·request.renewedDocument.title,
+    149     │ - → → → → → → → → → })}
+        177 │ + → → → → → → → → → {t(
+        178 │ + → → → → → → → → → → "settings.personnelFiles.requests.renews",
+        179 │ + → → → → → → → → → → "Renews·{title}",
+        180 │ + → → → → → → → → → → {
+        181 │ + → → → → → → → → → → → title:·request.renewedDocument.title,
+        182 │ + → → → → → → → → → → },
+        183 │ + → → → → → → → → → )}
+    150 184 │                   </p>
+    151 185 │                 ) : null}
+    152 186 │               </div>
+    153 187 │               {actions ? (
+    154     │ - → → → → → → → <div·className="flex·flex-wrap·items-center·gap-1">{actions(request)}</div>
+        188 │ + → → → → → → → <div·className="flex·flex-wrap·items-center·gap-1">
+        189 │ + → → → → → → → → {actions(request)}
+        190 │ + → → → → → → → </div>
+    155 191 │               ) : null}
+    156 192 │             </div>
+    157     │ - → → → → → {request.note·?·<p·className="whitespace-pre-line·text-sm">{request.note}</p>·:·null}
+        193 │ + → → → → → {request.note·?·(
+        194 │ + → → → → → → <p·className="whitespace-pre-line·text-sm">{request.note}</p>
+        195 │ + → → → → → )·:·null}
+    158 196 │             {request.pendingDocuments.length > 0 ? (
+    159 197 │               <div className="rounded-md border border-dashed p-2 text-sm">
+    ······· │ 
+    175 213 │               <div className="space-y-1">
+    176 214 │                 {request.submissions.map((submission) => (
+    177     │ - → → → → → → → → <div·key={submission.id}·className="rounded-md·bg-muted/50·p-2·text-sm">
+        215 │ + → → → → → → → → <div
+        216 │ + → → → → → → → → → key={submission.id}
+        217 │ + → → → → → → → → → className="rounded-md·bg-muted/50·p-2·text-sm"
+        218 │ + → → → → → → → → >
+    178 219 │                     <p className="font-medium">
+    179     │ - → → → → → → → → → → {t("settings.personnelFiles.requests.submission",·"Submitted·{date}",·{
+    180     │ - → → → → → → → → → → → date:·formatInstant(
+    181     │ - → → → → → → → → → → → → parseInstant(submission.submittedAt),
+    182     │ - → → → → → → → → → → → → {
+    183     │ - → → → → → → → → → → → → → locale,
+    184     │ - → → → → → → → → → → → → → timezone,
+    185     │ - → → → → → → → → → → → → → timeFormat:·localeDefaultTimeFormat(locale),
+    186     │ - → → → → → → → → → → → → },
+    187     │ - → → → → → → → → → → → → "dateMedium",
+    188     │ - → → → → → → → → → → → ),
+    189     │ - → → → → → → → → → → })}
+        220 │ + → → → → → → → → → → {t(
+        221 │ + → → → → → → → → → → → "settings.personnelFiles.requests.submission",
+        222 │ + → → → → → → → → → → → "Submitted·{date}",
+        223 │ + → → → → → → → → → → → {
+        224 │ + → → → → → → → → → → → → date:·formatInstant(
+        225 │ + → → → → → → → → → → → → → parseInstant(submission.submittedAt),
+        226 │ + → → → → → → → → → → → → → {
+        227 │ + → → → → → → → → → → → → → → locale,
+        228 │ + → → → → → → → → → → → → → → timezone,
+  25 more lines truncated
+  
+
+src\components\personnel-file\my-documents-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    12  12 │     SelectValue,
+    13  13 │   } from "@/components/ui/select";
+    14     │ - import·{·DOCUMENT_CATEGORIES,·type·DocumentCategory·}·from·"@/lib/personnel-file/document.types";
+        14 │ + import·{
+        15 │ + → DOCUMENT_CATEGORIES,
+        16 │ + → type·DocumentCategory,
+        17 │ + }·from·"@/lib/personnel-file/document.types";
+    15  18 │   import { usePersonnelFileLabels } from "./document-labels";
+    16  19 │   import { DocumentList } from "./document-list";
+    ······ │ 
+    38  41 │     return (
+    39  42 │       <section
+    40     │ - → → → aria-label={t("settings.personnelFiles.myDocuments.shared.title",·"Shared·documents")}
+        43 │ + → → → aria-label={t(
+        44 │ + → → → → "settings.personnelFiles.myDocuments.shared.title",
+        45 │ + → → → → "Shared·documents",
+        46 │ + → → → )}
+    41  47 │         className="min-w-0 space-y-4"
+    42  48 │       >
+    43  49 │         <div className="space-y-1">
+    44  50 │           <h2 className="text-lg font-semibold tracking-tight">
+    45     │ - → → → → → {t("settings.personnelFiles.myDocuments.shared.title",·"Shared·documents")}
+        51 │ + → → → → → {t(
+        52 │ + → → → → → → "settings.personnelFiles.myDocuments.shared.title",
+        53 │ + → → → → → → "Shared·documents",
+        54 │ + → → → → → )}
+    46  55 │           </h2>
+    47  56 │           <p className="text-sm text-muted-foreground">
+    ······ │ 
+    59  68 │                 value={category ?? ALL_CATEGORIES}
+    60  69 │                 onValueChange={(value) =>
+    61     │ - → → → → → → → → setCategory(value·===·ALL_CATEGORIES·?·null·:·(value·as·DocumentCategory))
+        70 │ + → → → → → → → → setCategory(
+        71 │ + → → → → → → → → → value·===·ALL_CATEGORIES·?·null·:·(value·as·DocumentCategory),
+        72 │ + → → → → → → → → )
+    62  73 │                 }
+    63  74 │               >
+    64  75 │                 <SelectTrigger
+    65  76 │                   className="w-44"
+    66     │ - → → → → → → → → aria-label={t("settings.personnelFiles.panel.filter",·"Filter·by·category")}
+        77 │ + → → → → → → → → aria-label={t(
+        78 │ + → → → → → → → → → "settings.personnelFiles.panel.filter",
+        79 │ + → → → → → → → → → "Filter·by·category",
+        80 │ + → → → → → → → → )}
+    67  81 │                 >
+    68  82 │                   <SelectValue />
+    ······ │ 
+    70  84 │                 <SelectContent>
+    71  85 │                   <SelectItem value={ALL_CATEGORIES}>
+    72     │ - → → → → → → → → → {t("settings.personnelFiles.panel.allCategories",·"All·categories")}
+        86 │ + → → → → → → → → → {t(
+        87 │ + → → → → → → → → → → "settings.personnelFiles.panel.allCategories",
+        88 │ + → → → → → → → → → → "All·categories",
+        89 │ + → → → → → → → → → )}
+    73  90 │                   </SelectItem>
+    74  91 │                   {present.map((option) => (
+  
+
+src\components\personnel-file\my-documents.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom
+      2     │ - import·{·act,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";
+          2 │ + import·{
+          3 │ + → act,
+          4 │ + → fireEvent,
+          5 │ + → render,
+          6 │ + → screen,
+          7 │ + → waitFor,
+          8 │ + → within,
+          9 │ + }·from·"@testing-library/react";
+      3  10 │   import { beforeEach, expect, it, vi } from "vitest";
+      4  11 │   import type { DocumentRequestView } from "@/lib/personnel-file/document-request.types";
+    ······· │ 
+     23  30 │     useTranslate: () => ({
+     24  31 │       t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+     25     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>·String(params?.[key]·??·match)),
+         32 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>
+         33 │ + → → → → String(params?.[key]·??·match),
+         34 │ + → → → ),
+     26  35 │     }),
+     27  36 │   }));
+    ······· │ 
+     32  41 │     useAppLocale: () => "en-GB",
+     33  42 │   }));
+     34     │ - vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({
+     35     │ - → submitDocumentRequestAction:·boundary.submit,
+     36     │ - }));
+         43 │ + vi.mock(
+         44 │ + → "@/app/[locale]/(app)/personnel-files/document-request-actions",
+         45 │ + → ()·=>·({
+         46 │ + → → submitDocumentRequestAction:·boundary.submit,
+         47 │ + → }),
+         48 │ + );
+     37  49 │   
+     38  50 │   const capability = {
+    ······· │ 
+     42  54 │     timezone: "Europe/Berlin",
+     43  55 │   };
+     44     │ - function·request(id:·string,·overrides:·Partial<DocumentRequestView>·=·{}):·DocumentRequestView·{
+         56 │ + function·request(
+         57 │ + → id:·string,
+         58 │ + → overrides:·Partial<DocumentRequestView>·=·{},
+         59 │ + ):·DocumentRequestView·{
+     45  60 │     return {
+     46  61 │       id,
+    ······· │ 
+     66  81 │   it("keeps upload reachable in the original empty shared-document state", () => {
+     67  82 │     render(
+     68     │ - → → <MyDocumentsList·documents={[]}·actions={<button·type="button">Upload·document</button>}·/>,
+         83 │ + → → <MyDocumentsList
+         84 │ + → → → documents={[]}
+         85 │ + → → → actions={<button·type="button">Upload·document</button>}
+         86 │ + → → />,
+     69  87 │     );
+     70     │ - → expect(screen.getByText("No·documents·have·been·shared·with·you·yet.")).toBeTruthy();
+         88 │ + → expect(
+         89 │ + → → screen.getByText("No·documents·have·been·shared·with·you·yet."),
+         90 │ + → ).toBeTruthy();
+     71  91 │     expect(screen.getByRole("button", { name: "Upload document" })).toBeTruthy();
+     72  92 │   });
+    ······· │ 
+    118 138 │     expect(screen.getByText(/safety.pdf/)).toBeTruthy();
+    119 139 │     expect(
+    120     │ - → → screen.getByRole("link",·{·name:·"Download·Safety·certificate"·}).getAttribute("href"),
+        140 │ + → → screen
+        141 │ + → → → .getByRole("link",·{·name:·"Download·Safety·certificate"·})
+        142 │ + → → → .getAttribute("href"),
+    121 143 │     ).toBe("/api/personnel-files/documents/certificate?download=1");
+    122 144 │     fireEvent.click(screen.getByRole("combobox", { name: "Filter by category" }));
+    123     │ - → fireEvent.click(await·screen.findByRole("option",·{·name:·"All·categories"·}));
+        145 │ + → fireEvent.click(
+        146 │ + → → await·screen.findByRole("option",·{·name:·"All·categories"·}),
+        147 │ + → );
+    124 148 │     expect(screen.getByText("October pay")).toBeTruthy();
+    125 149 │     expect(screen.getByText(/Pay period October 2026/)).toBeTruthy();
+    ······· │ 
+    145 169 │         .getAllByRole("listitem")
+    146 170 │         .map((item) => item.textContent),
+    147     │ - → ).toEqual([expect.stringContaining("overdue"),·expect.stringContaining("later")]);
+        171 │ + → ).toEqual([
+        172 │ + → → expect.stringContaining("overdue"),
+        173 │ + → → expect.stringContaining("later"),
+        174 │ + → ]);
+    148 175 │     expect(screen.getByText("accepted")).toBeTruthy();
+    149 176 │     expect(screen.getByText("submitted")).toBeTruthy();
+    150     │ - → expect(screen.queryByRole("button",·{·name:·/Accept|Return|Cancel·request/·})).toBeNull();
+        177 │ + → expect(
+        178 │ + → → screen.queryByRole("button",·{·name:·/Accept|Return|Cancel·request/·}),
+        179 │ + → ).toBeNull();
+    151 180 │   });
+    152 181 │   
+    ······· │ 
+    181 210 │     fireEvent.submit(form);
+    182 211 │     expect(await within(dialog).findByRole("alert")).toBeTruthy();
+    183     │ - → expect((within(dialog).getByRole("textbox")·as·HTMLTextAreaElement).value).toBe("Original·note");
+        212 │ + → expect(
+        213 │ + → → (within(dialog).getByRole("textbox")·as·HTMLTextAreaElement).value,
+        214 │ + → ).toBe("Original·note");
+    184 215 │     fireEvent.click(within(dialog).getByRole("button", { name: "Submit" }));
+    185 216 │     await waitFor(() => expect(boundary.submit).toHaveBeenCalledTimes(2));
+  
+
+src\components\personnel-file\requested-documents.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     31  31 │     const router = useRouter();
+     32  32 │     const [uploading, setUploading] = useState<DocumentRequestView | null>(null);
+     33     │ - → const·[submitting,·setSubmitting]·=·useState<DocumentRequestView·|·null>(null);
+         33 │ + → const·[submitting,·setSubmitting]·=·useState<DocumentRequestView·|·null>(
+         34 │ + → → null,
+         35 │ + → );
+     34  36 │     const headingId = useId();
+     35  37 │     const outstanding = requests
+    ······· │ 
+     42  44 │         <div className="space-y-1">
+     43  45 │           <h2 id={headingId} className="text-lg font-semibold tracking-tight">
+     44     │ - → → → → → {t("settings.personnelFiles.myDocuments.requested.title",·"Requested·documents")}
+         46 │ + → → → → → {t(
+         47 │ + → → → → → → "settings.personnelFiles.myDocuments.requested.title",
+         48 │ + → → → → → → "Requested·documents",
+         49 │ + → → → → → )}
+     45  50 │           </h2>
+     46  51 │           <p className="text-sm text-muted-foreground">
+    ······· │ 
+     76  81 │                   >
+     77  82 │                     <IconUpload aria-hidden="true" className="size-4" />
+     78     │ - → → → → → → → → → {t("settings.personnelFiles.myDocuments.requested.upload.button",·"Upload")}
+         83 │ + → → → → → → → → → {t(
+         84 │ + → → → → → → → → → → "settings.personnelFiles.myDocuments.requested.upload.button",
+         85 │ + → → → → → → → → → → "Upload",
+         86 │ + → → → → → → → → → )}
+     79  87 │                   </Button>
+     80  88 │                   <Button
+    ······· │ 
+     90  98 │                   >
+     91  99 │                     <IconSend aria-hidden="true" className="size-4" />
+     92     │ - → → → → → → → → → {t("settings.personnelFiles.myDocuments.requested.submit.button",·"Submit")}
+        100 │ + → → → → → → → → → {t(
+        101 │ + → → → → → → → → → → "settings.personnelFiles.myDocuments.requested.submit.button",
+        102 │ + → → → → → → → → → → "Submit",
+        103 │ + → → → → → → → → → )}
+     93 104 │                   </Button>
+     94 105 │                 </>
+    ······· │ 
+    105 116 │               )}
+    106 117 │             </h3>
+    107     │ - → → → → → <DocumentRequestList·requests={remaining}·timezone={capability.timezone}·/>
+        118 │ + → → → → → <DocumentRequestList
+        119 │ + → → → → → → requests={remaining}
+        120 │ + → → → → → → timezone={capability.timezone}
+        121 │ + → → → → → />
+    108 122 │           </div>
+    109 123 │         ) : null}
+    ······· │ 
+    131 145 │           key={submitting?.id ?? "closed"}
+    132 146 │           request={
+    133     │ - → → → → → requests.find((request)·=>·request.id·===·submitting?.id·&&·request.status·===·"open")·??
+    134     │ - → → → → → null
+        147 │ + → → → → → requests.find(
+        148 │ + → → → → → → (request)·=>
+        149 │ + → → → → → → → request.id·===·submitting?.id·&&·request.status·===·"open",
+        150 │ + → → → → → )·??·null
+    135 151 │           }
+    136 152 │           onOpenChange={(open) => {
+  
+
+src\components\personnel-file\submit-document-request-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     17  17 │   } from "@/components/ui/alert-dialog";
+     18  18 │   import { Button } from "@/components/ui/button";
+     19     │ - import·{·TFormControl,·TFormItem,·TFormLabel·}·from·"@/components/ui/tanstack-form";
+         19 │ + import·{
+         20 │ + → TFormControl,
+         21 │ + → TFormItem,
+         22 │ + → TFormLabel,
+         23 │ + }·from·"@/components/ui/tanstack-form";
+     20  24 │   import { Textarea } from "@/components/ui/textarea";
+     21  25 │   import {
+    ······· │ 
+     70  74 │           return;
+     71  75 │         }
+     72     │ - → → → toast.success(t("settings.personnelFiles.myDocuments.requested.submit.success",·"Submitted"));
+         76 │ + → → → toast.success(
+         77 │ + → → → → t(
+         78 │ + → → → → → "settings.personnelFiles.myDocuments.requested.submit.success",
+         79 │ + → → → → → "Submitted",
+         80 │ + → → → → ),
+         81 │ + → → → );
+     73  82 │         form.reset();
+     74  83 │         onOpenChange(false);
+    ······· │ 
+    104 113 │             <AlertDialogHeader>
+    105 114 │               <AlertDialogTitle>
+    106     │ - → → → → → → → {t("settings.personnelFiles.myDocuments.requested.submit.title",·"Submit·documents?")}
+        115 │ + → → → → → → → {t(
+        116 │ + → → → → → → → → "settings.personnelFiles.myDocuments.requested.submit.title",
+        117 │ + → → → → → → → → "Submit·documents?",
+        118 │ + → → → → → → → )}
+    107 119 │               </AlertDialogTitle>
+    108 120 │               <AlertDialogDescription>
+    ······· │ 
+    150 162 │                     </AlertDialogCancel>
+    151 163 │                     <Button type="submit" disabled={isSubmitting}>
+    152     │ - → → → → → → → → → → {t("settings.personnelFiles.myDocuments.requested.submit.confirm",·"Submit")}
+        164 │ + → → → → → → → → → → {t(
+        165 │ + → → → → → → → → → → → "settings.personnelFiles.myDocuments.requested.submit.confirm",
+        166 │ + → → → → → → → → → → → "Submit",
+        167 │ + → → → → → → → → → → )}
+    153 168 │                     </Button>
+    154 169 │                   </>
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+      7     │ - ␍
+      8     │ - describe("route·metadata",·()·=>·{␍
+      9     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{␍
+     10     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);␍
+     11     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);␍
+     13     │ - → });␍
+     14     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{␍
+     15     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     16     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     17     │ - → → expect(␍
+     18     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     19     │ - → → ).toBe(true);␍
+     20     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     21     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     22     │ - → → → false,␍
+     23     │ - → → );␍
+     24     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     25     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+     26     │ - → });␍
+     27     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{␍
+     28     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);␍
+     29     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);␍
+     30     │ - → });␍
+     31     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{␍
+     32     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     33     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+     34     │ - → → → true,␍
+     35     │ - → → );␍
+     36     │ - → → expect(␍
+     37     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+     38     │ - → → ).toBe(false);␍
+     39     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+     41     │ - → });␍
+     42     │ - → it("retains·independent·approvals·page·headings",·()·=>·{␍
+     43     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     44     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     45     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+     46     │ - → → → true,␍
+     47     │ - → → );␍
+     48     │ - → });␍
+     49     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{␍
+     50     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+     51     │ - → → → true,␍
+     52     │ - → → );␍
+     53     │ - → → expect(␍
+     54     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+     55     │ - → → ).toBe(false);␍
+     56     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     57     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     58     │ - → });␍
+     59     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{␍
+     60     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     61     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     62     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+     63     │ - → → → true,␍
+     64     │ - → → );␍
+     65     │ - → });␍
+     66     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{␍
+     67     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+     68     │ - → → → true,␍
+     69     │ - → → );␍
+     70     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+     71     │ - → → → false,␍
+     72     │ - → → );␍
+     73     │ - → → expect(␍
+     74     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+     75     │ - → → ).toBe(false);␍
+     76     │ - → });␍
+     77     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{␍
+     78     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     79     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+     80     │ - → → → false,␍
+     81     │ - → → );␍
+     82     │ - → });␍
+     83     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{␍
+     84     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     85     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+     86     │ - → → → false,␍
+     87     │ - → → );␍
+     88     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     89     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+     90     │ - → → → false,␍
+     91     │ - → → );␍
+     92     │ - → });␍
+     93     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{␍
+     94     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);␍
+     95     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);␍
+     96     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);␍
+     97     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);␍
+     98     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);␍
+     99     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);␍
+    100     │ - → });␍
+    101     │ - → it("adopts·only·the·portfolio·pilot·title,·leaving·other·reports·and·descendants·with·shell·titles",·()·=>·{␍
+    102     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);␍
+    103     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);␍
+    104     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);␍
+    105     │ - → });␍
+    106     │ - → it.each([␍
+    107     │ - → → ["/en",·"Dashboard"],␍
+    108     │ - → → ["/de/my-requests",·"My·Requests"],␍
+    109     │ - → → ["/en/organization",·"Org·Explorer"],␍
+    110     │ - → → ["/en/payroll",·"Payroll"],␍
+    111     │ - → → ["/en/scheduling",·"Scheduling"],␍
+    112     │ - → → ["/en/approvals/inbox",·"Approvals"],␍
+    113     │ - → → ["/en/compliance",·"Compliance"],␍
+    114     │ - → → ["/en/works-council",·"Works·Council"],␍
+    115     │ - → → ["/en/team/absences",·"Team·Absences"],␍
+    116     │ - → → ["/en/team/driving",·"Driving·Details"],␍
+    117     │ - → → ["/en/driving-licence",·"My·driving·authorization"],␍
+    118     │ - → → ["/en/driving-licence/checks/employee-1",·"My·driving·authorization"],␍
+    119     │ - → → ["/en/reports/projects",·"Project·Reports"],␍
+    120     │ - → → ["/en/reports/vehicles",·"Distance·per·Vehicle"],␍
+    121     │ - → → ["/en/settings/employees/employee-1",·"Employees"],␍
+    122     │ - → → ["/en/settings/locations/location-1",·"Locations"],␍
+    123     │ - → → ["/en/equipment",·"Equipment"],␍
+    124     │ - → → ["/en/equipment/employees/employee-1",·"Equipment"],␍
+    125     │ - → → ["/en/equipment/assignments/assignment-1",·"Equipment"],␍
+    126     │ - → → ["/de/my-equipment",·"My·equipment"],␍
+    127     │ - → → ["/en/settings/equipment",·"Settings"],␍
+    128     │ - → ])("resolves·%s",·(pathname,·title)·=>·{␍
+    129     │ - → → expect(resolveAppRouteMetadata(pathname).titleDefault).toBe(title);␍
+    130     │ - → });␍
+    131     │ - ␍
+    132     │ - → it("matches·route·prefixes·only·at·path-segment·boundaries",·()·=>·{␍
+    133     │ - → → expect(resolveAppRouteMetadata("/en/teamwork").titleDefault).toBe("Z8");␍
+    134     │ - → });␍
+    135     │ - ␍
+    136     │ - → it("normalizes·locale·and·trailing·slash·segments",·()·=>·{␍
+    137     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    138     │ - → → → "/settings/security",␍
+    139     │ - → → );␍
+    140     │ - → });␍
+    141     │ - });␍
+          1 │ + import·{·describe,·expect,·it·}·from·"vitest";
+          2 │ + import·{
+          3 │ + → appPageOwnsHeading,
+          4 │ + → normalizeAppPath,
+          5 │ + → resolveAppRouteMetadata,
+          6 │ + }·from·"./route-metadata";
+          7 │ + 
+          8 │ + describe("route·metadata",·()·=>·{
+          9 │ + → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{
+  133 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  353 more lines truncated
+  
+
+Checked 12 files in 10ms. No fixes applied.
+Found 10 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-eaa80aa0-
+  │ d4431093adcdde65\apps\webapp
+

@@ -1,0 +1,555 @@
+{
+  "phase": "after",
+  "status": "accepted",
+  "setupComplete": true,
+  "checks": [
+    "Real get-session pending owner captured without editable work inputs",
+    "Real checkIsAdmin pending owner captured without editable work inputs",
+    "Original admission completes HTTP200",
+    "Ready form retains exactly one task heading",
+    "Generated admin actor owns current organization",
+    "Actual schedule draft controls are editable",
+    "Actual admin Continue advances stored progress to vacation_policy",
+    "Progress-only Continue preserves own work policy counts",
+    "Actual admin Skip retains vacation_policy progression",
+    "Actual Skip preserves own work policy counts",
+    "Existing member fixture automatically skips to wellness",
+    "Member auto-skip preserves own work policy counts",
+    "No browser exceptions",
+    "No request interception errors"
+  ],
+  "captures": [
+    {
+      "name": "after-session-pending-desktop.png",
+      "owner": "session-pending",
+      "pending": true,
+      "path": "/en/onboarding/work-schedule",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "headings": [
+        "Set your work schedule"
+      ],
+      "statuses": [
+        "Checking work schedule access"
+      ],
+      "workControls": 0,
+      "editableInputs": 0,
+      "sha256": "707a0289e4514d4a08fd1b06731ce44a9ea993e7a4b7b41f290002f7735f9c9e",
+      "source": {
+        "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+        "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+        "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "source": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "after-session-pending-phone.png",
+      "owner": "session-pending",
+      "pending": true,
+      "path": "/en/onboarding/work-schedule",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "headings": [
+        "Set your work schedule"
+      ],
+      "statuses": [
+        "Checking work schedule access"
+      ],
+      "workControls": 0,
+      "editableInputs": 0,
+      "sha256": "53f703b366df25cd4d8fdf5ffa7ad6ed2d523c65e0563eb3ece18d93b995f820",
+      "source": {
+        "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+        "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+        "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "source": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "after-admission-pending-desktop.png",
+      "owner": "admission-pending",
+      "pending": true,
+      "path": "/en/onboarding/work-schedule",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "headings": [
+        "Set your work schedule"
+      ],
+      "statuses": [
+        "Checking work schedule access"
+      ],
+      "workControls": 0,
+      "editableInputs": 0,
+      "sha256": "6bba2304fc73c9b48e0e6306293257730dbf5a7a31838afc88b2cd9ad98125e6",
+      "source": {
+        "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+        "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+        "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "source": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "after-admission-pending-phone.png",
+      "owner": "admission-pending",
+      "pending": true,
+      "path": "/en/onboarding/work-schedule",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "headings": [
+        "Set your work schedule"
+      ],
+      "statuses": [
+        "Checking work schedule access"
+      ],
+      "workControls": 0,
+      "editableInputs": 0,
+      "sha256": "089c13b5b35f6b5fa838a19eef3ffd7a7702b6c97858de8aff9860cf74a5e458",
+      "source": {
+        "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+        "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+        "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "source": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "after-ready-desktop.png",
+      "owner": "ready",
+      "pending": false,
+      "path": "/en/onboarding/work-schedule",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "headings": [
+        "Set your work schedule"
+      ],
+      "statuses": [],
+      "workControls": 2,
+      "editableInputs": 2,
+      "sha256": "d0856262ac4e9b4466ded1a859e710918743df4f682685463ff768762c89cbe9",
+      "source": {
+        "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+        "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+        "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "source": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+          }
+        ]
+      }
+    },
+    {
+      "name": "after-ready-phone.png",
+      "owner": "ready",
+      "pending": false,
+      "path": "/en/onboarding/work-schedule",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "headings": [
+        "Set your work schedule"
+      ],
+      "statuses": [],
+      "workControls": 2,
+      "editableInputs": 2,
+      "sha256": "e6014023d042ec513baa7024fd80e26066deed16aab23f4c61007778006f64ce",
+      "source": {
+        "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+        "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+        "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "source": [
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+            "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+            "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+          },
+          {
+            "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+            "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+          },
+          {
+            "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+            "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+            "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+            "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "transportErrors": [],
+  "session": {
+    "observed": true,
+    "held": 1,
+    "responses": [
+      200,
+      200,
+      200
+    ]
+  },
+  "admission": {
+    "held": 1,
+    "responses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "commands": {
+    "save": [
+      200
+    ],
+    "skip": [
+      200
+    ]
+  },
+  "qualification": "Consumer-only historical client comparison: exact bd160d9 client before, exact 1230f617 client after; server actions, fields and onboarding service stay at 1230f617. Normal ephemeral sign-in; no cookie/state save or transfer. Actual requests are held and continued unchanged. Work-schedule Save intentionally saves progress only, not hours/classification policies.",
+  "source": {
+    "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+    "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+    "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+    "source": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+        "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+        "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+        "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+        "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+        "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+        "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+        "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+        "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+      }
+    ]
+  },
+  "auth": {
+    "signIn": 200,
+    "active": 200
+  },
+  "actions": {
+    "checkIsAdmin": "0056878b5833cc1f02bd10d3cf70031168b158996e",
+    "setWorkScheduleOnboarding": "40b573932907f41bdf3a701879d2612535fc193d92",
+    "skipWorkScheduleSetup": "000c9e6f522d9b6e103c90f7e7872b014b384cb4f1"
+  },
+  "beforeSave": {
+    "membership": "admin",
+    "settings": {
+      "onboarding_step": null
+    },
+    "counts": {
+      "policies": 1,
+      "schedules": 1,
+      "schedule_days": 0,
+      "assignments": 1
+    }
+  },
+  "draft": {
+    "value": "37.5",
+    "disabled": false
+  },
+  "afterSave": {
+    "membership": "admin",
+    "settings": {
+      "onboarding_step": "vacation_policy"
+    },
+    "counts": {
+      "policies": 1,
+      "schedules": 1,
+      "schedule_days": 0,
+      "assignments": 1
+    }
+  },
+  "afterSkip": {
+    "membership": "admin",
+    "settings": {
+      "onboarding_step": "vacation_policy"
+    },
+    "counts": {
+      "policies": 1,
+      "schedules": 1,
+      "schedule_days": 0,
+      "assignments": 1
+    }
+  },
+  "memberBefore": {
+    "membership": "member",
+    "settings": {
+      "onboarding_step": null
+    },
+    "counts": {
+      "policies": 1,
+      "schedules": 1,
+      "schedule_days": 0,
+      "assignments": 1
+    }
+  },
+  "memberAfter": {
+    "membership": "member",
+    "settings": {
+      "onboarding_step": "wellness"
+    },
+    "counts": {
+      "policies": 1,
+      "schedules": 1,
+      "schedule_days": 0,
+      "assignments": 1
+    }
+  },
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ],
+  "sourceAtEnd": {
+    "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+    "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+    "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+    "source": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+        "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+        "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+        "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+        "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+        "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+        "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+        "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+        "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+      }
+    ]
+  }
+}

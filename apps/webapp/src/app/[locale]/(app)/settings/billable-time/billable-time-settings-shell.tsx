@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -7,30 +8,32 @@ import {
 	type BillableTimeSettingsPageId,
 } from "./billable-time-settings-pages";
 
-/** Heading and page navigation shared by every Billable Time settings page. */
+/**
+ * Heading and page navigation shared by every Billable Time settings page.
+ * `actions` holds the active page's primary action, shown in the page header.
+ */
 export async function BillableTimeSettingsShell({
 	activePageId,
+	actions,
 	children,
 }: {
 	activePageId: BillableTimeSettingsPageId;
+	actions?: ReactNode;
 	children: ReactNode;
 }) {
 	const t = await getTranslate();
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.billableTime.title", "Billable Time")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.billableTime.description",
-							"Billable currency and what your organization charges customers for work",
-						)}
-					</p>
-				</div>
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("settings.billableTime.title", "Billable Time")}
+					description={t(
+						"settings.billableTime.description",
+						"Billable currency and what your organization charges customers for work",
+					)}
+					actions={actions}
+				/>
 
 				{BILLABLE_TIME_SETTINGS_PAGES.length > 1 && (
 					<nav
@@ -43,7 +46,7 @@ export async function BillableTimeSettingsShell({
 								href={page.href}
 								aria-current={page.id === activePageId ? "page" : undefined}
 								className={cn(
-									"rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground",
+									"rounded-md px-3 py-1.5 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50",
 									page.id === activePageId && "bg-muted font-medium text-foreground",
 								)}
 							>

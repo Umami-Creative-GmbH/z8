@@ -1,0 +1,42 @@
+{
+  "checkout": "X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498",
+  "branch": "feat/1732-payslip-batch-ui",
+  "productCheckpoint": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+  "publishedMetadataCheckpoint": "96dea2d9b2dfa5f83325fd7c0bf925e0da9b1ecb",
+  "pnpmShellPrefix": "$env:pnpm_config_verify_deps_before_run='false'",
+  "directPnpmPrefix": "pnpm --config.verify-deps-before-run=false",
+  "install": "pnpm --config.verify-deps-before-run=false --config.verify-store-integrity=true install --offline --frozen-lockfile --ignore-scripts --package-import-method=copy",
+  "fixtures": [
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare .tmp/1732/fixture-ready",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare .tmp/1732/fixture-pg",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/runtime-helper.mjs dev . .tmp/1732/fixture-ready"
+  ],
+  "fixtureInnerGuardBoundary": "Maintained fixture.mjs spawn uses the equivalent --config.verifyDepsBeforeRun=false CLI override. Its isolated child environment filters parent variables. Exact kebab spelling and shell environment guard were used on every direct invocation; own check/runtime launchers preserve the environment guard and exact CLI flag. No auto-install or dependency mutation was observed after the single approved install.",
+  "unit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit --maxWorkers 2 --testTimeout 30000 src/components/personnel-file/payslip-batch-start.test.tsx src/lib/navigation/route-metadata.test.ts src/components/personnel-file/payslip-batch-files.test.ts src/lib/personnel-file/payslip-matching.test.ts src/lib/personnel-file/access.test.ts src/lib/personnel-file/organization-day.test.ts src/tolgee/extracted-key-defaults.test.ts src/app/[locale]/onboarding/profile/page.test.tsx src/app/[locale]/onboarding/profile/actions.test.ts src/lib/validations/onboarding.test.ts",
+  "postgres": "$env:FIXTURE_1732_DIR='.tmp/1732/fixture-pg'; pnpm --config.verify-deps-before-run=false node .tmp/1732/fixture-tools.mjs check exec vitest run --project integration src/lib/personnel-file/payslip-batch.integration.test.ts",
+  "types": "pnpm --config.verify-deps-before-run=false --dir apps/webapp run typecheck",
+  "licenses": "From apps/webapp: pnpm --config.verify-deps-before-run=false node C:/Users/KaiHentschel/AppData/Local/pnpm-cache/dlx/4ef919b1337dbf0e3e2130e402440523/mufawndf-1eas/node_modules/license-report/index.js --only=prod --output=json --config license-report-config.json > src/data/licenses.json",
+  "biome": "From apps/webapp: pnpm --config.verify-deps-before-run=false exec biome check --formatter-enabled=false <eight owned files listed in source pins>. Four owned page/components/tests also passed normal formatter.",
+  "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope changed --base 63a5e6ff43e6541473a927da0a651686bfd33afe --include-untracked --no-supply-chain --no-score --no-cache --verbose --output-dir .tmp/1732/doctor-63a",
+  "runtime": [
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/browser-launch.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/capture.mjs before",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/capture.mjs after",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/operations.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/preferences.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/officer-finish.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/roles-settled.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/roles-officer.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/preferences-final.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/keyboard-visible-final.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/runtime-final-helper.mjs mcp . .tmp/1732/fixture-ready"
+  ],
+  "cleanup": [
+    "pnpm --config.verify-deps-before-run=false node .tmp/1732/browser-close.mjs",
+    "Creation/path-checked Stop-Process only for Next31404 and captured descendants, see cleanup-next-tree.json",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup .tmp/1732/fixture-ready",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup .tmp/1732/fixture-pg"
+  ],
+  "checks": {"unitSuites":10,"unitTests":124,"postgresSuites":1,"postgresTests":20,"ownedFilesUnchangedAcrossMerges":8,"biomeFiles":8,"doctorWarnings":3,"doctorScore":null,"fullTypes":"passed","productionBuild":"not rerun; inherited limits retained"},
+  "noExternalPublication": true
+}

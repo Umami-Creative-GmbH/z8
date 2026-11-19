@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "checkedTextFiles": 129,
+  "fixtureGenerations": 2,
+  "scope": "Exact generated root fixture passwords and private environment credentials from both generations, including encoded variants; not a global historical-secret claim."
+}

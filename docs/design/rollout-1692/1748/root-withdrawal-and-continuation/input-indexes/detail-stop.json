@@ -1,0 +1,70 @@
+{
+  "kind": "Explicit sanitized public review allowlist",
+  "verifiedCommit": null,
+  "issue": "OPEN",
+  "candidate": "df0fafc4d827969d37482df69cfe2abb92fee599",
+  "files": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\HANDOFF.md",
+      "bytes": 12196,
+      "sha256": "d7bd4aa8653ab8bd4efe9aebf0c9f3ce91a417e29b4ef4f2987bb958aa55f98b"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\prediction.json",
+      "bytes": 35687,
+      "sha256": "8755da4d1548509f66c7ac888ca59d5ae8a6217c4fd8a49bae1829480f1d5b1b"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\predict.cjs",
+      "bytes": 4434,
+      "sha256": "9407a320bc574c3aa50b636c00fcae8fa437fb9b1ec6e805f92f5d2f9a1bdd96"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\resolved-metadata.txt",
+      "bytes": 7641,
+      "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\resolved-test.txt",
+      "bytes": 12722,
+      "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\refusal-review.test.tsx",
+      "bytes": 5446,
+      "sha256": "a982d19638c77b3ed60776cf7cd23252ff5dff2b8c51ba5380ffa30a4a25b3a7"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\baseline-control.test.tsx",
+      "bytes": 4311,
+      "sha256": "649aaaf93b288276cc1f737e35533c02ef9e07d1ba22705fe71dc51a9ed19a99"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\bridges.json",
+      "bytes": 491,
+      "sha256": "1d66d14f08e6bae18e6909285a809b0c33c0fedbdf70914ef10f99088b1d8dcd"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\bridge-cleanup.json",
+      "bytes": 555,
+      "sha256": "e5e1caa88a0748f6e76ebf1a407a05c63c520cb2b83f5c9513e7fa37ed3b3382"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\review-results.json",
+      "bytes": 14047,
+      "sha256": "980c058a069828502005d96f0c6f2bfc6205bf1d6886f80c384aad14a63d5fd5"
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\finalize.cjs",
+      "bytes": 6036,
+      "sha256": "3d4881f73fe0d72e09140204027f4e502f366a8592068e953ad264d246d64ac4"
+    }
+  ],
+  "exclusions": [
+    "Raw stdout and failure DOM",
+    "Raw Vitest JSON failure messages",
+    "Private filesystem inventories",
+    "Credentials/authstate/headers/action responses/private failure images"
+  ],
+  "redaction": "No secret match values collected or printed. Only public source/pins, synthetic fixture tests, aggregate process checks, and sanitized result identities are allowlisted."
+}

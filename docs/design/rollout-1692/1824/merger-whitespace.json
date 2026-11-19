@@ -1,0 +1,1224 @@
+[
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD^1",
+      "HEAD"
+    ],
+    "exitCode": 2,
+    "stdout": "docs/design/rollout-1692/1824/biome-default.txt:4: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:6: trailing whitespace.\n+      2   2 │   \ndocs/design/rollout-1692/1824/biome-default.txt:22: trailing whitespace.\n+      7  16 │   \ndocs/design/rollout-1692/1824/biome-default.txt:23: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:32: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:34: trailing whitespace.\n+     72  83 │   \ndocs/design/rollout-1692/1824/biome-default.txt:41: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:54: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:64: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:65: trailing whitespace.\n+    152 172 │   \ndocs/design/rollout-1692/1824/biome-default.txt:72: trailing whitespace.\n+    156 178 │   \ndocs/design/rollout-1692/1824/biome-default.txt:73: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:74: trailing whitespace.\n+    166 188 │   \ndocs/design/rollout-1692/1824/biome-default.txt:82: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:87: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:97: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:107: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:115: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:124: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:134: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:149: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:154: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:156: trailing whitespace.\n+      2   2 │   \ndocs/design/rollout-1692/1824/biome-default.txt:168: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:177: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:179: trailing whitespace.\n+     41  50 │   \ndocs/design/rollout-1692/1824/biome-default.txt:186: trailing whitespace.\n+     44  56 │   \ndocs/design/rollout-1692/1824/biome-default.txt:188: trailing whitespace.\n+     46  58 │   \ndocs/design/rollout-1692/1824/biome-default.txt:196: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:207: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:225: trailing whitespace.\n+    123 147 │   \ndocs/design/rollout-1692/1824/biome-default.txt:226: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:228: trailing whitespace.\n+    133 157 │   \ndocs/design/rollout-1692/1824/biome-default.txt:240: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:251: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:259: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:261: trailing whitespace.\n+    172 204 │   \ndocs/design/rollout-1692/1824/biome-default.txt:267: trailing whitespace.\n+    175 209 │   \ndocs/design/rollout-1692/1824/biome-default.txt:268: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:277: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:288: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:297: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:309: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:310: trailing whitespace.\n+    236 283 │   \ndocs/design/rollout-1692/1824/biome-default.txt:317: trailing whitespace.\n+    240 289 │   \ndocs/design/rollout-1692/1824/biome-default.txt:319: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:324: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:326: trailing whitespace.\n+      2   2 │   \ndocs/design/rollout-1692/1824/biome-default.txt:335: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:346: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:353: trailing whitespace.\n+     78  88 │   \ndocs/design/rollout-1692/1824/biome-default.txt:355: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:363: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:378: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:393: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:398: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:412: trailing whitespace.\n+     17  23 │   \ndocs/design/rollout-1692/1824/biome-default.txt:413: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:415: trailing whitespace.\n+     20  26 │   \ndocs/design/rollout-1692/1824/biome-default.txt:423: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:433: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:443: trailing whitespace.\n+    105 121 │   \ndocs/design/rollout-1692/1824/biome-default.txt:444: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:453: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:463: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:468: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:479: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:489: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:506: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:517: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:527: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:537: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:542: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:651: trailing whitespace.\n+          2 │ + \ndocs/design/rollout-1692/1824/biome-default.txt:666: trailing whitespace.\n+         17 │ + \ndocs/design/rollout-1692/1824/biome-default.txt:675: trailing whitespace.\n+         26 │ + \ndocs/design/rollout-1692/1824/biome-default.txt:683: trailing whitespace.\n+         34 │ + \ndocs/design/rollout-1692/1824/biome-default.txt:692: trailing whitespace.\n+         43 │ + \ndocs/design/rollout-1692/1824/biome-default.txt:694: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:699: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:700: trailing whitespace.\n+      2   2 │   \ndocs/design/rollout-1692/1824/biome-default.txt:713: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:722: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:732: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:742: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:758: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:760: trailing whitespace.\n+    117 136 │   \ndocs/design/rollout-1692/1824/biome-default.txt:768: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:779: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:788: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:790: trailing whitespace.\n+    143 171 │   \ndocs/design/rollout-1692/1824/biome-default.txt:799: trailing whitespace.\n+    146 179 │   \ndocs/design/rollout-1692/1824/biome-default.txt:800: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:801: trailing whitespace.\n+    181 214 │   \ndocs/design/rollout-1692/1824/biome-default.txt:808: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:819: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:827: trailing whitespace.\n+    252 292 │   \ndocs/design/rollout-1692/1824/biome-default.txt:828: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:835: trailing whitespace.\n+    261 303 │   \ndocs/design/rollout-1692/1824/biome-default.txt:837: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:855: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:865: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:870: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:879: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:896: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:913: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:925: trailing whitespace.\n+    277 299 │   \ndocs/design/rollout-1692/1824/biome-default.txt:947: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:962: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:963: trailing whitespace.\n+    344 382 │   \ndocs/design/rollout-1692/1824/biome-default.txt:973: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:981: trailing whitespace.\n+    354 398 │   \ndocs/design/rollout-1692/1824/biome-default.txt:982: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:994: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1003: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1012: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1017: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1030: trailing whitespace.\n+     18  24 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1040: trailing whitespace.\n+     23  33 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1041: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1042: trailing whitespace.\n+     25  35 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1051: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1061: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1066: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1074: trailing whitespace.\n+     49  51 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1075: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1091: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1092: trailing whitespace.\n+     68  76 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1097: trailing whitespace.\n+     71  80 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1109: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1151: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1163: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1168: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1170: trailing whitespace.\n+      2   2 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1181: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1182: trailing whitespace.\n+     21  27 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1189: trailing whitespace.\n+     24  33 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1191: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1201: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1209: trailing whitespace.\n+     53  67 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1210: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1218: trailing whitespace.\n+     59  75 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1219: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1229: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1238: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1327: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1332: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1334: trailing whitespace.\n+     16   16 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1339: trailing whitespace.\n+     18   20 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1341: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1349: trailing whitespace.\n+     55   56 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1351: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1362: trailing whitespace.\n+     69   76 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1364: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1378: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1388: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1400: trailing whitespace.\n+    246  267 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1401: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1403: trailing whitespace.\n+    315  336 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1408: trailing whitespace.\n+    317  340 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1410: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1418: trailing whitespace.\n+    337  362 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1419: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1427: trailing whitespace.\n+    362  390 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1429: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1445: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1446: trailing whitespace.\n+    392  425 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1453: trailing whitespace.\n+    396  431 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1465: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1472: trailing whitespace.\n+    409  451 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1474: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1482: trailing whitespace.\n+    417  461 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1490: trailing whitespace.\n+    421  468 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1492: trailing whitespace.\n+    ········ │ \ndocs/design/rollout-1692/1824/biome-default.txt:1497: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1502: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1522: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1532: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1542: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1544: trailing whitespace.\n+    109 124 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1563: trailing whitespace.\n+    115 140 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1564: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1574: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1585: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1595: trailing whitespace.\n+    164 200 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1596: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1598: trailing whitespace.\n+    200 236 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1606: trailing whitespace.\n+    203 243 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1615: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1626: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1663: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1668: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1678: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1690: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome-default.txt:1691: trailing whitespace.\n+    321 329 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1698: trailing whitespace.\n+    324 335 │   \ndocs/design/rollout-1692/1824/biome-default.txt:1700: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1707: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome-default.txt:1713: new blank line at EOF.\ndocs/design/rollout-1692/1824/biome.txt:4: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:16: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:18: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:20: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:28: trailing whitespace.\n+    ······· │ \ndocs/design/rollout-1692/1824/biome.txt:36: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:41: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:48: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:50: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:55: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:62: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:64: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:71: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:75: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:77: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:79: trailing whitespace.\n+       │              -----------   \ndocs/design/rollout-1692/1824/biome.txt:91: trailing whitespace.\n+  \ndocs/design/rollout-1692/1824/biome.txt:97: new blank line at EOF.\ndocs/design/rollout-1692/1824/combined-unit.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/final-integration-unit.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/green-keyboard.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/green-pairing.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/green-queue.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/green-scope.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/red-keyboard.txt:54: new blank line at EOF.\ndocs/design/rollout-1692/1824/red-pairing.txt:135: new blank line at EOF.\ndocs/design/rollout-1692/1824/red-queue.txt:301: new blank line at EOF.\ndocs/design/rollout-1692/1824/red-scope.txt:139: new blank line at EOF.\ndocs/design/rollout-1692/1824/types.txt:10: new blank line at EOF.\ndocs/design/rollout-1692/1824/unit-final.txt:12: new blank line at EOF.\ndocs/design/rollout-1692/1824/unit.txt:12: new blank line at EOF.\n",
+    "stderr": "",
+    "diagnostics": [
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 4,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 6,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 22,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 23,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 32,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 34,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 41,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 54,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 64,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 65,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 72,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 73,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 74,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 82,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 87,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 97,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 107,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 115,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 124,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 134,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 149,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 154,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 156,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 168,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 177,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 179,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 186,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 188,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 196,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 207,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 225,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 226,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 228,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 240,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 251,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 259,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 261,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 267,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 268,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 277,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 288,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 297,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 309,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 310,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 317,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 319,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 324,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 326,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 335,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 346,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 353,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 355,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 363,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 378,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 393,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 398,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 412,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 413,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 415,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 423,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 433,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 443,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 444,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 453,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 463,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 468,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 479,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 489,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 506,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 517,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 527,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 537,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 542,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 651,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 666,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 675,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 683,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 692,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 694,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 699,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 700,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 713,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 722,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 732,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 742,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 758,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 760,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 768,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 779,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 788,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 790,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 799,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 800,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 801,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 808,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 819,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 827,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 828,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 835,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 837,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 855,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 865,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 870,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 879,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 896,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 913,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 925,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 947,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 962,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 963,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 973,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 981,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 982,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 994,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1003,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1012,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1017,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1030,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1040,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1041,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1042,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1051,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1061,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1066,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1074,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1075,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1091,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1092,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1097,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1109,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1151,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1163,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1168,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1170,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1181,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1182,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1189,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1191,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1201,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1209,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1210,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1218,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1219,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1229,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1238,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1327,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1332,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1334,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1339,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1341,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1349,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1351,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1362,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1364,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1378,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1388,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1400,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1401,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1403,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1408,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1410,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1418,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1419,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1427,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1429,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1445,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1446,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1453,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1465,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1472,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1474,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1482,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1490,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1492,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1497,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1502,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1522,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1532,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1542,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1544,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1563,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1564,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1574,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1585,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1595,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1596,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1598,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1606,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1615,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1626,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1663,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1668,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1678,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1690,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1691,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1698,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1700,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1707,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome-default.txt",
+        "line": 1713,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 4,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 16,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 18,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 20,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 28,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 36,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 41,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 48,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 50,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 55,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 62,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 64,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 71,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 75,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 77,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 79,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 91,
+        "message": "trailing whitespace."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/biome.txt",
+        "line": 97,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/combined-unit.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/final-integration-unit.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/green-keyboard.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/green-pairing.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/green-queue.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/green-scope.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/red-keyboard.txt",
+        "line": 54,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/red-pairing.txt",
+        "line": 135,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/red-queue.txt",
+        "line": 301,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/red-scope.txt",
+        "line": 139,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/types.txt",
+        "line": 10,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/unit-final.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      },
+      {
+        "path": "docs/design/rollout-1692/1824/unit.txt",
+        "line": 12,
+        "message": "new blank line at EOF."
+      }
+    ],
+    "counts": {
+      "total": 230,
+      "trailingWhitespace": 215,
+      "blankAtEof": 15
+    },
+    "files": [
+      "docs/design/rollout-1692/1824/biome-default.txt",
+      "docs/design/rollout-1692/1824/biome.txt",
+      "docs/design/rollout-1692/1824/combined-unit.txt",
+      "docs/design/rollout-1692/1824/final-integration-unit.txt",
+      "docs/design/rollout-1692/1824/green-keyboard.txt",
+      "docs/design/rollout-1692/1824/green-pairing.txt",
+      "docs/design/rollout-1692/1824/green-queue.txt",
+      "docs/design/rollout-1692/1824/green-scope.txt",
+      "docs/design/rollout-1692/1824/red-keyboard.txt",
+      "docs/design/rollout-1692/1824/red-pairing.txt",
+      "docs/design/rollout-1692/1824/red-queue.txt",
+      "docs/design/rollout-1692/1824/red-scope.txt",
+      "docs/design/rollout-1692/1824/types.txt",
+      "docs/design/rollout-1692/1824/unit-final.txt",
+      "docs/design/rollout-1692/1824/unit.txt"
+    ]
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD^2",
+      "HEAD"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "",
+    "diagnostics": [],
+    "counts": {
+      "total": 0,
+      "trailingWhitespace": 0,
+      "blankAtEof": 0
+    },
+    "files": []
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "",
+    "diagnostics": [],
+    "counts": {
+      "total": 0,
+      "trailingWhitespace": 0,
+      "blankAtEof": 0
+    },
+    "files": []
+  }
+]

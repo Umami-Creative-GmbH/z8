@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "policy": "category-only; no private input filenames, sizes, hashes, or reads",
+  "rawEvidencePreserved": true,
+  "categories": [
+    "All nonallowlisted runtime data, raw/private inputs/results/logs, credentials, contacts, token URLs, auth/session/storage data and private failure references.",
+    "Original Doctor log includes an actual private diagnostics path: excluded without a raw hash; the labeled clone omits only that path value.",
+    "Publication scratch and its unsuccessful tooling attempts remain ignored. No private image was inspected and no archived harness was executed."
+  ],
+  "staticScan": {
+    "rawPublicFiles": 13,
+    "mergerPublicFiles": 8,
+    "accidentalValueMatches": 0,
+    "doctorCloneMatches": 0
+  },
+  "runtimePolicy": "Only the exact 74 paths in runtime/public-allowlist.json, including its one artifact-hashes.json; never recursive runtime copying."
+}

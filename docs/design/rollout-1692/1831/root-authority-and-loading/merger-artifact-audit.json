@@ -1,0 +1,143 @@
+{
+  "passed": true,
+  "base": "96dea2d9b2dfa5f83325fd7c0bf925e0da9b1ecb",
+  "incoming": "5c083d2a4301672ec610d96b08be6ebc0d0f7588",
+  "merge": "699a1a782ca8f0ab2def50b31e4921fd6d17a073",
+  "tree": "b8616b195815d7f0d7175010d8f80469e8e9690c",
+  "parents": [
+    "96dea2d9b2dfa5f83325fd7c0bf925e0da9b1ecb",
+    "5c083d2a4301672ec610d96b08be6ebc0d0f7588"
+  ],
+  "independentMergeTreeMatches": true,
+  "changedPaths": 71,
+  "sourcePaths": [
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts"
+  ],
+  "preservation": {
+    "unaffectedPaths": 13230,
+    "priorRolloutPaths": 2981,
+    "incomingRawPaths": 67,
+    "verifiedTicketAncestors": 44,
+    "baselineAncestor": true,
+    "root1830Verified": true,
+    "owners": [
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.ts",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "apps/webapp/src/components/ui/tanstack-form.tsx",
+      "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "apps/webapp/src/lib/employee-lifecycle/joining/joining.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/validations/onboarding.ts"
+    ],
+    "sourcePageTemplates": 172,
+    "persistentPages": 153,
+    "aliases": 19,
+    "graphNodes": 157,
+    "graphEdges": 159
+  },
+  "artifacts": {
+    "decodedPNGs": 17,
+    "parsedJSON": 23,
+    "syntaxCheckedMJS": 7,
+    "documentLinks": 6,
+    "driverImports": [
+      {
+        "driver": "biweekly.mjs",
+        "import": "../1719/fixture.mjs"
+      },
+      {
+        "driver": "default-actions.mjs",
+        "import": "../1719/fixture.mjs"
+      },
+      {
+        "driver": "default-capture.mjs",
+        "import": "../1719/fixture.mjs"
+      },
+      {
+        "driver": "final-runtime.mjs",
+        "import": "../1719/fixture.mjs"
+      },
+      {
+        "driver": "postgres.mjs",
+        "import": "../1719/fixture.mjs"
+      },
+      {
+        "driver": "runtime.mjs",
+        "import": "../1719/fixture.mjs"
+      },
+      {
+        "driver": "runtime.mjs",
+        "import": "../../../../scripts/performance/journey-steps.mjs"
+      }
+    ],
+    "rawPins": [
+      {
+        "file": "page-before.tsx.txt",
+        "actualSHA256": "6be8048a5b2782596ac9cc4ef818df55ad7f6fd75c40e0e530f5029b8f90474a",
+        "declaredCaptureSHA256": "ab674ed8e26a71cb3a370dc6b9f20544df9641fc97984c9308843ce60000799e",
+        "rawSnapshotHashMatches": false,
+        "lfSHA256": "6be8048a5b2782596ac9cc4ef818df55ad7f6fd75c40e0e530f5029b8f90474a",
+        "crlfSHA256": "ab674ed8e26a71cb3a370dc6b9f20544df9641fc97984c9308843ce60000799e"
+      },
+      {
+        "file": "page-overlay-actions.tsx.txt",
+        "actualSHA256": "d3542a8cd263ff7a09e816c0a7d9bbfed413fd34793bce441528ff1a70bcc202",
+        "declaredCaptureSHA256": "d3542a8cd263ff7a09e816c0a7d9bbfed413fd34793bce441528ff1a70bcc202",
+        "rawSnapshotHashMatches": true,
+        "lfSHA256": "d3542a8cd263ff7a09e816c0a7d9bbfed413fd34793bce441528ff1a70bcc202",
+        "crlfSHA256": "ec8fe4c30a75e68d46fc2eba9e29e8d00c4107eaf0f638eee46ef441f6dd8fde"
+      },
+      {
+        "file": "resolver-overlay.config.ts.txt",
+        "actualSHA256": "7bf3570c6ca962eea9cfad869d036c2a58ae770b90fb72538fd655480f92ffb8",
+        "declaredCaptureSHA256": "c06caaf5f92e3d89ee7a4b44e991d7d4092bc75ef5ea54b9c4f232c0a7c92eba",
+        "rawSnapshotHashMatches": false,
+        "lfSHA256": "7bf3570c6ca962eea9cfad869d036c2a58ae770b90fb72538fd655480f92ffb8",
+        "crlfSHA256": "c06caaf5f92e3d89ee7a4b44e991d7d4092bc75ef5ea54b9c4f232c0a7c92eba"
+      },
+      {
+        "file": "page-default-actions.tsx.txt",
+        "actualSHA256": "71f6e705bbfe9fa09113475565ebd9aa26f2d738defdd7f012b981ab076ef262",
+        "declaredCaptureSHA256": "71f6e705bbfe9fa09113475565ebd9aa26f2d738defdd7f012b981ab076ef262",
+        "rawSnapshotHashMatches": true,
+        "lfSHA256": "71f6e705bbfe9fa09113475565ebd9aa26f2d738defdd7f012b981ab076ef262",
+        "crlfSHA256": "2a87d52a4c0610d8e7215103e1ecc6585aa1bd5701a3fa86905e93b6cfb14491"
+      },
+      {
+        "file": "page-after.tsx.txt",
+        "actualSHA256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+        "declaredCaptureSHA256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+        "rawSnapshotHashMatches": true,
+        "lfSHA256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+        "crlfSHA256": "b07c7aa9b6c64b247c04a098f6ea612e6beacbdebcc921feb5174db0b441f6c2"
+      }
+    ],
+    "allRawCapturePinsMatch": false,
+    "checkoutRawEqualsFinalSnapshot": false,
+    "checkoutLFEqualsFinalSnapshot": true,
+    "successfulActionSourceIsDistinctFromFinalPresentation": true,
+    "normalizedLogs": []
+  },
+  "dependencies": {
+    "physicalRoots": [
+      "node_modules",
+      "apps/webapp/node_modules",
+      "node_modules/.pnpm"
+    ],
+    "localLeafLinks": 158,
+    "lockSHA256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "noInstallOrRepair": true
+  },
+  "qualification": [
+    "Fresh independent static/archive audit; worker PostgreSQL/browser/native evidence is inherited, not rerun.",
+    "Every worker-committed snapshot and pre-merge rollout Git blob is unchanged. Some capture source hashes require CRLF reconstruction from stored LF snapshots; raw snapshot-to-capture hash equality is not asserted for those. Checkout LF/CRLF canonical equality is distinct from byte equality.",
+    "Successful default-config action proof uses an earlier captured source; final presentation has separate refusal/focus/skip/readback/admission evidence.",
+    "Overlay journeys retain compiler/resolver qualification. Default-config matched captures are separately pinned.",
+    "Authority-refusal defects are tested independently in .tmp; no worker DB refusal is relabeled permission-loss proof."
+  ]
+}

@@ -80,7 +80,9 @@ export function OrganizationLanguageCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.language.title", "Notification language")}</CardTitle>
+				<CardTitle>
+					<h2>{t("organization.language.title", "Notification language")}</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.language.description",

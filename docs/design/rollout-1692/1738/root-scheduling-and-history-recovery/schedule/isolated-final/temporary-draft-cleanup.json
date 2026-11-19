@@ -1,0 +1,5 @@
+{
+  "publicDelete": true,
+  "activation": "DOM click on named buttons after pointer/focus harness failures",
+  "initialInventoryRestored": true
+}

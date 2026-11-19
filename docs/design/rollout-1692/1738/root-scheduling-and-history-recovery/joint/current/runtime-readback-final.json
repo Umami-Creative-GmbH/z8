@@ -1,0 +1,34 @@
+{
+  "records": {
+    "small-admin": {
+      "shift": {
+        "count": 0,
+        "digest": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "time_entry": {
+        "count": 4176,
+        "digest": "00005305a0eca604c6940c2e70cd81bc"
+      },
+      "work_period": {
+        "count": 2088,
+        "digest": "f8ee686b39f97feb337247d7ae9b0c6b"
+      }
+    },
+    "large-admin": {
+      "shift": {
+        "count": 0,
+        "digest": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "time_entry": {
+        "count": 104400,
+        "digest": "8bc3a900827d0c04a2192e825bf81be5"
+      },
+      "work_period": {
+        "count": 52200,
+        "digest": "851ee9e752b241df391a97e546518a52"
+      }
+    }
+  },
+  "allShiftAndRecordedWorkDigestsPreserved": true,
+  "balanceLedger": "one public +2h own-admin opening balance retained in disposable fixture; no membership/grant/policy/lifecycle changes"
+}

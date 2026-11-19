@@ -1,0 +1,37 @@
+{
+  "kind": "safe-summary-clone",
+  "original": "public-recovery-result-01.json",
+  "originalSha256": "a4a866a6c6b313f22155adf6100f86211ea0250868b97b06fcf1a360d75a9bb7",
+  "total": 3,
+  "passed": 1,
+  "failed": 2,
+  "pending": 0,
+  "physicalFiles": 1,
+  "cases": [
+    {
+      "physicalFile": "apps/webapp/src/test/independent1735-recovery/public-recovery.test.tsx",
+      "fullName": "independent healthy-control: actual settings Retry recovers its failed transport",
+      "occurrence": 1,
+      "status": "passed",
+      "failure": []
+    },
+    {
+      "physicalFile": "apps/webapp/src/test/independent1735-recovery/public-recovery.test.tsx",
+      "fullName": "independent roster refusal exposes a local public Retry and recovers without a page reset",
+      "occurrence": 2,
+      "status": "failed",
+      "failure": [
+        "AssertionError: The failed roster read must have a local public retry; a healthy settings read is not its recovery.: expected null not to be null"
+      ]
+    },
+    {
+      "physicalFile": "apps/webapp/src/test/independent1735-recovery/public-recovery.test.tsx",
+      "fullName": "independent roster rejection exposes a local public Retry and recovers without a page reset",
+      "occurrence": 3,
+      "status": "failed",
+      "failure": [
+        "AssertionError: The failed roster read must have a local public retry; a healthy settings read is not its recovery.: expected null not to be null"
+      ]
+    }
+  ]
+}

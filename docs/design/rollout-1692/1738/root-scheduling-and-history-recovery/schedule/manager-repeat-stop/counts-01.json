@@ -1,0 +1,21 @@
+{
+  "freshDistinctAcceptanceCases": 1,
+  "freshCase": "normal canonical manager remains admitted after normal scheduler reads",
+  "freshResult": "FAIL",
+  "attempts": 2,
+  "additionalFreshReadback": "one scoped canonical readback, no Vitest PG cases",
+  "unitCases": 0,
+  "pgCases": 0,
+  "images": 0,
+  "ownFixtures": 1,
+  "actualPublicMutations": 0,
+  "inheritedCountsNotAdded": true,
+  "failedHarnessAttempts": [
+    "Initial PowerShell generator parse failed before execution; no namespace/runtime mutation",
+    "Initial pnpm engine-store denied; ordinary approved escalation succeeded",
+    "Two exploratory shell commands had PowerShell/Windows path syntax errors; no product changes",
+    "Initial narrow CIM identity read denied; immediate ordinary approved narrow three-PID re-read saved identities",
+    "Normal UI login wrapper lost execution context during init navigation; one login submitted, authenticated dashboard confirmed without another login"
+  ],
+  "privateReceiptLimit": "Initial dashboard state receipt retained privately and excluded: synthetic roster emails beyond actor-only redaction. No customer secrets used. Safe receipts use explicit fields and broad generated-email redaction."
+}

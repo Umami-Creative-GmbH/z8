@@ -1,0 +1,125 @@
+{
+  "metadata": "58ea18603a936d102f0625e3303f4c05689a9961",
+  "verified": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+  "comparison": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+      "metadataBlob": "2f8ebd4a376829eae7945f7617485254211bb433",
+      "verifiedBlob": "2f8ebd4a376829eae7945f7617485254211bb433",
+      "finalBlob": "e497cbd4a6ee4550ff4f0e1eeb9f51b649ffdd2e",
+      "finalSha256": "ae9345732197a155d6a3eb92e210f1afad71a0e644c4244d23889f54ad42b90a"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+      "metadataBlob": "3a73a32a335cf17881424b96a94c8d7528efcd28",
+      "verifiedBlob": "3a73a32a335cf17881424b96a94c8d7528efcd28",
+      "finalBlob": "da681fb2127fce446cc9431ae19029562a5e3277",
+      "finalSha256": "81662d101d7e83a34e10f7dbceb85ed2ee08a9994b242edcb4c213a5d52ded15"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+      "metadataBlob": "58ea18603a936d102f0625e3303f4c05689a9961:apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+      "verifiedBlob": "ca6f607d683c69ee47e7558fae78b1dcd1b53914:apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+      "finalBlob": "1c24e888bb22d25d2b0e124a9ceca7f17a96268c",
+      "finalSha256": "22dd3dc2daab4f2fa462757267a886b80edab172365e985b35a7d879076be7cb"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+      "metadataBlob": "6bd70e78b4303f819f046d715c2f15225ad49d95",
+      "verifiedBlob": "6bd70e78b4303f819f046d715c2f15225ad49d95",
+      "finalBlob": "817329d6c626f7a4f248c9533b76192796d0a314",
+      "finalSha256": "3db83ae78b4a6f5df383f714d8fee0b83c0d9543396faf5fc5129c30cf9cb735"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+      "metadataBlob": null,
+      "verifiedBlob": null,
+      "finalBlob": "4c3b57457ebbaf4715719c3645c050c779d09dd5",
+      "finalSha256": "f5f0d6cd5c7368bc60ca489e558d10b5946b636c909156c6982e18f5dfcd47f0"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "metadataBlob": "4591e5db4368b5866ede1c3c57b308a30b795846",
+      "verifiedBlob": "4591e5db4368b5866ede1c3c57b308a30b795846",
+      "finalBlob": "c2f06a37da63446945ee97dfc68356d14d44a08e",
+      "finalSha256": "7b4af53f458e0a1c62a04c565476e2ffe607a2f368325e3f81ee4c171d5ed076"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+      "metadataBlob": null,
+      "verifiedBlob": null,
+      "finalBlob": "b1fb9d4ef70d1557148bdb658ffb9adbd4328d0c",
+      "finalSha256": "0eead5ddd6a09a4919f542ea40504ddb0289474d46cee5f558193c81bbce1ec5"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+      "metadataBlob": "103371807eba8cb4c59a957bb9aa57cd48cea4eb",
+      "verifiedBlob": "103371807eba8cb4c59a957bb9aa57cd48cea4eb",
+      "finalBlob": "21d2241fe341a17247ecb1b34594f927d91503ce",
+      "finalSha256": "51d5802a7dd4d799681197729742602887b39600c9ca31db0f761153985796db"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+      "metadataBlob": null,
+      "verifiedBlob": null,
+      "finalBlob": "1bfcf73f8d4f5ee5e1f8ce78d1b89242661d4a8f",
+      "finalSha256": "dc736b6d81117e9322350d3d773354c6c4444d0e856ed78ef777343f06b03667"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "metadataBlob": "4e1252a2fcd5ae5fb8def77bb6aa9409f9766757",
+      "verifiedBlob": "4e1252a2fcd5ae5fb8def77bb6aa9409f9766757",
+      "finalBlob": "3b00dc25b15662380147428ddc4aa4464b2a140c",
+      "finalSha256": "f35638993cd46df09158d23266aac615cf26eae4d1b5b3731d42d05d606d7f20"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+      "metadataBlob": null,
+      "verifiedBlob": null,
+      "finalBlob": "359a579bb5fca3d2abd26ba32c655c0a8fa564f2",
+      "finalSha256": "94e88376217f64fb17e00b9c98241aa24f0b5c9a4e3d794e91b5d61ff4520a71"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+      "metadataBlob": null,
+      "verifiedBlob": null,
+      "finalBlob": "8a68955196364614b8f964a7df275ce3b6195edf",
+      "finalSha256": "7c372cba4d5155cdb903f3990bafd8a291c169934f7beca04de40cc75b168ca8"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+      "metadataBlob": "b5acad059157306f3a8c77c282323826d8648498",
+      "verifiedBlob": "b5acad059157306f3a8c77c282323826d8648498",
+      "finalBlob": "0817f4dc6f9a9cbe2af6b8028063c6f020c0ae14",
+      "finalSha256": "92ba88b86ef3acc8b19eeb95d13018a818b4ac0ea094bc83351c813fd9601950"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+      "metadataBlob": "1eec0e9e111aa8d2db235ac7184ec8825ec7e6ce",
+      "verifiedBlob": "1eec0e9e111aa8d2db235ac7184ec8825ec7e6ce",
+      "finalBlob": "af965db15ff3bc3deb0c6356d30c910b013dc4c0",
+      "finalSha256": "716f391530483f325bdbcc722f67bab5cd68f22f08ba628051925fc901de9707"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "metadataBlob": "44bb16af4a8e469eadacc980a1012ec68ec0eb85",
+      "verifiedBlob": "44bb16af4a8e469eadacc980a1012ec68ec0eb85",
+      "finalBlob": "8623b13fdafa853ccb36aebf4f63504650d2adda",
+      "finalSha256": "32966571edb216ef3037fb90e85a06201cf6940aecf7c99f9019d21691ddc9a6"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "metadataBlob": "8bdc11da5143262f07b2c813ac3e6f4514b0336c",
+      "verifiedBlob": "8bdc11da5143262f07b2c813ac3e6f4514b0336c",
+      "finalBlob": "a47ad7779d1d6f273ce60077ac991fd85bd64d37",
+      "finalSha256": "a47e93aa28a4e2234ba02f13340fca35268d52b175494ffb8d9f6327a702852d"
+    },
+    {
+      "file": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+      "metadataBlob": "814fbafdf44a079fb3358d750b3a4ae91ffe9ba1",
+      "verifiedBlob": "814fbafdf44a079fb3358d750b3a4ae91ffe9ba1",
+      "finalBlob": "1e77bbe25cc029c34efca56af6a67918cbfc7e92",
+      "finalSha256": "8824e3ed07966faf53564385cc835efe9b67e0190a79984a9c7dea3d7ef4774b"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "from": ".tmp/1738-independent-checks/scheduling-fixture-bridge-02.ts",
+  "sourceSha256": "d7b63521cd354b698107158ec2177a71dfcb035bf2bb8fbd99c88bba5add0aec",
+  "target": "apps/webapp/scripts/1738-publish-independent-fixture-bridge.ts",
+  "bridgeSha256": "a3602d955cd9a438111dbf6ffa3c07b1becfaac278c06b20d5f9ee5b2877409d",
+  "adaptations": [
+    "own namespace/import bridge",
+    "one additional initial domain-only assigned draft, matching two-draft pointer control",
+    "unique readback suffix; no auth/member/grant changes"
+  ]
+}

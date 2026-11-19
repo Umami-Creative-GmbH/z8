@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-18T04:17:40.501Z",
+  "endpoint": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+  "method": "HEAD",
+  "token": false,
+  "credentials": false,
+  "qualification": "Transport only; no auth proof",
+  "reached": true,
+  "status": 405
+}

@@ -1,0 +1,37 @@
+{
+  "range": "2025-01-01 / 2025-01-02 Europe/Berlin",
+  "failedTransport": {
+    "downloads": 0,
+    "rangeRetained": true
+  },
+  "retry": {
+    "status": 200,
+    "downloads": 1,
+    "rows": 8,
+    "hoursPerEmployee": 16,
+    "filename": "work-hours-2024-12-31",
+    "bytes": 316
+  },
+  "headers": [
+    {
+      "key": "employeeName",
+      "label": "Employee"
+    },
+    {
+      "key": "totalHours",
+      "label": "Total Hours"
+    },
+    {
+      "key": "overtimeHours",
+      "label": "Overtime Hours"
+    },
+    {
+      "key": "undertimeHours",
+      "label": "Undertime Hours"
+    },
+    {
+      "key": "avgHoursPerWeek",
+      "label": "Avg Hours/Week"
+    }
+  ]
+}

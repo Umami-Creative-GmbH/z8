@@ -1,0 +1,141 @@
+{
+  "publicScriptContents": false,
+  "source": "New ignored harness files only; hashes are reproducibility metadata, not test passes",
+  "files": [
+    {
+      "file": "auth-boundary.js",
+      "bytes": 1010,
+      "sha256": "e75473439760c8e4aa6add3e8fdd7f35afac72df1c95795e2f4f2d48a72338cb"
+    },
+    {
+      "file": "bootstrap-controller2.mjs",
+      "bytes": 559,
+      "sha256": "90fa0708001a199d90265195beb1747eab847ccd7bbc35f28a888a8cd743712b"
+    },
+    {
+      "file": "bootstrap.mjs",
+      "bytes": 555,
+      "sha256": "14cf83a1ce6d71f9b450b7302cc8c5b7e1cb579dd05ef6f8932c9df335ef5826"
+    },
+    {
+      "file": "call.mjs",
+      "bytes": 404,
+      "sha256": "893f3b79a66218fcbfba4edbf84043dc35b07a8b2ed96782e0b32c0ad6a7ea3a"
+    },
+    {
+      "file": "call2.mjs",
+      "bytes": 405,
+      "sha256": "c0711d2663244ce6f51b0e085294ed83b3ea6d334bf51ace19723ea1942263c0"
+    },
+    {
+      "file": "close-browser.js",
+      "bytes": 206,
+      "sha256": "4198ae912db24cf9f829182d3e76e35f07a2b7ed58c64693718e9074c3867f6f"
+    },
+    {
+      "file": "controller.mjs",
+      "bytes": 1624,
+      "sha256": "31c720ce6eae99cfa80b729e55ac8ce5f1bfc53ac2bee73b4f4cff30ffaa6bc3"
+    },
+    {
+      "file": "controller2.mjs",
+      "bytes": 1625,
+      "sha256": "56402cc17a52c1d9c5ac7b5cca4491b880e2693bb507b3a334a60700785e7313"
+    },
+    {
+      "file": "create.js",
+      "bytes": 1681,
+      "sha256": "963f1d773a350741f62034241468a73fff5b5f630bbaf298d80f28a5a8a3fd7c"
+    },
+    {
+      "file": "database-after.js",
+      "bytes": 2010,
+      "sha256": "81646fb5f9af60de00fc1f3621dbe905aa1d0a400c46560c1fa9e854e5da1e53"
+    },
+    {
+      "file": "database-before.js",
+      "bytes": 1237,
+      "sha256": "b5283b7cfc13fb299039363d9840bf52d56a457b88551292faea03f50f746266"
+    },
+    {
+      "file": "database-before2.js",
+      "bytes": 1240,
+      "sha256": "e8ce6e6d3fad782123f5637efe82e80995ec89620aa0adc25ab015ffbebd0f84"
+    },
+    {
+      "file": "login-exact.js",
+      "bytes": 960,
+      "sha256": "ef0e9c2d75a93fb36662f963bea3d29d0826f508e227a6a1d50308dc8e5d94ce"
+    },
+    {
+      "file": "login-state.js",
+      "bytes": 474,
+      "sha256": "95c9310135a5b693b0d2a57b5aae3a04de7c193495fd53c3736878ceb76f2e8c"
+    },
+    {
+      "file": "login.js",
+      "bytes": 1147,
+      "sha256": "8a455d780364ed2dbb93618d9aea09ffe4b8a9f0c03dc5e314d66932d41689f2"
+    },
+    {
+      "file": "mcp-final.js",
+      "bytes": 2344,
+      "sha256": "153dc7b540734c0a975d585330dc0cbb58b647c7eb8df3f1b413e603985f09a5"
+    },
+    {
+      "file": "mcp-list.js",
+      "bytes": 606,
+      "sha256": "14cc31efda1ab20ba35c5a0f5e568ffd044d6e2035bc29bb78fcc5a29d82ffc3"
+    },
+    {
+      "file": "originals-before.js",
+      "bytes": 703,
+      "sha256": "258371d76c540d45bcb2a43e133c9c902b6a16c63d5aa3d7c7a61629044c4a2f"
+    },
+    {
+      "file": "preflight.mjs",
+      "bytes": 3680,
+      "sha256": "4b7ae1e59af89e1660adbb43de7476120d221d4f807cefd7bc934498005f1a76"
+    },
+    {
+      "file": "preservation-final.mjs",
+      "bytes": 3115,
+      "sha256": "a28361b430a8fd6e19e7273d902552f19ecb1d723bec5ef9729f45d5ac27c787"
+    },
+    {
+      "file": "restart-controller.ps1",
+      "bytes": 1195,
+      "sha256": "5f3f5c1c79abbb11522fc076b6c6986743cb87bd163df77c3dc78d24b547f019"
+    },
+    {
+      "file": "runtime.mjs",
+      "bytes": 1613,
+      "sha256": "e40cd3b2f14834f970d6b110b5335d1df0e5abfa80207ae9fc16007210ecfc66"
+    },
+    {
+      "file": "seal.mjs",
+      "bytes": 18518,
+      "sha256": "c88c7539a41aecbbb7b135a6225a6d04c0275c4c6e080079f13db5f62b82a733"
+    },
+    {
+      "file": "seed.ts",
+      "bytes": 4406,
+      "sha256": "9eebc8efbc92ec5d9c4fd8a329b2285bf327140125373580d1955f2b4d4fa43a"
+    },
+    {
+      "file": "select-org.js",
+      "bytes": 675,
+      "sha256": "b8de9e0fc7db4c066990edfc6da89b76638c92543c98f4fe9a14b74a8bdf7cfc"
+    },
+    {
+      "file": "start-browser.js",
+      "bytes": 1705,
+      "sha256": "1a667795576c0efdc6dbbc522d704c60ec66ea712da790b68b5fca80ca845c77"
+    },
+    {
+      "file": "status.js",
+      "bytes": 477,
+      "sha256": "fd9998a04e904599e5e04ff92f87bfe693c633d09dbe4625781961363fbeb360"
+    }
+  ]
+}

@@ -13,16 +13,18 @@ export function RiskSummaryHeader({
 }) {
 	return (
 		<section className="rounded-xl border bg-card p-5">
-			<div className="flex items-center justify-between gap-3">
+			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="min-w-0 space-y-1">
 					<p className="text-sm text-muted-foreground">
 						{t("compliance.commandCenter.overview", "Compliance overview")}
 					</p>
-					<h1 className="text-2xl font-semibold text-balance break-words">
+					<h2 className="text-xl font-semibold text-balance break-words">
 						{renderComplianceText(t, summary.headline)}
-					</h1>
+					</h2>
 				</div>
-				<Badge variant={summary.status === "critical" ? "destructive" : "secondary"}>
+				<Badge
+					variant={summary.status === "critical" ? "destructive" : "secondary"}
+				>
 					{renderComplianceText(t, COMPLIANCE_STATUS_I18N[summary.status])}
 				</Badge>
 			</div>

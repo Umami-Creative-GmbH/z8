@@ -1,0 +1,165 @@
+{
+  "head": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "tree": "8c3a3993377ebde26099a95c55a2f31855791364",
+  "rawTrackedFilesCompared": 13577,
+  "rawTrackedFilesChanged": 0,
+  "configs": {
+    "package.json": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+    "apps/webapp/package.json": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+    "pnpm-lock.yaml": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "pnpm-workspace.yaml": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+    "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "apps/webapp/vitest.config.ts": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+    "apps/webapp/tsconfig.typecheck.json": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+    "apps/webapp/tsconfig.workflow-contracts.json": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+    "apps/webapp/tsconfig.smoke.json": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+    "apps/webapp/src/data/licenses.json": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "rawSha256": "c0892fb16b400539574b5033a47bc3bdee5d33c6eb82f3b62df5fab405bce2d9",
+      "lfSha256": "2b1fd0d522d4a9986a941eb8edfc4177c5cb9364e672fd6ef95b1638e4a501cb",
+      "gitBlob": "a3cec59c45eab6ef5bbdfab8efcc4da3df6c15ca"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "rawSha256": "06e69cbf71b9958c70dcee378e67815d2a67f8c895b546da28e10689200f7b5d",
+      "lfSha256": "7e03b0e9b9194bf88a9ce987da8a2e73d89fc25f9d0dfc9f60290bcbe19cc3f8",
+      "gitBlob": "b8ecfdd7dd805c667a1930d57c4d5007153ea92a"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+      "rawSha256": "9b6cefb865e360e1f899f2ee22e8278fb4dd979fbf30dded0c71f254ef75dd81",
+      "lfSha256": "da7b84ce2f970bc8c261174f154edd7ad79a7af1ef04e77c019b3610ee8ed98b",
+      "gitBlob": "a076b2b49071332e383bd2c3b428cfb30e6f1d27"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+      "rawSha256": "6b61dbde2e1ae753fae4d70ff46a0a77c2de018ac71a7e70b0832692b6bf07d0",
+      "lfSha256": "94e127ad5e8e21921ce5fe65e687ec5eee604d31901064647502eb87b00be7bb",
+      "gitBlob": "6acd2a096ff0778dfc9d4c1fabf58a61d6ea2d8a"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "rawSha256": "5a25257f626362474baa0beeb022fa3e4d3967aa34c480537f82d26bcc9debec",
+      "lfSha256": "a38b5844f7ce9f19a700aecabb65d2c9c8243bed7e5b3cc5133911c64f0bf690",
+      "gitBlob": "2f1595d157c30dbdd3fe220ff75e1b5200d58ed5"
+    },
+    {
+      "path": "apps/webapp/src/lib/run-with-cleanup.ts",
+      "rawSha256": "914bdbeffcfc6ebcebc63f5a8a8dddceafe2c4f34def8552360376661780c151",
+      "lfSha256": "7de9598c3232e22ba4783f9e4851bea572c652dee3c6a3098721002262cd2dc8",
+      "gitBlob": "c86518134ffb792b1299137170a990a1f2e2ca10"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "rawSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "lfSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rawSha256": "b981444d81f2bf922849c6823c9ad1990501ccd974e29a8d504be6514077604f",
+      "lfSha256": "67fd2f5eb03d57fd84104a292b3038645658e74cb403aead7fc9aa42787a5945",
+      "gitBlob": "896047173635780ce8dc8b00479c9982cdc9a032"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "rawSha256": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lfSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitBlob": "ce04338a66447465689b321227db26da97cabe56"
+    }
+  ],
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "physical": true,
+      "real": "node_modules"
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true,
+      "real": "apps/webapp/node_modules"
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true,
+      "real": "node_modules/.pnpm"
+    }
+  ],
+  "internalLeafLinks": 158,
+  "topologySha256": "b5c76e8143f0754f12522ddd486d0645e558d9c5047d186a9cb54274db61a0fd",
+  "topologyMatchesInitial": true,
+  "dependencies": [
+    {
+      "name": "next",
+      "version": "16.4.6",
+      "packageJson": "node_modules/.pnpm/next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915/node_modules/next/package.json",
+      "sha256": "ed29e68845a44d4cd30518dd0df0554fcf6f6ada99b81f4e8798d26dc6964f82"
+    },
+    {
+      "name": "react",
+      "version": "19.3.1",
+      "packageJson": "node_modules/.pnpm/react@19.3.1/node_modules/react/package.json",
+      "sha256": "9cc9c3de5441a2eea7f41f52f3f2a15a4fc51f90c0b72741f0d7638643a85e67"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.1",
+      "packageJson": "node_modules/.pnpm/react-dom@19.3.1_react@19.3.1/node_modules/react-dom/package.json",
+      "sha256": "89d54f11575c9b0f7819962d9d72a31970dfb4d103f07e8b1d1b37e6d1fc3258"
+    },
+    {
+      "name": "@tanstack/react-query",
+      "version": "5.107.1",
+      "packageJson": "node_modules/.pnpm/@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416/node_modules/@tanstack/react-query/package.json",
+      "sha256": "2a2d66d46321b0a124a3ad5f8d6378ec08621bcc18f91ab3128b4fc884d51cbe"
+    },
+    {
+      "name": "vitest",
+      "version": "5.1.0",
+      "packageJson": "node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/package.json",
+      "sha256": "cc2979885d9d149c8456128e7ae48038d815352cf1e6d1932eb631057a99f973"
+    },
+    {
+      "name": "pg",
+      "version": "8.23.1",
+      "packageJson": "node_modules/.pnpm/pg@8.23.1/node_modules/pg/package.json",
+      "sha256": "b1e53333a3d0c2c47c49a5cb919d221135dc03145df740925b899bc2baacc435"
+    },
+    {
+      "name": "sharp",
+      "version": "0.35.5",
+      "packageJson": "node_modules/.pnpm/sharp@0.35.5_@types+node@26.6.6/node_modules/sharp/package.json",
+      "sha256": "ad4a2535d72eb638053a38867b1abf43c328cd1c1dbae5cf4172d498365a8b97"
+    }
+  ],
+  "dependencyHashBoundary": "Final package JSON pins; initial/final comparison covers topology and frozen manifests/config/lock. No install, repair, upgrade or package file mutation performed.",
+  "licenses": {
+    "count": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "provenance": "Inherited, not regenerated"
+  },
+  "verifiedAncestors": 57,
+  "r051VerifiedCommit": null,
+  "originalStop": {
+    "sealSha256": "d7aa836a9cd8e66a3ef1778784bb67dfd0bb05f509ec02fcb64a8b1b54103917",
+    "filesVerified": 30
+  },
+  "historicalOverlay": {
+    "consumers": 2,
+    "restoredByteExact": true
+  },
+  "ownBridgesRemoved": 3,
+  "gitClean": true,
+  "resources": {
+    "browserControllerParentAbsent": true,
+    "browserPidAbsent": true,
+    "nextPortClosed": true,
+    "zeroOwnedRuntimeResources": true,
+    "nativePidAbsent": true,
+    "exactOwnServicesAbsent": 3,
+    "noGlobalKillOrServiceEnumeration": true
+  }
+}

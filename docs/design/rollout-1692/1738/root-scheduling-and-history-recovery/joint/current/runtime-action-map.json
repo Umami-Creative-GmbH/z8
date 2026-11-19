@@ -1,0 +1,38 @@
+{
+  "7f21909038b758e0de586253d4835a1a4224c16322": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/settings/employees/work-balance-actions.ts",
+    "functionName": "getEmployeeWorkBalanceSectionAction"
+  },
+  "7f911f38636e689c0d5873eabd9e63c69dd7d5888a": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/settings/employees/employee-clock-status.actions.ts",
+    "functionName": "getEmployeeClockStatuses"
+  },
+  "7f352e9a39db38bee207ae90d2aa11bf41040d7b39": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/settings/position-stamps/actions.ts",
+    "functionName": "getOwnPositionCaptureAction"
+  },
+  "401dbfaefde97927ae46eda8ea0fc386981f7173ec": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use.ts",
+    "functionName": "getClockVehicleUseStatus"
+  },
+  "7f46dd7fb6772277e21879d6a7f3beae710369fe1c": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/actions.ts",
+    "functionName": "getTargetHeatmapData"
+  },
+  "7f120ff73187e6eaf0681720bd129af14c79627323": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+    "functionName": "getPendingShiftRequests"
+  },
+  "7f44975da110617253d39747992b04a5fea58d7791": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+    "functionName": "getShifts"
+  },
+  "7fec5568073b4c2e7bdb09d0700594002df976012c": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+    "functionName": "getShiftTemplates"
+  },
+  "7fa2f1024c9a49f9460be4d3b6f1be0bf72ecb433e": {
+    "filename": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+    "functionName": "getScheduleComplianceSummary"
+  }
+}

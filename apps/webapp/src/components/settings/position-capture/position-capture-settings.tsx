@@ -371,9 +371,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 					);
 					return false;
 				}
-				toast.success(
-					t("settings.positionCapture.assignmentRemoved", "Assignment removed"),
-				);
+				// ScopedFeatureAssignments shows the success toast with Undo.
 				router.refresh();
 				return true;
 			}}

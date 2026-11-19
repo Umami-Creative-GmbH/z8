@@ -1,0 +1,9 @@
+{
+  "attempts": [
+    {
+      "name": "failure",
+      "message": "Waiting failed: 60000ms exceeded"
+    }
+  ],
+  "downloads": []
+}

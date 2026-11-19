@@ -31,7 +31,11 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/components/settings/import/import-review-page", () => ({
 	ImportReviewPage: (props: Record<string, unknown>) => {
 		mockState.renderReviewPage(props);
-		return <div data-testid="import-review-page" />;
+		return (
+			<div data-testid="import-review-page">
+				{props.supplement as React.ReactNode}
+			</div>
+		);
 	},
 }));
 

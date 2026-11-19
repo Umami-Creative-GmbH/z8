@@ -1,0 +1,15 @@
+{
+  "route": "/en/team",
+  "method": "passive live React DOM fiber ancestry; names only; no props/state or mocks",
+  "targets": [
+    "TeamDirectoryRecords",
+    "TeamMembersList",
+    "TeamMembersToolbar",
+    "TeamMemberCards"
+  ],
+  "required": [
+    "TeamDirectoryClient",
+    "TeamMembersList"
+  ],
+  "matched": false
+}

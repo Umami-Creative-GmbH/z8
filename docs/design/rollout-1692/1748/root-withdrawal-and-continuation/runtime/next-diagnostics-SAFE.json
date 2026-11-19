@@ -1,0 +1,42 @@
+{
+  "get_compilation_issues": {
+    "rpcError": false,
+    "toolError": false,
+    "browserUnconnected": false,
+    "targetNamed": false,
+    "containsClaimRoute": false,
+    "textLengths": [
+      13
+    ],
+    "issueCount": 0,
+    "issueTypes": []
+  },
+  "get_errors": {
+    "rpcError": false,
+    "toolError": false,
+    "browserUnconnected": false,
+    "targetNamed": false,
+    "containsClaimRoute": false,
+    "textLengths": [
+      38
+    ],
+    "topKeys": [
+      "configErrors",
+      "sessionErrors"
+    ],
+    "arrayCounts": {
+      "configErrors": 0,
+      "sessionErrors": 0
+    }
+  },
+  "get_page_metadata": {
+    "rpcError": false,
+    "toolError": false,
+    "browserUnconnected": false,
+    "targetNamed": false,
+    "containsClaimRoute": true,
+    "textLengths": [
+      2196
+    ]
+  }
+}

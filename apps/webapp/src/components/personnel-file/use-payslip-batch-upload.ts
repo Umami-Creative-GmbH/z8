@@ -36,7 +36,10 @@ export function usePayslipBatchUpload(options: {
 	const { batchId } = options;
 
 	useEffect(() => {
+		let active = true;
+		setProgress(idle);
 		const uppy = new Uppy({
+			id: `payslip-batch-${batchId}`,
 			restrictions: {
 				maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
 				maxNumberOfFiles: PAYSLIP_BATCH_MAX_FILES,
@@ -45,6 +48,8 @@ export function usePayslipBatchUpload(options: {
 			autoProceed: true,
 		}).use(Tus, {
 			endpoint: "/api/tus",
+			// Staging consumes these bytes; a completed URL cannot serve another batch.
+			removeFingerprintOnSuccess: true,
 			retryDelays: [0, 1000, 3000, 5000],
 			chunkSize: 5 * 1024 * 1024,
 			limit: 4,
@@ -52,6 +57,7 @@ export function usePayslipBatchUpload(options: {
 		uppyRef.current = uppy;
 
 		const fail = (fileName: string, error: string) => {
+			if (!active) return;
 			const failure = { id: crypto.randomUUID(), fileName, error };
 			setProgress((current) => ({
 				...current,
@@ -63,18 +69,22 @@ export function usePayslipBatchUpload(options: {
 			file: { id: string; name?: string } | undefined,
 			response: { uploadURL?: string },
 		) => {
-			if (!file) return;
+			if (!file || !active) return;
 			const fileName = file.name ?? "payslip.pdf";
 			const tusFileKey = getTusFileKeyFromUploadUrl(response.uploadURL);
 			try {
 				if (!tusFileKey) throw new Error("Upload failed");
 				await stageUpload({ batchId, tusFileKey, fileName });
+				if (!active) return;
 				setProgress((current) => ({ ...current, staged: current.staged + 1 }));
 				onStaged.current();
 			} catch (error) {
-				fail(fileName, error instanceof Error ? error.message : "Upload failed");
+				fail(
+					fileName,
+					error instanceof Error ? error.message : "Upload failed",
+				);
 			} finally {
-				uppy.removeFile(file.id);
+				if (active) uppy.removeFile(file.id);
 			}
 		};
 		const handleError = (
@@ -89,6 +99,7 @@ export function usePayslipBatchUpload(options: {
 		uppy.on("upload-success", handleSuccess);
 		uppy.on("upload-error", handleError);
 		return () => {
+			active = false;
 			uppy.off("upload-success", handleSuccess);
 			uppy.off("upload-error", handleError);
 			uppy.destroy();

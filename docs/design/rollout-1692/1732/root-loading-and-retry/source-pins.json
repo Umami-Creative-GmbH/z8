@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "state": "SEALED_FIXED_GIT",
+  "candidate": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "rootCorrection": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+  "rootCorrectionIntegration": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+  "originalMerge": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+  "reconciliation": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+  "latestDirectlyVerified": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+  "historicalComparison": "96e64b16a10c629cae6ec820b11862ac48511503",
+  "commits": [
+    {
+      "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+      "tree": "d4d9a22387f9a94816a4eec207c1e4b4b8f31574",
+      "parents": [
+        "25a23e58c0ca84e87ece89e8ac633b0a951bbb11"
+      ]
+    },
+    {
+      "head": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+      "tree": "e6eb8257237b4ecf4b1ddca1df888407fd151c91",
+      "parents": [
+        "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7"
+      ]
+    },
+    {
+      "head": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+      "tree": "e6eb8257237b4ecf4b1ddca1df888407fd151c91",
+      "parents": [
+        "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+        "72b34589cb1d2fbc32a186b42b05758b22ff39ee"
+      ]
+    },
+    {
+      "head": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+      "tree": "906682516a4501da176383e2f891a69a67a7e90c",
+      "parents": [
+        "96e64b16a10c629cae6ec820b11862ac48511503",
+        "df20c5d11bda382ccbe9104398600c6278a5038e"
+      ]
+    },
+    {
+      "head": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+      "tree": "414021289707825ace9f06fe533ef04e72e7d1e0",
+      "parents": [
+        "29e56ae7b6c8214b8d404de52d834ac0d99313d8"
+      ]
+    }
+  ],
+  "rootChangedPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batches-heading.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batches-loading.test.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx"
+  ],
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+      "raw": "7857a9d62ed925a1c99ea89454207f529bc4565d84e10059014d46b0002da4d7",
+      "lf": "a0afd4f39bdf92af4fa8759058cac979319677c615a6ebe37ac6f2209bdf7f41",
+      "gitBytes": 6719,
+      "gitSha256": "a0afd4f39bdf92af4fa8759058cac979319677c615a6ebe37ac6f2209bdf7f41",
+      "gitLfSha256": "a0afd4f39bdf92af4fa8759058cac979319677c615a6ebe37ac6f2209bdf7f41",
+      "gitBlob": "d4fe5e91a9500c9983e85af6919bf02267b2cad7",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/actions.ts",
+      "raw": "3d053dba30e8373845adfd5306a8e7d36f0629fd09429a33dc9a7dec6f138a91",
+      "lf": "1f80fef82021f1d82a452bcdf3b4c63d0616e7e6569b29c34436a5ff71dc1127",
+      "gitBytes": 5954,
+      "gitSha256": "1f80fef82021f1d82a452bcdf3b4c63d0616e7e6569b29c34436a5ff71dc1127",
+      "gitLfSha256": "1f80fef82021f1d82a452bcdf3b4c63d0616e7e6569b29c34436a5ff71dc1127",
+      "gitBlob": "f5a12e7c5aec521f780ab6a1e31ddf40cf3c22d3",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+      "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e",
+      "gitBytes": 8346,
+      "gitSha256": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e",
+      "gitLfSha256": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e",
+      "gitBlob": "cb5258989e1ea98f63aeb1288a56b43bd16589a1",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+      "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43",
+      "gitBytes": 9731,
+      "gitSha256": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43",
+      "gitLfSha256": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43",
+      "gitBlob": "e9db902ead4f397cfa5a8e4b5d6c3a27a30032a7",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-heading.tsx",
+      "raw": "323d3c6c7a6326e95fbdbc8130d5823b56ee10610abd7bc8423a725372b453c1",
+      "lf": "4b74ad1d3ed2d13ae103af148d81f799a6dbdfc10a95c43d6bbd371dbcedbb18",
+      "gitBytes": 369,
+      "gitSha256": "4b74ad1d3ed2d13ae103af148d81f799a6dbdfc10a95c43d6bbd371dbcedbb18",
+      "gitLfSha256": "4b74ad1d3ed2d13ae103af148d81f799a6dbdfc10a95c43d6bbd371dbcedbb18",
+      "gitBlob": "d6f54acca245905ed8b3cf927173c4baa4b2c1ca",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-loading.test.tsx",
+      "raw": "11341cec70dea878b930241a3616fb29eab87b5a3ca0d37ffbc66717be4fba4f",
+      "lf": "69eed381bd288128d8e9d48070824b4168c763bdb7bd88cf820c8e731ee8447c",
+      "gitBytes": 4438,
+      "gitSha256": "69eed381bd288128d8e9d48070824b4168c763bdb7bd88cf820c8e731ee8447c",
+      "gitLfSha256": "69eed381bd288128d8e9d48070824b4168c763bdb7bd88cf820c8e731ee8447c",
+      "gitBlob": "d908187543b998f1e2745d0db4406a7efdebd885",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+      "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+      "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8",
+      "gitBytes": 2006,
+      "gitSha256": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8",
+      "gitLfSha256": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8",
+      "gitBlob": "78ce1d2278988ce0719e7b7ab0a7bbfa0edeb2d4",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "cca2112f55a8be84b77e0f092f668fcfa702e1d2006cda2e1b3fc7b7cb239562",
+      "lf": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d",
+      "gitBytes": 7034,
+      "gitSha256": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d",
+      "gitLfSha256": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d",
+      "gitBlob": "53312374935f7f8fac192c29c507f3d607c24baf",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "raw": "7e6fe0997cdd79be2ec2427ab99772add4b52fa7cb06f67dc3d7c961b0de7259",
+      "lf": "d327a20ea0830a7a6c395ffea924c13c7f584f7992162bff523d2913e0222c62",
+      "gitBytes": 9282,
+      "gitSha256": "d327a20ea0830a7a6c395ffea924c13c7f584f7992162bff523d2913e0222c62",
+      "gitLfSha256": "d327a20ea0830a7a6c395ffea924c13c7f584f7992162bff523d2913e0222c62",
+      "gitBlob": "84cd28e493cdf9cdd41e8f6d81dcbe490d99ee2e",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+      "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitBytes": 32383,
+      "gitSha256": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitLfSha256": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitBlob": "323245b2faafb355b8a562caa24d9679828ad2dd",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitBytes": 4969,
+      "gitSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitLfSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitBlob": "ce04338a66447465689b321227db26da97cabe56",
+      "sameBytesAtCorrectionAndIntegration": true
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "raw": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "lf": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "gitBytes": 7081,
+      "gitSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "gitLfSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "sameBytesAtCorrectionAndIntegration": true
+    }
+  ],
+  "configPins": [
+    {
+      "path": ".npmrc",
+      "runtimeRawSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "gitBytes": 102,
+      "gitSha256": "dd998aaa9f9922968f3267afc734950541138c7d0e00665590907f81824641c0",
+      "gitLfSha256": "dd998aaa9f9922968f3267afc734950541138c7d0e00665590907f81824641c0"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "runtimeRawSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "gitBytes": 1249,
+      "gitSha256": "67b6912a0634c8d1c1d504e99bc4dbc3273c305d96d6c678e1459ccef9b28ebf",
+      "gitLfSha256": "67b6912a0634c8d1c1d504e99bc4dbc3273c305d96d6c678e1459ccef9b28ebf"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "runtimeRawSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "gitBytes": 609,
+      "gitSha256": "f59bde5e2e38c1470a5aac02b87339f56a94b99a240f3505eb9a74ed9407eb01",
+      "gitLfSha256": "f59bde5e2e38c1470a5aac02b87339f56a94b99a240f3505eb9a74ed9407eb01"
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "runtimeRawSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "gitBytes": 213,
+      "gitSha256": "9e2abb169ea87b7190613a1d4da57ca608463a453bd4231fa3aeee5e308370dd",
+      "gitLfSha256": "9e2abb169ea87b7190613a1d4da57ca608463a453bd4231fa3aeee5e308370dd"
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "runtimeRawSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "gitBytes": 152,
+      "gitSha256": "c2dbb9dfc889a5e75e47ffc12f69a322de097cf5fec3ecf441c0801857263502",
+      "gitLfSha256": "c2dbb9dfc889a5e75e47ffc12f69a322de097cf5fec3ecf441c0801857263502"
+    },
+    {
+      "path": "apps/docs/next.config.mjs",
+      "runtimeRawSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "gitBytes": 197,
+      "gitSha256": "86ab8a58ffa347d40b42acc70fe78bfa297b7ea70d18e84cf1fd1fb236795d55",
+      "gitLfSha256": "86ab8a58ffa347d40b42acc70fe78bfa297b7ea70d18e84cf1fd1fb236795d55"
+    },
+    {
+      "path": "apps/docs/package.json",
+      "runtimeRawSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "gitBytes": 715,
+      "gitSha256": "1b2cc9cf320f8502a224271a8979d576cb65a5db3062c78133ce6fc084f023ac",
+      "gitLfSha256": "1b2cc9cf320f8502a224271a8979d576cb65a5db3062c78133ce6fc084f023ac"
+    },
+    {
+      "path": "apps/docs/tsconfig.json",
+      "runtimeRawSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "gitBytes": 811,
+      "gitSha256": "6fa9a44e852f873578c5d92c4d5e0e801c90bf13a0f724e5fe6761e772bb4ee8",
+      "gitLfSha256": "6fa9a44e852f873578c5d92c4d5e0e801c90bf13a0f724e5fe6761e772bb4ee8"
+    },
+    {
+      "path": "apps/marketing/biome.jsonc",
+      "runtimeRawSha256": "2e9f25762a0f614245768779d41720c5dadfaf34c55b1941fe47a4e4f3d2365e",
+      "gitBytes": 1379,
+      "gitSha256": "aaadb426502d0d513c908b00d7fb2af0e1c5932fb540959e50ea168534456904",
+      "gitLfSha256": "aaadb426502d0d513c908b00d7fb2af0e1c5932fb540959e50ea168534456904"
+    },
+    {
+      "path": "apps/marketing/next.config.ts",
+      "runtimeRawSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "gitBytes": 264,
+      "gitSha256": "a713b10723519883797a0234aed41c1926511030635b89f6a09a4f70158416d6",
+      "gitLfSha256": "a713b10723519883797a0234aed41c1926511030635b89f6a09a4f70158416d6"
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "runtimeRawSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "gitBytes": 784,
+      "gitSha256": "f8453307c0a5cd240b2c24bd683fcd8d262c127a93154e302730add2d94cb1f2",
+      "gitLfSha256": "f8453307c0a5cd240b2c24bd683fcd8d262c127a93154e302730add2d94cb1f2"
+    },
+    {
+      "path": "apps/marketing/tsconfig.json",
+      "runtimeRawSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "gitBytes": 620,
+      "gitSha256": "38279c637fd0e81d04f624c839d610c39d62158fdd5efb7da64f6f1a2f45d950",
+      "gitLfSha256": "38279c637fd0e81d04f624c839d610c39d62158fdd5efb7da64f6f1a2f45d950"
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "runtimeRawSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "gitBytes": 1338,
+      "gitSha256": "1fd56c297b4e087ea8048d00eb546897e7c720ef8934d908c1a125e6cffa3fe4",
+      "gitLfSha256": "1fd56c297b4e087ea8048d00eb546897e7c720ef8934d908c1a125e6cffa3fe4"
+    },
+    {
+      "path": "apps/mobile/tsconfig.json",
+      "runtimeRawSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "gitBytes": 355,
+      "gitSha256": "d71de2c271d2a8020017f4944e0e929b62fee1cedb676f5d043e5cf2abccb310",
+      "gitLfSha256": "d71de2c271d2a8020017f4944e0e929b62fee1cedb676f5d043e5cf2abccb310"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "runtimeRawSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "gitBytes": 1672,
+      "gitSha256": "b0f8500d2fb0110c4ee2915ddf00fd12f9c146544f016b9422f651f93a029b68",
+      "gitLfSha256": "b0f8500d2fb0110c4ee2915ddf00fd12f9c146544f016b9422f651f93a029b68"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "runtimeRawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "gitBytes": 4154,
+      "gitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "gitLfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "runtimeRawSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "gitBytes": 8339,
+      "gitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "gitLfSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "runtimeRawSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "gitBytes": 653,
+      "gitSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "gitLfSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "runtimeRawSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "gitBytes": 202,
+      "gitSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "gitLfSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "runtimeRawSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "gitBytes": 244,
+      "gitSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "gitLfSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "runtimeRawSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "gitBytes": 437,
+      "gitSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "gitLfSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "runtimeRawSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "gitBytes": 1782,
+      "gitSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "gitLfSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2"
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "runtimeRawSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "gitBytes": 383,
+      "gitSha256": "617ac9f1ac1b9af81652aa095888963b1fc20634cca2001186412ab02e689e8e",
+      "gitLfSha256": "617ac9f1ac1b9af81652aa095888963b1fc20634cca2001186412ab02e689e8e"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-lock.yaml",
+      "runtimeRawSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "gitBytes": 34617,
+      "gitSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "gitLfSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-workspace.yaml",
+      "runtimeRawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBytes": 1361,
+      "gitSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "gitLfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988"
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "runtimeRawSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "gitBytes": 259,
+      "gitSha256": "fd7eca485085fc9e71c850e3ac6149b1848a9e90978735a430fb9f864cb1da3d",
+      "gitLfSha256": "fd7eca485085fc9e71c850e3ac6149b1848a9e90978735a430fb9f864cb1da3d"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-lock.yaml",
+      "runtimeRawSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "gitBytes": 22958,
+      "gitSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "gitLfSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-workspace.yaml",
+      "runtimeRawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBytes": 1361,
+      "gitSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "gitLfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988"
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "runtimeRawSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "gitBytes": 1478,
+      "gitSha256": "3b2a2afb8d560a8c12626802acf4436eff50f708dc215f40bfa6e4c00a679cd6",
+      "gitLfSha256": "3b2a2afb8d560a8c12626802acf4436eff50f708dc215f40bfa6e4c00a679cd6"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-lock.yaml",
+      "runtimeRawSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "gitBytes": 188668,
+      "gitSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "gitLfSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-workspace.yaml",
+      "runtimeRawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBytes": 1361,
+      "gitSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "gitLfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988"
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "runtimeRawSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "gitBytes": 938,
+      "gitSha256": "275338b163b78082598c96456718d272b66b108dbe3d524bc3e3a6df9071fb33",
+      "gitLfSha256": "275338b163b78082598c96456718d272b66b108dbe3d524bc3e3a6df9071fb33"
+    },
+    {
+      "path": "docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "runtimeRawSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "gitBytes": 967,
+      "gitSha256": "077cdcfa5215c7ea365847ad26773bcc796bc635fdda5fd1a7c023e7346e6f24",
+      "gitLfSha256": "077cdcfa5215c7ea365847ad26773bcc796bc635fdda5fd1a7c023e7346e6f24"
+    },
+    {
+      "path": "package.json",
+      "runtimeRawSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "gitBytes": 5951,
+      "gitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "gitLfSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "runtimeRawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBytes": 771361,
+      "gitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitLfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "runtimeRawSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "gitBytes": 1816,
+      "gitSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "gitLfSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877"
+    }
+  ],
+  "reportPrefix": {
+    "path": "docs/design/rollout-1692/1732.md",
+    "rawBytes": 19583,
+    "rawSha256": "3bd5e4a199e5dba2c7f0fddff67b9473fb53bb4eb4ffb752e938e80b61f92ef9",
+    "gitBytes": 19500,
+    "gitSha256": "c42efc52ae8d5d1243df7bddda823780dcf55e5bd0dfdc2dcb9b3945226ef29b",
+    "canonicalLfSha256": "c42efc52ae8d5d1243df7bddda823780dcf55e5bd0dfdc2dcb9b3945226ef29b"
+  },
+  "boundary": "Fixed Git blobs and recorded public runtime raw/LF pins. Raw CRLF is never falsely compared to Git LF; optional current-source checks the exact declared source/config pins only."
+}

@@ -1,0 +1,34 @@
+{
+  "mode": "after",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n00:34\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nTotal Employees\n8\nActive employees in organization\nAvg Work Hours\n2088.0h\nPer employee in selected period\nTotal Absence Days\n416\nTotal days in selected period\nApproval Rate\n0.0%\nOf decided requests approved\nWork Hours by Team\nTotal work hours logged per team\nFixture team 1\nFixture team 0\n0\n2500\n5000\n7500\n10000\nView chart values\nAbsence Patterns\nAbsence distribution by category\nFixture home office\n0\n150\n300\n450\n600\nView chart values\nApproval Bottlenecks\nTeams and request types with pending work or SLA warnings\n\nNo approval bottlenecks found"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\nMore actions\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nTotal Employees\n8\nActive employees in organization\nAvg Work Hours\n2088.0h\nPer employee in selected period\nTotal Absence Days\n416\nTotal days in selected period\nApproval Rate\n0.0%\nOf decided requests approved\nWork Hours by Team\nTotal work hours logged per team\nFixture team 1\nFixture team 0\n0\n2500\n5000\n7500\n10000\nView chart values\nAbsence Patterns\nAbsence distribution by category\nFixture home office\n0\n150\n300\n450\n600\nView chart values\nApproval Bottlenecks\nTeams and request types with pending work or SLA warnings\n\nNo approval bottlenecks found"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n00:34\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nTotal Employees\n8\nActive employees in organization\nAvg Work Hours\n2088.0h\nPer employee in selected period\nTotal Absence Days\n416\nTotal days in selected period\nApproval Rate\n0.0%\nOf decided requests approved\nWork Hours by Team\nTotal work hours logged per team\nFixture team 1\nFixture team 0\n0\n2500\n5000\n7500\n10000\nView chart values\nAbsence Patterns\nAbsence distribution by category\nFixture home office\n0\n150\n300\n450\n600\nView chart values\nApproval Bottlenecks\nTeams and request types with pending work or SLA warnings\n\nNo approval bottlenecks found"
+    }
+  ],
+  "errors": []
+}

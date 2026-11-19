@@ -1,0 +1,284 @@
+{
+  "runs": [
+    {
+      "run": "priority",
+      "exit": 0,
+      "tests": [
+        {
+          "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "fullname": "retires a held history conversion when displayed session becomes pending",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "fullname": "retires a held retained list conversion when displayed session becomes pending",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "fullname": "does not show a retired conversion refusal in a later displayed account",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "fullname": "does not start a queued continuation after displayed session proof is interrupted",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "fullname": "never reactivates a held continuation after account A returns from account B",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail does not revive earlier evidence after a late claim arrival and return",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail does not revive earlier evidence after a late organization arrival and return",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail does not revive earlier evidence after a late employee arrival and return",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail does not revive earlier evidence after a late account arrival and return",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail does not revive a late read after pending retained-session data and Activity restoration",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail withdraws retained receipts when a refresh is canonically refused",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail keeps a terminal timestamp when only intermediate approval evidence survived",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail shows an intermediate approval alongside the original final decision",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail formats persisted currency amounts for the active locale",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail shows the stored decision timestamp when a legacy claim has no decision log",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail opens an existing claim with unknown legacy dates, original notes, receipts and decision history",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail labels the claim type, status and decisions with catalog keys (#680)",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail offers retry after a failed detail load and restores the claim",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "stored travel claim detail keeps loaded detail and its receipts visible when a refresh fails",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) withdraws a converted report link when the conversion owner refuses the read",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) does not start a queued conversion after the claim reader is retired",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) reserves one conversion when two activations arrive before rendering",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) ignores a conversion success after the reader leaves the claim",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) keeps the known converted report link during a transient conversion-read failure",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) continues the owner's draft as a report and opens it",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) explains a refused conversion and changes nothing",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) links a converted draft to its report",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+          "fullname": "legacy draft continuation (#616) never offers continuation for a submitted claim or someone else's draft",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "control: an authorized read retains original evidence through a transient 503 and recovers",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "restores evidence only after Retry obtains a fresh success following 401 and 503",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "restores evidence only after Retry obtains a fresh success following 403 and 503",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "restores evidence only after Retry obtains a fresh success following 404 and 503",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "keeps withdrawn evidence hidden through rejected reads and failed retries",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "does not restore withdrawn evidence when a cache reset is followed by a failed read",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "control: an initial canonical 404 exposes no original evidence or receipt action",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+          "fullname": "keeps canonically withdrawn evidence and receipt actions hidden when the next refresh is only a 503",
+          "occurrence": 1,
+          "status": "passed"
+        }
+      ],
+      "passed": 36,
+      "failed": 0
+    },
+    {
+      "run": "conversion",
+      "exit": 1,
+      "tests": [
+        {
+          "file": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+          "fullname": "independent positive control: available conversion link survives a transient failure and Retry recovers",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+          "fullname": "independent initial conversion refusal control: Unauthorized",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+          "fullname": "independent initial conversion refusal control: Travel expense claim not found",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+          "fullname": "pinned 85d6 baseline conversion control hides cached report link after refusal and transient failure: Unauthorized",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+          "fullname": "pinned 85d6 baseline conversion control hides cached report link after refusal and transient failure: Travel expense claim not found",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+          "fullname": "independent critical objection: conversion-owner withdrawal remains hidden after a later transient failure without fresh success",
+          "occurrence": 1,
+          "status": "failed"
+        }
+      ],
+      "passed": 5,
+      "failed": 1
+    }
+  ],
+  "deduplication": "physical file/fullname/occurrence; reruns nonadditive; no historical worker/root counts added",
+  "distinct": 42,
+  "latestPassed": 41,
+  "latestFailed": 1,
+  "physicalTestFiles": 4,
+  "failedPredicate": {
+    "reportLinkVisible": {
+      "expected": false,
+      "actual": true
+    }
+  },
+  "stop": "First confirmed P1; no subsequent product acceptance runs"
+}

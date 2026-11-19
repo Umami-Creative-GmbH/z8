@@ -1,0 +1,27 @@
+{
+  "mode": "before",
+  "scope": "small-admin, same disposable organization; 23 holidays, 12 projects; current-month report",
+  "checks": [
+    {
+      "holidayRows": 20
+    },
+    {
+      "holidayPhone": {
+        "width": 390,
+        "documentWidth": 390,
+        "layout": "scroll",
+        "rowControls": 20
+      }
+    },
+    {
+      "portfolio": {
+        "headings": [
+          "Project Reports"
+        ],
+        "rows": 10,
+        "hasNextPage": false
+      }
+    }
+  ],
+  "errors": []
+}

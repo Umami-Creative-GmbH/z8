@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-26f93436-9113146a88895020/apps/webapp
+
+ ❯ |unit| src/app/[locale]/(app)/reports/page-ui.test.tsx (7 tests | 1 failed) 292ms
+   ❯ employee report workspace (7)
+     × observes batched identity signals before React renders A again 107ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/page-ui.test.tsx > employee report workspace > observes batched identity signals before React renders A again
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "Report generated successfully",
+      Object {
+        "description": "Generated report for Historic Ada",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/(app)/reports/page-ui.test.tsx:177:29
+    175|    held.resolve({ success: true, data: report });
+    176|   });
+    177|   expect(mocks.success).not.toHaveBeenCalled(); expect(screen.queryByT…
+       |                             ^
+    178|  });
+    179|  it("keeps the generated report visible while retrying a failed replac…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  22:05:45
+   Duration  3.83s (import 56%, transform 25%, environment 10%, tests 8%, setup 1%)
+

@@ -1,0 +1,28 @@
+X:\t3-code\worktrees\z8\t3-2f159aee-10fac1c1d358d617\node_modules\.pnpm\pg@8.23.1\node_modules\pg\lib\client.js:694
+          Error.captureStackTrace(err)
+                ^
+
+error: column "revoked_at" does not exist
+    at X:\t3-code\worktrees\z8\t3-2f159aee-10fac1c1d358d617\node_modules\.pnpm\pg@8.23.1\node_modules\pg\lib\client.js:694:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/.tmp/1728/roles.mjs:23:14 {
+  length: 111,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '101',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+
+Node.js v26.9.0

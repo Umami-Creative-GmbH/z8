@@ -42,8 +42,8 @@ export function OwnSkillsCard({ ownSkills }: { ownSkills: OwnSkills }) {
 								key={ownSkill.id}
 								className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
 							>
-								<div className="flex flex-wrap items-center gap-2">
-									<span className="font-medium">{ownSkill.name}</span>
+								<div className="flex min-w-0 flex-wrap items-center gap-2">
+									<span className="min-w-0 break-words font-medium">{ownSkill.name}</span>
 									{badge === "expired" && (
 										<Badge variant="destructive">
 											<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
@@ -51,7 +51,10 @@ export function OwnSkillsCard({ ownSkills }: { ownSkills: OwnSkills }) {
 										</Badge>
 									)}
 									{badge === "expiringSoon" && (
-										<Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
+										<Badge
+											variant="outline"
+											className="border-warning/40 bg-warning/10 text-warning"
+										>
 											<IconCalendarDue className="mr-1 size-3" aria-hidden="true" />
 											{t("settings.profile.skills.expiringSoon", "Expiring soon")}
 										</Badge>

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "candidate": {
+    "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+    "tree": "d4d9a22387f9a94816a4eec207c1e4b4b8f31574",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "clean": true,
+    "sourceCorrectedCommit": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+    "integrationCommit": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+    "lastVerified": "b1e9a95c02374118deb9bba789f3aa8291b5e932"
+  },
+  "status": "Specific fresh current runtime acceptance complete with explicit optional officer/revocation gap; root owns final VERIFIED decision",
+  "rootSourceChecks": {
+    "freshInThisRuntime": false,
+    "unitPhysicalFiles": 62,
+    "unitDistinctCases": 440,
+    "disjointGroups": [
+      {
+        "files": 58,
+        "cases": 408
+      },
+      {
+        "files": 4,
+        "cases": 32
+      }
+    ],
+    "defaultTimeoutMs": 5000,
+    "typesProjects": 3,
+    "typegen": true,
+    "lintFiles": 10,
+    "lintExit": 0,
+    "doctorErrors": 0,
+    "doctorReviewedWarnings": 2,
+    "formattingBoundaryFiles": 6,
+    "source": "Supplied root checks.json; no new counts or intermediate pins fabricated"
+  },
+  "freshPostgres": {
+    "physicalFiles": 1,
+    "distinctCases": 20,
+    "passed": 20,
+    "failed": 0,
+    "exit": 0,
+    "nonadditiveWithEarlierPG20": true,
+    "identities": "public/postgres20.json"
+  },
+  "runtime": {
+    "automatedCaseTotalsAdditive": false,
+    "observations": 31,
+    "distinctObservationNames": 31,
+    "controllerCompleteAttempts": 14,
+    "controllerFailedAttempts": 11,
+    "controllerExit": 0,
+    "actualRouteSuspenseBlockedHistory": true,
+    "realMountedContextGetControlled503AndLocalRefetchRetry": true,
+    "realOwnedHistorySelectCancelAndLocalRetryExactDraft": true,
+    "predispatchAbortThenOneHeldStartExactZeroResultingDocumentsNotifications": true,
+    "independentManagerRestrictedDenials": true,
+    "officerGrantAndHeldRevocationAccepted": false,
+    "actualActivityLiveABAMatrixAccepted": false,
+    "nativeTargets": [
+      "PayslipBatchStart",
+      "PayslipBatchesScope",
+      "SiteHeader"
+    ],
+    "nativeBoundary": "Actual DOM/fiber ancestry; not full React DevTools UI profiling",
+    "nextFinalCompilation": {
+      "issues": []
+    },
+    "nextFinalErrors": {
+      "configErrors": [],
+      "sessionErrors": []
+    },
+    "preferences": [
+      "Large18/dark persisted reload",
+      "collapse retained draft and persisted after hydration",
+      "HeaderRefresh retained same-scope draft",
+      "phone drawer first Escape/focus",
+      "month first Escape/focus after settling",
+      "reduced motion",
+      "phone local-scroll final history row"
+    ]
+  },
+  "comparison": {
+    "partialHistoricalExistingConsumers": true,
+    "historicalRef": "96e64b16a10c629cae6ec820b11862ac48511503",
+    "paths": [
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+      "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "matchedPairs": 3,
+    "sameExactBatchState": true,
+    "restoredRawBytesBeforeFinalRestart": true,
+    "acceptedRetainedPngs": 19,
+    "pixelInspectedAll": true,
+    "phoneObstruction": "Visible Pets/Next/Rendering widgets; retained and qualified",
+    "historicalDesktop": "Fresh settled capture legible; inherited clipping remains historical",
+    "deviceOrTrueZoom": false
+  },
+  "preservation": {
+    "file": "public/preservation.json",
+    "sourcePins": "public/source-pins.json",
+    "configurationPins": 36,
+    "physicalDependencyParents": 3,
+    "links": 158,
+    "lock": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799"
+  },
+  "validation": {
+    "pngFilesFullyCrcInflateUnfiltered": 19,
+    "scriptsParsedWithoutExecution": 33,
+    "powershellClonesParsed": 1,
+    "jsonAndAllowlistFinalSyntax": "Recorded in artifact-hashes.json after final seal",
+    "privateFixtureInputsHashedOrPublished": false,
+    "publicClonesSanitized": true
+  },
+  "cleanup": {
+    "allOwnedResourcesRemaining": 0,
+    "privateInputsPreserved": true,
+    "exactNextStops": 3,
+    "exactCanonicalFixtureCleanups": 2,
+    "threeManifestLabelContainersEach": true,
+    "processWrapperTerminationExits": [
+      1,
+      1,
+      1
+    ],
+    "controllerClosedExit": 0
+  },
+  "unpassed": [
+    "Fresh public officer grant/revocation",
+    "Live all-ABA role/org/account/Activity and RSC freshness matrices",
+    "Full production build/static generation",
+    "Tolgee/catalog sync",
+    "Provider/delivery/payment calls",
+    "Physical device/store wrapper",
+    "True browser zoom",
+    "Broad four-path global guard",
+    "Exhaustive role/feature/loading matrices"
+  ],
+  "publication": {
+    "reportReadmeLedgerTrackerCommitPushPRClosureDevMergeDeploy": false
+  },
+  "release": "RELEASE ALL checkout/index/package/runtime/process ownership."
+}

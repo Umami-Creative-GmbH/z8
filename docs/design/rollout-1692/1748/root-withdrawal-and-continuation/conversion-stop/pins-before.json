@@ -1,0 +1,123 @@
+{
+  "candidate": "2404a1e0404e5079c56e51c290629455f798f9f5",
+  "tree": "2b6082e0e967cabdbc9fadc3ff4b574b508903be",
+  "appTree": "21de4ad559b7cfac4e8c168f8f7144f30e6780e5",
+  "baseline": "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "bytes": 1916,
+      "sha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c",
+      "blob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "bytes": 8147,
+      "sha256": "8981c9d05baf38381bd60d69d686fc7fe57e6f5920df4c8a0eb17a35b3cd133e",
+      "blob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "bytes": 7091,
+      "sha256": "4a1b813675e75ef5a1da183c5a6c25e2e40de31434f6d459da5ee85294f121e7",
+      "blob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "bytes": 13688,
+      "sha256": "4a02f550438ead82b3703011f1acb3979710ea2414688ae3243f695a36f1dcb3",
+      "blob": "d498332ae4ea7e8dc260b7d997fd4fda140faf06",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "bytes": 19359,
+      "sha256": "c7a2206c22d9ef5be6d4d1917224effd422811fbf6cd2f2980663ac899107400",
+      "blob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "bytes": 14041,
+      "sha256": "b8b7ba4943baacc39961108276d6874dfb8fac80cf426d3c9484f60f7f62475b",
+      "blob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "bytes": 9303,
+      "sha256": "e35daf7803d9321aa214303d8211ae16f741f3d84ff5bc8274ccde6ed552d949",
+      "blob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "bytes": 12999,
+      "sha256": "04df26d1cf70f5ae1a040e74e98d561d9f98a221b1015b7d3b60e33dc68f8e6d",
+      "blob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "matchesProducerBytes": false
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "bytes": 7923,
+      "sha256": "5d3ad953a24f6cf4da62cda25433675bfc53b922cc6ab4f28de4ce14b899293d",
+      "blob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "matchesProducerBytes": false
+    }
+  ],
+  "config": [
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "bytes": 1950,
+      "sha256": "f869813593c3b53b46f79536e48874f69696b4293b9895d0c9ab997eec069c0c"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    }
+  ],
+  "dependencies": {
+    "beforeInstall": "node_modules and apps/webapp/node_modules absent",
+    "install": "offline frozen ignore-scripts package-import-method=copy",
+    "pnpm": "12.16.1",
+    "packages": 1823,
+    "downloaded": 0,
+    "doctor": "0.9.22",
+    "rootNodeModulesReparsePoint": false,
+    "appNodeModulesReparsePoint": false
+  }
+}

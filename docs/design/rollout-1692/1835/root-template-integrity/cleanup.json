@@ -1,0 +1,14 @@
+{
+  "privateManifestsRetained": true,
+  "nextPort": 62642,
+  "portClosed": true,
+  "removed": true,
+  "verifiedAbsent": true,
+  "exactServiceCount": 3,
+  "services": [
+    "z8_perf_944a3d4b9d86_postgres",
+    "z8_perf_944a3d4b9d86_redis",
+    "z8_perf_944a3d4b9d86_storage"
+  ],
+  "ownershipLabelVerified": true
+}

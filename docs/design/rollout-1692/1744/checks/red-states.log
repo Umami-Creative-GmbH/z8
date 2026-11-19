@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/apps/webapp
+
+ ❯ |unit| src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx [ src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx ]
+Error: Failed to resolve import "./not-found" from "src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx:8:0
+  11 |  const __vi_import_1__ = await import("./error");
+  12 |  const __vi_import_2__ = await import("./location-presence-loading");
+  13 |  const __vi_import_3__ = await import("./not-found");
+     |                                       ^
+  14 |  const __vi_import_4__ = await import("react/jsx-dev-runtime");
+  15 |  // @vitest-environment jsdom
+ ❯ TransformPluginContext._formatLog ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8865:39
+ ❯ TransformPluginContext.error ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8862:14
+ ❯ resolveId ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:26552:18
+ ❯ ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:26651:23
+ ❯ TransformPluginContext.transform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:26624:4
+ ❯ EnvironmentPluginContainer.transform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8636:14
+ ❯ loadAndTransform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:20112:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  05:59:08
+   Duration  599ms (environment 92%, setup 6%, transform 1%, worker 1%)
+

@@ -1,0 +1,19 @@
+{
+  "canonicalPath": "scripts/performance/fixture.mjs",
+  "canonicalSha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+  "derivedSha256": "15809d8874791324227a48e07db7196cb41b88e757c8ea34d5f8dc91cd58a56d",
+  "changes": [
+    "relative imports for own temporary location",
+    "unique ownership label",
+    "both pnpm guards in external child process transport"
+  ],
+  "domainSeedPath": "apps/webapp/scripts/performance-fixture.ts",
+  "domainSeedSha256": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d",
+  "devSource": "docs/design/rollout-1692/1738/harness/dev.mjs",
+  "devOriginalSha256": "8cc0df92d8180ed28ac32a8e9f7e8087a3ab3a219cb1c6d93523a02b8e64bc9f",
+  "devDerivedSha256": "71e0556c440c8d491e87b4e84a95f9b9285984df7bc22ee354f26fbf18e6fc56",
+  "devChanges": [
+    "unique ownership label only"
+  ],
+  "auth": "normal development form only; authenticate command is not used"
+}

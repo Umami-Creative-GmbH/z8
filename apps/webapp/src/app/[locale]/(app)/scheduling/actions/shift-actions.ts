@@ -12,6 +12,7 @@ import {
 } from "@/lib/effect/services/schedule-compliance.service";
 import {
 	type IncompleteDayInfo,
+	type ShiftQuery as ServiceShiftQuery,
 	type ShiftMetadata,
 	ShiftService,
 	type ShiftWithRelations,
@@ -74,9 +75,11 @@ function getEffectiveShiftQuery(
 		startDate && endDateExclusive
 			? toServiceDateRange({ startDate, endDateExclusive }, timezone)
 			: undefined;
-	const effectiveQuery = {
+	const effectiveQuery: ServiceShiftQuery = {
 		...filters,
-		...range,
+		...(range
+			? { startDate: range.start, endDateExclusive: range.endExclusive }
+			: {}),
 		organizationId: currentEmployee.organizationId,
 	};
 

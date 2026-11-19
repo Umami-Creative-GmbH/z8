@@ -1,0 +1,11 @@
+{
+  "route": "/en/team",
+  "abortedHTTPAttempts": 5,
+  "pending": {
+    "held": 1,
+    "loading": true,
+    "previousReasonHidden": true
+  },
+  "sameDialogNonemptyRecovered": true,
+  "canonicalReadbackRows": 1
+}

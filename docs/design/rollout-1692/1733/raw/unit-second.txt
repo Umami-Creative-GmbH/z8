@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/payslip-batch-workspace.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/payslip-batch-workspace.test.tsx [ src/components/personnel-file/payslip-batch-workspace.test.tsx ]
+Error: Transform failed with 1 error:
+
+[PARSE_ERROR] Unexpected token
+      ╭─[ src/components/personnel-file/payslip-batch-workspace.tsx:1240:1 ]
+      │
+ 1240 │ }
+      │ ┬  
+      │ ╰── 
+──────╯
+
+  Plugin: vite:oxc
+  File: X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx
+ ❯ transformWithOxc ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:7673:19
+ ❯ TransformPluginContext.transform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:7747:26
+ ❯ EnvironmentPluginContainer.transform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:8636:51
+ ❯ loadAndTransform ../../node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:20112:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  56 passed (56)
+   Start at  20:28:43
+   Duration  645ms (environment 61%, setup 24%, import 5%, transform 4%, worker 3%, tests 2%)
+

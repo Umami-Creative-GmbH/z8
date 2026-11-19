@@ -1,0 +1,17 @@
+{
+  "scheduling": {
+    "passed": 6,
+    "failed": 0,
+    "files": [
+      "src/lib/effect/services/shift-publication.integration.test.ts",
+      "src/app/[locale]/(app)/scheduling/actions/shift-actions.range.integration.test.ts"
+    ]
+  },
+  "team": {
+    "passed": 6,
+    "failed": 0,
+    "files": [
+      "src/app/[locale]/(app)/team/former-employees.integration.test.ts"
+    ]
+  }
+}

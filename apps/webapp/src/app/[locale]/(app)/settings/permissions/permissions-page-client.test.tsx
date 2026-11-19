@@ -46,17 +46,21 @@ vi.mock("./page-utils", async (importOriginal) => {
 vi.mock("./page-sections", () => ({
 	PermissionEditorDialog: () => null,
 	PermissionsEmptyState: () => <div>Empty</div>,
+	PermissionsPageHeader: () => <h1>Team Permissions</h1>,
 	PermissionsTableCard: ({
 		employees,
 		loading,
+		loadFailed,
 		onRefresh,
 	}: {
 		employees: Array<{ user: { name: string } }>;
 		loading: boolean;
+		loadFailed?: boolean;
 		onRefresh: () => Promise<void>;
 	}) => (
 		<div>
 			<div>{loading ? "Loading permissions" : "Permissions loaded"}</div>
+			{loadFailed ? <div>Permissions load failed</div> : null}
 			<div>{employees.map((employee) => employee.user.name).join(",")}</div>
 			<button type="button" onClick={() => void onRefresh()}>
 				Refresh
@@ -253,6 +257,8 @@ describe("PermissionsPageClient", () => {
 		render(<PermissionsPageClient organizationId="org-a" isOrgAdmin />);
 
 		expect(await screen.findByText("Permissions loaded")).toBeTruthy();
+		// The failure stays visible beside the list, distinct from an empty organization.
+		expect(screen.getByText("Permissions load failed")).toBeTruthy();
 		expect(mocks.toastError).toHaveBeenCalledWith("Failed to load employees");
 		expect(screen.queryByText("database connection details")).toBeNull();
 	});

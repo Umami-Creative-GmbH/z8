@@ -1,0 +1,116 @@
+{
+  "port": 54630,
+  "containerOwnershipLabel": "z8-performance-fixture-1450",
+  "ownedProfilesAbsent": true,
+  "otherBrowserRuns": "before/after store-navigation and both private normal sign-ins completed their awaited browser.close() finally blocks; ephemeral profiles, no auth-state exports",
+  "containers": [
+    {
+      "name": "z8_perf_0823a1539817_postgres",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_0823a1539817_redis",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_0823a1539817_storage",
+      "absent": true
+    }
+  ],
+  "nextStops": [
+    {
+      "port": 54630,
+      "listenerAbsent": true,
+      "checkout": "X:\\t3-code\\worktrees\\z8\\t3-9f879c88-e70f7b3e3d6bc5a7",
+      "pid": 59252,
+      "listenerVerified": true,
+      "commandVerified": true,
+      "childPids": [
+        88612
+      ],
+      "processesAbsent": true,
+      "creationVerified": true
+    },
+    {
+      "port": 54630,
+      "listenerAbsent": true,
+      "listenerVerified": true,
+      "pid": 8044,
+      "commandVerified": true,
+      "checkout": "X:\\t3-code\\worktrees\\z8\\t3-9f879c88-e70f7b3e3d6bc5a7",
+      "creationVerified": true,
+      "childPids": [
+        90244
+      ],
+      "processesAbsent": true
+    },
+    {
+      "pid": 91644,
+      "processesAbsent": true,
+      "commandVerified": true,
+      "port": 54630,
+      "creationVerified": true,
+      "childPids": [
+        70036
+      ],
+      "listenerAbsent": true,
+      "checkout": "X:\\t3-code\\worktrees\\z8\\t3-9f879c88-e70f7b3e3d6bc5a7",
+      "listenerVerified": true
+    }
+  ],
+  "listenerAbsent": true,
+  "recordedCaptureBrowsers": [
+    {
+      "absent": true,
+      "pid": 89624
+    },
+    {
+      "absent": true,
+      "pid": 63208
+    },
+    {
+      "absent": true,
+      "pid": 63680
+    },
+    {
+      "absent": true,
+      "pid": 77432
+    },
+    {
+      "absent": true,
+      "pid": 62872
+    },
+    {
+      "absent": true,
+      "pid": 91460
+    }
+  ],
+  "nextProcesses": [
+    {
+      "absent": true,
+      "pid": 59252
+    },
+    {
+      "absent": true,
+      "pid": 88612
+    },
+    {
+      "absent": true,
+      "pid": 8044
+    },
+    {
+      "absent": true,
+      "pid": 90244
+    },
+    {
+      "absent": true,
+      "pid": 91644
+    },
+    {
+      "absent": true,
+      "pid": 70036
+    }
+  ],
+  "privateGeneratedFixtureManifestsRemoved": true,
+  "retiredOwnRuntimeCachesAndRawServiceLogsRemoved": true
+}

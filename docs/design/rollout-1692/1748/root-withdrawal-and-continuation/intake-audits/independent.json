@@ -1,0 +1,239 @@
+{
+  "indexSha256": "12fddeaa72049e4f604d723f6a3287068199808c90d123c5327f4ce3fa677118",
+  "payloadCount": 61,
+  "payloadBytes": 761942,
+  "allPayloadBytesHashesJsonValid": true,
+  "pythonAstCount": 9,
+  "staticParse": [
+    {
+      "name": "account.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "audit.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "checks.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "prepare_broader.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "prepare_objections.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "prepare_refresh.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "release_bridges.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "review.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "seal.py",
+      "astParsed": true,
+      "executed": false
+    },
+    {
+      "name": "syntax.cjs",
+      "mode": "node --check via stdin; parse only",
+      "exit": 0,
+      "stderr": "",
+      "executed": false
+    }
+  ],
+  "multiset": {
+    "unitDistinct": 545,
+    "unitFiles": 48,
+    "rootDistinct": 518,
+    "rootFiles": 43,
+    "extraDistinct": 27,
+    "extraByRun": {
+      "priority-original": 6,
+      "priority-detail": 3,
+      "priority-objections-controlled": 8,
+      "actual-consumers": 7,
+      "real-refresh": 3
+    },
+    "pgDistinct": 51,
+    "pgFiles": 4,
+    "pgByFile": {
+      "apps/webapp/src/lib/travel-expenses/claim-read.integration.test.ts": 8,
+      "apps/webapp/src/lib/travel-expenses/expense-officer-access.integration.test.ts": 13,
+      "apps/webapp/src/lib/travel-expenses/finance-settlement.integration.test.ts": 16,
+      "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion.integration.test.ts": 14
+    },
+    "allFinalPassed": true,
+    "latestRebuiltFromHistory": true,
+    "allOccurrenceOne": true,
+    "runs": [
+      {
+        "run": "priority-original",
+        "cases": 24,
+        "physicalFiles": 3,
+        "actualStatuses": {
+          "passed": 24
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      },
+      {
+        "run": "priority-detail",
+        "cases": 3,
+        "physicalFiles": 1,
+        "actualStatuses": {
+          "passed": 3
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      },
+      {
+        "run": "priority-objections",
+        "cases": 31,
+        "physicalFiles": 2,
+        "actualStatuses": {
+          "passed": 27,
+          "failed": 1,
+          "pending": 3
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": true
+      },
+      {
+        "run": "priority-objections-settled",
+        "cases": 8,
+        "physicalFiles": 1,
+        "actualStatuses": {
+          "passed": 4,
+          "failed": 1,
+          "pending": 3
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": true
+      },
+      {
+        "run": "priority-objections-waited",
+        "cases": 8,
+        "physicalFiles": 1,
+        "actualStatuses": {
+          "passed": 4,
+          "failed": 1,
+          "pending": 3
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": true
+      },
+      {
+        "run": "priority-objections-controlled",
+        "cases": 13,
+        "physicalFiles": 2,
+        "actualStatuses": {
+          "passed": 13
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      },
+      {
+        "run": "actual-consumers",
+        "cases": 7,
+        "physicalFiles": 1,
+        "actualStatuses": {
+          "passed": 7
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      },
+      {
+        "run": "compatibility",
+        "cases": 518,
+        "physicalFiles": 43,
+        "actualStatuses": {
+          "passed": 518
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      },
+      {
+        "run": "integration",
+        "cases": 51,
+        "physicalFiles": 4,
+        "actualStatuses": {
+          "passed": 51
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      },
+      {
+        "run": "real-refresh",
+        "cases": 3,
+        "physicalFiles": 1,
+        "actualStatuses": {
+          "passed": 3
+        },
+        "reportedPending": 0,
+        "pendingMetadataDiffers": false
+      }
+    ],
+    "baselineCaseNames": [
+      "pinned 85d6 baseline conversion control hides cached report link after refusal and transient failure: Unauthorized",
+      "pinned 85d6 baseline conversion control hides cached report link after refusal and transient failure: Travel expense claim not found",
+      "pinned baseline detail control confirms inherited evidence retention on 404 and later outage"
+    ]
+  },
+  "publicArchivePayloads": 73,
+  "publicLinks": 9,
+  "currentSourcePins": 14,
+  "historicalSourcePins": 8,
+  "historicalCaptureMatches": 7,
+  "pngDecoded": 18,
+  "pngVisuallyInspectedThisAudit": false,
+  "producerOnlyClaims": [
+    "cleanup/resource absence",
+    "before/after preservation vs actual historical state",
+    "ancestry64",
+    "Doctor zero diagnostics and main TS exact diagnostic content where raw outputs excluded",
+    "report prefixes",
+    "live historical acceptance"
+  ],
+  "qualifications": [
+    "545=518 root+27 independent/control; three baseline controls; semantic overlap nonadditive",
+    "51 PG separate, four suites, no timeout override in recorded argv",
+    "three harness runs have actual 3 pending while reportedPending=0; disclosed preserved history",
+    "main TS exit1 missing ignored license; no green implication",
+    "ordinary two-file formatting exit1; explicit100CRLF two-file pass; whole-scope explicit formatting exit1",
+    "historical conversion capture source differs from final implementation; 7/8 historical capture hashes reconcile",
+    "after large-font two images byte-identical; historical observations not current acceptance",
+    "dependency topology after-only",
+    "verifiedCommit null"
+  ],
+  "verifiedCommit": null,
+  "noReadinessDecision": true,
+  "allowlistedJsonCount": 36,
+  "commandReceipts": 23,
+  "independentArchiveJsonPayloadsParsed": 9,
+  "historicalContentChecks": [
+    "cold four-consumer overlay explicitly documented",
+    "historical PG 50 pass + 1 default5000ms timeout, settlement16 rerun and distinct51",
+    "native helper failed/timeout vs separately recorded completed CDP download",
+    "post-capture liveRerun false explicitly recorded"
+  ],
+  "excludedPrivateTargetsRead": false,
+  "repositoryMutations": false,
+  "testsOrArchivedScriptsExecuted": false
+}

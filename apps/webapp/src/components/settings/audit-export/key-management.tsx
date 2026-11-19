@@ -26,17 +26,8 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -137,7 +128,11 @@ function KeyManagementForOrganization({
 		};
 	}, []);
 
-	const handleRotateKey = async () => {
+	/**
+	 * Rotates the signing key; resolves to the worded failure, shown inside the
+	 * confirmation, or null once it is rotated (or the organization changed meanwhile).
+	 */
+	const handleRotateKey = async (): Promise<string | null> => {
 		const organizationOperation = organizationOperationRef.current;
 		const keyOperation = ++rotateOperationRef.current;
 		setLoading(true);
@@ -147,32 +142,29 @@ function KeyManagementForOrganization({
 			!organizationOperation.active ||
 			rotateOperationRef.current !== keyOperation
 		) {
-			return;
+			return null;
 		}
 		setLoading(false);
 		if (!actionResult.success) {
-			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Rotate key error:", actionResult.error);
-			return;
+			return t("common.unexpectedError", "An unexpected error occurred");
 		}
 
 		const result = actionResult.value;
-		if (result.success) {
-			toast.success(
-				t(
-					"settings.auditExport.keys.rotateSuccess",
-					"Signing key rotated successfully",
-				),
-			);
-			router.refresh();
-		} else {
-			toast.error(
-				actionErrorMessage(t, result, {}, [
-					"settings.auditExport.keys.rotateError",
-					"Key rotation failed",
-				]),
-			);
+		if (!result.success) {
+			return actionErrorMessage(t, result, {}, [
+				"settings.auditExport.keys.rotateError",
+				"Key rotation failed",
+			]);
 		}
+		toast.success(
+			t(
+				"settings.auditExport.keys.rotateSuccess",
+				"Signing key rotated successfully",
+			),
+		);
+		router.refresh();
+		return null;
 	};
 
 	const loadKeyHistory = async () => {
@@ -337,7 +329,7 @@ function KeyManagementCard({
 	onDownloadPublicKey: () => void;
 	onLoadKeyHistory: () => Promise<void>;
 	onLoadPublicKey: () => Promise<void>;
-	onRotateKey: () => Promise<void>;
+	onRotateKey: () => Promise<string | null>;
 	t: Translate;
 }) {
 	return (
@@ -397,12 +389,9 @@ function KeyManagementCard({
 								) : publicKey ? (
 									<div className="space-y-4">
 										<div className="space-y-2">
-											<div className="flex items-center justify-between">
-												<p className="text-sm font-medium">
-													{t(
-														"settings.auditExport.keys.pemFormat",
-														"PEM Format",
-													)}
+											<div className="flex flex-wrap items-center justify-between gap-2">
+												<p id="audit-public-key-pem-label" className="text-sm font-medium">
+													{t("settings.auditExport.keys.pemFormat", "PEM Format")}
 												</p>
 												<div className="flex gap-2">
 													<Button
@@ -425,6 +414,7 @@ function KeyManagementCard({
 											</div>
 											<Textarea
 												readOnly
+												aria-labelledby="audit-public-key-pem-label"
 												value={publicKey.publicKeyPem}
 												className="font-mono text-xs h-32"
 											/>
@@ -560,41 +550,7 @@ function KeyManagementCard({
 					</ActionPanel>
 
 					{/* Rotate Key */}
-					<AlertDialog>
-						<AlertDialogTrigger asChild>
-							<Button variant="outline">
-								<IconRefresh className="mr-2 size-4" />
-								{t("settings.auditExport.keys.rotateKey", "Rotate Key")}
-							</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>
-									{t(
-										"settings.auditExport.keys.rotateTitle",
-										"Rotate Signing Key",
-									)}
-								</AlertDialogTitle>
-								<AlertDialogDescription>
-									{t(
-										"settings.auditExport.keys.rotateDescription",
-										"This will generate a new signing key. The old key will be kept for verification of existing packages but will no longer be used for new signatures. This action cannot be undone.",
-									)}
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel>
-									{t("common.cancel", "Cancel")}
-								</AlertDialogCancel>
-								<AlertDialogAction onClick={onRotateKey} disabled={loading}>
-									{loading && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
-									)}
-									{t("settings.auditExport.keys.rotateConfirm", "Rotate Key")}
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
+					<RotateKeyDialog loading={loading} onRotateKey={onRotateKey} t={t} />
 				</div>
 
 				<p className="text-xs text-muted-foreground">
@@ -605,6 +561,57 @@ function KeyManagementCard({
 				</p>
 			</CardContent>
 		</Card>
+	);
+}
+
+/**
+ * The irreversible key rotation behind a confirmation that stays open while the
+ * rotation runs and shows a failure inline, so it can be retried or cancelled.
+ */
+function RotateKeyDialog({
+	loading,
+	onRotateKey,
+	t,
+}: {
+	loading: boolean;
+	onRotateKey: () => Promise<string | null>;
+	t: Translate;
+}) {
+	const [open, setOpen] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	return (
+		<ConfirmActionDialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				setOpen(nextOpen);
+				if (!nextOpen) setError(null);
+			}}
+			trigger={
+				<AlertDialogTrigger asChild>
+					<Button variant="outline">
+						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+						{t("settings.auditExport.keys.rotateKey", "Rotate Key")}
+					</Button>
+				</AlertDialogTrigger>
+			}
+			title={t("settings.auditExport.keys.rotateTitle", "Rotate Signing Key")}
+			description={t(
+				"settings.auditExport.keys.rotateDescription",
+				"This will generate a new signing key. The old key will be kept for verification of existing packages but will no longer be used for new signatures. This action cannot be undone.",
+			)}
+			confirmLabel={t("settings.auditExport.keys.rotateConfirm", "Rotate Key")}
+			isPending={loading}
+			error={error}
+			onConfirm={() =>
+				void (async () => {
+					setError(null);
+					const failure = await onRotateKey();
+					if (failure === null) setOpen(false);
+					else setError(failure);
+				})()
+			}
+		/>
 	);
 }
 
@@ -620,7 +627,10 @@ function ActiveKeySummary({
 	return (
 		<div className="rounded-lg border p-4 space-y-3">
 			<div className="flex items-center gap-2">
-				<IconShieldCheck className="size-5 text-green-600" />
+				<IconShieldCheck
+					className="size-5 shrink-0 text-success"
+					aria-hidden="true"
+				/>
 				<span className="font-medium">
 					{t("settings.auditExport.keys.activeKey", "Active Key")}
 				</span>

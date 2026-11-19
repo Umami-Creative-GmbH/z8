@@ -1,0 +1,9 @@
+{
+  "path": "docs/design/rollout-1692/1735.md",
+  "bytes": 20095,
+  "rawSha256": "ea5d92b8d590dd1957b188a1755c346c6a56413130b7f0646a48216487cfdb7f",
+  "lfBytes": 20008,
+  "lfSha256": "03ff0830686a00e98586b9b7f9baf031b5380b805a635e18c6f3ac691e393a01",
+  "section": "## Root integration verification and compiled PDF recovery",
+  "normalization": "Original raw prefix is immutable; Git may normalize CRLF to LF. Computed LF hashes are not claims of staged Git object inspection."
+}

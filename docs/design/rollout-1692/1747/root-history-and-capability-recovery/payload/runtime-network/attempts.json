@@ -1,0 +1,304 @@
+{
+  "controllerInvocationCount": 28,
+  "controllerFailures": 2,
+  "controllerInvocations": [
+    {
+      "file": "attempt-arrival-v2.js-1794974159309.json",
+      "bytes": 294,
+      "sha256": "14c92157abdc05d00404c9554e7bfac4dc987da530f39a52ff31b33ae8445026",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs arrival-v2.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-arrival.js-1794974129086.json",
+      "bytes": 61,
+      "sha256": "e62850562ccc3a84068eba5a449a1502f071bdf76c1cfd5b25bab2e0ca130a6b",
+      "harnessOk": false,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs arrival.js",
+      "shellExit": 1
+    },
+    {
+      "file": "attempt-close-all.js-1794974276000.json",
+      "bytes": 135,
+      "sha256": "ad9be0a61ba21b94fbf976c7916fdb3f9398570b68426c769783f85c0939ae7a",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs close-all.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-create.js-1794973705856.json",
+      "bytes": 1639,
+      "sha256": "92d3ff210c7b2a2a8936ce25f54613f60b2b6908b8dc2a9d72a09a6055d38f6b",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs create.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-database-before.js-1794973620070.json",
+      "bytes": 740,
+      "sha256": "daa44a9ac11ccd7b4c8cd0ad23ef76e4a370b6020ba7644ed19ee25bf006c1d5",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs database-before.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-database-before2.js-1794973649964.json",
+      "bytes": 740,
+      "sha256": "daa44a9ac11ccd7b4c8cd0ad23ef76e4a370b6020ba7644ed19ee25bf006c1d5",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs database-before2.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-delete.js-1794973896458.json",
+      "bytes": 325,
+      "sha256": "1606cc7019537251d57e93272237974fee49ef639f917f7d5c9b3482651fa139",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs delete.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-diagnostics-v2.js-1794974268949.json",
+      "bytes": 3991,
+      "sha256": "5d1d7750e28fabc4481e0f2a5aa65434d807571db26a8af0ae6c6451cc8be7ae",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call-quiet.mjs diagnostics-v2.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-filters.js-1794973773805.json",
+      "bytes": 1378,
+      "sha256": "38af1bb2480b83b5f69288fdc61df7b31453dd104372b96d4a8466252033ad1e",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs filters.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-final-listing.js-1794974199507.json",
+      "bytes": 1086,
+      "sha256": "c27b04d7ec66b88ba8fe36737f3c95a1a60ecd74f5b6e09e4f2af7b57d316e20",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs final-listing.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-hold-create.js-1794973838600.json",
+      "bytes": 296,
+      "sha256": "65829c912c66666456f768c651c2887d1bf87db3a7b0599e26d2520998eef465",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs hold-create.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-keyboard-captures.js-1794974076705.json",
+      "bytes": 539,
+      "sha256": "b1ed2ecd88d09977652748d24fbefcbf65bfe1855365aa9123c86f02452d97f5",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs keyboard-captures.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-layout.js-1794973929899.json",
+      "bytes": 109,
+      "sha256": "25a4b73ff37ab32045c67339f02cfc6e987fd512108f4691d52cfa117ecb8c50",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs layout.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-listing.js-1794973720474.json",
+      "bytes": 2802,
+      "sha256": "a11e7d3e42d8e39677ffc673e7a49b9f659a5890d2cbd037b9c8c9179ccd4749",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs listing.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-login-exact.js-1794973655406.json",
+      "bytes": 61,
+      "sha256": "cb2978f58578bbfb172ae2901ef662e6019f851c1f49d7df1db11f86c5f39deb",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs login-exact.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-manager-destination.js-1794974097322.json",
+      "bytes": 368,
+      "sha256": "f5545cd435ec294c3b2d7f5da8c5eb6d6a62d60de23a7c44ae53381701cd13aa",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs manager-destination.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-manager.js-1794974034088.json",
+      "bytes": 640,
+      "sha256": "2ba0bbea06e9fdf9401f5e26cbc0e45cf36a45ad6a5f0f885c6485ee3bd879a1",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs manager.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-mcp-list.js-1794974129448.json",
+      "bytes": 4389,
+      "sha256": "2e54912b98aabfe7f04eed2f92d6556a241e0e169514b2babaad00368a227be4",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs mcp-list.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-originals-before.js-1794973646684.json",
+      "bytes": 1836,
+      "sha256": "7d7439cbfaa64748771946a071b954ece0280c2fe1156fc6fcd1cc8f9245b2e6",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs originals-before.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-preferences-error.js-1794973960022.json",
+      "bytes": 606,
+      "sha256": "bc25f303c5a81142aa8af74b841317be33adf4e4cf43ea03b68975103b54cca3",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences-error.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-preferences-v2.js-1794974003251.json",
+      "bytes": 1045,
+      "sha256": "48043b3bef5c3edb5c944cbfe5eb4edbbf37bad5fc5ad96f7e8f43924a5a23df",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences-v2.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-preferences.js-1794973945845.json",
+      "bytes": 61,
+      "sha256": "e62850562ccc3a84068eba5a449a1502f071bdf76c1cfd5b25bab2e0ca130a6b",
+      "harnessOk": false,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences.js",
+      "shellExit": 1
+    },
+    {
+      "file": "attempt-readback.js-1794974203777.json",
+      "bytes": 2230,
+      "sha256": "c3671767e3f6f192e79df4f45ba19f0828d0b15e647bfc193ecca5552fb993ce",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs readback.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-refresh.js-1794973801454.json",
+      "bytes": 320,
+      "sha256": "f24e8385f6c1d0eac51086f5c67c66dd58784d4e6a6ca41b46585f0440a03d45",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs refresh.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-release-create.js-1794973847120.json",
+      "bytes": 489,
+      "sha256": "13556691f1fa02507d286a90520b32c1901b0d649645020697897a5fc91b6ca7",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs release-create.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-select-org.js-1794973678253.json",
+      "bytes": 85,
+      "sha256": "499b5d65c7da8da049962c5049c8b05100969fb5a583a545d660c0d56ea39337",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs select-org.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-start-browser.js-1794973639429.json",
+      "bytes": 71,
+      "sha256": "ad774bace7414bd5a5c36f5a03c20157a8ea399d6dc77e9dcdea5e7a68902ad6",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs start-browser.js",
+      "shellExit": 0
+    },
+    {
+      "file": "attempt-status.js-1794973678557.json",
+      "bytes": 385,
+      "sha256": "54201a78d4d61e4365193f690e49a857a04751aed67f9ce3ae9bad59549e8f85",
+      "harnessOk": true,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs status.js",
+      "shellExit": 0
+    }
+  ],
+  "uniqueFailuresAndQualifications": [
+    {
+      "kind": "tooling",
+      "command": "agent-browser skills get core",
+      "exit": 1,
+      "category": "PSSecurityException UnauthorizedAccess; no policy or alternate-launcher bypass"
+    },
+    {
+      "kind": "harness",
+      "file": "attempt-arrival.js-1794974129086.json",
+      "bytes": 61,
+      "sha256": "e62850562ccc3a84068eba5a449a1502f071bdf76c1cfd5b25bab2e0ca130a6b",
+      "harnessOk": false,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs arrival.js",
+      "shellExit": 1
+    },
+    {
+      "kind": "harness",
+      "file": "attempt-preferences.js-1794973945845.json",
+      "bytes": 61,
+      "sha256": "e62850562ccc3a84068eba5a449a1502f071bdf76c1cfd5b25bab2e0ca130a6b",
+      "harnessOk": false,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences.js",
+      "shellExit": 1
+    },
+    {
+      "kind": "harness",
+      "step": "preferences.js",
+      "category": "Large submenu not yet mounted; one correction after waiting; original private exception preserved"
+    },
+    {
+      "kind": "harness",
+      "step": "arrival.js / arrival-v2.js",
+      "category": "Exact visible text locator failed; one correction used observed canonical sidebar href. Precommit sample and all-DOM count 11 rejected as acceptance; no additional arrival retry."
+    },
+    {
+      "kind": "capture",
+      "step": "layout.js",
+      "category": "Original element PNG crop clipped heading despite correct geometry; two original PNGs quarantined and excluded from SAFE. Corrected native viewport-clip captures accepted."
+    },
+    {
+      "kind": "assertion-harness",
+      "step": "filters.js",
+      "category": "No-match wording matcher returned false. Exact visible No expenses with this status and actual Show all were captured in keyboard receipt; no product finding."
+    },
+    {
+      "kind": "tooling",
+      "command": "& .tmp/1747-current-runtime-20261118b/inventory.ps1",
+      "exit": 1,
+      "category": "Own script-file policy blocked; normal inline PowerShell commands used, no ExecutionPolicy change"
+    },
+    {
+      "kind": "tooling",
+      "command": "Get-CimInstance Win32_Process",
+      "exit": 1,
+      "category": "Default sandbox access denied; approved read-only ownership inventory and exact cleanup succeeded"
+    },
+    {
+      "kind": "tooling",
+      "step": "read-only rg filename globs",
+      "category": "Three Windows literal wildcard paths invalid; no source effect or product assertion"
+    },
+    {
+      "kind": "tooling",
+      "step": "preview_open about:blank",
+      "category": "Unsupported about protocol; normal empty incognito preview tab opened then closed, never navigated or authenticated. Explicit authorized local Chromium harness used."
+    }
+  ],
+  "privateExceptionLog": {
+    "sha256": "f0ec8ddaa1839dd6884b839fed1266ccc45f91f8f44e54f443c0cf1dea234126",
+    "published": false
+  },
+  "correctFreshCredentialFormSubmissions": 2,
+  "deliberateWrongPasswordSubmissions": 0
+}

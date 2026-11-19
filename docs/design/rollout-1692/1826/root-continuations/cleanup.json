@@ -1,0 +1,11 @@
+{
+  "nativeCloseCommand": "EOF without response; no matching named-session process found",
+  "structuredBrowsersClosedInFinally": true,
+  "remainingOwnedContainers": 0,
+  "previewClosed": true,
+  "ownedContainers": 3,
+  "ownedNextStopped": true,
+  "cacheBackup": "Stopped old dev output preserved under checked same .next parent; never moved live",
+  "port": 59846,
+  "portClosed": true
+}

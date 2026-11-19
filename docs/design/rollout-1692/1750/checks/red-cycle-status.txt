@@ -1,0 +1,32 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+ ❯ |unit| src/components/travel-expenses/report/report-submission.test.tsx (14 tests | 1 failed | 13 skipped) 74ms
+   ❯ report submission (14)
+     × does not label an earlier withdrawn submission with the current report status 73ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/components/travel-expenses/report/report-submission.test.tsx > report submission > does not label an earlier withdrawn submission with the current report status
+AssertionError: expected <span …(2)></span> to be null
+- Expected:
+null
++ Received:
+<span
+  class="inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3 text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+  data-slot="badge"
+>
+  Awaiting review
+</span>
+ ❯ src/components/travel-expenses/report/report-submission.test.tsx:445:77
+    443|   mount();
+    444|   await screen.findByText("This submission was withdrawn before a deci…
+    445|   expect(within(screen.getByRole("banner")).queryByText("Awaiting revi…
+       |                                                                             ^
+    446|   expect(screen.queryByRole("button",{name:"Withdraw report"})).toBeNu…
+    447|  });
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 skipped (14)
+   Start at  13:09:17
+   Duration  3.51s (import 63%, transform 24%, environment 10%, tests 2%, setup 1%)

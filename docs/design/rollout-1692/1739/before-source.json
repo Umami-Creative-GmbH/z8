@@ -1,0 +1,169 @@
+{
+  "head": "58ea18603a936d102f0625e3303f4c05689a9961",
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.test.ts",
+      "sha256": "bea11e80f5604d769e1fd86695b13272400551fcbace25a38879da07a8ca6e2b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+      "sha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+      "sha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+      "sha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+      "sha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+      "sha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+      "sha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.test.tsx",
+      "sha256": "3f89a1036bf9ccd1011f4021738ec91478a0d6d22db40a71f09082b52f2c69e4"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+      "sha256": "9ec03596d9e98d93e80d7d81e622e9caf630957a69c8e467ffdaf4452993a782"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.sick-notes.test.tsx",
+      "sha256": "4094a10a541e8751c27a4c813993d3441c27f8e8f52a7493e7b01965fc3bd75f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "sha256": "56cc19b972de96a534094370029b674ebb148391c72eb672c568f749caf6dbe3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+      "sha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.test.tsx",
+      "sha256": "3de1a0e84c3a3403e95bbb47fe1ad62412bf216a442115261ef2002f43e6eacf"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+      "sha256": "5c97822e4caaaca91aff34562df09d2fe2ba8d5009b7c9463a5577cb2febc2db"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.test.tsx",
+      "sha256": "b5a15d8b1acd02c88a3e287d81249b6f88f34c8a97d7fed4b6b04a2d71241526"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "sha256": "6a87f89119e49f49c07e7abc59ae261ead3a5f19fd740f76146c20115c37d301"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/actions.test.ts",
+      "sha256": "db90feb23f2343f431ed036f847c98cf22431925893c2279c00a70dec2d87173"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/actions.ts",
+      "sha256": "c4fcf48e87b2c473ee8b6329a31dd9ea3a4eeafb26cf8fe3de7b7d91a72a89c2"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-data.ts",
+      "sha256": "06e740e6ef98e2ea1f616a674fb7f96df913320dc4d78718bb1b9993faff717f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-details-list.test.tsx",
+      "sha256": "6a59d03943fd901dff128330e624e2175de153e9cc183a9cf7e7a95c59b8edc3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-details-list.tsx",
+      "sha256": "fa114b5ada57944866f713934ac325461b32a02bdcd8bf7911d449688787d421"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/driving/page.tsx",
+      "sha256": "cd52021118fb7a5b13d22615ea20a8d3451fb83fbb18a4e838274ea24bd1922f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/former-employees.integration.test.ts",
+      "sha256": "3c92a1a4eb07ee94890657b74d94ef4c537a41c1b22b31fc41b006395946a630"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/layout.tsx",
+      "sha256": "92a8b2c1388baf1ff0bc60759feb6cc6ec39b018010d7d670d154353aacb4601"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx",
+      "sha256": "88180499d8c4453ee1a8c22b0d5199acc1595116527322d3b65091adabfa3d65"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.test.tsx",
+      "sha256": "70a0c565de9e9ee56f5e915a3519c5fee67136aefe500b688a23b5c7e9e96ca6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.tsx",
+      "sha256": "30d8d824b2a391a9e3dff81c19fb94d22a1b2e80f8e081f1d32b9a322023e88f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-data.ts",
+      "sha256": "97dce6c2d161db08b59300e332a4feb56620c82b7f6652a76575bd51fe18e08e"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "sha256": "379bd9b508cbc67c3cdbe1042d3fd272a5f85f395ce01d127a4db84a53571450"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+      "sha256": "4b9f3b95705adc22e38ea24bd525893d2898fd46ef4357658d6f430c47e677f3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx",
+      "sha256": "f5abbb7f0d0c24ce543870172dee3239bbf80192398f7b6b00dc9a8f17d66f80"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/presence-data.ts",
+      "sha256": "055bd7a939e701e327b55fda936e7651cd07f69c9864e69d2e18ce284bd3c036"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-data.ts",
+      "sha256": "f6d59b19fb802bbafd32ad83427fed7ba1594d6db4e7a8b5cb6a5ebd04b45333"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+      "sha256": "d80ad88c8d71e80e59a3d74180b5eb4ca8a0b5ff196e182fd8009fe2da733a89"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-time-balance-types.ts",
+      "sha256": "443a0073e2d67c86e93e566664f57635d3f89a5dc2f411f30161cd3478901c9c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-time-balance.test.ts",
+      "sha256": "c7c367b335bd1bd62d95471bbb43c4842b2d6e9a6de14876b9bfd02faea41676"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-time-balance.ts",
+      "sha256": "f7b31e476a0759aaf6df294230821ec00fbf99c25cd844cc7ed1f1eb8aa91450"
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+      "sha256": "34fab96110ce6209d1c2adb79a3da5971fa4be9618b1434e52b331b4cd4e0bb0"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+    }
+  ]
+}

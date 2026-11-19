@@ -1,0 +1,32 @@
+{
+  "source": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+  "candidate": "9284956219792bc328f24137ae5a17856f2dd999",
+  "parent": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "latestVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "verifiedCommit": null,
+  "tree": "cd57fcb71837c74915dd02bbb041465e80454641",
+  "counts": {
+    "integrated": 58,
+    "awaiting-integration": 28,
+    "implementing": 2,
+    "pending": 69
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx",
+      "bytes": 13007,
+      "sha256": "ed2ae33e74e624799e9cbf7aa3ea7c7c1c3f963963c7b798efd0bde68f764478",
+      "lfSha256": "640fe23c9ee2e00644b284427a9afe349735a60fd77e0cfd9183ce03c018cf3e",
+      "canonicalGitBlob": "7265c661396dc555341a3ebd2998602375a5dbd0",
+      "rawGitBlob": "865286c308a9e8fe620cc66a12c0b3dbca1615a1"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+      "bytes": 5908,
+      "sha256": "5628fb916c076da4b72daee1c46745f057e46fc5bb193397ef945e9e8934c7c9",
+      "lfSha256": "4f06a53b73e02018b9e8782209e4c26f5c07dfefa308b2b18a7e0aec82b7c7e6",
+      "canonicalGitBlob": "3239b0774f6c7f3c0d5e116902efb4e60c0a738d",
+      "rawGitBlob": "d0c075e2fcb213a2ba582ac024263e3e35631fb0"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "b4cef3a126fd16563cb0bbddfd5872a2aeb4e530",
+  "base": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "priorUnchangedOutsideSixSources": 12551,
+  "originalWorkerRawPaths": 83,
+  "verifiedAncestors": 39,
+  "bytePreservedSnapshots": 4,
+  "relativeReportLinks": 43,
+  "productAndReportWhitespace": true,
+  "archiveWhitespace": "Retained literal formatter/test log whitespace plus preserved CRLF source snapshots; not claimed clean."
+}

@@ -1,0 +1,36 @@
+{
+  "treeUsable": true,
+  "componentNames": [
+    "Forget(MyRequestsClient)",
+    "Forget(PageHeader)",
+    "Forget(RequestFilters)",
+    "Forget(RequestCard)",
+    "Forget(RequestAction)"
+  ],
+  "wcagContent": {
+    "success": true,
+    "axeVersion": "4.12.1",
+    "counts": {
+      "inapplicable": 45,
+      "incomplete": 0,
+      "passes": 14,
+      "violations": 0
+    },
+    "violations": [],
+    "incomplete": []
+  },
+  "wholePage": {
+    "success": true,
+    "axeVersion": "4.12.1",
+    "counts": {
+      "inapplicable": 45,
+      "incomplete": 0,
+      "passes": 44,
+      "violations": 0
+    },
+    "violations": [],
+    "incomplete": []
+  },
+  "inspectUsable": true,
+  "inspectSourcePresent": true
+}

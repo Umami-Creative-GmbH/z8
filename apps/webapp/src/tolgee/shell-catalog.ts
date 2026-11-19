@@ -179,7 +179,6 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 	]),
 	...keys("settings/rules", [
 		"settings.changePolicies.tab.policies",
-		"settings.approvalEscalation.attention.approvalType",
 		"settings.approvalEscalation.navDescription",
 		"settings.approvalEscalation.title",
 		"settings.approvalPolicies.description",
@@ -242,6 +241,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.myData.description",
 		"settings.myData.title",
 		// Consolidated settings pages (titles and descriptions only, not their tab copy).
+		"settings.navigation.approval.title",
 		"settings.navigation.audit.description",
 		"settings.navigation.audit.title",
 		"settings.navigation.chat-integrations.description",

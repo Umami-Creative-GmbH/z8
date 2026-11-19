@@ -62,6 +62,40 @@ describe("PersonioConfigForm", () => {
 		expect(screen.queryByDisplayValue("secret-1")).toBeNull();
 	});
 
+	it("keeps the credential deletion dialog open with the reason when it fails", async () => {
+		deletePersonioCredentialsActionMock.mockResolvedValue({
+			success: false,
+			error: "Vault unavailable",
+		});
+		render(
+			<PersonioConfigForm
+				initialConfig={{
+					id: "config-1",
+					formatId: "personio",
+					config: {
+						employeeMatchStrategy: "employeeNumber",
+						includeZeroHours: false,
+						batchSize: 100,
+						apiTimeoutMs: 30000,
+					},
+					isActive: true,
+					hasCredentials: true,
+					createdAt: new Date("2026-01-01T00:00:00Z"),
+					updatedAt: new Date("2026-01-01T00:00:00Z"),
+				}}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Delete credentials" }));
+		await screen.findByRole("alertdialog");
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+		await waitFor(() => expect(deletePersonioCredentialsActionMock).toHaveBeenCalledTimes(1));
+		expect((await screen.findByRole("alert")).textContent).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(screen.getByText("API credentials configured")).toBeTruthy();
+	});
+
 	it("preserves the complete Personio configuration payload", async () => {
 		render(
 			<PersonioConfigForm initialConfig={null} />,

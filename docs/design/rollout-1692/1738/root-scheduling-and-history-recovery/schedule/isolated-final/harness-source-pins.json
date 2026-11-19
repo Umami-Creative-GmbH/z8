@@ -1,0 +1,126 @@
+{
+  "files": [
+    {
+      "name": "adapt-browser.mjs",
+      "sha256": "68405d09f44622a8e54c8566c52cc1f64e929aed49b19b20fa3186f90db44017"
+    },
+    {
+      "name": "browser-controller-01.private.mjs",
+      "sha256": "ed8507152291b242e10d09b37ffdb8ad414750c5a6386626221a8fb3088102ad"
+    },
+    {
+      "name": "browser-controller-02.private.mjs",
+      "sha256": "7d0dcf65b3d600fb1e3266e6fcebeebfdec329776b08c76530eaffe1e7da64cf"
+    },
+    {
+      "name": "browser-controller-04.private.mjs",
+      "sha256": "0aca54bb24bf5dd499f1c5c0421f3b87336be3cdf09579734fb267728afb7a73"
+    },
+    {
+      "name": "browser-controller-05.private.mjs",
+      "sha256": "d90ba301e7399c7eabf2321f1b290885dfe4ebb01cb211080190436ed7a6e64a"
+    },
+    {
+      "name": "dev-01-private.mjs",
+      "sha256": "312860564e4093fa1cef2c4fd084074b2c8a5c4ba9f804a12d8fae897576d18f"
+    },
+    {
+      "name": "dev-02-private.mjs",
+      "sha256": "674af2c28e66e926a19012758fcd49f5c1fcdee4cc25dd22dd3ee2d841d71964"
+    },
+    {
+      "name": "dev-04-private.mjs",
+      "sha256": "674af2c28e66e926a19012758fcd49f5c1fcdee4cc25dd22dd3ee2d841d71964"
+    },
+    {
+      "name": "dev-05-private.mjs",
+      "sha256": "674af2c28e66e926a19012758fcd49f5c1fcdee4cc25dd22dd3ee2d841d71964"
+    },
+    {
+      "name": "final-preservation-v2.mjs",
+      "sha256": "2ca50e0a9e7da7519837555c702e72dc56b2e28c9c121f16b87ecec3d6edb3d1"
+    },
+    {
+      "name": "final-preservation.mjs",
+      "sha256": "d4d02fa9e2d72e9cfedf0882020a9daae0e0b9682497ded6699790a489172f20"
+    },
+    {
+      "name": "fixture-helper-01.mjs",
+      "sha256": "91ca67ce7f14d18c55fab95c2b241f22dfbe23c1f55aff436918e5fb66b066f0"
+    },
+    {
+      "name": "prepare-own-v2.mjs",
+      "sha256": "27ce76a1b88ded0a4f6e1c0db4727f11ceb39371c068cd6fbce399ef010b9656"
+    },
+    {
+      "name": "prepare-own.mjs",
+      "sha256": "59d6a48894308a17f3a72093d9f11543100bcc58b9883345492ffc086b0aae9a"
+    },
+    {
+      "name": "prepare-version-runtime-v2.mjs",
+      "sha256": "829fb61d51143880f4a247a5a62cd9453fd8f659ed9d23a8bb06f2b6c6ec303b"
+    },
+    {
+      "name": "prepare-version-runtime.mjs",
+      "sha256": "e390019108c75441d3bdcc96b00899f7613609f0834091814d8afb3e07377115"
+    },
+    {
+      "name": "run-fixture-tool-03.mjs",
+      "sha256": "e6990a05482704f7732b947c492947105c9e1ff1960544d84abb8fd3e9cb9b74"
+    },
+    {
+      "name": "runtime-tools-01.mjs",
+      "sha256": "012bf7937e847cacd5aec569e0ebcc7669426aef00e39ea20f3b354fbf80844e"
+    },
+    {
+      "name": "scheduling-fixture-bridge-03.ts",
+      "sha256": "8fc8661dc1e0916f7d4f7a334776df7788bc7c70d3b3a97d9c41638baa3ad02e"
+    },
+    {
+      "name": "seal-safe.mjs",
+      "sha256": "6a851235e4522f1fb1a659bc3f04b042946993f593a5a147b9fba1b687e3208f"
+    },
+    {
+      "name": "select-historical-v2.ps1",
+      "sha256": "bb11595b275126b29f4ab1d037d66daf7703c323d86aba4d4f1a253270c943af"
+    },
+    {
+      "name": "select-historical.ps1",
+      "sha256": "02a9fd969b5b3b07bc2df5d605aa9449eddf0a410ecbe76ae4042ebb49a99b50"
+    },
+    {
+      "name": "start-browser-01.mjs",
+      "sha256": "df0825beaa5113b3eaf72d83d9ac368081cac8b686bdfa994071a96d00d82c61"
+    },
+    {
+      "name": "start-browser-02.mjs",
+      "sha256": "e2def4673a46f41b2409f99a86d53ba1379ca7fb34aab441ec2231f5c57b6cd1"
+    },
+    {
+      "name": "start-browser-04.mjs",
+      "sha256": "cbe8dc680394973b4774b13729ab20bb63fd29f330937efc8608f89da6b54bba"
+    },
+    {
+      "name": "start-browser-05.mjs",
+      "sha256": "065bbe180f8085efae070b03c2174139827c75269cbbbcfe1c93d67b5ec3d1a5"
+    },
+    {
+      "name": "stop-own-next-v2.ps1",
+      "sha256": "a9d7a5aae4ec1358b6b4cbe8b60f00ec6fb1fdd79f9d6d5c671f0a01827165fd"
+    },
+    {
+      "name": "stop-own-next-v3.ps1",
+      "sha256": "b357978503779cf55a759fec933a55c797bac58a6fefe6772ffd03c5eb64fe35"
+    },
+    {
+      "name": "stop-own-next.ps1",
+      "sha256": "61659b0060137ff96a2aecbbc21e109c22f26fc7784227f4e61bccfe6985cc36"
+    },
+    {
+      "name": "verify-cleanup.ps1",
+      "sha256": "caf1c86f23ad246bcf949e82b1d6397fc2b56000f49335593fe9a706c82f9cd4"
+    }
+  ],
+  "unchangedProductionSource": true,
+  "transientBridgeRemoved": true
+}

@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-2a184f7c-c55e0704d64f87a8/apps/webapp
+
+ ❯ |unit| src/components/site-header.test.tsx (12 tests | 1 failed) 123ms
+   × lets the retained legacy claim page own the single main heading 39ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/site-header.test.tsx > lets the retained legacy claim page own the single main heading
+AssertionError: expected [ <h1 …(2)></h1>, <h1 …(1)></h1> ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/components/site-header.test.tsx:14:53
+     12|  pathname = "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054";
+     13|  const view = render(<><SiteHeader /><PageHeader title="Travel expense…
+     14|  expect(view.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+       |                                                     ^
+     15|  view.unmount();
+     16|  pathname = "/";
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  08:08:10
+   Duration  1.10s (environment 44%, import 31%, tests 13%, transform 8%, setup 3%, worker 1%)
+

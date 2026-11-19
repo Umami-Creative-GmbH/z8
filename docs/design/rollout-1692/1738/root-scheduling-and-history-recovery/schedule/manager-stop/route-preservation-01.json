@@ -1,0 +1,16 @@
+{
+  "templates": 172,
+  "persistent": 153,
+  "aliases": 19,
+  "allTemplateBlobsUnchangedFromPrior7e5": true,
+  "inheritedInventory": {
+    "path": ".tmp/1738-publication-independent-checks/route-inventory-01.json",
+    "bytes": 35838,
+    "sha256": "fdea7fd60124586aa6db269dcfb4d2d68b8b40500a2bf4b84d91dd2fe1e4bd24"
+  },
+  "limits": [
+    "Source coverage and blob equality do not prove locale/query/access behavior at runtime.",
+    "All19 alias contracts still require their destination-ticket acceptance and final integration verification.",
+    "No full route/role/domain/browser/build/catalog certification follows."
+  ]
+}

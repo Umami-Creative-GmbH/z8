@@ -1,0 +1,415 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional-awaiting-independent-recheck",
+  "verifiedCommit": null,
+  "previousPublishedCheckpoint": "fd9e8a72885b0477b545bf5faaa5dd0867387e36",
+  "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f",
+  "correctionCommit": "60b6ee86b1e677dc8858ad6dcbc635d593b075f7",
+  "correctionIntegrationCommit": "f9bcd216023c02e0a7253416b40aa61709f86fb4",
+  "tree": "26b40a6e8babaa9ef7742c2a00aecd2b791d6521",
+  "appTree": "6337611eb28d76f829a5da3bf1e6274c9d76cb01",
+  "orderedParents": [
+    "fd9e8a72885b0477b545bf5faaa5dd0867387e36",
+    "60b6ee86b1e677dc8858ad6dcbc635d593b075f7"
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "gitBlob": "7b8822d2a6b2afcc42792e71ada9bdda36d91ec5"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+      "gitBlob": "c874b802d891d9d2a47694d4b0be09740985ff54"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/confirm-payroll-run-dialog.tsx",
+      "gitBlob": "7e634c3e30db0a8e6a685a96070019f759c29db4"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "gitBlob": "62c1ea822774a03cb5cd38775e9159480dcd75e3"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "gitBlob": "9f5edc3c4930a6206ccfe595c12f8e40190dfd34"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-exports.tsx",
+      "gitBlob": "9a9d9e3168327717bba8e3776a9baa8090c0e089"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "gitBlob": "d7e7f6c25d3fc3429f7cb84e60ac696f2aecfd72"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.tsx",
+      "gitBlob": "6085f80d5ebaa66907828e435073998d19986220"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-read-boundary.tsx",
+      "gitBlob": "7b57068a02d06098624e1f90ca45555b003640f5"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-read-result.ts",
+      "gitBlob": "83454af155b3c8e83e0e7127289e488a3d659c2a"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-reader-provider.test.tsx",
+      "gitBlob": "0345a3541eb27c06b318c980e1ee3a8968bdfcbf"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+      "gitBlob": "a4ee91e3afec977a2df2b9dbeb5d0e604eb8ffa5"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.tsx",
+      "gitBlob": "a00cbcb9bbf80a99a12bdc836174555ae14cecbc"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/payroll-runs-to-confirm.tsx",
+      "gitBlob": "5f32fda1bc28987f866e79dea8fdfc19096449fc"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx",
+      "gitBlob": "40b0eff76414922bd997732479d06b23d11a998d"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/use-finance-command.ts",
+      "gitBlob": "7348c27a635d19d0044e44a037e536a563de13c3"
+    },
+    {
+      "path": "apps/webapp/src/test/finance-organization-fixture.tsx",
+      "gitBlob": "d557b520d6437795e9517984e591794bfc82759c"
+    }
+  ],
+  "independentStop": {
+    "safeSha256": "5647d26978e45f30ecedb6904702868122130ade9bdae552183384e19dd19480",
+    "files": 49,
+    "bytes": 8090395,
+    "rootAndNativeHashesMatch": true,
+    "nativeAuditSha256": "d32f8ce5ba822c0d8688c06c7ec783715e89237f940858f40ebc71c5716263a9",
+    "spec": 1,
+    "standardsConfirmed": 0,
+    "standardsComplete": false,
+    "overlap": 0,
+    "inherited": true,
+    "correctionIntroduced": false,
+    "queue": {
+      "controlsPassed": 3,
+      "priorityFailed": 1
+    },
+    "unchangedEmployeeProbe": {
+      "passed": 3,
+      "failed": 0,
+      "nonadditive": true
+    },
+    "qualification": "Current red proves observed employee loss,retained link and no action call. Current read counts/selected-action state missing from JSON diagnostics; enabled action proved only by premerge positive control. Early raw setup gaps and missing unallowlisted preservation-before.log reference retained. Snapshot was post-preparation;two owned SQLite sidecars restored toHEAD differ from that snapshot. StaticTSparser unavailable to intake,5MJS syntax-only checks not execution."
+  },
+  "rootReproduction": {
+    "originalQueueProbe": {
+      "sha256": "bb952049278bfd0cefa3936f461fe6d38cb4dfc64765ef9449d1a15decf268a5",
+      "red": {
+        "passed": 3,
+        "failed": 1
+      },
+      "green": {
+        "passed": 4,
+        "failed": 0
+      },
+      "assertionsUnchanged": true,
+      "premergeControlPreserved": true
+    },
+    "additionalConfirmed": {
+      "readRefusals": "Queue/payroll canonical Unauthorized retained evidence; corrected export locator then3controlsP/1refusalF confirmed same behavior in exports. Coverage successful-null refusal already safe.",
+      "selection": "Selected bulk dialog closed on withdrawal, but old selected keys reactivated on fresh success; reproduced then corrected.",
+      "unsettledPayroll": "Role replacement,employee loss/return andActivity each permitted2publicconfirmationcalls beforeoriginalpromise settled; correctedsame-targetreservation,not persistedwriteproof.",
+      "exports": "Two focused reds confirmed duplicate batch retry afterproviderreplacement andretiredreimbursement-read failuretoast; corrected reserved batch mutations andreadactivation checks."
+    },
+    "harnessQualifications": [
+      "New export locator initially expected DownloadZIP then button; actual semantic is link Download. Four locatorfailures and4filteredrepeat failures retained,not product findings. Corrected export controls3P/1realrefusalF.",
+      "First existing-fixture alignment aborted partway atmissing router stub; partial run39P/12fixtureF. Completed fourfixtures51P.",
+      "Broad350 run346P/4routefixtureF exposed missing frameworkrouter/providerproof in existing serverpage seam. Onlyfixturemetadata added; later350pass.",
+      "Original unchanged-pending-session continuation test failed after an overbroad ready guard,thenready narrowed back to existing behavior; originalassertion retained andgreen. Actualreadboundary stillretires onpendingproof.",
+      "InitialfixtureDate.nowinrenderDoctorpurity error corrected by module-leveldisplayproof timestamp; no suppression.",
+      "Header/Vite config and TimeoutOverflow warnings retained in logs."
+    ]
+  },
+  "behavior": {
+    "readBoundary": "Shared real-provider/rawsession view prerequisite and fresh keyed read lifetime around queue/filter descendants,exports,payroll,coverage andsettlement. Employee-backed readers retire onmissing/replacedemployee/role,pendingproof/contextfailure andsupportlocalserializedcontextRetry.",
+    "coverageException": "requireExpenseAdministrator() does not require employee; coverage uses requireEmployee=false and activeorganization proof. Tested withoutemployee. No inferred client grant.",
+    "knownRefusal": "readFinanceResult preserves canonicalNotfound/Unauthorized withdrawal asnull; outagescannotrestoreprevious read. Other failures propagate for retained-authorized-data/Retry behavior.",
+    "selection": "Committed view changes/withdrawal reset selected keys; withdrawal closes andclearsbulk snapshot sofreshsuccess cannotrestoreoldtargets.",
+    "commands": "Existing rawuser/org +semantic target client reservations persist untilactualpromise settles,includingretired/remountedviews. RetiredUIcontinuations cannotpublishlatefeedback; oldrelease canfreeitsownreservationonly. Pendingstate broadcasts boolean snapshots; no credentials/DTOs,persistence orservercontractchange.",
+    "exportContinuation": "Batch retry/cancel uses same reserved mutation owner; queued retired activations skipdispatch; late failure/refetch skipped. Reimbursement readonlyactivation isduplicate guarded anddrops retired feedback/dialog results.",
+    "unchanged": "Canonicalactions,authorization,officer/payment/snapshot scope,date/math,expectedbalance/idempotency,payroll/exportwriters,querykeyfactories andexisting publicprops remain unchanged."
+  },
+  "coverage": {
+    "broad": {
+      "cases": 350,
+      "passed": 350,
+      "failed": 0,
+      "files": 29
+    },
+    "finalExport": {
+      "cases": 33,
+      "passed": 33,
+      "failed": 0,
+      "files": 2
+    },
+    "union": {
+      "cases": 352,
+      "passed": 352,
+      "files": 29,
+      "overlap": 31
+    }
+  },
+  "newPermanentCases": {
+    "file": "finance-reader-provider.test.tsx",
+    "cases": 26,
+    "priorProbeAdaptations": 3,
+    "rootAddedCases": 23,
+    "notAnIndependentReview": true
+  },
+  "existingFixtureAudit": [
+    {
+      "file": "finance-queue.test.tsx",
+      "wrappers": 3,
+      "assertionsBefore": 76,
+      "assertionsAfter": 76
+    },
+    {
+      "file": "finance-exports.test.tsx",
+      "wrappers": 1,
+      "assertionsBefore": 32,
+      "assertionsAfter": 32
+    },
+    {
+      "file": "finance-command-lifetime.test.tsx",
+      "wrappers": 1,
+      "assertionsBefore": 28,
+      "assertionsAfter": 28
+    },
+    {
+      "file": "officer-coverage-gap.test.tsx",
+      "wrappers": 1,
+      "assertionsBefore": 7,
+      "assertionsAfter": 7
+    },
+    {
+      "file": "app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "wrappers": 1,
+      "assertionsBefore": 6,
+      "assertionsAfter": 6
+    }
+  ],
+  "existingAssertionsRetained": 149,
+  "fixtureNamesAndAssertionsPreserved": true,
+  "unitSelection": [
+    "src/components/site-header.test.tsx",
+    "src/tolgee/extracted-key-defaults.test.ts",
+    "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+    "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/travel-expenses/finance-queue-paging.test.ts",
+    "src/lib/travel-expenses/finance-queue-params.test.ts",
+    "src/lib/travel-expenses/officer-scope.test.ts",
+    "src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+    "src/components/travel-expenses/finance/finance-exports.test.tsx",
+    "src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+    "src/components/travel-expenses/finance/finance-queue.test.tsx",
+    "src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+    "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+    "src/components/travel-expenses/finance/settlement-status.test.tsx",
+    "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+    "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+    "src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+    "src/lib/travel-expenses/__tests__/settlement.test.ts",
+    "src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+    "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+    "src/components/travel-expenses/travel-expense-management.test.tsx",
+    "src/components/travel-expenses/travel-expenses-heading.test.ts",
+    "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+    "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+    "src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx",
+    "src/components/travel-expenses/finance/settlement-panel-provider.test.tsx",
+    "src/components/travel-expenses/finance/finance-reader-provider.test.tsx"
+  ],
+  "quality": {
+    "typegenAndAllThreeFullProjects": "pass onfinalsource;existing genuine125licenseunchanged",
+    "explicit100CRLF": {
+      "files": 17,
+      "exit": 0
+    },
+    "lintImport": {
+      "files": 17,
+      "exit": 0
+    },
+    "ordinary": {
+      "files": 17,
+      "exit": 1,
+      "formatFindings": 17
+    },
+    "workingWhitespaceExit": 0,
+    "doctor": {
+      "version": "0.9.22",
+      "base": "fd9e8a72885b0477b545bf5faaa5dd0867387e36",
+      "files": 17,
+      "summary": {
+        "errorCount": 0,
+        "warningCount": 6,
+        "affectedFileCount": 4,
+        "totalDiagnosticCount": 6,
+        "score": null,
+        "scoreLabel": null
+      },
+      "review": "Six warnings:2inheritedFastRefreshexports,3TanStackpreventDefault detections despiteactualpreventDefault beforehandleSubmit,1queuecomplexity. Priorbroaderwarningsremainhistorical;no blanketwholebranchclear.",
+      "diagnostics": [
+        {
+          "path": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+          "line": 86,
+          "rule": "only-export-components",
+          "severity": "warning"
+        },
+        {
+          "path": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+          "line": 91,
+          "rule": "only-export-components",
+          "severity": "warning"
+        },
+        {
+          "path": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+          "line": 416,
+          "rule": "tanstack-form-on-submit-requires-prevent-default",
+          "severity": "warning"
+        },
+        {
+          "path": "src/components/travel-expenses/finance/confirm-payroll-run-dialog.tsx",
+          "line": 267,
+          "rule": "tanstack-form-on-submit-requires-prevent-default",
+          "severity": "warning"
+        },
+        {
+          "path": "src/components/travel-expenses/finance/finance-exports.tsx",
+          "line": 240,
+          "rule": "tanstack-form-on-submit-requires-prevent-default",
+          "severity": "warning"
+        },
+        {
+          "path": "src/components/travel-expenses/finance/finance-queue.tsx",
+          "line": 383,
+          "rule": "no-high-complexity-react-function",
+          "severity": "warning"
+        }
+      ]
+    }
+  },
+  "commands": [
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/test/review1749-queue-provider.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-queue-provider-root-checks/red.json",
+      "exit": 1,
+      "result": "3P/1F before source change; exactgreen4Paftersharedboundary."
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/finance-reader-provider.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-queue-provider-root-checks/shared-readers-first.json",
+      "exit": 1,
+      "result": "14P/6F:2confirmedrefusalreds+4exportlocatorharnesserrors; correctedexport3P/1refusalF separate."
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/finance-reader-provider.test.tsx --testNamePattern='unresolved confirmation|closes a selected' --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-queue-provider-root-checks/settlement-reservation-red.json",
+      "exit": 1,
+      "result": "4executedfailures/20filtered; selectedkeysrevival+3same-targetduplicatecalls. No persistedserverwrites."
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/finance-reader-provider.test.tsx --testNamePattern='pending batch retry|reimbursement read retired' --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-queue-provider-root-checks/export-continuation-red.json",
+      "exit": 1,
+      "result": "2executedfailures/24filtered; duplicatecall/latetoast,notSQLwrites."
+    },
+    {
+      "cmd": "$selectedUnits=Get-Content -Raw -LiteralPath '.tmp/1749-queue-provider-root-checks/unit-selection.json' | ConvertFrom-Json\npnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit @selectedUnits --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-queue-provider-root-checks/unit-final-aligned.json",
+      "exit": 0,
+      "result": "350/29before2finalexportcases/guards"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/finance-reader-provider.test.tsx src/components/travel-expenses/finance/finance-exports.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-queue-provider-root-checks/export-continuation-green.json",
+      "exit": 0,
+      "result": "33/2final;31overlap350+2new=352unique/29files"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+      "exit": 0,
+      "result": "Final Nexttypegen +app/workflow/smoke fullprojects,typecheck-complete.log"
+    },
+    {
+      "cmd": "$ownedPaths=Get-Content -Raw -LiteralPath '.tmp/1749-queue-provider-root-checks/owned-ts-paths.json' | ConvertFrom-Json\npnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf --write @ownedPaths",
+      "exit": 0
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome lint --config-path=biome.jsonc @ownedPaths",
+      "exit": 0
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc @ownedPaths",
+      "exit": 1,
+      "result": "17formatfindings retained"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base fd9e8a72885b0477b545bf5faaa5dd0867387e36 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1749-queue-provider-root-checks/doctor-complete.json",
+      "exit": 0
+    },
+    {
+      "cmd": "git diff --check (owned workingcorrection)",
+      "exit": 0
+    }
+  ],
+  "preservation": {
+    "sourceDeltaPaths": 17,
+    "anchors": 66,
+    "uniqueAnchorShas": 62,
+    "missingAnchors": 0,
+    "immutableArchivesUnchanged": [
+      "docs/design/rollout-1692/1747/root-history-and-capability-recovery",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation"
+    ],
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "genuineLicenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "dependencyInstallCopyUpgrade": 0,
+    "noConfigMutations": true,
+    "temporaryHashGuardedBridgesRemoved": 2,
+    "rootRuntimeOrFixtureStarted": false,
+    "ownedRuntimeResources": 0
+  },
+  "limits": [
+    "Fresh independent review,canonicalPostgreSQL andcurrentbrowser/Next/native financeacceptance remainunpassed.",
+    "Map reserves theexisting semantic commandtarget withrawactor/orguntilpromise settlement;no newserverexpected-scope,revalidation,wire-age,idempotency orpersistedwrite guarantee.",
+    "Retained pending genericcommand continuation keeps its existingcontract;actualread-boundaryprooflossretiresmappedviews.",
+    "Unobserved grant/role/population changes,liveauthorityraces,fullpermission matrices,payroll settlement/downloadprovider acceptance,allview/draft/error combinations remainunpassed.",
+    "Historicalworker210unit/84PG andbrowserdownloads stayproducer-only/nonadditive;blankpaymentPNGs andunsafeAPI-login/overlaydrivers are notfreshproof.",
+    "Full production generation,Tolgee/provider/device/truezoom/global157-node finalreview remainsunpassed."
+  ],
+  "commandEnvironment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "pinnedPnpm": "12.16.1",
+    "packageInstalls": 0
+  },
+  "ownedTypeScriptSelection": [
+    "src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+    "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+    "src/components/travel-expenses/finance/confirm-payroll-run-dialog.tsx",
+    "src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+    "src/components/travel-expenses/finance/finance-exports.test.tsx",
+    "src/components/travel-expenses/finance/finance-exports.tsx",
+    "src/components/travel-expenses/finance/finance-queue.test.tsx",
+    "src/components/travel-expenses/finance/finance-queue.tsx",
+    "src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+    "src/components/travel-expenses/finance/officer-coverage-gap.tsx",
+    "src/components/travel-expenses/finance/payroll-runs-to-confirm.tsx",
+    "src/components/travel-expenses/finance/settlement-panel.tsx",
+    "src/components/travel-expenses/finance/use-finance-command.ts",
+    "src/components/travel-expenses/finance/finance-read-boundary.tsx",
+    "src/components/travel-expenses/finance/finance-read-result.ts",
+    "src/components/travel-expenses/finance/finance-reader-provider.test.tsx",
+    "src/test/finance-organization-fixture.tsx"
+  ]
+}

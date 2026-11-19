@@ -1,0 +1,1410 @@
+src\components\reports\projects\customer-billable-view.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconBuilding,␍
+      5     │ - → IconChevronDown,␍
+      6     │ - → IconChevronRight,␍
+      7     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconBuilding,·IconChevronDown,·IconChevronRight·}·from·"@tabler/icons-react";␍
+      8   4 │   import { useTranslate } from "@tolgee/react";␍
+      9   5 │   import { Fragment, useState } from "react";␍
+     10   6 │   import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";␍
+     11   7 │   import { Button } from "@/components/ui/button";␍
+     12     │ - import·{␍
+     13     │ - → Card,␍
+     14     │ - → CardContent,␍
+     15     │ - → CardDescription,␍
+     16     │ - → CardHeader,␍
+     17     │ - → CardTitle,␍
+     18     │ - }·from·"@/components/ui/card";␍
+          8 │ + import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+     19   9 │   import {␍
+     20  10 │     Table,␍
+    ······· │ 
+     46  36 │    * customer lists its projects, and a project opens its detailed report.␍
+     47  37 │    */␍
+     48     │ - export·function·CustomerBillableView({␍
+     49     │ - → report,␍
+     50     │ - → onProjectSelect,␍
+     51     │ - }:·CustomerBillableViewProps)·{␍
+         38 │ + export·function·CustomerBillableView({·report,·onProjectSelect·}:·CustomerBillableViewProps)·{␍
+     52  39 │     const { t } = useTranslate();␍
+     53  40 │     const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());␍
+    ······· │ 
+     65  52 │             {␍
+     66  53 │               key: WITHOUT_CUSTOMER_KEY,␍
+     67     │ - → → → → → → name:·t(␍
+     68     │ - → → → → → → → "reports.projects.customers.withoutCustomer",␍
+     69     │ - → → → → → → → "Without·customer",␍
+     70     │ - → → → → → → ),␍
+         54 │ + → → → → → → name:·t("reports.projects.customers.withoutCustomer",·"Without·customer"),␍
+     71  55 │               ...report.withoutCustomer,␍
+     72  56 │             },␍
+    ······· │ 
+     88  72 │           <ReportDocumentExportButtons␍
+     89  73 │             source={report}␍
+     90     │ - → → → → → buildDocument={(context)·=>␍
+     91     │ - → → → → → → buildCustomerReportDocument(report,·context)␍
+     92     │ - → → → → → }␍
+         74 │ + → → → → → buildDocument={(context)·=>·buildCustomerReportDocument(report,·context)}␍
+     93  75 │           />␍
+     94  76 │         </div>␍
+     95  77 │   ␍
+     96     │ - → → → <BillableFiguresCard␍
+     97     │ - → → → → figures={report.totals.billable}␍
+     98     │ - → → → → context={report.billableTime}␍
+     99     │ - → → → />␍
+         78 │ + → → → <BillableFiguresCard·figures={report.totals.billable}·context={report.billableTime}·/>␍
+    100  79 │   ␍
+    101  80 │         <Card>␍
+    ······· │ 
+    115  94 │             {groups.length === 0 ? (␍
+    116  95 │               <p className="py-6 text-center text-sm text-muted-foreground">␍
+    117     │ - → → → → → → → {t(␍
+    118     │ - → → → → → → → → "reports.projects.customers.empty",␍
+    119     │ - → → → → → → → → "No·work·on·customer·projects·in·this·period",␍
+    120     │ - → → → → → → → )}␍
+         96 │ + → → → → → → → {t("reports.projects.customers.empty",·"No·work·on·customer·projects·in·this·period")}␍
+    121  97 │               </p>␍
+    122  98 │             ) : (␍
+    ······· │ 
+    124 100 │                 <TableHeader>␍
+    125 101 │                   <TableRow>␍
+    126     │ - → → → → → → → → → <TableHead>␍
+    127     │ - → → → → → → → → → → {t("reports.projects.customers.customer",·"Customer")}␍
+    128     │ - → → → → → → → → → </TableHead>␍
+        102 │ + → → → → → → → → → <TableHead>{t("reports.projects.customers.customer",·"Customer")}</TableHead>␍
+    129 103 │                     <TableHead className="text-right">␍
+    130     │ - → → → → → → → → → → {t(␍
+    131     │ - → → → → → → → → → → → "reports.projects.billable.billableHours",␍
+    132     │ - → → → → → → → → → → → "Billable·hours",␍
+    133     │ - → → → → → → → → → → )}␍
+        104 │ + → → → → → → → → → → {t("reports.projects.billable.billableHours",·"Billable·hours")}␍
+    134 105 │                     </TableHead>␍
+    135 106 │                     <TableHead className="text-right">␍
+    136     │ - → → → → → → → → → → {t(␍
+    137     │ - → → → → → → → → → → → "reports.projects.billable.nonBillableHours",␍
+    138     │ - → → → → → → → → → → → "Non-billable·hours",␍
+    139     │ - → → → → → → → → → → )}␍
+        107 │ + → → → → → → → → → → {t("reports.projects.billable.nonBillableHours",·"Non-billable·hours")}␍
+    140 108 │                     </TableHead>␍
+    141 109 │                     <TableHead className="text-right">␍
+    ······· │ 
+    165 133 │                               >␍
+    166 134 │                                 {isOpen ? (␍
+    167     │ - → → → → → → → → → → → → → → → → <IconChevronDown␍
+    168     │ - → → → → → → → → → → → → → → → → → className="size-4"␍
+    169     │ - → → → → → → → → → → → → → → → → → aria-hidden="true"␍
+    170     │ - → → → → → → → → → → → → → → → → />␍
+        135 │ + → → → → → → → → → → → → → → → → <IconChevronDown·className="size-4"·aria-hidden="true"·/>␍
+    171 136 │                                 ) : (␍
+    172     │ - → → → → → → → → → → → → → → → → <IconChevronRight␍
+    173     │ - → → → → → → → → → → → → → → → → → className="size-4"␍
+    174     │ - → → → → → → → → → → → → → → → → → aria-hidden="true"␍
+    175     │ - → → → → → → → → → → → → → → → → />␍
+        137 │ + → → → → → → → → → → → → → → → → <IconChevronRight·className="size-4"·aria-hidden="true"·/>␍
+    176 138 │                                 )}␍
+    177 139 │                                 {row.name}␍
+    ······· │ 
+    200 162 │                                   "{hours} billable without customer, cannot be handed off",␍
+    201 163 │                                   {␍
+    202     │ - → → → → → → → → → → → → → → → → → hours:·format.hours(␍
+    203     │ - → → → → → → → → → → → → → → → → → → row.billable.withoutCustomerHours,␍
+    204     │ - → → → → → → → → → → → → → → → → → ),␍
+        164 │ + → → → → → → → → → → → → → → → → → hours:·format.hours(row.billable.withoutCustomerHours),␍
+    205 165 │                                   },␍
+    206 166 │                                 )}␍
+    ······· │ 
+    208 168 │                             )}␍
+    209 169 │                           </TableCell>␍
+    210     │ - → → → → → → → → → → → → <BillableFigureCells␍
+    211     │ - → → → → → → → → → → → → → figures={row.billable}␍
+    212     │ - → → → → → → → → → → → → → showMargin={showMargin}␍
+    213     │ - → → → → → → → → → → → → />␍
+        170 │ + → → → → → → → → → → → → <BillableFigureCells·figures={row.billable}·showMargin={showMargin}·/>␍
+    214 171 │                         </TableRow>␍
+    215 172 │                         {isOpen &&␍
+    216 173 │                           row.projects.map((projectRow) => (␍
+    217     │ - → → → → → → → → → → → → → <TableRow␍
+    218     │ - → → → → → → → → → → → → → → key={projectRow.project.id}␍
+    219     │ - → → → → → → → → → → → → → → className="bg-muted/30"␍
+    220     │ - → → → → → → → → → → → → → >␍
+        174 │ + → → → → → → → → → → → → → <TableRow·key={projectRow.project.id}·className="bg-muted/30">␍
+    221 175 │                               <TableCell className="pl-10">␍
+    222 176 │                                 <Button␍
+    ······· │ 
+    224 178 │                                   size="sm"␍
+    225 179 │                                   className="h-auto p-0"␍
+    226     │ - → → → → → → → → → → → → → → → → onClick={()·=>␍
+    227     │ - → → → → → → → → → → → → → → → → → onProjectSelect(projectRow.project.id)␍
+    228     │ - → → → → → → → → → → → → → → → → }␍
+        180 │ + → → → → → → → → → → → → → → → → onClick={()·=>·onProjectSelect(projectRow.project.id)}␍
+    229 181 │                                 >␍
+    230 182 │                                   {projectRow.project.name}␍
+    ······· │ 
+    243 195 │                 <TableFooter>␍
+    244 196 │                   <TableRow>␍
+    245     │ - → → → → → → → → → <TableCell>␍
+    246     │ - → → → → → → → → → → {t("reports.projects.customers.total",·"Total")}␍
+    247     │ - → → → → → → → → → </TableCell>␍
+    248     │ - → → → → → → → → → <BillableFigureCells␍
+    249     │ - → → → → → → → → → → figures={report.totals.billable}␍
+    250     │ - → → → → → → → → → → showMargin={showMargin}␍
+    251     │ - → → → → → → → → → />␍
+        197 │ + → → → → → → → → → <TableCell>{t("reports.projects.customers.total",·"Total")}</TableCell>␍
+        198 │ + → → → → → → → → → <BillableFigureCells·figures={report.totals.billable}·showMargin={showMargin}·/>␍
+    252 199 │                   </TableRow>␍
+    253 200 │                 </TableFooter>␍
+  
+
+src\components\reports\projects\project-filters.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     27  27 │   }␍
+     28  28 │   ␍
+     29     │ - export·function·ProjectFilters({␍
+     30     │ - → onGenerate,␍
+     31     │ - → isGenerating·=·false,␍
+     32     │ - }:·ProjectFiltersProps)·{␍
+         29 │ + export·function·ProjectFilters({·onGenerate,·isGenerating·=·false·}:·ProjectFiltersProps)·{␍
+     33  30 │     const { t } = useTranslate();␍
+     34  31 │     const statusFilterId = useId();␍
+    ······· │ 
+     63  60 │         onGenerate(␍
+     64  61 │           value.dateRange,␍
+     65     │ - → → → → value.statusFilter·===·"all"␍
+     66     │ - → → → → → ?·undefined␍
+     67     │ - → → → → → :·value.statusFilter.split(","),␍
+         62 │ + → → → → value.statusFilter·===·"all"·?·undefined·:·value.statusFilter.split(","),␍
+     68  63 │         );␍
+     69  64 │       },␍
+     70  65 │     });␍
+     71     │ - → const·{·dateRange,·statusFilter·}·=·useStore(␍
+     72     │ - → → form.store,␍
+     73     │ - → → (state)·=>·state.values,␍
+     74     │ - → );␍
+         66 │ + → const·{·dateRange,·statusFilter·}·=·useStore(form.store,·(state)·=>·state.values);␍
+     75  67 │   ␍
+     76  68 │     useEffect(() => {␍
+    ······· │ 
+     79  71 │       }␍
+     80  72 │   ␍
+     81     │ - → → form.setFieldValue(␍
+     82     │ - → → → "dateRange",␍
+     83     │ - → → → getDateRangeForPreset("current_month",·{·timezone·}),␍
+     84     │ - → → );␍
+         73 │ + → → form.setFieldValue("dateRange",·getDateRangeForPreset("current_month",·{·timezone·}));␍
+     85  74 │     }, [form, isHydrated, timezone]);␍
+     86  75 │   ␍
+    ······· │ 
+    130 119 │                 </legend>␍
+    131 120 │                 {dateRange ? (␍
+    132     │ - → → → → → → → → <DateRangePicker␍
+    133     │ - → → → → → → → → → value={dateRange}␍
+    134     │ - → → → → → → → → → onChange={handleDateRangeChange}␍
+    135     │ - → → → → → → → → />␍
+        121 │ + → → → → → → → → <DateRangePicker·value={dateRange}·onChange={handleDateRangeChange}·/>␍
+    136 122 │                 ) : (␍
+    137 123 │                   <p className="text-sm text-muted-foreground">␍
+    ······· │ 
+    146 132 │               {/* Status Filter */}␍
+    147 133 │               <div className="space-y-2">␍
+    148     │ - → → → → → → → <Label␍
+    149     │ - → → → → → → → → htmlFor={statusFilterId}␍
+    150     │ - → → → → → → → → className="text-sm·font-medium·leading-none"␍
+    151     │ - → → → → → → → >␍
+        134 │ + → → → → → → → <Label·htmlFor={statusFilterId}·className="text-sm·font-medium·leading-none">␍
+    152 135 │                   {t("reports.projects.filter.status", "Status")}␍
+    153 136 │                 </Label>␍
+    154 137 │                 <Select␍
+    155 138 │                   value={statusFilter}␍
+    156     │ - → → → → → → → → onValueChange={(value)·=>␍
+    157     │ - → → → → → → → → → form.setFieldValue("statusFilter",·value·??·"all")␍
+    158     │ - → → → → → → → → }␍
+        139 │ + → → → → → → → → onValueChange={(value)·=>·form.setFieldValue("statusFilter",·value·??·"all")}␍
+    159 140 │                   disabled={isGenerating}␍
+    160 141 │                 >␍
+    161 142 │                   <SelectTrigger id={statusFilterId}>␍
+    162 143 │                     <SelectValue␍
+    163     │ - → → → → → → → → → → placeholder={t(␍
+    164     │ - → → → → → → → → → → → "reports.projects.filter.selectStatus",␍
+    165     │ - → → → → → → → → → → → "Select·status·filter",␍
+    166     │ - → → → → → → → → → → )}␍
+        144 │ + → → → → → → → → → → placeholder={t("reports.projects.filter.selectStatus",·"Select·status·filter")}␍
+    167 145 │                     />␍
+    168 146 │                   </SelectTrigger>␍
+  
+
+src\components\reports\projects\project-reports-container.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconAlertCircle,␍
+      5     │ - → IconBriefcase,␍
+      6     │ - → IconChartBar,␍
+      7     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconAlertCircle,·IconBriefcase,·IconChartBar·}·from·"@tabler/icons-react";␍
+      8   4 │   import { useTranslate } from "@tolgee/react";␍
+      9   5 │   import { useLocale } from "next-intl";␍
+    ······· │ 
+     52  48 │       return (␍
+     53  49 │         <p role="status" className="px-4 lg:px-6">␍
+     54     │ - → → → → {t(␍
+     55     │ - → → → → → "reports.projects.scopeLoading",␍
+     56     │ - → → → → → "Loading·the·current·report·scope\u2026",␍
+     57     │ - → → → → )}␍
+         50 │ + → → → → {t("reports.projects.scopeLoading",·"Loading·the·current·report·scope\u2026")}␍
+     58  51 │         </p>␍
+     59  52 │       );␍
+     60  53 │     return (␍
+     61     │ - → → <ProjectReportWorkspace␍
+     62     │ - → → → key={JSON.stringify([scope.userId,·scope.activeOrganizationId])}␍
+     63     │ - → → />␍
+         54 │ + → → <ProjectReportWorkspace·key={JSON.stringify([scope.userId,·scope.activeOrganizationId])}·/>␍
+     64  55 │     );␍
+     65  56 │   }␍
+    ······· │ 
+     67  58 │   function ProjectReportWorkspace() {␍
+     68  59 │     const { t } = useTranslate();␍
+     69     │ - → const·[portfolioData,·setPortfolioData]·=␍
+     70     │ - → → useState<ProjectPortfolioData·|·null>(null);␍
+     71     │ - → const·[detailedReport,·setDetailedReport]·=␍
+     72     │ - → → useState<ProjectDetailedReport·|·null>(null);␍
+     73     │ - → const·[customerReport,·setCustomerReport]·=␍
+     74     │ - → → useState<CustomerBillableReport·|·null>(null);␍
+         60 │ + → const·[portfolioData,·setPortfolioData]·=·useState<ProjectPortfolioData·|·null>(null);␍
+         61 │ + → const·[detailedReport,·setDetailedReport]·=·useState<ProjectDetailedReport·|·null>(null);␍
+         62 │ + → const·[customerReport,·setCustomerReport]·=·useState<CustomerBillableReport·|·null>(null);␍
+     75  63 │     const [isLoading, setIsLoading] = useState(false);␍
+     76  64 │     const [error, setError] = useState<string | null>(null);␍
+     77  65 │     const dateRangeRef = useRef<ReportDateRange | null>(null);␍
+     78     │ - → const·[generatedStatus,·setGeneratedStatus]·=·useState<␍
+     79     │ - → → string[]·|·undefined␍
+     80     │ - → >();␍
+     81     │ - → const·[generatedRange,·setGeneratedRange]·=·useState<ReportDateRange·|·null>(␍
+     82     │ - → → null,␍
+     83     │ - → );␍
+         66 │ + → const·[generatedStatus,·setGeneratedStatus]·=·useState<string[]·|·undefined>();␍
+         67 │ + → const·[generatedRange,·setGeneratedRange]·=·useState<ReportDateRange·|·null>(null);␍
+     84  68 │     const statusFilterRef = useRef<string[] | undefined>(undefined);␍
+     85  69 │     const lifetime = useRef<object | null>(null);␍
+     86  70 │     const pending = useRef<object | null>(null);␍
+     87  71 │     const retry = useRef<null | (() => Promise<void>)>(null);␍
+     88     │ - → const·[activeTab,·setActiveTab]·=·useState<␍
+     89     │ - → → "portfolio"·|·"customers"·|·"project"␍
+     90     │ - → >("portfolio");␍
+         72 │ + → const·[activeTab,·setActiveTab]·=·useState<"portfolio"·|·"customers"·|·"project">("portfolio");␍
+     91  73 │     useLayoutEffect(() => {␍
+     92  74 │       lifetime.current = {};␍
+    ······· │ 
+    107  89 │       const operation = {};␍
+    108  90 │       pending.current = operation;␍
+    109     │ - → → const·current·=·()·=>␍
+    110     │ - → → → lifetime.current·===·arrival·&&·pending.current·===·operation;␍
+         91 │ + → → const·current·=·()·=>·lifetime.current·===·arrival·&&·pending.current·===·operation;␍
+    111  92 │       setIsLoading(true);␍
+    112  93 │       setError(null);␍
+    ······· │ 
+    121 102 │               err instanceof Error␍
+    122 103 │                 ? err.message␍
+    123     │ - → → → → → → → :·t(␍
+    124     │ - → → → → → → → → → "reports.projects.toast.unexpectedError",␍
+    125     │ - → → → → → → → → → "An·unexpected·error·occurred",␍
+    126     │ - → → → → → → → → ),␍
+        104 │ + → → → → → → → :·t("reports.projects.toast.unexpectedError",·"An·unexpected·error·occurred"),␍
+    127 105 │             );␍
+    128     │ - → → → → → toast.error(␍
+    129     │ - → → → → → → t(␍
+    130     │ - → → → → → → → "reports.projects.toast.failedGenerate",␍
+    131     │ - → → → → → → → "Failed·to·generate·report",␍
+    132     │ - → → → → → → ),␍
+    133     │ - → → → → → );␍
+        106 │ + → → → → → toast.error(t("reports.projects.toast.failedGenerate",·"Failed·to·generate·report"));␍
+    134 107 │           }␍
+    135 108 │         },␍
+    ······· │ 
+    143 116 │     }␍
+    144 117 │   ␍
+    145     │ - → const·handleGeneratePortfolio·=·async·(␍
+    146     │ - → → range:·ReportDateRange,␍
+    147     │ - → → statusFilter?:·string[],␍
+    148     │ - → )·=>·{␍
+        118 │ + → const·handleGeneratePortfolio·=·async·(range:·ReportDateRange,·statusFilter?:·string[])·=>·{␍
+    149 119 │       await readReport(␍
+    150 120 │         async (current) => {␍
+    151     │ - → → → → const·result·=·await·getProjectsOverview(␍
+    152     │ - → → → → → range.startDate,␍
+    153     │ - → → → → → range.endDate,␍
+    154     │ - → → → → → statusFilter,␍
+    155     │ - → → → → );␍
+        121 │ + → → → → const·result·=·await·getProjectsOverview(range.startDate,·range.endDate,·statusFilter);␍
+    156 122 │           if (!current()) return;␍
+    157 123 │           if (!result.success)␍
+    158 124 │             throw new Error(␍
+    159 125 │               result.error ||␍
+    160     │ - → → → → → → → t(␍
+    161     │ - → → → → → → → → "reports.projects.toast.failedPortfolio",␍
+    162     │ - → → → → → → → → "Failed·to·generate·portfolio·report",␍
+    163     │ - → → → → → → → ),␍
+        126 │ + → → → → → → → t("reports.projects.toast.failedPortfolio",·"Failed·to·generate·portfolio·report"),␍
+    164 127 │             );␍
+    165 128 │           const customers = result.data.billableTime␍
+    166     │ - → → → → → ?·await·getCustomerBillableReport(␍
+    167     │ - → → → → → → → range.startDate,␍
+    168     │ - → → → → → → → range.endDate,␍
+    169     │ - → → → → → → → statusFilter,␍
+    170     │ - → → → → → → )␍
+        129 │ + → → → → → ?·await·getCustomerBillableReport(range.startDate,·range.endDate,·statusFilter)␍
+    171 130 │             : null;␍
+    172 131 │           if (!current()) return;␍
+    ······· │ 
+    180 139 │           setDetailedReport(null);␍
+    181 140 │           setActiveTab("portfolio");␍
+    182     │ - → → → → toast.success(␍
+    183     │ - → → → → → t(␍
+    184     │ - → → → → → → "reports.projects.toast.portfolioGenerated",␍
+    185     │ - → → → → → → "Portfolio·report·generated",␍
+    186     │ - → → → → → ),␍
+    187     │ - → → → → );␍
+        141 │ + → → → → toast.success(t("reports.projects.toast.portfolioGenerated",·"Portfolio·report·generated"));␍
+    188 142 │         },␍
+    189 143 │         () => handleGeneratePortfolio(range, statusFilter),␍
+    ······· │ 
+    205 159 │             throw new Error(␍
+    206 160 │               result.error ||␍
+    207     │ - → → → → → → → t(␍
+    208     │ - → → → → → → → → "reports.projects.toast.failedProject",␍
+    209     │ - → → → → → → → → "Failed·to·generate·project·report",␍
+    210     │ - → → → → → → → ),␍
+        161 │ + → → → → → → → t("reports.projects.toast.failedProject",·"Failed·to·generate·project·report"),␍
+    211 162 │             );␍
+    212 163 │           setDetailedReport(result.data);␍
+    213 164 │           setActiveTab("project");␍
+    214 165 │           toast.success(␍
+    215     │ - → → → → → t(␍
+    216     │ - → → → → → → "reports.projects.toast.projectGenerated",␍
+    217     │ - → → → → → → "Report·generated·for·{name}",␍
+    218     │ - → → → → → → {␍
+    219     │ - → → → → → → → name:·result.data.project.name,␍
+    220     │ - → → → → → → },␍
+    221     │ - → → → → → ),␍
+        166 │ + → → → → → t("reports.projects.toast.projectGenerated",·"Report·generated·for·{name}",·{␍
+        167 │ + → → → → → → name:·result.data.project.name,␍
+        168 │ + → → → → → }),␍
+    222 169 │           );␍
+    223 170 │         },␍
+  165 more lines truncated
+  
+
+src\components\reports\projects\project-reports-workflow.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{␍
+      4     │ - → act,␍
+      5     │ - → cleanup,␍
+      6     │ - → fireEvent,␍
+      7     │ - → screen,␍
+      8     │ - → waitFor,␍
+      9     │ - }·from·"@testing-library/react";␍
+          3 │ + import·{·act,·cleanup,·fireEvent,·screen,·waitFor·}·from·"@testing-library/react";␍
+     10   4 │   import { Activity } from "react";␍
+     11   5 │   import { afterEach, beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     44  38 │   vi.mock("next-intl", () => ({ useLocale: () => "en" }));␍
+     45  39 │   vi.mock("@/navigation", () => ({␍
+     46     │ - → Link:·({␍
+     47     │ - → → href,␍
+     48     │ - → → children,␍
+     49     │ - → }:·{␍
+     50     │ - → → href:·string;␍
+     51     │ - → → children:·import("react").ReactNode;␍
+     52     │ - → })·=>·<a·href={href}>{children}</a>,␍
+         40 │ + → Link:·({·href,·children·}:·{·href:·string;·children:·import("react").ReactNode·})·=>·(␍
+         41 │ + → → <a·href={href}>{children}</a>␍
+         42 │ + → ),␍
+     53  43 │   }));␍
+     54  44 │   vi.mock("next/dynamic", () => ({ default: () => () => null }));␍
+    ······· │ 
+    106  96 │       isLoading: false,␍
+    107  97 │     };␍
+    108     │ - → useOrganizationSettings␍
+    109     │ - → → .getState()␍
+    110     │ - → → .setSettings({·isHydrated:·true,·timezone:·"Europe/Berlin"·});␍
+         98 │ + → useOrganizationSettings.getState().setSettings({·isHydrated:·true,·timezone:·"Europe/Berlin"·});␍
+    111  99 │     mocks.overview.mockResolvedValue({ success: true, data: portfolio() });␍
+    112 100 │   });␍
+    ······· │ 
+    126 114 │         mocks.scope = {␍
+    127 115 │           ...mocks.scope,␍
+    128     │ - → → → → ...(kind·===·"organization"␍
+    129     │ - → → → → → ?·{·activeOrganizationId:·"B"·}␍
+    130     │ - → → → → → :·{·userId:·"other"·}),␍
+        116 │ + → → → → ...(kind·===·"organization"·?·{·activeOrganizationId:·"B"·}·:·{·userId:·"other"·}),␍
+    131 117 │         };␍
+    132 118 │         view.rerender(view.tree());␍
+    ······· │ 
+    138 124 │         view.rerender(view.tree());␍
+    139 125 │       }␍
+    140     │ - → → await·act(async·()·=>␍
+    141     │ - → → → pending.resolve({·success:·true,·data:·portfolio(99)·}),␍
+    142     │ - → → );␍
+        126 │ + → → await·act(async·()·=>·pending.resolve({·success:·true,·data:·portfolio(99)·}));␍
+    143 127 │       expect(screen.queryByText("99.0 h")).toBeNull();␍
+    144 128 │       expect(mocks.success).not.toHaveBeenCalled();␍
+    ······· │ 
+    165 149 │     });␍
+    166 150 │     await act(async () => {␍
+    167     │ - → → await·expect(mocks.refresh?.()).rejects.toThrow(␍
+    168     │ - → → → "Could·not·refresh·project·reports",␍
+    169     │ - → → );␍
+        151 │ + → → await·expect(mocks.refresh?.()).rejects.toThrow("Could·not·refresh·project·reports");␍
+    170 152 │     });␍
+    171 153 │     expect(screen.getByText("12.0 h")).toBeTruthy();␍
+  
+
+src\components\reports\projects\project-summary-cards.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconAlertTriangle,␍
+      5     │ - → IconBriefcase,␍
+      6     │ - → IconClock,␍
+      7     │ - → IconUsers,␍
+      8     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconAlertTriangle,·IconBriefcase,·IconClock,·IconUsers·}·from·"@tabler/icons-react";␍
+      9   4 │   import { useTranslate } from "@tolgee/react";␍
+     10   5 │   import type { ProjectInfo } from "@/lib/reports/project-types";␍
+    ······· │ 
+     49  44 │                 {t("reports.projects.cards.totalHours", "Total Hours")}␍
+     50  45 │               </dt>␍
+     51     │ - → → → → → → <IconClock␍
+     52     │ - → → → → → → → aria-hidden="true"␍
+     53     │ - → → → → → → → className="size-4·text-muted-foreground"␍
+     54     │ - → → → → → → />␍
+         46 │ + → → → → → → <IconClock·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+     55  47 │             </div>␍
+     56  48 │             <dd>␍
+    ······· │ 
+     72  64 │                 {t("reports.projects.cards.teamMembers", "Team Members")}␍
+     73  65 │               </dt>␍
+     74     │ - → → → → → → <IconUsers␍
+     75     │ - → → → → → → → aria-hidden="true"␍
+     76     │ - → → → → → → → className="size-4·text-muted-foreground"␍
+     77     │ - → → → → → → />␍
+         66 │ + → → → → → → <IconUsers·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+     78  67 │             </div>␍
+     79  68 │             <dd>␍
+    ······· │ 
+     82  71 │               </div>␍
+     83  72 │               <p className="text-xs text-muted-foreground">␍
+     84     │ - → → → → → → → {t(␍
+     85     │ - → → → → → → → → "reports.projects.cards.activeContributors",␍
+     86     │ - → → → → → → → → "Active·contributors",␍
+     87     │ - → → → → → → → )}␍
+         73 │ + → → → → → → → {t("reports.projects.cards.activeContributors",·"Active·contributors")}␍
+     88  74 │               </p>␍
+     89  75 │             </dd>␍
+    ······· │ 
+     96  82 │                 {t("reports.projects.cards.budgetUsed", "Budget Used")}␍
+     97  83 │               </dt>␍
+     98     │ - → → → → → → <IconBriefcase␍
+     99     │ - → → → → → → → aria-hidden="true"␍
+    100     │ - → → → → → → → className="size-4·text-muted-foreground"␍
+    101     │ - → → → → → → />␍
+         84 │ + → → → → → → <IconBriefcase·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    102  85 │             </div>␍
+    103  86 │             <dd>␍
+    ······· │ 
+    109  92 │               <p className="text-xs text-muted-foreground">␍
+    110  93 │                 {summary.budgetHours !== null␍
+    111     │ - → → → → → → → → ?·t(␍
+    112     │ - → → → → → → → → → → "reports.projects.cards.hoursOfBudget",␍
+    113     │ - → → → → → → → → → → "{used}h·of·{total}h",␍
+    114     │ - → → → → → → → → → → {␍
+    115     │ - → → → → → → → → → → → used:·format.number(summary.totalHours),␍
+    116     │ - → → → → → → → → → → → total:·format.compactNumber(summary.budgetHours),␍
+    117     │ - → → → → → → → → → → },␍
+    118     │ - → → → → → → → → → )␍
+         94 │ + → → → → → → → → ?·t("reports.projects.cards.hoursOfBudget",·"{used}h·of·{total}h",·{␍
+         95 │ + → → → → → → → → → → used:·format.number(summary.totalHours),␍
+         96 │ + → → → → → → → → → → total:·format.compactNumber(summary.budgetHours),␍
+         97 │ + → → → → → → → → → })␍
+    119  98 │                   : t("reports.projects.cards.noBudgetSet", "No budget set")}␍
+    120  99 │               </p>␍
+    ······· │ 
+    128 107 │                 {t("reports.projects.cards.dailyAverage", "Daily Average")}␍
+    129 108 │               </dt>␍
+    130     │ - → → → → → → <IconClock␍
+    131     │ - → → → → → → → aria-hidden="true"␍
+    132     │ - → → → → → → → className="size-4·text-muted-foreground"␍
+    133     │ - → → → → → → />␍
+        109 │ + → → → → → → <IconClock·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    134 110 │             </div>␍
+    135 111 │             <dd>␍
+    ······· │ 
+    154 130 │               {t("reports.projects.cards.totalProjects", "Total Projects")}␍
+    155 131 │             </dt>␍
+    156     │ - → → → → → <IconBriefcase␍
+    157     │ - → → → → → → aria-hidden="true"␍
+    158     │ - → → → → → → className="size-4·text-muted-foreground"␍
+    159     │ - → → → → → />␍
+        132 │ + → → → → → <IconBriefcase·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    160 133 │           </div>␍
+    161 134 │           <dd>␍
+    ······· │ 
+    177 150 │               {t("reports.projects.cards.totalHours", "Total Hours")}␍
+    178 151 │             </dt>␍
+    179     │ - → → → → → <IconClock␍
+    180     │ - → → → → → → aria-hidden="true"␍
+    181     │ - → → → → → → className="size-4·text-muted-foreground"␍
+    182     │ - → → → → → />␍
+        152 │ + → → → → → <IconClock·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    183 153 │           </div>␍
+    184 154 │           <dd>␍
+    ······· │ 
+    187 157 │             </div>␍
+    188 158 │             <p className="text-xs text-muted-foreground">␍
+    189     │ - → → → → → → {t(␍
+    190     │ - → → → → → → → "reports.projects.cards.acrossAllProjects",␍
+    191     │ - → → → → → → → "Across·all·projects",␍
+    192     │ - → → → → → → )}␍
+        159 │ + → → → → → → {t("reports.projects.cards.acrossAllProjects",·"Across·all·projects")}␍
+    193 160 │             </p>␍
+    194 161 │           </dd>␍
+    ······· │ 
+    201 168 │               {t("reports.projects.cards.activeProjects", "Active Projects")}␍
+    202 169 │             </dt>␍
+    203     │ - → → → → → <IconBriefcase␍
+    204     │ - → → → → → → aria-hidden="true"␍
+    205     │ - → → → → → → className="size-4·text-muted-foreground"␍
+    206     │ - → → → → → />␍
+        170 │ + → → → → → <IconBriefcase·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    207 171 │           </div>␍
+    208 172 │           <dd>␍
+    ······· │ 
+    211 175 │             </div>␍
+    212 176 │             <p className="text-xs text-muted-foreground">␍
+    213     │ - → → → → → → {t(␍
+    214     │ - → → → → → → → "reports.projects.cards.currentlyInProgress",␍
+    215     │ - → → → → → → → "Currently·in·progress",␍
+    216     │ - → → → → → → )}␍
+        177 │ + → → → → → → {t("reports.projects.cards.currentlyInProgress",·"Currently·in·progress")}␍
+    217 178 │             </p>␍
+    218 179 │           </dd>␍
+    ······· │ 
+    225 186 │               {t("reports.projects.cards.overBudget", "Over Budget")}␍
+    226 187 │             </dt>␍
+    227     │ - → → → → → <IconAlertTriangle␍
+    228     │ - → → → → → → aria-hidden="true"␍
+    229     │ - → → → → → → className="size-4·text-muted-foreground"␍
+    230     │ - → → → → → />␍
+        188 │ + → → → → → <IconAlertTriangle·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    231 189 │           </div>␍
+    232 190 │           <dd>␍
+    ······· │ 
+    246 204 │               {t("reports.projects.cards.overdue", "Overdue")}␍
+    247 205 │             </dt>␍
+    248     │ - → → → → → <IconAlertTriangle␍
+    249     │ - → → → → → → aria-hidden="true"␍
+    250     │ - → → → → → → className="size-4·text-muted-foreground"␍
+    251     │ - → → → → → />␍
+        206 │ + → → → → → <IconAlertTriangle·aria-hidden="true"·className="size-4·text-muted-foreground"·/>␍
+    252 207 │           </div>␍
+    253 208 │           <dd>␍
+  
+
+src\components\reports\projects\report-share-dialog.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{␍
+      4     │ - → act,␍
+      5     │ - → cleanup,␍
+      6     │ - → fireEvent,␍
+      7     │ - → screen,␍
+      8     │ - → waitFor,␍
+      9     │ - }·from·"@testing-library/react";␍
+          3 │ + import·{·act,·cleanup,·fireEvent,·screen,·waitFor·}·from·"@testing-library/react";␍
+     10   4 │   import { Activity } from "react";␍
+     11   5 │   import { afterEach, beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     70  64 │       const view = render(tree());␍
+     71  65 │       fireEvent.click(screen.getByRole("button", { name: "Share" }));␍
+     72     │ - → → const·form·=·(␍
+     73     │ - → → → await·screen.findByRole("button",·{·name:·"Create·link"·})␍
+     74     │ - → → ).closest("form");␍
+         66 │ + → → const·form·=·(await·screen.findByRole("button",·{·name:·"Create·link"·})).closest("form");␍
+     75  67 │       if (!form) throw Error("Missing share form");␍
+     76  68 │       await act(async () => {␍
+    ······· │ 
+     81  73 │           mocks.scope = {␍
+     82  74 │             ...mocks.scope,␍
+     83     │ - → → → → → ...(kind·===·"organization"␍
+     84     │ - → → → → → → ?·{·activeOrganizationId:·"B"·}␍
+     85     │ - → → → → → → :·{·userId:·"other"·}),␍
+         75 │ + → → → → → ...(kind·===·"organization"·?·{·activeOrganizationId:·"B"·}·:·{·userId:·"other"·}),␍
+     86  76 │           };␍
+     87  77 │           view.rerender(tree());␍
+    ······· │ 
+    113 103 │     expect(employees.getAttribute("aria-checked")).toBe("true");␍
+    114 104 │     fireEvent.click(screen.getByRole("button", { name: "Create link" }));␍
+    115     │ - → expect(␍
+    116     │ - → → await·screen.findByRole("textbox",·{·name:·"Share·link"·}),␍
+    117     │ - → ).toBeTruthy();␍
+        105 │ + → expect(await·screen.findByRole("textbox",·{·name:·"Share·link"·})).toBeTruthy();␍
+    118 106 │     expect(mocks.create.mock.calls[1][0]).toEqual({␍
+    119 107 │       kind: "project",␍
+    ······· │ 
+    151 139 │     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());␍
+    152 140 │     fireEvent.click(screen.getByRole("button", { name: "Share" }));␍
+    153     │ - → await·act(async·()·=>␍
+    154     │ - → → finish({·success:·true,·data:·{·path:·"/share/synthetic-test-token"·}·}),␍
+    155     │ - → );␍
+        141 │ + → await·act(async·()·=>·finish({·success:·true,·data:·{·path:·"/share/synthetic-test-token"·}·}));␍
+    156 142 │     expect(screen.queryByRole("textbox", { name: "Share link" })).toBeNull();␍
+    157 143 │     expect(screen.getByRole("button", { name: "Create link" })).toBeTruthy();␍
+  
+
+src\components\reports\projects\report-share-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconCheck,␍
+      5     │ - → IconCopy,␍
+      6     │ - → IconLoader2,␍
+      7     │ - → IconShare,␍
+      8     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconCheck,·IconCopy,·IconLoader2,·IconShare·}·from·"@tabler/icons-react";␍
+      9   4 │   import { useForm } from "@tanstack/react-form";␍
+     10   5 │   import { useQueryClient } from "@tanstack/react-query";␍
+    ······· │ 
+     53  48 │   import { ReportShareLinkList } from "./report-share-link-list";␍
+     54  49 │   ␍
+     55     │ - const·EXPIRY_CHOICES·=·[␍
+     56     │ - → 7,␍
+     57     │ - → 14,␍
+     58     │ - → SHARE_LINK_DEFAULT_EXPIRY_DAYS,␍
+     59     │ - → 60,␍
+     60     │ - → SHARE_LINK_MAX_EXPIRY_DAYS,␍
+     61     │ - ];␍
+         50 │ + const·EXPIRY_CHOICES·=·[7,·14,·SHARE_LINK_DEFAULT_EXPIRY_DAYS,·60,·SHARE_LINK_MAX_EXPIRY_DAYS];␍
+     62  51 │   ␍
+     63  52 │   interface ShareFormValues {␍
+    ······· │ 
+     86  75 │   export function ReportShareDialog(props: ReportShareDialogProps) {␍
+     87  76 │     const scope = useOrganization();␍
+     88     │ - → if·(scope.isLoading·||·!scope.userId·||·!scope.activeOrganizationId)␍
+     89     │ - → → return·null;␍
+         77 │ + → if·(scope.isLoading·||·!scope.userId·||·!scope.activeOrganizationId)·return·null;␍
+     90  78 │     return (␍
+     91  79 │       <ReportShareArrival␍
+    ······· │ 
+    152 140 │       onSubmit: async ({ value, meta }) => {␍
+    153 141 │         const generation = meta.generation;␍
+    154     │ - → → → if·(!generation·||·lifetime.current·!==·generation·||·pending.current)␍
+    155     │ - → → → → return;␍
+        142 │ + → → → if·(!generation·||·lifetime.current·!==·generation·||·pending.current)·return;␍
+    156 143 │         pending.current = generation;␍
+    157 144 │         await runWithCleanup(␍
+    ······· │ 
+    168 155 │               if (lifetime.current !== generation) return;␍
+    169 156 │               if (!result.success) {␍
+    170     │ - → → → → → → → toast.error(␍
+    171     │ - → → → → → → → → t(␍
+    172     │ - → → → → → → → → → "reports.share.create.failed",␍
+    173     │ - → → → → → → → → → "The·share·link·could·not·be·created",␍
+    174     │ - → → → → → → → → ),␍
+    175     │ - → → → → → → → → {␍
+    176     │ - → → → → → → → → → description:·result.error,␍
+    177     │ - → → → → → → → → },␍
+    178     │ - → → → → → → → );␍
+        157 │ + → → → → → → → toast.error(t("reports.share.create.failed",·"The·share·link·could·not·be·created"),·{␍
+        158 │ + → → → → → → → → description:·result.error,␍
+        159 │ + → → → → → → → });␍
+    179 160 │                 return;␍
+    180 161 │               }␍
+    ······· │ 
+    186 167 │             } catch {␍
+    187 168 │               if (lifetime.current === generation)␍
+    188     │ - → → → → → → → toast.error(␍
+    189     │ - → → → → → → → → t(␍
+    190     │ - → → → → → → → → → "reports.share.create.failed",␍
+    191     │ - → → → → → → → → → "The·share·link·could·not·be·created",␍
+    192     │ - → → → → → → → → ),␍
+    193     │ - → → → → → → → );␍
+        169 │ + → → → → → → → toast.error(t("reports.share.create.failed",·"The·share·link·could·not·be·created"));␍
+    194 170 │             }␍
+    195 171 │           },␍
+    ······· │ 
+    206 182 │       try {␍
+    207 183 │         await navigator.clipboard.writeText(createdUrl);␍
+    208     │ - → → → if·(lifetime.current·===·generation·&&·copyTarget.current·===·createdUrl)␍
+    209     │ - → → → → setCopied(true);␍
+        184 │ + → → → if·(lifetime.current·===·generation·&&·copyTarget.current·===·createdUrl)·setCopied(true);␍
+    210 185 │       } catch {␍
+    211 186 │         if (lifetime.current === generation && copyTarget.current === createdUrl)␍
+    212     │ - → → → → toast.error(␍
+    213     │ - → → → → → t(␍
+    214     │ - → → → → → → "reports.share.created.copyFailed",␍
+    215     │ - → → → → → → "Copy·the·link·by·selecting·it",␍
+    216     │ - → → → → → ),␍
+    217     │ - → → → → );␍
+        187 │ + → → → → toast.error(t("reports.share.created.copyFailed",·"Copy·the·link·by·selecting·it"));␍
+    218 188 │       }␍
+    219 189 │     }␍
+    ······· │ 
+    272 242 │                 {(field) => (␍
+    273 243 │                   <TFormItem>␍
+    274     │ - → → → → → → → → → <TFormLabel>␍
+    275     │ - → → → → → → → → → → {t("reports.share.form.figures",·"Figures")}␍
+    276     │ - → → → → → → → → → </TFormLabel>␍
+        244 │ + → → → → → → → → → <TFormLabel>{t("reports.share.form.figures",·"Figures")}</TFormLabel>␍
+    277 245 │                     <TFormControl>␍
+    278 246 │                       <RadioGroup␍
+    279 247 │                         value={field.state.value}␍
+    280     │ - → → → → → → → → → → → onValueChange={(value)·=>␍
+    281     │ - → → → → → → → → → → → → field.handleChange(value·as·ShareLinkFigures)␍
+    282     │ - → → → → → → → → → → → }␍
+        248 │ + → → → → → → → → → → → onValueChange={(value)·=>·field.handleChange(value·as·ShareLinkFigures)}␍
+    283 249 │                         className="gap-2"␍
+    284 250 │                       >␍
+    285 251 │                         <div className="flex items-center gap-2">␍
+    286     │ - → → → → → → → → → → → → <RadioGroupItem␍
+    287     │ - → → → → → → → → → → → → → id={`${id}-share-figures-hours`}␍
+    288     │ - → → → → → → → → → → → → → value="hours"␍
+    289     │ - → → → → → → → → → → → → />␍
+    290     │ - → → → → → → → → → → → → <Label␍
+    291     │ - → → → → → → → → → → → → → htmlFor={`${id}-share-figures-hours`}␍
+    292     │ - → → → → → → → → → → → → → className="font-normal"␍
+    293     │ - → → → → → → → → → → → → >␍
+        252 │ + → → → → → → → → → → → → <RadioGroupItem·id={`${id}-share-figures-hours`}·value="hours"·/>␍
+        253 │ + → → → → → → → → → → → → <Label·htmlFor={`${id}-share-figures-hours`}·className="font-normal">␍
+    294 254 │                             {t("reports.share.figures.hours", "Hours only")}␍
+    295 255 │                           </Label>␍
+    ······· │ 
+    301 261 │                             disabled={!canShareRevenue}␍
+    302 262 │                           />␍
+    303     │ - → → → → → → → → → → → → <Label␍
+    304     │ - → → → → → → → → → → → → → htmlFor={`${id}-share-figures-revenue`}␍
+    305     │ - → → → → → → → → → → → → → className="font-normal"␍
+    306     │ - → → → → → → → → → → → → >␍
+    307     │ - → → → → → → → → → → → → → {t(␍
+    308     │ - → → → → → → → → → → → → → → "reports.share.figures.revenue",␍
+    309     │ - → → → → → → → → → → → → → → "Hours·+·revenue",␍
+    310     │ - → → → → → → → → → → → → → )}␍
+        263 │ + → → → → → → → → → → → → <Label·htmlFor={`${id}-share-figures-revenue`}·className="font-normal">␍
+        264 │ + → → → → → → → → → → → → → {t("reports.share.figures.revenue",·"Hours·+·revenue")}␍
+    311 265 │                           </Label>␍
+    312 266 │                         </div>␍
+    ······· │ 
+    333 287 │                       </TFormLabel>␍
+    334 288 │                       <TFormControl className="row-span-2">␍
+    335     │ - → → → → → → → → → → → <Switch␍
+    336     │ - → → → → → → → → → → → → checked={field.state.value}␍
+    337     │ - → → → → → → → → → → → → onCheckedChange={field.handleChange}␍
+    338     │ - → → → → → → → → → → → />␍
+        289 │ + → → → → → → → → → → → <Switch·checked={field.state.value}·onCheckedChange={field.handleChange}·/>␍
+    339 290 │                       </TFormControl>␍
+    340 291 │                       <TFormDescription className="text-xs">␍
+    ······· │ 
+    352 303 │                 {(field) => (␍
+    353 304 │                   <TFormItem>␍
+    354     │ - → → → → → → → → → <TFormLabel>␍
+    355     │ - → → → → → → → → → → {t("reports.share.form.expiry",·"Expires·after")}␍
+    356     │ - → → → → → → → → → </TFormLabel>␍
+    357     │ - → → → → → → → → → <Select␍
+    358     │ - → → → → → → → → → → value={field.state.value}␍
+    359     │ - → → → → → → → → → → onValueChange={field.handleChange}␍
+    360     │ - → → → → → → → → → >␍
+        305 │ + → → → → → → → → → <TFormLabel>{t("reports.share.form.expiry",·"Expires·after")}</TFormLabel>␍
+        306 │ + → → → → → → → → → <Select·value={field.state.value}·onValueChange={field.handleChange}>␍
+    361 307 │                       <TFormControl>␍
+    362 308 │                         <SelectTrigger className="w-full sm:w-56">␍
+    ······· │ 
+    386 332 │                   <Button type="submit" disabled={isSubmitting}>␍
+    387 333 │                     {isSubmitting && (␍
+    388     │ - → → → → → → → → → → <IconLoader2␍
+    389     │ - → → → → → → → → → → → aria-hidden="true"␍
+    390     │ - → → → → → → → → → → → className="size-4·animate-spin"␍
+    391     │ - → → → → → → → → → → />␍
+  12 more lines truncated
+  
+
+src\components\reports\projects\report-share-link-list.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     84  84 │       mocks.scope = {␍
+     85  85 │         ...mocks.scope,␍
+     86     │ - → → → ...(change·===·"organization"␍
+     87     │ - → → → → ?·{·activeOrganizationId:·"B"·}␍
+     88     │ - → → → → :·{·userId:·"other"·}),␍
+         86 │ + → → → ...(change·===·"organization"·?·{·activeOrganizationId:·"B"·}·:·{·userId:·"other"·}),␍
+     89  87 │       };␍
+     90  88 │       view.rerender(tree());␍
+    ······· │ 
+    106 104 │       expect(client.getQueryData(peerKey)).toBe("keep");␍
+    107 105 │       expect(␍
+    108     │ - → → → client␍
+    109     │ - → → → → .getQueryCache()␍
+    110     │ - → → → → .findAll({·queryKey:·queryKeys.reportShareLinks.all·}),␍
+        106 │ + → → → client.getQueryCache().findAll({·queryKey:·queryKeys.reportShareLinks.all·}),␍
+    111 107 │       ).toHaveLength(1);␍
+    112 108 │     },␍
+  
+
+src\components\reports\projects\report-share-link-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     26  26 │   import { useDisplayContext } from "@/hooks/use-display-context";␍
+     27  27 │   import { useOrganization } from "@/hooks/use-organization";␍
+     28     │ - import·{␍
+     29     │ - → formatInstant,␍
+     30     │ - → formatPlainDateRange,␍
+     31     │ - }·from·"@/lib/datetime/temporal-format";␍
+         28 │ + import·{·formatInstant,·formatPlainDateRange·}·from·"@/lib/datetime/temporal-format";␍
+     32  29 │   import type {␍
+     33  30 │     ShareLinkStatus,␍
+    ······· │ 
+     84  81 │       return (␍
+     85  82 │         <p role="status">␍
+     86     │ - → → → → {t(␍
+     87     │ - → → → → → "reports.share.list.scopeLoading",␍
+     88     │ - → → → → → "Loading·the·current·share-link·scope\u2026",␍
+     89     │ - → → → → )}␍
+         83 │ + → → → → {t("reports.share.list.scopeLoading",·"Loading·the·current·share-link·scope\u2026")}␍
+     90  84 │         </p>␍
+     91  85 │       );␍
+     92  86 │     return (␍
+     93  87 │       <ReportShareLinkArrival␍
+     94     │ - → → → key={JSON.stringify([␍
+     95     │ - → → → → scope.userId,␍
+     96     │ - → → → → scope.activeOrganizationId,␍
+     97     │ - → → → → targetKey(props.target),␍
+     98     │ - → → → ])}␍
+         88 │ + → → → key={JSON.stringify([scope.userId,·scope.activeOrganizationId,·targetKey(props.target)])}␍
+     99  89 │         {...props}␍
+    100  90 │         userId={scope.userId}␍
+    ······· │ 
+    112 102 │     const arrival = useId();␍
+    113 103 │     const scope = { userId, organizationId, arrival };␍
+    114     │ - → const·queryKey·=·useOwnedShareKey(␍
+    115     │ - → → queryKeys.reportShareLinks.list(targetKey(target)),␍
+    116     │ - → → scope,␍
+    117     │ - → );␍
+        104 │ + → const·queryKey·=·useOwnedShareKey(queryKeys.reportShareLinks.list(targetKey(target)),·scope);␍
+    118 105 │     const { t } = useTranslate();␍
+    119 106 │     const query = useQuery({␍
+    ······· │ 
+    130 117 │     if (query.isPending) {␍
+    131 118 │       return (␍
+    132     │ - → → → <p␍
+    133     │ - → → → → className="flex·items-center·gap-2·text-sm·text-muted-foreground"␍
+    134     │ - → → → → role="status"␍
+    135     │ - → → → >␍
+        119 │ + → → → <p·className="flex·items-center·gap-2·text-sm·text-muted-foreground"·role="status">␍
+    136 120 │           <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />␍
+    137 121 │           {t("reports.share.list.loading", "Loading share links…")}␍
+    ······· │ 
+    143 127 │         <div className="space-y-2 text-sm text-destructive" role="alert">␍
+    144 128 │           {t("reports.share.list.failed", "Share links could not be loaded.")}␍
+    145     │ - → → → → <Button␍
+    146     │ - → → → → → variant="outline"␍
+    147     │ - → → → → → disabled={query.isFetching}␍
+    148     │ - → → → → → onClick={()·=>·void·query.refetch()}␍
+    149     │ - → → → → >␍
+        129 │ + → → → → <Button·variant="outline"·disabled={query.isFetching}·onClick={()·=>·void·query.refetch()}>␍
+    150 130 │             {t("common.retry", "Retry")}␍
+    151 131 │           </Button>␍
+    ······· │ 
+    163 143 │       <ul className="divide-y rounded-lg border">␍
+    164 144 │         {query.data.map((link) => (␍
+    165     │ - → → → → <ReportShareLinkRow␍
+    166     │ - → → → → → key={link.id}␍
+    167     │ - → → → → → link={link}␍
+    168     │ - → → → → → showReport={showReport}␍
+    169     │ - → → → → → scope={scope}␍
+    170     │ - → → → → />␍
+        145 │ + → → → → <ReportShareLinkRow·key={link.id}·link={link}·showReport={showReport}·scope={scope}·/>␍
+    171 146 │         ))}␍
+    172 147 │       </ul>␍
+    ······· │ 
+    180 155 │     }␍
+    181 156 │     if (status === "expired") {␍
+    182     │ - → → return·(␍
+    183     │ - → → → <Badge·variant="secondary">␍
+    184     │ - → → → → {t("reports.share.status.expired",·"Expired")}␍
+    185     │ - → → → </Badge>␍
+    186     │ - → → );␍
+        157 │ + → → return·<Badge·variant="secondary">{t("reports.share.status.expired",·"Expired")}</Badge>;␍
+    187 158 │     }␍
+    188     │ - → return·(␍
+    189     │ - → → <Badge·variant="outline">␍
+    190     │ - → → → {t("reports.share.status.revoked",·"Revoked")}␍
+    191     │ - → → </Badge>␍
+    192     │ - → );␍
+        159 │ + → return·<Badge·variant="outline">{t("reports.share.status.revoked",·"Revoked")}</Badge>;␍
+    193 160 │   }␍
+    194 161 │   ␍
+    ······· │ 
+    264 231 │             setConfirming(false);␍
+    265 232 │             if (!result.success) {␍
+    266     │ - → → → → → → toast.error(␍
+    267     │ - → → → → → → → t("reports.share.revoke.failed",·"The·link·could·not·be·revoked"),␍
+    268     │ - → → → → → → → {␍
+    269     │ - → → → → → → → → description:·result.error,␍
+    270     │ - → → → → → → → },␍
+    271     │ - → → → → → → );␍
+        233 │ + → → → → → → toast.error(t("reports.share.revoke.failed",·"The·link·could·not·be·revoked"),·{␍
+        234 │ + → → → → → → → description:·result.error,␍
+        235 │ + → → → → → → });␍
+    272 236 │               return;␍
+    273 237 │             }␍
+    ······· │ 
+    278 242 │           } catch {␍
+    279 243 │             if (lifetime.current === generation)␍
+    280     │ - → → → → → → toast.error(␍
+    281     │ - → → → → → → → t("reports.share.revoke.failed",·"The·link·could·not·be·revoked"),␍
+    282     │ - → → → → → → );␍
+        244 │ + → → → → → → toast.error(t("reports.share.revoke.failed",·"The·link·could·not·be·revoked"));␍
+    283 245 │           }␍
+    284 246 │         },␍
+    ······· │ 
+    298 260 │           {showReport && (␍
+    299 261 │             <span className="font-medium">␍
+    300     │ - → → → → → → {link.reportName·??␍
+    301     │ - → → → → → → → t("reports.share.list.deletedReport",·"Deleted")}␍
+        262 │ + → → → → → → {link.reportName·??·t("reports.share.list.deletedReport",·"Deleted")}␍
+    302 263 │               {" · "}␍
+    303 264 │               {link.kind === "project"␍
+    ······· │ 
+    316 277 │               link.includeEmployees␍
+    317 278 │                 ? t("reports.share.list.withEmployees", "With employee breakdown")␍
+    318     │ - → → → → → → → :·t(␍
+    319     │ - → → → → → → → → → "reports.share.list.withoutEmployees",␍
+    320     │ - → → → → → → → → → "Without·employee·breakdown",␍
+    321     │ - → → → → → → → → )␍
+        279 │ + → → → → → → → :·t("reports.share.list.withoutEmployees",·"Without·employee·breakdown")␍
+    322 280 │             }`}␍
+    323 281 │         </p>␍
+    ······· │ 
+    338 296 │           >␍
+    339 297 │             <IconEye aria-hidden="true" className="size-4" />␍
+    340     │ - → → → → → {t(␍
+    341     │ - → → → → → → "reports.share.list.views",␍
+    342     │ - → → → → → → "{count,·plural,·one·{#·view}·other·{#·views}}",␍
+    343     │ - → → → → → → {␍
+    344     │ - → → → → → → → count:·link.viewCount,␍
+    345     │ - → → → → → → },␍
+    346     │ - → → → → → )}␍
+        298 │ + → → → → → {t("reports.share.list.views",·"{count,·plural,·one·{#·view}·other·{#·views}}",·{␍
+        299 │ + → → → → → → count:·link.viewCount,␍
+        300 │ + → → → → → })}␍
+    347 301 │             {link.lastViewedAt &&␍
+    348 302 │               ` · ${t("reports.share.list.lastViewed", "last {date}", { date: at(link.lastViewedAt) })}`}␍
+    349 303 │           </Button>␍
+    350 304 │           {link.status === "active" && link.canRevoke && (␍
+    351     │ - → → → → → <Button␍
+    352     │ - → → → → → → variant="outline"␍
+    353     │ - → → → → → → size="sm"␍
+    354     │ - → → → → → → onClick={()·=>·setConfirming(true)}␍
+    355     │ - → → → → → >␍
+        305 │ + → → → → → <Button·variant="outline"·size="sm"·onClick={()·=>·setConfirming(true)}>␍
+    356 306 │               <IconLinkOff aria-hidden="true" className="size-4" />␍
+    357 307 │               {t("reports.share.revoke.action", "Revoke")}␍
+    ······· │ 
+    384 334 │                 }}␍
+    385 335 │               >␍
+    386     │ - → → → → → → → {revoking·&&·(␍
+    387     │ - → → → → → → → → <IconLoader2␍
+    388     │ - → → → → → → → → → aria-hidden="true"␍
+  47 more lines truncated
+  
+
+src\components\reports\projects\shared-report-view.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     77  77 │       timeFormat: "24h" as const,␍
+     78  78 │     };␍
+     79     │ - → const·takenAt·=·formatInstant(␍
+     80     │ - → → Temporal.Instant.from(createdAt),␍
+     81     │ - → → display,␍
+     82     │ - → → "dateTimeMedium",␍
+     83     │ - → );␍
+     84     │ - → const·expiresOn·=·formatInstant(␍
+     85     │ - → → Temporal.Instant.from(expiresAt),␍
+     86     │ - → → display,␍
+     87     │ - → → "dateTimeMedium",␍
+     88     │ - → );␍
+         79 │ + → const·takenAt·=·formatInstant(Temporal.Instant.from(createdAt),·display,·"dateTimeMedium");␍
+         80 │ + → const·expiresOn·=·formatInstant(Temporal.Instant.from(expiresAt),·display,·"dateTimeMedium");␍
+     89  81 │     // The snapshot's time stands in for "generated on": the figures are as of then.␍
+     90  82 │     const document = buildSharedSnapshotDocument(snapshot, {␍
+    ······· │ 
+     96  88 │       <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:py-10">␍
+     97  89 │         <header className="space-y-3">␍
+     98     │ - → → → → <p·className="text-sm·font-medium·text-muted-foreground">␍
+     99     │ - → → → → → {organizationName}␍
+    100     │ - → → → → </p>␍
+    101     │ - → → → → <h1·className="text-2xl·font-semibold·tracking-tight·text-balance">␍
+    102     │ - → → → → → {document.title}␍
+    103     │ - → → → → </h1>␍
+         90 │ + → → → → <p·className="text-sm·font-medium·text-muted-foreground">{organizationName}</p>␍
+         91 │ + → → → → <h1·className="text-2xl·font-semibold·tracking-tight·text-balance">{document.title}</h1>␍
+    104  92 │           <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">␍
+    105  93 │             <li className="flex items-center gap-1.5">␍
+    ······· │ 
+    141 129 │   ␍
+    142 130 │         {document.tables.map((table) => (␍
+    143     │ - → → → → <SharedReportTable␍
+    144     │ - → → → → → key={table.title}␍
+    145     │ - → → → → → table={table}␍
+    146     │ - → → → → → unknownLabel={document.unknownLabel}␍
+    147     │ - → → → → />␍
+        131 │ + → → → → <SharedReportTable·key={table.title}·table={table}·unknownLabel={document.unknownLabel}·/>␍
+    148 132 │         ))}␍
+    149 133 │   ␍
+    ······· │ 
+    166 150 │   }␍
+    167 151 │   ␍
+    168     │ - function·SharedReportTable({␍
+    169     │ - → table,␍
+    170     │ - → unknownLabel,␍
+    171     │ - }:·{␍
+    172     │ - → table:·ReportTable;␍
+    173     │ - → unknownLabel:·string;␍
+    174     │ - })·{␍
+        152 │ + function·SharedReportTable({·table,·unknownLabel·}:·{·table:·ReportTable;·unknownLabel:·string·})·{␍
+    175 153 │     const cell = (value: ReportTable["rows"][number][number], index: number) => {␍
+    176 154 │       const kind = table.columns[index]?.kind ?? "text";␍
+    ······· │ 
+    212 190 │             {table.totals && (␍
+    213 191 │               <TableFooter>␍
+    214     │ - → → → → → → → <TableRow·className="font-medium">␍
+    215     │ - → → → → → → → → {table.totals.map(cell)}␍
+    216     │ - → → → → → → → </TableRow>␍
+        192 │ + → → → → → → → <TableRow·className="font-medium">{table.totals.map(cell)}</TableRow>␍
+    217 193 │               </TableFooter>␍
+    218 194 │             )}␍
+  
+
+src\components\reports\report-document-export-buttons.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2     │ - import·{␍
+      3     │ - → act,␍
+      4     │ - → cleanup,␍
+      5     │ - → fireEvent,␍
+      6     │ - → screen,␍
+      7     │ - → waitFor,␍
+      8     │ - }·from·"@testing-library/react";␍
+          2 │ + import·{·act,·cleanup,·fireEvent,·screen,·waitFor·}·from·"@testing-library/react";␍
+      9   3 │   import { Activity } from "react";␍
+     10   4 │   import { afterEach, beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     54  48 │       }),␍
+     55  49 │     );␍
+     56     │ - → click·=·vi␍
+     57     │ - → → .spyOn(HTMLAnchorElement.prototype,·"click")␍
+     58     │ - → → .mockImplementation(()·=>·{});␍
+         50 │ + → click·=·vi.spyOn(HTMLAnchorElement.prototype,·"click").mockImplementation(()·=>·{});␍
+     59  51 │   });␍
+     60  52 │   afterEach(() => {␍
+    ······· │ 
+     84  76 │       />,␍
+     85  77 │     );␍
+     86     │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toContain(␍
+     87     │ - → → "Project·report",␍
+     88     │ - → );␍
+         78 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toContain("Project·report");␍
+     89  79 │     expect(screen.getAllByText("Frozen Delivery").length).toBeGreaterThan(0);␍
+     90  80 │     expect(screen.queryByText("Cost")).toBeNull();␍
+  
+
+src\components\reports\report-document-export-buttons.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconDownload,␍
+      5     │ - → IconFileSpreadsheet,␍
+      6     │ - → IconFileText,␍
+      7     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconDownload,·IconFileSpreadsheet,·IconFileText·}·from·"@tabler/icons-react";␍
+      8   4 │   import { useTranslate } from "@tolgee/react";␍
+      9   5 │   import { useLayoutEffect, useRef, useState } from "react";␍
+    ······· │ 
+     13   9 │   import { systemClock } from "@/lib/datetime/temporal-core";␍
+     14  10 │   import { formatInstant } from "@/lib/datetime/temporal-format";␍
+     15     │ - import·{␍
+     16     │ - → type·ReportDocument,␍
+     17     │ - → reportFileName,␍
+     18     │ - }·from·"@/lib/reports/exporters/report-document";␍
+         11 │ + import·{·type·ReportDocument,·reportFileName·}·from·"@/lib/reports/exporters/report-document";␍
+     19  12 │   import { exportReportDocumentToCSV } from "@/lib/reports/exporters/report-document-csv";␍
+     20  13 │   import type {␍
+    ······· │ 
+     29  22 │     const { t } = useTranslate();␍
+     30  23 │     return {␍
+     31     │ - → → projectReportTitle:·t(␍
+     32     │ - → → → "reports.projects.export.projectReportTitle",␍
+     33     │ - → → → "Project·report",␍
+     34     │ - → → ),␍
+     35     │ - → → customerReportTitle:·t(␍
+     36     │ - → → → "reports.projects.export.customerReportTitle",␍
+     37     │ - → → → "Customer·report",␍
+     38     │ - → → ),␍
+         24 │ + → → projectReportTitle:·t("reports.projects.export.projectReportTitle",·"Project·report"),␍
+         25 │ + → → customerReportTitle:·t("reports.projects.export.customerReportTitle",·"Customer·report"),␍
+     39  26 │       project: t("reports.projects.export.project", "Project"),␍
+     40  27 │       customer: t("reports.projects.export.customer", "Customer"),␍
+    ······· │ 
+     44  31 │       generatedAt: t("reports.projects.export.generatedAt", "Generated on"),␍
+     45  32 │       currency: t("reports.projects.export.currency", "Currency"),␍
+     46     │ - → → ratesResolvedAt:·t(␍
+     47     │ - → → → "reports.projects.export.ratesResolvedAt",␍
+     48     │ - → → → "Rates·as·of",␍
+     49     │ - → → ),␍
+         33 │ + → → ratesResolvedAt:·t("reports.projects.export.ratesResolvedAt",·"Rates·as·of"),␍
+     50  34 │       summaryTable: t("reports.projects.export.summaryTable", "Summary"),␍
+     51  35 │       employeesTable: t("reports.projects.export.employeesTable", "Employees"),␍
+     52     │ - → → dailyHoursTable:·t(␍
+     53     │ - → → → "reports.projects.export.dailyHoursTable",␍
+     54     │ - → → → "Hours·per·day",␍
+     55     │ - → → ),␍
+         36 │ + → → dailyHoursTable:·t("reports.projects.export.dailyHoursTable",·"Hours·per·day"),␍
+     56  37 │       customersTable: t("reports.projects.export.customersTable", "Customers"),␍
+     57  38 │       projectsTable: t("reports.projects.export.projectsTable", "Projects"),␍
+    ······· │ 
+     60  41 │       workPeriods: t("reports.projects.export.workPeriods", "Work periods"),␍
+     61  42 │       billableHours: t("reports.projects.export.billableHours", "Billable hours"),␍
+     62     │ - → → nonBillableHours:·t(␍
+     63     │ - → → → "reports.projects.export.nonBillableHours",␍
+     64     │ - → → → "Non-billable·hours",␍
+     65     │ - → → ),␍
+         43 │ + → → nonBillableHours:·t("reports.projects.export.nonBillableHours",·"Non-billable·hours"),␍
+     66  44 │       withoutCustomerHours: t(␍
+     67  45 │         "reports.projects.export.withoutCustomerHours",␍
+     68  46 │         "Billable hours without customer",␍
+     69  47 │       ),␍
+     70     │ - → → withoutCustomer:·t(␍
+     71     │ - → → → "reports.projects.export.withoutCustomer",␍
+     72     │ - → → → "Without·customer",␍
+     73     │ - → → ),␍
+         48 │ + → → withoutCustomer:·t("reports.projects.export.withoutCustomer",·"Without·customer"),␍
+     74  49 │       revenue: t("reports.projects.export.revenue", "Revenue"),␍
+     75  50 │       unpricedWork: t("reports.projects.export.unpricedWork", "Unpriced work"),␍
+     76  51 │       unpricedHours: t("reports.projects.export.unpricedHours", "Unpriced hours"),␍
+     77     │ - → → pendingReview:·t(␍
+     78     │ - → → → "reports.projects.export.pendingReview",␍
+     79     │ - → → → "Pending·corrections·or·submissions",␍
+     80     │ - → → ),␍
+         52 │ + → → pendingReview:·t("reports.projects.export.pendingReview",·"Pending·corrections·or·submissions"),␍
+     81  53 │       cost: t("reports.projects.export.cost", "Cost"),␍
+     82  54 │       margin: t("reports.projects.export.margin", "Margin"),␍
+    ······· │ 
+    100  72 │       ),␍
+    101  73 │       invoicedHours: t("reports.projects.export.invoicedHours", "Invoiced hours"),␍
+    102     │ - → → invoicedRevenue:·t(␍
+    103     │ - → → → "reports.projects.export.invoicedRevenue",␍
+    104     │ - → → → "Invoiced·revenue",␍
+    105     │ - → → ),␍
+    106     │ - → → uninvoicedHours:·t(␍
+    107     │ - → → → "reports.projects.export.uninvoicedHours",␍
+    108     │ - → → → "Un-invoiced·hours",␍
+    109     │ - → → ),␍
+    110     │ - → → uninvoicedRevenue:·t(␍
+    111     │ - → → → "reports.projects.export.uninvoicedRevenue",␍
+    112     │ - → → → "Un-invoiced·revenue",␍
+    113     │ - → → ),␍
+         74 │ + → → invoicedRevenue:·t("reports.projects.export.invoicedRevenue",·"Invoiced·revenue"),␍
+         75 │ + → → uninvoicedHours:·t("reports.projects.export.uninvoicedHours",·"Un-invoiced·hours"),␍
+         76 │ + → → uninvoicedRevenue:·t("reports.projects.export.uninvoicedRevenue",·"Un-invoiced·revenue"),␍
+    114  77 │       changedAfterInvoicing: t(␍
+    115  78 │         "reports.projects.export.changedAfterInvoicing",␍
+    ······· │ 
+    120  83 │         "Invoiced revenue keeps the rates of its invoice draft; un-invoiced revenue uses the rates in effect when the report was generated.",␍
+    121  84 │       ),␍
+    122     │ - → → customFieldsTable:·t(␍
+    123     │ - → → → "reports.projects.export.customFieldsTable",␍
+    124     │ - → → → "Custom·fields",␍
+    125     │ - → → ),␍
+         85 │ + → → customFieldsTable:·t("reports.projects.export.customFieldsTable",·"Custom·fields"),␍
+    126  86 │       customFieldRecord: t("reports.projects.export.customFieldRecord", "Record"),␍
+    127  87 │       customFieldName: t("reports.projects.export.customFieldName", "Field"),␍
+    ······· │ 
+    133  93 │   }␍
+    134  94 │   ␍
+    135     │ - async·function·buildReportExportFile(␍
+    136     │ - → format:·ExportFormat,␍
+    137     │ - → document:·ReportDocument,␍
+    138     │ - )·{␍
+         95 │ + async·function·buildReportExportFile(format:·ExportFormat,·document:·ReportDocument)·{␍
+    139  96 │     return format === "pdf"␍
+    140  97 │       ? {␍
+    ······· │ 
+    151 108 │             ).exportReportDocumentToExcel(document),␍
+    152 109 │             filename: reportFileName(document, "xlsx"),␍
+    153     │ - → → → → → mimeType:␍
+    154     │ - → → → → → → "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",␍
+        110 │ + → → → → → mimeType:·"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",␍
+    155 111 │           }␍
+    156 112 │         : {␍
+    ······· │ 
+    161 117 │   }␍
+    162 118 │   ␍
+    163     │ - function·downloadReportFile(file:·{␍
+    164     │ - → data:·BlobPart;␍
+    165     │ - → mimeType:·string;␍
+    166     │ - → filename:·string;␍
+    167     │ - })·{␍
+        119 │ + function·downloadReportFile(file:·{·data:·BlobPart;·mimeType:·string;·filename:·string·})·{␍
+    168 120 │     const blob = new Blob([file.data], { type: file.mimeType });␍
+    169 121 │     const url = URL.createObjectURL(blob);␍
+    ······· │ 
+    221 173 │       const operation = {};␍
+    222 174 │       pending.current = operation;␍
+    223     │ - → → const·current·=·()·=>␍
+    224     │ - → → → lifetime.current·===·arrival·&&·pending.current·===·operation;␍
+        175 │ + → → const·current·=·()·=>·lifetime.current·===·arrival·&&·pending.current·===·operation;␍
+    225 176 │       setLoading(format);␍
+    226     │ - → → const·generatedAt·=·formatInstant(␍
+    227     │ - → → → systemClock.nowInstant(),␍
+    228     │ - → → → displayContext,␍
+    229     │ - → → → "dateTimeMedium",␍
+    230     │ - → → );␍
+        177 │ + → → const·generatedAt·=·formatInstant(systemClock.nowInstant(),·displayContext,·"dateTimeMedium");␍
+    231 178 │       await (async () => {␍
+    232 179 │         try {␍
+    ······· │ 
+    264 211 │       <div className="flex flex-wrap gap-2">␍
+    265 212 │         {formats.includes("pdf") && (␍
+    266     │ - → → → → <Button␍
+    267     │ - → → → → → onClick={()·=>·handleExport("pdf")}␍
+    268     │ - → → → → → disabled={loading·!==·null}␍
+    269     │ - → → → → → variant="outline"␍
+    270     │ - → → → → >␍
+  23 more lines truncated
+  
+
+src\lib\reports\exporters\report-document-pdf.compiled.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     20  20 │     const compiler = require("babel-plugin-react-compiler");␍
+     21  21 │     const esbuild = createRequire(require.resolve("tsx/package.json"))("esbuild");␍
+     22     │ - → const·filename·=·fileURLToPath(␍
+     23     │ - → → new·URL("./report-document-pdf.tsx",·import.meta.url),␍
+     24     │ - → );␍
+         22 │ + → const·filename·=·fileURLToPath(new·URL("./report-document-pdf.tsx",·import.meta.url));␍
+     25  23 │     const compiled = babel.transformSync(readFileSync(filename, "utf8"), {␍
+     26  24 │       filename,␍
+    ······· │ 
+     75  73 │     const page = await pdf.getPage(1);␍
+     76  74 │     const content = await page.getTextContent();␍
+     77     │ - → const·text·=·content.items␍
+     78     │ - → → .map((item)·=>·("str"·in·item·?·item.str·:·""))␍
+     79     │ - → → .join("·");␍
+         75 │ + → const·text·=·content.items.map((item)·=>·("str"·in·item·?·item.str·:·"")).join("·");␍
+     80  76 │     expect(text).toContain("Synthetic project report");␍
+     81  77 │     expect(text).toContain("2026-11-01 to 2026-11-30");␍
+    ······· │ 
+    197 193 │             {␍
+    198 194 │               ...document.tables[0],␍
+    199     │ - → → → → → → rows:·Array.from({·length:·80·},·(_,·index)·=>·[␍
+    200     │ - → → → → → → → `Record·${index·+·1}`,␍
+    201     │ - → → → → → → → 5,␍
+    202     │ - → → → → → → → null,␍
+    203     │ - → → → → → → ]),␍
+        195 │ + → → → → → → rows:·Array.from({·length:·80·},·(_,·index)·=>·[`Record·${index·+·1}`,·5,·null]),␍
+    204 196 │             },␍
+    205 197 │           ],␍
+    ······· │ 
+    215 207 │       for (let number = 1; number <= parsed.numPages; number++) {␍
+    216 208 │         const pageContent = await (await parsed.getPage(number)).getTextContent();␍
+    217     │ - → → → pages.push(␍
+    218     │ - → → → → pageContent.items␍
+    219     │ - → → → → → .map((item)·=>·("str"·in·item·?·item.str·:·""))␍
+    220     │ - → → → → → .join("·"),␍
+    221     │ - → → → );␍
+        209 │ + → → → pages.push(pageContent.items.map((item)·=>·("str"·in·item·?·item.str·:·"")).join("·"));␍
+    222 210 │       }␍
+    223     │ - → → for·(const·expected·of·fixture.expected)␍
+    224     │ - → → → expect(pages.join("·")).toContain(expected);␍
+        211 │ + → → for·(const·expected·of·fixture.expected)·expect(pages.join("·")).toContain(expected);␍
+    225 212 │       if (fixture.document.title.includes("Frozen")) {␍
+    226 213 │         expect(pages.join(" ")).not.toContain("Margin");␍
+  
+
+src\lib\reports\exporters\report-document-pdf.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      6   6 │    */␍
+      7   7 │   ␍
+      8     │ - import·{␍
+      9     │ - → formatReportCell,␍
+     10     │ - → type·ReportCell,␍
+     11     │ - → type·ReportDocument,␍
+     12     │ - }·from·"./report-document";␍
+          8 │ + import·{·formatReportCell,·type·ReportCell,·type·ReportDocument·}·from·"./report-document";␍
+     13   9 │   ␍
+     14  10 │   const styleDefinitions = {␍
+    ······· │ 
+    100  96 │                 <View style={styles.headerRow} fixed>␍
+    101  97 │                   {table.columns.map((column, index) => (␍
+    102     │ - → → → → → → → → → <Text␍
+    103     │ - → → → → → → → → → → key={column.key}␍
+    104     │ - → → → → → → → → → → style={index·===·0·?·styles.firstCell·:·styles.cell}␍
+    105     │ - → → → → → → → → → >␍
+         98 │ + → → → → → → → → → <Text·key={column.key}·style={index·===·0·?·styles.firstCell·:·styles.cell}>␍
+    106  99 │                       {column.header}␍
+    107 100 │                     </Text>␍
+    ······· │ 
+    141 134 │   }␍
+    142 135 │   ␍
+    143     │ - export·async·function·exportReportDocumentToPDF(␍
+    144     │ - → document:·ReportDocument,␍
+    145     │ - ):·Promise<Uint8Array>·{␍
+        136 │ + export·async·function·exportReportDocumentToPDF(document:·ReportDocument):·Promise<Uint8Array>·{␍
+    146 137 │     const renderer = await import("@react-pdf/renderer");␍
+    147     │ - → const·blob·=·await·renderer␍
+    148     │ - → → .pdf(<ReportPDF·document={document}·renderer={renderer}·/>)␍
+    149     │ - → → .toBlob();␍
+        138 │ + → const·blob·=·await·renderer.pdf(<ReportPDF·document={document}·renderer={renderer}·/>).toBlob();␍
+    150 139 │     return new Uint8Array(await blob.arrayBuffer());␍
+    151 140 │   }␍
+  
+
+Checked 14 files in 9ms. No fixes applied.
+Found 14 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

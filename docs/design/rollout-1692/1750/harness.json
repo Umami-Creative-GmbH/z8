@@ -1,0 +1,31 @@
+{
+  "source": "7e466fae2668148a856b6dfb2fdaf605d7366029",
+  "files": [
+    {
+      "file": "harness/capture.mjs",
+      "sha256": "5b6b0dea818a5bad36a0bd744d59b441b6bcf333a43ba4b7846210ae617d1056",
+      "bytes": 3104
+    },
+    {
+      "file": "harness/record-state.mjs",
+      "sha256": "4bd195c5b970051e08b980b43be38cd6aa8b9c6cb526a78ac1e54e36c0420179",
+      "bytes": 1523
+    },
+    {
+      "file": "harness/receipt-readback.js",
+      "sha256": "0f90c36379337b07c5ca4f2e4c6c0902eb843baad7fd415e46008d8454fa9f54",
+      "bytes": 594
+    },
+    {
+      "file": "harness/focus.js",
+      "sha256": "3987d2fe0b6139a074abd1250537b8dea1b47818248f2446d92c7f11638e1613",
+      "bytes": 315
+    },
+    {
+      "file": "harness/next-probes.mjs",
+      "sha256": "ccb541c4b342918a555a8146e8b9aca0459131eb1bf1cb144d45202a29562821",
+      "bytes": 1071
+    }
+  ],
+  "qualification": "Final maintained public helper bytes. Earlier capture metadata was narrowed and privacy clones produced afterward; historical helper versions were not separately archived. Helpers are not an authentication fixture or saved browser state."
+}

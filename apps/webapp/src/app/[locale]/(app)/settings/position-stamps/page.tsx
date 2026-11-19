@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { OwnPositionStampsPanel } from "@/components/settings/position-stamps/own-position-stamps-panel";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -14,31 +16,36 @@ async function PositionStampsPageContent() {
 	]);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.positionStamps.title", "Position stamps")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.positionStamps.description",
-							"Whether your position is recorded with your clock events, and your consent",
-						)}
-					</p>
-				</div>
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
+				<PageHeader
+					title={t("settings.positionStamps.title", "Position stamps")}
+					description={t(
+						"settings.positionStamps.description",
+						"Whether your position is recorded with your clock events, and your consent",
+					)}
+				/>
 				{result.success ? (
 					<OwnPositionStampsPanel
 						data={result.data}
 						accessLog={accessLog.success ? accessLog.data : null}
 					/>
-				) : (
-					<p className="text-sm text-muted-foreground">
+				) : result.refusal === "employee_profile_required" ? (
+					// Only a missing employee profile is a lasting prerequisite; any
+					// other failure is a load error the user can retry.
+					<p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
 						{t(
 							"settings.positionStamps.unavailable",
 							"Position stamps are available once you have an employee profile in this organization.",
 						)}
 					</p>
+				) : (
+					<SettingsLoadError
+						message={t(
+							"settings.positionStamps.loadFailed",
+							"Your position stamp settings could not be loaded.",
+						)}
+					/>
 				)}
 			</div>
 		</div>
@@ -47,8 +54,8 @@ async function PositionStampsPageContent() {
 
 function PositionStampsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />

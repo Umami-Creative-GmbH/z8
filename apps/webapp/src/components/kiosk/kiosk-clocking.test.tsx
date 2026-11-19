@@ -48,7 +48,11 @@ function snapshot(state: KioskEmployeeSnapshot["state"], minutes = 0): KioskEmpl
 	return { employee: anna, state, dayTotal: { ...dayTotal, minutes } };
 }
 
-type Call = { url: string; init: RequestInit | undefined; body: Record<string, unknown> | null };
+type Call = {
+	url: string;
+	init: RequestInit | undefined;
+	body: Record<string, unknown> | null;
+};
 type Route = (call: Call) => Response | Promise<Response>;
 
 function stubFetch(routes: Record<string, Route>) {
@@ -105,6 +109,18 @@ describe("kiosk clocking screen (#862)", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("does not submit a PIN when Enter activates the focused Back button", async () => {
+		const calls = stubFetch(kioskRoutes());
+		fireEvent.click(await openHome());
+		const back = await screen.findByRole("button", { name: "Not you? Back" });
+		for (const digit of "2468") fireEvent.click(screen.getByRole("button", { name: digit }));
+		back.focus();
+		fireEvent.keyDown(back, { key: "Enter" });
+		expect(calls.some(call => call.url === "/api/kiosk/employee-status")).toBe(false);
+		fireEvent.click(back);
+		expect(await screen.findByRole("button", { name: /Anna Berger/ })).toBeTruthy();
+	});
+
 	it("lists the kiosk's employees on its home screen and finds them by name", async () => {
 		const calls = stubFetch(kioskRoutes());
 
@@ -120,6 +136,23 @@ describe("kiosk clocking screen (#862)", () => {
 		});
 		expect(screen.queryByRole("button", { name: /Anna Berger/ })).toBeNull();
 		expect(screen.getByRole("button", { name: /Ben Özdemir/ })).toBeTruthy();
+	});
+
+	it("keeps the paired location and device visible during identification and the employee's action", async () => {
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/employee-status": () =>
+					Response.json(snapshot({ status: "clocked_out" })),
+			}),
+		);
+		fireEvent.click(await openHome());
+		await screen.findByRole("heading", { name: "Anna Berger" });
+		expect(screen.getByText("Front door")).toBeTruthy();
+		expect(screen.getByText("Store")).toBeTruthy();
+		await enterPin("2468");
+		await screen.findByRole("button", { name: "Clock in" });
+		expect(screen.getByText("Front door")).toBeTruthy();
+		expect(screen.getByText("Store")).toBeTruthy();
 	});
 
 	it("clocks in after a verified PIN, confirms name, action and time, and returns home after about 10 seconds", async () => {

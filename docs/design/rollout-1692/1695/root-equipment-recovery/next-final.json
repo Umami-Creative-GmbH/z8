@@ -1,0 +1,11 @@
+{
+  "boundary": "Fresh normal current-source browser after deliberate fixture failure/recovery checks. Earlier startup/Next-indicator/fault-injection diagnostics remain retained, not erased.",
+  "pageErrors": [],
+  "get_compilation_issues": {
+    "issues": []
+  },
+  "get_errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  }
+}

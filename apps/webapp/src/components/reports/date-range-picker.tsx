@@ -108,8 +108,8 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{!isHydrated && (
 				<p id={loadingDescriptionId} className="text-sm text-muted-foreground">
 					{t(
-						"reports.filter.loadingSettings",
-						"Loading organization settings before enabling presets.",
+						"reports.filter.settingsRequired",
+						"Organization settings are required to use presets.",
 					)}
 				</p>
 			)}

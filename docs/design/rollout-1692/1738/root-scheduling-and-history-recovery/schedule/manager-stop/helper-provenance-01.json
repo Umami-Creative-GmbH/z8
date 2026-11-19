@@ -1,0 +1,98 @@
+{
+  "sources": [
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\fixture-helper-01.mjs",
+      "sourceSha256": "2392b069835bd2870ef690e889bfeb142761e6f9279b07be617f95b980feda78",
+      "target": "fixture-helper-01.mjs",
+      "sha256": "720c598199e5098e6f3d2c117b4edd6f9135d05775d8f0179cd8de55f60bb2b1",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\dev-01-private.mjs",
+      "sourceSha256": "0c595035f3b6214da5e26e2056d1805606e59f4d54683d8ec212e6225a9ea65b",
+      "target": "dev-01-private.mjs",
+      "sha256": "6f154c85fc4faf0a5c26d363ef718e7f61ea9506bddf83cfe38ee5f30e6dd093",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\browser-controller-01.private.mjs",
+      "sourceSha256": "51cf432e4692ce1e56f56177ed65520d69e7b25a86d4ac1a43a2446915bc7dde",
+      "target": "browser-controller-01.private.mjs",
+      "sha256": "6a8bd265f8ce8bbea602bf59f265afc9f0d9c4e9ff4db5655ee6647c9b151eb0",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\start-browser-01.mjs",
+      "sourceSha256": "a6893263883426cb8ea3a5b5be4cbbf8e38c80acc7c37a92c42297bdb6e5fa39",
+      "target": "start-browser-01.mjs",
+      "sha256": "2c29d9203ea771a10e0d50d3d7cb8812813f0c48c15b239e4fe999aec1aa7ca6",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\rpc-03.mjs",
+      "sourceSha256": "f2a4e213a48a4035aba6685830818a608b619fc61f43e17e353c5841e3b313e3",
+      "target": "rpc-03.mjs",
+      "sha256": "9b18da484bce380dffdbe2200efba08be276005f7a167946cb5f55a8c9f74194",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\scheduling-fixture-bridge-03.ts",
+      "sourceSha256": "00b568d70a11143b09e7dafbf11eca597b7fad23787a92daa997064082bdc687",
+      "target": "scheduling-fixture-bridge-03.ts",
+      "sha256": "af7cabe72a1b865ccb084e36ceb203298b507ed1f569874e57fa40f5440b2ea1",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\run-fixture-tool-03.mjs",
+      "sourceSha256": "a141d15ebfa1c11e2b453e3418971eedf0d67d7adc9e628cd65f9afb4d9f2ae0",
+      "target": "run-fixture-tool-03.mjs",
+      "sha256": "9b96107eefcd8a000ee9247d39cdbddaf4615fa24aba2adbbaacf881dccfdfd9",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\cleanup-processes-01.ps1",
+      "sourceSha256": "de09f9a1199b6cec1fc8b5b4eb041bcd90998710a72cad27a4fbfcae1f7e29d7",
+      "target": "cleanup-processes-01.ps1",
+      "sha256": "5126401f8e5f35e5e837e474461b09d5a64c369ccf974ec6f38816220fd61889",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\verify-cleanup-01.ps1",
+      "sourceSha256": "665892a0c99fd38d97a5eda7b23067cd7713f95616a8ea1058080d1ac7bd51d1",
+      "target": "verify-cleanup-01.ps1",
+      "sha256": "c83f5331d24057e807c4037430cf28879a7ed368463312850605ddfd45a27eb9",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-publication-independent-checks\\preservation-final-01.mjs",
+      "sourceSha256": "940706988dbba5d2a39ec54905070ae6020eff619c034443a62b0c4cd922a265",
+      "target": "preservation-final-01.mjs",
+      "sha256": "14ac5b765d3a1e3b226af84e2886afd28232305fa8db1b62fd5c52e7725782b3",
+      "changes": [
+        "own namespace, own label, own bridge only"
+      ]
+    }
+  ],
+  "initialBootstrap": "canonical prepare only; no authenticate; fresh generated initial prerequisites",
+  "login": "normal DEVELOPMENT widget/form, private stdin, transient context",
+  "authStateSavedCopiedRestored": false,
+  "notifications": "denied"
+}

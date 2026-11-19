@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {r,f,puppeteer,save,source,login,go,click,capture,settle,nextMcp,sha} from './common.mjs';
+const phase=process.argv[2],attempt=process.argv[3]??'02';assert.ok(['current','before','restored'].includes(phase));
+const result={phase,source:await source(),checks:[],captures:[],errors:[],policy:'Fresh transient context and normal email sign-in each phase; notification permission denied fixture policy. Actual UI preference owners; no copied or restored cookies/storage.',qualification:phase==='before'?'PARTIAL APPLICATION comparison: exact existing changed fb6c consumer sources only; current shared application/dependencies and unused new helpers remain.':'Current a4e2 source.'};
+const b=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--disable-notifications']}),c=await b.createBrowserContext();await c.setPermission(r.origin,{permission:{name:'notifications'},state:'denied'});const p=await c.newPage();p.setDefaultTimeout(30000);p.on('pageerror',e=>result.errors.push(e.message));
+const activate=async(name,selector='button')=>{const h=await p.waitForFunction((n,s)=>[...document.querySelectorAll(s)].find(e=>e.checkVisibility()&&(e.textContent.trim()===n||e.getAttribute('aria-label')===n)),{},name,selector);await h.focus();await p.keyboard.press('Space');};
+const check=(n,x)=>{assert.ok(x,n);result.checks.push(n);};
+const cap=async n=>{
+ await p.waitForFunction(()=>[...document.querySelectorAll('ul.divide-y>li')].filter(e=>e.checkVisibility()).length===10&&document.querySelector('main')?.innerText.includes('Pacific/Kiritimati'));
+ await settle(p);
+ const x=await capture(p,'matched-'+phase+'-'+attempt+'-'+n);
+ x.h1=await p.$$eval('main h1',es=>es.filter(e=>e.checkVisibility()).map(e=>e.textContent.trim()));
+ x.visibleRecordTitles=await p.$$eval('ul.divide-y>li',es=>es.filter(e=>e.checkVisibility()).map(e=>e.innerText.match(/R047 record \d+|R047 root [^\n]+/)?.[0]));
+ result.captures.push(x);
+ check(n+' horizontal document fit',x.documentWidth===x.viewport.width);
+ check(n+' no blocking dialog',x.dialogs===0);
+ if(phase!=='before')check(n+' exactly one visible route heading',x.h1.length===1);
+};
+async function font(label,px){await activate('Account: Person 0');await click(p,'Font size','[role=menuitem]');await click(p,label,'[role=menuitemradio]');await p.keyboard.press('Escape');await p.keyboard.press('Escape');await p.waitForFunction(px=>getComputedStyle(document.documentElement).fontSize===px,{},px);}
+async function theme(label){await activate('Toggle theme');await click(p,label,'[role=menuitem]');await p.waitForFunction(d=>document.documentElement.classList.contains('dark')===d,{},label==='Dark');}
+try{
+ await p.setViewport({width:1600,height:1000});await login(p,'small-admin');await go(p,'/personnel-files/document-requests?status=all&pageSize=10&retained=1730');await p.waitForFunction(()=>[...document.querySelectorAll('ul.divide-y>li')].some(e=>e.checkVisibility()));
+ result.recordTitles=await p.$$eval('ul.divide-y>li',es=>es.filter(e=>e.checkVisibility()).map(e=>e.innerText.match(/R047 record \d+|R047 root [^\n]+/)?.[0]??e.innerText.split('\n')[1]));result.recordTitlesDigest=sha(JSON.stringify(result.recordTitles));
+ if(phase==='restored'){check('restored route current heading',await p.$$eval('main h1',es=>es.filter(e=>e.checkVisibility()).length===1));result.next=await nextMcp();await cap('desktop');result.status='passed';}
+ else{
+  await font('Default','16px');await theme('Light');await p.reload({waitUntil:'domcontentloaded'});await p.waitForFunction(()=>getComputedStyle(document.documentElement).fontSize==='16px'&&!document.documentElement.classList.contains('dark'));check('actual Default/light owners persist after reload',true);await cap('desktop-light-16');
+  const initialPath=p.url();await p.keyboard.down('Control');await p.keyboard.press('b');await p.keyboard.up('Control');await cap('desktop-collapsed-light-16');check('Ctrl+B preserves current route',p.url()===initialPath);await p.keyboard.down('Control');await p.keyboard.press('b');await p.keyboard.up('Control');await settle(p);
+  await p.setViewport({width:390,height:844});await cap('phone-light-16');await activate('Toggle Sidebar');await p.waitForFunction(()=>[...document.querySelectorAll('[role=dialog]')].some(e=>e.checkVisibility()));await p.keyboard.press('Escape');await p.waitForFunction(()=>![...document.querySelectorAll('[role=dialog]')].some(e=>e.checkVisibility()));result.drawerFocus=await p.evaluate(()=>({tag:document.activeElement.tagName,label:document.activeElement.getAttribute('aria-label')??document.activeElement.textContent.trim(),sidebarTrigger:document.activeElement.matches('[data-sidebar=trigger]')}));check('current route phone drawer first Escape restores toggle focus',result.drawerFocus.sidebarTrigger);
+  await p.setViewport({width:1600,height:1000});await font('Large','18px');await theme('Dark');await p.reload({waitUntil:'domcontentloaded'});await p.waitForFunction(()=>getComputedStyle(document.documentElement).fontSize==='18px'&&document.documentElement.classList.contains('dark'));check('actual Large/dark owners persist after reload',true);await p.setViewport({width:2400,height:1200});await cap('wide-dark-18');await p.setViewport({width:390,height:844});await p.reload({waitUntil:'domcontentloaded'});await p.waitForFunction(()=>getComputedStyle(document.documentElement).fontSize==='18px'&&document.documentElement.classList.contains('dark'));await cap('phone-dark-18');result.next=await nextMcp();result.status='passed';
+ }
+}catch(e){result.failure={name:e.name,message:e.message,stack:e.stack};process.exitCode=1;}finally{await save('matched-'+phase+'-'+attempt+'.json',result);await b.close();console.log(JSON.stringify({phase,status:result.status??'failed',checks:result.checks.length,captures:result.captures.length,failure:result.failure?.message}));}

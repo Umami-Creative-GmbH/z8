@@ -1,0 +1,16 @@
+{
+  "base": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "before": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+      "after": "f91b0f70cc4b114cd1d7aa8d4d7699f95173d6864288e6db7f88cc134803118a"
+    },
+    {
+      "path": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+      "before": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+      "after": "475edb8891ff5d187c55ef372b22244ec189c3fad3b08a2c344f4e9005404d2f"
+    }
+  ],
+  "scope": "Two exact consumers over current infrastructure; new heading module is present but unused before"
+}

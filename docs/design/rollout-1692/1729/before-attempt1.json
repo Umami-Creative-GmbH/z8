@@ -1,0 +1,14 @@
+{
+  "stage": "before",
+  "checks": [],
+  "captures": [],
+  "errors": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "fixture": {
+    "actor": "small-admin",
+    "organizationId": "perf-small-5b90dc2f199e",
+    "employeeId": "6e71ae07-24f0-4276-a9a3-9c1ca5c0a092"
+  },
+  "source": [],
+  "failure": "Expected values to be strictly equal:\n\nfalse !== true\n"
+}

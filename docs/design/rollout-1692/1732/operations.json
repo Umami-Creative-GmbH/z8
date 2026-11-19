@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "name": "invalid year retained and focused",
+      "passed": true
+    },
+    {
+      "name": "transport failure retains input",
+      "passed": true
+    },
+    {
+      "name": "real start creates exactly one empty batch",
+      "passed": true
+    },
+    {
+      "name": "submitted period and shared visibility read back",
+      "passed": true
+    },
+    {
+      "name": "new batch reachable through history",
+      "passed": true
+    },
+    {
+      "failure": "history link reaches authorized confirmed batch"
+    }
+  ]
+}

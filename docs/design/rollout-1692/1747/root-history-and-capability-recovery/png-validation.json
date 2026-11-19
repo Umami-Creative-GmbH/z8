@@ -1,0 +1,70 @@
+{
+  "scope": "Publication-only complete decoding and visual inspection of all five allowlisted PNGs; no other images read.",
+  "images": [
+    {
+      "path": "payload/runtime-network/desktop-1600-expanded-corrected.png",
+      "sha256": "099a13825f0a0ce90acb29a1daba65c300d6b4deeab75b40cec6c5b31d5244dd",
+      "width": 1312,
+      "height": 1000,
+      "depth": 8,
+      "colorType": 2,
+      "chunks": 29,
+      "decodedPixelBytes": 3936000,
+      "decodedPixelSha256": "46e587128e7ff84c075fbff8165ea39b497389dd055fe81ebf1ab7b3a3f51321",
+      "decode": "all chunks CRC, complete inflate, every row filter reversed",
+      "visualReview": "Accepted current main-region crop only; no whole-window or matched historical comparison. Sidebar statement depends on geometry."
+    },
+    {
+      "path": "payload/runtime-network/desktop-1600-large-reloaded-v2.png",
+      "sha256": "75795fdc9a012df2378d5938d94502fabc9ead2c1e2e81a4edc8dedbc3267fb5",
+      "width": 1312,
+      "height": 1000,
+      "depth": 8,
+      "colorType": 2,
+      "chunks": 29,
+      "decodedPixelBytes": 3936000,
+      "decodedPixelSha256": "c726550500fe75317f9b8e640ddd48cf9daa748530783037ce3900c50f6cc36a",
+      "decode": "all chunks CRC, complete inflate, every row filter reversed",
+      "visualReview": "Accepted current main-region crop only; no whole-window or matched historical comparison. Sidebar statement depends on geometry."
+    },
+    {
+      "path": "payload/runtime-network/phone-390-large-v2.png",
+      "sha256": "58be82dee5849e448464bc197f6205ad346338e46178d5faee3942fca79f5399",
+      "width": 390,
+      "height": 844,
+      "depth": 8,
+      "colorType": 2,
+      "chunks": 15,
+      "decodedPixelBytes": 987480,
+      "decodedPixelSha256": "ce670abb4986c3d528bf81529c6081979267f01fd862ce0b8034cdbf1089e087",
+      "decode": "all chunks CRC, complete inflate, every row filter reversed",
+      "visualReview": "Accepted current main-region crop only; no whole-window or matched historical comparison. Sidebar statement depends on geometry."
+    },
+    {
+      "path": "payload/runtime-network/wide-2400-dark-corrected.png",
+      "sha256": "85b11dbea13b2b060ecb0321fb9ec07a9c4ee80596bc16b6a0b9b8bd226b97c0",
+      "width": 2112,
+      "height": 1200,
+      "depth": 8,
+      "colorType": 2,
+      "chunks": 32,
+      "decodedPixelBytes": 7603200,
+      "decodedPixelSha256": "b0c3dbe87dcdc4dd9967d3b9e7510a1ef686124b1931f2514fda60c8e93a06d6",
+      "decode": "all chunks CRC, complete inflate, every row filter reversed",
+      "visualReview": "Accepted current main-region crop only; no whole-window or matched historical comparison. Sidebar statement depends on geometry."
+    },
+    {
+      "path": "payload/focused/focused-personal-history.png",
+      "sha256": "4dc8625735233abcd9666ab8829500b355adbba2c3f27dc51df3532b605b1d51",
+      "width": 1300,
+      "height": 915,
+      "depth": 8,
+      "colorType": 2,
+      "chunks": 24,
+      "decodedPixelBytes": 3568500,
+      "decodedPixelSha256": "2a535b0c81bdd7d6c53703615356b6835c4fd7d227652ea523bd9160fa570a16",
+      "decode": "all chunks CRC, complete inflate, every row filter reversed",
+      "visualReview": "Diagnostic only: left title/action/content edge clipped; pixel UNPASSED; raw settled description superseded."
+    }
+  ]
+}

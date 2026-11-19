@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "issue": 1744,
+  "readiness": null,
+  "verifiedCommit": null,
+  "reviewedCommit": "2310f3bfb83a5e529f22753e8932a8245a3aca5d",
+  "reviewedTree": "a8d6bf97bb8ea3164e4b6c24a212868bd7fc2637",
+  "reviewedAppTree": "31eb3098b5e86baa32178e06d54ac39fd2cb6fe0",
+  "verdict": "No P1 or new scoped correctness finding confirmed in independent public/static review.",
+  "unit": {
+    "cases": 135,
+    "physicalFiles": 14,
+    "passed": 135,
+    "failed": 0,
+    "newIndependentCases": 10,
+    "prior125Included": true,
+    "priority24Included": true,
+    "postgresRerun": false
+  },
+  "static": {
+    "typegen": "passed",
+    "fullTypeProjects": 3,
+    "lintImport": {
+      "files": 14,
+      "result": "passed"
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "files": 14,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "exactCandidateRevision": true,
+      "zeroDiffScanNotCoverage": true,
+      "unsupportedCombinedInvocationRetained": true
+    },
+    "explicit100CRLF": {
+      "ownedFiles": 5,
+      "result": "passed",
+      "fullSelectionFiles": 14,
+      "sharedFindings": 2
+    },
+    "ordinary": {
+      "files": 14,
+      "findings": 14,
+      "result": "failed"
+    }
+  },
+  "readonlyIntake": {
+    "allowlistSHA256": "64b790f36c0ef75adae54bf2c84db53f83f9360e9faa71f76ca9b65be6d3d3df",
+    "payloads": 21,
+    "declaredSizesAndSHA256Match": true,
+    "parsedJSON": 12,
+    "sourcePinsMatchedCurrentRoot": 14,
+    "frozenOwnersMatched": 6,
+    "configPinsMatched": 31,
+    "onlyDeveloperAccessSixApplicationPathsDifferSinceReview": true
+  },
+  "preservation": {
+    "trackedFilesReported": 18418,
+    "ticketAnchors": 63,
+    "baseline": true,
+    "sealedOriginal1744Paths": 150,
+    "priorProofArchives": [
+      445,
+      127,
+      72
+    ],
+    "cleanCandidate": true,
+    "ownedRunningResources": 0,
+    "qualification": "A failed local-cache install wrote two tracked SQLite auxiliary files; only these owned side effects were restored byte-exact under hash guards. Complete commands disclose the failure."
+  },
+  "accounting": {
+    "independent135IncludesRoot125": true,
+    "priority24Overlaps": true,
+    "prior15CanonicalPostgres": "inherited and unadded"
+  },
+  "limits": [
+    "No current-source browser, Next, native, PostgreSQL or provider run was performed by this reviewer.",
+    "Synthetic provider/Activity/remount controls do not prove live authority races or per-transition async RSC/database admission.",
+    "Full generation/catalog/visual/device/zoom acceptance remains unpassed."
+  ]
+}

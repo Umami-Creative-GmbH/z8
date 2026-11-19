@@ -1,0 +1,117 @@
+{
+    "attempt":  "attempt06-premerge-settled",
+    "head":  "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
+    "tree":  "9f3d38d04ba25f08a43c3a9d20303788958a6273",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+    "executable":  "pnpm",
+    "arguments":  [
+                      "--config.verify-deps-before-run=false",
+                      "exec",
+                      "vitest",
+                      "run",
+                      "--project",
+                      "unit",
+                      "src/test/merge1738-public-probe.test.tsx",
+                      "--reporter=json",
+                      "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1738-audit/attempt06-premerge-settled-vitest.json"
+                  ],
+    "environment":  {
+                        "pnpm_config_verify_deps_before_run":  "false",
+                        "NODE_ENV":  "test",
+                        "MERGE1738_CONSUMER":  "before",
+                        "MERGE1738_ATTEMPT":  "attempt06-premerge-settled"
+                    },
+    "started":  "2026-11-17T00:24:39.1691389+00:00",
+    "ended":  "2026-11-17T00:24:42.0889524+00:00",
+    "exitCode":  1,
+    "source":  [
+                   {
+                       "path":  "apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+                       "sha256":  "22DD3DC2DAAB4F2FA462757267A886B80EDAB172365E985B35A7D879076BE7CB"
+                   },
+                   {
+                       "path":  "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+                       "sha256":  "81662D101D7E83A34E10F7DBCEB85ED2EE08A9994B242EDCB4C213A5D52DED15"
+                   },
+                   {
+                       "path":  "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+                       "sha256":  "AE9345732197A155D6A3EB92E210F1AFAD71A0E644C4244D23889F54AD42B90A"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+                       "sha256":  "199B347BF2EB048D61F1809F9A33E434D4BB31671F08E928ECD893247D01841E"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+                       "sha256":  "F5F0D6CD5C7368BC60CA489E558D10B5946B636C909156C6982E18F5DFCD47F0"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+                       "sha256":  "3DB83AE78B4A6F5DF383F714D8FEE0B83C0D9543396FAF5FC5129C30CF9CB735"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/merge1738-premerge-control.tsx",
+                       "sha256":  "950C021F3965E8758C7180400D9BCDBEADD844F5341596D7054AAD6D83E7464D"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+                       "sha256":  "05398D6C2EF43E24BA7405C283CB862309428DB19A154D2322A69B58C0FBAA14"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+                       "sha256":  "94E88376217F64FB17E00B9C98241AA24F0B5C9A4E3D794E91B5D61FF4520A71"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+                       "sha256":  "7C372CBA4D5155CDB903F3990BAFD8A291C169934F7BECA04DE40CC75B168CA8"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+                       "sha256":  "0EEAD5DDD6A09A4919F542EA40504DDB0289474D46CEE5F558193C81BBCE1EC5"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+                       "sha256":  "7B4AF53F458E0A1C62A04C565476E2FFE607A2F368325E3F81EE4C171D5ED076"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+                       "sha256":  "DC736B6D81117E9322350D3D773354C6C4444D0E856ED78EF777343F06B03667"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+                       "sha256":  "51D5802A7DD4D799681197729742602887B39600C9CA31DB0F761153985796DB"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+                       "sha256":  "853EF2F8797B1AE59CEBE5E5ACE9E0F19931B3FD983E1F0FE84D11DED060D35B"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+                       "sha256":  "F35638993CD46DF09158D23266AAC615CF26EAE4D1B5B3731D42D05D606D7F20"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+                       "sha256":  "92BA88B86EF3ACC8B19EEB95D13018A818B4AC0EA094BC83351C813FD9601950"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+                       "sha256":  "8824E3ED07966FAF53564385CC835EFE9B67E0190A79984A9C7DEA3D7EF4774B"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+                       "sha256":  "716F391530483F325BDBCC722F67BAB5CD68F22F08BA628051925FC901DE9707"
+                   },
+                   {
+                       "path":  "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                       "sha256":  "4DFA0EE1AD328D10F67E2E5A0BC82AD937EB74A8F719FE6F83131C0560AA10D2"
+                   },
+                   {
+                       "path":  "apps/webapp/src/lib/navigation/route-metadata.ts",
+                       "sha256":  "DCC8E4EF3359AE86C4D7A6F31DBBB58C85E969DFBF8D986B11B28BECE551EA7B"
+                   },
+                   {
+                       "path":  "apps/webapp/src/test/merge1738-public-probe.test.tsx",
+                       "sha256":  "7CDE4332F15F7113BBD3505E87705C203996B0461BE6738268B4EBC39924E6E9"
+                   }
+               ]
+}

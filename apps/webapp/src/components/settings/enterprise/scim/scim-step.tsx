@@ -307,6 +307,8 @@ export function ScimStep({
 			/>
 			<ScimDestructiveDialogs
 				action={controller.destructive}
+				pending={controller.destructivePending}
+				error={controller.destructiveError}
 				onCancel={controller.cancelDestructive}
 				onConfirm={controller.confirm}
 			/>

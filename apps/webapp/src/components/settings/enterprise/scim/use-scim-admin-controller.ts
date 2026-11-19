@@ -41,6 +41,9 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		"create" | "refresh" | "rotate" | "revoke" | "decommission" | null
 	>(null);
 	const [isPending, startTransition] = useTransition();
+	const [destructiveError, setDestructiveError] = useState<string | null>(null);
+	const destructivePending =
+		destructive !== null && (pendingAction === "revoke" || pendingAction === "decommission");
 	const connectionId =
 		lifecycle === "decommissioned"
 			? null
@@ -181,12 +184,13 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		});
 	};
 
+	// The confirmation stays open while the change runs; it closes once the change
+	// is done and shows a failure inline otherwise, so it can be retried.
 	const confirm = () => {
-		if (!connectionId) return;
+		if (!connectionId || destructivePending) return;
 		const currentAction = destructive;
 		const currentCredential = credentialId;
-		setDestructive(null);
-		setCredentialId(null);
+		setDestructiveError(null);
 		if (currentAction) setPendingAction(currentAction);
 		startTransition(async () => {
 			const operation =
@@ -216,9 +220,11 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 						setEvents(result[1]);
 					}
 					setPendingAction(null);
+					setDestructive(null);
+					setCredentialId(null);
 				},
 				() => {
-					toast.error(
+					setDestructiveError(
 						t(
 							"settings.enterprise.identity.scim.toast.updateError",
 							"Unable to update the SCIM connection.",
@@ -245,12 +251,20 @@ export function useScimAdminController(setup: EnterpriseIdentitySetupResponse["s
 		rotate,
 		status,
 		clearCredential: () => setCredential(null),
+		destructivePending,
+		destructiveError,
 		requestRevoke: (id: string) => {
+			setDestructiveError(null);
 			setCredentialId(id);
 			setDestructive("revoke");
 		},
-		requestDecommission: () => setDestructive("decommission"),
+		requestDecommission: () => {
+			setDestructiveError(null);
+			setDestructive("decommission");
+		},
 		cancelDestructive: () => {
+			if (destructivePending) return;
+			setDestructiveError(null);
 			setCredentialId(null);
 			setDestructive(null);
 		},

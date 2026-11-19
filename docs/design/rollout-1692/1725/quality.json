@@ -1,0 +1,63 @@
+{
+  "environment": "Windows; Node 26.9.0; Next 16.4.6 Turbopack; pnpm_config_verify_deps_before_run=false; PowerShell UTF-8",
+  "base": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+  "implementationCommit": "1272b2ce8395b47b9ee7962187a82d1c49795810",
+  "includedLatestLocalIntegration": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+  "sourceMergeHead": "79e65b83ab2085275237ea72b278a84e7d91227a",
+  "captureSourceHead": "59c974ce06966119fb20cd4036982f5a60f8f186",
+  "formatOnlyHead": "13470da28d28597c0e9ef9d4ebd7c8989eefc55b",
+  "evidenceLogNormalization": "Committed console-log copies trim trailing whitespace and extra blank EOF lines for Git checks; raw local logs remain private. Commands/counts/content are unchanged.",
+  "requiredH1": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+  "freshChecks": {
+    "unit": {
+      "command": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 1 src/components/payroll 'src/app/[locale]/(app)/payroll' src/lib/payroll-workspace src/lib/navigation/route-metadata.test.ts src/components/providers/view-refresh-provider.test.tsx src/components/ui/table.test.tsx src/components/ui/action-panel.test.tsx src/tolgee/extracted-key-defaults.test.ts",
+      "suites": 24,
+      "passed": 269,
+      "failed": 0,
+      "qualification": "Final merged 79e65b83a tree after restoring all four overlaid sources:24 suites/269 tests; subsequent13470da28 changes shared metadata formatting only. Earlier59c974ce0 also passed24/269; earlier tree passed24/268 before inheriting the notification heading test. Earlier maxWorkers=2 run had267 passes and one existing dismissal-focus failure; isolated focus and sequential full rerun passed. Not an uninterrupted green run."
+    },
+    "postgres": {
+      "command": "pnpm node docs/design/rollout-1692/1725/postgres.mjs .tmp/1725/fixture",
+      "suites": 5,
+      "passed": 50,
+      "skipped": 1,
+      "qualification": "Fresh before the later root correction/notification merges; no payroll owner changed in those merges. Real existing integration setup/gate on new label-verified migrated disposable PostgreSQL. grant-holder-export, comparison-service, baseline-evidence, comparison-explanations, overtime-payouts. DATEV intentionally skips the Lexware-only it.runIf comparison case. Not 51 passing tests, not an exhaustive or post-merge PostgreSQL rerun."
+    },
+    "types": {
+      "command": "pnpm --filter webapp typecheck",
+      "passed": true,
+      "scope": ["next typegen", "tsconfig.typecheck.json", "tsconfig.workflow-contracts.json", "tsconfig.smoke.json"],
+      "qualification": "Initial failure for absent ignored data/licenses.json; generated with pnpm --filter webapp generate-licenses, then full types passed."
+    },
+    "biome": {
+      "command": "pnpm --filter webapp exec biome check --config-path biome.jsonc --line-ending=crlf 'src/app/[locale]/(app)/payroll/page.tsx' 'src/app/[locale]/(app)/payroll/payroll-failure-state.tsx' src/components/payroll/payroll-workspace.tsx src/components/payroll/payroll-workspace.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "files": 6,
+      "passed": true,
+      "qualification": "Explicit repository config, CRLF checkout qualification; formatting touched existing long/short-line layout in consumer files. No blanket repository lint claim. Keyboard comparison-scroll tabindex follows existing named report-region pattern with a local justified suppression."
+    },
+    "reactDoctor": {
+      "command": "pnpm exec react-doctor apps/webapp --scope changed --base 11ad20e2251742960e6ccf3db17b1227ca3f17da --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+      "files": 6,
+      "findings": 0,
+      "qualification": "Installed 0.9.22; score and supply-chain analysis explicitly disabled."
+    }
+  },
+  "tdd": {
+    "heading": "New exact payroll opt-in test failed before metadata change; passes after.",
+    "lateExport": "New assembled test reproduced an export-completed toast after unmount; lifecycle generation suppresses it.",
+    "transport": "New assembled test reproduced an uncaught transport rejection and lost workspace; catch retains the task and retry.",
+    "furtherLifetimes": "Activity visible-hidden-visible late export and late PDF download assertions pass; these are assembled React tests, not live organization-switch proof.",
+    "composition": "Inventory/test were written before presentation edits, but the initial test command was blocked by missing dependency links. Presentation edits preceded its first executable run; this is a TDD sequencing qualification."
+  },
+  "runtimeLimits": [
+    "Preview used first; two same-step snapshot failures each reported Preview automation snapshot timed out after 15000ms. Native fallback then permitted. Owned preview closed.",
+    "Initial action attempts used an empty current month, then real seeded March 2025. Final matched captures use the same nonempty March scope on both sides.",
+    "Download routing initially targeted the default browser context instead of incognito; corrected context produced real PDF bytes. A subsequent driver clicked disabled controls before Apply settled; enabled-state wait corrected it.",
+    "A comparison wait used an inexact literal download label; corrected to Download reviewed comparison. One checkbox locator assumed a button element; corrected to actual checkbox role.",
+    "Full action scripts retained partial checks but did not finish held A-B-A acceptance. Attempts remain separate. The independent bounded scope driver later exercised real held dispatch with current B cookies, refused without a job in either organization; B's no-profile admission signed out the actor, so A return requires real synthetic reauthentication. This is not continuous cached A-B-A or an already-produced late-response certification.",
+    "No actual payroll provider delivery, external provider session or payment. File export is not expense reimbursement or payment.",
+    "No remote Tolgee synchronization, full production/static-generation build, physical store wrapper/device, true browser zoom, exhaustive translations, screen-reader or transition/performance certification. Existing static-generation timeout and absent remote Tolgee remain unpassed.",
+    "Former-only fallback, connector differences and all retained-evidence unavailable variants are preserved and have applicable existing unit/PostgreSQL coverage; not every variant was freshly exercised live. Shared shell clipping/transition obligations remain root-owned.",
+    "Saved font/theme matrix uses existing local storage owners followed by real reload/computed-style checks; it does not certify every preference UI save path."
+  ]
+}

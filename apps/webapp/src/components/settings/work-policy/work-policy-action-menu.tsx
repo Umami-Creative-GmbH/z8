@@ -44,9 +44,11 @@ export function WorkPolicyActionMenu({
 					variant="ghost"
 					size="icon"
 					className="size-8"
-					aria-label={t("common.openMenu", "Open menu")}
+					aria-label={t("settings.workPolicies.actionsFor", "Actions for {name}", {
+						name: policy.name,
+					})}
 				>
-					<IconDots className="size-4" />
+					<IconDots className="size-4" aria-hidden="true" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">

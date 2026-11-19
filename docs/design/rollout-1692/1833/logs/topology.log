@@ -1,0 +1,12 @@
+[eval]:1
+const fs=require(fs),p=require(path);const root=process.cwd();const parents=[node_modules,apps/webapp/node_modules,node_modules/.pnpm];for(const f of parents){if(fs.lstatSync(f).isSymbolicLink())throw Error(Nonphysical
+                                                                                                                                ^
+Expression expected
+
+SyntaxError: Unexpected token '.'
+    at makeContextifyScript (node:internal/vm:194:14)
+    at compileScript (node:internal/process/execution:422:10)
+    at evalTypeScript (node:internal/process/execution:294:22)
+    at node:internal/main/eval_string:71:3
+
+Node.js v26.9.0

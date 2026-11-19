@@ -1,9 +1,11 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import type { CsvWorkReviewData } from "./csv-work-review";
+import { ImportReviewSummaryStrip } from "./import-review-summary-strip";
 
 const summaryItems = [
 	{
@@ -49,27 +51,30 @@ export function CsvWorkReviewHeader({
 }) {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-wrap items-start justify-between gap-4">
-			<div className="space-y-2">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.import.csv.reviewTitle", "Review CSV completed work")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
+		<PageHeader
+			title={t("settings.import.csv.reviewTitle", "Review CSV completed work")}
+			description={
+				<>
 					{String(view.batch.selectedScope.fileName ?? "CSV")} ·{" "}
 					{t("settings.import.csv.fileTimezone", "Timezone for local timestamps")}:{" "}
 					{String(
 						view.batch.selectedScope.timezone ??
 							t("settings.import.csv.offsetsOnly", "explicit offsets only"),
 					)}
-				</p>
-			</div>
-			<Button
-				disabled={pending || view.batch.status !== "needs_review" || view.summary.accepted === 0}
-				onClick={onCommit}
-			>
-				{t("settings.import.csv.commit", "Commit accepted rows")}
-			</Button>
-		</div>
+				</>
+			}
+			actions={
+				<Button
+					disabled={pending || view.batch.status !== "needs_review" || view.summary.accepted === 0}
+					onClick={onCommit}
+				>
+					{pending ? (
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+					) : null}
+					{t("settings.import.csv.commit", "Commit accepted rows")}
+				</Button>
+			}
+		/>
 	);
 }
 
@@ -88,7 +93,8 @@ export function CsvWorkReviewNotices({
 	return (
 		<>
 			{busy ? (
-				<p role="status">
+				<p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+					<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 					{status === "scanning"
 						? t("settings.import.csv.scanning", "Preparing the review…")
 						: t("settings.import.csv.committing", "Importing accepted rows…")}
@@ -106,20 +112,13 @@ export function CsvWorkReviewNotices({
 export function CsvWorkReviewSummary({ summary }: { summary: CsvWorkReviewData["summary"] }) {
 	const { t } = useTranslate();
 	return (
-		<div className="grid grid-cols-2 gap-3 md:grid-cols-6">
-			{summaryItems.map((item) => (
-				<Card key={item.name} className="gap-2 py-4 shadow-none">
-					<CardHeader className="px-4">
-						<CardTitle className="text-sm font-medium text-muted-foreground">
-							{t(item.key, item.fallback)}
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="px-4 text-2xl font-semibold tabular-nums">
-						{summary[item.name]}
-					</CardContent>
-				</Card>
-			))}
-		</div>
+		<ImportReviewSummaryStrip
+			items={summaryItems.map((item) => ({
+				key: item.name,
+				label: t(item.key, item.fallback),
+				value: summary[item.name],
+			}))}
+		/>
 	);
 }
 

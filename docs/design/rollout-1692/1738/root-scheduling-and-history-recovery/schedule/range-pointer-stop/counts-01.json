@@ -1,0 +1,41 @@
+{
+  "fresh": {
+    "unitCases": 0,
+    "postgreSqlTestCases": 0,
+    "canonicalFixturePrepares": 1,
+    "initialDomainSeedCalls": 1,
+    "initialDomainRows": 12,
+    "transientChromiumBrowsers": 1,
+    "freshContexts": 2,
+    "normalPublicFormLogins": 2,
+    "actualPublicationCalls": 1,
+    "actualPublishRequests": 1,
+    "pointerActivations": 2,
+    "successfulPublishedRows": 2,
+    "successfulCreateEditDelete": 0,
+    "canonicalScopedReadbackCalls": 1,
+    "reviewedAllowlistedOperationalImages": 3
+  },
+  "inherited": {
+    "unitCases": 73,
+    "postgresCases": 48,
+    "distinctUnion": 121,
+    "unitFiles": 13,
+    "postgresFiles": 8,
+    "afterImportSort15Nonadditive": true
+  },
+  "nonadditive": {
+    "firstPublishHarnessTimedOutBeforeAction": true,
+    "firstHarnessActionRequests": 0,
+    "publicLoginWrappers": 2,
+    "postSubmitInitializationNavigationErrors": 2,
+    "actualNormalAdmittedLogins": 2
+  },
+  "harnessLimits": [
+    "Initial sandbox pnpm call denied normal engine-store lock; ordinary escalation approved.",
+    "An accidental no-such-file pnpm probe also failed at sandbox engine-store lock before Node execution; zero checks/actions ran.",
+    "First publish harness expected2 displayed drafts and timed out with0requests; boundary controls revealed actual4. Second harness reaches real publication and reports failure because pending second pointer opens Edit Shift.",
+    "Both normal login wrappers lost execution context after the real form submit during initialization redirect; subsequent admitted route state confirms each login without repeating credentials or auth requests."
+  ],
+  "countsAreNotAddedToInheritedCases": true
+}

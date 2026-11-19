@@ -1,0 +1,45 @@
+{
+  "remainingOwnBrowserControllerIdentities": 0,
+  "readback": [
+    {
+      "controllerAttempt": "01",
+      "ownStillPresent": false,
+      "identity": "pid"
+    },
+    {
+      "controllerAttempt": "01",
+      "ownStillPresent": false,
+      "identity": "browserPid"
+    },
+    {
+      "controllerAttempt": "02",
+      "ownStillPresent": false,
+      "identity": "pid"
+    },
+    {
+      "controllerAttempt": "02",
+      "ownStillPresent": false,
+      "identity": "browserPid"
+    },
+    {
+      "controllerAttempt": "03",
+      "ownStillPresent": false,
+      "identity": "pid"
+    },
+    {
+      "controllerAttempt": "03",
+      "ownStillPresent": false,
+      "identity": "browserPid"
+    },
+    {
+      "controllerAttempt": "04",
+      "ownStillPresent": false,
+      "identity": "pid"
+    },
+    {
+      "controllerAttempt": "04",
+      "ownStillPresent": false,
+      "identity": "browserPid"
+    }
+  ]
+}

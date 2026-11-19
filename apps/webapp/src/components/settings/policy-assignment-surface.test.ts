@@ -10,7 +10,10 @@ import {
 import { WorkPolicyAssignmentSections } from "./work-policy/work-policy-assignment-sections";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? "")),
+	}),
 }));
 
 describe("policy assignment surface visibility", () => {
@@ -149,6 +152,8 @@ describe("policy assignment surface visibility", () => {
 			}),
 		);
 
-		expect(screen.getByRole("button", { name: "Remove Assignment" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Remove assignment for Organization Default" }),
+		).toBeTruthy();
 	});
 });

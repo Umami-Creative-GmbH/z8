@@ -1,25 +1,20 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PlatformAnalyticsCharts } from "@/components/platform-admin/platform-analytics-charts";
 import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
-import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
 import type {
 	ParsedPlatformAnalyticsParams,
 	PlatformAnalyticsSearchParams,
 } from "@/lib/platform-analytics/types";
 import { getTranslate } from "@/tolgee/server";
 import { PlatformAnalyticsControls } from "./analytics-controls";
+import { PlatformAnalyticsDataSection } from "./analytics-data";
+import { PlatformAnalyticsHeading } from "./analytics-heading";
 
-const PLATFORM_ANALYTICS_KPI_LOADING_KEYS = [
-	"kpi-1",
-	"kpi-2",
-	"kpi-3",
-	"kpi-4",
-];
+const PLATFORM_ANALYTICS_KPI_LOADING_KEYS = ["kpi-1", "kpi-2", "kpi-3", "kpi-4"];
 const PLATFORM_ANALYTICS_CHART_LOADING_KEYS = ["chart-1", "chart-2"];
 
 export default function PlatformAnalyticsPage({
@@ -42,28 +37,15 @@ async function PlatformAnalyticsPageContent({
 	// Live platform analytics Effect data must resolve per request outside the prerendered shell.
 	await connection();
 	const t = await getTranslate();
-	const sectionTitle = t(
-		"admin:admin.analytics.sectionTitle",
-		"Analytics Trends",
-	);
+	const sectionTitle = t("admin:admin.analytics.sectionTitle", "Analytics Trends");
 	const sectionDescription = t(
 		"admin:admin.analytics.sectionDescription",
 		"Updated from current platform data for the selected range and bucket.",
 	);
 
 	return (
-		<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("admin:admin.analytics.title", "Platform Analytics")}
-				</h1>
-				<p className="max-w-2xl text-muted-foreground">
-					{t(
-						"admin:admin.analytics.description",
-						"Monitor platform growth, engagement, operational activity, and billing trends.",
-					)}
-				</p>
-			</div>
+		<div className="min-w-0 space-y-6">
+			<PlatformAnalyticsHeading />
 
 			<Suspense
 				fallback={
@@ -96,10 +78,7 @@ async function PlatformAnalyticsRouteContent({
 
 	return (
 		<>
-			<PlatformAnalyticsControls
-				range={parsedParams.range}
-				bucket={parsedParams.bucket}
-			/>
+			<PlatformAnalyticsControls range={parsedParams.range} bucket={parsedParams.bucket} />
 			<PlatformAnalyticsSection
 				parsedParams={parsedParams}
 				sectionTitle={sectionTitle}
@@ -119,10 +98,7 @@ function PlatformAnalyticsSection({
 	sectionDescription: string;
 }) {
 	return (
-		<section
-			className="mt-4 space-y-4 lg:col-span-2"
-			aria-labelledby="platform-analytics-heading"
-		>
+		<section className="mt-4 space-y-4 lg:col-span-2" aria-labelledby="platform-analytics-heading">
 			<PlatformAnalyticsSectionHeading
 				sectionTitle={sectionTitle}
 				sectionDescription={sectionDescription}
@@ -137,19 +113,16 @@ function PlatformAnalyticsSection({
 	);
 }
 
-async function PlatformAnalyticsDataSection({
-	parsedParams,
-}: {
-	parsedParams: ParsedPlatformAnalyticsParams;
-}) {
-	const data = await getPlatformAnalyticsData(parsedParams);
-
-	return <PlatformAnalyticsCharts data={data} />;
-}
-
 function PlatformAnalyticsLoading() {
 	return (
-		<div className="space-y-4">
+		<LoadingRegion
+			className="min-w-0 space-y-4"
+			role="status"
+			label={{
+				labelKey: "common.loadingRegions.platformAnalytics",
+				labelDefault: "Loading platform analytics",
+			}}
+		>
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{PLATFORM_ANALYTICS_KPI_LOADING_KEYS.map((key) => (
 					<Card key={key}>
@@ -177,16 +150,13 @@ function PlatformAnalyticsLoading() {
 					</Card>
 				))}
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 
 function PlatformAnalyticsControlsLoading() {
 	return (
-		<div
-			className="flex flex-col gap-3 sm:flex-row sm:items-center"
-			aria-hidden="true"
-		>
+		<div className="flex flex-col gap-3 sm:flex-row sm:items-center" aria-hidden="true">
 			<div className="grid gap-1.5">
 				<Skeleton className="h-3 w-16" />
 				<Skeleton className="h-10 w-full sm:w-[180px]" />
@@ -209,11 +179,7 @@ function PlatformAnalyticsRouteLoading({
 	return (
 		<>
 			<PlatformAnalyticsControlsLoading />
-			<section
-				className="mt-4 space-y-4 lg:col-span-2"
-				aria-busy="true"
-				role="status"
-			>
+			<section className="mt-4 space-y-4 lg:col-span-2" aria-busy="true" role="status">
 				<LocalizedLoadingLabel
 					translationKey="common:loading.platformAnalytics"
 					fallback="Loading platform analytics"
@@ -258,11 +224,8 @@ function PlatformAnalyticsPageLoading() {
 				labelDefault: "Loading platform analytics",
 			}}
 		>
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-				<div className="space-y-2">
-					<Skeleton aria-hidden="true" className="h-8 w-56" />
-					<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
-				</div>
+			<div className="space-y-6">
+				<PlatformAnalyticsHeading />
 				<PlatformAnalyticsControlsLoading />
 			</div>
 			<section className="space-y-4">

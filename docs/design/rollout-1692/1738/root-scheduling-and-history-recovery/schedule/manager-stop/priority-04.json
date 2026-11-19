@@ -1,0 +1,198 @@
+{
+  "candidate": "3f22ce77ccc5219338237b9522f19b9405539355",
+  "normalDevelopmentFormWidgetLogin": true,
+  "authStateSavedCopiedRestored": false,
+  "rawActionResponsesCaptured": false,
+  "fixture": {
+    "totalOwn": 6,
+    "inRange": 4,
+    "beforeControl": true,
+    "endExclusiveControl": true
+  },
+  "read": {
+    "heading": "Shift Schedule",
+    "summary": "Shift list (4)",
+    "rows": [
+      {
+        "date": "Thu, Nov 19",
+        "draft": true,
+        "published": false
+      },
+      {
+        "date": "Wed, Nov 18",
+        "draft": false,
+        "published": true
+      },
+      {
+        "date": "Tue, Nov 17",
+        "draft": true,
+        "published": false
+      },
+      {
+        "date": "Mon, Nov 16",
+        "draft": false,
+        "published": true
+      }
+    ],
+    "publish": "Publish (2)",
+    "notifications": "denied",
+    "rangeText": "Nov 16, 2026 – Nov 22, 2026 (Europe/Berlin)"
+  },
+  "readVerdict": "PASS",
+  "beforeImage": {
+    "h1": [
+      {
+        "text": "Shift Schedule",
+        "box": {
+          "x": 280,
+          "y": -79,
+          "width": 1296,
+          "height": 36,
+          "right": 1576,
+          "bottom": -43
+        }
+      }
+    ],
+    "main": {
+      "x": 256,
+      "y": 0,
+      "width": 1344,
+      "height": 1100,
+      "right": 1600,
+      "bottom": 1100
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1100,
+      "right": 256,
+      "bottom": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "pending": {
+    "nativeDisabled": true,
+    "disabledAttribute": true,
+    "pointerEvents": "auto",
+    "zIndex": "30",
+    "hitOnDisabledSurface": true,
+    "targetTag": "BUTTON",
+    "dialogBeforeSecond": false,
+    "center": {
+      "x": 1503.03125,
+      "y": 1048
+    }
+  },
+  "afterSecond": {
+    "pointers": [
+      {
+        "trusted": true,
+        "publish": true,
+        "disabled": false,
+        "dialog": false
+      },
+      {
+        "trusted": true,
+        "publish": true,
+        "disabled": true,
+        "dialog": false
+      }
+    ],
+    "dialog": false,
+    "disabled": true
+  },
+  "pendingImage": {
+    "h1": [
+      {
+        "text": "Shift Schedule",
+        "box": {
+          "x": 280,
+          "y": -79,
+          "width": 1296,
+          "height": 36,
+          "right": 1576,
+          "bottom": -43
+        }
+      }
+    ],
+    "main": {
+      "x": 256,
+      "y": 0,
+      "width": 1344,
+      "height": 1100,
+      "right": 1600,
+      "bottom": 1100
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1100,
+      "right": 256,
+      "bottom": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "pendingVerdict": "PASS",
+  "after": {
+    "success": true,
+    "failure": false,
+    "dialog": null,
+    "summary": "Shift list (4)",
+    "remainingPublish": 0,
+    "publishedRows": 4
+  },
+  "publishRequests": 1,
+  "afterImage": {
+    "h1": [
+      {
+        "text": "Shift Schedule",
+        "box": {
+          "x": 280,
+          "y": -79,
+          "width": 1296,
+          "height": 36,
+          "right": 1576,
+          "bottom": -43
+        }
+      }
+    ],
+    "main": {
+      "x": 256,
+      "y": 0,
+      "width": 1344,
+      "height": 1100,
+      "right": 1600,
+      "bottom": 1100
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1100,
+      "right": 256,
+      "bottom": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "verdict": "PRIORITY_UI_PASS_PENDING_SCOPED_READBACK"
+}

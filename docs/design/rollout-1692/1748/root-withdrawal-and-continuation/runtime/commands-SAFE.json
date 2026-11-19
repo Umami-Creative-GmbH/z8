@@ -1,0 +1,602 @@
+{
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "pinnedPnpm": "12.16.1",
+    "cliGuard": "--config.verify-deps-before-run=false",
+    "packageCallsOnlyPinned": true
+  },
+  "commands": [
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/preflight.mjs"
+      ],
+      "initialExit": 1,
+      "finalExit": 0
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs",
+        "prepare",
+        ".tmp/1748-current-runtime-20261118a/fixture-private"
+      ],
+      "exit": 0,
+      "output": "prepare-private.log"
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/1748-current-runtime-20261118a/runtime.mjs"
+      ],
+      "status": "Owned normal Next dev launched; later exact tree stopped",
+      "nested": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "next",
+        "dev",
+        "--turbopack",
+        "--port",
+        "<owned-port>"
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/private-run.mjs",
+        "fixture-business.mjs",
+        "seed"
+      ],
+      "firstExit": 1,
+      "finalExit": 0
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/controller.mjs"
+      ],
+      "status": "Sandbox connection/timeout attempts retained; elevated normal controller succeeded; exact tree later stopped"
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "start-browser.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "signin-preflight.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "login.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "login-state.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "mcp-list.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "login-control.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "login-exact.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "draft.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "draft-settled.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "mcp-current.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        },
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "receipt.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "conversion.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "submitted-recovery.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "check-recovery.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "preferences.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "preferences-large.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "font-menu.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "phone-large.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "recovery-bounded.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": []
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "readers.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        },
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "wide.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": true,
+          "errorName": "Error"
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "wide-theme.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "wide-capture.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "settlement-init.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": true,
+          "errorName": "TimeoutError"
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "admin-state.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "admin-reload.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "arrival-status.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "admin-org-menu.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "admin-org-select.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "admin-capabilities.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "settlement-fill.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "settlement-submit.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "own-org-reselect.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": true,
+          "errorName": "TimeoutError"
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "react-and-retirement.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": true,
+          "errorName": "TimeoutError"
+        },
+        {
+          "httpStatus": 200,
+          "harnessError": true,
+          "errorName": "TimeoutError"
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "final-browser.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "actor-and-diagnostics.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/run-browser.mjs",
+        "close-browser.js"
+      ],
+      "processExit": 0,
+      "qualification": "Wrapper exit 0 is not proof of operation success. Individual acceptance in ledger; failure attempts separately preserved.",
+      "loggedFinalResult": [
+        {
+          "httpStatus": 200,
+          "harnessError": false,
+          "errorName": null
+        }
+      ]
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/private-run.mjs",
+        "database-final.mjs"
+      ],
+      "exit": 0,
+      "firstAssertions": "87/88",
+      "finalAssertions": "88/88",
+      "rerunNonadditive": true
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs",
+        "cleanup",
+        ".tmp/1748-current-runtime-20261118a/fixture-private"
+      ],
+      "exit": 0
+    },
+    {
+      "operation": "Native PowerShell verified process/profile cleanup",
+      "exit": 0
+    },
+    {
+      "operation": "Native PowerShell verified controller cleanup after shell interrupt survivor",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "node",
+        ".tmp/1748-current-runtime-20261118a/seal.mjs"
+      ],
+      "exit": "Completes only after this seal is written"
+    }
+  ]
+}

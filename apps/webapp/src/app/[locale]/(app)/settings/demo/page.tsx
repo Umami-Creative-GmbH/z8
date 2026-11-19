@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getOrganizationEmployees } from "./actions";
@@ -21,26 +22,28 @@ async function DemoSettingsContent() {
 		notFound();
 	}
 
+	// A failed read is not an empty organization: the wizard says so and blocks
+	// generation, which targets these employees, until a retry loads them.
+	const employeesLoadFailed = !employeesResult.success;
 	const employees = employeesResult.success ? employeesResult.data : [];
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.demo.title", "Demo Data")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("settings.demo.title", "Demo Data")}
+					description={t(
 						"settings.demo.description",
 						"Generate sample data for testing or clear existing time-related data",
 					)}
-				</p>
-			</div>
+				/>
 
-			<DemoDataWizard
-				key={organizationId}
-				employees={employees}
-			/>
+				<DemoDataWizard
+					key={organizationId}
+					employees={employees}
+					employeesLoadFailed={employeesLoadFailed}
+				/>
+			</div>
 		</div>
 	);
 }
@@ -48,6 +51,7 @@ async function DemoSettingsContent() {
 function DemoSettingsLoading() {
 	return (
 		<SettingsPageSkeleton
+			measure
 			label={{
 				labelKey: "common.loadingRegions.demoDataSettings",
 				labelDefault: "Loading demo data settings",

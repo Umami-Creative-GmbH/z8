@@ -1,0 +1,11 @@
+$ next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false
+Generating route types...
+✓ Types generated successfully
+src/app/[locale]/onboarding/work-templates/page-client.tsx(568,11): error TS2322: Type 'ZodCoercedNumber<unknown>' is not assignable to type 'FieldValidateOrFn<{ name: string; hoursPerWeek: string; workingDays: DayOfWeek[]; setAsDefault: boolean; }, "hoursPerWeek", string> | undefined'.
+  Type 'ZodCoercedNumber<unknown>' is not assignable to type 'StandardSchemaV1<string, unknown>'.
+    The types of '['~standard'].types' are incompatible between these types.
+      Type 'Types<unknown, number> | undefined' is not assignable to type 'StandardSchemaV1Types<string, unknown> | undefined'.
+        Type 'Types<unknown, number>' is not assignable to type 'StandardSchemaV1Types<string, unknown>'.
+          Types of property 'input' are incompatible.
+            Type 'unknown' is not assignable to type 'string'.
+[ELIFECYCLE] Command failed with exit code 1.

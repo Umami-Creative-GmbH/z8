@@ -1,0 +1,145 @@
+{
+  "scope": "Only newly appended sections; old private/excluded references not followed",
+  "links": [
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/README.md",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/HANDOFF.md",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/source-config-pins.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/verification-results.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/supporting-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/scheduling-supporting-retry.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/HANDOFF.md",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/comparison-images.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-v5-1600-light.png",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/directory-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/directory-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/history-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-nonempty-history.png",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1738.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-context-runtime-retry.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/README.md",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/HANDOFF.md",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/source-config-pins.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/verification-results.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/directory-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/directory-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/history-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-nonempty-history.png",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-context-runtime-retry.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/supporting-public.test.tsx",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/scheduling-supporting-retry.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/HANDOFF.md",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/comparison-images.json",
+      "exists": true
+    },
+    {
+      "from": "docs/design/rollout-1692/1739.md",
+      "target": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-v5-1600-light.png",
+      "exists": true
+    }
+  ]
+}

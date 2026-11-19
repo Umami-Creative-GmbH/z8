@@ -1,0 +1,348 @@
+{
+  "schema": 1,
+  "scope": "R155/#1839 only; explicit sanitized allowlist, no expansion by references",
+  "entries": [
+    {
+      "path": "../../1839.md",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 21527,
+      "sha256": "bdb776a8444c355ec644954f37c6b4fb130730066eefec7ac9bcc63da7ad3e63"
+    },
+    {
+      "path": "after-final-desktop-dark.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 908371,
+      "sha256": "c167fed61c10389aedbd96cdf4056ebbde2e13fd8e1e4e9a77417a91dbc1c589",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "pixelSha256": "9b0f56b05d0c1f704a4de9279aa1953f0e7034365066303c84d30baed6ce4559"
+      }
+    },
+    {
+      "path": "after-final-desktop-light.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 391992,
+      "sha256": "60032850258e01abba9b601d1e3a8d7cfdab79c714adc874463b6ccf789373d7",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "pixelSha256": "ca545035b7414693666a95f03a8213c9662063893a93a16eb1ad35919794fc4e"
+      }
+    },
+    {
+      "path": "after-final-extra.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 1358,
+      "sha256": "3aa40c1eeee22a6c606ae2913c47d50f50340f5482f55f0f034167c94647b3e9"
+    },
+    {
+      "path": "after-final-phone-dark-large.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 76998,
+      "sha256": "40127b6734b8aef6e1b72c1597523de8dbe7fd80a98591624c849794d4f0033c",
+      "png": {
+        "width": 390,
+        "height": 934,
+        "pixelSha256": "00321491d0d53a96172e95f303a475ff9e25c25202bf8adb8089d1a0606de132"
+      }
+    },
+    {
+      "path": "after-final-phone-dark.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 84544,
+      "sha256": "4d4770d87390af48dc2c05b26ca26f631e438c89faab24c95756b5be21cb7660",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "ba54f7c26d28b0a9248ff24a5c0c95f0804ff31aec81500a5ee63b460c6ffb63"
+      }
+    },
+    {
+      "path": "after-final-phone-light.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 73582,
+      "sha256": "c2aa069e55028859f536075c187cfd9fad5045feda6891fc186e92b67145c2ff",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "7e9615164b00de0ccdd0c0c4bd438c25d2ad00184809a861efe7d64fc61aaad6"
+      }
+    },
+    {
+      "path": "after-final-runtime.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 12488,
+      "sha256": "df1ee0e92a9a49989695a91a7b5ab46d284843ea7f9cef08b66cb5fa4432de62"
+    },
+    {
+      "path": "after-final-store-android.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 143148,
+      "sha256": "894f5d6846ac07fe5248cd3182018cdc96c6e790df9d41b85a4788c539dcf2d0",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "97e1927d6dec6e416debb080037f78d6c6937456489722dbe33a2fc5ff5e6c7f"
+      }
+    },
+    {
+      "path": "after-final-store-ios.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 117100,
+      "sha256": "80a7ffbb805085d7e97a0ea6dc3f1a7682aea1537121be05cdad74c88c77952c",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "f3727850db9f02955d27e5351962df33747535c8dbe965a305152b3288c6607c"
+      }
+    },
+    {
+      "path": "after-final-wide-dark.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 1015085,
+      "sha256": "9ab5d46a0f069881e788c6db1e3f2be818c0ee9d03029ec79f075e58789766b9",
+      "png": {
+        "width": 2400,
+        "height": 1200,
+        "pixelSha256": "b03bdcb1e4c471069871e828d5e0a1182ddf91785264f643300c527bca002145"
+      }
+    },
+    {
+      "path": "after-final-wide-light.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 1131551,
+      "sha256": "ec014fc0748ea3a8dbf7c97a01b539be9181824774d8530581902325ec860a92",
+      "png": {
+        "width": 2400,
+        "height": 1200,
+        "pixelSha256": "1f1cf6a45c272545b425fdb23f71cb65d2c87bf6364b152927e91d6565eadd95"
+      }
+    },
+    {
+      "path": "authentication-final.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 369,
+      "sha256": "522b0dfc37d0540491e77b76e63bc35306030511b31e0e6009b1b87e6cf0d784"
+    },
+    {
+      "path": "before-final-extra.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 1361,
+      "sha256": "1af6a7d05bf6a1fd772e19582cab7a39d74e1664fbc1a92152ff43abcae69988"
+    },
+    {
+      "path": "before-final-store-android.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 120478,
+      "sha256": "60fab7d10735cabbae0a6a8258750b28a3894dee57c470c3e0b3298bcf9be834",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "23396797e5995857eb708d41b74c31af9e8344e12cf3b7eb1e541afd6f89af2b"
+      }
+    },
+    {
+      "path": "before-final-store-ios.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 66514,
+      "sha256": "ffceee58a7e14a5f41cb20f0db48179c9610ab00d16c657dd5aabaef06ce3647",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "ddc475e5e7b82b6b9894aebc6e2a0278ff315b85bc8c1b7ed6d977765c237c62"
+      }
+    },
+    {
+      "path": "before-settled-desktop-dark.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 915906,
+      "sha256": "80895eaa7577d9e5863b82d73ae1e4c1265ff053b7a36258707a63c24e13a31d",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "pixelSha256": "f9e33129833b2db3cffcfaef53463add9c22fa0285e0d8346a1952f6fb7181ad"
+      }
+    },
+    {
+      "path": "before-settled-desktop-light.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 917620,
+      "sha256": "ac060cc750bff728de540d5526443ba163ea0ff2f790f506929c825bd7c11a4b",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "pixelSha256": "3934e5d0c99923d4d7baa410faafdae816b42b0c7b913c2a9b93d03185746939"
+      }
+    },
+    {
+      "path": "before-settled-phone-dark-large.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 91719,
+      "sha256": "1bd9c1dba522d2a4c09d129b737bd384cc4b5701cba912d802477198bdc7cafe",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "ef581db0414ef642544130eb57697a4d5554cbae9f2540cb15638e78c6731f1f"
+      }
+    },
+    {
+      "path": "before-settled-phone-dark.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 78785,
+      "sha256": "f27ca60a57f9a891f10097807933ff90855a572f0e5d4802490f61bf8e1af70d",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "19cfd7f73e2908ab9cfaf95998aeeaa382e2e46f292202fd1e890f37dcbb0fad"
+      }
+    },
+    {
+      "path": "before-settled-phone-light.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 87037,
+      "sha256": "ecfd05782b251004352df0afa1dd1144549355016883fc01a9845e0e28f10c4b",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "pixelSha256": "545ad58cffdd4bd1147935c880ceca1935ed726eb8bc1f0c01bbf4ae126ef02c"
+      }
+    },
+    {
+      "path": "before-settled-runtime.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 12388,
+      "sha256": "1ead49f962641eb307610a664c286df7103f133d3f2341dadab2c1ed008f1511"
+    },
+    {
+      "path": "before-settled-wide-dark.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 349843,
+      "sha256": "103d6a482d9e9c7186bb242897b005541140e663f8d97deb90e8c0a5b6d844e0",
+      "png": {
+        "width": 2400,
+        "height": 1200,
+        "pixelSha256": "e197850a0e775711494702836b92bd1a1e8e8e4d9fb1556798afb7e256ce2717"
+      }
+    },
+    {
+      "path": "before-settled-wide-light.png",
+      "classification": "accepted-unfilled-browser-capture",
+      "newlines": "binary",
+      "bytes": 1489060,
+      "sha256": "1c8b14d338ec5209203eabada6466a14385467a4f5b8c099db4f2c6ddd6524ed",
+      "png": {
+        "width": 2400,
+        "height": 1200,
+        "pixelSha256": "33990d2c6b513429efb4b5a5dd6a117f82fb5578ad4cc3919217dec9e7e61b7a"
+      }
+    },
+    {
+      "path": "cleanup.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 2414,
+      "sha256": "14a579c3441a3d414386d827702d43d384fdd622e342770014a9f722c8dfebc7"
+    },
+    {
+      "path": "compile.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 208,
+      "sha256": "0ade80f7f6897210c7ec67dc90d248ca55d0ac177d0bd4036969fa0eb065c37c"
+    },
+    {
+      "path": "dependencies.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 1084,
+      "sha256": "8dd6ba2163dd8827762f98ebcaa3fc7a9f318fafec56cb36128c38ebb76bf5fc"
+    },
+    {
+      "path": "doctor.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 343,
+      "sha256": "471ec06253315e13a0a9cfb95590b96478eda3d0631cbdf9a74255f4d3e0fcf1"
+    },
+    {
+      "path": "failures-and-limits.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 4489,
+      "sha256": "2ef6aebd83e8c2564ccfd2eccf00b17759e2ab1466b6b53b975a90b535f13b72"
+    },
+    {
+      "path": "next-mcp.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 453,
+      "sha256": "3beb38162abb126125da03bf57aa7c9a6de6066ce145a8ac0c5cfc9093897fbf"
+    },
+    {
+      "path": "preservation.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 4665,
+      "sha256": "6c73dbc35b7f799d9b65eda41818ee4b83d03e161dc486e9fa468fad8a9ba095"
+    },
+    {
+      "path": "quality.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 2081,
+      "sha256": "e043cbdface7f61cf4ae01f64ede468253fa92df44c707bcee0c88d384fd9a6f"
+    },
+    {
+      "path": "source-pins.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 7217,
+      "sha256": "f94ee3c2f2af8d29a48575a7049a32073ca2b246394d293538a0b63a2ec459ff"
+    },
+    {
+      "path": "test-cases.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 96296,
+      "sha256": "fbc4e9b1b20b1bb77e3cd8d2bfcef4fd20ebc7766f42a07edcaba69d58863772"
+    },
+    {
+      "path": "test-commands.json",
+      "classification": "sanitized-public-evidence",
+      "newlines": "git-lf",
+      "bytes": 1971,
+      "sha256": "09cd151c02a7725c52ae884be12d146317539b4a4d2d544723a9cf4231c527ec"
+    },
+    {
+      "path": "verify-evidence.mjs",
+      "classification": "read-only-verifier",
+      "newlines": "git-lf",
+      "bytes": 5761,
+      "sha256": "385c2b25a2bf5f124e74f72e07e357ebf13439547b5534efb513513f47995ebe"
+    }
+  ]
+}

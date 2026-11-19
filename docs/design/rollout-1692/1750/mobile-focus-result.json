@@ -1,0 +1,11 @@
+{
+  "path": "blank",
+  "dialogs": 0,
+  "active": {
+    "tag": "BODY",
+    "label": null,
+    "text": null
+  },
+  "passed": false,
+  "qualification": "Final attempt after runtime loss; blank page / file not found does not establish acceptance."
+}

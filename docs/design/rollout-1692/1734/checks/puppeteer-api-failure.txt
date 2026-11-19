@@ -1,0 +1,8 @@
+file:///X:/t3-code/worktrees/z8/t3-9b0f468b-151f714db384cc36/.tmp/1734/runtime-check.mjs:52
+   await page.locator('h1').scrollIntoView();
+                            ^
+
+TypeError: page.locator(...).scrollIntoView is not a function
+    at file:///X:/t3-code/worktrees/z8/t3-9b0f468b-151f714db384cc36/.tmp/1734/runtime-check.mjs:52:29
+
+Node.js v26.9.0

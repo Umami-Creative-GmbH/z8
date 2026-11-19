@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "issue": 1773,
+  "verifiedCommit": null,
+  "reviewCandidate": "0814d3d5519992bc86de4820a4c21175a4771378",
+  "reviewAppTree": "2cc569361241e54e62bdc800616e379e659ae0de",
+  "currentRootBeforeDocumentation": "78d77c74ee370ed3979cf82fe7be8817a485080d",
+  "currentAppTree": "440219039a3ec524a457da06145d319fa1d5f07d",
+  "correctionCommit": "f145c3cd6f2be2d934ad7b0fa0e795c006c50826",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.tsx",
+      "sha256": "52d6507cf7eb103a3b65cd21c37b6425e0336231ffc2bf3c1591a8de45942f10",
+      "gitBlob": "c72cab289bd4a89a25d4ef2747f4e31b801e3efa",
+      "gitSha256": "d7a10981c1920f34a134c4eec5ec74eccea06a48ea840192914701a0456e131d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "sha256": "83b79408614c94cbd812de36dda7d84bada008690bd99289ddfc035bbe2abe37",
+      "gitBlob": "d492c304d977650a998d31ffa629437c7e4279b3",
+      "gitSha256": "4dfe1e5d8de17cb8850fd3035b929475c1eb92235399f8e8c0f2036a0e1c09dd"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-server-arrival.test.tsx",
+      "sha256": "a0e5c02eb7d3fd9163b484d34a6f257328a812a681461fd71684186eb6bdb635",
+      "gitBlob": "546ca89e99c6f2f5a25925ba658fd4aa545a9e6d",
+      "gitSha256": "6041f9bc39cecf2c380568b2ac9b23dab8350320d92b593a528c226f2db2b982"
+    }
+  ],
+  "exactCorrectionSourcesStillMatch": true,
+  "interveningRootDrift": "Today-only correction sources/report/proof plus README/ledger; R096 source unchanged.",
+  "result": {
+    "confirmedP1": 0,
+    "guarantee": "First observation by combined route owner, including panels never visited. No wire-age provenance for a source never observed by the route.",
+    "cases": 203,
+    "physicalFiles": 12,
+    "passed": 203,
+    "failed": 0,
+    "duplicates": 0,
+    "permanentCasesIncluded": 152,
+    "independentlyAuthoredCases": 51,
+    "priorRoot178AndHistorical174NotAdded": true,
+    "includesActualTabClicks": true,
+    "neverObservedRouteBoundaryControls": 2
+  },
+  "quality": {
+    "staticNextTypegen": "pass",
+    "workflowContracts": "pass",
+    "smoke": "pass",
+    "mainTypeProject": "Only missing ignored licenses.json; no copy/generation/repair. Root full-three-project pass remains separate.",
+    "lintImport": "3files pass",
+    "explicit100Crlf": "3files pass",
+    "ordinaryFormatting": "3findings, failed",
+    "doctor": "0errors/0warnings, complete3file scan; no score/suppression"
+  },
+  "safeArchive": {
+    "allowlistSha256": "1a0f39872d18668f1f89a956a94acbb46b5ab42ef651a33ff0e8e9b3f04b74f0",
+    "payloadFiles": 42,
+    "payloadBytes": 5375032,
+    "parsedJson": 20,
+    "beforeInventory": "Hashed only, not displayed or copied for publication.",
+    "intakeAuditSha256": "fd643e6426789833986597d87d43b401fa21388ba37414d477d2289537a18da1"
+  },
+  "preservation": {
+    "all63TicketAnchorsPlusBaseline": true,
+    "trackedFiles18492UnchangedOnCandidate": true,
+    "source3MatchCurrentRootAndWorkingBytes": true,
+    "packagePins38Unchanged": true,
+    "physicalOwnedDependenciesNoExternalLinksOrHardlinks": true,
+    "bridgeHashGuardRemoved": true,
+    "zeroOwnedRunningResources": true
+  },
+  "failedAttempts": [
+    "Inventory maxBuffer bound corrected.",
+    "Initial navigation Link seam absent; added only external adapter.",
+    "Hidden-heading locator ambiguity and pending-render assumption corrected without changing refusal/cache/row/Retry predicates.",
+    "Sandbox engine-store denial/version-only fallback; approved identical elevation used pinned12.16.1.",
+    "Ignored license missing; ordinary formatting; first denied process inventory retained."
+  ],
+  "freshRuntimeCases": 0,
+  "freshPostgresCases": 0,
+  "remaining": [
+    "Authenticated R096 key/webhook actions, true one-time secret/copy/hide and readback.",
+    "Current responsive/preferences/keyboard/accessibility/native/Next acceptance.",
+    "Canonical PG/authority and broader live races, delivery, production/catalog/device/truezoom/global matrices."
+  ],
+  "readiness": "Provisional; current-source authenticated fixture verification is next."
+}

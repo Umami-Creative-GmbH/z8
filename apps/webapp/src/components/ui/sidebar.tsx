@@ -32,6 +32,7 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+const subscribeToSidebarHydration = () => () => {};
 
 function readStoredSidebarOpen(defaultOpen: boolean) {
 	try {
@@ -63,6 +64,7 @@ function writeStoredSidebarOpen(open: boolean) {
 type SidebarContextProps = {
 	state: "expanded" | "collapsed";
 	open: boolean;
+	serverOpen: boolean;
 	setOpen: (open: boolean) => void;
 	openMobile: boolean;
 	setOpenMobile: (open: boolean) => void;
@@ -79,6 +81,17 @@ function useSidebar() {
 	}
 
 	return context;
+}
+
+// A streamed consumer can hydrate after its provider has read localStorage.
+// Its first render must still match the server's attributes, then adopt the saved value.
+function useSidebarOpenSnapshot() {
+	const { open, serverOpen } = useSidebar();
+	return React.useSyncExternalStore(
+		subscribeToSidebarHydration,
+		() => open,
+		() => serverOpen,
+	);
 }
 
 function SidebarProvider({
@@ -151,6 +164,7 @@ function SidebarProvider({
 	const contextValue: SidebarContextProps = {
 		state,
 		open,
+		serverOpen: openProp ?? defaultOpen,
 		setOpen,
 		isMobile,
 		openMobile,
@@ -196,7 +210,10 @@ function Sidebar({
 	collapsible?: "offcanvas" | "icon" | "none";
 }) {
 	const { t } = useTranslate();
-	const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+	const { openMobile, setOpenMobile } = useSidebar();
+	const isMobile = useIsMobile();
+	const open = useSidebarOpenSnapshot();
+	const state = open ? "expanded" : "collapsed";
 
 	if (collapsible === "none") {
 		return (
@@ -217,6 +234,11 @@ function Sidebar({
 		return (
 			<Sheet onOpenChange={setOpenMobile} open={openMobile} {...props}>
 				<SheetContent
+					finalFocus={() =>
+						document.querySelector<HTMLButtonElement>(
+							'[data-sidebar="trigger"]',
+						)
+					}
 					className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
 					data-mobile="true"
 					data-sidebar="sidebar"
@@ -308,10 +330,13 @@ function SidebarTrigger({
 	...props
 }: React.ComponentProps<typeof Button>) {
 	const { t } = useTranslate();
-	const { toggleSidebar } = useSidebar();
+	const { toggleSidebar, openMobile } = useSidebar();
+	const isMobile = useIsMobile();
+	const open = useSidebarOpenSnapshot();
 
 	return (
 		<Button
+			aria-expanded={isMobile ? openMobile : open}
 			className={cn("size-7", className)}
 			data-sidebar="trigger"
 			data-slot="sidebar-trigger"
@@ -602,7 +627,7 @@ function SidebarMenuButton({
 	}
 
 	return (
-		<Tooltip>
+		<Tooltip disabled={state !== "collapsed" || isMobile}>
 			<TooltipTrigger asChild>{button}</TooltipTrigger>
 			<TooltipContent
 				align="center"

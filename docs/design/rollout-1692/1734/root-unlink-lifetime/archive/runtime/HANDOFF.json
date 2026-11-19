@@ -1,0 +1,124 @@
+{
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "tree": "8c3a3993377ebde26099a95c55a2f31855791364",
+  "lastVerified": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+  "boundedResult": "No reproduced product/source blocker in these observations; root owns final readiness and publication.",
+  "tests": {
+    "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+    "runs": [
+      {
+        "name": "public-attempt-1",
+        "cases": 8,
+        "passed": 7,
+        "failed": 1,
+        "pending": 0,
+        "reportRawSha256": "59fceb1f5f30725f81fbb2c3286c30f9a7031f05a18523169cc1309cf26fbdb0",
+        "physicalFileExecutions": 1
+      },
+      {
+        "name": "public-attempt-2",
+        "cases": 8,
+        "passed": 8,
+        "failed": 0,
+        "pending": 0,
+        "reportRawSha256": "82ad84a094a31ef47e5edecdceb12bb0f931d2bc02163f01c3b745caec665d1a",
+        "physicalFileExecutions": 1
+      },
+      {
+        "name": "public-confirmed",
+        "cases": 8,
+        "passed": 8,
+        "failed": 0,
+        "pending": 0,
+        "reportRawSha256": "b6d4030a9af4bbe9455e927acb0c638365ec47dd572cbf1037e97108e6b1dd3c",
+        "physicalFileExecutions": 1
+      },
+      {
+        "name": "protected-focused",
+        "cases": 40,
+        "passed": 40,
+        "failed": 0,
+        "pending": 0,
+        "reportRawSha256": "91fbb2ea9f4e7a8487f25bbe2ea65cec62b65ee128d48e7092d80ba00295d3e7",
+        "physicalFileExecutions": 5
+      },
+      {
+        "name": "public-final",
+        "cases": 40,
+        "passed": 40,
+        "failed": 0,
+        "pending": 0,
+        "reportRawSha256": "d68d436f02537fcb55e583ee231307a958d9e2958e781bc7a304cbea5a715f70",
+        "physicalFileExecutions": 5
+      },
+      {
+        "name": "public-nine-final",
+        "cases": 9,
+        "passed": 9,
+        "failed": 0,
+        "pending": 0,
+        "reportRawSha256": "16e62a21f8fd62d9c5df25c88c5a6af3bf79486d4ddd04789ceea291ccebb631",
+        "physicalFileExecutions": 1
+      },
+      {
+        "name": "postgres",
+        "cases": 85,
+        "passed": 85,
+        "failed": 0,
+        "pending": 0,
+        "reportRawSha256": "e49b3dc8a12bc892c8e9ba208012faebf7798e88137ace6bbb174096d9280d10",
+        "physicalFileExecutions": 4
+      }
+    ],
+    "unitMultiset": {
+      "runs": 6,
+      "caseInstances": 113,
+      "passed": 112,
+      "failed": 1,
+      "fileExecutions": 14,
+      "uniquePhysicalFiles": 6
+    },
+    "finalAccepted": {
+      "independentNewPublicCases": 9,
+      "independentNewPublicPhysicalFiles": 1,
+      "protectedRechecks": 40,
+      "protectedPhysicalFiles": 5,
+      "canonicalPostgres": 65,
+      "canonicalPostgresPhysicalFiles": 3,
+      "protectedPayslipPostgres": 20,
+      "protectedPostgresPhysicalFiles": 1,
+      "distinctCases": 134,
+      "distinctPhysicalFiles": 10
+    },
+    "allMultiset": {
+      "runs": 7,
+      "caseInstances": 198,
+      "passed": 197,
+      "failed": 1,
+      "fileExecutions": 18
+    },
+    "notes": [
+      "public-attempt-1:7 pass/1 fixture-sequencing failure; dispatched fixture by requested absence before later passing public probes.",
+      "public-attempt-2:8 report passes; PowerShell stderr wrapper returned1; independently repeated through a structured runner with status0.",
+      "public-final was an unintended repeat of protected40 due a runner-name selection branch; retained, never counted as9 or new coverage.",
+      "Root509/70,3 type projects and bounded Doctor/lint/format remain inherited. Protected40 overlap root509 and must not be added to it.",
+      "Final new public9/1 and protected40/5 are distinct files/cases, while repeated attempts remain a multiset. PostgreSQL85/4 is fresh against the guarded disposable fixture."
+    ]
+  },
+  "resources": {
+    "browserControllerParentAbsent": true,
+    "browserPidAbsent": true,
+    "nextPortClosed": true,
+    "zeroOwnedRuntimeResources": true,
+    "nativePidAbsent": true,
+    "exactOwnServicesAbsent": 3,
+    "noGlobalKillOrServiceEnumeration": true
+  },
+  "restored": true,
+  "gitClean": true,
+  "verifiedCommit": null,
+  "remoteOrTrackerWrites": false,
+  "sourceFix": false,
+  "release": "RELEASE ALL checkout/index/Git/package/runtime/process ownership to root.",
+  "publication": "Copy only public-allowlist.json entries; private runtime, baseline, raw diagnostics and failed images are excluded."
+}

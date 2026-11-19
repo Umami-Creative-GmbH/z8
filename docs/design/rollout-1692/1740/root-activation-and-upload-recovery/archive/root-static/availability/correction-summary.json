@@ -1,0 +1,77 @@
+{
+  "base": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+  "sources": [
+    {
+      "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+      "bytes": 6368,
+      "sha256": "4825e6d9d87d449540b7baea185a9b87c8748b599642f1ce57507fb61e25c481"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "bytes": 6166,
+      "sha256": "743a836a763f00b90ab13b2b2597fb144d9078c3eee8b760621aa6e517f8c3bd"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+      "bytes": 5427,
+      "sha256": "9cb3f3cf3272faea13839610d3b4fdfc1b3a13b6bb8f1682d036febc5b349ba0"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+      "bytes": 9525,
+      "sha256": "f1fa39c97b4176991c0fe1da494cf069679f1ee24f43e2116fcdeabb9b927d21"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "bytes": 25199,
+      "sha256": "9d21ed51ae96b643c83ea0a813ce7a1a06cbfdbe57aae2c9de3c1d17fd14a92b"
+    }
+  ],
+  "unit": {
+    "passed": 592,
+    "passingFiles": 73,
+    "selectedFiles": 74,
+    "skipped": [
+      {
+        "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "name": "payslip upload transport uploads the same PDF again after an earlier batch consumed its temporary bytes"
+      },
+      {
+        "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "name": "payslip upload transport still resumes unfinished bytes after a browser reload"
+      },
+      {
+        "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "name": "payslip upload transport ignores a consumed completed URL retained by the previous client"
+      }
+    ]
+  },
+  "http": {
+    "passed": 2,
+    "actualBrowserDistribution": true,
+    "syntheticBoundaries": true
+  },
+  "postgres": {
+    "passed": 83,
+    "files": 5,
+    "skipped": 0,
+    "migrationVerifier": "PASS",
+    "cleanupContainer": "z8_approval_workflow_repository_test_1794907005659449700_24522",
+    "independentAbsence": "postgres-absence.json"
+  },
+  "types": "all3+typegen PASS",
+  "lint": "five-owned explicit100CRLF PASS",
+  "doctor": "five-owned zero diagnostics",
+  "oldReportPrefix": {
+    "bytes": 27371,
+    "sha256": "e8ccff2cd4d3fe72afa38f47446453715dd464f7fe5b45bc2436fc26f9e056d6"
+  },
+  "verifiedCommit1740": null,
+  "liveBrowser": false,
+  "failures": [
+    "actual assembled availability red",
+    "public staging API key red",
+    "expanded old-processing test fixed-index assumption",
+    "cleanup-receipt final print referenced an unbound variable after receipt already saved; container absence check passed"
+  ]
+}

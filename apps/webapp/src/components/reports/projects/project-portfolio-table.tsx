@@ -4,11 +4,21 @@ import { IconAlertTriangle, IconChevronRight } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { DataTable, DataTableToolbar } from "@/components/data-table-server";
+import {
+	DataTable,
+	DataTablePagination,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { ProjectSummary } from "@/lib/reports/project-types";
 import { cn } from "@/lib/utils";
@@ -23,7 +33,8 @@ interface ProjectPortfolioTableProps {
 const STATUS_COLORS: Record<string, string> = {
 	planned: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
 	active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-	paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+	paused:
+		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
 	completed: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
 	archived: "bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-500",
 };
@@ -36,7 +47,10 @@ function getBudgetProgressColor(percent: number | null) {
 	return "bg-green-500";
 }
 
-export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
+export function ProjectPortfolioTable({
+	projects,
+	onProjectSelect,
+}: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
 	const format = useBillableFigureFormat();
 	const hoursFormat = useProjectHoursFormat();
@@ -105,65 +119,79 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 
 	// Billable Time columns, only for viewers who get the figures (#902).
 	const showBillable = projects.some((project) => project.billable);
-	const showMargin = projects.some((project) => project.billable?.access === "full");
-	const billableColumns: ColumnDef<DataTableFeatures, ProjectSummary>[] = showBillable
-		? [
-				{
-					id: "billableHours",
-					header: () => (
-						<div className="text-right">
-							{t("reports.projects.billable.billableHours", "Billable hours")}
-						</div>
-					),
-					cell: ({ row }) => (
-						<div className="text-right tabular-nums">
-							{row.original.billable ? hoursFormat.hours(row.original.billable.billableHours) : "—"}
-						</div>
-					),
-				},
-				{
-					id: "revenue",
-					header: () => (
-						<div className="text-right">{t("reports.projects.billable.revenue", "Revenue")}</div>
-					),
-					cell: ({ row }) => {
-						const figures = row.original.billable;
-						if (!figures) return <div className="text-right">—</div>;
-						return (
-							<div className="text-right tabular-nums">
-								{format.money(figures.revenue, figures.currency)}
-								{figures.unpricedWorkCount > 0 && (
-									<IconAlertTriangle
-										className="ml-1 inline size-3 text-amber-600"
-										aria-label={t("reports.projects.billable.hasUnpriced", "Has unpriced work")}
-									/>
-								)}
+	const showMargin = projects.some(
+		(project) => project.billable?.access === "full",
+	);
+	const billableColumns: ColumnDef<DataTableFeatures, ProjectSummary>[] =
+		showBillable
+			? [
+					{
+						id: "billableHours",
+						header: () => (
+							<div className="text-right">
+								{t("reports.projects.billable.billableHours", "Billable hours")}
 							</div>
-						);
+						),
+						cell: ({ row }) => (
+							<div className="text-right tabular-nums">
+								{row.original.billable
+									? hoursFormat.hours(row.original.billable.billableHours)
+									: "—"}
+							</div>
+						),
 					},
-				},
-				...(showMargin
-					? [
-							{
-								id: "margin",
-								header: () => (
-									<div className="text-right">
-										{t("reports.projects.billable.margin", "Margin")}
-									</div>
-								),
-								cell: ({ row }) => {
-									const figures = row.original.billable;
-									return (
-										<div className="text-right tabular-nums">
-											{figures?.access === "full" ? <MarginValue figures={figures} /> : "—"}
+					{
+						id: "revenue",
+						header: () => (
+							<div className="text-right">
+								{t("reports.projects.billable.revenue", "Revenue")}
+							</div>
+						),
+						cell: ({ row }) => {
+							const figures = row.original.billable;
+							if (!figures) return <div className="text-right">—</div>;
+							return (
+								<div className="text-right tabular-nums">
+									{format.money(figures.revenue, figures.currency)}
+									{figures.unpricedWorkCount > 0 && (
+										<IconAlertTriangle
+											className="ml-1 inline size-3 text-amber-600"
+											aria-label={t(
+												"reports.projects.billable.hasUnpriced",
+												"Has unpriced work",
+											)}
+										/>
+									)}
+								</div>
+							);
+						},
+					},
+					...(showMargin
+						? [
+								{
+									id: "margin",
+									header: () => (
+										<div className="text-right">
+											{t("reports.projects.billable.margin", "Margin")}
 										</div>
-									);
-								},
-							} satisfies ColumnDef<DataTableFeatures, ProjectSummary>,
-						]
-					: []),
-			]
-		: [];
+									),
+									cell: ({ row }) => {
+										const figures = row.original.billable;
+										return (
+											<div className="text-right tabular-nums">
+												{figures?.access === "full" ? (
+													<MarginValue figures={figures} />
+												) : (
+													"—"
+												)}
+											</div>
+										);
+									},
+								} satisfies ColumnDef<DataTableFeatures, ProjectSummary>,
+							]
+						: []),
+				]
+			: [];
 
 	// Column definitions
 	const columns: ColumnDef<DataTableFeatures, ProjectSummary>[] = [
@@ -194,7 +222,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			header: t("reports.projects.table.customer", "Customer"),
 			cell: ({ row }) => (
 				<div className="text-sm">
-					{row.original.customer?.name ?? <span className="text-muted-foreground">—</span>}
+					{row.original.customer?.name ?? (
+						<span className="text-muted-foreground">—</span>
+					)}
 				</div>
 			),
 		},
@@ -202,16 +232,25 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			accessorKey: "status",
 			header: t("reports.projects.table.status", "Status"),
 			cell: ({ row }) => (
-				<Badge variant="secondary" className={cn(STATUS_COLORS[row.original.status])}>
+				<Badge
+					variant="secondary"
+					className={cn(STATUS_COLORS[row.original.status])}
+				>
 					{getStatusLabel(row.original.status)}
 				</Badge>
 			),
 		},
 		{
 			accessorKey: "totalHours",
-			header: () => <div className="text-right">{t("reports.projects.table.hours", "Hours")}</div>,
+			header: () => (
+				<div className="text-right">
+					{t("reports.projects.table.hours", "Hours")}
+				</div>
+			),
 			cell: ({ row }) => (
-				<div className="text-right tabular-nums">{hoursFormat.hours(row.original.totalHours)}</div>
+				<div className="text-right tabular-nums">
+					{hoursFormat.hours(row.original.totalHours)}
+				</div>
 			),
 		},
 		...billableColumns,
@@ -235,7 +274,10 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 						</div>
 						<Progress
 							value={Math.min(project.percentBudgetUsed ?? 0, 100)}
-							className={cn("h-2", getBudgetProgressColor(project.percentBudgetUsed))}
+							className={cn(
+								"h-2",
+								getBudgetProgressColor(project.percentBudgetUsed),
+							)}
 						/>
 						{project.forecastSeverity !== "none" && (
 							<Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
@@ -256,7 +298,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 				}
 				return (
 					<div className="flex flex-col gap-1">
-						<span className="text-sm">{project.deadline.toLocaleDateString()}</span>
+						<span className="text-sm">
+							{project.deadline.toLocaleDateString()}
+						</span>
 						{formatDeadlineStatus(project.daysUntilDeadline)}
 					</div>
 				);
@@ -264,9 +308,15 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 		},
 		{
 			accessorKey: "uniqueEmployees",
-			header: () => <div className="text-right">{t("reports.projects.table.team", "Team")}</div>,
+			header: () => (
+				<div className="text-right">
+					{t("reports.projects.table.team", "Team")}
+				</div>
+			),
 			cell: ({ row }) => (
-				<div className="text-right tabular-nums">{row.original.uniqueEmployees}</div>
+				<div className="text-right tabular-nums">
+					{row.original.uniqueEmployees}
+				</div>
 			),
 		},
 		{
@@ -276,8 +326,11 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					variant="ghost"
 					size="sm"
 					onClick={() => onProjectSelect(row.original.id)}
-					className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-					aria-label={t("reports.projects.table.viewProject", "View project details")}
+					className="sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity motion-reduce:transition-none"
+					aria-label={t(
+						"reports.projects.table.viewProject",
+						"View project details",
+					)}
 				>
 					<IconChevronRight className="size-4" />
 				</Button>
@@ -288,7 +341,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("reports.projects.table.portfolioTitle", "Project Portfolio")}</CardTitle>
+				<CardTitle>
+					{t("reports.projects.table.portfolioTitle", "Project Portfolio")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"reports.projects.table.portfolioDescription",
@@ -306,7 +361,11 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					)}
 				/>
 
-				<DataTable mobileLayout="stacked"
+				<DataTable
+					mobileLayout="scroll"
+					pinLastColumn
+					rowClassName="group"
+					getRowId={(row) => row.id}
 					columns={columns}
 					data={filteredProjects}
 					emptyMessage={
@@ -317,7 +376,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 								)
 							: t("reports.projects.table.noProjectsFound", "No projects found")
 					}
-				/>
+				>
+					{(table) => <DataTablePagination table={table} />}
+				</DataTable>
 			</CardContent>
 		</Card>
 	);

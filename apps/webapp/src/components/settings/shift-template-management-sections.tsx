@@ -3,7 +3,6 @@
 import {
 	IconClock,
 	IconDots,
-	IconLoader2,
 	IconMapPin,
 	IconPalette,
 	IconPencil,
@@ -28,6 +27,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -37,6 +37,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { SettingsLoadError } from "./settings-load-error";
 
 const PRESET_COLORS = [
 	{ key: "blue", value: "#3b82f6" },
@@ -110,6 +111,9 @@ export function ShiftTemplateColorPicker({
 export function ShiftTemplateList({
 	templates,
 	isLoading,
+	isError = false,
+	isRetrying = false,
+	onRetry,
 	formatTime,
 	calculateDuration,
 	onCreate,
@@ -119,6 +123,10 @@ export function ShiftTemplateList({
 }: {
 	templates: ShiftTemplate[];
 	isLoading: boolean;
+	/** The list failed to load, so an empty list would be misleading. */
+	isError?: boolean;
+	isRetrying?: boolean;
+	onRetry?: () => void;
 	formatTime: (time: string) => string;
 	calculateDuration: (startTime: string, endTime: string) => string;
 	onCreate: () => void;
@@ -129,10 +137,10 @@ export function ShiftTemplateList({
 	const { t } = useTranslate();
 	return (
 		<Card>
-			<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-4">
-				<div>
+			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 pb-4">
+				<div className="min-w-0">
 					<CardTitle className="text-base font-medium">
-						{t("settings.shiftTemplates.list.title", "Templates")}
+						<h2>{t("settings.shiftTemplates.list.title", "Templates")}</h2>
 					</CardTitle>
 					<CardDescription>
 						{t(
@@ -142,22 +150,37 @@ export function ShiftTemplateList({
 					</CardDescription>
 				</div>
 				<Button onClick={onCreate} size="sm">
-					<IconPlus className="mr-2 size-4" />
+					<IconPlus aria-hidden="true" className="mr-2 size-4" />
 					{t("settings.shiftTemplates.add", "Add Template")}
 				</Button>
 			</CardHeader>
 			<CardContent>
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2
-							className="size-6 animate-spin text-muted-foreground"
-							aria-hidden="true"
-						/>
+					<div
+						role="status"
+						aria-label={t(
+							"common.loadingRegions.shiftTemplateSettings",
+							"Loading shift template settings",
+						)}
+						className="space-y-2"
+					>
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
 					</div>
+				) : isError ? (
+					<SettingsLoadError
+						message={t(
+							"settings.shiftTemplates.loadError",
+							"Shift templates could not be loaded.",
+						)}
+						onRetry={() => onRetry?.()}
+						isRetrying={isRetrying}
+					/>
 				) : templates.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-8 text-center">
 						<IconClock
-							className="size-12 text-muted-foreground/50 mb-4"
+							className="size-8 text-muted-foreground mb-3"
 							aria-hidden="true"
 						/>
 						<h3 className="font-medium">
@@ -193,30 +216,39 @@ export function ShiftTemplateList({
 								<TableHead>
 									{t("settings.shiftTemplates.table.status", "Status")}
 								</TableHead>
-								<TableHead className="w-[70px]" />
+								<TableHead className="w-[70px]">
+									<span className="sr-only">
+										{t("common.actions", "Actions")}
+									</span>
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{templates.map((template) => (
 								<TableRow key={template.id}>
 									<TableCell>
-										<div className="flex items-center gap-3">
+										<div className="flex min-w-0 items-center gap-3">
 											<div
 												className="size-4 rounded-full shrink-0"
 												style={{ backgroundColor: template.color || "#3b82f6" }}
 												aria-hidden="true"
 											/>
-											<span className="font-medium">{template.name}</span>
+											<span
+												className="max-w-64 truncate font-medium"
+												title={template.name}
+											>
+												{template.name}
+											</span>
 										</div>
 									</TableCell>
 									<TableCell>
-										<span className="text-muted-foreground">
+										<span className="text-muted-foreground tabular-nums whitespace-nowrap">
 											{formatTime(template.startTime)} –{" "}
 											{formatTime(template.endTime)}
 										</span>
 									</TableCell>
 									<TableCell>
-										<span className="text-muted-foreground">
+										<span className="text-muted-foreground tabular-nums">
 											{calculateDuration(template.startTime, template.endTime)}
 										</span>
 									</TableCell>
@@ -232,11 +264,13 @@ export function ShiftTemplateList({
 									<TableCell>
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="icon" className="size-8">
-													<IconDots className="size-4" />
-													<span className="sr-only">
-														{t("common.openMenu", "Open menu")}
-													</span>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8"
+													aria-label={`${t("common.openMenu", "Open menu")}: ${template.name}`}
+												>
+													<IconDots aria-hidden="true" className="size-4" />
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">

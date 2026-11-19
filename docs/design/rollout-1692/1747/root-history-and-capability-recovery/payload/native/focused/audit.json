@@ -1,0 +1,635 @@
+{
+  "schemaVersion": 1,
+  "issue": 1747,
+  "purpose": "Read-only focused SAFE intake; no tests, archived execution, source review or readiness decision",
+  "verifiedCommit": null,
+  "input": {
+    "directory": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1747-focused-runtime-20261118c\\SAFE",
+    "index": "SHA256-final.json",
+    "indexSha256": "d0a8f007edf29f31c923ff45ff45c920e67c38c432ad4c4ecc9047c8c35b4e2f",
+    "payloadFiles": 52,
+    "payloadBytes": 191678,
+    "allBytesAndHashesMatch": true,
+    "jsonParsed": 50,
+    "pngs": 1,
+    "payloadHashes": [
+      {
+        "path": "F1-held.json",
+        "bytes": 1418,
+        "sha256": "8e2c3fa40719178b21019abc9663b350dfc765a3a0f443a7d4948c7efa9d4ceb"
+      },
+      {
+        "path": "F1.json",
+        "bytes": 2044,
+        "sha256": "099e99025961dbfcd54271fca6a15a42ebfd7f9ea6ced03c3f0f48a2a1deb3ac"
+      },
+      {
+        "path": "F2-healthy-empty-control.json",
+        "bytes": 599,
+        "sha256": "0b248b25e84b406f3a094221aa9dfefb613b7d6e195718eabfbad115840a22e3"
+      },
+      {
+        "path": "F2-no-match-control-v2.json",
+        "bytes": 1113,
+        "sha256": "4b09f13cd5a909c9d296524ac4637f78e817e4ac6235b19c82262054024a399f"
+      },
+      {
+        "path": "F2-outage.json",
+        "bytes": 1583,
+        "sha256": "2447101d272ed6781a24acaef94fa56903dd19f747d32aaa62244c88b9025eed"
+      },
+      {
+        "path": "F2.json",
+        "bytes": 2006,
+        "sha256": "70606e74fa1909156705bca45ad9db3efbc039adc2bfe0bafb38197e9ed44dc0"
+      },
+      {
+        "path": "F3-before-save.json",
+        "bytes": 175,
+        "sha256": "db5838912c4d171bf58c6f699150fe16818cf0387eb37faaaee61eefa80abfb7"
+      },
+      {
+        "path": "F3-destinations.json",
+        "bytes": 170,
+        "sha256": "41bc52f74c8005a2fe18c089da6ee86d49c07df705c091e9e84ab0a2f7da070c"
+      },
+      {
+        "path": "F3-editor-open.json",
+        "bytes": 187,
+        "sha256": "ec3cd94a35d5da48cd01087f2be2bd3d56c89c2336e2bd9c439520209fce6313"
+      },
+      {
+        "path": "F3-finance.json",
+        "bytes": 1435,
+        "sha256": "20640ccf57ca506caf21072ab68b0c53bc768edfac982db3df6ca0d854cb4256"
+      },
+      {
+        "path": "F3-grant.json",
+        "bytes": 270,
+        "sha256": "fe682afa305eecabf26ee78484ce384ca1c204ff6c518221bec073a47a7fc0d1"
+      },
+      {
+        "path": "F4-arrival.json",
+        "bytes": 725,
+        "sha256": "c15da8c1becfa36500e1c2d9db1a0290b87d220ce8dfa3e837f5c0cabaa021f1"
+      },
+      {
+        "path": "F4-direct-denial.json",
+        "bytes": 486,
+        "sha256": "16003435c5fdd801a2683bd918e91214289f8d4390c62259ac71d1442f3bfd25"
+      },
+      {
+        "path": "F4-revoke.json",
+        "bytes": 341,
+        "sha256": "f215c6fba00a7d75530c1e485801fbe386c0b3b8892eea42d8cb7aab3f45bafd"
+      },
+      {
+        "path": "F5-large-employee.json",
+        "bytes": 614,
+        "sha256": "72ff27b9f6de0e24967a0784f668bb994d3540f886ce11793db3370ec7a03378"
+      },
+      {
+        "path": "F5-small-restricted.json",
+        "bytes": 616,
+        "sha256": "c1c1170769811926552c597f8575b66245ac58231024e4c6dbe480294c990d4a"
+      },
+      {
+        "path": "F6-failure.json",
+        "bytes": 1210,
+        "sha256": "93112085e665b15ff82924c5d6f6949df50a50e510b5fea3996c59c3fca7e9a0"
+      },
+      {
+        "path": "F6.json",
+        "bytes": 647,
+        "sha256": "6e5a3c4f51e9e70efe0302fc2526beae6efe83e9908c7349ca4c3a0a574f1d86"
+      },
+      {
+        "path": "F7-pre-release.json",
+        "bytes": 775,
+        "sha256": "f27333003d1d5ad8e0aa37229ae833641132e6ac23883168f785ae4a58a4b8b8"
+      },
+      {
+        "path": "F7.json",
+        "bytes": 1142,
+        "sha256": "92a12c0b73e8e3c246d74addb3e552dfddccca32693f5297f92db53345d2621c"
+      },
+      {
+        "path": "HANDOFF.md",
+        "bytes": 1526,
+        "sha256": "9bede2f1e78a73f46bcdf6da4355f601974e6382677a8ef3db6e4923e7299d03"
+      },
+      {
+        "path": "RELEASE.json",
+        "bytes": 1280,
+        "sha256": "c5ab2c2b98ea5a5b0589ed6361de50c9fbb2b491720286678c2b4d4cb9e029b6"
+      },
+      {
+        "path": "REPORT.json",
+        "bytes": 1304,
+        "sha256": "e5c28593b7cfd4957e462494fe3b1c686dea929280ef6f30d48926d51442d612"
+      },
+      {
+        "path": "SEAL-VERIFICATION.json",
+        "bytes": 667,
+        "sha256": "00e5a75a6c27ae9a800759a088210bbb0ae5fdfe9a15ac8fd2f43be1f642c9a6"
+      },
+      {
+        "path": "attempts.json",
+        "bytes": 6997,
+        "sha256": "d43a716c0a78ba937a59d910c5db3978ba21da8b92da8170ff71a068074b1599"
+      },
+      {
+        "path": "browser-cleanup.json",
+        "bytes": 164,
+        "sha256": "5a7d7670d21c047fac874281612b251a97126fcc9a9d67c519787d1177967436"
+      },
+      {
+        "path": "capture-review.json",
+        "bytes": 476,
+        "sha256": "452f55c9cb5389a55be008955beabb4219b852da6fa1ce86d61411ad1f83a4c9"
+      },
+      {
+        "path": "capture.json",
+        "bytes": 698,
+        "sha256": "d0efc6fa4126a6756841d4644fd904df645c839befe5f637a47428e802e273b8"
+      },
+      {
+        "path": "cleanup-qualifications.json",
+        "bytes": 592,
+        "sha256": "fa079a70b57b8ebb71d94e153db8d08ce9ed4a2cf6168e47570ad438605794ec"
+      },
+      {
+        "path": "commands.json",
+        "bytes": 5728,
+        "sha256": "1cebe0aba8ec7fc92f3db02d1115fd53a87c88b4b2106071d65627f1326f1135"
+      },
+      {
+        "path": "database-after-seed.json",
+        "bytes": 10380,
+        "sha256": "a160e2d0a2a6b1dac4a107249f0f1f18cc7f7a999db7800833a01eaf00afdf88"
+      },
+      {
+        "path": "database-final.json",
+        "bytes": 10380,
+        "sha256": "a736f756cd276a1f1c6b4cc35b731ff6e54888748ae109e0ef04c4d89c27587d"
+      },
+      {
+        "path": "database-initial.json",
+        "bytes": 10380,
+        "sha256": "8945f75e7dc7122c1a90f78ee1d714eb5884f27344fd9d862da2ef2f3b3cb6d5"
+      },
+      {
+        "path": "focused-personal-history.png",
+        "bytes": 84720,
+        "sha256": "4dc8625735233abcd9666ab8829500b355adbba2c3f27dc51df3532b605b1d51"
+      },
+      {
+        "path": "harness-hashes.json",
+        "bytes": 5488,
+        "sha256": "3290c8a92ce5e3c1a34c12578bd10e34ca15a36daa6869b9b24bc85cae07c0f9"
+      },
+      {
+        "path": "login-large-employee.json",
+        "bytes": 182,
+        "sha256": "e3aaaff6adaec62201de2f5d23ccaa8b37f69a40ddbbc9cc7181140f026df6fe"
+      },
+      {
+        "path": "login-small-admin.json",
+        "bytes": 182,
+        "sha256": "9f7082fb1b81038410e0759723291fbec64552c65b300989f5980ffb44c1b31f"
+      },
+      {
+        "path": "login-small-employee.json",
+        "bytes": 187,
+        "sha256": "0b37a6acc9a79a28edeb525b9fadb16335757891c2f96e96ff3267507b162199"
+      },
+      {
+        "path": "login-small-manager.json",
+        "bytes": 182,
+        "sha256": "e72d13eec9a88cfa6235c41cc8141cae8cb5d9f729f7744cf66204f8258be983"
+      },
+      {
+        "path": "login-small-restricted.json",
+        "bytes": 182,
+        "sha256": "ca569cd61d99f7f7015999916d37e10a7cf3e7a1b476dc442d651796c481cd3d"
+      },
+      {
+        "path": "next-diagnostics.json",
+        "bytes": 9330,
+        "sha256": "61f8c0a134174bd902a0c2abda0407f51635913ed7b026a76db0493ebb86f163"
+      },
+      {
+        "path": "next-tools.json",
+        "bytes": 5316,
+        "sha256": "5d850eaf662fd0c14fc527fc6a0f7e70fb5c02a9fbcb85c5d6004750e275402e"
+      },
+      {
+        "path": "originals-after.json",
+        "bytes": 1842,
+        "sha256": "421e5b77762cc5e83c7acacd34775fe61e5c56f512a73f7982673a3ca195b3a1"
+      },
+      {
+        "path": "originals-before.json",
+        "bytes": 1842,
+        "sha256": "0640c61400248eb22ddf886f12c5d5862f466526afb33b68b74a9afcefad7f63"
+      },
+      {
+        "path": "predicate-ledger.json",
+        "bytes": 7481,
+        "sha256": "33f424b5edd09c24d2defc77de7de7bebcf99917eca30e9e4fe53df7d71f9fd2"
+      },
+      {
+        "path": "preflight.json",
+        "bytes": 1246,
+        "sha256": "6d43be8549cb403316ae93f0c7cc4be0c9b2febdf378ca87cefc853a9558f103"
+      },
+      {
+        "path": "preservation-database.json",
+        "bytes": 3023,
+        "sha256": "ce6733629f9ac37dad57fa33fe04fd63871f6220881d9a8e122fcf6dcd585ae9"
+      },
+      {
+        "path": "preservation-final.json",
+        "bytes": 776,
+        "sha256": "766dad1ebc8073a56e3fc6b602fa7a14b3cfe9f86177fbad7fe4567f1e16c903"
+      },
+      {
+        "path": "process-cleanup.json",
+        "bytes": 653,
+        "sha256": "d6e9fd51536813871b0cea72b974e3015b702ce420b249a8ee1192f2d0c86393"
+      },
+      {
+        "path": "resources-final.json",
+        "bytes": 424,
+        "sha256": "58b496247557884b5a29871dfc01fd49591819156b9eaf962667aaa780f50997"
+      },
+      {
+        "path": "seed.json",
+        "bytes": 231,
+        "sha256": "28e1df97f1758c0da67b325dfc2c4b5f76248e2a3be35dd4d97adb6b09817dab"
+      },
+      {
+        "path": "transport.json",
+        "bytes": 263,
+        "sha256": "10b97d286794b9cf30c2acfb9a4c513413d4f20517c2163c6d109001e9c9385e"
+      }
+    ]
+  },
+  "counts": {
+    "focused": {
+      "PASS": 7,
+      "FAIL": 0,
+      "UNPASSED": 1
+    },
+    "allLedger": {
+      "PASS": 7,
+      "FAIL": 0,
+      "UNPASSED": 7
+    },
+    "attempts": 21,
+    "inheritedSuiteCasesAdded": 0,
+    "priorEvidenceUnchangedInProducerReceipts": true,
+    "notAddedToPriorCounts": true
+  },
+  "support": {
+    "F1": {
+      "supported": true,
+      "scope": "Initial CLIENT history after exact route commit; visible one route-owned h1, Loading your travel expenses, zero rows; unmodified release produces two rows.",
+      "ordering": {
+        "committed": "2026-11-18T04:20:41.113Z",
+        "released": "2026-11-18T04:20:41.115Z",
+        "freshRows": "2026-11-18T04:20:42.235Z"
+      },
+      "qualifications": [
+        "Earliest authenticated-shell fallback not evaluated.",
+        "Current-route non-auth POST scope may overlap shared reads; no exactly-one-reader claim."
+      ]
+    },
+    "F2": {
+      "supported": true,
+      "scope": "New page without prior history success: seven before-dispatch route POST failures, error and local Retry but no healthy-empty; actual Retry restores two rows. Separate empty manager and no-match/Show all controls.",
+      "qualification": "Generic noMatch helper is false in the corrected receipt, while message:true and zero→four rows around actual Show all expenses provide the specific positive control; preserve both values."
+    },
+    "F3": {
+      "supported": true,
+      "grant": {
+        "scope": "all",
+        "can_export": false,
+        "can_record_reimbursements": false,
+        "is_active": true
+      },
+      "destinations": {
+        "finance": true,
+        "approval": false
+      },
+      "actualFinanceNavigation": true,
+      "qualifications": [
+        "Early before-save form selectors report all:false/export:null/reimburse:null; final canonical readback is authoritative for flags.",
+        "Queue row is grantee own approved legacy expense; absent settlement controls overlap own-expense exclusion. Not hidden API refusal or other-person settlement-admission proof.",
+        "Finance route visit is capability evidence, not finance-page heading/layout acceptance."
+      ]
+    },
+    "F4": {
+      "supportedNarrowRenderedDenial": true,
+      "grantInactive": true,
+      "renderedNotFound": true,
+      "httpStatus": 200,
+      "rawPassFalsePreserved": true,
+      "qualifications": [
+        "Fresh-arrival/reload only; no live race guarantee.",
+        "Canonical field is is_active, not revoked_at.",
+        "Raw pass:false used overstrict HTTP404 expectation; rendered denial and inactive readback are supported.",
+        "F4-arrival has destinations:[] but its view pathname is already /en/travel-expenses/finance. Standalone listing-destination capture lacks its own listing path/timestamp; do not widen this to independently timestamped listing disappearance proof."
+      ]
+    },
+    "F5": {
+      "supported": true,
+      "foreignAndSameOrgPeerPositiveOwnSeededRows": true,
+      "creatorSeededAndCurrentDraftsAbsent": true,
+      "qualification": "Actual listing privacy, not exhaustive direct-object/revocation matrix."
+    },
+    "F6": {
+      "supported": true,
+      "beforeDispatchFailedRequests": 1,
+      "beforeRetryGraphDelta": 0,
+      "historyRowsRetained": 2,
+      "busyReset": true,
+      "afterRetry": {
+        "reports": 1,
+        "items": 1,
+        "kind": "standalone",
+        "itemType": "receipt"
+      },
+      "qualification": "Synthetic transport failure only, not natural business refusal, Unauthorized, payload forgery or authority bypass."
+    },
+    "F7": {
+      "supported": true,
+      "secondPointerRecorded": "2026-11-18T04:23:17.361Z",
+      "heldResponse": "2026-11-18T04:23:17.235Z",
+      "preReleaseReceipt": "2026-11-18T04:23:18.165Z",
+      "release": "2026-11-18T04:23:18.166Z",
+      "beforeRelease": {
+        "requests": 1,
+        "held": 1,
+        "reports": 1,
+        "itemType": "receipt",
+        "disabled": true,
+        "busy": "true"
+      },
+      "unmodifiedCompletionOwnEditor": true,
+      "qualification": "CDP trusted-pointer method is a producer action receipt; no archived driver executed here. This closes the earlier v2 second-pointer traceability narrowly without summing repeat retirement coverage."
+    }
+  },
+  "unpassed": [
+    "F8 export/payroll-included-but-unpaid badge fixture",
+    "U1 full native agent-browser loop",
+    "U2 axe",
+    "U3 focused clipped PNG pixel acceptance",
+    "U4 full production/catalog/provider matrices",
+    "U5 device/true zoom",
+    "U6 exhaustive accounting/editor/direct-object/live capability races"
+  ],
+  "png": {
+    "path": "focused-personal-history.png",
+    "width": 1300,
+    "height": 915,
+    "fullyDecoded": true,
+    "independentMethod": "System.Drawing/GDI+ Bitmap.LockBits Marshal.Copy entire Format32bppArgb buffer",
+    "decodedPixelBytes": 4758000,
+    "rgbaSha256": "a04fe5af02c40e11fed929de489d2c6f7400ee32c2097b33235ee1418ea13bdf",
+    "visuallyInspected": true,
+    "result": "Leftmost title/action/content clipped; pixel acceptance UNPASSED; no wholewindow/sidebar conclusion",
+    "toolAttempt": "Python Pillow unavailable (ModuleNotFoundError); no install. Native view_image inspection and independent GDI+ full decode succeeded. RGB producer decode and RGBA audit differ in channels by design."
+  },
+  "database": {
+    "seedDelta": [
+      {
+        "org": "small",
+        "table": "travel_expense_attachment",
+        "countDelta": 3,
+        "from": 0,
+        "to": 3,
+        "shaEqual": false
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_claim",
+        "countDelta": 3,
+        "from": 0,
+        "to": 3,
+        "shaEqual": false
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_decision_log",
+        "countDelta": 1,
+        "from": 0,
+        "to": 1,
+        "shaEqual": false
+      },
+      {
+        "org": "large",
+        "table": "travel_expense_attachment",
+        "countDelta": 1,
+        "from": 0,
+        "to": 1,
+        "shaEqual": false
+      },
+      {
+        "org": "large",
+        "table": "travel_expense_claim",
+        "countDelta": 1,
+        "from": 0,
+        "to": 1,
+        "shaEqual": false
+      }
+    ],
+    "postSeedUiDelta": [
+      {
+        "org": "small",
+        "table": "expense_officer_grant",
+        "countDelta": 1,
+        "from": 0,
+        "to": 1,
+        "shaEqual": false
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_report",
+        "countDelta": 2,
+        "from": 0,
+        "to": 2,
+        "shaEqual": false
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_report_item",
+        "countDelta": 2,
+        "from": 0,
+        "to": 2,
+        "shaEqual": false
+      }
+    ],
+    "originalAliases": [
+      {
+        "alias": "creator-draft",
+        "unchanged": true
+      },
+      {
+        "alias": "creator-approved",
+        "unchanged": true
+      },
+      {
+        "alias": "peer-draft",
+        "unchanged": true
+      },
+      {
+        "alias": "foreign-draft",
+        "unchanged": true
+      }
+    ],
+    "originalAliasGroups": 4,
+    "perTableOriginalSnapshots": 12,
+    "populatedOriginalSnapshots": 9,
+    "foreignNamespacePostSeedUnchanged": true,
+    "populatedTimekeepingPairs": [
+      {
+        "org": "small",
+        "table": "time_record",
+        "count": 2088,
+        "unchanged": true
+      },
+      {
+        "org": "small",
+        "table": "time_entry",
+        "count": 4176,
+        "unchanged": true
+      },
+      {
+        "org": "small",
+        "table": "work_period",
+        "count": 2088,
+        "unchanged": true
+      },
+      {
+        "org": "large",
+        "table": "time_record",
+        "count": 52200,
+        "unchanged": true
+      },
+      {
+        "org": "large",
+        "table": "time_entry",
+        "count": 104400,
+        "unchanged": true
+      },
+      {
+        "org": "large",
+        "table": "work_period",
+        "count": 52200,
+        "unchanged": true
+      }
+    ],
+    "exactFinalGrant": {
+      "scope": "all",
+      "can_export": false,
+      "can_record_reimbursements": false,
+      "is_active": false
+    },
+    "seedVsUi": "Four business claims/attachments/objects plus one decision log are seeds. Exactly two reports/two receipt items plus one UI grant then revocation are UI changes. No authority SQL/time writes according to producer receipts.",
+    "qualification": "Digest comparisons and count deltas independently recalculated from indexed receipts; database itself was not queried."
+  },
+  "freshSourceChecks": {
+    "initial": {
+      "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+      "app": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+      "branch": "ai/1692-app-wide-ui-refresh",
+      "status": "",
+      "tracked": 18871
+    },
+    "final": {
+      "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+      "app": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+      "branch": "ai/1692-app-wide-ui-refresh",
+      "status": "",
+      "indexSha256": "cf1f8dccd45d276aeba291ae589ac1ec71706ad1deee18c20c35afd0972ef124"
+    },
+    "indexSha256": "cf1f8dccd45d276aeba291ae589ac1ec71706ad1deee18c20c35afd0972ef124",
+    "indexMatchesPreflight": true,
+    "pins": [
+      {
+        "path": "pnpm-lock.yaml",
+        "expected": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "actual": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/data/licenses.json",
+        "expected": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+        "actual": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+        "match": true
+      },
+      {
+        "path": ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs",
+        "expected": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+        "actual": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+        "match": true
+      },
+      {
+        "path": "scripts/performance/fixture.mjs",
+        "expected": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+        "actual": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+        "match": true
+      }
+    ],
+    "anchors": {
+      "occurrences": 65,
+      "missing": []
+    },
+    "lease": {
+      "status": "released",
+      "ownership": false,
+      "ownedLiveResources": 0,
+      "matchesBundledRelease": true
+    }
+  },
+  "producerOnlyPreservation": {
+    "allTrackedAndDependencyByteComparison": {
+      "at": "2026-11-18T04:31:35.473Z",
+      "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+      "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+      "branch": "ai/1692-app-wide-ui-refresh",
+      "trackedClean": true,
+      "trackedFileCount": 18871,
+      "protectedFileCount": 183931,
+      "indexUnchanged": true,
+      "sourcePinsUnchanged": true,
+      "fileChanges": [],
+      "linkChanges": [],
+      "priorV1V2IndexedArchivesUnchanged": true,
+      "pass": true,
+      "qualification": "All tracked bytes, Git index, dependency regular-file bytes and inventoried links, lock/license/canonical fixture pins and old v1/v2 indexed payloads compared. Generated .next allowed. Prior native intake/transport evidence never mutated; no independent pre-run byte inventory claimed for unindexed private evidence."
+    },
+    "operationalCleanup": "Indexed process-cleanup/resources-final/browser-cleanup/cleanup-qualifications and exact taskkill command support producer release; no fresh OS/container inventory here.",
+    "priorChronology": "Old v1/v2 indexed bytes match according to producer preflight/final inventory; old private evidence not read or rehashed here."
+  },
+  "retainedAttempts": {
+    "count": 21,
+    "failures": [
+      {
+        "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs no-match-control.js",
+        "error": "TargetCloseError",
+        "exit": 1,
+        "receiptFile": "attempt-no-match-control.js-1794976020627.json"
+      },
+      {
+        "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs setup.js",
+        "error": "TimeoutError",
+        "exit": 1,
+        "receiptFile": "attempt-setup.js-1794975521843.json"
+      }
+    ],
+    "rawFailures": "Excluded private exceptions not read/reconstructed. No-match original stayed pending until closure; corrected-label control passed. Cleanup traversal/Stop-Process/taskkill corrections remain explicit; package/runtime process exit1 on forced cleanup not product error."
+  },
+  "disposition": "SAFE integrity and bounded F1–F7 support pass with listed qualifications. No product/runtime execution, repository/index/source/Git/tracker mutation or readiness decision; only new system TEMP outputs."
+}

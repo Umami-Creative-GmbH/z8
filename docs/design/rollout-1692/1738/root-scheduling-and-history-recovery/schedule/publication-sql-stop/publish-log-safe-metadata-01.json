@@ -1,0 +1,11 @@
+{
+    "allowedSqlStateMatches":  [
+                                   {
+                                       "occurrences":  16,
+                                       "sqlState":  "42809"
+                                   }
+                               ],
+    "publishQueryFailureMarkers":  4,
+    "source":  "Own development log; allowlist-only derived metadata. No raw query, parameters, IDs, headers, auth, private fields or raw log exposed.",
+    "anyArrayMessageOccurrences":  28
+}

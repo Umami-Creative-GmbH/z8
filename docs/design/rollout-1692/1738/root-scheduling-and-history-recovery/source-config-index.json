@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "pins": "source-config-pins.json",
+  "originalPlan": {
+    "bytes": 10198,
+    "sha256": "caf48c79701c7a07464414188cd1f5ec93e02616e45b92c599bca7d80906b442",
+    "normalization": "valid-utf8-no-nul",
+    "lf": {
+      "bytes": 10198,
+      "sha256": "caf48c79701c7a07464414188cd1f5ec93e02616e45b92c599bca7d80906b442"
+    },
+    "crlf": {
+      "bytes": 10430,
+      "sha256": "5b97504d47ac49d4b958de5b028d9ed7c41cd6d6e9fba866498a8af8a6b0ad50"
+    }
+  },
+  "files": [
+    {
+      "path": ".gitattributes",
+      "kind": "configuration",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "kind": "configuration",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "kind": "configuration",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/actions.ts",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+      "kind": "test-source",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+      "kind": "test-source",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+      "kind": "test-source",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+      "kind": "test-source",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/shift.service.ts",
+      "kind": "application-source",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "package.json",
+      "kind": "configuration",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "kind": "configuration",
+      "currentSourceCheck": true
+    }
+  ],
+  "qualification": "Pins are provenance only. No application/configuration bytes were copied or modified. Historical Git blobs are read at sourceCommit; --current-source checks only relevant pins, never entire later HEAD/appTree."
+}

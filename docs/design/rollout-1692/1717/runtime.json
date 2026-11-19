@@ -1,0 +1,110 @@
+{
+  "checks": [
+    {
+      "name": "single task heading",
+      "actual": [
+        "Equipment"
+      ]
+    },
+    {
+      "name": "overdue excludes outstanding undated partial",
+      "actual": true
+    },
+    {
+      "name": "partial quantity stays visible",
+      "actual": true
+    },
+    {
+      "name": "actual assignment destination",
+      "actual": true
+    },
+    {
+      "name": "ready excludes damaged item",
+      "actual": true
+    },
+    {
+      "name": "failed command retains quantity",
+      "actual": "3"
+    },
+    {
+      "name": "real issuance survives reload",
+      "actual": true
+    },
+    {
+      "name": "partial receipt removes settled obligation from outstanding view",
+      "actual": true
+    },
+    {
+      "name": "damaged item is ready only after actual clearance",
+      "actual": true
+    },
+    {
+      "name": "failed read offers named retry",
+      "actual": 1
+    },
+    {
+      "name": "retry restores real authorized holdings",
+      "actual": true
+    },
+    {
+      "name": "sidebar collapse persists",
+      "actual": "false"
+    },
+    {
+      "name": "sidebar collapse persists",
+      "actual": "false"
+    },
+    {
+      "name": "large saved font and dark theme",
+      "actual": {
+        "font": "large",
+        "size": "18px",
+        "dark": true
+      }
+    },
+    {
+      "name": "phone fits saved font",
+      "actual": true
+    },
+    {
+      "name": "enlarged reduced-motion phone fits",
+      "actual": true
+    },
+    {
+      "name": "zoom equivalent fits",
+      "actual": true
+    },
+    {
+      "name": "ordinary manager gains no equipment staff scope",
+      "actual": true
+    },
+    {
+      "name": "small-employee has no staff holdings",
+      "actual": true
+    },
+    {
+      "name": "small-restricted has no staff holdings",
+      "actual": true
+    },
+    {
+      "name": "large-admin has no staff holdings",
+      "actual": true
+    },
+    {
+      "name": "scoped officer sees covered holder and not other holder",
+      "actual": true
+    },
+    {
+      "name": "officer has issue but no setup administration",
+      "actual": true
+    },
+    {
+      "name": "revoked officer loses direct-route access",
+      "actual": true
+    }
+  ],
+  "errors": [
+    "Cannot read properties of null (reading 'textContent')",
+    "Cannot read properties of null (reading 'textContent')"
+  ]
+}

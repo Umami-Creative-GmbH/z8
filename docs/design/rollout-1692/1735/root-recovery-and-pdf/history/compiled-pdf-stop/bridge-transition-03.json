@@ -1,0 +1,9 @@
+{
+  "priorSha256": "60cb64e54a2766f315ae5d92c0d560cc896d501277781697d6f25ef40bbfe24a",
+  "newSha256": "06b1dc9bdda6c5e4ad9e0084ba254cb5111a383d3dd14c99e04c97f763a45f10",
+  "changes": [
+    "UTF-8-safe pending-name matcher",
+    "wait for actual popup exit before querying restored selector",
+    "narrow refetch stage diagnostics"
+  ]
+}

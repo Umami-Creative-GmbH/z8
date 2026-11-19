@@ -1,0 +1,76 @@
+{
+  "captures": [
+    {
+      "label": "my-licence-desktop",
+      "headings": [
+        "Driving licence",
+        "Driving authorization active",
+        "Unable to drive?",
+        "Original check evidence",
+        "Check and authorization history"
+      ],
+      "text": "Toggle Sidebar\n\nMy driving authorization\n\n06:08\nUTC+01:00\nClock In\nToggle theme\n1\nDriving licence\nDriving authorization, original checks and planning in your active organization. Each view follows your current access.\nMy licence\nChecks\nPlanning\nDriving authorization active\nOrganization driving authorization covers the listed classes and restrictions. It does not establish suitability for every vehicle. You can continue recording working time and actual vehicle use.\nClass\tStatus\tValid through\tRestrictions\n\nB\n\t\nAuthorized\n\t\nMay 15, 2027 (Europe/Berlin)\n\t\nCorrective lenses\nUnable to drive?\nReport a current inability to drive. All class authorizations will be suspended immediately. You do not need to provide personal reasons.\nReport that I cannot drive\nOriginal check evidence\n\nSynthetic Driver · 2026-11-15T04:42:23.754Z\n\nOriginal check recorded by Synthetic Verifier\n\nDocument issued 2020-01-01; expires 2035-01-01\n\nOriginal personally inspected and employee identity confirmed.\n\nThe employee made the declaration in person; the verifier attested it at the control time.\n\nI confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions.\n\nVerifier confirmation recorded with policy version 1; deadlines use Europe/Berlin.\n\nB: Successful · Corrective lenses\nCheck and authorization history\nOriginal confirmations, dated supplements and effective authorization decisions remain separate. Earlier evidence needed to understand the selected period is labeled as context. All event times and period boundaries below use UTC.\nFrom date (UTC)\nPick a date\n\nPeriod starts at 00:00 UTC.\n\nBefore date (UTC)\nPick a date\n\nPeriod ends before 00:00 UTC on this date.\n\nApply period\nDownload evidence PDF\n\nDriving authorization active\n\n2026-11-15 04:42:23.754Z\n\nOriginal check and confirmation\n\nSynthetic Driver · Synthetic Verifier\n\nDocument issued 2020-01-01; expires 2035-01-01\n\nPolicy 1; interval 6 months; deadline timezone Europe/Berlin\n\nB · Successful · Corrective lenses\n\nOriginal and identity confirmed\n\nEmployee declaration confirmed at the original check\n\nNo known impediment; restrictions met\n\nVerifier confirmation recorded at the original check time",
+      "width": 1600,
+      "viewport": 1600
+    },
+    {
+      "label": "my-licence-phone",
+      "headings": [
+        "Driving licence",
+        "Driving authorization active",
+        "Unable to drive?",
+        "Original check evidence",
+        "Check and authorization history"
+      ],
+      "text": "Toggle Sidebar\n\nMy driving authorization\n\n1\nMore actions\nDriving licence\nDriving authorization, original checks and planning in your active organization. Each view follows your current access.\nMy licence\nChecks\nPlanning\nDriving authorization active\nOrganization driving authorization covers the listed classes and restrictions. It does not establish suitability for every vehicle. You can continue recording working time and actual vehicle use.\nClass\nStatus\nValid through\nRestrictions\nB\nAuthorized\nMay 15, 2027 (Europe/Berlin)\nCorrective lenses\nUnable to drive?\nReport a current inability to drive. All class authorizations will be suspended immediately. You do not need to provide personal reasons.\nReport that I cannot drive\nOriginal check evidence\n\nSynthetic Driver · 2026-11-15T04:42:23.754Z\n\nOriginal check recorded by Synthetic Verifier\n\nDocument issued 2020-01-01; expires 2035-01-01\n\nOriginal personally inspected and employee identity confirmed.\n\nThe employee made the declaration in person; the verifier attested it at the control time.\n\nI confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions.\n\nVerifier confirmation recorded with policy version 1; deadlines use Europe/Berlin.\n\nB: Successful · Corrective lenses\nCheck and authorization history\nOriginal confirmations, dated supplements and effective authorization decisions remain separate. Earlier evidence needed to understand the selected period is labeled as context. All event times and period boundaries below use UTC.\nFrom date (UTC)\nPick a date\n\nPeriod starts at 00:00 UTC.\n\nBefore date (UTC)\nPick a date\n\nPeriod ends before 00:00 UTC on this date.\n\nApply period\nDownload evidence PDF\n\nDriving authorization active\n\n2026-11-15 04:42:23.754Z\n\nOriginal check and confirmation\n\nSynthetic Driver · Synthetic Verifier\n\nDocument issued 2020-01-01; expires 2035-01-01\n\nPolicy 1; interval 6 months; deadline timezone Europe/Berlin\n\nB · Successful · Corrective lenses\n\nOriginal and identity confirmed\n\nEmployee declaration confirmed at the original check\n\nNo known impediment; restrictions met\n\nVerifier confirmation recorded at the original check time",
+      "width": 390,
+      "viewport": 390
+    },
+    {
+      "label": "checks-desktop",
+      "headings": [
+        "Driving licence",
+        "Intended drivers to check"
+      ],
+      "text": "Toggle Sidebar\n\nMy driving authorization\n\n06:08\nUTC+01:00\nClock In\nToggle theme\n1\nDriving licence\nDriving authorization, original checks and planning in your active organization. Each view follows your current access.\nMy licence\nChecks\nPlanning\nIntended drivers to check\nIntended drivers covered by your current verifier responsibility. You never appear in your own list.\n\nChecks due now first, then the next deadline.\n\nRefresh check worklist\nSearch by name\nStatus\nAll statuses\nName\n\tStatus\tNext deadline\n\tTeam\n\t\nAction\n\n\nPerson 2\n\t\nActive\n\t\nMay 15, 2027 (Europe/Berlin)\n\t\nFixture team 0\n\t\nCheck Person 2\nYour verifier responsibility\n\nYou are responsible for checks across this organization. You cannot verify yourself.",
+      "width": 1600,
+      "viewport": 1600
+    },
+    {
+      "label": "checks-phone",
+      "headings": [
+        "Driving licence",
+        "Intended drivers to check"
+      ],
+      "text": "Toggle Sidebar\n\nMy driving authorization\n\n1\nMore actions\nDriving licence\nDriving authorization, original checks and planning in your active organization. Each view follows your current access.\nMy licence\nChecks\nPlanning\nIntended drivers to check\nIntended drivers covered by your current verifier responsibility. You never appear in your own list.\n\nChecks due now first, then the next deadline.\n\nRefresh check worklist\nSearch by name\nStatus\nAll statuses\nName\nStatus\nNext deadline\nTeam\nAction\nPerson 2\nActive\nMay 15, 2027 (Europe/Berlin)\nFixture team 0\nCheck Person 2\nYour verifier responsibility\n\nYou are responsible for checks across this organization. You cannot verify yourself.",
+      "width": 390,
+      "viewport": 390
+    },
+    {
+      "label": "planning-desktop",
+      "headings": [
+        "Driving licence",
+        "Driving status for planning"
+      ],
+      "text": "Toggle Sidebar\n\nMy driving authorization\n\n06:08\nUTC+01:00\nClock In\nToggle theme\n1\nDriving licence\nDriving authorization, original checks and planning in your active organization. Each view follows your current access.\nMy licence\nChecks\nPlanning\nDriving status for planning\nRefresh planning employees\nFind employee\n\nUp to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.\n\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7",
+      "width": 1600,
+      "viewport": 1600
+    },
+    {
+      "label": "planning-phone",
+      "headings": [
+        "Driving licence",
+        "Driving status for planning"
+      ],
+      "text": "Toggle Sidebar\n\nMy driving authorization\n\n1\nMore actions\nDriving licence\nDriving authorization, original checks and planning in your active organization. Each view follows your current access.\nMy licence\nChecks\nPlanning\nDriving status for planning\nRefresh planning employees\nFind employee\n\nUp to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.\n\nPerson 0\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7",
+      "width": 390,
+      "viewport": 390
+    },
+    {
+      "label": "planning-wide-dark",
+      "width": 2400,
+      "viewport": 2400
+    }
+  ],
+  "errors": []
+}

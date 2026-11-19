@@ -1,0 +1,15 @@
+# Source-stage provenance
+
+The final immutable source is a4e2d21f5ab0256bb072af2ef13b7982808f7570, based on provisional merge 7d7d333e685cb9ce0aae3b08bc24394ad1dda1b0. Exact final Git pins and published predecessor bulk bytes are independently checked. The merge preserves 15,530 predecessor files outside the nine incoming paths. Eight root correction paths and the thirteen-file changed-source union are distinct sets.
+
+Bulk/workspace reds used unchanged merge consumers. First shared pending reds used unchanged shared merge consumers. Later activation/retirement reds used evolving pending-only forms; recovery reds used guarded forms before the local catch. Those intermediate working stages were not all committed or independently hash sealed. Their red failures remain evidence at that stated boundary, without invented intermediate hashes. Final shared fixtures return the actual request type before the final 335-case run. Fourteen new permanent cases are included in 335: one bulk, one workspace, twelve shared lifetime/recovery.
+
+Both recovery-red failures report missing inline alert feedback following rejected public transport. No top-level unhandled-error fields or explicit unhandled-rejection counts exist; no count is inferred. The initial broad run has one 5,000ms Tolgee default-English timeout; isolated and final sequential reruns use the unchanged default timeout and overlap rather than add cases.
+
+Runtime tracked preservation covers 12,506 tracked raw files under apps/webapp/src, packages and docs/design/rollout-1692. It is not a whole-repository inventory. Five raw runtime configuration pins, three physical dependency parents and 158 internal links are observations at release, distinct from seven immutable Git manifest/config pins. Prior public proof group counts 152/163/203/211/266 remain unchanged against the published predecessor.
+
+The manifest public clone changes only unnecessary pointer-path command prose and labels the already contact-redacted discovery result; original released public digest and clone digest are mapped in runtime/artifact-hashes.json. Public harness bytes, including generic operational basename literals, remain exact. No excluded private input was opened, copied or hashed during publication.
+
+Two public role-driver failure JSONs contained references/digests for excluded contact captures. Their labeled public clones remove only those capture-list entries; failure/check data remains unchanged. Original released PUBLIC JSON digests and clone digests are mapped separately. No excluded capture was opened, statted or hashed. These privacy clones are explicit exceptions to raw-byte preservation.
+
+Both native sessions show normal auth, actual DocumentRequestsWorkspace, snapshot and close success, and connected Next metadata with no compilation/config/session errors. Their ancillary Notification permission probe exits 1 because Notification is undefined; this is retained and does not establish permission support. Restored native result intentionally records the canonical native.mjs harness hash while native-restored.mjs is a separate pinned wrapper.

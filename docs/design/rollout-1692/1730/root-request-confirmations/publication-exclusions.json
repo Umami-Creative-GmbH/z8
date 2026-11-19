@@ -1,0 +1,21 @@
+{
+  "policy": "category-only; no private filenames, sizes, hashes, or reads",
+  "categories": [
+    {
+      "category": "Private operational inputs and raw outputs",
+      "reason": "Fixture data, credentials, cookies/session/storage, pointers, private detail inventories, raw contacts, auth/TEMP and PostgreSQL logs, private failure DOM and full-contact captures remain excluded, including hash-only copies."
+    },
+    {
+      "category": "Unreleased or unlisted runtime artifacts",
+      "reason": "Only the released exact public allowlist was copied. Generic basename literals already present in public harness code describe its contract and do not constitute copied private input artifacts."
+    },
+    {
+      "category": "Manifest operational detail",
+      "reason": "A labeled public clone replaces unnecessary pointer path prose with a category token; released-public and clone digests are mapped separately."
+    },
+    {
+      "category": "Verifier outputs",
+      "reason": "Verifier, outputs and logs are outside the evidence index and control-file seals to avoid self-sealing."
+    }
+  ]
+}

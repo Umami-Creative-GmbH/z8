@@ -95,17 +95,37 @@ export function CostRatesOverview({
 														: t("settings.billableTime.costRates.unknown", "Cost unknown")}
 											</TableCell>
 											<TableCell className="text-right">
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() =>
-														setSelected({ employeeId: entry.employeeId, name: entry.name })
-													}
-												>
-													{entry.periods.length > 0
-														? t("settings.billableTime.costRates.history", "History")
-														: t("settings.billableTime.costRates.set", "Set cost rate")}
-												</Button>
+												{entry.periods.length > 0 ? (
+													<Button
+														variant="outline"
+														size="sm"
+														aria-label={t(
+															"settings.billableTime.costRates.historyAction",
+															"History of the cost rate for {name}",
+															{ name: entry.name },
+														)}
+														onClick={() =>
+															setSelected({ employeeId: entry.employeeId, name: entry.name })
+														}
+													>
+														{t("settings.billableTime.costRates.history", "History")}
+													</Button>
+												) : (
+													<Button
+														variant="outline"
+														size="sm"
+														aria-label={t(
+															"settings.billableTime.costRates.setAction",
+															"Set cost rate for {name}",
+															{ name: entry.name },
+														)}
+														onClick={() =>
+															setSelected({ employeeId: entry.employeeId, name: entry.name })
+														}
+													>
+														{t("settings.billableTime.costRates.set", "Set cost rate")}
+													</Button>
+												)}
 											</TableCell>
 										</TableRow>
 									);

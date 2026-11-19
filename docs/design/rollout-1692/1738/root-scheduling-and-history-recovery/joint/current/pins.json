@@ -1,0 +1,50 @@
+{
+  "head": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "tree": "efb19ee6e79e7833417970b1e250600bf866f977",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "trackedFiles": 17406,
+  "configCount": 129,
+  "physicalParents": 3,
+  "localLinks": 158,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "licenses": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "count": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "verifiedAnchors": 59,
+  "baseline": "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "ticket1739VerifiedCommit": null,
+  "routeTemplates": 172,
+  "aliases": 19,
+  "correctionDelta": [
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+    "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+    "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+    "docs/design/rollout-1692/1739.md"
+  ],
+  "inherited": {
+    "units-final-02": {
+      "path": ".tmp/1739-context-retry-checks/units-final-02.json",
+      "sha256": "d0164c99662147ecee76600ff89567d050db8ac292918d4bbe493c31c65483e0",
+      "files": 13,
+      "assertions": 114,
+      "passed": 114,
+      "failed": 0,
+      "pending": 0
+    },
+    "postgres-final-01": {
+      "path": ".tmp/1739-context-retry-checks/postgres-final-01.json",
+      "sha256": "5e1f96ef0175691dd05cc5b8b58c85cfa2a751141281577d2c35ed01bd0b17c8",
+      "files": 1,
+      "assertions": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0
+    }
+  }
+}

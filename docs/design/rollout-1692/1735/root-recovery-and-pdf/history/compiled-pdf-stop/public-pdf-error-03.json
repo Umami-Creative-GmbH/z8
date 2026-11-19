@@ -1,0 +1,29 @@
+{
+  "kind": "deterministic safe clone of actual browser error observation; original raw hash retained, owned origin normalized",
+  "rawSha256": "8d218c066caca5f21ede2576e9810c6ba6639495ef8f54bc06fed7e2eee393a8",
+  "candidate": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "actualPointerClick": true,
+  "visibleToasts": [
+    "Export failedCannot read properties of null (reading 'props')"
+  ],
+  "error": {
+    "name": "TypeError",
+    "message": "Cannot read properties of null (reading 'props')",
+    "stack": "TypeError: Cannot read properties of null (reading 'props')\n    at render (<owned-loopback-origin>/_next/static/chunks/node_modules__pnpm_1sepsdargwcs3._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:8633:42)\n    at Object.toBlob (<owned-loopback-origin>/_next/static/chunks/node_modules__pnpm_1sepsdargwcs3._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:8677:82)\n    at exportToPDF (<owned-loopback-origin>/_next/static/chunks/apps_webapp_src_1yqh65lfl1qui._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:12954:15)\n    at async <owned-loopback-origin>/_next/static/chunks/apps_webapp_src_1yqh65lfl1qui._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:5654:35\n    at async ExportButtons[handleExport] (<owned-loopback-origin>/_next/static/chunks/apps_webapp_src_1yqh65lfl1qui._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:5651:38)"
+  },
+  "report": "Person 0",
+  "buttons": [
+    {
+      "text": "Export PDF",
+      "disabled": false
+    },
+    {
+      "text": "Export Excel",
+      "disabled": false
+    },
+    {
+      "text": "Export CSV",
+      "disabled": false
+    }
+  ]
+}

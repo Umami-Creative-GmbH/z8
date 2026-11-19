@@ -1,0 +1,26 @@
+{
+  "helpers": [
+    {
+      "name": "browser-controller-01.private.mjs",
+      "sourceSha256": "1f0cefd27547064cb7081dddc960e51e062f310d8a9b8b687ac7cde8e7f6a18c",
+      "targetSha256": "ed8507152291b242e10d09b37ffdb8ad414750c5a6386626221a8fb3088102ad"
+    },
+    {
+      "name": "start-browser-01.mjs",
+      "sourceSha256": "f44ba40843e72091ea5160a7a28f2eb14b486ff1952b9c404429339d7af0f8b0",
+      "targetSha256": "df0825beaa5113b3eaf72d83d9ac368081cac8b686bdfa994071a96d00d82c61"
+    },
+    {
+      "name": "runtime-tools-01.mjs",
+      "sourceSha256": "0a5cf531186ae20cf22f579cbfadadb103df4a1cb12ea1045c246f15bbfd2abf",
+      "targetSha256": "012bf7937e847cacd5aec569e0ebcc7669426aef00e39ea20f3b354fbf80844e"
+    }
+  ],
+  "changes": [
+    "own namespace",
+    "one exact shift save transport allowlist",
+    "20s finally-safe hold cap"
+  ],
+  "authTransfer": false,
+  "authStateSaved": false
+}

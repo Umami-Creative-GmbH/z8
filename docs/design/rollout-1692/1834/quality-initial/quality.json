@@ -1,0 +1,47 @@
+[
+  {
+    "name": "typegen",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec next typegen",
+    "exit": 0
+  },
+  {
+    "name": "types-app",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.typecheck.json --noEmit --incremental false",
+    "exit": 1
+  },
+  {
+    "name": "types-workflow",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false",
+    "exit": 0
+  },
+  {
+    "name": "types-smoke",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.smoke.json --noEmit --incremental false",
+    "exit": 0
+  },
+  {
+    "name": "unit",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/app/[locale]/onboarding src/components/onboarding src/lib/effect/services/onboarding.service.test.ts src/lib/validations/onboarding src/components/ui/tanstack-form.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/loading-region.test.tsx src/tolgee/extracted-key-defaults.test.ts --maxWorkers=2 --reporter=json --outputFile=X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d\\docs\\design\\rollout-1692\\1834/unit.json",
+    "exit": 0
+  },
+  {
+    "name": "biome-crlf",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --line-ending=crlf src/app/[locale]/onboarding/work-schedule/page-client.tsx src/app/[locale]/onboarding/work-schedule/page.test.tsx src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+    "exit": 1
+  },
+  {
+    "name": "biome-default",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check src/app/[locale]/onboarding/work-schedule/page-client.tsx src/app/[locale]/onboarding/work-schedule/page.test.tsx src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+    "exit": 1
+  },
+  {
+    "name": "biome-lint-imports",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --formatter-enabled=false src/app/[locale]/onboarding/work-schedule/page-client.tsx src/app/[locale]/onboarding/work-schedule/page.test.tsx src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+    "exit": 0
+  },
+  {
+    "name": "doctor",
+    "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --diff 584db58aa2e5789e6f0e94d0f2c2f69b62f18807 --verbose --offline",
+    "exit": 0
+  }
+]

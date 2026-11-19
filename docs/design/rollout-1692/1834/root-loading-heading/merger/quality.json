@@ -1,0 +1,95 @@
+﻿[
+    {
+        "argv":  [
+                     "pnpm",
+                     "--config.verify-deps-before-run=false",
+                     "--filter",
+                     "webapp",
+                     "typecheck"
+                 ],
+        "name":  "types",
+        "exit":  0
+    },
+    {
+        "argv":  [
+                     "pnpm",
+                     "--config.verify-deps-before-run=false",
+                     "--filter",
+                     "webapp",
+                     "exec",
+                     "biome",
+                     "check",
+                     "--error-on-warnings",
+                     "--config-path=./biome.jsonc",
+                     "--line-ending=crlf",
+                     "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+                     "src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+                     "src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx"
+                 ],
+        "name":  "biome-scoped",
+        "exit":  1
+    },
+    {
+        "argv":  [
+                     "pnpm",
+                     "--config.verify-deps-before-run=false",
+                     "--filter",
+                     "webapp",
+                     "exec",
+                     "biome",
+                     "check",
+                     "--error-on-warnings",
+                     "--config-path=./biome.jsonc",
+                     "--line-ending=crlf",
+                     "--line-width=100",
+                     "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+                     "src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+                     "src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx"
+                 ],
+        "name":  "biome-explicit100",
+        "exit":  1
+    },
+    {
+        "argv":  [
+                     "pnpm",
+                     "--config.verify-deps-before-run=false",
+                     "--filter",
+                     "webapp",
+                     "exec",
+                     "biome",
+                     "check",
+                     "--error-on-warnings",
+                     "--config-path=./biome.jsonc",
+                     "--formatter-enabled=false",
+                     "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+                     "src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+                     "src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx"
+                 ],
+        "name":  "biome-lint",
+        "exit":  0
+    },
+    {
+        "argv":  [
+                     "pnpm",
+                     "--config.verify-deps-before-run=false",
+                     "exec",
+                     "react-doctor",
+                     "apps/webapp",
+                     "--scope",
+                     "changed",
+                     "--base",
+                     "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+                     "--verbose",
+                     "--no-supply-chain",
+                     "--no-telemetry",
+                     "--no-score",
+                     "--json",
+                     "--json-out",
+                     "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1834-fresh-merger-20261116\\doctor.json",
+                     "--max-duration",
+                     "90"
+                 ],
+        "name":  "doctor",
+        "exit":  0
+    }
+]

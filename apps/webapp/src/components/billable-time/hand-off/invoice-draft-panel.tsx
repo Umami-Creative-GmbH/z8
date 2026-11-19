@@ -21,15 +21,10 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+	ConfirmActionDialog,
+	describeFailure,
+	useConfirmedAction,
+} from "@/components/settings/confirm-action-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -156,7 +151,8 @@ function useInvoiceDraftDetail({
 	const { locale } = useDisplayContext();
 	const labels = useHandOffLabels();
 	const money = (amount: string) => formatBillableAmount(locale, amount, draft.currency);
-	const [releasing, setReleasing] = useState(false);
+	// Release stays open until it settles and keeps a failure visible inline.
+	const release = useConfirmedAction<string>();
 	const [reason, setReason] = useState("");
 	const [isPending, startTransition] = useTransition();
 
@@ -199,8 +195,7 @@ function useInvoiceDraftDetail({
 		money,
 		workLabel,
 		releasable,
-		setReleasing,
-		releasing,
+		release,
 		reason,
 		setReason,
 	};
@@ -225,8 +220,7 @@ function DraftDetail({
 		money,
 		workLabel,
 		releasable,
-		setReleasing,
-		releasing,
+		release,
 		reason,
 		setReason,
 	} = useInvoiceDraftDetail({ draft, actions, onChanged });
@@ -237,9 +231,9 @@ function DraftDetail({
 			{gone && (
 				<div
 					role="alert"
-					className="flex gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+					className="flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground"
 				>
-					<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+					<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
 					<p>
 						{t(
 							"settings.billableTime.handOff.detail.gone",
@@ -375,58 +369,71 @@ function DraftDetail({
 
 			{releasable && (
 				<div className="flex justify-end border-t pt-4">
-					<Button variant="outline" disabled={isPending} onClick={() => setReleasing(true)}>
+					<Button
+						variant="outline"
+						disabled={isPending || release.isPending}
+						onClick={() => release.request(draft.id)}
+					>
 						<IconRotate aria-hidden="true" className="mr-2 size-4" />
 						{t("settings.billableTime.handOff.release.action", "Release")}
 					</Button>
 				</div>
 			)}
 
-			<AlertDialog open={releasing} onOpenChange={setReleasing}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.billableTime.handOff.release.title", "Release this hand-off?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.billableTime.handOff.release.description",
-								"Its work becomes un-invoiced again and can be handed off anew. Z8 does not change the draft in the accounting tool: delete or cancel it there yourself.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<div className="space-y-2">
-						<Label htmlFor="hand-off-release-reason">
-							{t("settings.billableTime.handOff.release.reason", "Reason (optional)")}
-						</Label>
-						<Textarea
-							id="hand-off-release-reason"
-							value={reason}
-							maxLength={500}
-							onChange={(event) => setReason(event.target.value)}
-						/>
-					</div>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => {
-								setReleasing(false);
-								run(
-									() => actions.release(draft.id, reason),
-									(data) =>
-										t(
-											"settings.billableTime.handOff.release.done",
-											"Released. {count, plural, one {# work period is} other {# work periods are}} un-invoiced again.",
-											{ count: data.workReturned },
-										),
-								);
-							}}
-						>
-							{t("settings.billableTime.handOff.release.confirm", "Release")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={release.open}
+				onOpenChange={release.onOpenChange}
+				variant="default"
+				title={t("settings.billableTime.handOff.release.title", "Release this hand-off?")}
+				description={
+					<>
+						<span className="mb-2 block font-medium text-foreground break-words">
+							{draft.customerName} · {labels.period(draft.period)}
+						</span>
+						{t(
+							"settings.billableTime.handOff.release.description",
+							"Its work becomes un-invoiced again and can be handed off anew. Z8 does not change the draft in the accounting tool: delete or cancel it there yourself.",
+						)}
+					</>
+				}
+				confirmLabel={t("settings.billableTime.handOff.release.confirm", "Release")}
+				isPending={release.isPending}
+				error={release.error}
+				onConfirm={() =>
+					void release.confirm(
+						async (draftId) => {
+							const result = await actions.release(draftId, reason);
+							if (!result.success) throw new Error(result.error);
+							toast.success(
+								t(
+									"settings.billableTime.handOff.release.done",
+									"Released. {count, plural, one {# work period is} other {# work periods are}} un-invoiced again.",
+									{ count: result.data.workReturned },
+								),
+							);
+							onChanged();
+						},
+						(failure) =>
+							describeFailure(
+								failure,
+								t("common.unexpectedError", "An unexpected error occurred"),
+							),
+					)
+				}
+			>
+				<div className="space-y-2">
+					<Label htmlFor="hand-off-release-reason">
+						{t("settings.billableTime.handOff.release.reason", "Reason (optional)")}
+					</Label>
+					<Textarea
+						id="hand-off-release-reason"
+						value={reason}
+						maxLength={500}
+						disabled={release.isPending}
+						onChange={(event) => setReason(event.target.value)}
+					/>
+				</div>
+			</ConfirmActionDialog>
 		</div>
 	);
 }

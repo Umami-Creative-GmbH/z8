@@ -146,9 +146,8 @@ export async function exportToPDF(
 		"dateTimeMedium",
 	);
 
-	// Define the PDF document component inline (closure over dynamic imports)
-	// one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
-	const EmployeeReportPDF = () => (
+	// Keep row callbacks in the scope of the lazily imported PDF primitives.
+	const document = (
 		<Document>
 			<Page size="A4" style={styles.page}>
 				{/* Title */}
@@ -381,7 +380,7 @@ export async function exportToPDF(
 		</Document>
 	);
 
-	const blob = await pdf(<EmployeeReportPDF />).toBlob();
+	const blob = await pdf(document).toBlob();
 	return new Uint8Array(await blob.arrayBuffer());
 }
 

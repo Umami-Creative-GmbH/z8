@@ -1,0 +1,202 @@
+{
+  "schema": 1,
+  "issue": 1744,
+  "verifiedCommit": null,
+  "readiness": null,
+  "worker": "9e686dd62df119b8534600ff39c58506c9d5f08a",
+  "reviewCandidate": "69be975bf648ca566eeb0c9700c2f34833e53256",
+  "rootBefore": "0012af1f02b78429b89c33637a2093d832cf5ec8",
+  "provisionalImport": "09d072eb4bf7ab763a1dc826b13cf2c41710a8e1",
+  "correctionCommit": "9e836c6b1626d19c5ed39345642aee5de625b7b0",
+  "integrationCommit": "1e6366eeaad1225b87a51f8f0887eadc1dcb01bb",
+  "tree": "211234a9ac37c019129041355bfc9548a13456a2",
+  "appTree": "d2eee66fa6f19572251acac574c647cfec39b3b0",
+  "finding": {
+    "classification": "Inherited retained roster presentation; incoming adds actionable employee links. Synthetic arrival evidence is not a live server admission bypass.",
+    "independent": {
+      "cases": 5,
+      "passed": 4,
+      "failed": 1
+    },
+    "rootRed": {
+      "cases": 4,
+      "passed": 3,
+      "failed": 1,
+      "reproSHA256": "7d07ef84343cfd5edb8b8e2f00d7d96da2370fd6440116a1a3283e78508b6338"
+    },
+    "originalHistoricalClassificationNotRerun": true
+  },
+  "behavior": [
+    "The authorized server page passes only user/org presentation provenance and wraps its entire scoped heading, rows and employee links in a route-local client boundary.",
+    "Actual session and published display employee/role identity retire old presentation. A new server view can render only when its actor/org match; current server readers still decide admission, including administrators without employees.",
+    "Retirement belongs to the existing QueryClient and weak serialized-view identity, surviving provider account/org remounts and A→B→A. No roster data is cached by this marker and no browser storage or permission is introduced.",
+    "StrictMode immediate effect reconnect preserves a current view; actual departure retires it. Pending-session/Activity controls and fresh-server-view Retry replacements pass.",
+    "Retry uses router.refresh for a new authorized server read. Existing list refresh cadence, frozen date/zone formatting, live presence readers, assignment rules and DB authority are unchanged.",
+    "Owned route error props now match installed Next16 ErrorInfo unknown values; the safe UI still ignores raw errors."
+  ],
+  "fresh": {
+    "unit": {
+      "cases": 125,
+      "files": 13,
+      "passed": 125,
+      "failed": 0,
+      "skipped": 0
+    },
+    "postgres": {
+      "cases": 15,
+      "files": 3,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "groups": [
+        {
+          "file": "src/lib/time-tracking/assigned-locations/assigned-locations.integration.test.ts",
+          "cases": 6
+        },
+        {
+          "file": "src/lib/time-tracking/who-is-in/who-is-in.integration.test.ts",
+          "cases": 6
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/presence/selection-actions.integration.test.ts",
+          "cases": 3
+        }
+      ],
+      "migrationVerifier": "passed"
+    },
+    "combinedCases": 140,
+    "combinedPhysicalFiles": 16,
+    "publicCases": 14,
+    "publicCasesIncluded": true,
+    "rerunsAdded": false,
+    "typegen": "passed",
+    "typescriptProjects": 3,
+    "allAffectedLintImport": {
+      "files": 14,
+      "result": "passed"
+    },
+    "rootOwnedExplicit100CRLF": {
+      "files": 5,
+      "result": "passed"
+    },
+    "allAffectedExplicit100CRLF": {
+      "files": 14,
+      "result": "unpassed",
+      "findings": 2,
+      "paths": [
+        "src/lib/navigation/route-metadata.ts",
+        "src/lib/navigation/route-metadata.test.ts"
+      ]
+    },
+    "ordinaryProfile": {
+      "files": 14,
+      "result": "unpassed",
+      "findings": 14
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "0012af1f02b78429b89c33637a2093d832cf5ec8",
+      "files": 14,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null
+    },
+    "browser": false,
+    "nextRuntime": false,
+    "native": false
+  },
+  "artifactIntake": {
+    "originalIssueArchiveFiles": 149,
+    "originalReport": 1,
+    "pngFullyDecoded": 64,
+    "jsonParsed": 32,
+    "embeddedJsonParsed": 20,
+    "manifestEntries": 148,
+    "exactByteMatches": 104,
+    "canonicalCRLFMatches": 44,
+    "sourcePins": 10,
+    "reviewPins": 15,
+    "beforeMatched": {
+      "checks": 21,
+      "captures": 8
+    },
+    "afterCold": {
+      "checks": 46,
+      "captures": 16
+    },
+    "otherPNG": 40,
+    "navigationChecks": 4,
+    "archiveDriverExecution": false,
+    "qualification": "Worker31JSON description excludes verification.json; archive has32 total JSON. Accepted8before vs16after and intermediate/native evidence remain distinct. Report repeated whitespace paragraph remains unchanged."
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "gitBlob": "7f661c2e2e7be3cc270c239e4d45e22a5a68a212",
+      "sha256": "fc1248d1871d73970ec9a4a1807df7d5bfa168cdb372c04fc393e17fb9aa28cb"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/error.tsx",
+      "gitBlob": "79480668f1258a810c6cb4bef51229562c8496b7",
+      "sha256": "382aefa466024782922c529f9225639b6b95cd133f098d535988d96f335de941"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-view.tsx",
+      "gitBlob": "aa8ea767d6d6d7bd77a21914a37cf870bc9b0c56",
+      "sha256": "917dc906d60b6e1098099e96be9abb1da586a55055e8b0a93cedcc01f756fd2b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/use-presence-view-arrival.ts",
+      "gitBlob": "7f2b18dd09d6326b49160858705dbcfe137b0e2c",
+      "sha256": "4675008c6b3b778308b442a8b78295bf01e8586909ee889b67590d4ce390a6b2"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-arrival.test.tsx",
+      "gitBlob": "73857245f0846df247b1f4239f32912265ec74c1",
+      "sha256": "786b21f49bbaa981c2d7ff66bc1d22aa1e01b1743b619cf34a848c64b490a2ef"
+    }
+  ],
+  "preservation": {
+    "expectedImportTree": "1d2afccac57b72395434edb7feb22b15e2f6183f",
+    "expectedImportAppTree": "4170374eabb1b9d67a3725631cebe99d2ca95d37",
+    "incomingCandidateDelta": 161,
+    "applicationPaths": 11,
+    "originalPublicPaths": 150,
+    "overlap": [],
+    "unaffectedRootEntries": 18251,
+    "unexpectedChanges": 0,
+    "originalReportAnd149ArchiveFilesByteExact": true,
+    "verifiedTicketAnchors": 63,
+    "baselineAncestor": true,
+    "signInAndAPIProofsPreserved": true,
+    "domainAuthorizationTimekeepingOwnersChanged": false
+  },
+  "failedAttempts": [
+    "Copied current public repro passed3/failed1 before root correction. Archived historical classification control was preserved separately rather than executing its old source in root.",
+    "First component-local retirement passed the basic finding but failed three org/account/hidden-Activity return cases because the canonical provider remounts children. QueryClient-scoped weak retirement replaced it; all14 public cases pass.",
+    "Copied Retry test fixture had four missing JSX keys, any casts and a nested component; added keys, full installed router types, a module-level transport reader and exact ErrorInfo typing without suppression."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit 'src/app/[locale]/(app)/team/presence' src/lib/navigation/route-metadata.test.ts src/lib/time-tracking/who-is-in/shape.test.ts src/lib/time-tracking/who-is-in/format.test.ts src/tolgee/extracted-key-defaults.test.ts src/components/ui/table.test.tsx src/components/font-size-preference.test.tsx src/components/site-header.test.tsx --maxWorkers=1 --reporter=json",
+    "postgres": "pnpm --config.verify-deps-before-run=false --filter webapp test:integration src/lib/time-tracking/who-is-in/who-is-in.integration.test.ts src/lib/time-tracking/assigned-locations/assigned-locations.integration.test.ts 'src/app/[locale]/(app)/team/presence/selection-actions.integration.test.ts' --maxWorkers=1 --reporter=json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 0012af1f02b78429b89c33637a2093d832cf5ec8 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json",
+    "environment": "pnpm_config_verify_deps_before_run=false everycall; pinned12.16.1/maxWorkers1. NODE_ENV=test and own guarded BASH_ENV for canonicalPG."
+  },
+  "cleanup": {
+    "postgres": "z8_approval_workflow_repository_test_1794930207247211300_671",
+    "canonicalLabel": "z8.agent-owned=approval-workflow-repository-test",
+    "trapRemoved": true,
+    "independentExactNameAbsenceConfirmed": true,
+    "allForegroundChecksExited": true,
+    "noNextBrowserNativeOrProviderStarted": true
+  },
+  "limits": [
+    "Fresh independent correction and current-source runtime/visual/native acceptance pending; verifiedCommit staysnull.",
+    "Public fixtures assemble the actual client boundary/providers and preformatted server props; they do not execute async page/DB loading for each synthetic transition. CanonicalPG readers are tested separately.",
+    "No live authorization bypass, data withdrawal from browser memory, simultaneous revocation or physical presence proof is claimed.",
+    "Worker82unit/12PG and runtime/native/capture receipts remain historical and unadded; fresh15PG includes12presence/assignment plus3selector cases.",
+    "Full generation, catalogs/providers, native React, physical devices/truezoom and exhaustive live role/arrival variants remain unpassed."
+  ]
+}

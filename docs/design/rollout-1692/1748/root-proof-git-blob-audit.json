@@ -1,0 +1,4001 @@
+{
+  "schemaVersion": 1,
+  "issue": 1748,
+  "scope": "Staged proof bytes and preserved sources; no application or rollout readiness verdict.",
+  "auditedHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "independentRawAudit": {
+    "bytes": 136906,
+    "sha256": "adc8ee488fa5a357436be84dbeb372961a55c637c9aa9bdf1b0016ad1785444d",
+    "publication": "Parsed data below is serialized as UTF-8 LF in this separate root-owned receipt; the immutable archive is unchanged."
+  },
+  "independentAudit": {
+    "schemaVersion": 1,
+    "kind": "Independent staged Git-blob audit for issue 1748",
+    "auditedHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "verifiedCommit": null,
+    "noReadinessDecision": true,
+    "status": "PASS",
+    "scope": {
+      "stagedPaths": 203,
+      "archivePaths": 202,
+      "archiveBytes": 2705287,
+      "stagedBytes": 2740961,
+      "rawArchivePlusReportBytes": 2741226,
+      "exactCopies": 172,
+      "exactCopyBytes": 2297645,
+      "sourceClones": 14,
+      "inputIndexes": 5,
+      "protectedTicketAnchors": 63,
+      "baselineAnchors": 1
+    },
+    "inputManifest": {
+      "bytes": 64953,
+      "sha256": "2e38a63847ac02cbb506d2c8316fbc4e5e4fd8510f274250b1ce9c4e8390c05e"
+    },
+    "publicationHandoff": {
+      "bytes": 150192,
+      "sha256": "1488d3407eb8f27abb016cb2677b9dd784b2ff7a480f3b983704b5286f02f236"
+    },
+    "seal": {
+      "bytes": 1420,
+      "sha256": "2b72a454e595678698e9153bcdd17a7bbf367095e08e5991af86f88b74690507"
+    },
+    "verifier": {
+      "bytes": 9925,
+      "sha256": "f8102e9628e7ed227a0cab70d38933bcbb678adc6f0446ce330cbd119abf5316",
+      "review": "Statically reviewed only; no execution by this auditor. Read-only filesystem/crypto built-ins, stdout/stderr only, no subprocess/network/dynamic evaluation/archived imports/file writes.",
+      "requires": [
+        "node:fs",
+        "node:crypto"
+      ],
+      "fsCalls": [
+        "lstatSync",
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ],
+      "readOnlySafeWithinDocumentedScope": true
+    },
+    "checks": [
+      {
+        "check": "manifest fixed SHA-256",
+        "passed": true
+      },
+      {
+        "check": "frozen HEAD and app tree",
+        "passed": true
+      },
+      {
+        "check": "exact 203 staged paths",
+        "passed": true
+      },
+      {
+        "check": "202 additions and report-only modification",
+        "passed": true
+      },
+      {
+        "check": "all staged entries mode 100644 at stage zero",
+        "passed": true
+      },
+      {
+        "check": "all 202 archive staged blobs equal raw filesystem and handoff bytes",
+        "passed": true
+      },
+      {
+        "check": "202 archive files and 2705287 bytes",
+        "passed": true
+      },
+      {
+        "check": "raw archive inventory equals staged set",
+        "passed": true
+      },
+      {
+        "check": "archive contains only regular non-symlink files",
+        "passed": true
+      },
+      {
+        "check": "file index covers exact 200 nonrecursive archive entries",
+        "passed": true
+      },
+      {
+        "check": "every file index hash exact",
+        "passed": true
+      },
+      {
+        "check": "seal fixed SHA-256",
+        "passed": true
+      },
+      {
+        "check": "seal principal hashes exact",
+        "passed": true
+      },
+      {
+        "check": "principal handoff identities exact",
+        "passed": true
+      },
+      {
+        "check": "input contract copied raw",
+        "passed": true
+      },
+      {
+        "check": "payload index equals explicit 172-input contract",
+        "passed": true
+      },
+      {
+        "check": "172 explicit source copies exact, 2297645 raw bytes",
+        "passed": true
+      },
+      {
+        "check": "all seven copy cohort counts exact",
+        "passed": true
+      },
+      {
+        "check": "five exact source input indexes and complete payload membership",
+        "passed": true
+      },
+      {
+        "check": "all 14 source clones, frozen/current/index blobs and materialized canonical bytes exact",
+        "passed": true
+      },
+      {
+        "check": "63 ticket anchors plus baseline remain ancestors of frozen HEAD",
+        "passed": true
+      },
+      {
+        "check": "raw report prefix, appendix and full receipt hashes",
+        "passed": true
+      },
+      {
+        "check": "frozen Git report prefix and exactly one named appendix with only CRLF-to-LF materialization",
+        "passed": true
+      },
+      {
+        "check": "authorized archive-local -text attributes exact",
+        "passed": true
+      },
+      {
+        "check": "independent unit and PostgreSQL distinct identities and files",
+        "passed": true
+      },
+      {
+        "check": "unit root overlap and controls exact",
+        "passed": true
+      },
+      {
+        "check": "old 140 declared PASS ledger categories preserved",
+        "passed": true
+      },
+      {
+        "check": "old ID42 unsupported and ID16 narrowed with no all-accepted count",
+        "passed": true
+      },
+      {
+        "check": "focused ledger remains 29 of 32; 13,14,28 unpassed",
+        "passed": true
+      },
+      {
+        "check": "focused names and report opening/reload supported by qualified receipts",
+        "passed": true
+      },
+      {
+        "check": "retirement/order/axe/native-extension limits retained",
+        "passed": true
+      },
+      {
+        "check": "all 29 foreign travel tables are qualified empty unchanged controls",
+        "passed": true
+      },
+      {
+        "check": "download is excluded bytes and producer receipt only",
+        "passed": true
+      },
+      {
+        "check": "historical cleanup and overwritten seed qualification retained",
+        "passed": true
+      },
+      {
+        "check": "verifiedCommit null and no readiness decision retained",
+        "passed": true
+      },
+      {
+        "check": "verifier fixed identity and static read-only fs/crypto boundary",
+        "passed": true
+      },
+      {
+        "check": "existing whitespace result records staged203 and exit2",
+        "passed": true
+      },
+      {
+        "check": "index bytes unchanged during audit",
+        "passed": true
+      },
+      {
+        "check": "HEAD and app tree unchanged during audit",
+        "passed": true
+      }
+    ],
+    "discrepancies": [],
+    "report": {
+      "rawPrefix": {
+        "bytes": 28273,
+        "sha256": "45195fecf57d160a27984699ffdc0fdf2f88c2ecd574f30152236804f08d9438"
+      },
+      "gitPrefix": {
+        "bytes": 28008,
+        "sha256": "5e6ff4426c433630f18e5cad901142c1be4cdd313510a081346a7a7c4b101455"
+      },
+      "rawFull": {
+        "bytes": 35939,
+        "sha256": "a249d72c8c406ca183545da0f6248e56ecfec21b9702fa1305cad2598de9c35c"
+      },
+      "stagedFull": {
+        "bytes": 35674,
+        "sha256": "652b25ee5c9e2258d6960aacf71becc60fcd928a3fe7290c554a9331d46b4b9b"
+      },
+      "appendix": {
+        "bytes": 7666,
+        "sha256": "c1235f538de8720b0edc01d165c223af33cdb70358b0478f3faa50c9d375a8b7"
+      },
+      "rawPrefixCRLFCount": 265,
+      "appendixCRLFCount": 0,
+      "namedSectionOccurrences": 1,
+      "stagedPrefixExact": true,
+      "rawPrefixCanonicalExact": true,
+      "rawSuffixExact": true,
+      "stagedSuffixExact": true,
+      "onlyCRLFtoLFMaterialization": true
+    },
+    "stagedPaths": [
+      {
+        "path": "docs/design/rollout-1692/1748.md",
+        "mode": "100644",
+        "gitBlob": "3a32432d91466260d62e09fa7b16d5afc2768acb",
+        "bytes": 35674,
+        "sha256": "652b25ee5c9e2258d6960aacf71becc60fcd928a3fe7290c554a9331d46b4b9b",
+        "filesystemCRLFtoLFExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/.gitattributes",
+        "mode": "100644",
+        "gitBlob": "fd38c7f3a405823634fae4895a9fc49f6c7f952a",
+        "bytes": 19,
+        "sha256": "3e5e82fc72e044ea9af807a2030b73dbb94800d2cd1775302063b2eee761ba1e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/README.md",
+        "mode": "100644",
+        "gitBlob": "fbda125becdf51c37ef6d3c5b1dba70dc1113590",
+        "bytes": 12302,
+        "sha256": "351d7e4a1e160f7e8265ba6dbefea3ab0b680b23433398ff56ce369142660daa",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/claim-dispositions.json",
+        "mode": "100644",
+        "gitBlob": "f48586820a3127a21b3268e372fe146d1d7b6c07",
+        "bytes": 6365,
+        "sha256": "091cce77725c8ed4c3bb9b986dd0db7c72f601828cbb79b706931af8f82d9f13",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/HANDOFF.md",
+        "mode": "100644",
+        "gitBlob": "162faf56cd395d01ff6324a5eda81513af359f97",
+        "bytes": 2303,
+        "sha256": "25a758774eb0fa22d18fef63798b2b2c42d6ef10cb49f866c6ed0d557279181f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/REPORT.md",
+        "mode": "100644",
+        "gitBlob": "366f2bfeb26a46585a38eeb608efe8618f6e88d0",
+        "bytes": 10960,
+        "sha256": "1b4ed139e09d1edcf0a88405a3b97921529a5abb7019603f19ad1563e72a3b5f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/baseline-legacy-draft-conversion.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "6dbf7efd3e97ee56663960eb56c7162d273debf1",
+        "bytes": 7767,
+        "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/baseline-travel-expense-claim-detail.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "edf63b75e39c3c1d19500170b6c935e75fe9fadd",
+        "bytes": 11048,
+        "sha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/bridge-cleanup.json",
+        "mode": "100644",
+        "gitBlob": "9261bf1ab243f487e2c334898d783aa409adb928",
+        "bytes": 828,
+        "sha256": "d91107cef3fb64ace1914924c21c2b68a69bcfb2c38033f18b6a2858d006ebaa",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/bridges.json",
+        "mode": "100644",
+        "gitBlob": "602f52ca0331e79388355d280c10f75284e37198",
+        "bytes": 1071,
+        "sha256": "a8a1846c09cb689211382e53eea8c9cc13eb8039f9ef9cc5ddf36436965d6062",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/candidate-legacy-draft-conversion.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "d498332ae4ea7e8dc260b7d997fd4fda140faf06",
+        "bytes": 13289,
+        "sha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/candidate-travel-expense-claim-detail.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+        "bytes": 13627,
+        "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/cleanup.json",
+        "mode": "100644",
+        "gitBlob": "205d66908612c73b06d93ec9b712843ce53adaed",
+        "bytes": 552,
+        "sha256": "d322baa94f834c7eac50bc5e5362599480708b58cb57e1e6716e16c59b7ef10c",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/commands.json",
+        "mode": "100644",
+        "gitBlob": "14ec3e8bc10f2e00759b9ab58ee75777bf389da3",
+        "bytes": 8012,
+        "sha256": "4903d9acce54bc0e6250119d74284ab535275a31d8ddc919736e0e0be2e9bd94",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/conversion-review.test.tsx",
+        "mode": "100644",
+        "gitBlob": "d0ee3c223c5bed00aeeeff7da5223faa8dbd7c11",
+        "bytes": 7341,
+        "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/excluded-hash-only.json",
+        "mode": "100644",
+        "gitBlob": "e6a9c22ec9f971be241af62e5b5c242904b6c7eb",
+        "bytes": 1776,
+        "sha256": "dee6f211125fb66fa6e1a42209caf4c856bfecbe120515c3816a268fed542622",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/pins-after.json",
+        "mode": "100644",
+        "gitBlob": "747276fbd3c294e2c9d41205ba8446bac26984ac",
+        "bytes": 8529,
+        "sha256": "cd3ef0cda777f175e5726049fc01358317acad20f12cc0ea4931abb2bade0d00",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/pins-before.json",
+        "mode": "100644",
+        "gitBlob": "cf6e3676768998b542131880c42a1400816489e6",
+        "bytes": 4703,
+        "sha256": "f000c5016b9b87ad8bfc10b6786d4d771b8e434cd54accc0b8d3dfd0e9beccde",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/prepare.py",
+        "mode": "100644",
+        "gitBlob": "5f58cbdd30af5b9bfe72a0506fe160d6f4a8b306",
+        "bytes": 3481,
+        "sha256": "7322ab1da8d4ca8123aad43f131fbad00a84783168735a14e0c6b3d566b43d49",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/preservation.json",
+        "mode": "100644",
+        "gitBlob": "c9a37b197350c5f9a88c500c2e0ce4d33480bee9",
+        "bytes": 730,
+        "sha256": "80587257011fc5a9665b16fb4644ea6323f2bd57b12ef87ba0eb99d550c53943",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/preserve.py",
+        "mode": "100644",
+        "gitBlob": "51caa6a4fe7597256fe1041a083c7594f476f530",
+        "bytes": 7561,
+        "sha256": "b7d156a50f851fbb7d7bbf3fd73e2debfe3a7f60f9e2703e30aa943c27044315",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/prior-safe-receipt.json",
+        "mode": "100644",
+        "gitBlob": "8fac0080a07742017815470ef1ff04af67299324",
+        "bytes": 2621,
+        "sha256": "d935757c0a748ffe9654060a5ded30371a8167465eb4e1117da7fc8f52757ebc",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/process-cleanup.json",
+        "mode": "100644",
+        "gitBlob": "fab98864e8f93b1796fd61dcfa922497c206dfc4",
+        "bytes": 158,
+        "sha256": "2f5dcf25923783a41a0bab41e786fae7d2a1d24a6942d7451e866371817fb756",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/seal.py",
+        "mode": "100644",
+        "gitBlob": "9021412731761a5e49698a530ed65c4a3706b492",
+        "bytes": 9773,
+        "sha256": "f46b15bb5680bafddfff67484b50102fdeda75d096d878df964c4bfc2a7ad762",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/test-multiset.json",
+        "mode": "100644",
+        "gitBlob": "e9421659d49e2ba4153127dd8556541f1b074c65",
+        "bytes": 13362,
+        "sha256": "cc8cf7750b8df53e91cc123d4c74a932c7aba63db411262e665637e952a7f389",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/HANDOFF.md",
+        "mode": "100644",
+        "gitBlob": "8ccbaa1a6aefed9328604c05cff8253d271a7196",
+        "bytes": 12196,
+        "sha256": "d7bd4aa8653ab8bd4efe9aebf0c9f3ce91a417e29b4ef4f2987bb958aa55f98b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/baseline-control.test.tsx",
+        "mode": "100644",
+        "gitBlob": "acf438b84da7e31e5187bb4bcf699847c5a289c4",
+        "bytes": 4311,
+        "sha256": "649aaaf93b288276cc1f737e35533c02ef9e07d1ba22705fe71dc51a9ed19a99",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/bridge-cleanup.json",
+        "mode": "100644",
+        "gitBlob": "6cc07422b64ffde80db6d5f3bb3b6db66ce05616",
+        "bytes": 555,
+        "sha256": "e5e1caa88a0748f6e76ebf1a407a05c63c520cb2b83f5c9513e7fa37ed3b3382",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/bridges.json",
+        "mode": "100644",
+        "gitBlob": "4b8a17fb7937f5707b00c14d328498ba111e41f2",
+        "bytes": 491,
+        "sha256": "1d66d14f08e6bae18e6909285a809b0c33c0fedbdf70914ef10f99088b1d8dcd",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/finalize.cjs",
+        "mode": "100644",
+        "gitBlob": "9e6b8bfc306e0c65f501cb781b98a9c87a0c3728",
+        "bytes": 6036,
+        "sha256": "3d4881f73fe0d72e09140204027f4e502f366a8592068e953ad264d246d64ac4",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/predict.cjs",
+        "mode": "100644",
+        "gitBlob": "4c94266ad8fbab312e0625fba50c322ee6413da9",
+        "bytes": 4434,
+        "sha256": "9407a320bc574c3aa50b636c00fcae8fa437fb9b1ec6e805f92f5d2f9a1bdd96",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/prediction.json",
+        "mode": "100644",
+        "gitBlob": "5bb203e9fcbd7df89850c1d1c310364aa3c43af4",
+        "bytes": 35687,
+        "sha256": "8755da4d1548509f66c7ac888ca59d5ae8a6217c4fd8a49bae1829480f1d5b1b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/refusal-review.test.tsx",
+        "mode": "100644",
+        "gitBlob": "f082851a9ae2a81bd0514f4d15f713ddd2f48b13",
+        "bytes": 5446,
+        "sha256": "a982d19638c77b3ed60776cf7cd23252ff5dff2b8c51ba5380ffa30a4a25b3a7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/resolved-metadata.txt",
+        "mode": "100644",
+        "gitBlob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+        "bytes": 7641,
+        "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/resolved-test.txt",
+        "mode": "100644",
+        "gitBlob": "5f6f75f256c6899338b436d76248c26923ec8702",
+        "bytes": 12722,
+        "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/review-results.json",
+        "mode": "100644",
+        "gitBlob": "4d1470843e8d7c39bf191d23e518f55e04f77b11",
+        "bytes": 14047,
+        "sha256": "980c058a069828502005d96f0c6f2bfc6205bf1d6886f80c384aad14a63d5fd5",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/file-index.json",
+        "mode": "100644",
+        "gitBlob": "17cd486e19ca009178555c8f57777d3488368a91",
+        "bytes": 34272,
+        "sha256": "d9318fe1dfed4362ab39846797a34f4cc29badf672fb04b5c807f28cee4861af",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/HANDOFF.md",
+        "mode": "100644",
+        "gitBlob": "9ab76a3e712a027f02e771316aa43e51963a68bd",
+        "bytes": 3816,
+        "sha256": "dc2c6f6265e550e053a47c3e88ac3bb7c61ed7cd8a07cb5ec1eccd25139e024e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/LEASE.json",
+        "mode": "100644",
+        "gitBlob": "850b952853d5e069d8e998a1bd096cef06039527",
+        "bytes": 724,
+        "sha256": "72a3a5aa9b8e246c9e4a959d370cac6537f349e0567128d125aa7afb68011f2d",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/REPORT.json",
+        "mode": "100644",
+        "gitBlob": "349f2d98364ee8c1e50e854fea7fba5ec46ee9cc",
+        "bytes": 3846,
+        "sha256": "e557727adaba4a9e4735d0fbbe9b3fff78736da0dd6b4e57907fe55cb2b06ae4",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/assertion-ledger-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "cc1089e82c65e9473bb0e326ad9be0c82da5bee7",
+        "bytes": 9746,
+        "sha256": "e67e4a6fdfffbeec844fc063b49c2103d2442a44aad7849e85ed9ec0d474fed7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/attempts-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "3954788e7f22080e0c7da0c50ae5950ab8cb6245",
+        "bytes": 4246,
+        "sha256": "6b151f67a5e8936f28cba11cd11c090068e6646ff784aafa3df97c31f1ce955a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/browser-cleanup-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "315d2cbd2f13b3ba87ed870c3541312cbb2f7fbe",
+        "bytes": 158,
+        "sha256": "0ef6fb53354446a3c0c005b0d48d9093ea3b0938dfe3e012fce8b821ebd8f903",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/captures-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "2da929e58611db5507d3bb6c42909ac0660f732e",
+        "bytes": 1818,
+        "sha256": "52d8c41a6c63ed7852e4202ede0c0b89a8052deeabdfe74687598c18ac2d61a2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/claim-next-diagnostics-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "49b9af57c287efa1a6cdccf1356ed32f264cc165",
+        "bytes": 1181,
+        "sha256": "16a8c26b53a6dba03dad2b1d951d115baeb224d2b0532532e3d11043e285dd98",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/commands-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "c4e59acdf2de36da8c962451975b1267bd9bced6",
+        "bytes": 2283,
+        "sha256": "0501990c95f17e78d5c499a9ff8d8d271d2819bb36300b14b116a07995eb7370",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/database-after-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "e519ea8b5542fca4bdaa94b8e6c8c0b7670310da",
+        "bytes": 9378,
+        "sha256": "719cc6e74c78157d7f39203c3940cc68204b6f3ca7d31dc88fb3540f38266b5c",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/database-before-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "024bad6eaab3b4f0a3b936c65b93fc5590625e67",
+        "bytes": 9378,
+        "sha256": "f80abd3cbfa451a21dc6cb0d429b558b1bcd4a882271ca3bb044e8d43d024687",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/database-controls-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "6895bda59f196b447a7a65b80f35b9cbca57f1ae",
+        "bytes": 1660,
+        "sha256": "cb7ed92cd0e97a3606156b77c4558cc577d34304d4464145528e0faa8600e4c5",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/dependency-links-before-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "c5df73b7b61f52e8d6e5553cae53a1d725556e3f",
+        "bytes": 121,
+        "sha256": "93b16b422cf7cda06d7d4e3e402ef999db30abb39d43e8666e6be69df2d8d2fd",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/draft-panel-current.png",
+        "mode": "100644",
+        "gitBlob": "aa9c2108e8b4171e59486ad4d6a153984c4836c3",
+        "bytes": 94760,
+        "sha256": "f0957343f749f1b86d3350ba649f4fdcafdaae1e259427b5adcb35f14cdde8ac",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/first-conversion-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "2df2f8b78314d8845d2942a56d05e59f8bcc7e15",
+        "bytes": 345,
+        "sha256": "311934873197301b5729c57882c86a22329e5ac4e0692f282cbb8310da1e24fb",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/graph-fields-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "ad223009cc62b0bbb6c4b0c5b2b53a55a7c04948",
+        "bytes": 670,
+        "sha256": "ec0320f805b8dc4d17b9fd5e63ecc86653d1247fca95363c246890a5acde06b2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/lease-release-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "bad5cf5f83a186efa7564e3da635da930eab0eca",
+        "bytes": 135,
+        "sha256": "2000b759c5b3e2248164165d76300e2379cb6921a0a28cd65dd828412d78e5aa",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/mcp-tools-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "aa5a6fcaf13b3b7f94c09a0071ac95745c786586",
+        "bytes": 5280,
+        "sha256": "56991efe043588d74dd93c9ef839e94f83b6359eb4cc960e227ad2825b668e58",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/next-diagnostics-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "76e8b266512834d944bf3ac13c21ebe1531adaa7",
+        "bytes": 1724,
+        "sha256": "2d57d9e4284fb7ef0ed4e13d732b16c9ad3489af5faca733f508018066651002",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/observed-failure-receipts-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "2f5c1f03d249ccbf8b4c9a67ec8c5e635fe5ee01",
+        "bytes": 615,
+        "sha256": "ae83d378580240e8c6f98fa7dbd52d769f6890143c2523b16eb1b66029a518f7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/originals-after-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "e33cb3c0a8af6a42f54be7e90e638f57422a73aa",
+        "bytes": 887,
+        "sha256": "cbdf83d93da19d318045c65412d91278315c2aae05a5c3a82d97795eb0bc9fab",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/originals-before-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "e33cb3c0a8af6a42f54be7e90e638f57422a73aa",
+        "bytes": 887,
+        "sha256": "cbdf83d93da19d318045c65412d91278315c2aae05a5c3a82d97795eb0bc9fab",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/pins-before-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "474e6417a33678bd440d5e9e5227ad2eaecd1e43",
+        "bytes": 510,
+        "sha256": "b133f5cb4ead9ce469afaf84b4ac6d15209250583f5ce964d82d0dce0b2b33b1",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/preservation-final-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "4134479b43de47ff65a3a1c718c7aae24b5f1b6e",
+        "bytes": 816,
+        "sha256": "ed8b1d274d61e6184f230bf4b8dd6a79e1bc464cb79ceb4c2ee738ae460b1155",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/process-cleanup-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a9222a876627d632ca699257a5e70941c80c780c",
+        "bytes": 218,
+        "sha256": "1a12cf15c0f86c000c654875127abe6517a8a8945d61f43a2d0aaea61bed5f30",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/process-inventory-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "678c073ae2c770024e6c6ccfd830e3bf9740b633",
+        "bytes": 125,
+        "sha256": "964be1be69c4d2634a55411264875425f7b976dd2971dcd00e0aaa7c97ef77ad",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/react-draft-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "3c529a19c5b3a4aca3920daa1afcf5ecd55fed41",
+        "bytes": 3189,
+        "sha256": "026d7409f13664c96e615490e27eb0297d9cb55e7aa8dff178e2c9444dd4f9f6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/react-draft-attempt1-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "409e9d832bedf1bef3e3557fa24e5b3fc493e194",
+        "bytes": 2802,
+        "sha256": "6f9636c0bd072872d099029a1dc206269e7380b42cd52bdbd96c9839d7a20239",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/report-editor-open-current.png",
+        "mode": "100644",
+        "gitBlob": "49ccad06528a7f442f633072ef5c6e8ee7fcfa16",
+        "bytes": 123146,
+        "sha256": "a45109abe49b98c3c2508de8d20f2a55359e4fc1deed5f52dcb5eae8a81ef316",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/report-editor-reload-current.png",
+        "mode": "100644",
+        "gitBlob": "d2a4b966e1240c7ea52fc0d1c2c1a6a2afe51cbc",
+        "bytes": 117921,
+        "sha256": "6fe448844d198be270f9ee2eba0b48d29235b039db1296383b60b159cc37bdb5",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/report-open-reload-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a6716679b43e538d79e8c61fdde4da722212b2a1",
+        "bytes": 645,
+        "sha256": "c486ae7e9498a3990b50df6c3f021f953f3c8e06175bc5747edcf8224e761f74",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/resources-final-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "2abf653fe135fd9f6546952b53615aac8bf388bd",
+        "bytes": 297,
+        "sha256": "4903848a5c4919e605490000044d69a5f9da1a0de489f4ccedc2104376f1fe63",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/retirement-attempt1-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "e878f077a96e2dc5060f93b4baaacfeb988c9c23",
+        "bytes": 834,
+        "sha256": "43abfd665acc84f379da7560641959204e82ca2a055719ce65a34453f3024ddf",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/retirement-held-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "74fb5c63927a9d9d1620b09139aa0d8ee223e87a",
+        "bytes": 548,
+        "sha256": "92549b155564806fbee0d6b69c8dab5faa2ce2d69f7824669230cdcba538f27a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/retirement-settled-current.png",
+        "mode": "100644",
+        "gitBlob": "d54f71fc1338cb7fd0314b1ff2718fd1af872702",
+        "bytes": 77945,
+        "sha256": "45db4b6678fbf7c375730f0cdedbd3114b8bb10560dae2469754d37bf01a1d0f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/seed-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "74edf9802ddcd766d6849249b10ac5e76fe12ce5",
+        "bytes": 203,
+        "sha256": "916ec835fe8d0ba36fb518c9ea24923e329d25746793d0690dcbb60f4622f309",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/HANDOFF.md",
+        "mode": "100644",
+        "gitBlob": "2f7337803486f27f897573a1d42177203ac68da7",
+        "bytes": 2346,
+        "sha256": "dca0a607dc5dc82d561d02c19a689aa405fecf57084cac3e16c74ba8103b388b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/REPORT.md",
+        "mode": "100644",
+        "gitBlob": "b15fb0d75f2a80582121165a81d61ac07923794e",
+        "bytes": 15123,
+        "sha256": "aa9e2a23a1179275279d8765d3be3fa06c2a8a0d56dcde98848a8b1c17764700",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/account.py",
+        "mode": "100644",
+        "gitBlob": "9b0794af7bf07eea47fdf9c0f09af0fae6c8faae",
+        "bytes": 4196,
+        "sha256": "7e4fc4398f7d9a4f1d1c8fe8e495083fc2feab63efecc38475ceef4213090765",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/anchors.json",
+        "mode": "100644",
+        "gitBlob": "7fae4719f24a831b8b03a28d5bb2d06b1f9f35cd",
+        "bytes": 7941,
+        "sha256": "349cdd85a5dc1005a74472dbfc97b6d7956ddac01bc91cc2e0238c3b7bc2b647",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/archive-audit.json",
+        "mode": "100644",
+        "gitBlob": "6d4d4bf6702af615852a437ec0c4fc29b570d4da",
+        "bytes": 20505,
+        "sha256": "fea4df6c2f3cd0c7ce57a955c5e7f5727a62162077f770f810a0f67a87d14133",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/attempts.json",
+        "mode": "100644",
+        "gitBlob": "aba3643f6d2e2a88106e2fb1fa392339d8d2a3c0",
+        "bytes": 3589,
+        "sha256": "e96ab47f1c68d5d1be7d71b4335e24b2f4d7e31bf011ddd9c2257bf1d6955386",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/audit.py",
+        "mode": "100644",
+        "gitBlob": "602bda50bc0cbbe20f489a5b763600f81d4d3db8",
+        "bytes": 3894,
+        "sha256": "b5f109d76e1de759d1bc8ea1b3cd2e62a925382f9a5a38a374c7628c94d4a042",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/baseline-legacy-draft-conversion.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "6dbf7efd3e97ee56663960eb56c7162d273debf1",
+        "bytes": 7767,
+        "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/baseline-travel-expense-claim-detail.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "edf63b75e39c3c1d19500170b6c935e75fe9fadd",
+        "bytes": 11048,
+        "sha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/bridge-cleanup.json",
+        "mode": "100644",
+        "gitBlob": "a696b93a3a7acfbb4cf484d5c57a3b8e6a610f7e",
+        "bytes": 1679,
+        "sha256": "ba450f851326c7a9b8e911bdbab7930c503c8f9867a709375c0d96b41ac9e3b7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/bridges.json",
+        "mode": "100644",
+        "gitBlob": "8490fd2f701e9c371d6d206b8cebe845ead6b69a",
+        "bytes": 1378,
+        "sha256": "1ef218451b9405f7caa8af62130e28e0604e4b5b5b20083ff17ec5cfd1edd237",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/checks.py",
+        "mode": "100644",
+        "gitBlob": "f1138139609af1fb0a9957ab355310c4948d4b8c",
+        "bytes": 2435,
+        "sha256": "071e2400c6ad31b52dc6368332f0267c6a56ed6215f7d3787138f03298999c24",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/cleanup.json",
+        "mode": "100644",
+        "gitBlob": "c2b6f45084934cca560873179159a6a18b761a62",
+        "bytes": 705,
+        "sha256": "d495812f2251b2f95a3110ab9df329301f2c693d664b99d5516af1b8418f707a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/commands.json",
+        "mode": "100644",
+        "gitBlob": "4e1055efa171515708aa3af0b0562ae080328d25",
+        "bytes": 21755,
+        "sha256": "2136e1ed801f6b18dde3bc3543dd8affd61c420f4024c45b9df1528d5f943c80",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/conversion-review.test.tsx",
+        "mode": "100644",
+        "gitBlob": "d0ee3c223c5bed00aeeeff7da5223faa8dbd7c11",
+        "bytes": 7341,
+        "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/doctor-version.command.json",
+        "mode": "100644",
+        "gitBlob": "be403e0f58c4d0ca828033f76c93e207358c90af",
+        "bytes": 504,
+        "sha256": "6525697d125919c7ef143be287878d6d8fec69d4c049f67a6f2d6c6821a833e3",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/doctor.command.json",
+        "mode": "100644",
+        "gitBlob": "71845343eddc82e148ea8c90b18d07764ffe4199",
+        "bytes": 874,
+        "sha256": "585489a7581d7afa85efdd1f7db556189e9bac9cff7a8f255b3926f58a1a3777",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/excluded-hash-only.json",
+        "mode": "100644",
+        "gitBlob": "a15b91cd8b03b7fe5381f33dd31af0df8a13194c",
+        "bytes": 9540,
+        "sha256": "1e843c6d391199f15d8be5ddfd2da395636a1c01d02bf6991e6cdc152cbfb5ba",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/explicit100crlf.command.json",
+        "mode": "100644",
+        "gitBlob": "69d1a18706df9c37f9ea87b38aea6a0355245400",
+        "bytes": 1282,
+        "sha256": "543cbd4480f601310a87731fc865fff6a16b3d24c4763fd41d187fd2f961dd33",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/findings.json",
+        "mode": "100644",
+        "gitBlob": "96255f32a70a2044c9631b270d57eb0d197c8e6c",
+        "bytes": 463,
+        "sha256": "1eae686845dbe1b1f7d920929a2372f7ce2708bd2fb775727c7c885b2ced30de",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/historical-source-pins.json",
+        "mode": "100644",
+        "gitBlob": "d26f9830ea9052138fb7fd4b1a8ff03f978534f5",
+        "bytes": 4419,
+        "sha256": "474fa0217eae7ebfab7186cc353bff550e23928e8a4cb34e89a6d6b85a8dd104",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/integration.command.json",
+        "mode": "100644",
+        "gitBlob": "8dd6a885a68db8b22c447865a3656a868baf0a90",
+        "bytes": 983,
+        "sha256": "e87dc7ae413dd29df992c5bcf9709dcbdd6396755c10b349581b63f707d5ccb1",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/lint.command.json",
+        "mode": "100644",
+        "gitBlob": "1f67822d5f13d3998078392a3a5a41b3a0b0c157",
+        "bytes": 1250,
+        "sha256": "f4b93c8c28d5047818f547f80a1d100052bf24c737ead1fad3c439515d847099",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/main-types.command.json",
+        "mode": "100644",
+        "gitBlob": "ffb04bb7436c1dca56409a3ddf70c4b0863abc4f",
+        "bytes": 613,
+        "sha256": "f816651500831a594708f8ba8625eae1a6303b99203e230376146ad658e07ebf",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/nested-pnpm-bridge.sh",
+        "mode": "100644",
+        "gitBlob": "18758d2061b47df18c52984a8e9e25fa397849cb",
+        "bytes": 120,
+        "sha256": "815f319c8056070541ae7ff6d74ecbb3da5c983aaf16cc033f95ede5e8d103ae",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/objections-attempt1.test.tsx",
+        "mode": "100644",
+        "gitBlob": "8448d5439e6d7dd69123cd9607fa440624ab41cf",
+        "bytes": 10125,
+        "sha256": "afc09e14c976984ef676390a922d52dab4927caa45f73099e1cdb7170845e737",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/objections-attempt2.test.tsx",
+        "mode": "100644",
+        "gitBlob": "cbe1ff164f389b57637c198cc5d467709a1c3d88",
+        "bytes": 10196,
+        "sha256": "36a4d9a316c267fcd51b41c4939640cf2d43843eeb6deec0997e721d32f1599e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/owned-explicit100crlf.command.json",
+        "mode": "100644",
+        "gitBlob": "cdff4fb51540e503ff088072c6aebb26716d58a8",
+        "bytes": 771,
+        "sha256": "a44cf99a2004baa04b21270c49cdc60a57f88509e48f7259e6cc85b722938921",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/owned-ordinary.command.json",
+        "mode": "100644",
+        "gitBlob": "61d54adaf02005873a6ae6f4991b512ec5adb710",
+        "bytes": 715,
+        "sha256": "2a1a58461ca4b36b74437ba481f3dd15dc0baddc9612711cb27fbadaf1a097ab",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/pins-after.json",
+        "mode": "100644",
+        "gitBlob": "f4a29c8f5f7cc9cdbac39fbcb28aabb195a2b10a",
+        "bytes": 26607,
+        "sha256": "d57a0ff137cd87fc64f7ea4d3bd1159be2d61e5fb3d0dbcd31f46bf232198da6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/pins-before.json",
+        "mode": "100644",
+        "gitBlob": "f4a29c8f5f7cc9cdbac39fbcb28aabb195a2b10a",
+        "bytes": 26607,
+        "sha256": "d57a0ff137cd87fc64f7ea4d3bd1159be2d61e5fb3d0dbcd31f46bf232198da6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prepare_broader.py",
+        "mode": "100644",
+        "gitBlob": "42addacaf3d4bf7d9c84c726777ac2997876659b",
+        "bytes": 2592,
+        "sha256": "cd637abfb9488fe9fa5bf55e0ea1f1ffef29603793b5fe7ca7e49ecb977872b2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prepare_objections.py",
+        "mode": "100644",
+        "gitBlob": "b807d8a69a35ef9c52c92059755bb22a462f3403",
+        "bytes": 10140,
+        "sha256": "c5029d64f9da06a495683d6bd33ea7e9d772d2b34739007a3f88f3d9da7f9cc3",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prepare_refresh.py",
+        "mode": "100644",
+        "gitBlob": "2de8a836ca222ce109f031bf9e19210b16a0dca7",
+        "bytes": 5255,
+        "sha256": "1d43d067c2b5b99af4f9cee807629743bc9c958010f08279d24f1f68fb70be5a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/preservation.json",
+        "mode": "100644",
+        "gitBlob": "949c696d5cd0c026de548fba592b04b785b3d545",
+        "bytes": 45647,
+        "sha256": "8e5323b62fbda606724de04afa91e497af99c229fa1e0d73372c08885c7e4c2d",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prior-intake.json",
+        "mode": "100644",
+        "gitBlob": "26ef05ff797975a0dbc1068d81d06e0879fcf7f8",
+        "bytes": 3598,
+        "sha256": "4f5ec20ccac047c801e5b8d02512e743b99cd0e4dc96b8a5a4c31adae3c17b75",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prior-static-python.json",
+        "mode": "100644",
+        "gitBlob": "aa28883b5b1065a553b5b70957b2d3e4dd2cdeff",
+        "bytes": 256,
+        "sha256": "77c0051c7de3791ef5d3cac6861fb9fd5aaef9ce87a7aeac7619db756a387b0f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/real-refresh.command.json",
+        "mode": "100644",
+        "gitBlob": "f1f6ae57cb408a3f036a73ddbeba1d46d6b44e99",
+        "bytes": 745,
+        "sha256": "f8b6221d60789b1e92a27e93074866e6b1d2d24737396efd944f2f7028c87e6d",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/release_bridges.py",
+        "mode": "100644",
+        "gitBlob": "e17a77f6e00e17fc15a4cced10c44b3273fcb2fc",
+        "bytes": 570,
+        "sha256": "c10567494fc7eee46530ff24b532732b826b35fbe9146f293ab7976723fed3c2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review.py",
+        "mode": "100644",
+        "gitBlob": "31ac1f95abb1503b8d72cbfa144a6bfd950dd35e",
+        "bytes": 4373,
+        "sha256": "9903db0f22ad3f0b42bd2e2dbd8ba81687695f2a2d0b5c6910018e70b29d3f8f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-actual-consumers.test.tsx",
+        "mode": "100644",
+        "gitBlob": "2cd224f74f4ee24d48ff78167f5b80d002e048db",
+        "bytes": 8688,
+        "sha256": "84108bbc5a1257df358a0310fec5e3200a11354e4075d53421af59445d20354c",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-assembled-objections.test.tsx",
+        "mode": "100644",
+        "gitBlob": "4bb434535a4d3f8b6e0b0ca3f39fd580e486c129",
+        "bytes": 10215,
+        "sha256": "58857f488a4d8b2e39f71d869867c53310d44e16cb1751f650b7b1393875fbfd",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-independent-baseline-conversion.tsx",
+        "mode": "100644",
+        "gitBlob": "6dbf7efd3e97ee56663960eb56c7162d273debf1",
+        "bytes": 7767,
+        "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-independent-baseline-detail.tsx",
+        "mode": "100644",
+        "gitBlob": "f25c7653808da5bbc087c9ef84354cf565c266e7",
+        "bytes": 11067,
+        "sha256": "788bc620fcdd4a8e86233784659570e20c183d25f6730d70efe291eb2cd64f32",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-original-conversion.test.tsx",
+        "mode": "100644",
+        "gitBlob": "d0ee3c223c5bed00aeeeff7da5223faa8dbd7c11",
+        "bytes": 7341,
+        "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-original-detail.test.tsx",
+        "mode": "100644",
+        "gitBlob": "1fe7b727f6a16b8e424fe5a508d2b9f97d81c41b",
+        "bytes": 6091,
+        "sha256": "787763f3a92244116d9406cc7e0afba140aedfcac2f626de49c459e2804a959c",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-real-refresh.test.tsx",
+        "mode": "100644",
+        "gitBlob": "92ebcb3ffb2d6fb4953628447901e53a2d2776e2",
+        "bytes": 8159,
+        "sha256": "d7764cc6e90b5f907d2cde0f68c733477a34ad6a400f41a846e9c7f9dff02aa9",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/seal.py",
+        "mode": "100644",
+        "gitBlob": "7ec03526861b66f7200b99d01d7bbf7c9a48f3be",
+        "bytes": 8713,
+        "sha256": "a642158774e609c26435baa612d26e1a7d96fa9930d1f7f1036e6b220bd06068",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/selection.json",
+        "mode": "100644",
+        "gitBlob": "ca9173333047a514913e85c40014d65ab0514f84",
+        "bytes": 4215,
+        "sha256": "58fc3e6a0f8e5d210c9aef54bb0657ae3a43581ad0544cce6c904ccd87df01e5",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/service-cleanup.json",
+        "mode": "100644",
+        "gitBlob": "ce8b655a1ef451e3ee0ec280228c96e89a6fb630",
+        "bytes": 120,
+        "sha256": "cd7267e3c4eaa2ded050642774eeb77b68973462c3509a32a8efa2bea5111969",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/setup-command.json",
+        "mode": "100644",
+        "gitBlob": "722df7a82bbf885864551f8a99e3a058e77007cb",
+        "bytes": 653,
+        "sha256": "496bbe2b13210be45003faf7fd50b4ec25551c0d032643887512a0c5ec7a7b05",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/smoke-types.command.json",
+        "mode": "100644",
+        "gitBlob": "f7f3a0b0ee9dc76303145fe33817f384733ca8d0",
+        "bytes": 606,
+        "sha256": "1e7e1dcd5484b8ef218f487ddefedaf79ec6b82f09aff25a286d8eebc95fc8f2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/static-syntax-babel.command.json",
+        "mode": "100644",
+        "gitBlob": "438ec2d78931c34d336f61e7f549a32816b2ad6d",
+        "bytes": 510,
+        "sha256": "4448858bd3ad9a9bdd0e0b503f87a0df7d1e05ed9cc13f8aa82cbe14e5a61ef1",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/static-syntax-final.command.json",
+        "mode": "100644",
+        "gitBlob": "309461b0b29f1d2ad90efca176b599c9f8a2d8e1",
+        "bytes": 511,
+        "sha256": "5ad7fcecc7dae79e8434338847b7289b69c1dd3ca11dce5b1baf625d7e7aec4e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/static-syntax.command.json",
+        "mode": "100644",
+        "gitBlob": "fa687eb4a0aa909aad8798ac78fda7b32c5749a3",
+        "bytes": 507,
+        "sha256": "ce4d82f1b8030c90bc47d9d77cee97481527a5d213c6cb911e86e3d706e41938",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax-before-refresh.json",
+        "mode": "100644",
+        "gitBlob": "c1ea53490f25bc6e52d5dd69e3be315f84556b3c",
+        "bytes": 3489,
+        "sha256": "5d3701fd9f893dd32acad8742328a44039fe2b6202e21bdbd302f8708d39df5b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax.cjs",
+        "mode": "100644",
+        "gitBlob": "8865f3bc131395ebb9934e7a3a7337bfa8d7085e",
+        "bytes": 1322,
+        "sha256": "19b87634331864ffaa27ca9071298d29d7cf9ae83834d98a3aebef48803f65b1",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax.json",
+        "mode": "100644",
+        "gitBlob": "b3d1daf43a726c0515937bed41b2122e5a119686",
+        "bytes": 3645,
+        "sha256": "0de0296f57cf3df9d3ddb6ec39fe9a2745e91fca8b5e8464930b04a15a05d926",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/test-multiset.json",
+        "mode": "100644",
+        "gitBlob": "7b1517fa2b6028e93ec60c110168cf721169174d",
+        "bytes": 397230,
+        "sha256": "e5d44276261d00e41f4ee3a064125b802d7980f8777c60e1f6f522adb9e9db0a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/typegen.command.json",
+        "mode": "100644",
+        "gitBlob": "75ce26edd0a36af951f982ee9320e2d64c2029e7",
+        "bytes": 522,
+        "sha256": "84cd6749caa91aeacf2ccbbf65a4c314ce68ff7665d378680c2704fcc769d1e8",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/workflow-types.command.json",
+        "mode": "100644",
+        "gitBlob": "1700aafa8f4ab06c643d75d1d0762a381ca431b9",
+        "bytes": 624,
+        "sha256": "aaee8f692b0739631fa0238ec4625548ce6b5b8bcede48bf35e672bcea4046dd",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-contract.json",
+        "mode": "100644",
+        "gitBlob": "4717cc9f27892c6ea72a664f6302f586298a702f",
+        "bytes": 64953,
+        "sha256": "2e38a63847ac02cbb506d2c8316fbc4e5e4fd8510f274250b1ce9c4e8390c05e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/conversion-stop.json",
+        "mode": "100644",
+        "gitBlob": "4e29f91567764f3f0b13ecd43b923a6fedf8e22f",
+        "bytes": 5643,
+        "sha256": "864b3a5a1ab722fcc3fb63352c507c0dc6a4ed642b9df517b27178c78ff5e04a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/detail-stop.json",
+        "mode": "100644",
+        "gitBlob": "4e91c96ff3e677cad14b37a4ea9d057e085b7501",
+        "bytes": 3086,
+        "sha256": "649fd83ba7378d7c087466887f7f67159f09d52988e16161825c644b788cc197",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/focused.json",
+        "mode": "100644",
+        "gitBlob": "05d49659e793883c696a8741c92698bdf3af7224",
+        "bytes": 6148,
+        "sha256": "0da458c14db90728040ff22bb3e34cae96e22716a169d439b94dd44a94d2a534",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/independent.json",
+        "mode": "100644",
+        "gitBlob": "191527ce06c0eb0a20ee46702f72915c7a2173e9",
+        "bytes": 15597,
+        "sha256": "12fddeaa72049e4f604d723f6a3287068199808c90d123c5327f4ce3fa677118",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/runtime.json",
+        "mode": "100644",
+        "gitBlob": "0203f9d51115e1af0784f91cc6c5e41367bccb00",
+        "bytes": 5771,
+        "sha256": "04c3ffe1c4070bba2db8265019d7a986589bf189125acb8951002b3058b3b1e6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/conversion-stop.json",
+        "mode": "100644",
+        "gitBlob": "9a9ca11006a5b52f970e240e74f55eb58b2baa8d",
+        "bytes": 9273,
+        "sha256": "f2ee24e8813a058c9cfe3f3ab68cf4e94b9f8bf9c38226e959e1ed3e9840bc4c",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/detail-stop.json",
+        "mode": "100644",
+        "gitBlob": "c2479eac5a50ade30eccf6f6c413a27e8daa12e9",
+        "bytes": 6677,
+        "sha256": "902afa12aa1b955ec132ec6bea18442d53c09c6cbf6ddf8a378285ead36037c6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/focused.json",
+        "mode": "100644",
+        "gitBlob": "0f4405257e815c4c251d9884269eeed67e7df74d",
+        "bytes": 8828,
+        "sha256": "eaba55d619e8b65706f5f74f7d5e89a3085ddbe4b9381232e7ee1f8f1870d4f5",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/independent.json",
+        "mode": "100644",
+        "gitBlob": "3c55e5f76180ccce6dab972d22ae2fdf2eff050e",
+        "bytes": 7036,
+        "sha256": "c9764644fda2f6af25577b4ddfe39cb1e0cf50f3f162771ce3dce59462e5453b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/runtime.json",
+        "mode": "100644",
+        "gitBlob": "3e8d0368083f5153c4a5e609bd69dc460dbe5e55",
+        "bytes": 24775,
+        "sha256": "3a500ccfa93f3e53b8e730a6bc530173d69e518c1baf29836799c8a5fb819d42",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/runtime.md",
+        "mode": "100644",
+        "gitBlob": "1817207d4d8e8dd8f75b73be4144f3a07c0b1593",
+        "bytes": 3520,
+        "sha256": "f30ca7dd33cfb20b3e6d81a4f4cbc96db0c6c378c7068cd7ff8e7882416fa68b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/payload-index.json",
+        "mode": "100644",
+        "gitBlob": "8d85aa35869c58a454e2204f9a84bee1ca7144d0",
+        "bytes": 58041,
+        "sha256": "73e962a2b7b03311239229a489049f11f61cc8f4a626ba262d2be205cd2b7339",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/publication-seal.json",
+        "mode": "100644",
+        "gitBlob": "ff624cd74d489626efb467df12c515c34a8147c6",
+        "bytes": 1420,
+        "sha256": "2b72a454e595678698e9153bcdd17a7bbf367095e08e5991af86f88b74690507",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/report-appendix.txt",
+        "mode": "100644",
+        "gitBlob": "7367608ff948b52c9ad8d12d06a1a6c8e93266b9",
+        "bytes": 7666,
+        "sha256": "c1235f538de8720b0edc01d165c223af33cdb70358b0478f3faa50c9d375a8b7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/root-checks/conversion-correction.json",
+        "mode": "100644",
+        "gitBlob": "cc417f2e9b4a4b6e1987044e857486afd2de7dbe",
+        "bytes": 18938,
+        "sha256": "4cac7ca4c002919ae528a8843effea4832e8b58f0118c93e50aa79c1c5dfe73c",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/root-checks/detail-correction.json",
+        "mode": "100644",
+        "gitBlob": "9eee9dce7afc427c9c3cc11a7a2c71d3e86e38bd",
+        "bytes": 8472,
+        "sha256": "37b5286dfaf191461b8f49c64ca25affc426c30a3afe23e87b1a234651e3a26a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/root-checks/independent-recheck.json",
+        "mode": "100644",
+        "gitBlob": "9fb5b40b1351ab4f0d4ee13e0f56e2fc844737f1",
+        "bytes": 38211,
+        "sha256": "818ef6d161c51fa2542a0997c3ed96cd8d8567a4ceb5dea4e5f18ca215074f0d",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/ASSERTIONS.md",
+        "mode": "100644",
+        "gitBlob": "91db396972e92f1821eb5635481f28d44c0d8699",
+        "bytes": 13289,
+        "sha256": "4cb45aec61cf8fdeaa82e7f8c411e94541a6b9e9756f33f63dc8eeac6c51b54d",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/HANDOFF.md",
+        "mode": "100644",
+        "gitBlob": "c05b635f80d84ba89f330326b99e610988a57599",
+        "bytes": 4585,
+        "sha256": "4bb0969bbcbc07c76cfc53a118f700e54701f1ae954adaac184f95ebd321772e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/REPORT.json",
+        "mode": "100644",
+        "gitBlob": "185c4de8d6ddf93866ca0de960647c7f1e944b66",
+        "bytes": 5353,
+        "sha256": "c415d045d3fec4ef21c9bb559c01874507868c7179459574fa356ae7a92892b6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/assertion-ledger-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "447dd354426d787f8c1239aa3329d3c2acaa1f4d",
+        "bytes": 40048,
+        "sha256": "e36ea3a4fa39c6ae5efc3ef36eea77180b700ddcbb7e1b53219b682d8830a0d7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/attempt-qualifications-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "463c3e39ffb2197025fba570d64f1b778c68248b",
+        "bytes": 6119,
+        "sha256": "ae209dc31f8ab3d8101a6a87c9006bb464bc766e8a8a37f7396f18091c088682",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/captures-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "340d2bb5ce3e17ee7f35df89ecaade8c79ca019b",
+        "bytes": 3210,
+        "sha256": "87a5bb3bcead646eb58072d775aa278017ddc5bc0ac9c995e38cbc0086909441",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/commands-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "3dae07f23b508786709599ef505b466d74c6851b",
+        "bytes": 17948,
+        "sha256": "59928809ba21bab378e3236439c36d17cf2d8b144547a6c980740b2cc8e75974",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/conversion-graph-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a0dda9bc93de9d7d84c878cced13386896bba3e8",
+        "bytes": 242,
+        "sha256": "7fafd84bf748eb0b180a6f9be0cea8fedfa33a52b4e8a249d600b1cb0cfdda9e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/converted-desktop.png",
+        "mode": "100644",
+        "gitBlob": "7d85954a3353e4ec6a8551b0cd7a5b52b77fdb04",
+        "bytes": 81043,
+        "sha256": "8961453d56bd57014002a5e43ec194b6ae42254a92a4c1230c814c416f0eb317",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-after-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "7739d0e843ee0b9ac79ab73e6edb7fc7da29478c",
+        "bytes": 9514,
+        "sha256": "148b222663acc566dc33aefee35af71176a79035ff3984f78c763483a0894ab0",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-before-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "1265f8f39bdde526796d9ae9e54c8f994501552c",
+        "bytes": 9514,
+        "sha256": "71dae63afb1eaa4b3cdda3b0dd65a3f8f730cf7d42e6a4569c7c9c9e7adc4300",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-checks-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "6f5998fd0c8cc34fa1d1f73787558c80aa0dc23f",
+        "bytes": 22668,
+        "sha256": "1075a5acc04ee72444ba924b12737673faba14d7b7cd45b34670032e8badb8f6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-initial-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "e890dd7564ad10e18a9e630b30af4b74a8733a75",
+        "bytes": 9514,
+        "sha256": "7f94a20a0812f96416aaaf35d91bfaf1e0e117833f6ee61ed06e691bfc10cb05",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/desktop-layout-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "dd2e6c168bbabda6f35feca57711c98adf0240c6",
+        "bytes": 408,
+        "sha256": "bc74b688128cc883b1b7dd607de17ac1780079714b33eae9079366de0c94126a",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/download-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "5d91c875cbab24d70e9c1860c25a44afbea59986",
+        "bytes": 241,
+        "sha256": "23de41cb29882ce611be3346e0b0d43354167a66b0b0481c4d6a6415ac923803",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/draft-desktop-1600-settled.png",
+        "mode": "100644",
+        "gitBlob": "9a2ebc8e1c4fce59cf862132cbb1ae920396d9d5",
+        "bytes": 73801,
+        "sha256": "19dc722635ac7577abfb8b951f923f18532e790b0a5ec8d4f478987316e7abda",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/lease-release-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "f170c23f7839052a6aba57ebedd65c7c3428a68b",
+        "bytes": 189,
+        "sha256": "ed337462ceaa21a3453e9684896ceaec7dcba08bceb42d2f9f970171d8b49ed1",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/legacy-rows-after-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a041b3c0386d86c85f774e72f5e3f0961f24adff",
+        "bytes": 2696,
+        "sha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/legacy-rows-before-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a041b3c0386d86c85f774e72f5e3f0961f24adff",
+        "bytes": 2696,
+        "sha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/next-diagnostics-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "1dfe763c469bc41cba09fc96519fc1e8e897a4ad",
+        "bytes": 805,
+        "sha256": "e658931e460944784ee9942a9876fd4ab996c0d66c5d226e080494fc64675862",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/phone-layout-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "7490b59793dc5533f4da0b054674aa57ccc6000e",
+        "bytes": 512,
+        "sha256": "e61946133473f77598a8649250e367369e85f694c5e1bd17b3cb576b414c9bb9",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/preflight-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "b20bd581fbfba904d715fdbbef62be5adf2b57f6",
+        "bytes": 677,
+        "sha256": "856810d233c730731412898e1cb03a2f37f1b1976aaa70845264c5d80da0381d",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/preservation-final-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "fb58b3ca76ad1797983b6fa8eb17148bc4812ab6",
+        "bytes": 609,
+        "sha256": "c1f6d51f4040a969cdb212838b35bd4985246a30121b26f3c5a7ffcb8285466e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/process-cleanup-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a7753ff1314e0ddf852f7391d075590e8c8bfc8f",
+        "bytes": 126,
+        "sha256": "2cf143020b67ea1ffd98b5b575424fd069080b711cbc9b1419d81890177a2520",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/react-approved-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "d1b3651ebfb80122eb2c223d7665b04437f8c3bc",
+        "bytes": 337,
+        "sha256": "fff1b32c474c359295b1b49fe4d19311f0e1c5abf6fa0354298c5c87549e18f2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/readers-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a6872d284f6c51312bf8218bcebd6fceb954101c",
+        "bytes": 458,
+        "sha256": "406111feecbf36d31eff907154d48935becbbc1be6cb7956a6423ea255f42554",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/real-receipt-refusal-desktop.png",
+        "mode": "100644",
+        "gitBlob": "9503ca73b951482ae5618c33ffa4bce2c19f31ed",
+        "bytes": 95736,
+        "sha256": "ee3ddafdcb4465093afbac647e518386cf441e9d13ca1d979b8cac4e11c1d3eb",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/resources-final-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "76cf52344dce75c5c70a23feabf46a92e6937f0a",
+        "bytes": 237,
+        "sha256": "9179e1d1ed81943c30915a8bfa91b8df16ca548e2049017ca8d90bce39bf4faf",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/seed-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "a766be61a6eb597a6d4afac4d8b4e5e105006a87",
+        "bytes": 430,
+        "sha256": "1c31875952fd781b564ecb4f9d50fa4f729404456539c6167f486d2c4f840329",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-desktop-1600.png",
+        "mode": "100644",
+        "gitBlob": "51e65536c139d6d12dc5d9b5638c75c8b9632f3b",
+        "bytes": 71183,
+        "sha256": "2f9e794007badb520bb9f238d1ffa51b0d9d22d64d3a078ad4c339132119d326",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-local-retry.png",
+        "mode": "100644",
+        "gitBlob": "b86014bcb46cfa50c421a2022834a1fcc244944f",
+        "bytes": 79261,
+        "sha256": "3ebd71f82e84b58e25f4a208a50c25b9136bc9f231647ed3dac08e380e4d84d6",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-phone-390-large.png",
+        "mode": "100644",
+        "gitBlob": "608dae2397fa9d1e2f20ef0233f4a15c70e27b8d",
+        "bytes": 42338,
+        "sha256": "33d1c27c83d263d611d45f345c04ceb1662a9d6969c423d85bb1c6530882c418",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-wide-2400-dark-large.png",
+        "mode": "100644",
+        "gitBlob": "7cf16cc231297aa5b059b11b5cd2f5c6978c7e17",
+        "bytes": 97439,
+        "sha256": "5999f11759e62589b409d9576d8af50dd371cbe502f9f07d2507b3b267599f14",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/wide-layout-SAFE.json",
+        "mode": "100644",
+        "gitBlob": "1c78bd76a1374e3bf62ff8b54c9f96ef4fbb7ffd",
+        "bytes": 832,
+        "sha256": "eb75ac7a910beb8abb89aa7222bd17951212f1cfc42a91cf6dd59678aad22ffc",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source-pins.json",
+        "mode": "100644",
+        "gitBlob": "4f1d46b90fa8f53de0c90321098c80aa61ce6c8c",
+        "bytes": 10723,
+        "sha256": "591048394c3a749a34dd5b526eace0e8afa26bbf757994a17c83d6cfdfca4a6b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+        "bytes": 1861,
+        "sha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts.txt",
+        "mode": "100644",
+        "gitBlob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0",
+        "bytes": 3510,
+        "sha256": "42683441abe49b9acae745ca4fb1ba8d2b6bc1070fcc74e5594dfa1458bc6307",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/site-header.test.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+        "bytes": 7918,
+        "sha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "ba19e9037e3e304b877091993f968a101f684b94",
+        "bytes": 6874,
+        "sha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "b6b904215b1d9801f0768d35eed520b7454b923a",
+        "bytes": 11065,
+        "sha256": "afb6b4335bd6bed8e2474f59f0584853fccfb0c501294789c82adb6d44d96659",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327",
+        "bytes": 13615,
+        "sha256": "0558860b7abf7f6053f69ab2650e607b3803d9ebfe10497a3cb5540190c30b0b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+        "bytes": 18784,
+        "sha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+        "bytes": 13627,
+        "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx.txt",
+        "mode": "100644",
+        "gitBlob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+        "bytes": 9090,
+        "sha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/navigation/route-metadata.test.ts.txt",
+        "mode": "100644",
+        "gitBlob": "5f6f75f256c6899338b436d76248c26923ec8702",
+        "bytes": 12722,
+        "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/navigation/route-metadata.ts.txt",
+        "mode": "100644",
+        "gitBlob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+        "bytes": 7641,
+        "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/travel-expenses/current-owner.ts.txt",
+        "mode": "100644",
+        "gitBlob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751",
+        "bytes": 639,
+        "sha256": "939ae2071718830a529e09ae3855a330d8d258e72ea6647c4db4250fde0bfc50",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts.txt",
+        "mode": "100644",
+        "gitBlob": "502b9aa3e6336e7cef0885734c947170a15f5197",
+        "bytes": 3589,
+        "sha256": "664db4505f12cf9d652c7bd71aa31298324b7d6cd6cd25bbd7227af541e8655b",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts.txt",
+        "mode": "100644",
+        "gitBlob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c",
+        "bytes": 14313,
+        "sha256": "99d358bf17795fb682e00d7fbfc648e7bf669ad433be76fe871182f5d18e6d4f",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verification-results.json",
+        "mode": "100644",
+        "gitBlob": "00ad7fe7452199a5b85533c25880e542b9f9c827",
+        "bytes": 40463,
+        "sha256": "17283cd171a8ad9ea51ce3112ff1cf67980014876736fd56a955d1aa761324b2",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+        "mode": "100644",
+        "gitBlob": "f03434dcdcfeb549371046d949cb06974a78b869",
+        "bytes": 9925,
+        "sha256": "f8102e9628e7ed227a0cab70d38933bcbb678adc6f0446ce330cbd119abf5316",
+        "rawFilesystemExact": true,
+        "handoffHashExact": true
+      }
+    ],
+    "pathList": {
+      "bytes": 20064,
+      "sha256": "4b941d79db288df2583ea07d5eded26caefb79bfcea613404acfdbbcf0af6a95"
+    },
+    "stagedBlobAggregate": {
+      "bytes": 44014,
+      "sha256": "a4485a317d3d8a5c6e3637d5dda2face92b45fed54c1a8ae222ae6317c8907b4",
+      "format": "UTF-8 sorted path<TAB>mode<TAB>Git SHA-1<TAB>raw staged byte count<TAB>SHA-256<LF>"
+    },
+    "copyCohorts": {
+      "detail-stop": 11,
+      "conversion-stop": 21,
+      "independent": 61,
+      "runtime": 34,
+      "focused": 36,
+      "intake-audits": 6,
+      "root-checks": 3
+    },
+    "explicitCopyChecks": [
+      {
+        "destination": "detail-stop/HANDOFF.md",
+        "group": "detail-stop",
+        "bytes": 12196,
+        "sha256": "d7bd4aa8653ab8bd4efe9aebf0c9f3ce91a417e29b4ef4f2987bb958aa55f98b",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/prediction.json",
+        "group": "detail-stop",
+        "bytes": 35687,
+        "sha256": "8755da4d1548509f66c7ac888ca59d5ae8a6217c4fd8a49bae1829480f1d5b1b",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/predict.cjs",
+        "group": "detail-stop",
+        "bytes": 4434,
+        "sha256": "9407a320bc574c3aa50b636c00fcae8fa437fb9b1ec6e805f92f5d2f9a1bdd96",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/resolved-metadata.txt",
+        "group": "detail-stop",
+        "bytes": 7641,
+        "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/resolved-test.txt",
+        "group": "detail-stop",
+        "bytes": 12722,
+        "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/refusal-review.test.tsx",
+        "group": "detail-stop",
+        "bytes": 5446,
+        "sha256": "a982d19638c77b3ed60776cf7cd23252ff5dff2b8c51ba5380ffa30a4a25b3a7",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/baseline-control.test.tsx",
+        "group": "detail-stop",
+        "bytes": 4311,
+        "sha256": "649aaaf93b288276cc1f737e35533c02ef9e07d1ba22705fe71dc51a9ed19a99",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/bridges.json",
+        "group": "detail-stop",
+        "bytes": 491,
+        "sha256": "1d66d14f08e6bae18e6909285a809b0c33c0fedbdf70914ef10f99088b1d8dcd",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/bridge-cleanup.json",
+        "group": "detail-stop",
+        "bytes": 555,
+        "sha256": "e5e1caa88a0748f6e76ebf1a407a05c63c520cb2b83f5c9513e7fa37ed3b3382",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/review-results.json",
+        "group": "detail-stop",
+        "bytes": 14047,
+        "sha256": "980c058a069828502005d96f0c6f2bfc6205bf1d6886f80c384aad14a63d5fd5",
+        "exact": true
+      },
+      {
+        "destination": "detail-stop/finalize.cjs",
+        "group": "detail-stop",
+        "bytes": 6036,
+        "sha256": "3d4881f73fe0d72e09140204027f4e502f366a8592068e953ad264d246d64ac4",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/baseline-legacy-draft-conversion.tsx.txt",
+        "group": "conversion-stop",
+        "bytes": 7767,
+        "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/baseline-travel-expense-claim-detail.tsx.txt",
+        "group": "conversion-stop",
+        "bytes": 11048,
+        "sha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/bridge-cleanup.json",
+        "group": "conversion-stop",
+        "bytes": 828,
+        "sha256": "d91107cef3fb64ace1914924c21c2b68a69bcfb2c38033f18b6a2858d006ebaa",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/bridges.json",
+        "group": "conversion-stop",
+        "bytes": 1071,
+        "sha256": "a8a1846c09cb689211382e53eea8c9cc13eb8039f9ef9cc5ddf36436965d6062",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/candidate-legacy-draft-conversion.tsx.txt",
+        "group": "conversion-stop",
+        "bytes": 13289,
+        "sha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/candidate-travel-expense-claim-detail.tsx.txt",
+        "group": "conversion-stop",
+        "bytes": 13627,
+        "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/cleanup.json",
+        "group": "conversion-stop",
+        "bytes": 552,
+        "sha256": "d322baa94f834c7eac50bc5e5362599480708b58cb57e1e6716e16c59b7ef10c",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/commands.json",
+        "group": "conversion-stop",
+        "bytes": 8012,
+        "sha256": "4903d9acce54bc0e6250119d74284ab535275a31d8ddc919736e0e0be2e9bd94",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/conversion-review.test.tsx",
+        "group": "conversion-stop",
+        "bytes": 7341,
+        "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/excluded-hash-only.json",
+        "group": "conversion-stop",
+        "bytes": 1776,
+        "sha256": "dee6f211125fb66fa6e1a42209caf4c856bfecbe120515c3816a268fed542622",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/HANDOFF.md",
+        "group": "conversion-stop",
+        "bytes": 2303,
+        "sha256": "25a758774eb0fa22d18fef63798b2b2c42d6ef10cb49f866c6ed0d557279181f",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/pins-after.json",
+        "group": "conversion-stop",
+        "bytes": 8529,
+        "sha256": "cd3ef0cda777f175e5726049fc01358317acad20f12cc0ea4931abb2bade0d00",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/pins-before.json",
+        "group": "conversion-stop",
+        "bytes": 4703,
+        "sha256": "f000c5016b9b87ad8bfc10b6786d4d771b8e434cd54accc0b8d3dfd0e9beccde",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/prepare.py",
+        "group": "conversion-stop",
+        "bytes": 3481,
+        "sha256": "7322ab1da8d4ca8123aad43f131fbad00a84783168735a14e0c6b3d566b43d49",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/preservation.json",
+        "group": "conversion-stop",
+        "bytes": 730,
+        "sha256": "80587257011fc5a9665b16fb4644ea6323f2bd57b12ef87ba0eb99d550c53943",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/preserve.py",
+        "group": "conversion-stop",
+        "bytes": 7561,
+        "sha256": "b7d156a50f851fbb7d7bbf3fd73e2debfe3a7f60f9e2703e30aa943c27044315",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/prior-safe-receipt.json",
+        "group": "conversion-stop",
+        "bytes": 2621,
+        "sha256": "d935757c0a748ffe9654060a5ded30371a8167465eb4e1117da7fc8f52757ebc",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/process-cleanup.json",
+        "group": "conversion-stop",
+        "bytes": 158,
+        "sha256": "2f5dcf25923783a41a0bab41e786fae7d2a1d24a6942d7451e866371817fb756",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/REPORT.md",
+        "group": "conversion-stop",
+        "bytes": 10960,
+        "sha256": "1b4ed139e09d1edcf0a88405a3b97921529a5abb7019603f19ad1563e72a3b5f",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/seal.py",
+        "group": "conversion-stop",
+        "bytes": 9773,
+        "sha256": "f46b15bb5680bafddfff67484b50102fdeda75d096d878df964c4bfc2a7ad762",
+        "exact": true
+      },
+      {
+        "destination": "conversion-stop/test-multiset.json",
+        "group": "conversion-stop",
+        "bytes": 13362,
+        "sha256": "cc8cf7750b8df53e91cc123d4c74a932c7aba63db411262e665637e952a7f389",
+        "exact": true
+      },
+      {
+        "destination": "independent/account.py",
+        "group": "independent",
+        "bytes": 4196,
+        "sha256": "7e4fc4398f7d9a4f1d1c8fe8e495083fc2feab63efecc38475ceef4213090765",
+        "exact": true
+      },
+      {
+        "destination": "independent/anchors.json",
+        "group": "independent",
+        "bytes": 7941,
+        "sha256": "349cdd85a5dc1005a74472dbfc97b6d7956ddac01bc91cc2e0238c3b7bc2b647",
+        "exact": true
+      },
+      {
+        "destination": "independent/archive-audit.json",
+        "group": "independent",
+        "bytes": 20505,
+        "sha256": "fea4df6c2f3cd0c7ce57a955c5e7f5727a62162077f770f810a0f67a87d14133",
+        "exact": true
+      },
+      {
+        "destination": "independent/attempts.json",
+        "group": "independent",
+        "bytes": 3589,
+        "sha256": "e96ab47f1c68d5d1be7d71b4335e24b2f4d7e31bf011ddd9c2257bf1d6955386",
+        "exact": true
+      },
+      {
+        "destination": "independent/audit.py",
+        "group": "independent",
+        "bytes": 3894,
+        "sha256": "b5f109d76e1de759d1bc8ea1b3cd2e62a925382f9a5a38a374c7628c94d4a042",
+        "exact": true
+      },
+      {
+        "destination": "independent/baseline-legacy-draft-conversion.tsx.txt",
+        "group": "independent",
+        "bytes": 7767,
+        "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+        "exact": true
+      },
+      {
+        "destination": "independent/baseline-travel-expense-claim-detail.tsx.txt",
+        "group": "independent",
+        "bytes": 11048,
+        "sha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+        "exact": true
+      },
+      {
+        "destination": "independent/bridge-cleanup.json",
+        "group": "independent",
+        "bytes": 1679,
+        "sha256": "ba450f851326c7a9b8e911bdbab7930c503c8f9867a709375c0d96b41ac9e3b7",
+        "exact": true
+      },
+      {
+        "destination": "independent/bridges.json",
+        "group": "independent",
+        "bytes": 1378,
+        "sha256": "1ef218451b9405f7caa8af62130e28e0604e4b5b5b20083ff17ec5cfd1edd237",
+        "exact": true
+      },
+      {
+        "destination": "independent/checks.py",
+        "group": "independent",
+        "bytes": 2435,
+        "sha256": "071e2400c6ad31b52dc6368332f0267c6a56ed6215f7d3787138f03298999c24",
+        "exact": true
+      },
+      {
+        "destination": "independent/cleanup.json",
+        "group": "independent",
+        "bytes": 705,
+        "sha256": "d495812f2251b2f95a3110ab9df329301f2c693d664b99d5516af1b8418f707a",
+        "exact": true
+      },
+      {
+        "destination": "independent/commands.json",
+        "group": "independent",
+        "bytes": 21755,
+        "sha256": "2136e1ed801f6b18dde3bc3543dd8affd61c420f4024c45b9df1528d5f943c80",
+        "exact": true
+      },
+      {
+        "destination": "independent/conversion-review.test.tsx",
+        "group": "independent",
+        "bytes": 7341,
+        "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63",
+        "exact": true
+      },
+      {
+        "destination": "independent/doctor-version.command.json",
+        "group": "independent",
+        "bytes": 504,
+        "sha256": "6525697d125919c7ef143be287878d6d8fec69d4c049f67a6f2d6c6821a833e3",
+        "exact": true
+      },
+      {
+        "destination": "independent/doctor.command.json",
+        "group": "independent",
+        "bytes": 874,
+        "sha256": "585489a7581d7afa85efdd1f7db556189e9bac9cff7a8f255b3926f58a1a3777",
+        "exact": true
+      },
+      {
+        "destination": "independent/excluded-hash-only.json",
+        "group": "independent",
+        "bytes": 9540,
+        "sha256": "1e843c6d391199f15d8be5ddfd2da395636a1c01d02bf6991e6cdc152cbfb5ba",
+        "exact": true
+      },
+      {
+        "destination": "independent/explicit100crlf.command.json",
+        "group": "independent",
+        "bytes": 1282,
+        "sha256": "543cbd4480f601310a87731fc865fff6a16b3d24c4763fd41d187fd2f961dd33",
+        "exact": true
+      },
+      {
+        "destination": "independent/findings.json",
+        "group": "independent",
+        "bytes": 463,
+        "sha256": "1eae686845dbe1b1f7d920929a2372f7ce2708bd2fb775727c7c885b2ced30de",
+        "exact": true
+      },
+      {
+        "destination": "independent/HANDOFF.md",
+        "group": "independent",
+        "bytes": 2346,
+        "sha256": "dca0a607dc5dc82d561d02c19a689aa405fecf57084cac3e16c74ba8103b388b",
+        "exact": true
+      },
+      {
+        "destination": "independent/historical-source-pins.json",
+        "group": "independent",
+        "bytes": 4419,
+        "sha256": "474fa0217eae7ebfab7186cc353bff550e23928e8a4cb34e89a6d6b85a8dd104",
+        "exact": true
+      },
+      {
+        "destination": "independent/integration.command.json",
+        "group": "independent",
+        "bytes": 983,
+        "sha256": "e87dc7ae413dd29df992c5bcf9709dcbdd6396755c10b349581b63f707d5ccb1",
+        "exact": true
+      },
+      {
+        "destination": "independent/lint.command.json",
+        "group": "independent",
+        "bytes": 1250,
+        "sha256": "f4b93c8c28d5047818f547f80a1d100052bf24c737ead1fad3c439515d847099",
+        "exact": true
+      },
+      {
+        "destination": "independent/main-types.command.json",
+        "group": "independent",
+        "bytes": 613,
+        "sha256": "f816651500831a594708f8ba8625eae1a6303b99203e230376146ad658e07ebf",
+        "exact": true
+      },
+      {
+        "destination": "independent/nested-pnpm-bridge.sh",
+        "group": "independent",
+        "bytes": 120,
+        "sha256": "815f319c8056070541ae7ff6d74ecbb3da5c983aaf16cc033f95ede5e8d103ae",
+        "exact": true
+      },
+      {
+        "destination": "independent/objections-attempt1.test.tsx",
+        "group": "independent",
+        "bytes": 10125,
+        "sha256": "afc09e14c976984ef676390a922d52dab4927caa45f73099e1cdb7170845e737",
+        "exact": true
+      },
+      {
+        "destination": "independent/objections-attempt2.test.tsx",
+        "group": "independent",
+        "bytes": 10196,
+        "sha256": "36a4d9a316c267fcd51b41c4939640cf2d43843eeb6deec0997e721d32f1599e",
+        "exact": true
+      },
+      {
+        "destination": "independent/owned-explicit100crlf.command.json",
+        "group": "independent",
+        "bytes": 771,
+        "sha256": "a44cf99a2004baa04b21270c49cdc60a57f88509e48f7259e6cc85b722938921",
+        "exact": true
+      },
+      {
+        "destination": "independent/owned-ordinary.command.json",
+        "group": "independent",
+        "bytes": 715,
+        "sha256": "2a1a58461ca4b36b74437ba481f3dd15dc0baddc9612711cb27fbadaf1a097ab",
+        "exact": true
+      },
+      {
+        "destination": "independent/pins-after.json",
+        "group": "independent",
+        "bytes": 26607,
+        "sha256": "d57a0ff137cd87fc64f7ea4d3bd1159be2d61e5fb3d0dbcd31f46bf232198da6",
+        "exact": true
+      },
+      {
+        "destination": "independent/pins-before.json",
+        "group": "independent",
+        "bytes": 26607,
+        "sha256": "d57a0ff137cd87fc64f7ea4d3bd1159be2d61e5fb3d0dbcd31f46bf232198da6",
+        "exact": true
+      },
+      {
+        "destination": "independent/prepare_broader.py",
+        "group": "independent",
+        "bytes": 2592,
+        "sha256": "cd637abfb9488fe9fa5bf55e0ea1f1ffef29603793b5fe7ca7e49ecb977872b2",
+        "exact": true
+      },
+      {
+        "destination": "independent/prepare_objections.py",
+        "group": "independent",
+        "bytes": 10140,
+        "sha256": "c5029d64f9da06a495683d6bd33ea7e9d772d2b34739007a3f88f3d9da7f9cc3",
+        "exact": true
+      },
+      {
+        "destination": "independent/prepare_refresh.py",
+        "group": "independent",
+        "bytes": 5255,
+        "sha256": "1d43d067c2b5b99af4f9cee807629743bc9c958010f08279d24f1f68fb70be5a",
+        "exact": true
+      },
+      {
+        "destination": "independent/preservation.json",
+        "group": "independent",
+        "bytes": 45647,
+        "sha256": "8e5323b62fbda606724de04afa91e497af99c229fa1e0d73372c08885c7e4c2d",
+        "exact": true
+      },
+      {
+        "destination": "independent/prior-intake.json",
+        "group": "independent",
+        "bytes": 3598,
+        "sha256": "4f5ec20ccac047c801e5b8d02512e743b99cd0e4dc96b8a5a4c31adae3c17b75",
+        "exact": true
+      },
+      {
+        "destination": "independent/prior-static-python.json",
+        "group": "independent",
+        "bytes": 256,
+        "sha256": "77c0051c7de3791ef5d3cac6861fb9fd5aaef9ce87a7aeac7619db756a387b0f",
+        "exact": true
+      },
+      {
+        "destination": "independent/real-refresh.command.json",
+        "group": "independent",
+        "bytes": 745,
+        "sha256": "f8b6221d60789b1e92a27e93074866e6b1d2d24737396efd944f2f7028c87e6d",
+        "exact": true
+      },
+      {
+        "destination": "independent/release_bridges.py",
+        "group": "independent",
+        "bytes": 570,
+        "sha256": "c10567494fc7eee46530ff24b532732b826b35fbe9146f293ab7976723fed3c2",
+        "exact": true
+      },
+      {
+        "destination": "independent/REPORT.md",
+        "group": "independent",
+        "bytes": 15123,
+        "sha256": "aa9e2a23a1179275279d8765d3be3fa06c2a8a0d56dcde98848a8b1c17764700",
+        "exact": true
+      },
+      {
+        "destination": "independent/review.py",
+        "group": "independent",
+        "bytes": 4373,
+        "sha256": "9903db0f22ad3f0b42bd2e2dbd8ba81687695f2a2d0b5c6910018e70b29d3f8f",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-actual-consumers.test.tsx",
+        "group": "independent",
+        "bytes": 8688,
+        "sha256": "84108bbc5a1257df358a0310fec5e3200a11354e4075d53421af59445d20354c",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-assembled-objections.test.tsx",
+        "group": "independent",
+        "bytes": 10215,
+        "sha256": "58857f488a4d8b2e39f71d869867c53310d44e16cb1751f650b7b1393875fbfd",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-independent-baseline-conversion.tsx",
+        "group": "independent",
+        "bytes": 7767,
+        "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-independent-baseline-detail.tsx",
+        "group": "independent",
+        "bytes": 11067,
+        "sha256": "788bc620fcdd4a8e86233784659570e20c183d25f6730d70efe291eb2cd64f32",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-original-conversion.test.tsx",
+        "group": "independent",
+        "bytes": 7341,
+        "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-original-detail.test.tsx",
+        "group": "independent",
+        "bytes": 6091,
+        "sha256": "787763f3a92244116d9406cc7e0afba140aedfcac2f626de49c459e2804a959c",
+        "exact": true
+      },
+      {
+        "destination": "independent/review1748-real-refresh.test.tsx",
+        "group": "independent",
+        "bytes": 8159,
+        "sha256": "d7764cc6e90b5f907d2cde0f68c733477a34ad6a400f41a846e9c7f9dff02aa9",
+        "exact": true
+      },
+      {
+        "destination": "independent/seal.py",
+        "group": "independent",
+        "bytes": 8713,
+        "sha256": "a642158774e609c26435baa612d26e1a7d96fa9930d1f7f1036e6b220bd06068",
+        "exact": true
+      },
+      {
+        "destination": "independent/selection.json",
+        "group": "independent",
+        "bytes": 4215,
+        "sha256": "58fc3e6a0f8e5d210c9aef54bb0657ae3a43581ad0544cce6c904ccd87df01e5",
+        "exact": true
+      },
+      {
+        "destination": "independent/service-cleanup.json",
+        "group": "independent",
+        "bytes": 120,
+        "sha256": "cd7267e3c4eaa2ded050642774eeb77b68973462c3509a32a8efa2bea5111969",
+        "exact": true
+      },
+      {
+        "destination": "independent/setup-command.json",
+        "group": "independent",
+        "bytes": 653,
+        "sha256": "496bbe2b13210be45003faf7fd50b4ec25551c0d032643887512a0c5ec7a7b05",
+        "exact": true
+      },
+      {
+        "destination": "independent/smoke-types.command.json",
+        "group": "independent",
+        "bytes": 606,
+        "sha256": "1e7e1dcd5484b8ef218f487ddefedaf79ec6b82f09aff25a286d8eebc95fc8f2",
+        "exact": true
+      },
+      {
+        "destination": "independent/static-syntax-babel.command.json",
+        "group": "independent",
+        "bytes": 510,
+        "sha256": "4448858bd3ad9a9bdd0e0b503f87a0df7d1e05ed9cc13f8aa82cbe14e5a61ef1",
+        "exact": true
+      },
+      {
+        "destination": "independent/static-syntax-final.command.json",
+        "group": "independent",
+        "bytes": 511,
+        "sha256": "5ad7fcecc7dae79e8434338847b7289b69c1dd3ca11dce5b1baf625d7e7aec4e",
+        "exact": true
+      },
+      {
+        "destination": "independent/static-syntax.command.json",
+        "group": "independent",
+        "bytes": 507,
+        "sha256": "ce4d82f1b8030c90bc47d9d77cee97481527a5d213c6cb911e86e3d706e41938",
+        "exact": true
+      },
+      {
+        "destination": "independent/syntax-before-refresh.json",
+        "group": "independent",
+        "bytes": 3489,
+        "sha256": "5d3701fd9f893dd32acad8742328a44039fe2b6202e21bdbd302f8708d39df5b",
+        "exact": true
+      },
+      {
+        "destination": "independent/syntax.cjs",
+        "group": "independent",
+        "bytes": 1322,
+        "sha256": "19b87634331864ffaa27ca9071298d29d7cf9ae83834d98a3aebef48803f65b1",
+        "exact": true
+      },
+      {
+        "destination": "independent/syntax.json",
+        "group": "independent",
+        "bytes": 3645,
+        "sha256": "0de0296f57cf3df9d3ddb6ec39fe9a2745e91fca8b5e8464930b04a15a05d926",
+        "exact": true
+      },
+      {
+        "destination": "independent/test-multiset.json",
+        "group": "independent",
+        "bytes": 397230,
+        "sha256": "e5d44276261d00e41f4ee3a064125b802d7980f8777c60e1f6f522adb9e9db0a",
+        "exact": true
+      },
+      {
+        "destination": "independent/typegen.command.json",
+        "group": "independent",
+        "bytes": 522,
+        "sha256": "84cd6749caa91aeacf2ccbbf65a4c314ce68ff7665d378680c2704fcc769d1e8",
+        "exact": true
+      },
+      {
+        "destination": "independent/workflow-types.command.json",
+        "group": "independent",
+        "bytes": 624,
+        "sha256": "aaee8f692b0739631fa0238ec4625548ce6b5b8bcede48bf35e672bcea4046dd",
+        "exact": true
+      },
+      {
+        "destination": "runtime/HANDOFF.md",
+        "group": "runtime",
+        "bytes": 4585,
+        "sha256": "4bb0969bbcbc07c76cfc53a118f700e54701f1ae954adaac184f95ebd321772e",
+        "exact": true
+      },
+      {
+        "destination": "runtime/REPORT.json",
+        "group": "runtime",
+        "bytes": 5353,
+        "sha256": "c415d045d3fec4ef21c9bb559c01874507868c7179459574fa356ae7a92892b6",
+        "exact": true
+      },
+      {
+        "destination": "runtime/ASSERTIONS.md",
+        "group": "runtime",
+        "bytes": 13289,
+        "sha256": "4cb45aec61cf8fdeaa82e7f8c411e94541a6b9e9756f33f63dc8eeac6c51b54d",
+        "exact": true
+      },
+      {
+        "destination": "runtime/assertion-ledger-SAFE.json",
+        "group": "runtime",
+        "bytes": 40048,
+        "sha256": "e36ea3a4fa39c6ae5efc3ef36eea77180b700ddcbb7e1b53219b682d8830a0d7",
+        "exact": true
+      },
+      {
+        "destination": "runtime/attempt-qualifications-SAFE.json",
+        "group": "runtime",
+        "bytes": 6119,
+        "sha256": "ae209dc31f8ab3d8101a6a87c9006bb464bc766e8a8a37f7396f18091c088682",
+        "exact": true
+      },
+      {
+        "destination": "runtime/commands-SAFE.json",
+        "group": "runtime",
+        "bytes": 17948,
+        "sha256": "59928809ba21bab378e3236439c36d17cf2d8b144547a6c980740b2cc8e75974",
+        "exact": true
+      },
+      {
+        "destination": "runtime/preflight-SAFE.json",
+        "group": "runtime",
+        "bytes": 677,
+        "sha256": "856810d233c730731412898e1cb03a2f37f1b1976aaa70845264c5d80da0381d",
+        "exact": true
+      },
+      {
+        "destination": "runtime/seed-SAFE.json",
+        "group": "runtime",
+        "bytes": 430,
+        "sha256": "1c31875952fd781b564ecb4f9d50fa4f729404456539c6167f486d2c4f840329",
+        "exact": true
+      },
+      {
+        "destination": "runtime/database-initial-SAFE.json",
+        "group": "runtime",
+        "bytes": 9514,
+        "sha256": "7f94a20a0812f96416aaaf35d91bfaf1e0e117833f6ee61ed06e691bfc10cb05",
+        "exact": true
+      },
+      {
+        "destination": "runtime/database-before-SAFE.json",
+        "group": "runtime",
+        "bytes": 9514,
+        "sha256": "71dae63afb1eaa4b3cdda3b0dd65a3f8f730cf7d42e6a4569c7c9c9e7adc4300",
+        "exact": true
+      },
+      {
+        "destination": "runtime/database-after-SAFE.json",
+        "group": "runtime",
+        "bytes": 9514,
+        "sha256": "148b222663acc566dc33aefee35af71176a79035ff3984f78c763483a0894ab0",
+        "exact": true
+      },
+      {
+        "destination": "runtime/database-checks-SAFE.json",
+        "group": "runtime",
+        "bytes": 22668,
+        "sha256": "1075a5acc04ee72444ba924b12737673faba14d7b7cd45b34670032e8badb8f6",
+        "exact": true
+      },
+      {
+        "destination": "runtime/legacy-rows-before-SAFE.json",
+        "group": "runtime",
+        "bytes": 2696,
+        "sha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f",
+        "exact": true
+      },
+      {
+        "destination": "runtime/legacy-rows-after-SAFE.json",
+        "group": "runtime",
+        "bytes": 2696,
+        "sha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f",
+        "exact": true
+      },
+      {
+        "destination": "runtime/conversion-graph-SAFE.json",
+        "group": "runtime",
+        "bytes": 242,
+        "sha256": "7fafd84bf748eb0b180a6f9be0cea8fedfa33a52b4e8a249d600b1cb0cfdda9e",
+        "exact": true
+      },
+      {
+        "destination": "runtime/download-SAFE.json",
+        "group": "runtime",
+        "bytes": 241,
+        "sha256": "23de41cb29882ce611be3346e0b0d43354167a66b0b0481c4d6a6415ac923803",
+        "exact": true
+      },
+      {
+        "destination": "runtime/readers-SAFE.json",
+        "group": "runtime",
+        "bytes": 458,
+        "sha256": "406111feecbf36d31eff907154d48935becbbc1be6cb7956a6423ea255f42554",
+        "exact": true
+      },
+      {
+        "destination": "runtime/react-approved-SAFE.json",
+        "group": "runtime",
+        "bytes": 337,
+        "sha256": "fff1b32c474c359295b1b49fe4d19311f0e1c5abf6fa0354298c5c87549e18f2",
+        "exact": true
+      },
+      {
+        "destination": "runtime/next-diagnostics-SAFE.json",
+        "group": "runtime",
+        "bytes": 805,
+        "sha256": "e658931e460944784ee9942a9876fd4ab996c0d66c5d226e080494fc64675862",
+        "exact": true
+      },
+      {
+        "destination": "runtime/desktop-layout-SAFE.json",
+        "group": "runtime",
+        "bytes": 408,
+        "sha256": "bc74b688128cc883b1b7dd607de17ac1780079714b33eae9079366de0c94126a",
+        "exact": true
+      },
+      {
+        "destination": "runtime/phone-layout-SAFE.json",
+        "group": "runtime",
+        "bytes": 512,
+        "sha256": "e61946133473f77598a8649250e367369e85f694c5e1bd17b3cb576b414c9bb9",
+        "exact": true
+      },
+      {
+        "destination": "runtime/wide-layout-SAFE.json",
+        "group": "runtime",
+        "bytes": 832,
+        "sha256": "eb75ac7a910beb8abb89aa7222bd17951212f1cfc42a91cf6dd59678aad22ffc",
+        "exact": true
+      },
+      {
+        "destination": "runtime/captures-SAFE.json",
+        "group": "runtime",
+        "bytes": 3210,
+        "sha256": "87a5bb3bcead646eb58072d775aa278017ddc5bc0ac9c995e38cbc0086909441",
+        "exact": true
+      },
+      {
+        "destination": "runtime/preservation-final-SAFE.json",
+        "group": "runtime",
+        "bytes": 609,
+        "sha256": "c1f6d51f4040a969cdb212838b35bd4985246a30121b26f3c5a7ffcb8285466e",
+        "exact": true
+      },
+      {
+        "destination": "runtime/process-cleanup-SAFE.json",
+        "group": "runtime",
+        "bytes": 126,
+        "sha256": "2cf143020b67ea1ffd98b5b575424fd069080b711cbc9b1419d81890177a2520",
+        "exact": true
+      },
+      {
+        "destination": "runtime/resources-final-SAFE.json",
+        "group": "runtime",
+        "bytes": 237,
+        "sha256": "9179e1d1ed81943c30915a8bfa91b8df16ca548e2049017ca8d90bce39bf4faf",
+        "exact": true
+      },
+      {
+        "destination": "runtime/lease-release-SAFE.json",
+        "group": "runtime",
+        "bytes": 189,
+        "sha256": "ed337462ceaa21a3453e9684896ceaec7dcba08bceb42d2f9f970171d8b49ed1",
+        "exact": true
+      },
+      {
+        "destination": "runtime/draft-desktop-1600-settled.png",
+        "group": "runtime",
+        "bytes": 73801,
+        "sha256": "19dc722635ac7577abfb8b951f923f18532e790b0a5ec8d4f478987316e7abda",
+        "exact": true
+      },
+      {
+        "destination": "runtime/real-receipt-refusal-desktop.png",
+        "group": "runtime",
+        "bytes": 95736,
+        "sha256": "ee3ddafdcb4465093afbac647e518386cf441e9d13ca1d979b8cac4e11c1d3eb",
+        "exact": true
+      },
+      {
+        "destination": "runtime/converted-desktop.png",
+        "group": "runtime",
+        "bytes": 81043,
+        "sha256": "8961453d56bd57014002a5e43ec194b6ae42254a92a4c1230c814c416f0eb317",
+        "exact": true
+      },
+      {
+        "destination": "runtime/submitted-desktop-1600.png",
+        "group": "runtime",
+        "bytes": 71183,
+        "sha256": "2f9e794007badb520bb9f238d1ffa51b0d9d22d64d3a078ad4c339132119d326",
+        "exact": true
+      },
+      {
+        "destination": "runtime/submitted-local-retry.png",
+        "group": "runtime",
+        "bytes": 79261,
+        "sha256": "3ebd71f82e84b58e25f4a208a50c25b9136bc9f231647ed3dac08e380e4d84d6",
+        "exact": true
+      },
+      {
+        "destination": "runtime/submitted-phone-390-large.png",
+        "group": "runtime",
+        "bytes": 42338,
+        "sha256": "33d1c27c83d263d611d45f345c04ceb1662a9d6969c423d85bb1c6530882c418",
+        "exact": true
+      },
+      {
+        "destination": "runtime/submitted-wide-2400-dark-large.png",
+        "group": "runtime",
+        "bytes": 97439,
+        "sha256": "5999f11759e62589b409d9576d8af50dd371cbe502f9f07d2507b3b267599f14",
+        "exact": true
+      },
+      {
+        "destination": "focused/HANDOFF.md",
+        "group": "focused",
+        "bytes": 3816,
+        "sha256": "dc2c6f6265e550e053a47c3e88ac3bb7c61ed7cd8a07cb5ec1eccd25139e024e",
+        "exact": true
+      },
+      {
+        "destination": "focused/LEASE.json",
+        "group": "focused",
+        "bytes": 724,
+        "sha256": "72a3a5aa9b8e246c9e4a959d370cac6537f349e0567128d125aa7afb68011f2d",
+        "exact": true
+      },
+      {
+        "destination": "focused/REPORT.json",
+        "group": "focused",
+        "bytes": 3846,
+        "sha256": "e557727adaba4a9e4735d0fbbe9b3fff78736da0dd6b4e57907fe55cb2b06ae4",
+        "exact": true
+      },
+      {
+        "destination": "focused/assertion-ledger-SAFE.json",
+        "group": "focused",
+        "bytes": 9746,
+        "sha256": "e67e4a6fdfffbeec844fc063b49c2103d2442a44aad7849e85ed9ec0d474fed7",
+        "exact": true
+      },
+      {
+        "destination": "focused/attempts-SAFE.json",
+        "group": "focused",
+        "bytes": 4246,
+        "sha256": "6b151f67a5e8936f28cba11cd11c090068e6646ff784aafa3df97c31f1ce955a",
+        "exact": true
+      },
+      {
+        "destination": "focused/browser-cleanup-SAFE.json",
+        "group": "focused",
+        "bytes": 158,
+        "sha256": "0ef6fb53354446a3c0c005b0d48d9093ea3b0938dfe3e012fce8b821ebd8f903",
+        "exact": true
+      },
+      {
+        "destination": "focused/captures-SAFE.json",
+        "group": "focused",
+        "bytes": 1818,
+        "sha256": "52d8c41a6c63ed7852e4202ede0c0b89a8052deeabdfe74687598c18ac2d61a2",
+        "exact": true
+      },
+      {
+        "destination": "focused/claim-next-diagnostics-SAFE.json",
+        "group": "focused",
+        "bytes": 1181,
+        "sha256": "16a8c26b53a6dba03dad2b1d951d115baeb224d2b0532532e3d11043e285dd98",
+        "exact": true
+      },
+      {
+        "destination": "focused/commands-SAFE.json",
+        "group": "focused",
+        "bytes": 2283,
+        "sha256": "0501990c95f17e78d5c499a9ff8d8d271d2819bb36300b14b116a07995eb7370",
+        "exact": true
+      },
+      {
+        "destination": "focused/database-after-SAFE.json",
+        "group": "focused",
+        "bytes": 9378,
+        "sha256": "719cc6e74c78157d7f39203c3940cc68204b6f3ca7d31dc88fb3540f38266b5c",
+        "exact": true
+      },
+      {
+        "destination": "focused/database-before-SAFE.json",
+        "group": "focused",
+        "bytes": 9378,
+        "sha256": "f80abd3cbfa451a21dc6cb0d429b558b1bcd4a882271ca3bb044e8d43d024687",
+        "exact": true
+      },
+      {
+        "destination": "focused/database-controls-SAFE.json",
+        "group": "focused",
+        "bytes": 1660,
+        "sha256": "cb7ed92cd0e97a3606156b77c4558cc577d34304d4464145528e0faa8600e4c5",
+        "exact": true
+      },
+      {
+        "destination": "focused/dependency-links-before-SAFE.json",
+        "group": "focused",
+        "bytes": 121,
+        "sha256": "93b16b422cf7cda06d7d4e3e402ef999db30abb39d43e8666e6be69df2d8d2fd",
+        "exact": true
+      },
+      {
+        "destination": "focused/draft-panel-current.png",
+        "group": "focused",
+        "bytes": 94760,
+        "sha256": "f0957343f749f1b86d3350ba649f4fdcafdaae1e259427b5adcb35f14cdde8ac",
+        "exact": true
+      },
+      {
+        "destination": "focused/first-conversion-SAFE.json",
+        "group": "focused",
+        "bytes": 345,
+        "sha256": "311934873197301b5729c57882c86a22329e5ac4e0692f282cbb8310da1e24fb",
+        "exact": true
+      },
+      {
+        "destination": "focused/graph-fields-SAFE.json",
+        "group": "focused",
+        "bytes": 670,
+        "sha256": "ec0320f805b8dc4d17b9fd5e63ecc86653d1247fca95363c246890a5acde06b2",
+        "exact": true
+      },
+      {
+        "destination": "focused/lease-release-SAFE.json",
+        "group": "focused",
+        "bytes": 135,
+        "sha256": "2000b759c5b3e2248164165d76300e2379cb6921a0a28cd65dd828412d78e5aa",
+        "exact": true
+      },
+      {
+        "destination": "focused/mcp-tools-SAFE.json",
+        "group": "focused",
+        "bytes": 5280,
+        "sha256": "56991efe043588d74dd93c9ef839e94f83b6359eb4cc960e227ad2825b668e58",
+        "exact": true
+      },
+      {
+        "destination": "focused/next-diagnostics-SAFE.json",
+        "group": "focused",
+        "bytes": 1724,
+        "sha256": "2d57d9e4284fb7ef0ed4e13d732b16c9ad3489af5faca733f508018066651002",
+        "exact": true
+      },
+      {
+        "destination": "focused/observed-failure-receipts-SAFE.json",
+        "group": "focused",
+        "bytes": 615,
+        "sha256": "ae83d378580240e8c6f98fa7dbd52d769f6890143c2523b16eb1b66029a518f7",
+        "exact": true
+      },
+      {
+        "destination": "focused/originals-after-SAFE.json",
+        "group": "focused",
+        "bytes": 887,
+        "sha256": "cbdf83d93da19d318045c65412d91278315c2aae05a5c3a82d97795eb0bc9fab",
+        "exact": true
+      },
+      {
+        "destination": "focused/originals-before-SAFE.json",
+        "group": "focused",
+        "bytes": 887,
+        "sha256": "cbdf83d93da19d318045c65412d91278315c2aae05a5c3a82d97795eb0bc9fab",
+        "exact": true
+      },
+      {
+        "destination": "focused/pins-before-SAFE.json",
+        "group": "focused",
+        "bytes": 510,
+        "sha256": "b133f5cb4ead9ce469afaf84b4ac6d15209250583f5ce964d82d0dce0b2b33b1",
+        "exact": true
+      },
+      {
+        "destination": "focused/preservation-final-SAFE.json",
+        "group": "focused",
+        "bytes": 816,
+        "sha256": "ed8b1d274d61e6184f230bf4b8dd6a79e1bc464cb79ceb4c2ee738ae460b1155",
+        "exact": true
+      },
+      {
+        "destination": "focused/process-cleanup-SAFE.json",
+        "group": "focused",
+        "bytes": 218,
+        "sha256": "1a12cf15c0f86c000c654875127abe6517a8a8945d61f43a2d0aaea61bed5f30",
+        "exact": true
+      },
+      {
+        "destination": "focused/process-inventory-SAFE.json",
+        "group": "focused",
+        "bytes": 125,
+        "sha256": "964be1be69c4d2634a55411264875425f7b976dd2971dcd00e0aaa7c97ef77ad",
+        "exact": true
+      },
+      {
+        "destination": "focused/react-draft-SAFE.json",
+        "group": "focused",
+        "bytes": 3189,
+        "sha256": "026d7409f13664c96e615490e27eb0297d9cb55e7aa8dff178e2c9444dd4f9f6",
+        "exact": true
+      },
+      {
+        "destination": "focused/react-draft-attempt1-SAFE.json",
+        "group": "focused",
+        "bytes": 2802,
+        "sha256": "6f9636c0bd072872d099029a1dc206269e7380b42cd52bdbd96c9839d7a20239",
+        "exact": true
+      },
+      {
+        "destination": "focused/report-editor-open-current.png",
+        "group": "focused",
+        "bytes": 123146,
+        "sha256": "a45109abe49b98c3c2508de8d20f2a55359e4fc1deed5f52dcb5eae8a81ef316",
+        "exact": true
+      },
+      {
+        "destination": "focused/report-editor-reload-current.png",
+        "group": "focused",
+        "bytes": 117921,
+        "sha256": "6fe448844d198be270f9ee2eba0b48d29235b039db1296383b60b159cc37bdb5",
+        "exact": true
+      },
+      {
+        "destination": "focused/report-open-reload-SAFE.json",
+        "group": "focused",
+        "bytes": 645,
+        "sha256": "c486ae7e9498a3990b50df6c3f021f953f3c8e06175bc5747edcf8224e761f74",
+        "exact": true
+      },
+      {
+        "destination": "focused/resources-final-SAFE.json",
+        "group": "focused",
+        "bytes": 297,
+        "sha256": "4903848a5c4919e605490000044d69a5f9da1a0de489f4ccedc2104376f1fe63",
+        "exact": true
+      },
+      {
+        "destination": "focused/retirement-attempt1-SAFE.json",
+        "group": "focused",
+        "bytes": 834,
+        "sha256": "43abfd665acc84f379da7560641959204e82ca2a055719ce65a34453f3024ddf",
+        "exact": true
+      },
+      {
+        "destination": "focused/retirement-held-SAFE.json",
+        "group": "focused",
+        "bytes": 548,
+        "sha256": "92549b155564806fbee0d6b69c8dab5faa2ce2d69f7824669230cdcba538f27a",
+        "exact": true
+      },
+      {
+        "destination": "focused/retirement-settled-current.png",
+        "group": "focused",
+        "bytes": 77945,
+        "sha256": "45db4b6678fbf7c375730f0cdedbd3114b8bb10560dae2469754d37bf01a1d0f",
+        "exact": true
+      },
+      {
+        "destination": "focused/seed-SAFE.json",
+        "group": "focused",
+        "bytes": 203,
+        "sha256": "916ec835fe8d0ba36fb518c9ea24923e329d25746793d0690dcbb60f4622f309",
+        "exact": true
+      },
+      {
+        "destination": "intake-audits/detail-stop.json",
+        "group": "intake-audits",
+        "bytes": 6677,
+        "sha256": "902afa12aa1b955ec132ec6bea18442d53c09c6cbf6ddf8a378285ead36037c6",
+        "exact": true
+      },
+      {
+        "destination": "intake-audits/conversion-stop.json",
+        "group": "intake-audits",
+        "bytes": 9273,
+        "sha256": "f2ee24e8813a058c9cfe3f3ab68cf4e94b9f8bf9c38226e959e1ed3e9840bc4c",
+        "exact": true
+      },
+      {
+        "destination": "intake-audits/independent.json",
+        "group": "intake-audits",
+        "bytes": 7036,
+        "sha256": "c9764644fda2f6af25577b4ddfe39cb1e0cf50f3f162771ce3dce59462e5453b",
+        "exact": true
+      },
+      {
+        "destination": "intake-audits/runtime.json",
+        "group": "intake-audits",
+        "bytes": 24775,
+        "sha256": "3a500ccfa93f3e53b8e730a6bc530173d69e518c1baf29836799c8a5fb819d42",
+        "exact": true
+      },
+      {
+        "destination": "intake-audits/runtime.md",
+        "group": "intake-audits",
+        "bytes": 3520,
+        "sha256": "f30ca7dd33cfb20b3e6d81a4f4cbc96db0c6c378c7068cd7ff8e7882416fa68b",
+        "exact": true
+      },
+      {
+        "destination": "intake-audits/focused.json",
+        "group": "intake-audits",
+        "bytes": 8828,
+        "sha256": "eaba55d619e8b65706f5f74f7d5e89a3085ddbe4b9381232e7ee1f8f1870d4f5",
+        "exact": true
+      },
+      {
+        "destination": "root-checks/detail-correction.json",
+        "group": "root-checks",
+        "bytes": 8472,
+        "sha256": "37b5286dfaf191461b8f49c64ca25affc426c30a3afe23e87b1a234651e3a26a",
+        "exact": true
+      },
+      {
+        "destination": "root-checks/conversion-correction.json",
+        "group": "root-checks",
+        "bytes": 18938,
+        "sha256": "4cac7ca4c002919ae528a8843effea4832e8b58f0118c93e50aa79c1c5dfe73c",
+        "exact": true
+      },
+      {
+        "destination": "root-checks/independent-recheck.json",
+        "group": "root-checks",
+        "bytes": 38211,
+        "sha256": "818ef6d161c51fa2542a0997c3ed96cd8d8567a4ceb5dea4e5f18ca215074f0d",
+        "exact": true
+      }
+    ],
+    "inputIndexChecks": [
+      {
+        "id": "detail-stop",
+        "payloadCount": 11,
+        "rawExact": true,
+        "sha256Exact": true,
+        "membershipExact": true
+      },
+      {
+        "id": "conversion-stop",
+        "payloadCount": 21,
+        "rawExact": true,
+        "sha256Exact": true,
+        "membershipExact": true
+      },
+      {
+        "id": "independent",
+        "payloadCount": 61,
+        "rawExact": true,
+        "sha256Exact": true,
+        "membershipExact": true
+      },
+      {
+        "id": "runtime",
+        "payloadCount": 34,
+        "rawExact": true,
+        "sha256Exact": true,
+        "membershipExact": true
+      },
+      {
+        "id": "focused",
+        "payloadCount": 36,
+        "rawExact": true,
+        "sha256Exact": true,
+        "membershipExact": true
+      }
+    ],
+    "sourcePinChecks": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+        "gitBlob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/site-header.test.tsx",
+        "gitBlob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "gitBlob": "ba19e9037e3e304b877091993f968a101f684b94",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "gitBlob": "b6b904215b1d9801f0768d35eed520b7454b923a",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+        "gitBlob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "gitBlob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+        "gitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "gitBlob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "gitBlob": "5f6f75f256c6899338b436d76248c26923ec8702",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "gitBlob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+        "gitBlob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+        "gitBlob": "502b9aa3e6336e7cef0885734c947170a15f5197",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+        "gitBlob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+        "gitBlob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751",
+        "cloneRawExact": true,
+        "frozenHeadAndIndexExact": true,
+        "currentCanonicalExact": true
+      }
+    ],
+    "anchorChecks": [
+      {
+        "commit": "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+        "ancestor": true
+      },
+      {
+        "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+        "ancestor": true
+      },
+      {
+        "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+        "ancestor": true
+      },
+      {
+        "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+        "ancestor": true
+      },
+      {
+        "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+        "ancestor": true
+      },
+      {
+        "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+        "ancestor": true
+      },
+      {
+        "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+        "ancestor": true
+      },
+      {
+        "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+        "ancestor": true
+      },
+      {
+        "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+        "ancestor": true
+      },
+      {
+        "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+        "ancestor": true
+      },
+      {
+        "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+        "ancestor": true
+      },
+      {
+        "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+        "ancestor": true
+      },
+      {
+        "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+        "ancestor": true
+      },
+      {
+        "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+        "ancestor": true
+      },
+      {
+        "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+        "ancestor": true
+      },
+      {
+        "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+        "ancestor": true
+      },
+      {
+        "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+        "ancestor": true
+      },
+      {
+        "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+        "ancestor": true
+      },
+      {
+        "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+        "ancestor": true
+      },
+      {
+        "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+        "ancestor": true
+      },
+      {
+        "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+        "ancestor": true
+      },
+      {
+        "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+        "ancestor": true
+      },
+      {
+        "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+        "ancestor": true
+      },
+      {
+        "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+        "ancestor": true
+      },
+      {
+        "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+        "ancestor": true
+      },
+      {
+        "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+        "ancestor": true
+      },
+      {
+        "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+        "ancestor": true
+      },
+      {
+        "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+        "ancestor": true
+      },
+      {
+        "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+        "ancestor": true
+      },
+      {
+        "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+        "ancestor": true
+      },
+      {
+        "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+        "ancestor": true
+      },
+      {
+        "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+        "ancestor": true
+      },
+      {
+        "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+        "ancestor": true
+      },
+      {
+        "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+        "ancestor": true
+      },
+      {
+        "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+        "ancestor": true
+      },
+      {
+        "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+        "ancestor": true
+      },
+      {
+        "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+        "ancestor": true
+      },
+      {
+        "commit": "752c500833e751df9988a3b2434d240124b89a51",
+        "ancestor": true
+      },
+      {
+        "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+        "ancestor": true
+      },
+      {
+        "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+        "ancestor": true
+      },
+      {
+        "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+        "ancestor": true
+      },
+      {
+        "commit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+        "ancestor": true
+      },
+      {
+        "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+        "ancestor": true
+      },
+      {
+        "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+        "ancestor": true
+      },
+      {
+        "commit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+        "ancestor": true
+      },
+      {
+        "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+        "ancestor": true
+      },
+      {
+        "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+        "ancestor": true
+      },
+      {
+        "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+        "ancestor": true
+      },
+      {
+        "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+        "ancestor": true
+      },
+      {
+        "commit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+        "ancestor": true
+      },
+      {
+        "commit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+        "ancestor": true
+      },
+      {
+        "commit": "8e3876c39725b7a8ef5218439766395401d64b80",
+        "ancestor": true
+      },
+      {
+        "commit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+        "ancestor": true
+      },
+      {
+        "commit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+        "ancestor": true
+      },
+      {
+        "commit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+        "ancestor": true
+      },
+      {
+        "commit": "9f2bd756833e85a33a97db496487afbc992c69ae",
+        "ancestor": true
+      },
+      {
+        "commit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+        "ancestor": true
+      },
+      {
+        "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+        "ancestor": true
+      },
+      {
+        "commit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+        "ancestor": true
+      },
+      {
+        "commit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+        "ancestor": true
+      },
+      {
+        "commit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+        "ancestor": true
+      },
+      {
+        "commit": "e59610bb265ef973c3df61f3d4de7ddf9e561833",
+        "ancestor": true
+      },
+      {
+        "commit": "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
+        "ancestor": true
+      },
+      {
+        "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+        "ancestor": true
+      }
+    ],
+    "indexBefore": {
+      "bytes": 2513167,
+      "sha256": "ac06a8231d8c69eb1a90b369add39d856aaa5dbfea7d651f089f93aa9f67b3f4"
+    },
+    "indexAfter": {
+      "bytes": 2513167,
+      "sha256": "ac06a8231d8c69eb1a90b369add39d856aaa5dbfea7d651f089f93aa9f67b3f4"
+    },
+    "whitespace": {
+      "bytes": 2994880,
+      "sha256": "0c942b5d679e07d0a6355a1ac6e1c1bc677664ab76b68bdea8d57cf30df55631",
+      "recordedExit": 2,
+      "diagnosticRows": 18103,
+      "uniqueOffendingPathLinePairs": 18103,
+      "offendingPaths": 61,
+      "categories": {
+        "trailing whitespace.": 18103
+      },
+      "qualification": "Existing raw staged-whitespace log read only. Exit 2 is a whitespace diagnostic failure; no blanket whitespace pass. Preserved evidence was not normalized. No payload lines reproduced."
+    },
+    "semanticDispositions": {
+      "unit": 545,
+      "unitFiles": 48,
+      "root": 518,
+      "independentControls": 27,
+      "includedBaselineControls": 3,
+      "postgresql": 51,
+      "postgresqlFiles": 4,
+      "mainTypeScriptQualifiedByMissingIgnoredLicense": true,
+      "runtimeDeclared": 140,
+      "runtimeAcceptedIndependentCount": null,
+      "oldUnsupported": [
+        42
+      ],
+      "oldNarrowed": [
+        16
+      ],
+      "focusedPass": 29,
+      "focusedTotal": 32,
+      "focusedUnpassed": [
+        13,
+        14,
+        28
+      ],
+      "focusedForeignTables": 29,
+      "foreignTravelPopulated": false,
+      "reactMethod": "CDP DOM fiber ancestry; native extension unproved",
+      "actualReportOpeningAndReload": true,
+      "retirementOrderingProved": false,
+      "downloadBytesExcluded": true,
+      "cleanupHistorical": true,
+      "initialRawSeedExceptionOverwritten": true
+    },
+    "limits": [
+      "Read-only audit only; no readiness decision or verified integration commit.",
+      "No tests, archived scripts, portable verifier, package, runtime, tracker, network or repository/index mutations executed.",
+      "Only supplied 172 source inputs and five supplied input indexes read for source-copy comparisons; excluded/private targets were not followed.",
+      "Historical test/runtime/database/cleanup observations remain producer receipts and sealed native-intake qualifications; no new runtime acceptance or visual review.",
+      "Main TypeScript remains qualified by missing ignored licenses.json; 51 PostgreSQL/default-timeout/fresh-disposable database descriptions are preserved historical review evidence.",
+      "Whitespace diagnostics remain uncorrected to preserve original evidence."
+    ],
+    "mutationAttestation": {
+      "repositoryWrites": 0,
+      "indexWrites": 0,
+      "trackerWrites": 0,
+      "runtimeActions": 0,
+      "archivedCodeExecutions": 0,
+      "excludedTargetReads": 0,
+      "outputs": "New system TEMP directory only"
+    }
+  },
+  "rootBatchAudit": {
+    "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "stagePaths": [
+      "docs/design/rollout-1692/1748.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/.gitattributes",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/README.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/claim-dispositions.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/HANDOFF.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/REPORT.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/baseline-legacy-draft-conversion.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/baseline-travel-expense-claim-detail.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/bridge-cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/bridges.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/candidate-legacy-draft-conversion.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/candidate-travel-expense-claim-detail.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/commands.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/conversion-review.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/excluded-hash-only.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/pins-after.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/pins-before.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/prepare.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/preservation.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/preserve.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/prior-safe-receipt.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/process-cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/seal.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/conversion-stop/test-multiset.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/HANDOFF.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/baseline-control.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/bridge-cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/bridges.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/finalize.cjs",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/predict.cjs",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/prediction.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/refusal-review.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/resolved-metadata.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/resolved-test.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/review-results.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/file-index.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/HANDOFF.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/LEASE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/REPORT.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/assertion-ledger-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/attempts-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/browser-cleanup-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/captures-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/claim-next-diagnostics-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/commands-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/database-after-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/database-before-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/database-controls-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/dependency-links-before-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/draft-panel-current.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/first-conversion-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/graph-fields-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/lease-release-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/mcp-tools-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/next-diagnostics-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/observed-failure-receipts-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/originals-after-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/originals-before-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/pins-before-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/preservation-final-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/process-cleanup-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/process-inventory-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/react-draft-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/react-draft-attempt1-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/report-editor-open-current.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/report-editor-reload-current.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/report-open-reload-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/resources-final-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/retirement-attempt1-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/retirement-held-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/retirement-settled-current.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/focused/seed-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/HANDOFF.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/REPORT.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/account.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/anchors.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/archive-audit.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/attempts.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/audit.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/baseline-legacy-draft-conversion.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/baseline-travel-expense-claim-detail.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/bridge-cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/bridges.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/checks.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/commands.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/conversion-review.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/doctor-version.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/doctor.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/excluded-hash-only.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/explicit100crlf.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/findings.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/historical-source-pins.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/integration.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/lint.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/main-types.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/nested-pnpm-bridge.sh",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/objections-attempt1.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/objections-attempt2.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/owned-explicit100crlf.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/owned-ordinary.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/pins-after.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/pins-before.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prepare_broader.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prepare_objections.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prepare_refresh.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/preservation.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prior-intake.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/prior-static-python.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/real-refresh.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/release_bridges.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-actual-consumers.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-assembled-objections.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-independent-baseline-conversion.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-independent-baseline-detail.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-original-conversion.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-original-detail.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/review1748-real-refresh.test.tsx",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/seal.py",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/selection.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/service-cleanup.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/setup-command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/smoke-types.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/static-syntax-babel.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/static-syntax-final.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/static-syntax.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax-before-refresh.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax.cjs",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/test-multiset.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/typegen.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/workflow-types.command.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-contract.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/conversion-stop.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/detail-stop.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/focused.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/independent.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/input-indexes/runtime.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/conversion-stop.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/detail-stop.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/focused.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/independent.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/runtime.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/intake-audits/runtime.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/payload-index.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/publication-seal.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/report-appendix.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/root-checks/conversion-correction.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/root-checks/detail-correction.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/root-checks/independent-recheck.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/ASSERTIONS.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/HANDOFF.md",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/REPORT.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/assertion-ledger-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/attempt-qualifications-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/captures-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/commands-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/conversion-graph-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/converted-desktop.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-after-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-before-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-checks-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/database-initial-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/desktop-layout-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/download-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/draft-desktop-1600-settled.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/lease-release-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/legacy-rows-after-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/legacy-rows-before-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/next-diagnostics-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/phone-layout-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/preflight-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/preservation-final-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/process-cleanup-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/react-approved-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/readers-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/real-receipt-refusal-desktop.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/resources-final-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/seed-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-desktop-1600.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-local-retry.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-phone-390-large.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/submitted-wide-2400-dark-large.png",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/runtime/wide-layout-SAFE.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source-pins.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/site-header.test.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/navigation/route-metadata.test.ts.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/navigation/route-metadata.ts.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/travel-expenses/current-owner.ts.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts.txt",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verification-results.json",
+      "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+    ],
+    "archiveGitBlobsExact": 202,
+    "archiveBytes": 2705287,
+    "sourceClones": 14,
+    "payloadCopies": 172,
+    "reportGitPrefix": {
+      "bytes": 28008,
+      "sha256": "5e6ff4426c433630f18e5cad901142c1be4cdd313510a081346a7a7c4b101455"
+    },
+    "archiveUnchangedAfterVerification": true,
+    "publicationSealSha256": "2b72a454e595678698e9153bcdd17a7bbf367095e08e5991af86f88b74690507",
+    "harnessQualification": "Initial sequential per-file read-only Git audit timed out and reset the JS kernel. A subsequent attempt to import disallowed node:process failed before Git reads. Neither changed the archive/index. This final audit uses one read-only cat-file batch."
+  },
+  "rootVerificationExits": {
+    "currentSource": 0,
+    "syntax": 0,
+    "archive": 0
+  },
+  "qualifications": {
+    "rawWhitespaceExit": 2,
+    "diagnosticLines": 18103,
+    "affectedPaths": 61,
+    "rawLogSha256": "0c942b5d679e07d0a6355a1ac6e1c1bc677664ab76b68bdea8d57cf30df55631",
+    "noArchiveWhitespacePass": true,
+    "rootInitialReadOnlyAuditAttempts": "The sequential Node Git audit timed out; a disallowed node:process import then failed before Git reads. Final batch audit passed. No archive/index changes arose from those attempts."
+  }
+}

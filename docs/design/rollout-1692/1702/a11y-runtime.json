@@ -1,0 +1,48 @@
+{
+  "axeVersion": "4.12.1",
+  "counts": {
+    "inapplicable": 86,
+    "incomplete": 1,
+    "passes": 2,
+    "violations": 0
+  },
+  "violations": [],
+  "incomplete": [
+    {
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodeCount": 2,
+      "nodes": [
+        {
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content",
+          "html": "<tspan x=\"57\" dy=\"0.355em\">3</tspan>",
+          "target": [
+            "text[y=\"67\"] > tspan[dy=\"0.355em\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content",
+          "html": "<tspan x=\"57\" dy=\"0.355em\">4</tspan>",
+          "target": [
+            "text[y=\"9\"] > tspan[dy=\"0.355em\"]"
+          ]
+        }
+      ],
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT",
+        "RGAAv4",
+        "RGAA-3.2.1"
+      ]
+    }
+  ],
+  "scope": "main, actual Total Employees loaded, small-admin current month, desktop light; scoped tool result, not all-state certification"
+}

@@ -1,0 +1,164 @@
+{
+  "candidate": "08c266493f3a3cba07de3fe81e8d054a7377fd4d",
+  "correction": "8491e46aaac7e4e4b4b26d4dacd19d963580610a",
+  "sourceEdited": false,
+  "normalDevelopmentPublicLogin": true,
+  "notificationsDenied": true,
+  "authStateCopiedSavedRestored": false,
+  "images": [
+    {
+      "path": "current-publish-expanded-1600-01.png",
+      "bytes": 87336,
+      "sha256": "a9c968bf3511073787848901658b68ec670e8e269675f661d1f4098618a2900c",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-collapsed-1600-01.png",
+      "bytes": 87472,
+      "sha256": "1e90de36586a42db91dd18a2da2448f1e8843db53ea65c588d7a81f4dd8d49a0",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-expanded-390-01.png",
+      "bytes": 44488,
+      "sha256": "9c66e610b933fc429fcef3d1f41a6059aff062b0abc0f67d3f7b88aa757e3862",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    }
+  ],
+  "expanded": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "collapsed": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": false,
+    "documentWidth": 1600
+  },
+  "expandedAgain": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "phone": {
+    "viewport": [
+      390,
+      844
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 230.78125,
+        "y": 764,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 390
+  },
+  "wide": {
+    "viewport": [
+      2400,
+      1400
+    ],
+    "fontSize": "16px",
+    "dark": true,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 2240.78125,
+        "y": 1320,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "NEXTJS-PORTAL",
+      "isPublish": false,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 2400
+  },
+  "verdict": "ATTEMPT_FAILED",
+  "failure": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n\nfalse !== true\n"
+  },
+  "publishCalls": 0
+}

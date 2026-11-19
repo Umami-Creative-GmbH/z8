@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "verifiedCommit": null,
+  "identity": {
+    "sha": "242cbaca01a8647adf25ee69e434e66c06c0c7d8",
+    "tree": "b9579233461e7b586b14829e84063124a8e52d07",
+    "appTree": "d0853a2009d558508195195d04b9c28795339e35"
+  },
+  "sourceCorrection": "8155d789ce7cda7201886ec09fca4fab2a487247",
+  "units": {
+    "occurrences": 158,
+    "distinctFileFullNames": 137,
+    "physicalFiles": 11,
+    "overlapOccurrences": 21,
+    "priorRootCompatibilityOverlap": 116,
+    "newIndependentLabels": 21,
+    "behavioralOverlapRetained": true
+  },
+  "canonicalPg": {
+    "cases": 9,
+    "files": 2,
+    "fresh": true,
+    "oldWorkerNineNotAdded": true
+  },
+  "types": {
+    "typegen": true,
+    "completeProjects": 3
+  },
+  "lintFiles": 8,
+  "doctor": {
+    "errors": 0,
+    "warnings": 0,
+    "score": null
+  },
+  "format": {
+    "explicitSharedFailures": 2,
+    "ordinaryFailures": 8
+  },
+  "sealed": {
+    "payloads": 18,
+    "bytes": 2704873,
+    "json": 12,
+    "sealSha256": "f55d9c291fb48e96da0531e8af72bcdcea0ebd02a47ef1e8191f84753f5c1cf4",
+    "indexSha256": "9d038503fa66831c9e69692f06ee8706754272932fbaed8606ae3f57240b934a",
+    "independentIntakeAuditSha256": "acf6d12b2c4dcbdda12d1a1b458b0738da8e617b56942633efc9c9d5742bef57"
+  },
+  "intake": {
+    "sourcePinsExact": 8,
+    "configPinsExact": 139,
+    "configPinsCRLFEquivalent": 10,
+    "full18163TrackedPreservation": "sealed reviewer receipt; root fresh Git identity/clean and selected pins only",
+    "leaf158Links": "inherited, not traversed/recounted",
+    "pgCleanup": "exact owned absence receipt internally checked; root did not inspect Docker again"
+  },
+  "runtime": {
+    "currentBrowser": false,
+    "currentNextServer": false,
+    "currentNative": false,
+    "ownedResourcesReported": 0
+  },
+  "limitations": [
+    "Worker images/native/runtime remain on earlier pinned sources.",
+    "No live authority races/current browser/native/production/catalog/provider/device/truezoom acceptance.",
+    "No critical product finding in bounded public/static/canonicalPG matrix; readiness remainsnull."
+  ]
+}

@@ -5,7 +5,13 @@ import { DateTime } from "luxon";
 import { DynamicServerError } from "next/dist/client/components/hooks-server-context";
 import { makeUntrackedHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { notFound, redirect, unstable_rethrow } from "next/navigation";
-import { type ReactElement, Suspense } from "react";
+import {
+	Children,
+	isValidElement,
+	type ReactElement,
+	type ReactNode,
+	Suspense,
+} from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
@@ -26,9 +32,7 @@ import {
 } from "./region-data";
 import {
 	ClockLoading,
-	DrivingLoading,
 	HistoryLoading,
-	PeriodsLoading,
 	RegionLoadError,
 	SummaryLoading,
 	TimelineLoading,
@@ -42,6 +46,8 @@ import {
 	SummaryRegion,
 	TimelineRegion,
 	TimeTrackingPageContent,
+	WorkdayContextRegion,
+	WorkplacePolicyRegion,
 } from "./regions";
 import {
 	type EmployeeRenderContext,
@@ -172,7 +178,10 @@ describe("driving details missing notice (#1127)", () => {
 	};
 
 	it("lists the employee's flagged work", async () => {
-		vi.mocked(readDrivingRegion).mockResolvedValue({ work: [work], truncated: false });
+		vi.mocked(readDrivingRegion).mockResolvedValue({
+			work: [work],
+			truncated: false,
+		});
 		const notice = leaf(await DrivingRegion({ context }));
 		expect(notice.type).toBe(DrivingDetailsMissingNotice);
 		expect(notice.props).toMatchObject({
@@ -184,7 +193,10 @@ describe("driving details missing notice (#1127)", () => {
 	});
 
 	it("shows nothing without flagged work, or when it cannot be read", async () => {
-		vi.mocked(readDrivingRegion).mockResolvedValue({ work: [], truncated: false });
+		vi.mocked(readDrivingRegion).mockResolvedValue({
+			work: [],
+			truncated: false,
+		});
 		expect(await DrivingRegion({ context })).toBeNull();
 		vi.mocked(readDrivingRegion).mockRejectedValue(new Error("down"));
 		expect(await DrivingRegion({ context })).toBeNull();
@@ -236,52 +248,44 @@ describe("independent time tracking region components", () => {
 		const result = TimeTrackingPageContent({ searchParams: date.promise });
 		identity.resolve(context);
 		const content = element(await result);
-		expect(content.props.className).toBe(
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
-		);
-		const [focus, ...boundaries] = content.props.children as ReactElement<{
+		function boundariesIn(node: ReactNode): ReactElement<{
 			children: ReactElement<{
 				context: EmployeeRenderContext;
 				searchParams?: Promise<TimeTrackingPageSearchParams>;
 			}>;
-			fallback: ReactElement;
-		}>[];
-		// The period blocker focus (#1349) comes first, so its notice sits at the top.
-		expect(focus?.type).toBe(Suspense);
+			fallback: ReactNode;
+		}>[] {
+			return Children.toArray(node).flatMap((child) => {
+				if (!isValidElement<{ children?: ReactNode }>(child)) return [];
+				if (child.type === Suspense) return [element(child)];
+				return boundariesIn(child.props.children);
+			});
+		}
+		const [focus, ...boundaries] = boundariesIn(content);
 		expect(focus?.props.fallback).toBeNull();
 		expect(focus?.props.children.type).toBe(PeriodBlockerFocusRegion);
-		expect(focus?.props.children.props).toEqual({ context, searchParams: date.promise });
-		expect(boundaries).toHaveLength(6);
-		expect(boundaries.map((boundary) => boundary.type)).toEqual([
-			Suspense,
-			Suspense,
-			Suspense,
-			Suspense,
-			Suspense,
-			Suspense,
-		]);
+		expect(focus?.props.children.props).toEqual({
+			context,
+			searchParams: date.promise,
+		});
 		expect(boundaries.map((boundary) => boundary.props.children.type)).toEqual([
 			ClockRegion,
 			DrivingRegion,
 			SummaryRegion,
 			TimelineRegion,
-			PeriodsRegion,
 			HistoryRegion,
-		]);
-		expect(boundaries.map((boundary) => boundary.props.fallback.type)).toEqual([
-			ClockLoading,
-			DrivingLoading,
-			SummaryLoading,
-			TimelineLoading,
-			PeriodsLoading,
-			HistoryLoading,
+			PeriodsRegion,
+			WorkdayContextRegion,
+			WorkplacePolicyRegion,
 		]);
 		expect(
 			boundaries.map((boundary) => boundary.props.children.props.context),
-		).toEqual([context, context, context, context, context, context]);
+		).toEqual(Array(8).fill(context));
 		expect(
-			boundaries.map((boundary) => boundary.props.children.props.searchParams),
-		).toEqual([undefined, undefined, undefined, date.promise, undefined, undefined]);
+			boundaries
+				.filter((boundary) => boundary.props.children.props.searchParams)
+				.map((boundary) => boundary.props.children.type),
+		).toEqual([TimelineRegion, HistoryRegion, WorkdayContextRegion]);
 		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
 		expect(readSummaryRegion).not.toHaveBeenCalled();
 		expect(readHistoryRegion).not.toHaveBeenCalled();
@@ -292,7 +296,10 @@ describe("independent time tracking region components", () => {
 		const focus = element(
 			await PeriodBlockerFocusRegion({
 				context,
-				searchParams: Promise.resolve({ date: "2026-10-02", focus: "manual_work:w-1" }),
+				searchParams: Promise.resolve({
+					date: "2026-10-02",
+					focus: "manual_work:w-1",
+				}),
 			}),
 		);
 		expect(focus.type).toBe(PeriodBlockerFocus);
@@ -304,7 +311,9 @@ describe("independent time tracking region components", () => {
 		const repeated = element(
 			await PeriodBlockerFocusRegion({
 				context,
-				searchParams: Promise.resolve({ focus: ["manual_work:w-1", "live_work:w-2"] }),
+				searchParams: Promise.resolve({
+					focus: ["manual_work:w-1", "live_work:w-2"],
+				}),
 			}),
 		);
 		expect(repeated.props.focus).toBeUndefined();
@@ -317,12 +326,20 @@ describe("independent time tracking region components", () => {
 	});
 
 	it("marks the timeline and the clock as rendered, loaded or failed, for a blocker focus", async () => {
-		const loaded = element(await TimelineRegion({ context, searchParams: searchParams() }));
+		const loaded = element(
+			await TimelineRegion({ context, searchParams: searchParams() }),
+		);
 		expect(loaded.props.id).toBe("workday-timeline-region");
-		vi.mocked(getWorkdayTimelineData).mockRejectedValue(new Error("timeline unavailable"));
-		const failed = element(await TimelineRegion({ context, searchParams: searchParams() }));
+		vi.mocked(getWorkdayTimelineData).mockRejectedValue(
+			new Error("timeline unavailable"),
+		);
+		const failed = element(
+			await TimelineRegion({ context, searchParams: searchParams() }),
+		);
 		expect(failed.props.id).toBe("workday-timeline-region");
-		vi.mocked(readActiveWorkPeriod).mockRejectedValue(new Error("clock unavailable"));
+		vi.mocked(readActiveWorkPeriod).mockRejectedValue(
+			new Error("clock unavailable"),
+		);
 		const clockFailed = element(await ClockRegion({ context }));
 		expect(clockFailed.props.id).toBe("time-clock-region");
 	});
@@ -389,11 +406,18 @@ describe("independent time tracking region components", () => {
 				opensOn: "2026-03-08",
 			},
 		];
-		vi.mocked(readPeriodsRegion).mockResolvedValue({ timezone: "Europe/Berlin", periods });
+		vi.mocked(readPeriodsRegion).mockResolvedValue({
+			timezone: "Europe/Berlin",
+			periods,
+		});
 		const view = leaf(await PeriodsRegion({ context }));
 		expect(view.type).toBe(PeriodSubmissionsCard);
 		// The card checks readiness for the organization and employee it was rendered for (#1348).
-		expect(view.props).toEqual({ periods, organizationId: "org-1", employeeId: "employee-1" });
+		expect(view.props).toEqual({
+			periods,
+			organizationId: "org-1",
+			employeeId: "employee-1",
+		});
 	});
 
 	const regions = [

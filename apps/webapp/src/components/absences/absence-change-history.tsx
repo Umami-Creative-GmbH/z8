@@ -57,13 +57,19 @@ export function AbsenceChangeHistory({
 					t("absences.change.withdrawFailed", "Could not withdraw the request. Please try again."),
 			);
 	}
+	const pendingCount = requests.filter((request) => request.status === "pending").length;
 	return (
-		<details
-			className="rounded-lg border p-4"
-			open={requests.some((request) => request.status === "pending")}
-		>
-			<summary className="cursor-pointer font-medium focus-visible:ring-2 focus-visible:ring-ring">
-				{t("absences.change.history", "Absence change requests")}
+		// Open while a request awaits approval; decided requests stay one click away.
+		<details className="rounded-lg border bg-card p-4" open={pendingCount > 0}>
+			<summary className="flex cursor-pointer flex-wrap items-center gap-2 font-medium focus-visible:ring-2 focus-visible:ring-ring">
+				<span>{t("absences.change.history", "Absence change requests")}</span>
+				{pendingCount > 0 ? (
+					<Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning">
+						{t("absences.change.pendingCount", "{count} pending", {
+							count: pendingCount,
+						})}
+					</Badge>
+				) : null}
 			</summary>
 			<ul className="mt-4 space-y-4">
 				{requests.map((request) => (

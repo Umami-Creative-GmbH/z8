@@ -1,0 +1,18 @@
+{
+  "at": "2026-11-18T03:51:36.453Z",
+  "normalConfirmation": {
+    "title": "Delete this draft?",
+    "buttons": [
+      "Cancel",
+      "Delete draft"
+    ]
+  },
+  "deletedOwnNewDraft": true,
+  "remainingItemsForDeletedReport": 0,
+  "reportCountDelta": -1,
+  "itemCountDelta": -1,
+  "otherTablesUnchanged": true,
+  "foreignOrgAllTablesUnchanged": true,
+  "originalsUnchanged": true,
+  "restoredSixRows": true
+}

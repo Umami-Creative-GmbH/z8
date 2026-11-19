@@ -1,0 +1,14 @@
+{
+  "status": "released",
+  "ownership": false,
+  "owner": "1692-1748-focused-runtime-v2",
+  "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "scope": "Focused live observation only: conversion-panel React names, actual report opening/reload, and real held conversion-response retirement. All tracked source/docs,Git/index,dependencies/config immutable. Own ignored runtime scripts/fixtures/Next generated cache permitted.",
+  "artifactDirectory": ".tmp/1748-focused-runtime-20261118b",
+  "rootWillNotMutateUntilReleased": true,
+  "verifiedCommit": null,
+  "activatedAt": "2026-11-18T01:06:06.721Z",
+  "releasedAt": "2026-11-18T01:28:13.152Z",
+  "resources": 0
+}

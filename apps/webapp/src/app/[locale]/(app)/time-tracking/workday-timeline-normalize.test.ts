@@ -64,9 +64,36 @@ describe("normalizeWorkdayTimeline", () => {
 		expect(result.hasRecordedActivity).toBe(true);
 	});
 
-	it("adds warning rows for pending edits, active periods, and auto adjustments", () => {
+	it("does not flag today's live session as a missing clock-out", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
+			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "period-live",
+					// 00:30 Berlin on the selected day, which is today.
+					startTime: new Date("2026-05-02T22:30:00.000Z"),
+					endTime: null,
+					durationMinutes: null,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.dayWarnings).toEqual([]);
+	});
+
+	it("adds warning rows for pending edits, a period left open since an earlier day, and auto adjustments", () => {
+		const result = normalizeWorkdayTimeline({
+			// Viewed the day after: the period is still open, so a clock-out is missing.
+			selectedDate: { ...selectedDate, todayDateKey: "2026-05-04" },
 			timezone: "Europe/Berlin",
 			organizationTimezone: "Europe/Berlin",
 			workPeriods: [

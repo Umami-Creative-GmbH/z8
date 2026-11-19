@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "status": "provisional",
+  "verifiedCommit": null,
+  "correctionCommit": "fa14ae6cc5948824110c2b33f18583b0a17df09e",
+  "integrationCommit": "25d6a6d00db5fbec0c270278ab788ff24428ccca",
+  "appTree": "268193988ddf0ba1e566f2627f9d5422467e3a3a",
+  "previousRoot": "56120fa8903d95e3cc2db6798e44b01b48b2ac38",
+  "independentStop": {
+    "cases": 26,
+    "passed": 25,
+    "failed": 1,
+    "physicalFiles": 2,
+    "safeIndexSha256": "4ff46a518e88919dc672a7d2391eddee203566e61c9c2db55175752c4f6fb630",
+    "exactProbeSha256": "852cc7ce7b1c4aabc166c764ac41a5252fd27ac2dacc4255723925d7d7bc8e35",
+    "classification": "Actual page/read/provider/builder with synthetic public employee/data seams. No live unauthorized disclosure or persisted decision claim."
+  },
+  "rootRed": {
+    "cases": 5,
+    "passed": 4,
+    "failed": 1,
+    "method": "Exact independent five-case probe with four pinned module loads from 56120fa8. No tracked historical overlay. Initial environment-only failure ran zero cases and is excluded."
+  },
+  "changes": [
+    "A ready read returns actor, organization, employee and role from the same employee object passed to the canonical builder.",
+    "Page no longer labels independently produced rows with its earlier employee lookup.",
+    "Initial admission and refresh acceptance compare the producing view with the actual published provider view; mismatch removes evidence and actions.",
+    "Local Retry rechecks provider context before a new canonical read; existing read retirement, partial-result privacy and unsettled decision reservations remain."
+  ],
+  "checks": {
+    "units": {
+      "physicalFiles": 14,
+      "instances": 203,
+      "unique": 203,
+      "passed": 203,
+      "failed": 0,
+      "newPermanentProducerCases": 7,
+      "prior196Included": true,
+      "publicSubset": {
+        "provider": 11,
+        "population": 4,
+        "decision": 13,
+        "producer": 7,
+        "total": 35,
+        "physicalFiles": 4,
+        "includedIn203": true
+      }
+    },
+    "types": "Static Next typegen and all three complete TypeScript projects pass.",
+    "acceptedFormatting": "Nine owned files: explicit 100-column CRLF formatting, lint/import checks pass.",
+    "ordinaryFormatting": "Nine errors and five warnings retained; nonpassing.",
+    "doctor": {
+      "version": "0.9.22",
+      "files": 9,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true
+    },
+    "whitespace": "git diff --check passes.",
+    "postgres": "No fresh PostgreSQL run for this correction.",
+    "runtime": "No Next/browser/native/fixture run for this correction."
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/actions.ts",
+      "sha256": "2d0e79ee0d10b97fa982aed9310eecac666f07909a8ea405261e55e45631fc21",
+      "gitBlob": "df53f97b92acb365d30924793e7fed59474b4471",
+      "gitBytesSha256": "87c39639405c2a4016c92da5ff13b2afab6870cbfa1d03b464cab8d9e6958199"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/page.tsx",
+      "sha256": "a35c24738fb11f5ff4c9e1e3cb1d5c9d39b3b2714b4ecdcd180f462a9cc3bf84",
+      "gitBlob": "555cba72c8670c1d2296fa9b462d08b483064e0c",
+      "gitBytesSha256": "b50b9116115ceb707bd65d625e246218cc01ded0c8da0fd00d3ab7037172216a"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-decision-arrival.test.tsx",
+      "sha256": "45e287af58a6aae1d874e937eabbbaa53b5537f62437ee54d9fbefeed98b8c98",
+      "gitBlob": "c77c37df158846d1c1c708deab1f15cbfcdebf68",
+      "gitBytesSha256": "aede1861a5fd14e3c183f4a68a4738d3ddbdecac7543c260a132600c13c4e051"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-population-arrival.test.tsx",
+      "sha256": "92a7e6ea094382a690e687e641e2fc8c060a3ba857554674dee474c10d5d7934",
+      "gitBlob": "a4a296a00a56323b76bdc32c2cc9fd5e4c5f8f45",
+      "gitBytesSha256": "966ea826ee458d0f657cb8845227fd048136d10a54cd7892207fd79fbf322f8d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-provider-arrival.test.tsx",
+      "sha256": "fb96e97b1482101ac7d2c48405836bad4cbd8ae76bef8076e59c3bba6d8aefbe",
+      "gitBlob": "3f1f46f0807f03ffda172521c7790421b566b6fe",
+      "gitBytesSha256": "b41615b896858feb6988c9f701e7bd82d5aa5ed632c036a1893ad80e0b62eea2"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-types.ts",
+      "sha256": "61cbcdf72a8eb46a6ee5c1759de3104cb13da995ba1672f677e840ef87f804a2",
+      "gitBlob": "e1a30de89bd3a041c384c0620db5c9d3ad41005a",
+      "gitBytesSha256": "cef1947f033ecf81c07fbf6b713a5510df0142ce4f3e8772a1df341657c6237b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.test.tsx",
+      "sha256": "ba5959d3ce0c789bdc8f19d9aa5cfa457123141c77fa3dcdbd0ebb86d0ac30a9",
+      "gitBlob": "97e7b10c4629537540d3fad26bc50e7b8b7c99c8",
+      "gitBytesSha256": "3c247126f1bca50244baa5fea4d9d8da2597c1bddf735a76988ebe84c2f0acdf"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.tsx",
+      "sha256": "cc12bd3ecff099cb458caa286d6b20ff382af022cc7237f611f4b82972a731e1",
+      "gitBlob": "f45723bed6407d61dcb7ff118c5b9399456873a6",
+      "gitBytesSha256": "cbb3ee46a6a102ea8263510e6acc1e8f57326d61251db56e9b0f64a523a4860c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-producer-provenance.test.tsx",
+      "sha256": "a7e5d35488d348e2860b1011ce91673162ed17aa6376b8607880b4e65f904bf9",
+      "gitBlob": "6d4fa5d9c927bac7e2af0a39d6c64da3e082743b",
+      "gitBytesSha256": "e4b0d47a5bf9cb8044a864874ececb165c049b7c2571462acfe5672b7d168b92"
+    }
+  ],
+  "preservation": {
+    "verifiedAnchors": 63,
+    "baseline": true,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "mergeTreeMatchesCorrection": true
+  },
+  "harnessQualifications": [
+    "First red/green custom configurations failed setup before running cases; retained as harness failures.",
+    "Valid pinned load uses four read-only baseline modules with the exact original five-case probe; four pass and one private-row predicate fails.",
+    "First 203-case run failed two new-contract fixture assumptions. Corrected producer identity and existing shell-context-refetch count without weakening privacy predicates.",
+    "No browser, Next runtime, PostgreSQL or fixture started for this source correction."
+  ],
+  "remaining": [
+    "Fresh independent review of initial and refresh provenance, prior settlement/population/arrival controls.",
+    "Current-source PostgreSQL and authenticated Today acceptance.",
+    "Exhaustive live authority/account/org/Activity matrices, build/catalog/provider/device/true-zoom/global acceptance."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit 'src/app/[locale]/(app)/today' src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts src/lib/manager-daily-briefing/__tests__/logic.test.ts src/lib/navigation/route-metadata.test.ts src/components/dashboard/manager-today-widget.test.tsx 'src/app/api/approvals/inbox/[id]/approve/route.test.ts' 'src/app/api/approvals/inbox/[id]/reject/route.test.ts' src/tolgee/extracted-key-defaults.test.ts --maxWorkers=1 --reporter=json --outputFile .tmp/1746-provenance-root-checks/units-sealed.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "quality": "From apps/webapp: pnpm --config.verify-deps-before-run=false exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf <nine owned paths>",
+    "ordinary": "Same nine paths, ordinary biome check without overrides; exit1 retained.",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 56120fa8903d95e3cc2db6798e44b01b48b2ac38 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1746-provenance-root-checks/doctor-final.json",
+    "environment": "Every pnpm command also sets pnpm_config_verify_deps_before_run=false; installed12.16.1 only."
+  }
+}

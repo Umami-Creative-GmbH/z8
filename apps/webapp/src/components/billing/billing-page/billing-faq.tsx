@@ -7,13 +7,15 @@ export function BillingFaq() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("billing.faq.title", "Frequently Asked Questions")}</CardTitle>
+				<CardTitle>
+					<h2>{t("billing.faq.title", "Frequently Asked Questions")}</h2>
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div>
-					<h4 className="font-medium">
+					<h3 className="font-medium">
 						{t("billing.faq.perSeat.question", "How does per-seat billing work?")}
-					</h4>
+					</h3>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"billing.faq.perSeat.answer",
@@ -22,9 +24,9 @@ export function BillingFaq() {
 					</p>
 				</div>
 				<div>
-					<h4 className="font-medium">
+					<h3 className="font-medium">
 						{t("billing.faq.afterTrial.question", "What happens after the trial?")}
-					</h4>
+					</h3>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"billing.faq.afterTrial.answer",
@@ -33,9 +35,9 @@ export function BillingFaq() {
 					</p>
 				</div>
 				<div>
-					<h4 className="font-medium">
+					<h3 className="font-medium">
 						{t("billing.faq.switch.question", "Can I switch between monthly and yearly?")}
-					</h4>
+					</h3>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"billing.faq.switch.answer",

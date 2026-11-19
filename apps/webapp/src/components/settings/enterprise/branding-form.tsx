@@ -138,8 +138,8 @@ function LogoCard({ controller }: { controller: BrandingFormController }) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="flex items-center gap-6">
-					<div className="relative size-20 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
+				<div className="flex flex-wrap items-center gap-4 sm:flex-nowrap sm:gap-6">
+					<div className="relative size-20 shrink-0 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
 						{logoUpload.previewUrl || branding.logoUrl ? (
 							<Image
 								src={logoUpload.previewUrl || branding.logoUrl || ""}
@@ -149,16 +149,16 @@ function LogoCard({ controller }: { controller: BrandingFormController }) {
 								className="object-contain"
 							/>
 						) : (
-							<IconUpload className="size-8 text-muted-foreground" />
+							<IconUpload className="size-8 text-muted-foreground" aria-hidden="true" />
 						)}
 					</div>
-					<div className="flex-1">
+					<div className="min-w-0 flex-1 basis-56">
 						<Input
 							type="file"
 							accept="image/*"
 							onChange={handleLogoChange}
 							disabled={logoUpload.isUploading}
-							className="max-w-xs"
+							className="w-full max-w-xs"
 							aria-label={t(
 								"settings.branding.logo.upload",
 								"Upload logo image",
@@ -171,7 +171,7 @@ function LogoCard({ controller }: { controller: BrandingFormController }) {
 							)}
 						</p>
 						{logoUpload.isUploading && (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
 								{t("common.uploading", "Uploading...")} {logoUpload.progress}%
 							</p>
 						)}
@@ -185,7 +185,7 @@ function LogoCard({ controller }: { controller: BrandingFormController }) {
 							}
 							aria-label={t("settings.branding.logo.remove", "Remove logo")}
 						>
-							<IconX className="size-4" />
+							<IconX className="size-4" aria-hidden="true" />
 						</Button>
 					)}
 				</div>
@@ -216,8 +216,8 @@ function BackgroundImageCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="flex items-start gap-6">
-					<div className="relative h-32 w-48 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
+				<div className="flex flex-wrap items-start gap-4 sm:flex-nowrap sm:gap-6">
+					<div className="relative h-32 w-48 max-w-full shrink-0 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
 						{backgroundUpload.previewUrl || branding.backgroundImageUrl ? (
 							<Image
 								src={
@@ -234,16 +234,16 @@ function BackgroundImageCard({
 								className="object-cover"
 							/>
 						) : (
-							<IconUpload className="size-8 text-muted-foreground" />
+							<IconUpload className="size-8 text-muted-foreground" aria-hidden="true" />
 						)}
 					</div>
-					<div className="flex-1">
+					<div className="min-w-0 flex-1 basis-56">
 						<Input
 							type="file"
 							accept="image/*"
 							onChange={handleBackgroundChange}
 							disabled={backgroundUpload.isUploading}
-							className="max-w-xs"
+							className="w-full max-w-xs"
 							aria-label={t(
 								"settings.branding.background.upload",
 								"Upload background image",
@@ -256,7 +256,7 @@ function BackgroundImageCard({
 							)}
 						</p>
 						{backgroundUpload.isUploading && (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
 								{t("common.uploading", "Uploading...")} {backgroundUpload.progress}%
 							</p>
 						)}
@@ -273,7 +273,7 @@ function BackgroundImageCard({
 								"Remove background",
 							)}
 						>
-							<IconX className="size-4" />
+							<IconX className="size-4" aria-hidden="true" />
 						</Button>
 					)}
 				</div>
@@ -340,8 +340,8 @@ function ThemeColorsCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<div className="flex items-center gap-4">
-					<div className="flex-1">
+				<div className="grid gap-6 sm:grid-cols-2">
+					<div className="min-w-0">
 						<Label htmlFor="primaryColor">
 							{t("settings.branding.colors.primary", "Primary Color")}
 						</Label>
@@ -351,7 +351,7 @@ function ThemeColorsCard({
 								"Used for buttons, links, and focus states",
 							)}
 						</p>
-						<div className="flex items-center gap-3">
+						<div className="flex flex-wrap items-center gap-3">
 							<Input
 								id="primaryColor"
 								type="color"
@@ -392,7 +392,7 @@ function ThemeColorsCard({
 							)}
 						</div>
 					</div>
-					<div className="flex-1">
+					<div className="min-w-0">
 						<Label htmlFor="accentColor">
 							{t("settings.branding.colors.accent", "Accent Color (Optional)")}
 						</Label>
@@ -402,7 +402,7 @@ function ThemeColorsCard({
 								"Secondary color for highlights",
 							)}
 						</p>
-						<div className="flex items-center gap-3">
+						<div className="flex flex-wrap items-center gap-3">
 							<Input
 								id="accentColor"
 								type="color"
@@ -466,7 +466,7 @@ export function BrandingForm(props: BrandingFormProps) {
 				>
 					{controller.isSaving ? (
 						<>
-							<IconLoader2 className="mr-2 size-4 animate-spin" />
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 							{controller.t("common.saving", "Saving...")}
 						</>
 					) : (

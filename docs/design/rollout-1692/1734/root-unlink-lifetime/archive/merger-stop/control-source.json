@@ -1,0 +1,16 @@
+[
+  {
+    "parent": "a904b3d19815bd511c67514fb48078cd4aec262f",
+    "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+    "rawSha256": "ff740dfa2d89e1b9fab7edbde1f4f294f5b80829ceb03f42b9cb7e643f62a342",
+    "adaptedSha256": "32419064c4165cea13e6526961e7fba5d0531777789ec1bc919146311018f50b",
+    "adaptation": "Import destinations only; parent product logic unchanged"
+  },
+  {
+    "parent": "a904b3d19815bd511c67514fb48078cd4aec262f",
+    "path": "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+    "rawSha256": "2c7690d41e2d1592cfd577f8c4371cb5769cf97ef2de16d7b12b924e42ac0ed3",
+    "adaptedSha256": "2c131cc89e240dedd6c1fef73db4be3b8a9dde3a50ea8acc18366fa457a43c2c",
+    "adaptation": "Import destinations only; parent product logic unchanged"
+  }
+]

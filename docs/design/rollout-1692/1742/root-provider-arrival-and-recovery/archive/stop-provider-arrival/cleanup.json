@@ -1,0 +1,10 @@
+{
+  "checkout": "t3-43ae2b20-e06668fa9f9f50e6",
+  "nodeProcessCount": 0,
+  "matchingProcesses": [],
+  "nextStarted": false,
+  "browserStarted": false,
+  "fixturesStarted": false,
+  "databaseStarted": false,
+  "allExecSessionsCompleted": true
+}

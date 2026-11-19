@@ -1,0 +1,72 @@
+{
+  "legacy-draft": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "f5672fa7a71429568f1a35a158c910acd944e96b0ddd81cc76d234b9f4889696"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "f1cac24fb02bec165b6a07a32205fb6d824d11ec99e32efd51c89fd3084f0c9b"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "legacy-review": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "df5a7f74a483b30ce4318608afdf8f69de30fc68ce1f2263c502cc3698fa8cef"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "c1d0cfb463b123a6a8453f8846161067f2386631980c1cb0325df9ba557c4ddb"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "legacy-approved": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "454e06d972f8b349ab298faff04ffcb48f5a66411393dbcf2397721fb6a3425f"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "ad7635d825f2f816a0df17f50aed2f27340c1bc69d5b33773b78c813b802a264"
+    },
+    "travel_expense_decision_log": {
+      "count": 1,
+      "sha256": "f4ed613003ca52a5156fa4f9ccba2bb110c22c63db66d27e7120a87a017602d5"
+    }
+  },
+  "other-employee": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "194f8f92154cb6dfdc95ac7e2868258a07c770b39cbb5b6264d9c3e82cb4323b"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "34b11949ba35c42e447f23593727f2cea4ba33103c8a58572a606310d54798f2"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "foreign-org": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "98f6c153b3fc8bb81cafd152903fec72460aa717584c955d5838bcc197fd6b13"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "41512205e5f21d828d5320df8b25b8f94f4a3938935dd4662cdf9a17468929b9"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "candidate": "e597efc34bc2bdc1fa5369496781fe6bb0105888",
+  "fix": "047e89193fbafa34ba7a9a3d3a1fee992ccd84bd",
+  "branch": "test/recheck-root-fix",
+  "tree": "a0344cc9f8e88c40c199478a10e712171f1fa5f0",
+  "appTree": "d664630c31a37e8e3ef015810e4842abd701e4e2",
+  "fixAppTree": "d664630c31a37e8e3ef015810e4842abd701e4e2",
+  "cleanTrackedAndIndex": true,
+  "status": "",
+  "verifiedCommit": null,
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "blob": "ec93e4a17ec5da302928f50684466e6b5b98361f",
+      "sha256": "a2a726d048aea2fa2458ba4a5f3cbff4ba5b5fb85ca5d04e4d06efc57cafe4d5"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.activation.test.tsx",
+      "blob": "c89cd65c970fd6942dd84a7249e8e6072b3d2e6f",
+      "sha256": "75d33d2e2c56e1a524776fc85a92ce2ad39f4bb042e909ad53a490410af61b6b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.tsx",
+      "blob": "c1d281434bc7286bad10462355d9b916e675f7bf",
+      "sha256": "63bb81ae5fb704bf30c67e617a163f43e02945e397ff5dc9795e4d5cfc3be98c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "blob": "ab226e1bf98ac87774a1fbd9cc38b3222c3aa493",
+      "sha256": "93177e9a8f41c92a0507c98a18fb1b4688e629ba864aed56abf0234733b4b39d"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "blob": "546714c2f7e5a5d60b8f315ea095d879bcc8fc91",
+      "sha256": "3202d2f06c0331cf832731af8ce87329055015e766f86d0d293e0d34a2894071"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+      "blob": "fb66b4346e69eb4f59090ca5f1000578bc0b803e",
+      "sha256": "eaa84f74a1bf7f648bad279988bb8e47fe124a4fc46715b0a0cd67686b3783b1"
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+      "blob": "c37c23a53ea7595266b3f1e23a7590b3a17dc73a",
+      "sha256": "aaa0d5c00f3b1ac2e347c49d7620eb1cf063576332de7d1e074d6204102e7f8b"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "blob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+      "blob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+      "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193"
+    }
+  ],
+  "configPins": [
+    {
+      "path": "package.json",
+      "blob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "blob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "blob": "72bd6c845fc48f077c52fd789d799cb0928b6873",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "path": ".npmrc",
+      "blob": "901e422dfa4838df9e44e94aff5f9804c71f54bf",
+      "sha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "blob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "blob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "blob": "8b3443699f4cd49c80712705436546ca5934476a",
+      "sha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24"
+    }
+  ],
+  "ownerPins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+      "blob": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7",
+      "sha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7",
+      "publicArchivedSha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+      "blob": "a96430eada71ba47e054fa6b275da3a6599efece",
+      "sha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988",
+      "publicArchivedSha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+      "blob": "b942e55f688615279290645182fc35dc805ad7f8",
+      "sha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320",
+      "publicArchivedSha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+      "blob": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6",
+      "sha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6",
+      "publicArchivedSha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+      "blob": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5",
+      "sha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27",
+      "publicArchivedSha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+      "blob": "e0763b716ac589c655fed3e787dce94c24a33e05",
+      "sha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18",
+      "publicArchivedSha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+      "blob": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427",
+      "sha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1",
+      "publicArchivedSha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1",
+      "archiveMatch": "exact or explicit LF/CRLF materialization"
+    }
+  ],
+  "dependencies": {
+    "manager": "pnpm@12.16.1",
+    "install": "offline frozen copy ignore-scripts verify-store-integrity",
+    "directories": [
+      {
+        "path": "node_modules",
+        "physical": true
+      },
+      {
+        "path": "apps/webapp/node_modules",
+        "physical": true
+      },
+      {
+        "path": "node_modules/.pnpm",
+        "physical": true
+      }
+    ],
+    "appInternalLinks": 153,
+    "rootInternalLinks": 5,
+    "totalInternalLinks": 158,
+    "allRootAndAppLinksResolveInsideOwnCheckout": true,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "premergeControl": {
+    "commit": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+    "fullCommittedSelection": true,
+    "dialogBlob": "a07f2b11a37f26217238434a8df5780e0e2e2e9d",
+    "sharedUploadOwnersUnchanged": true
+  },
+  "preservation": "Exact original candidate HEAD, tree, clean index/worktree and source pins restored after ordinary Git selection; all original proofs remain at their original Git objects. No publication proof is rewritten.",
+  "resources": {
+    "ownedProcessCount": 0,
+    "ownedNextServersStarted": 0,
+    "ownedBrowserContextsStarted": 0,
+    "ownedFixturesStarted": 0,
+    "ownedContainersStarted": 0,
+    "remainingBridges": false,
+    "processInspection": "CIM read-only, command path restricted to own absolute checkout",
+    "cleanupScope": "OWN ONLY; no other process/container/worktree/dependency cleanup",
+    "verifiedCommit": null
+  }
+}

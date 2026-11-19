@@ -1,0 +1,9 @@
+file:///X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/docs/design/rollout-1692/1833/verify-runtime.mjs:10
+const check=(name,value)=>{results.checks.push({name,passed:Boolean(value)});if(!value)throw Error(name)};
+                                                                                             ^
+
+Error: preset Escape restores trigger focus
+    at check (file:///X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/docs/design/rollout-1692/1833/verify-runtime.mjs:10:94)
+    at file:///X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/docs/design/rollout-1692/1833/verify-runtime.mjs:36:2
+
+Node.js v26.9.0

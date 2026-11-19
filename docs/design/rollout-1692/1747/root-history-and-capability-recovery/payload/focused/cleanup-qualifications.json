@@ -1,0 +1,12 @@
+{
+  "browserContextsClosed": 5,
+  "controllerForceTermination": "After exact PID71968/parent88240/creation2026-11-18T04:17:52Z/path verification, Windows required taskkill /F. Normal Stop-Process NullReference and taskkill without /F retained as tooling failures.",
+  "twoBoundedCleanupScriptCorrections": true,
+  "allOperationalResourcesAbsent": true,
+  "processEvidence": "process-cleanup.json + resources-final.json",
+  "privateFixtureManifestsRetained": true,
+  "privateBrowserProfilesRemoved": true,
+  "noPeerGlobalKill": true,
+  "noCacheDependencyCleanup": true,
+  "resourceCount": 0
+}

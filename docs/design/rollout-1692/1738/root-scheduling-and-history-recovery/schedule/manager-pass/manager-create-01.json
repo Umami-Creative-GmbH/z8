@@ -1,0 +1,23 @@
+{
+  "actor": "standard manager",
+  "normalUi": true,
+  "addedGrants": false,
+  "rawResponses": false,
+  "steps": [],
+  "subareaOption": "Independent scheduling office – Independent reception",
+  "beforeSubmit": {
+    "date": "Nov 16, 2026",
+    "start": "09:00",
+    "end": "17:00",
+    "subarea": "Independent scheduling office – Independent reception",
+    "notes": "Independent manager created draft"
+  },
+  "afterSubmit": {
+    "path": "/en/scheduling",
+    "summary": [
+      "Shift list (5)"
+    ],
+    "publish": "Publish (3)",
+    "success": true
+  }
+}

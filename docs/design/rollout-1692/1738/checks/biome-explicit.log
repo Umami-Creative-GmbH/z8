@@ -1,0 +1,235 @@
+src\app\[locale]\(app)\scheduling\page.test.tsx:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × Sort these imports.
+  
+  > 1 │ import { beforeEach, describe, expect, it, vi } from "vitest";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 2 │ import { renderToStaticMarkup } from "react-dom/server";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3 │ 
+    4 │ const mockState = vi.hoisted(() => ({
+  
+  i Safe fix: Organize imports and exports (Biome)
+  
+      1     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      2     │ - import·{·renderToStaticMarkup·}·from·"react-dom/server";␍
+          1 │ + import·{·renderToStaticMarkup·}·from·"react-dom/server";
+          2 │ + import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      3   3 │   ␍
+      4   4 │   const mockState = vi.hoisted(() => ({␍
+  
+
+src\components\scheduling\scheduler\employee-shift-schedule.test.tsx:2:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × Sort these imports.
+  
+    1 │ /** @vitest-environment jsdom */
+  > 2 │ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 3 │ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+  > 4 │ import { act as actPreact } from "preact/test-utils";
+  > 5 │ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+  > 6 │ import { queryKeys } from "@/lib/query/keys";
+  > 7 │ import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    8 │ import { EmployeeShiftSchedule } from "./employee-shift-schedule";
+    9 │ 
+  
+  i Safe fix: Organize imports and exports (Biome)
+  
+      4   4 │   import { act as actPreact } from "preact/test-utils";␍
+      5   5 │   import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";␍
+      6     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+      7     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+          6 │ + import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+          7 │ + import·{·queryKeys·}·from·"@/lib/query/keys";␍
+      8   8 │   import { EmployeeShiftSchedule } from "./employee-shift-schedule";␍
+      9   9 │   ␍
+  
+
+src\components\scheduling\scheduler\schedule-shift-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    28 28 │         <ul className="divide-y border-t">␍
+    29 29 │           {shifts.map((shift) => (␍
+    30    │ - → → → → → <li·key={shift.id}·className="[content-visibility:auto]·[contain-intrinsic-size:auto_5rem]">␍
+       30 │ + → → → → → <li␍
+       31 │ + → → → → → → key={shift.id}␍
+       32 │ + → → → → → → className="[content-visibility:auto]·[contain-intrinsic-size:auto_5rem]"␍
+       33 │ + → → → → → >␍
+    31 34 │               <button␍
+    32 35 │                 type="button"␍
+  
+
+src\components\scheduling\scheduler\shift-scheduler.test.tsx:7:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × Some imports or exports are not organized.
+  
+     5 │ import { afterEach, beforeEach, expect, it, vi } from "vitest";
+     6 │ import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+   > 7 │ const { getShiftsMock, upsertShiftMock } = vi.hoisted(() => ({
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   > 8 │ 	upsertShiftMock: vi.fn(),
+        ...
+  > 15 │ 	useTolgee: () => ({ getLanguage: () => "en" }),
+  > 16 │ }));
+       │ ^^^^
+    17 │ vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
+    18 │ 	getShifts: getShiftsMock,
+  
+  i This statement must be preceded by a blank line. Add a newline before this statement.
+  
+     5 │ import { afterEach, beforeEach, expect, it, vi } from "vitest";
+     6 │ import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+   > 7 │ const { getShiftsMock, upsertShiftMock } = vi.hoisted(() => ({
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   > 8 │ 	upsertShiftMock: vi.fn(),
+   > 9 │ 	getShiftsMock: vi.fn(async (): Promise<{ success: true; data: ShiftWithRelations[] }> => ({ success: true, data: [] })),
+  > 10 │ }));
+       │ ^^^^
+    11 │ import { ShiftDialog } from "../shifts/shift-dialog";
+    12 │ import { ShiftScheduler } from "./shift-scheduler";
+  
+  i This statement must be preceded by a blank line. Add a newline before this statement.
+  
+     9 │ 	getShiftsMock: vi.fn(async (): Promise<{ success: true; data: ShiftWithRelations[] }> => ({ success: true, data: [] })),
+    10 │ }));
+  > 11 │ import { ShiftDialog } from "../shifts/shift-dialog";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    12 │ import { ShiftScheduler } from "./shift-scheduler";
+    13 │ vi.mock("@tolgee/react", () => ({
+  
+  i This statement must be preceded by a blank line. Add a newline before this statement.
+  
+    11 │ import { ShiftDialog } from "../shifts/shift-dialog";
+    12 │ import { ShiftScheduler } from "./shift-scheduler";
+  > 13 │ vi.mock("@tolgee/react", () => ({
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 14 │ 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+  > 15 │ 	useTolgee: () => ({ getLanguage: () => "en" }),
+  > 16 │ }));
+       │ ^^^^
+    17 │ vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
+    18 │ 	getShifts: getShiftsMock,
+  
+  i Safe fix: Organize imports and exports (Biome)
+  
+      5   5 │   import { afterEach, beforeEach, expect, it, vi } from "vitest";␍
+      6   6 │   import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";␍
+          7 │ + ␍
+      7   8 │   const { getShiftsMock, upsertShiftMock } = vi.hoisted(() => ({␍
+      8   9 │   	upsertShiftMock: vi.fn(),␍
+      9  10 │   	getShiftsMock: vi.fn(async (): Promise<{ success: true; data: ShiftWithRelations[] }> => ({ success: true, data: [] })),␍
+     10  11 │   }));␍
+         12 │ + ␍
+     11  13 │   import { ShiftDialog } from "../shifts/shift-dialog";␍
+     12  14 │   import { ShiftScheduler } from "./shift-scheduler";␍
+         15 │ + ␍
+     13  16 │   vi.mock("@tolgee/react", () => ({␍
+     14  17 │   	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),␍
+  
+
+src\components\scheduling\scheduler\shift-scheduler.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      7   7 │   const { getShiftsMock, upsertShiftMock } = vi.hoisted(() => ({␍
+      8   8 │     upsertShiftMock: vi.fn(),␍
+      9     │ - → getShiftsMock:·vi.fn(async·():·Promise<{·success:·true;·data:·ShiftWithRelations[]·}>·=>·({·success:·true,·data:·[]·})),␍
+          9 │ + → getShiftsMock:·vi.fn(␍
+         10 │ + → → async·():·Promise<{·success:·true;·data:·ShiftWithRelations[]·}>·=>·({␍
+         11 │ + → → → success:·true,␍
+         12 │ + → → → data:·[],␍
+         13 │ + → → }),␍
+         14 │ + → ),␍
+     10  15 │   }));␍
+     11  16 │   import { ShiftDialog } from "../shifts/shift-dialog";␍
+    ······· │ 
+     86  91 │           startTime: "09:00",␍
+     87  92 │           endTime: "17:00",␍
+     88     │ - → → → → templateId:·null,·subareaId:·"reception",·recurrenceId:·null,␍
+     89     │ - → → → → publishedAt:·null,·publishedBy:·null,·notes:·null,·color:·null,␍
+     90     │ - → → → → createdAt:·new·Date("2026-11-01T00:00:00Z"),·updatedAt:·new·Date("2026-11-01T00:00:00Z"),·createdBy:·"planner",␍
+         93 │ + → → → → templateId:·null,␍
+         94 │ + → → → → subareaId:·"reception",␍
+         95 │ + → → → → recurrenceId:·null,␍
+         96 │ + → → → → publishedAt:·null,␍
+         97 │ + → → → → publishedBy:·null,␍
+         98 │ + → → → → notes:·null,␍
+         99 │ + → → → → color:·null,␍
+        100 │ + → → → → createdAt:·new·Date("2026-11-01T00:00:00Z"),␍
+        101 │ + → → → → updatedAt:·new·Date("2026-11-01T00:00:00Z"),␍
+        102 │ + → → → → createdBy:·"planner",␍
+     91 103 │           subarea: { id: "reception", name: "Reception", location: { id: "office", name: "Office" } },␍
+     92 104 │         },␍
+  
+
+src\components\scheduling\scheduler\shift-scheduler.tsx:9:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × Sort these imports.
+  
+     7 │ import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
+     8 │ import "@schedule-x/theme-default/dist/index.css";
+   > 9 │ import { IconPlus } from "@tabler/icons-react";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 10 │ import { useTolgee, useTranslate } from "@tolgee/react";
+        ...
+  > 40 │ import { ScheduleReadFailure } from "./schedule-read-failure";
+  > 41 │ import { ScheduleShiftList } from "./schedule-shift-list";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    42 │ import { useCoverageHeatmap } from "./use-coverage-heatmap";
+    43 │ import { useShiftPublishFlow } from "./use-shift-publish-flow";
+  
+  i Safe fix: Organize imports and exports (Biome)
+  
+     19  19 │   import { Button } from "@/components/ui/button";␍
+     20  20 │   import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";␍
+     21     │ - import·{·parsePlainDate,·type·PlainDate,·type·ZonedDateTime·}·from·"@/lib/datetime/temporal-core";␍
+     22     │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     23     │ - import·{·toScheduleXLocale·}·from·"@/lib/calendar/schedule-x-locale";␍
+         21 │ + import·{·toScheduleXLocale·}·from·"@/lib/calendar/schedule-x-locale";␍
+         22 │ + import·{·type·PlainDate,·parsePlainDate,·type·ZonedDateTime·}·from·"@/lib/datetime/temporal-core";␍
+         23 │ + import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     24  24 │   import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";␍
+     25  25 │   import { ShiftDialog } from "../shifts/shift-dialog";␍
+     26     │ - import·{·EmployeeShiftSchedule·}·from·"./employee-shift-schedule";␍
+     27     │ - import·{·CoverageHeatmapOverlay·}·from·"./coverage-heatmap-overlay";␍
+         26 │ + import·{·CoverageHeatmapOverlay·}·from·"./coverage-heatmap-overlay";␍
+         27 │ + import·{·EmployeeShiftSchedule·}·from·"./employee-shift-schedule";␍
+     28  28 │   import { PublishComplianceDialog } from "./publish-compliance-dialog";␍
+     29  29 │   import { PublishFab } from "./publish-fab";␍
+     30  30 │   import { ScheduleComplianceBanner } from "./schedule-compliance-banner";␍
+     31     │ - import·{·createScheduleXDragAndDropPlugin·}·from·"./schedule-x-drag-and-drop";␍
+     32     │ - import·{␍
+     33     │ - → calendarRangeToDateRange,␍
+     34     │ - → eventToShiftTimes,␍
+     35     │ - → initialSchedulerView,␍
+     36     │ - → filterShiftsForEmployee,␍
+     37     │ - → scheduleXFirstDayOfWeek,␍
+     38     │ - }·from·"./shift-scheduler-utils";␍
+     39     │ - import·{·TemplateSidebar·}·from·"./template-sidebar";␍
+     40     │ - import·{·ScheduleReadFailure·}·from·"./schedule-read-failure";␍
+     41     │ - import·{·ScheduleShiftList·}·from·"./schedule-shift-list";␍
+         31 │ + import·{·ScheduleReadFailure·}·from·"./schedule-read-failure";␍
+         32 │ + import·{·ScheduleShiftList·}·from·"./schedule-shift-list";␍
+         33 │ + import·{·createScheduleXDragAndDropPlugin·}·from·"./schedule-x-drag-and-drop";␍
+         34 │ + import·{␍
+         35 │ + → calendarRangeToDateRange,␍
+         36 │ + → eventToShiftTimes,␍
+         37 │ + → filterShiftsForEmployee,␍
+         38 │ + → initialSchedulerView,␍
+         39 │ + → scheduleXFirstDayOfWeek,␍
+         40 │ + }·from·"./shift-scheduler-utils";␍
+         41 │ + import·{·TemplateSidebar·}·from·"./template-sidebar";␍
+     42  42 │   import { useCoverageHeatmap } from "./use-coverage-heatmap";␍
+     43  43 │   import { useShiftPublishFlow } from "./use-shift-publish-flow";␍
+  
+
+Checked 16 files in 37ms. No fixes applied.
+Found 6 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

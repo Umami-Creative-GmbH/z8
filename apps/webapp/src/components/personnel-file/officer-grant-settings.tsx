@@ -219,21 +219,28 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 						void form.handleSubmit();
 					}}
 				>
-					<Card>
-						<CardHeader>
-							<CardTitle>
+					{/* A bordered section, not a card: it already sits inside the officers card. */}
+					<section
+						aria-labelledby="personnel-file-officer-editor-title"
+						className="space-y-6 rounded-lg border p-4"
+					>
+						<div className="space-y-1">
+							<h3
+								id="personnel-file-officer-editor-title"
+								className="font-semibold leading-none"
+							>
 								{editingGrant
 									? t("settings.personnelFiles.officers.editTitle", "Edit personnel file officer")
 									: t("settings.personnelFiles.officers.addTitle", "Add personnel file officer")}
-							</CardTitle>
-							<CardDescription>
+							</h3>
+							<p className="text-sm text-muted-foreground">
 								{t(
 									"settings.personnelFiles.officers.editorDescription",
 									"Choose whose personnel files the officer manages and which document categories. Officers see, upload, edit, delete and download every document in their scope.",
 								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-6">
+							</p>
+						</div>
+						<div className="space-y-6">
 							<form.Field name="officerEmployeeId">
 								{(field) => (
 									<EmployeeSingleSelect
@@ -327,8 +334,8 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 									{t("common.cancel", "Cancel")}
 								</Button>
 							</div>
-						</CardContent>
-					</Card>
+						</div>
+					</section>
 				</form>
 			) : null}
 		</div>

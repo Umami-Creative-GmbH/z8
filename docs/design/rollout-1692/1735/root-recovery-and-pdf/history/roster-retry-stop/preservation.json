@@ -1,0 +1,58 @@
+{
+  "head": "4c397c1adb86b817a8f50cf7780920d69913c4d6",
+  "tree": "aff90d07c07bd5eb460517b2a9a47470a4f9dd46",
+  "source": "9870df191c6b686106b38dcfa1bf6590ed611541",
+  "latestVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "verifiedCommit1735": null,
+  "trackedStatus": "",
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/reports/report-filters.tsx",
+      "rawSha256": "9e6487f1dabffde0eb115c688ba604b3845e22e25bd8b0a61e698cf69131d0ad",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/date-range-picker.tsx",
+      "rawSha256": "8617cbeb3bc2f01dbeac3b99dd0a972eed8722b2fd1ecc3ac94024de0d89aec8",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/date-range-picker.test.tsx",
+      "rawSha256": "aa49daa170cd0fdc364f96517f3c6bb41850ec3310316199fa16bde9569a3247",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "rawSha256": "7038b86db56f68543c13d97145902aac280863217afb0df437ef677bf22620b0",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "rawSha256": "05e622ecfc5f6dfa48cfd6f06403e48c2f0bb5267ee6a2098c74d9ec9f270aa2",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "rawSha256": "a0a4599bf8c4a2a8c4ee46de372a06a318159b54665b7df3038ce72be4011c23",
+      "matches": true
+    }
+  ],
+  "originalStop": {
+    "sealSha256": "e730a6ba2d1f7906738437ff956db5de71f8381cd584f7b58dd214d25e4079a4",
+    "allowlistSha256": "95a66f3c022c2346f069397c8826e19866624300f3079001488b87f870845ad0"
+  },
+  "sourceFixes": false,
+  "gitWrites": false,
+  "packageOperations": false,
+  "archivedHelperExecutions": false,
+  "bridgeRemoved": true,
+  "privateRuntimeManifestsRead": false,
+  "authStateReadOrCopied": false,
+  "ownedBrowsers": 0,
+  "ownedNextProcesses": 0,
+  "ownedControllerProcesses": 0,
+  "ownedListeners": 0,
+  "ownedServices": 0,
+  "cleanup": "Only one hash-checked own test bridge existed and was removed. No runtime/browser/controller/service was started, so there are no owned runtime PIDs, listeners or label services to stop."
+}

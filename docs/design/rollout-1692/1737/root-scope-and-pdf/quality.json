@@ -1,0 +1,102 @@
+{
+  "sourceCommit": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+  "base": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx": "ee82f580d522f3c090da1d2a005a4776a6d338575a9bc09bcd6f3889e19d9ae6",
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.test.tsx": "5c7840140b30d39547860c25e78f91bf7627f6231113b742b42eff5166f6d84e",
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx": "7035a7a6c086d8b8f3a88fb2ed975ef29088efb7369a6a5a82b35cf00000599a",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx": "0874fce137d4d67a82f8cd63d4574e0af2bce37d357beaa71c404c7fd2350eba",
+    "apps/webapp/src/components/site-header.test.tsx": "481becd103cab876c9c9ee371b7bb84527a6710ea1cc4a946f4f053c61e129c6",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts": "b4cad6c3dd349e3d86c0056795a4992ab3f3d353a7a3ebb25a78ae0fe6cf23fa",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx": "e66f164beb7857c80cc56ac921519ec08df6ee99c783a20207768f2a0fed7a87"
+  },
+  "changedSourcePaths": [
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx"
+  ],
+  "runs": [
+    {
+      "name": "unit",
+      "physicalFiles": 61,
+      "passed": 587
+    },
+    {
+      "name": "public",
+      "physicalFiles": 5,
+      "passed": 20
+    }
+  ],
+  "unitFiles": 66,
+  "unitCases": 607,
+  "compiler": {
+    "beforeErrors": 5,
+    "intermediateErrors": 1,
+    "afterErrors": 0,
+    "afterCompileSuccess": true,
+    "qualification": "Actual installed Babel/React Compiler first declines unsupported finally/dynamic imports, then a conditional in try. Lazy serialization and Blob handoff move to ordinary helpers; component uses existing runWithCleanup. Guards, labels, MIME, filenames, canonical serializers/builders and delayed same-URL revocation remain. No compiler suppression."
+  },
+  "doctor": {
+    "scannedRevision": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+    "commandPinsMatchCommittedSource": true,
+    "errors": 0,
+    "warnings": 6,
+    "qualification": "Dirty provisional revision field; all nine final command canonical pins equal committed correction. Six retained architecture/effect/picker warnings, no suppression."
+  },
+  "runtime": {
+    "before": {
+      "checks": 5,
+      "captures": 4
+    },
+    "after": {
+      "checks": 5,
+      "captures": 6
+    },
+    "pdf": {
+      "checks": 2,
+      "captures": 3,
+      "bytes": 3554,
+      "sha256": "e06706a5ae070d51197e086eceabb1f58e9436ac9c1fec06e1179f2581767a7a",
+      "monthly": [
+        101,
+        46,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        147
+      ],
+      "archivedVanKm": 118,
+      "ownVehicleKm": 29
+    },
+    "native": {
+      "checks": 2,
+      "qualification": "Actual generated container/arrival/exports React tree. Native launch disables notifications and observed Notification API unavailable; no production/browser grant assertion."
+    }
+  },
+  "postgres": {
+    "freshStandaloneSuites": 0,
+    "inheritedFiles": 1,
+    "inheritedCases": 6,
+    "seed": "Own verified disposable database uses withCanonicalRecords helper and fixed stored offsets/zones; only synthetic vehicle/work records, no identities/grants/memberships."
+  },
+  "qualifications": [
+    "Permanent real OrganizationContextProvider+QueryClient transport regression fails before and passes after local Retry. No mocked organization hook for this case; no initial snapshot/action read until scope recovers. Pending-session/mismatched-scope guards remain; generic feedback uses existing scope.refetch.",
+    "Nine additional independent vehicle range/refusal/read/export controls and ten preserved1736 controls remain green; multiset totals deduplicate physical path/fullName/occurrence. Earlier worker/merger exact selections are not added to these counts.",
+    "Only three source paths change from the native merge: vehicle container, route-local exports and permanent scope regression. Canonical reader, actions, serializers, document builder, calculations, captured offset grouping, shared PDF and role/privacy owners remain unchanged.",
+    "Actual original context GET abort and unchanged completed HTTP200 recovery pass before any generated snapshot. Controlled before overlays only the exact old container on current support/export code with cold owned Next processes; not full historical app execution. Notification-denied isolated contexts, settled geometry and no blocking dialogs are required.",
+    "New own-fixture canonical records produce Jan101/Feb46/Mar0, archived118/own29, total147 with fixed +120/-300 captured zones. Public Generate and PDF export emit a completed native Browser event; actual3554bytes parse for identity/period/generation and all twelve numeric months. Prior CSV/XLSX completed147 evidence remains inherited on its own fixture, not a fresh root three-format run.",
+    "The generated phone PDF-operational image retains controls and147 snapshot but is scrolled past the page heading; it is not a top-of-page matched composition claim. Scope before/after phone images retain the heading. Existing development/Pets/Rendering overlays remain qualified; no numeric performance certification.",
+    "Fresh native normal private-stdin sign-in and actual Generate inspect container/arrival/export owners. React timing/Activity/authority races remain public assembled/query proof, not live concurrent revocation. Final connected Next compile/config/session probes are clean for vehicle; this does not erase retained global/settings diagnostics.",
+    "Initial strict lint fails an unused audit import; removed without assertion weakening. Intermediate compiler event and emitted code are retained. Runtime drafts were adapted only to bind the exact root private-Temp nonce pointer as well as workspace .tmp; kind/loopback/exact3names/labels/database guards remain. Seed wrapper uses no inherited NODE_OPTIONS; no cookie/state transfer, production-login bypass or external calls.",
+    "No fresh standalone PostgreSQL suite; prior vehicle6 remain inherited. All owned browsers, verified Next tree/port64135 and3label services cleaned. Root158internal dependency links/sixconfig hashes and approvedlock remain unchanged. Production generation, remoteTolgee/alllocales/provider/device/truezoom/offline/exhaustive accessibility/global transitions remain unpassed. Issues stay OPEN; no dev merge/deployment."
+  ]
+}

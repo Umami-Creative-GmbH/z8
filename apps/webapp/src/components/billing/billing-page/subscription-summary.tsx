@@ -5,8 +5,12 @@ import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatEuroAmount, seatCost, seatInterval } from "@/lib/billing/seat-prices";
-import { MONTHLY_PRICE, YEARLY_PRICE_PER_MONTH } from "../pricing-cards.constants";
+import {
+	formatEuroAmount,
+	SEAT_PRICES_CENTS,
+	seatCost,
+	seatInterval,
+} from "@/lib/billing/seat-prices";
 import type { SubscriptionInfo } from "./types";
 
 interface SubscriptionSummaryProps {
@@ -28,6 +32,9 @@ export function SubscriptionSummary({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	// Formatted in the app locale before translation, like the pricing cards ("1,50" in German).
+	// Every amount here sits in a catalog string that already carries the euro sign
+	// ("€{amount}", "€{price}/seat/mo"), so it takes the bare number; see
+	// formatEuroCurrency for amounts that stand alone.
 	const euros = (cents: number) => formatEuroAmount(cents, locale);
 	const formatDate = (dateStr: string | null) => {
 		if (!dateStr) return t("common:common.notApplicable", "N/A");
@@ -49,11 +56,7 @@ export function SubscriptionSummary({
 			case "trialing":
 				return <Badge variant="default">{t("billing.status.trial", "Trial")}</Badge>;
 			case "active":
-				return (
-					<Badge variant="default" className="bg-green-600">
-						{t("common:common.active", "Active")}
-					</Badge>
-				);
+				return <Badge variant="default">{t("common:common.active", "Active")}</Badge>;
 			case "past_due":
 				return <Badge variant="destructive">{t("billing.status.pastDue", "Past Due")}</Badge>;
 			case "canceled":
@@ -66,10 +69,12 @@ export function SubscriptionSummary({
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							{t("billing.currentPlan", "Current Plan")} {statusBadge}
+				<div className="flex flex-wrap items-center justify-between gap-4">
+					<div className="min-w-0 space-y-1.5">
+						<CardTitle>
+							<h2 className="flex flex-wrap items-center gap-2">
+								{t("billing.currentPlan", "Current Plan")} {statusBadge}
+							</h2>
 						</CardTitle>
 						<CardDescription>
 							{subscription.billingInterval === "year"
@@ -90,31 +95,33 @@ export function SubscriptionSummary({
 				<div className="grid gap-6 md:grid-cols-3">
 					<div className="flex items-start gap-3">
 						<div className="rounded-lg bg-primary/10 p-2">
-							<IconUsers className="size-5 text-primary" />
+							<IconUsers aria-hidden="true" className="size-5 text-primary" />
 						</div>
 						<div>
 							<p className="text-sm text-muted-foreground">{t("billing.activeSeats", "Active Seats")}</p>
-							<p className="text-2xl font-bold">{subscription.currentSeats}</p>
+							<p className="text-2xl font-semibold tabular-nums">{subscription.currentSeats}</p>
 							{kioskSeats === null ? (
 								<p className="text-xs text-muted-foreground">
 									{subscription.billingInterval === "year"
 										? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
-												price: YEARLY_PRICE_PER_MONTH,
+												price: euros(SEAT_PRICES_CENTS.full.yearPerMonth),
 											})
-										: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
+										: t("billing.priceSeatMonth", "€{price}/seat/mo", {
+												price: euros(SEAT_PRICES_CENTS.full.month),
+											})}
 								</p>
 							) : null}
 						</div>
 					</div>
 					<div className="flex items-start gap-3">
 						<div className="rounded-lg bg-primary/10 p-2">
-							<IconCalendar className="size-5 text-primary" />
+							<IconCalendar aria-hidden="true" className="size-5 text-primary" />
 						</div>
 						<div>
 							{subscription.isTrialing ? (
 								<>
 									<p className="text-sm text-muted-foreground">{t("billing.trialEnds", "Trial Ends")}</p>
-									<p className="text-2xl font-bold">
+									<p className="text-2xl font-semibold tabular-nums">
 										{t("billing.days", "{count} days", { count: getTrialDaysRemaining() })}
 									</p>
 									<p className="text-xs text-muted-foreground">{formatDate(subscription.trialEnd)}</p>
@@ -122,7 +129,7 @@ export function SubscriptionSummary({
 							) : (
 								<>
 									<p className="text-sm text-muted-foreground">{t("billing.nextBilling", "Next Billing")}</p>
-									<p className="text-2xl font-bold">{formatDate(subscription.currentPeriodEnd)}</p>
+									<p className="text-2xl font-semibold tabular-nums">{formatDate(subscription.currentPeriodEnd)}</p>
 									{subscription.cancelAt ? (
 										<p className="text-xs text-destructive">
 											{t("billing.cancelsOn", "Cancels on {date}", {
@@ -136,11 +143,11 @@ export function SubscriptionSummary({
 					</div>
 					<div className="flex items-start gap-3">
 						<div className="rounded-lg bg-primary/10 p-2">
-							<IconCreditCard className="size-5 text-primary" />
+							<IconCreditCard aria-hidden="true" className="size-5 text-primary" />
 						</div>
 						<div>
 							<p className="text-sm text-muted-foreground">{t("billing.monthlyCost", "Monthly Cost")}</p>
-							<p className="text-2xl font-bold">
+							<p className="text-2xl font-semibold tabular-nums">
 								{t("billing.amount", "€{amount}", { amount: euros(cost.totalPerMonthCents) })}
 							</p>
 							<p className="text-xs text-muted-foreground">

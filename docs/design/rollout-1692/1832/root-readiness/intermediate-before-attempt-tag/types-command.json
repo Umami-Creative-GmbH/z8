@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "typecheck"
+  ],
+  "exitCode": 0,
+  "sourceHead": "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": "96fcecffabddc5ca86935804a88fbf66af411e98c7261dfc56d45860db5c079f",
+    "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+  }
+}

@@ -1,0 +1,421 @@
+{
+  "phase": "after",
+  "fixture": "disposable performance fixture; current member specific payroll grant; former target; no personnel/expense grant",
+  "scope": {
+    "organizationId": "perf-small-90eebfc4a221",
+    "userId": "perf-small-2-90eebfc4a221",
+    "employeeId": "13a2c846-0999-440b-ad8b-7a8081a177dc"
+  },
+  "snapshots": [
+    {
+      "name": "desktop-light",
+      "identity": {
+        "head": "6f0d1079cb950c694699d71afd41628514bda495",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+            "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+            "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+            "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+            "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+            "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "0805e45e76470d4920502e0223b95ea6376323563c2fbb8bf99517e6253ec3e7",
+            "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+          },
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+            "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+            "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+            "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+            "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+            "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+            "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+            "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+            "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+            "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+            "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\n\nPayroll\n\n14:28\nUTC+01:00\nLoading clock status\nWork balances\nFixture Person 1\nFormer employee\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nRefresh\nCurrent work balance\n\n+12:00h\n\nThrough Nov 14, 2026\n\nEurope/Berlin\n\nSet opening balance\nRecord overtime payout\nBalance adjustments\nOvertime payout\n-1:00h\nNov 15, 2026\nCancelled\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser cancellation evidence\n\nOvertime payout\n-1:00h\nNov 15, 2026\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancel\nOpening balance\n+20:00h\nNov 12, 2026\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancel\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser replacement evidence\n\nOpening balance\n+20:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser replacement evidence\n\nOpening balance\n+8:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser replacement evidence\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:09\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser original opening",
+        "headings": [
+          "Fixture Person 1Former employee",
+          "Current work balance",
+          "Balance adjustments"
+        ],
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "dark": false,
+        "savedFont": null,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "decodedBytes": 4800000
+      }
+    },
+    {
+      "name": "phone-light",
+      "identity": {
+        "head": "6f0d1079cb950c694699d71afd41628514bda495",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+            "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+            "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+            "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+            "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+            "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "0805e45e76470d4920502e0223b95ea6376323563c2fbb8bf99517e6253ec3e7",
+            "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+          },
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+            "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+            "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+            "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+            "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+            "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+            "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+            "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+            "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+            "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+            "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\n\nPayroll\n\nMore actions\nWork balances\nFixture Person 1\nFormer employee\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nRefresh\nCurrent work balance\n\n+12:00h\n\nThrough Nov 14, 2026\n\nEurope/Berlin\n\nSet opening balance\nRecord overtime payout\nBalance adjustments\nOvertime payout\n-1:00h\nNov 15, 2026\nCancelled\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser cancellation evidence\n\nOvertime payout\n-1:00h\nNov 15, 2026\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancel\nOpening balance\n+20:00h\nNov 12, 2026\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancel\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser replacement evidence\n\nOpening balance\n+20:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser replacement evidence\n\nOpening balance\n+8:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser replacement evidence\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:09\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser original opening",
+        "headings": [
+          "Fixture Person 1Former employee",
+          "Current work balance",
+          "Balance adjustments"
+        ],
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "dark": false,
+        "savedFont": null,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "decodedBytes": 987480
+      }
+    },
+    {
+      "name": "wide-dark",
+      "identity": {
+        "head": "6f0d1079cb950c694699d71afd41628514bda495",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+            "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+            "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+            "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+            "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+            "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "0805e45e76470d4920502e0223b95ea6376323563c2fbb8bf99517e6253ec3e7",
+            "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+          },
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+            "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+            "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+            "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+            "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+            "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+            "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+            "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+            "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+            "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+            "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\n\nPayroll\n\n14:28\nUTC+01:00\nClock In\nToggle theme\nWork balances\nFixture Person 1\nFormer employee\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nRefresh\nCurrent work balance\n\n+12:00h\n\nThrough Nov 14, 2026\n\nEurope/Berlin\n\nSet opening balance\nRecord overtime payout\nBalance adjustments\nOvertime payout\n-1:00h\nNov 15, 2026\nCancelled\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser cancellation evidence\n\nOvertime payout\n-1:00h\nNov 15, 2026\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancel\nOpening balance\n+20:00h\nNov 12, 2026\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancel\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser replacement evidence\n\nOpening balance\n+20:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser replacement evidence\n\nOpening balance\n+8:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser replacement evidence\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:09\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser original opening",
+        "headings": [
+          "Fixture Person 1Former employee",
+          "Current work balance",
+          "Balance adjustments"
+        ],
+        "cssViewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "scrollWidth": 1920,
+        "dark": true,
+        "savedFont": null,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 1920,
+        "height": 1080,
+        "channels": 3,
+        "decodedBytes": 6220800
+      }
+    },
+    {
+      "name": "phone-dark-large",
+      "identity": {
+        "head": "6f0d1079cb950c694699d71afd41628514bda495",
+        "source": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+            "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+            "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+            "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+            "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/employee-work-balance-section.tsx",
+            "raw": "477ad7c9c7fe9e417f737abfd78cb0f7694de1358bc2154bd86486895fe2cae8",
+            "normalized": "29788118b8f4177ee950367a1a6e5af9d200ccf325ccf4d5a7268cf5307a5b07"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+            "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+            "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+            "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+            "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+            "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+            "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+            "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+            "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+          },
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+            "raw": "0805e45e76470d4920502e0223b95ea6376323563c2fbb8bf99517e6253ec3e7",
+            "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+          },
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+            "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+            "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+          },
+          {
+            "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+            "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+            "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+            "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+            "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+            "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+            "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+          },
+          {
+            "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+            "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+            "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+          }
+        ]
+      },
+      "observation": {
+        "text": "Toggle Sidebar\n\nPayroll\n\nMore actions\nWork balances\nFixture Person 1\nFormer employee\nCompleted work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.\nRefresh\nCurrent work balance\n\n+12:00h\n\nThrough Nov 14, 2026\n\nEurope/Berlin\n\nSet opening balance\nRecord overtime payout\nBalance adjustments\nOvertime payout\n-1:00h\nNov 15, 2026\nCancelled\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser cancellation evidence\n\nOvertime payout\n-1:00h\nNov 15, 2026\n\nR044 browser valid payout\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancel\nOpening balance\n+20:00h\nNov 12, 2026\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancel\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:16\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser replacement evidence\n\nOpening balance\n+20:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:16: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:14\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser replacement evidence\n\nOpening balance\n+8:00h\nNov 12, 2026\nCancelled\n\nR044 browser replacement evidence\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:14: R044 browser original opening\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:10\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser replacement evidence\n\nOpening balance\n+10:00h\nNov 12, 2026\nCancelled\n\nR044 browser original opening\n\nRecorded by Fixture Person 2 on Nov 15, 2026, 14:09\n\nCancelled by Fixture Person 2 on Nov 15, 2026, 14:10: R044 browser original opening",
+        "headings": [
+          "Fixture Person 1Former employee",
+          "Current work balance",
+          "Balance adjustments"
+        ],
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollWidth": 390,
+        "dark": true,
+        "savedFont": "large",
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsStatus": "loaded",
+        "loadedFonts": [
+          "__nextjs-Geist"
+        ],
+        "devicePixelRatio": 1,
+        "visualScale": 1
+      },
+      "png": {
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "decodedBytes": 987480
+      }
+    }
+  ],
+  "errors": [],
+  "failures": []
+}

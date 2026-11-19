@@ -1,0 +1,276 @@
+{
+  "status": "accepted",
+  "checks": [
+    "Actual native Generate returns 147 with one heading and no blocking dialog",
+    "Actual native container, arrival and exports tree"
+  ],
+  "qualification": "Fresh unique native browser with normal private-stdin development login, no cookie/state copy/restore/save. --disable-notifications is a fixture-only launch policy, verified in the browser; no production permission change. Actual Generate/147 and container/arrival/export React tree; deferred timing remains separate public-seam proof.",
+  "source": {
+    "head": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+    "beforeRef": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+    "expectedAfterRef": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+    "qualification": "Controlled before uses the exact vehicle container at supplied base; all current supporting sources are hashed independently. This is not full historical application execution.",
+    "source": [
+      {
+        "path": "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx",
+        "bytesSha256": "0b5459484bb06da9010f35dc3101d5b09e4800f56127054dfade9e5007f2d8e6",
+        "canonicalSha256": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44",
+        "gitBlob": "910149c905486c974f3d28e8f0d8b0479e366f14",
+        "expectedRef": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+        "expectedCanonicalSha256": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx",
+        "bytesSha256": "9ccf584aab48aca072746ceefc84c22c30a29c48bab0c8bd2173beb6b250de9a",
+        "canonicalSha256": "7035a7a6c086d8b8f3a88fb2ed975ef29088efb7369a6a5a82b35cf00000599a",
+        "gitBlob": "cf58ef6eaa8996c702049cdd6f0883cd6ee5fed0"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx",
+        "bytesSha256": "30695c6dc53ab892790b26c93e8c6adbf5d63c5f329ecd22b579a3a301367b24",
+        "canonicalSha256": "0874fce137d4d67a82f8cd63d4574e0af2bce37d357beaa71c404c7fd2350eba",
+        "gitBlob": "b59417c290536f3c6a6c95d0cf6cfc9915849a48"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx",
+        "bytesSha256": "53bd5fab3d55326a04f948e3f2f1319d14a04f07bf449cb48934b0e04077cdc5",
+        "canonicalSha256": "ee82f580d522f3c090da1d2a005a4776a6d338575a9bc09bcd6f3889e19d9ae6",
+        "gitBlob": "f2ba48ee3760263e6bcbfc02c0bb92587d545234"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "bytesSha256": "458aeae091078309e2e7f5e41c771d4f843abd7bdce988000e41fea3c04adac0",
+        "canonicalSha256": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b",
+        "gitBlob": "b487c390ca07832fb42920169427bd8e369d0f2d"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+        "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+        "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+        "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+        "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+        "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/actions.ts",
+        "bytesSha256": "66f9764133eca1721ee6dcb1979faacd1c11e8277ef8e2fc704fb0c923c38a07",
+        "canonicalSha256": "280e206b0a99a6fe69a288168af333349ed0773fb9bb04c6c57fb0210acd4c6d",
+        "gitBlob": "9c62f2ce18bad66d3a8b8e504af182c0527b7f08"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/vehicle-distance-work.ts",
+        "bytesSha256": "ea6f3e22d1122f991cebbba0a9402aeee9663848b01ff15515cb27974169e77a",
+        "canonicalSha256": "485d986ead04254e188b09e67aeabcea0d1221f871cc9ac64b62adcd99e09dd4",
+        "gitBlob": "ae88fa9df5b0567159d376439f28c0185016bde4"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/vehicle-distance-report.ts",
+        "bytesSha256": "e7f4281d08d71ff1d903e05839fb49d3e60e03c96c2e3ae76dde957a4ad10963",
+        "canonicalSha256": "79bb7ef5a9f8d0631cd2ab8725329705af964144ea22d1a4ba8c87072c827923",
+        "gitBlob": "fe2abfe9c277e2d22d8434792f8f5e0e24179acc"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document.ts",
+        "bytesSha256": "f4489e57e48a32feeb341c37eebb97e44a9f232e4cb43ebeba72df8f6654e159",
+        "canonicalSha256": "6cbbda2ff1f8cd7e1daf5512fa3ac69796aa8884ca8195709020158a4cfb4ddf",
+        "gitBlob": "46fd663b76500c97e41863f3f3baa4f9684aa8af"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+        "bytesSha256": "20f3b0d62859829021fecaae3b80a4e651ed3204722defec8d8d28e834278d9a",
+        "canonicalSha256": "0d5c9e60afd17e4b05335c0ea6581245b509475ed619f31166007ec9ab14ab52",
+        "gitBlob": "88667c729875fff50c2e7e2be143712336616d14"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document-csv.ts",
+        "bytesSha256": "5bc12a3f91cd0318ab09d7c59186f9674f98d6c92bc87b683278f5c9a8198ed5",
+        "canonicalSha256": "18191f8a70a5cc387ebcc797fdcf1d761779e3bf32f34417561a64193a19c688",
+        "gitBlob": "1ef3dfe526487394202d10c86caaf17638dd2929"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document-excel.ts",
+        "bytesSha256": "687b2e8de9da11a7c1522c432c9a1c0c5abf8ab9fe56cd82e7e03efbaa7ec4d7",
+        "canonicalSha256": "a4a742e019075762eec48b8b2ae382e4daaabbae2c724ada8489593dd4130937",
+        "gitBlob": "e0b3e3f7ed5f1c1ffa5798eb3205a36724453084"
+      }
+    ]
+  },
+  "auth": {
+    "active": 200,
+    "signIn": 200
+  },
+  "permission": {
+    "permission": "unavailable"
+  },
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/reports/vehicles\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/reports/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/reports/vehicles/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "sourceAtEnd": {
+    "head": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+    "beforeRef": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+    "expectedAfterRef": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+    "qualification": "Controlled before uses the exact vehicle container at supplied base; all current supporting sources are hashed independently. This is not full historical application execution.",
+    "source": [
+      {
+        "path": "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx",
+        "bytesSha256": "0b5459484bb06da9010f35dc3101d5b09e4800f56127054dfade9e5007f2d8e6",
+        "canonicalSha256": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44",
+        "gitBlob": "910149c905486c974f3d28e8f0d8b0479e366f14",
+        "expectedRef": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+        "expectedCanonicalSha256": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx",
+        "bytesSha256": "9ccf584aab48aca072746ceefc84c22c30a29c48bab0c8bd2173beb6b250de9a",
+        "canonicalSha256": "7035a7a6c086d8b8f3a88fb2ed975ef29088efb7369a6a5a82b35cf00000599a",
+        "gitBlob": "cf58ef6eaa8996c702049cdd6f0883cd6ee5fed0"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx",
+        "bytesSha256": "30695c6dc53ab892790b26c93e8c6adbf5d63c5f329ecd22b579a3a301367b24",
+        "canonicalSha256": "0874fce137d4d67a82f8cd63d4574e0af2bce37d357beaa71c404c7fd2350eba",
+        "gitBlob": "b59417c290536f3c6a6c95d0cf6cfc9915849a48"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx",
+        "bytesSha256": "53bd5fab3d55326a04f948e3f2f1319d14a04f07bf449cb48934b0e04077cdc5",
+        "canonicalSha256": "ee82f580d522f3c090da1d2a005a4776a6d338575a9bc09bcd6f3889e19d9ae6",
+        "gitBlob": "f2ba48ee3760263e6bcbfc02c0bb92587d545234"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "bytesSha256": "458aeae091078309e2e7f5e41c771d4f843abd7bdce988000e41fea3c04adac0",
+        "canonicalSha256": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b",
+        "gitBlob": "b487c390ca07832fb42920169427bd8e369d0f2d"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+        "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+        "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+        "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+        "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+        "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/actions.ts",
+        "bytesSha256": "66f9764133eca1721ee6dcb1979faacd1c11e8277ef8e2fc704fb0c923c38a07",
+        "canonicalSha256": "280e206b0a99a6fe69a288168af333349ed0773fb9bb04c6c57fb0210acd4c6d",
+        "gitBlob": "9c62f2ce18bad66d3a8b8e504af182c0527b7f08"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/vehicle-distance-work.ts",
+        "bytesSha256": "ea6f3e22d1122f991cebbba0a9402aeee9663848b01ff15515cb27974169e77a",
+        "canonicalSha256": "485d986ead04254e188b09e67aeabcea0d1221f871cc9ac64b62adcd99e09dd4",
+        "gitBlob": "ae88fa9df5b0567159d376439f28c0185016bde4"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/vehicle-distance-report.ts",
+        "bytesSha256": "e7f4281d08d71ff1d903e05839fb49d3e60e03c96c2e3ae76dde957a4ad10963",
+        "canonicalSha256": "79bb7ef5a9f8d0631cd2ab8725329705af964144ea22d1a4ba8c87072c827923",
+        "gitBlob": "fe2abfe9c277e2d22d8434792f8f5e0e24179acc"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document.ts",
+        "bytesSha256": "f4489e57e48a32feeb341c37eebb97e44a9f232e4cb43ebeba72df8f6654e159",
+        "canonicalSha256": "6cbbda2ff1f8cd7e1daf5512fa3ac69796aa8884ca8195709020158a4cfb4ddf",
+        "gitBlob": "46fd663b76500c97e41863f3f3baa4f9684aa8af"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+        "bytesSha256": "20f3b0d62859829021fecaae3b80a4e651ed3204722defec8d8d28e834278d9a",
+        "canonicalSha256": "0d5c9e60afd17e4b05335c0ea6581245b509475ed619f31166007ec9ab14ab52",
+        "gitBlob": "88667c729875fff50c2e7e2be143712336616d14"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document-csv.ts",
+        "bytesSha256": "5bc12a3f91cd0318ab09d7c59186f9674f98d6c92bc87b683278f5c9a8198ed5",
+        "canonicalSha256": "18191f8a70a5cc387ebcc797fdcf1d761779e3bf32f34417561a64193a19c688",
+        "gitBlob": "1ef3dfe526487394202d10c86caaf17638dd2929"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/exporters/report-document-excel.ts",
+        "bytesSha256": "687b2e8de9da11a7c1522c432c9a1c0c5abf8ab9fe56cd82e7e03efbaa7ec4d7",
+        "canonicalSha256": "a4a742e019075762eec48b8b2ae382e4daaabbae2c724ada8489593dd4130937",
+        "gitBlob": "e0b3e3f7ed5f1c1ffa5798eb3205a36724453084"
+      }
+    ]
+  },
+  "closed": true
+}

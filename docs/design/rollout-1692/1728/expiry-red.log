@@ -1,0 +1,226 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/expiring-documents.test.tsx (5 tests | 1 failed) 139ms
+   × names the attention section and opens the authorized document category 60ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/expiring-documents.test.tsx > names the attention section and opens the authorized document category
+TestingLibraryElementError: Unable to find an accessible element with the role "heading" and name `/Expiring documents/`
+
+Here are the accessible roles:
+
+  list:
+
+  Name "":
+  <ul
+    class="divide-y rounded-md border"
+  />
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  <li
+    class="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:flex-nowrap"
+  />
+
+  Name "":
+  <li
+    class="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:flex-nowrap"
+  />
+
+  Name "":
+  <li
+    class="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:flex-nowrap"
+  />
+
+  --------------------------------------------------
+  link:
+
+  Name "First aid card 2024CertificateAnna Example · Expires Oct 31, 2026":
+  <a
+    class="min-w-0 flex-1 space-y-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    href="/personnel-files/employee-1"
+  />
+
+  Name "Language courseOtherBen Example · Expires Oct 31, 2026":
+  <a
+    class="min-w-0 flex-1 space-y-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    href="/personnel-files/employee-2"
+  />
+
+  Name "Medical fitnessCertificateAnna Example · Expires Oct 31, 2026":
+  <a
+    class="min-w-0 flex-1 space-y-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    href="/personnel-files/employee-1"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "Request a renewal of First aid card 2024 (Anna Example)":
+  <button
+    aria-label="Request a renewal of First aid card 2024 (Anna Example)"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+    data-slot="button"
+    type="button"
+  />
+
+  Name "Request a renewal of Medical fitness (Anna Example)":
+  <button
+    aria-label="Request a renewal of Medical fitness (Anna Example)"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+    data-slot="button"
+    type="button"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+      data-slot="card"
+    >
+      <div
+        class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+        data-slot="card-header"
+      >
+        <div
+          class="min-w-0 break-words font-semibold leading-none flex items-center gap-2"
+          data-slot="card-title"
+        >
+          <svg
+            aria-hidden="true"
+            class="tabler-icon tabler-icon-calendar-exclamation size-5 text-muted-foreground"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 21h-9a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5"
+            />
+            <path
+              d="M16 3v4"
+            />
+            <path
+              d="M8 3v4"
+            />
+            <path
+              d="M4 11h16"
+            />
+            <path
+              d="M11 15h1"
+            />
+            <path
+              d="M12 15v3"
+            />
+            <path
+              d="M19 16v3"
+            />
+            <path
+              d="M19 22v.01"
+            />
+          </svg>
+          Expiring documents
+        </div>
+        <div
+          class="text-muted-foreground text-sm"
+          data-slot="card-description"
+        >
+          Documents that expire within the next {days, plural, one {# day} other {# days}}, and documents that already expired.
+        </div>
+      </div>
+      <div
+        class="min-w-0 px-6"
+        data-slot="card-content"
+      >
+        <ul
+          class="divide-y rounded-md border"
+        >
+          <li
+            class="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:flex-nowrap"
+          >
+            <a
+              class="min-w-0 flex-1 space-y-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              href="/personnel-files/employee-1"
+            >
+              <span
+                class="flex flex-wrap items-center gap-2"
+              >
+                <span
+                  class="truncate font-medium"
+                >
+                  First aid card 2024
+                </span>
+                <span
+                  class="inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3 border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90"
+                  data-slot="badge"
+                >
+                  Certificate
+                </span>
+              </span>
+              <span
+                class="block text-sm text-muted-foreground"
+              >
+                Anna Example · Expires Oct 31, 2026
+              </span>
+            </a>
+            <span
+              class="inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3 text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+              data-slot="badge"
+            >
+              Expires in {days, plural, one {# day} other {# days}}
+            </span>
+            <button
+              aria-label="Request a renewal of First aid card 2024 (Anna Example)"
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+              data-slot="button"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="tabler-icon tabler-icon-file-import size-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/personnel-file/expiring-documents.test.tsx:101:16
+     99| it("names the attention section and opens the authorized document cate…
+    100|  renderCard();
+    101|  expect(screen.getByRole("heading", { level: 2, name: /Expiring docume…
+       |                ^
+    102|  expect(screen.getByRole("link", { name: /First aid card 2024/ }).getA…
+    103| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  17:47:21
+   Duration  1.12s (environment 41%, import 31%, tests 14%, transform 12%, setup 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-2f159aee-
+  │ 10fac1c1d358d617\apps\webapp
+

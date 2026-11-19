@@ -1,0 +1,22 @@
+{
+  "started": "2026-11-16T01:29:42.257Z",
+  "finished": "2026-11-16T01:29:51.762Z",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp",
+  "env": "generated disposable local runtime; CI=true pnpm_config_verify_deps_before_run=false",
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "src/lib/effect/services/open-shifts.service.integration.test.ts",
+    "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+    "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+    "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+    "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts"
+  ],
+  "exit": 0,
+  "source": "e595454a2ad5c114e235cb5196500203b17a070e3f015fa5776501bf48bf5ce2"
+}

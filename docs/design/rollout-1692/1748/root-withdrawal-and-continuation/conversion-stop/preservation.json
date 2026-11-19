@@ -1,0 +1,14 @@
+{
+  "headAndAppTreeUnchanged": true,
+  "sourceAndConfigUnchanged": true,
+  "incomingArchivePaths": 74,
+  "incomingArchiveMismatches": [],
+  "archiveVerification": "Git blob/mode equality only; stopped before content/link/image audit",
+  "reportChangedByPriorRootReceipt": "docs/design/rollout-1692/1748.md",
+  "protected63AnchorsPlusBaseline": "Inherited root receipts; full unchanged HEAD/index/worktree preserves those paths; no fresh functional acceptance claimed",
+  "verifiedCommit": null,
+  "originalReportExactGitPrefixPreserved": true,
+  "originalReportGitBytes": 19190,
+  "originalReportGitSha256": "dcff88414097669ee33e8cd092f34748172ca2102e37ee6ae18187c79e2ca50a",
+  "incomingArchiveAndReportPaths": 75
+}

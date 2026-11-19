@@ -1,0 +1,19 @@
+{
+  "kind": "safe metadata for actual completed browser file and actual parser output; no source data recomputation",
+  "rawParsedSha256": "8a8f55f822775f216fcf012f47f0fb705fa6d8b2eb174c01983f3d0f9de8f29e",
+  "format": "csv",
+  "completed": true,
+  "bytes": 1706,
+  "sha256": "62715c7b92ac3b5adc43281a9e74c4bfc3aca1d55128aa84b4f4e9b796550bf3",
+  "actualSuggestedFilename": "report-person-0-1794867902883.csv",
+  "archivalByteIdenticalCopy": "exports/current-admin-2025.csv",
+  "parsedEmployee": "Person 0",
+  "parsedPeriod": "Jan 1, 2025 - Dec 31, 2025",
+  "parser": "stateful RFC-style quoted field parser applied to actual UTF-8 bytes",
+  "actualSheets": null,
+  "canonicalParity": "canonical-export-controls-02.json",
+  "limits": [
+    "Own fixture custom fields and hourly earnings absent; no live custom-field redaction claim",
+    "Original byte-identical synthetic file includes its generated example.test employee email; no real contacts or credentials"
+  ]
+}

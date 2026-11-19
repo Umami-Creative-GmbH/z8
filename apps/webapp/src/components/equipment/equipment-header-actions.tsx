@@ -7,7 +7,7 @@ import {
 	IconSettings,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useTransition } from "react";
+import { type ReactNode, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -19,15 +19,15 @@ import { cn } from "@/lib/utils";
 import { Link, useRouter } from "@/navigation";
 
 /** Reloads the server read; the icon spins until the refreshed page arrives. */
-export function EquipmentRefreshButton() {
+export function EquipmentRefreshButton({ children }: { children?: ReactNode }) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [refreshing, startTransition] = useTransition();
 	const label = t("settings.equipment.custody.reload", "Reload equipment");
 	return (
 		<Button
-			variant="ghost"
-			size="icon"
+			variant={children ? "outline" : "ghost"}
+			size={children ? "default" : "icon"}
 			aria-label={label}
 			title={label}
 			aria-busy={refreshing}
@@ -38,6 +38,7 @@ export function EquipmentRefreshButton() {
 				className={cn("size-4", refreshing && "animate-spin")}
 				aria-hidden="true"
 			/>
+			{children}
 		</Button>
 	);
 }

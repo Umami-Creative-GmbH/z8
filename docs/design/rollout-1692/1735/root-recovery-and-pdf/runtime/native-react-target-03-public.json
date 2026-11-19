@@ -1,0 +1,38 @@
+{
+  "componentPresence": [
+    {
+      "name": "ReportsContainer",
+      "present": true
+    },
+    {
+      "name": "ReportWorkspace",
+      "present": true
+    },
+    {
+      "name": "ReportFilters",
+      "present": true
+    },
+    {
+      "name": "ReportEmployeeSelector",
+      "present": true
+    },
+    {
+      "name": "DateRangePicker",
+      "present": true
+    }
+  ],
+  "actualAdmittedTarget": true,
+  "waitExit": 0,
+  "inspectExit": 0,
+  "inspectSuccess": true,
+  "exactReportsContainerTarget": true,
+  "treeColumnSelection": "Second numerical column is fiber ID; first is depth",
+  "inspectDataKeys": [
+    "lifecycle",
+    "source",
+    "text"
+  ],
+  "rawTreeSha256": "9135b86d3ca008acb40f85036d15c6dc933cb9175615a72a8737e86d29eccd1e",
+  "rawInspectSha256": "1f5cb48bf7782defbec8a600c498e09dbec947282c1ea997d9864efd6a7b9ad9",
+  "qualification": "Only structure/names/outcomes exposed; props and hook values remain private. No render/performance audit claim."
+}

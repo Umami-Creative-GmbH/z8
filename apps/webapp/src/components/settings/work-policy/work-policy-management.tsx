@@ -18,9 +18,15 @@ import { WorkPolicyTable } from "./work-policy-table";
 interface WorkPolicyManagementProps {
 	organizationId: string;
 	accessTier: SettingsAccessTier;
+	/** The organization's resolved IANA timezone (UTC when unset). */
+	organizationTimezone: string;
 }
 
-export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyManagementProps) {
+export function WorkPolicyManagement({
+	organizationId,
+	accessTier,
+	organizationTimezone,
+}: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	// Go-live fix links open the assignments tab with `?view=assignments`.
@@ -141,7 +147,10 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 
 				{canManagePolicies ? (
 					<TabsContent value="compliance" className="space-y-4">
-						<WorkPolicyComplianceView organizationId={organizationId} />
+						<WorkPolicyComplianceView
+							organizationId={organizationId}
+							organizationTimezone={organizationTimezone}
+						/>
 					</TabsContent>
 				) : null}
 			</Tabs>

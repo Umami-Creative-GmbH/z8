@@ -1,0 +1,98 @@
+{
+  "actions": [
+    {
+      "disabled": false,
+      "name": "Toggle Sidebar"
+    },
+    {
+      "disabled": false,
+      "name": "Current timezone Europe/Berlin, 14:13, UTC+01:00"
+    },
+    {
+      "disabled": false,
+      "name": "Clock In"
+    },
+    {
+      "disabled": false,
+      "name": "Refresh data"
+    },
+    {
+      "disabled": false,
+      "name": "Toggle theme"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications (2 unread)"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications (2 unread)"
+    },
+    {
+      "disabled": false,
+      "name": "More actions"
+    },
+    {
+      "disabled": false,
+      "name": "Nov 10, 2026"
+    },
+    {
+      "disabled": false,
+      "name": "Transport"
+    },
+    {
+      "disabled": false,
+      "name": "EUR – Euro"
+    },
+    {
+      "disabled": false,
+      "name": ""
+    },
+    {
+      "disabled": false,
+      "name": ""
+    },
+    {
+      "disabled": false,
+      "name": "No project"
+    },
+    {
+      "disabled": false,
+      "name": "Take photo"
+    },
+    {
+      "disabled": false,
+      "name": "Choose file"
+    },
+    {
+      "disabled": false,
+      "name": "Remove receipt.png"
+    },
+    {
+      "disabled": false,
+      "name": "Review and submit"
+    }
+  ],
+  "cycleLinks": [
+    {
+      "href": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f?cycle=1",
+      "text": "Submission 1 on Nov 16, 2026, 1:03 PM UTC: withdrawn"
+    },
+    {
+      "href": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f?cycle=2",
+      "text": "Submission 2 on Nov 16, 2026, 1:04 PM UTC: approved, then reopened for correction"
+    }
+  ],
+  "evidenceText": "Toggle Sidebar\n\nTravel Expenses\n\n14:13\nUTC+01:00\nClock In\nToggle theme\n2\nBack to travel expenses\nStandalone receipt\nReturned for changes\nCycle two corrected train ticket\nReopened for correction by Person 0 on Nov 16, 2026, 1:13 PM UTC\n\nSynthetic correction: check the train ticket description\n\nCorrect the report and submit it again. Earlier submissions stay in its history.\n\nSubmissions\nEach submission stays exactly as it was sent for review.\nSubmission 1 on Nov 16, 2026, 1:03 PM UTC: withdrawn\nSubmission 2 on Nov 16, 2026, 1:04 PM UTC: approved, then reopened for correction\n\nAll changes saved\n\nReceipt date\nNov 10, 2026\nCategory\nTransport\nDescription\nAmount on the receipt\nCurrency\nEUR – Euro\n\nWho paid?\n\nI paid (reimburse me)\nThe company paid (e.g. company card)\nAccounting reference (optional)\n\nA reference finance asked you to use, such as an order number.\n\nProject (optional)\nNo project\n\nYou had no project assignment on this date. If you worked on a project then, an expense administrator can authorize an attribution exception.\n\nReceipt\n\nTake a photo or attach a PDF or image of the receipt.\n\nTake photo\nChoose file\n\nreceipt.png\n\nDownload\nRemove\nStill needed\n\nEverything for this expense is entered.\n\nTotals\nReimbursed to you\n€89.90\nPaid by the company\n€0.00\n\nYour entries are saved. Review the report and send it for approval.\n\nReview and submit",
+  "fields": [
+    {
+      "name": "description",
+      "value": "Cycle two corrected train ticket"
+    }
+  ],
+  "h1": [
+    "Cycle two corrected train ticket"
+  ],
+  "path": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f",
+  "source": "61c0d1f1f73851924aa12a3ce5c565c8d0d69794"
+}

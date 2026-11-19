@@ -1,0 +1,82 @@
+{
+  "identity": {
+    "head": "b89c9e9c01effc7333fed98a4345cbdef0390c3b",
+    "integration": "877b12279ec992cf282e0ba775ac4849579aef86"
+  },
+  "hashes": {
+    "src/components/equipment/equipment-personal.tsx": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af",
+    "src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+    "src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+    "src/components/equipment/equipment-personal.test.tsx": "31b81e61d9c44747b0bb78c39de1a6ec500a942985a7da7d85df1b2c179f5eeb",
+    "src/components/equipment/equipment-routes.test.tsx": "4affc226738c6f4f7242f8cb6037dd85739b995c9413ddf4cfc42ac7dfc3218b",
+    "src/components/site-header.test.tsx": "b18fcf2c49ff97a14ba54b4e529bafaac77e578687ac04e7f2831d6380f4f6d5",
+    "src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+    "src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+  },
+  "env": "pnpm_config_verify_deps_before_run=false",
+  "checks": [
+    {
+      "command": "pnpm --filter webapp test src/components/equipment/equipment-personal.test.tsx src/components/equipment/equipment-routes.test.tsx",
+      "red": {
+        "suitesFailed": 2,
+        "failed": 2,
+        "passed": 17
+      },
+      "green": {
+        "suites": 2,
+        "passed": 19
+      }
+    },
+    {
+      "command": "pnpm --filter webapp test src/components/equipment src/lib/navigation/route-metadata.test.ts src/components/site-header.test.tsx src/components/ui/sidebar.test.tsx src/components/navigation src/components/ui/page-header.test.tsx src/tolgee/extracted-key-defaults.test.ts src/components/organization-mfa src/lib/organization-mfa 'src/app/[locale]/mfa'",
+      "suites": 24,
+      "passed": 191,
+      "scope": "fresh combined after LOCAL integration merge; includes prior 15/159 selection, counts overlap"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1721/postgres.mjs <owned-private-fixture>",
+      "suites": 10,
+      "passed": 118,
+      "scope": "fresh combined real PostgreSQL; includes initial 6/47, not 165 unique"
+    },
+    {
+      "command": "pnpm --filter webapp typecheck",
+      "passed": true,
+      "scope": "fresh combined next typegen and app/workflow-contract/smoke projects"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check 'src/components/equipment/equipment-personal.tsx' 'src/components/equipment/equipment-personal-header.tsx' 'src/components/equipment/equipment-personal-loading.tsx' 'src/components/equipment/equipment-personal.test.tsx' 'src/components/equipment/equipment-routes.test.tsx' 'src/components/site-header.test.tsx' 'src/app/[locale]/(app)/my-equipment/page.tsx' 'src/lib/navigation/route-metadata.ts'",
+      "passed": false,
+      "scope": "eight formatting-only failures, LF-default vs CRLF"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --line-ending=crlf 'src/components/equipment/equipment-personal.tsx' 'src/components/equipment/equipment-personal-header.tsx' 'src/components/equipment/equipment-personal-loading.tsx' 'src/components/equipment/equipment-personal.test.tsx' 'src/components/equipment/equipment-routes.test.tsx' 'src/components/site-header.test.tsx' 'src/app/[locale]/(app)/my-equipment/page.tsx' 'src/lib/navigation/route-metadata.ts'",
+      "passed": true
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf 'src/components/equipment/equipment-personal.tsx' 'src/components/equipment/equipment-personal-header.tsx' 'src/components/equipment/equipment-personal-loading.tsx' 'src/components/equipment/equipment-personal.test.tsx' 'src/components/equipment/equipment-routes.test.tsx' 'src/components/site-header.test.tsx' 'src/app/[locale]/(app)/my-equipment/page.tsx' 'src/lib/navigation/route-metadata.ts'",
+      "passed": false,
+      "scope": "six formatting-only failures under explicit 100-column profile"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf --formatter-enabled=false 'src/components/equipment/equipment-personal.tsx' 'src/components/equipment/equipment-personal-header.tsx' 'src/components/equipment/equipment-personal-loading.tsx' 'src/components/equipment/equipment-personal.test.tsx' 'src/components/equipment/equipment-routes.test.tsx' 'src/components/site-header.test.tsx' 'src/app/[locale]/(app)/my-equipment/page.tsx' 'src/lib/navigation/route-metadata.ts'",
+      "passed": true,
+      "scope": "lint and imports only"
+    },
+    {
+      "command": "pnpm exec react-doctor apps/webapp --scope changed --base 877b12279ec992cf282e0ba775ac4849579aef86 --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+      "files": 8,
+      "findings": 0,
+      "scope": "fresh combined; no numeric/network score or supply-chain claim"
+    }
+  ],
+  "unpassed": [
+    "full production static generation/build",
+    "remote Tolgee synchronization and multilingual new-key verification",
+    "physical/store-wrapper devices",
+    "24px/true browser zoom",
+    "provider acceptance (not applicable to this read-only page)",
+    "full performance/transition acceptance",
+    "exhaustive domain suite"
+  ]
+}

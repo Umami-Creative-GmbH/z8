@@ -1,0 +1,9 @@
+{
+  "publicAdminUI": true,
+  "subarea": "Independent reception",
+  "day": "Monday",
+  "start": "09:00",
+  "end": "17:00",
+  "minimum": 5,
+  "allowGaps": false
+}

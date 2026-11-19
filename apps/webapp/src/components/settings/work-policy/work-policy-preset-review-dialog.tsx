@@ -303,7 +303,16 @@ function WorkPolicyPresetReviewDialogContent({
 					<DialogDescription>{copy.description}</DialogDescription>
 				</DialogHeader>
 
-				<form className="space-y-5">
+				<form
+					className="space-y-5"
+					noValidate
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						// Enter in a field submits too; never start a second save while one is running.
+						if (!isSubmitting) form.handleSubmit();
+					}}
+				>
 					{serverError && (
 						<Alert variant="destructive" aria-live="polite">
 							<AlertDescription>{serverError}</AlertDescription>
@@ -330,11 +339,9 @@ function WorkPolicyPresetReviewDialogContent({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
-							type="button"
-							onClick={() => {
-								form.handleSubmit();
-							}}
+							type="submit"
 							disabled={isSubmitting}
+							aria-busy={isSubmitting || undefined}
 						>
 							{isSubmitting && (
 								<IconLoader2
@@ -593,7 +600,9 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center justify-between">
-				<Label>{t("settings.timeRegulations.breakRules", "Break rules")}</Label>
+				<h4 className="text-sm font-medium">
+					{t("settings.timeRegulations.breakRules", "Break rules")}
+				</h4>
 				<form.Field name="regulation.breakRules">
 					{(field) => (
 						<Button
@@ -613,9 +622,12 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 				{(rulesField) => (
 					<div className="space-y-3">
 						{rulesField.state.value?.length ? (
-							rulesField.state.value.map((rule, ruleIndex) => (
+							rulesField.state.value.map((_rule, ruleIndex) => (
 								<div
-									key={`${rule.workingMinutesThreshold}-${rule.requiredBreakMinutes}-${rule.options?.length ?? 0}`}
+									// Keyed by position, like the form's own `breakRules[i]` field names: a
+									// value-based key remounted the rule on every keystroke and dropped focus.
+									// oxlint-disable-next-line react/no-array-index-key -- rows are addressed by index
+									key={`break-rule-${ruleIndex}`}
 									className="space-y-3 rounded-lg border bg-muted/20 p-3"
 								>
 									<div className="flex items-center justify-between">
@@ -631,19 +643,14 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 											variant="ghost"
 											size="icon"
 											aria-label={t(
-												"settings.workPolicies.presetReview.removeBreakRule",
-												"Remove break rule",
+												"settings.workPolicies.presetReview.removeBreakRuleNumber",
+												"Remove break rule {number}",
+												{ number: ruleIndex + 1 },
 											)}
 											className="size-8 text-destructive hover:text-destructive"
 											onClick={() => rulesField.removeValue(ruleIndex)}
 										>
 											<IconTrash aria-hidden="true" className="size-4" />
-											<span className="sr-only">
-												{t(
-													"settings.workPolicies.presetReview.removeBreakRule",
-													"Remove break rule",
-												)}
-											</span>
 										</Button>
 									</div>
 
@@ -732,12 +739,12 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 										{(optionsField) => (
 											<div className="space-y-2">
 												<div className="flex items-center justify-between">
-													<Label>
+													<p className="text-sm font-medium">
 														{t(
 															"settings.timeRegulations.breakOptions",
 															"Break options",
 														)}
-													</Label>
+													</p>
 													<Button
 														type="button"
 														variant="ghost"
@@ -758,9 +765,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 												</div>
 
 												{optionsField.state.value?.map(
-													(option, optionIndex) => (
+													(_option, optionIndex) => (
 														<div
-															key={`${option.splitCount ?? "none"}-${option.minimumSplitMinutes ?? "none"}-${option.minimumLongestSplitMinutes ?? "none"}`}
+															// oxlint-disable-next-line react/no-array-index-key -- options are addressed by index, like their field names
+															key={`break-option-${optionIndex}`}
 															className="grid gap-3 rounded-md border bg-background p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
 														>
 															<form.Field
@@ -874,8 +882,9 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																variant="ghost"
 																size="icon"
 																aria-label={t(
-																	"settings.workPolicies.presetReview.removeBreakOption",
-																	"Remove break option",
+																	"settings.workPolicies.presetReview.removeBreakOptionNumber",
+																	"Remove option {option} of break rule {rule}",
+																	{ option: optionIndex + 1, rule: ruleIndex + 1 },
 																)}
 																className="self-end text-destructive hover:text-destructive"
 																onClick={() =>
@@ -889,12 +898,6 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																	aria-hidden="true"
 																	className="size-4"
 																/>
-																<span className="sr-only">
-																	{t(
-																		"settings.workPolicies.presetReview.removeBreakOption",
-																		"Remove break option",
-																	)}
-																</span>
 															</Button>
 														</div>
 													),
@@ -953,32 +956,46 @@ function PresetIdentityFields({ form, t }: PresetFormSectionProps) {
 				name="name"
 				validators={{
 					onChange: ({ value }) => {
-						if (!value.trim()) return "Name is required";
-						if (value.length > 100) return "Name too long";
+						// Mirrors the server, which trims the name and requires one character.
+						if (!value.trim()) {
+							return t("settings.workPolicies.presetReview.nameRequired", "Enter a name");
+						}
+						if (value.length > 100) {
+							return t("settings.workPolicies.nameTooLong", "Use 100 characters or fewer");
+						}
 						return undefined;
 					},
 				}}
 			>
-				{(field) => (
-					<div className="space-y-2 sm:col-span-2">
-						<Label htmlFor="preset-review-name">
-							{t("settings.workPolicies.name", "Name")}
-						</Label>
-						<Input
-							id="preset-review-name"
-							name="preset-review-name"
-							autoComplete="off"
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(event) => field.handleChange(event.target.value)}
-						/>
-						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm text-destructive">
-								{field.state.meta.errors[0]}
-							</p>
-						)}
-					</div>
-				)}
+				{(field) => {
+					const error = field.state.meta.errors[0];
+					return (
+						<div className="space-y-2 sm:col-span-2">
+							<Label htmlFor="preset-review-name">
+								{t("settings.workPolicies.name", "Name")}
+							</Label>
+							<Input
+								id="preset-review-name"
+								name="preset-review-name"
+								autoComplete="off"
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+								aria-invalid={error ? true : undefined}
+								aria-describedby={error ? "preset-review-name-error" : undefined}
+							/>
+							{error ? (
+								<p
+									id="preset-review-name-error"
+									role="alert"
+									className="text-sm text-destructive"
+								>
+									{String(error)}
+								</p>
+							) : null}
+						</div>
+					);
+				}}
 			</form.Field>
 
 			<form.Field name="description">

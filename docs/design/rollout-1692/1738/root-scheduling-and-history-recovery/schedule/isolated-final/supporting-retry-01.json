@@ -1,0 +1,164 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "oneUserActivation": true,
+  "rawResponsesCaptured": false,
+  "stages": [
+    {
+      "phase": "template held",
+      "buttons": [
+        {
+          "text": "Retry",
+          "disabled": false
+        },
+        {
+          "text": "Retry",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "phase": "compliance held after template",
+      "buttons": [
+        {
+          "text": "Retry",
+          "disabled": false
+        }
+      ]
+    }
+  ],
+  "final": {
+    "path": "/en/scheduling",
+    "retryEnabled": true
+  },
+  "actions": {
+    "observations": [
+      {
+        "sequence": 1,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 2,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 3,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 4,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 5,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 6,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 7,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 8,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 9,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 10,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 11,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 12,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 13,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 14,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 15,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 16,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 17,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "hold"
+      },
+      {
+        "sequence": 18,
+        "name": "getScheduleComplianceSummary",
+        "method": "POST",
+        "mode": "hold"
+      },
+      {
+        "sequence": 19,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 20,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 21,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "continue"
+      }
+    ],
+    "held": 0
+  }
+}

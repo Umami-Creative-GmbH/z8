@@ -1,0 +1,215 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional-awaiting-fresh-independent-review",
+  "verifiedCommit": null,
+  "previousPublishedCheckpoint": "90408aef6d8064014695577c6ae19f6764ae74ea",
+  "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f",
+  "priorWithdrawalCorrection": "de1b2749080796cc9aac00e287d37c972264584e",
+  "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
+  "correctionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
+  "tree": "45de17a526f3dc9a6e62f1984cad00f043c54c9f",
+  "appTree": "dd756f36b039b473bbb1eb4e2e84215acd208e29",
+  "orderedParents": [
+    "90408aef6d8064014695577c6ae19f6764ae74ea",
+    "e512a116b39706366eee3adfaad00787e04ff1dc"
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel-provider.test.tsx",
+      "gitBlob": "cdef9e72a586f6128e8a28f8d2b93e8ed26f3f4a"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx",
+      "gitBlob": "e9dea2cd96bbeb53b7278d48d98718f7ae4f25cf"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "gitBlob": "7038e9740bd11c01120bc6f44b5711b35f727692"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx",
+      "gitBlob": "8c008a7097d3c9be96f5a31370c2c91cc4af1e3d"
+    }
+  ],
+  "independentReview": {
+    "head": "90408aef6d8064014695577c6ae19f6764ae74ea",
+    "safeIndexSha256": "b2e2e752b3c5f597d3b842a81076f740696718c9ebcc31684b2feccd081da49a",
+    "files": 75,
+    "bytes": 390482,
+    "spec": 1,
+    "standards": 0,
+    "overlap": 0,
+    "classification": "Inherited employee-prerequisite presentation gap; current and pinned premerge retain prior note/form. Current fieldset enabled; equivalent premerge fieldset state not proved. No writes/live authorization bypass.",
+    "freshPriority": {
+      "cases": 3,
+      "passed": 2,
+      "failed": 1,
+      "repeatsNonadditive": true
+    },
+    "counts": "12 attempts/47assertions/31distinctnames/6physicalfiles/38pin-file-nameidentities/9repeats/4overlapgroups; not additive fresh confidence.",
+    "nativeIntakeReceiptSha256": "8f5e4d1d4a325d9db752443dfc9088a9d082f8cc5aa528ad506b2fbf5aa54509",
+    "qualification": "Early setup raw bytes partly transcript-only; TypeScript parsing unavailable to read-only native audit; upstream19237-entrymap outside75-entryallowlist. Prior map verification remains separate."
+  },
+  "rootReproduction": {
+    "unchangedOriginalProbe": {
+      "red": {
+        "passed": 2,
+        "failed": 1
+      },
+      "green": {
+        "passed": 3,
+        "failed": 0
+      }
+    },
+    "additionalCanonicalRefusal": {
+      "source": "getTravelExpenseSettlement,finance-actions.ts returns Unauthorized if auth.employee missing",
+      "red": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "filteredOut": 12
+      },
+      "behavior": "Both actual consumers retained prior evidence before classifier correction; only the known canonical Not found/Unauthorized refusals now persist withdrawal."
+    },
+    "newProbeQualification": "Initial34case selection32P/2newtestfailures and identicalrepeat preserved; waits for actual public errorRetry/provideremployee observation correct asynchronous sequencing without removing assertions. Node LF-vsCRLF source transform failed before write,not a product failure."
+  },
+  "behavior": "Actual provider and raw session must agree on an employee-backed current organization. Pending proof,context failure or employee loss unmount the settlement reader and action target. Employee/role replacements get fresh query lifetime; return cannot reuse old cached evidence. Context failure has serialized local Retry through real provider. Canonical Unauthorized and Not found both persist nullable withdrawal. Ordinary authorized outage draft retention remains.",
+  "coverage": {
+    "broad": {
+      "cases": 324,
+      "passed": 324,
+      "failed": 0,
+      "files": 28
+    },
+    "finalReader": {
+      "cases": 36,
+      "passed": 36,
+      "failed": 0,
+      "files": 3
+    },
+    "union": {
+      "identities": 326,
+      "passed": 326,
+      "files": 28,
+      "rerunsNonadditive": true
+    }
+  },
+  "permanentProviderCases": 11,
+  "permanentWithdrawalCases": 14,
+  "includedIn326": true,
+  "existingFixture": {
+    "file": "settlement-panel.test.tsx",
+    "namesUnchanged": true,
+    "assertionsBefore": 51,
+    "assertionsAfter": 51,
+    "adaptation": "Only two actual provider bootstrap wrappers and external navigation-router stub; existing assertion bodies/name semantics retained."
+  },
+  "quality": {
+    "typegenAndAll3FullTypes": "pass on final4file source using existing genuine125-entry artifact",
+    "lint": {
+      "files": 4,
+      "exit": 0
+    },
+    "explicit100CRLF": {
+      "files": 4,
+      "exit": 0
+    },
+    "ordinary": {
+      "files": 4,
+      "exit": 1,
+      "diagnostics": [
+        "Found 4 errors."
+      ]
+    },
+    "workingWhitespaceExit": 0,
+    "doctor": {
+      "version": "0.9.22",
+      "base": "90408aef6d8064014695577c6ae19f6764ae74ea",
+      "files": 4,
+      "errors": 0,
+      "warnings": 0,
+      "score": null,
+      "qualification": "Delta only; earlier incoming10warnings remain recorded and are not cleared by this4file scan."
+    }
+  },
+  "commands": [
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/test/review1749-employee.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-provider-arrival-root-checks/red.json",
+      "exit": 1
+    },
+    {
+      "cmd": "Same unchanged3caseprobe after providerboundary;green-exact.json",
+      "exit": 0
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit <28 paths from unit-selection.json> --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-provider-arrival-root-checks/unit-final.json",
+      "exit": 0,
+      "result": "324/28 before final canonical Unauthorized classifier extension"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx --testNamePattern=canonical Unauthorized --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-provider-arrival-root-checks/unauthorized-red.json",
+      "exit": 1,
+      "result": "2executedfail/12filtered"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/settlement-panel-provider.test.tsx src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx src/components/travel-expenses/finance/settlement-panel.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-provider-arrival-root-checks/readers-final.json",
+      "exit": 0,
+      "result": "36/3,34 overlap324 plus2new=326unique/28physicalfiles"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+      "exit": 0,
+      "result": "final4filetypecheck-final-4.log"
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf --write <4ownedTS/TSX>",
+      "exit": 0,
+      "result": "No broad reformat; formatter corrected final newly-addedtest only."
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome lint --config-path=biome.jsonc <4ownedTS/TSX>",
+      "exit": 0
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc <4ownedTS/TSX>",
+      "exit": 1
+    },
+    {
+      "cmd": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 90408aef6d8064014695577c6ae19f6764ae74ea --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1749-provider-arrival-root-checks/doctor-final-4.json",
+      "exit": 0
+    },
+    {
+      "cmd": "git diff --check (owned working correction)",
+      "exit": 0
+    }
+  ],
+  "preservation": {
+    "anchorOccurrences": 66,
+    "missingAnchors": 0,
+    "archives": [
+      {
+        "path": "docs/design/rollout-1692/1747/root-history-and-capability-recovery",
+        "changed": ""
+      },
+      {
+        "path": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation",
+        "changed": ""
+      }
+    ],
+    "canonicalActionsServicesAuthDomainDateMathWritersChanged": false,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "genuineLicenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "dependencyInstallsOrCopies": 0,
+    "rootRuntimeStarted": false,
+    "ownResources": 0,
+    "temporaryHashGuardedBridgesRemoved": 3
+  },
+  "limits": [
+    "Fresh independent recheck,canonicalPG and live R167 acceptance remain unpassed.",
+    "Other finance queue/export/payroll/coverage read/command lifetimes remain for independent scoped public objections; the shared rawsession finance hook was not widened.",
+    "No new wire-age,server expectedactor/org,source authorization,simultaneous revocation or live bypass guarantee.",
+    "Worker210unit/84PG and browser/download receipt remains historical and nonadditive; blank payment/readback PNGs and excluded direct-API-login/overlaydrivers remain qualified.",
+    "Full generation,Tolgee,provider/device/truezoom/global157-node final review unpassed."
+  ]
+}

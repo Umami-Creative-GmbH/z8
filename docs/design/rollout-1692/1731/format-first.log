@@ -1,0 +1,114 @@
+src\components\personnel-file\due-for-deletion-list.test.tsx:4:2 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+    2 │ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+    3 │ import {
+  > 4 │ 	act,
+      │ 	^^^
+    5 │ 	fireEvent,
+    6 │ 	render,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{␍
+      4     │ - → act,␍
+          3 │ + import·{␍
+      5   4 │     fireEvent,␍
+      6   5 │     render,␍
+  
+
+src\components\personnel-file\due-for-deletion-list.test.tsx:11:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+     9 │ 	within,
+    10 │ } from "@testing-library/react";
+  > 11 │ import { Activity } from "react";
+       │        ^^^^^^^^^^^^
+    12 │ import { beforeEach, expect, it, vi } from "vitest";
+    13 │ import type { DueDocumentsResult } from "@/lib/personnel-file/retention-store";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+      8   8 │   	waitFor,␍
+      9   9 │   	within,␍
+     10     │ - }·from·"@testing-library/react";␍
+     11     │ - import·{·Activity·}·from·"react";␍
+         10 │ + }·from·"@testing-library/react";␍
+     12  11 │   import { beforeEach, expect, it, vi } from "vitest";␍
+     13  12 │   import type { DueDocumentsResult } from "@/lib/personnel-file/retention-store";␍
+  
+
+src\components\personnel-file\due-for-deletion-list.tsx:552:7 lint/a11y/noLabelWithoutControl ━━━━━━━━━━
+
+  × A form label must be associated with an input.
+  
+    550 │ 					</h2>
+    551 │ 					{data.documents.length > 0 ? (
+  > 552 │ 						<label className="flex items-center gap-2 text-sm">
+        │ 						^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 553 │ 							<Checkbox
+         ...
+  > 577 │ 							)}
+  > 578 │ 						</label>
+        │ 						^^^^^^^^
+    579 │ 					) : null}
+    580 │ 				</div>
+  
+  i Assistive technologies rely on a label being associated with a control to announce it. Without the association, screen reader users cannot tell what the control is for.
+  
+  i Consider adding a "for" or "htmlFor" attribute to the label element or moving the input element to inside the label element.
+  
+
+src\components\personnel-file\due-for-deletion-list.tsx:391:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: revision.
+  
+    389 │ 	);
+    390 │ 	const { userId, organizationId } = scope;
+  > 391 │ 	useLayoutEffect(() => {
+        │ 	^^^^^^^^^^^^^^^
+    392 │ 		const attempt = { active: true, submitting: false };
+    393 │ 		lifetime.current = attempt;
+  
+  i This dependency can be removed from the list.
+  
+    418 │ 			attempt.active = false;
+    419 │ 		};
+  > 420 │ 	}, [userId, organizationId, revision]);
+        │ 	                            ^^^^^^^^
+    421 │ 	useLayoutEffect(() => {
+    422 │ 		setOutcome(null);
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    420 │ → },·[userId,·organizationId,·revision]);␍
+        │                             ----------   
+
+Skipped 3 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 4 files in 48ms. Fixed 4 files.
+Found 2 errors.
+Found 2 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-fd7b5280-
+  │ 0a9cc97a274c2847\apps\webapp
+

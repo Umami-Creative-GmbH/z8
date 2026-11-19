@@ -1,0 +1,146 @@
+{
+  "phase": "after",
+  "checks": [
+    {
+      "name": "desktop",
+      "path": "/en/personnel-files/payslip-batches",
+      "h1": [
+        "Payslip batches"
+      ],
+      "overflow": false,
+      "links": [
+        {
+          "text": "October 2026\n0 files\nNot confirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "September 2026\n0 files\nConfirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000002"
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "2026"
+        },
+        {
+          "tag": "BUTTON",
+          "value": "Shared"
+        },
+        {
+          "tag": "INPUT",
+          "value": "shared"
+        }
+      ],
+      "startCount": 1
+    },
+    {
+      "name": "phone",
+      "path": "/en/personnel-files/payslip-batches",
+      "h1": [
+        "Payslip batches"
+      ],
+      "overflow": false,
+      "links": [
+        {
+          "text": "October 2026\n0 files\nNot confirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "September 2026\n0 files\nConfirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000002"
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "2026"
+        },
+        {
+          "tag": "BUTTON",
+          "value": "Shared"
+        },
+        {
+          "tag": "INPUT",
+          "value": "shared"
+        }
+      ],
+      "startCount": 1
+    },
+    {
+      "name": "wide",
+      "path": "/en/personnel-files/payslip-batches",
+      "h1": [
+        "Payslip batches"
+      ],
+      "overflow": false,
+      "links": [
+        {
+          "text": "October 2026\n0 files\nNot confirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "September 2026\n0 files\nConfirmed",
+          "href": "/en/personnel-files/payslip-batches/17320000-0000-4000-8000-000000000002"
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "11"
+        },
+        {
+          "tag": "INPUT",
+          "value": "2026"
+        },
+        {
+          "tag": "BUTTON",
+          "value": "Shared"
+        },
+        {
+          "tag": "INPUT",
+          "value": "shared"
+        }
+      ],
+      "startCount": 1
+    }
+  ],
+  "native": {
+    "versions": [
+      "19.3.0-canary-278794d7-20261002",
+      "19.3.0-canary-278794d7-20261002",
+      "18.3.1"
+    ],
+    "components": [
+      "PayslipBatchesScope",
+      "PayslipBatchStart",
+      "TFormItem",
+      "TFormLabel",
+      "TFormControl",
+      "TFormMessage",
+      "TFormDescription"
+    ]
+  },
+  "sourcePin": "working implementation",
+  "provenanceLimit": "Historical normal-state captures precede final awaited-handler correction and cautious transport-error wording; later final role/native/preference checks used current source, which stayed unchanged across63a/96dea merges."
+}

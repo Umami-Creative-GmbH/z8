@@ -1,0 +1,58 @@
+{
+  "checks": [
+    {
+      "name": "manager calendar states selected New York zone",
+      "passed": true
+    },
+    {
+      "name": "manager global clock retains Berlin zone",
+      "passed": true
+    },
+    {
+      "name": "captured Berlin endpoint offset remains on New York calendar",
+      "passed": true
+    },
+    {
+      "name": "authorized real reader uses selected employee zone",
+      "passed": true
+    },
+    {
+      "name": "selected-person drag opens manual entry in selected employee zone",
+      "passed": true
+    },
+    {
+      "name": "large text preference survives calendar reload",
+      "passed": true
+    },
+    {
+      "name": "large text desktop fits",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse preserves calendar view",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse persists",
+      "passed": true
+    },
+    {
+      "name": "large text phone fits",
+      "passed": true
+    },
+    {
+      "name": "mobile navigation remains reachable",
+      "passed": true
+    },
+    {
+      "name": "mobile navigation backdrop dismissal returns focus",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "At large text on a 390x844 calendar, the shared mobile drawer remained open after Escape. This is unresolved shell/harness classification; no Escape pass is claimed.",
+    "Drag opens the real manual form but does not submit new work.",
+    "No physical device, native browser zoom or exhaustive contrast certification."
+  ]
+}

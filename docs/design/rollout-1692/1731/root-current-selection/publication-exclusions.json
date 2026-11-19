@@ -1,0 +1,24 @@
+{
+  "policy": "category-only; no private filenames, sizes, hashes, or reads",
+  "categories": [
+    {
+      "category": "Private fixture inputs, credentials and environment pointers",
+      "reason": "Not public evidence; no enumeration, open, stat or hash."
+    },
+    {
+      "category": "Private failure captures and raw native hook/context output",
+      "reason": "Automatic approval review rejected private image inspection; approved public clones and sanitized live diagnostics used."
+    },
+    {
+      "category": "Unredacted accepted-state originals and excluded preliminary captures",
+      "reason": "Only labeled approved contact-footer clones may be published."
+    }
+  ],
+  "publicCloneMapping": "Public report capture.file and capture.sha256 point to approved labeled clones; originals are deliberately unmapped by filename or digest.",
+  "rawEvidencePreserved": true,
+  "sourceLocations": {
+    "static": "Exact named public root check files",
+    "merger": "Exact named public merger archive files",
+    "runtime": "Only released public-allowlist.json entries plus artifact-hashes.json"
+  }
+}

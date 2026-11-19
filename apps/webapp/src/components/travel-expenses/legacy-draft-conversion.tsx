@@ -3,6 +3,7 @@
 import { IconAlertTriangle, IconArrowRight, IconLoader2, IconTransform } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import {
 	type ConvertLegacyDraftOutcome,
 	convertLegacyTravelExpenseDraftAction,
@@ -11,12 +12,121 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useOrganization } from "@/hooks/use-organization";
+import { authClient, useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
+import type { LegacyConversionView } from "@/lib/travel-expenses/legacy-draft-conversion-read";
 import type { LegacyReceiptRefusal } from "@/lib/travel-expenses/legacy-draft-conversion-store";
 import { Link, useRouter } from "@/navigation";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 type Refusal = Exclude<ConvertLegacyDraftOutcome, { kind: "converted" }>;
+
+function claimScopeMatches(
+	scope: ReturnType<typeof useOrganization>,
+	session: ReturnType<typeof useSession>,
+	expected?: { organizationId: string; employeeId: string; userId?: string },
+) {
+	return (
+		!scope.isLoading &&
+		!scope.error &&
+		!session.isPending &&
+		Boolean(scope.userId && scope.activeOrganizationId && scope.employeeId) &&
+		session.data?.user.id === scope.userId &&
+		session.data?.session.activeOrganizationId === scope.activeOrganizationId &&
+		(!expected ||
+			(expected.organizationId === scope.activeOrganizationId &&
+				expected.employeeId === scope.employeeId &&
+				(!expected.userId || expected.userId === scope.userId)))
+	);
+}
+
+/** Presentation lifetime only. Server reads/actions still decide access. */
+export function LegacyClaimArrival({
+	children,
+	expected,
+}: {
+	children: ReactNode;
+	expected?: { organizationId: string; employeeId: string; userId?: string };
+}) {
+	const scope = useOrganization();
+	const session = useSession();
+	const { t } = useTranslate();
+	const router = useRouter();
+	const ready = claimScopeMatches(scope, session, expected);
+	if (scope.error || (!ready && !scope.isLoading && !session.isPending))
+		return (
+			<Alert role="alert">
+				<AlertDescription className="space-y-3">
+					<p>
+						{t(
+							"travelExpenses.detail.scopeUnavailable",
+							"Refresh this claim to confirm your current access.",
+						)}
+					</p>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => {
+							void scope.refetch();
+							router.refresh();
+						}}
+					>
+						{t("common.retry", "Retry")}
+					</Button>
+				</AlertDescription>
+			</Alert>
+		);
+	if (!ready)
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				{t(
+					"travelExpenses.detail.confirmingScope",
+					"Confirming the current organization and employee…",
+				)}
+			</p>
+		);
+	return (
+		<div key={JSON.stringify([scope.userId, scope.activeOrganizationId, scope.employeeId])}>
+			{children}
+		</div>
+	);
+}
+
+/** Every effect setup is a new read lifetime, including an Activity restore. */
+export function useLegacyClaimLifetime() {
+	const id = useId();
+	const session = useSession();
+	const sessionScope =
+		!session.isPending && session.data?.user.id && session.data.session.activeOrganizationId
+			? JSON.stringify([session.data.user.id, session.data.session.activeOrganizationId])
+			: null;
+	const sequence = useRef(0);
+	const [lifetime, setLifetime] = useState({ id: `${id}:0`, active: false });
+	useEffect(() => {
+		const arrival = { id: `${id}:${++sequence.current}`, active: sessionScope !== null };
+		setLifetime(arrival);
+		if (!arrival.active) return;
+		let original = authClient.$store.atoms.session.get().data;
+		const unsubscribe = authClient.$store.atoms.session.subscribe((value) => {
+			// A pending proof retires callbacks even when retained session data is present.
+			if (value.isPending || !value.data) arrival.active = false;
+			if (
+				original &&
+				value.data &&
+				(original.user.id !== value.data.user.id ||
+					original.session.activeOrganizationId !== value.data.session.activeOrganizationId)
+			)
+				arrival.active = false;
+			if (!original) original = value.data;
+		});
+		return () => {
+			arrival.active = false;
+			unsubscribe();
+		};
+	}, [id, sessionScope]);
+	return lifetime;
+}
 
 function receiptReason(t: Translate, reason: LegacyReceiptRefusal): string {
 	switch (reason) {
@@ -75,30 +185,52 @@ export function ContinueLegacyDraftButton({
 	claimId: string;
 	size?: "sm" | "default";
 }) {
+	return <ContinueLegacyDraft key={claimId} claimId={claimId} size={size} />;
+}
+
+function ContinueLegacyDraft({ claimId, size }: { claimId: string; size: "sm" | "default" }) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const lifetime = useLegacyClaimLifetime();
+	const reserved = useRef(false);
 	const mutation = useMutation({
-		mutationFn: async () => {
+		mutationFn: async (activation: typeof lifetime) => {
+			if (!activation.active) throw new Error("Conversion arrival retired");
 			const result = await convertLegacyTravelExpenseDraftAction(claimId);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		onSuccess: async (outcome) => {
+		onSuccess: async (outcome, activation) => {
 			if (outcome.kind !== "converted") return;
-			await queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.all });
-			router.push(`/travel-expenses/reports/${outcome.reportId}`);
+			const invalidation = queryClient.invalidateQueries({
+				queryKey: queryKeys.travelExpenses.all,
+			});
+			// The conversion read can replace this button with its new report link.
+			// Navigate while this successful activation still owns the current view.
+			if (activation.active) router.push(`/travel-expenses/reports/${outcome.reportId}`);
+			await invalidation;
+		},
+		onSettled: () => {
+			reserved.current = false;
 		},
 	});
-	const outcome = mutation.data;
+	const currentAttempt = mutation.variables === lifetime && lifetime.active;
+	const outcome = currentAttempt ? mutation.data : undefined;
 	return (
 		<div className="space-y-2">
 			<Button
 				type="button"
 				size={size}
 				variant="outline"
-				disabled={mutation.isPending}
-				onClick={() => mutation.mutate()}
+				disabled={mutation.isPending || !lifetime.active}
+				aria-busy={mutation.isPending}
+				className="h-auto min-h-9 whitespace-normal text-start"
+				onClick={() => {
+					if (reserved.current || !lifetime.active) return;
+					reserved.current = true;
+					mutation.mutate(lifetime);
+				}}
 			>
 				{mutation.isPending ? (
 					<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
@@ -108,7 +240,7 @@ export function ContinueLegacyDraftButton({
 				{t("travelExpenses.legacyDraft.continue", "Continue as report")}
 			</Button>
 			<div aria-live="polite">
-				{(mutation.isError || (outcome && outcome.kind !== "converted")) && (
+				{((currentAttempt && mutation.isError) || (outcome && outcome.kind !== "converted")) && (
 					<Alert variant="destructive">
 						<IconAlertTriangle aria-hidden="true" className="size-4" />
 						<AlertDescription>
@@ -163,16 +295,79 @@ export function LegacyClaimActions({
  * already continued it as.
  */
 export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
+	return (
+		<LegacyClaimArrival>
+			<LegacyConversionRead key={claimId} claimId={claimId} />
+		</LegacyClaimArrival>
+	);
+}
+
+type LegacyConversionReadResult =
+	| { kind: "available"; conversion: LegacyConversionView | null }
+	| { kind: "withdrawn" };
+
+function LegacyConversionRead({ claimId }: { claimId: string }) {
 	const { t } = useTranslate();
-	const { data, isError, isLoading, refetch, isFetching } = useQuery({
-		queryKey: [...queryKeys.travelExpenses.detail(claimId), "legacy-conversion"],
-		queryFn: async () => {
+	const lifetime = useLegacyClaimLifetime();
+	const {
+		data: result,
+		isError,
+		isLoading,
+		refetch,
+		isFetching,
+	} = useQuery({
+		queryKey: [...queryKeys.travelExpenses.detail(claimId), "legacy-conversion", lifetime.id],
+		enabled: lifetime.active,
+		retry: false,
+		queryFn: async (): Promise<LegacyConversionReadResult> => {
 			const result = await getLegacyTravelExpenseConversion({ claimId });
-			if (!result.success) throw new Error(result.error);
-			return result.data;
+			if (!lifetime.active) throw new Error("Conversion read retired");
+			if (!result.success) {
+				if (["Unauthorized", "Travel expense claim not found"].includes(result.error))
+					return { kind: "withdrawn" };
+				throw new Error(result.error);
+			}
+			return { kind: "available", conversion: result.data };
 		},
 	});
-	if (isLoading) return null;
+	const data = result?.kind === "available" ? result.conversion : undefined;
+	const loadError = isError && (
+		<Alert variant="destructive">
+			<IconAlertTriangle aria-hidden="true" className="size-4" />
+			<AlertDescription className="flex flex-wrap items-center gap-2">
+				{t("travelExpenses.legacyDraft.loadFailed", "Unable to check this draft. Please retry.")}
+				<Button
+					type="button"
+					size="sm"
+					variant="outline"
+					disabled={isFetching}
+					onClick={() => void refetch()}
+				>
+					{t("common.retry", "Retry")}
+				</Button>
+			</AlertDescription>
+		</Alert>
+	);
+	if (result?.kind === "withdrawn")
+		return (
+			<div className="space-y-3">
+				<Alert role="alert">
+					<AlertDescription>
+						{t(
+							"travelExpenses.legacyDraft.readRefused",
+							"Draft continuation is not available for the current reader.",
+						)}
+					</AlertDescription>
+				</Alert>
+				{loadError}
+			</div>
+		);
+	if (isLoading || !lifetime.active)
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				{t("travelExpenses.legacyDraft.checking", "Checking draft continuation…")}
+			</p>
+		);
 	return (
 		<Card>
 			<CardHeader>
@@ -181,26 +376,8 @@ export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
 				</h2>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				{isError ? (
-					<Alert variant="destructive">
-						<IconAlertTriangle aria-hidden="true" className="size-4" />
-						<AlertDescription className="flex flex-wrap items-center gap-2">
-							{t(
-								"travelExpenses.legacyDraft.loadFailed",
-								"Unable to check this draft. Please retry.",
-							)}
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								disabled={isFetching}
-								onClick={() => void refetch()}
-							>
-								{t("common.retry", "Retry")}
-							</Button>
-						</AlertDescription>
-					</Alert>
-				) : data ? (
+				{loadError}
+				{data ? (
 					<>
 						<p className="text-sm text-muted-foreground">
 							{t(
@@ -216,7 +393,7 @@ export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
 							<IconArrowRight aria-hidden="true" className="size-4" />
 						</Link>
 					</>
-				) : (
+				) : !isError ? (
 					<>
 						<p className="text-sm text-muted-foreground">
 							{t(
@@ -226,7 +403,7 @@ export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
 						</p>
 						<ContinueLegacyDraftButton claimId={claimId} size="default" />
 					</>
-				)}
+				) : null}
 			</CardContent>
 		</Card>
 	);

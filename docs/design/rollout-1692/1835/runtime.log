@@ -1,0 +1,27 @@
+Passed: desktop-light fits viewport with loaded font, one heading and seven day controls
+Passed: desktop-light readable page text on opaque surfaces
+Passed: phone-light fits viewport with loaded font, one heading and seven day controls
+Passed: phone-light readable page text on opaque surfaces
+Passed: wide-dark-large fits viewport with loaded font, one heading and seven day controls
+Passed: wide-dark-large readable page text on opaque surfaces
+Passed: phone-dark-large fits viewport with loaded font, one heading and seven day controls
+Passed: phone-dark-large readable page text on opaque surfaces
+Passed: exact refreshed source restored after baseline overlay
+Passed: invalid name is focused
+Passed: weekly hour upper bound refused without a policy
+Passed: derived context follows actual fractional hours and selected days
+Passed: keyboard toggles a selected working day
+Passed: one pending save disables fields and skip
+Passed: failed real transport retains draft and inline retry context
+Passed: real save navigates to notifications and creates one non-default policy
+Passed: database stores selected weekly hours and all seven day rows
+Passed: non-default creates no organization assignment
+Passed: existing writer persists wellness step
+Passed: existing name is refused without an extra policy
+Passed: existing default conflict returns inline failure and retains input
+Passed: inherited nontransactional default conflict is identified, not represented as saved
+Passed: skip reaches existing destination without a policy
+Passed: actual non-admin is routed to notifications without template controls
+Passed: real restricted session at late submit is refused with recoverable input
+Passed: reduced motion remains usable
+Passed: no uncaught browser exceptions

@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-41aa9e05-0348e7c30589d86c/apps/webapp
+
+ ✓ |unit| src/test/1740-isolated-merger-bridge.test.tsx > assembled current workspace retains list on calendar read failure and retires on organization switch 135ms
+stdout | src/test/1740-isolated-merger-bridge.test.tsx > a queued public submit must not run after Activity hides and returns before onSubmit
+1740 safe reproduction: no command at click/hide/return; one retired command after return; genuine new submit sends second command to same synthetic target.
+
+ × |unit| src/test/1740-isolated-merger-bridge.test.tsx > a queued public submit must not run after Activity hides and returns before onSubmit 627ms
+   → expected "vi.fn()" to be called +0 times, but got 1 times
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/test/1740-isolated-merger-bridge.test.tsx > a queued public submit must not run after Activity hides and returns before onSubmit
+AssertionError: expected "vi.fn()" to be called +0 times, but got 1 times
+ ❯ src/test/1740-isolated-merger-bridge.test.tsx:87:33
+     85|   });
+     86|   await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10…
+     87|   expect.soft(transport.record).toHaveBeenCalledTimes(0);
+       |                                 ^
+     88|   expect(transport.record).toHaveBeenCalledTimes(1);
+     89|   expect(transport.record.mock.calls[0][0].employeeId).toBe('review-ta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  07:31:12
+   Duration  1.93s (tests 41%, import 35%, environment 16%, transform 6%, setup 1%)
+

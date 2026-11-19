@@ -1,0 +1,129 @@
+{
+  "boundary": "Guarded, read-only SQL assertions in own disposable database; actual mutations came from the public application. Hash comparison starts after intake and covers unlink/relink/refusal/captures.",
+  "postIntake": {
+    "phase": "post-intake",
+    "absences": 12,
+    "absenceRecordsSha256": "8f2ab16c86c5511f54d5076c4b16abf3829f7b13aee606417ffb3fae2ed55202",
+    "historyRows": 0,
+    "historySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "documents": [
+      {
+        "id": "25bf4a2f-c20e-43b1-843c-a9693150c36e",
+        "expectedEmployee": true,
+        "category": "sick_note",
+        "title": "Synthetic independent linked note",
+        "visibility": "shared",
+        "linkedAbsenceId": "9da4305b-506c-4715-bbc8-891a4896e080",
+        "mime": "image/png",
+        "bytes": 68,
+        "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+      }
+    ]
+  },
+  "crossViewUnlinked": {
+    "phase": "cross-view-unlinked",
+    "absences": 12,
+    "absenceRecordsSha256": "8f2ab16c86c5511f54d5076c4b16abf3829f7b13aee606417ffb3fae2ed55202",
+    "historyRows": 0,
+    "historySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "documents": [
+      {
+        "id": "25bf4a2f-c20e-43b1-843c-a9693150c36e",
+        "expectedEmployee": true,
+        "category": "sick_note",
+        "title": "Synthetic independent linked note",
+        "visibility": "shared",
+        "linkedAbsenceId": null,
+        "mime": "image/png",
+        "bytes": 68,
+        "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+      }
+    ]
+  },
+  "prematureUnconfirmedLinkAttempt": {
+    "phase": "selected-relinked",
+    "absences": 12,
+    "absenceRecordsSha256": "8f2ab16c86c5511f54d5076c4b16abf3829f7b13aee606417ffb3fae2ed55202",
+    "historyRows": 0,
+    "historySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "documents": [
+      {
+        "id": "25bf4a2f-c20e-43b1-843c-a9693150c36e",
+        "expectedEmployee": true,
+        "category": "sick_note",
+        "title": "Synthetic independent linked note",
+        "visibility": "shared",
+        "linkedAbsenceId": null,
+        "mime": "image/png",
+        "bytes": 68,
+        "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+      }
+    ],
+    "accepted": false,
+    "note": "Radio Enter did not select; persisted null was retained. Actual Space selection and Link later succeeded."
+  },
+  "relinked": {
+    "phase": "selected-relinked-confirmed",
+    "absences": 12,
+    "absenceRecordsSha256": "8f2ab16c86c5511f54d5076c4b16abf3829f7b13aee606417ffb3fae2ed55202",
+    "historyRows": 0,
+    "historySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "documents": [
+      {
+        "id": "25bf4a2f-c20e-43b1-843c-a9693150c36e",
+        "expectedEmployee": true,
+        "category": "sick_note",
+        "title": "Synthetic independent linked note",
+        "visibility": "shared",
+        "linkedAbsenceId": "9da4305b-506c-4715-bbc8-891a4896e080",
+        "mime": "image/png",
+        "bytes": 68,
+        "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+      }
+    ]
+  },
+  "revocationRefusal": {
+    "phase": "after-revocation-refusal",
+    "absences": 12,
+    "absenceRecordsSha256": "8f2ab16c86c5511f54d5076c4b16abf3829f7b13aee606417ffb3fae2ed55202",
+    "historyRows": 0,
+    "historySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "refusedDraftPersistedDocuments": 0,
+    "documents": [
+      {
+        "id": "25bf4a2f-c20e-43b1-843c-a9693150c36e",
+        "expectedEmployee": true,
+        "category": "sick_note",
+        "title": "Synthetic independent linked note",
+        "visibility": "shared",
+        "linkedAbsenceId": "9da4305b-506c-4715-bbc8-891a4896e080",
+        "mime": "image/png",
+        "bytes": 68,
+        "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+      }
+    ]
+  },
+  "final": {
+    "phase": "final-state",
+    "absences": 12,
+    "absenceRecordsSha256": "8f2ab16c86c5511f54d5076c4b16abf3829f7b13aee606417ffb3fae2ed55202",
+    "historyRows": 0,
+    "historySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "refusedDraftPersistedDocuments": 0,
+    "documents": [
+      {
+        "id": "25bf4a2f-c20e-43b1-843c-a9693150c36e",
+        "expectedEmployee": true,
+        "category": "sick_note",
+        "title": "Synthetic independent linked note",
+        "visibility": "shared",
+        "linkedAbsenceId": "9da4305b-506c-4715-bbc8-891a4896e080",
+        "mime": "image/png",
+        "bytes": 68,
+        "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+      }
+    ]
+  },
+  "absenceRecordsUnchanged": true,
+  "historyUnchanged": true
+}

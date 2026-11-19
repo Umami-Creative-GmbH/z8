@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { useEffect, useRef } from "react";
+import { Temporal } from "temporal-polyfill";
 import type { RefObject } from "react";
 import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { buildRequirementHeaderContent } from "./daily-requirement-strip";
@@ -282,22 +283,30 @@ export function useScheduleXDomLifecycle({
 		if (isLoading || (viewMode !== "day" && viewMode !== "week")) return;
 
 		const timer = window.setTimeout(() => {
-			const timeIndicator = calendarContainerRef.current?.querySelector(
+			const container = calendarContainerRef.current;
+			const viewport = container?.querySelector<HTMLElement>(".sx__view-container");
+			if (!viewport) return;
+			const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
+			const timeIndicator = container?.querySelector(
 				".sx__current-time-indicator",
 			);
 			if (timeIndicator) {
-				timeIndicator.scrollIntoView({ behavior: "smooth", block: "center" });
+				// scrollIntoView also scrolls the surrounding planner, hiding scope and period controls.
+				viewport.scrollTo({
+					top: viewport.scrollTop + timeIndicator.getBoundingClientRect().top - viewport.getBoundingClientRect().top - viewport.clientHeight / 2,
+					behavior,
+				});
 				return;
 			}
 
-			const now = DateTime.now().setZone(timeZone);
+			const now = Temporal.Now.zonedDateTimeISO(timeZone);
 			const hoursFromStart = now.hour + now.minute / 60;
-			const scrollContainer = calendarContainerRef.current?.querySelector(".sx__time-grid-day");
+			const scrollContainer = container?.querySelector(".sx__time-grid-day");
 			if (!scrollContainer) return;
 
 			const hourHeight = scrollContainer.scrollHeight / 24;
 			const scrollPosition = hoursFromStart * hourHeight - 200;
-			scrollContainer.parentElement?.scrollTo({ top: scrollPosition, behavior: "smooth" });
+			viewport.scrollTo({ top: scrollPosition, behavior });
 		}, 100);
 
 		return () => clearTimeout(timer);

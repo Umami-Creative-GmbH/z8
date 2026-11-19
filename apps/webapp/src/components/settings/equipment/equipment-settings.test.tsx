@@ -221,16 +221,20 @@ it("requires confirmation in an alert dialog before archiving a type", async () 
 			selectableTypes: [],
 		},
 	});
-	await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
-	await openRowAction(user, "Actions for type Laptop", "Archive");
+	// A failed archive keeps the confirmation open, so it can be retried in place.
+	const openDialog = screen.getByRole("alertdialog");
+	await waitFor(() =>
+		expect(
+			within(openDialog).getByRole("button", { name: "Confirm archive" }),
+		).toHaveProperty("disabled", false),
+	);
 	await user.click(
-		within(await screen.findByRole("alertdialog")).getByRole("button", {
-			name: "Confirm archive",
-		}),
+		within(openDialog).getByRole("button", { name: "Confirm archive" }),
 	);
 	await waitFor(() =>
 		expect(api.toastSuccess).toHaveBeenCalledWith("Equipment type archived."),
 	);
+	await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
 	expect(api.change).toHaveBeenCalledTimes(2);
 	expect(api.change.mock.calls[0][0]).toEqual({
 		kind: "archive_type",

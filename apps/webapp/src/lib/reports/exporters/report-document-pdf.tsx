@@ -50,12 +50,17 @@ const styleDefinitions = {
 	},
 } as const;
 
-export async function exportReportDocumentToPDF(document: ReportDocument): Promise<Uint8Array> {
-	const { Document, Page, pdf, StyleSheet, Text, View } = await import("@react-pdf/renderer");
+function ReportPDF({
+	document,
+	renderer,
+}: {
+	document: ReportDocument;
+	renderer: typeof import("@react-pdf/renderer");
+}) {
+	const { Document, Page, StyleSheet, Text, View } = renderer;
 	const styles = StyleSheet.create(styleDefinitions);
 
-	// one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
-	const ReportPDF = () => (
+	return (
 		<Document title={document.title}>
 			<Page size="A4" orientation="landscape" style={styles.page}>
 				<Text style={styles.title}>{document.title}</Text>
@@ -121,7 +126,10 @@ export async function exportReportDocumentToPDF(document: ReportDocument): Promi
 			</Page>
 		</Document>
 	);
+}
 
-	const blob = await pdf(<ReportPDF />).toBlob();
+export async function exportReportDocumentToPDF(document: ReportDocument): Promise<Uint8Array> {
+	const renderer = await import("@react-pdf/renderer");
+	const blob = await renderer.pdf(<ReportPDF document={document} renderer={renderer} />).toBlob();
 	return new Uint8Array(await blob.arrayBuffer());
 }

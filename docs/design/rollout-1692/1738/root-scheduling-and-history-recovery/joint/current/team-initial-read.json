@@ -1,0 +1,24 @@
+{
+  "route": "/en/team",
+  "role": "canonical fixture small-manager",
+  "memberCount": 4,
+  "nativeButton": "BUTTON",
+  "history": "canonical successful empty",
+  "requests": [
+    {
+      "id": "7f21909038b758e0de586253d4835a1a4224c16322",
+      "path": "/en/team",
+      "method": "POST"
+    },
+    {
+      "id": "7f21909038b758e0de586253d4835a1a4224c16322",
+      "path": "/en/team",
+      "method": "POST"
+    }
+  ],
+  "escapeFocusReturned": true,
+  "consoleCounts": {
+    "nativeButton": 0,
+    "otherError": 0
+  }
+}

@@ -1,0 +1,16 @@
+file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/Deferred.js:57
+            this.#timeoutError = new TimeoutError(opts.message);
+                                 ^
+
+TimeoutError: Navigation timeout of 90000 ms exceeded
+    at new Deferred (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/Deferred.js:57:34)
+    at Deferred.create (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/Deferred.js:18:16)
+    at new LifecycleWatcher (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/LifecycleWatcher.js:70:46)
+    at CdpFrame.goto (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Frame.js:152:29)
+    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)
+    at CdpPage.goto (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:587:43)
+    at go (file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/.tmp/1729/outer-pending.mjs:15:24)
+    at file:///X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/.tmp/1729/outer-pending.mjs:18:219
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v26.9.0

@@ -11,10 +11,13 @@ import {
 	IconUsersGroup,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
+import { Temporal } from "temporal-polyfill";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import type {
 	BriefingActionItem,
 	BriefingActionSeverity,
@@ -28,11 +31,15 @@ type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 type TodayBriefingProps = {
 	briefing: ManagerDailyBriefing;
+	onRetry?: () => void;
+	isRefreshing?: boolean;
+	readError?: string;
+	onDecision?: () => void;
 };
 
 type SummaryCardProps = {
 	title: string;
-	value: number;
+	value: number | undefined;
 	description: string;
 	icon: IconComponent;
 	tone?: "default" | "critical" | "warning";
@@ -43,6 +50,7 @@ type TFunction = ReturnType<typeof useTranslate>["t"];
 type SectionCardProps = {
 	section: BriefingSection;
 	icon: IconComponent;
+	onRetry?: () => void;
 };
 
 type EmptyStateProps = {
@@ -123,42 +131,87 @@ const supportingSections: Array<{
 	{ key: "payroll", icon: IconCurrencyEuro },
 ];
 
-export function TodayBriefing({ briefing }: TodayBriefingProps) {
+export function TodayBriefing({
+	briefing,
+	onRetry,
+	isRefreshing,
+	readError,
+	onDecision,
+}: TodayBriefingProps) {
 	const { t } = useTranslate();
-	const briefingDate = DateTime.fromISO(briefing.date).toLocaleString(
-		DateTime.DATE_MED_WITH_WEEKDAY,
+	const locale = useLocale();
+	// Display the already-resolved business day; never convert it through the viewer's zone.
+	const briefingDate = Temporal.PlainDate.from(briefing.date).toLocaleString(locale, {
+		weekday: "short",
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	});
+	// Keep the source instant's offset explicit instead of relabeling it as device-local time.
+	const generatedAt = `${Temporal.Instant.from(briefing.generatedAt)
+		.toZonedDateTimeISO("UTC")
+		.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
+	const incomplete = Boolean(
+		readError ||
+			briefing.needsActionError ||
+			Object.values(briefing.sections).some((section) => section.error),
 	);
-	const generatedAt = DateTime.fromISO(briefing.generatedAt).toLocaleString(DateTime.TIME_SIMPLE);
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6">
-			<header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-				<div className="space-y-2">
-					<Badge variant="secondary" className="w-fit">
-						{t("today.briefing.badge", "Today")}
-					</Badge>
+		<div
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
+			aria-busy={isRefreshing}
+		>
+			<PageHeader
+				title={t("today.briefing.title", "Manager Daily Briefing")}
+				scope={briefingDate}
+				description={
 					<div className="space-y-1">
-						<h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-							{t("today.briefing.title", "Manager Daily Briefing")}
-						</h1>
-						<p className="max-w-2xl text-muted-foreground text-sm">
+						<p>
 							{t(
-								"today.briefing.description",
-								"Review the items that need action today, then move directly into the right workflow.",
+								"today.briefing.scope",
+								"Operational follow-up for the employees you may oversee in the active organization.",
+							)}
+						</p>
+						<p className="break-words text-xs">
+							{t(
+								"today.briefing.snapshot",
+								"Snapshot updated {time}. Use Refresh data to check for changes.",
+								{ time: generatedAt },
 							)}
 						</p>
 					</div>
-				</div>
-				<p className="text-muted-foreground text-xs md:text-right">
-					{t("today.briefing.updatedAt", "{date} - Updated {time}", {
-						date: briefingDate,
-						time: generatedAt,
-					})}
+				}
+			/>
+			{isRefreshing ? (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t("today.briefing.refreshing", "Refreshing briefing. Previous results remain visible.")}
 				</p>
-			</header>
+			) : null}
+			{readError ? <SectionError message={readError} onRetry={onRetry} /> : null}
+			<section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+				<NeedsActionCard
+					items={briefing.needsAction}
+					t={t}
+					incomplete={incomplete}
+					error={
+						briefing.needsActionError
+							? t("today.briefing.drivingUnavailable", "Driving details could not be checked.")
+							: undefined
+					}
+					onRetry={onRetry}
+				/>
+				<TodayApprovalsPanel
+					items={briefing.sections.approvals.items}
+					error={briefing.sections.approvals.error}
+					stale={Boolean(readError)}
+					onRetry={onRetry}
+					onDecision={onDecision}
+				/>
+			</section>
 
 			<section
-				className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
+				className="grid overflow-hidden rounded-xl border bg-card sm:grid-cols-2 xl:grid-cols-6"
 				aria-label={t("today.briefing.summaryAriaLabel", "Today summary")}
 			>
 				{summaryCards.map(
@@ -168,18 +221,17 @@ export function TodayBriefing({ briefing }: TodayBriefingProps) {
 							{...card}
 							title={t(titleKey, fallbackTitle)}
 							description={t(descriptionKey, fallbackDescription)}
-							value={briefing.summary[key]}
+							value={
+								readError ||
+								(key === "criticalIssues"
+									? incomplete
+									: briefing.sections[summarySection[key]].error)
+									? undefined
+									: briefing.summary[key]
+							}
 						/>
 					),
 				)}
-			</section>
-
-			<section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-				<NeedsActionCard items={briefing.needsAction} t={t} />
-				<TodayApprovalsPanel
-					items={briefing.sections.approvals.items}
-					error={briefing.sections.approvals.error}
-				/>
 			</section>
 
 			<section
@@ -187,7 +239,7 @@ export function TodayBriefing({ briefing }: TodayBriefingProps) {
 				aria-label={t("today.briefing.supportingSectionsAriaLabel", "Supporting sections")}
 			>
 				{supportingSections.map(({ key, icon }) => (
-					<SectionCard key={key} section={briefing.sections[key]} icon={icon} />
+					<SectionCard key={key} section={briefing.sections[key]} icon={icon} onRetry={onRetry} />
 				))}
 			</section>
 		</div>
@@ -201,30 +253,42 @@ function SummaryCard({
 	icon: Icon,
 	tone = "default",
 }: SummaryCardProps) {
-	const toneClass =
-		tone === "critical"
-			? "border-destructive/30 bg-destructive/5"
-			: tone === "warning"
-				? "border-amber-500/30 bg-amber-500/5"
-				: "";
+	const { t } = useTranslate();
+	const toneClass = tone === "critical" && value ? "text-destructive" : "";
 
 	return (
-		<Card className={`gap-3 py-4 ${toneClass}`}>
-			<CardContent className="space-y-3 px-4">
+		<div className="min-w-0 border-b p-4 sm:odd:border-r xl:border-r xl:border-b-0 xl:last:border-r-0">
+			<div className="space-y-3">
 				<div className="flex items-center justify-between gap-3">
 					<Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-					<span className="font-semibold text-2xl tabular-nums">{value}</span>
+					<span
+						className={`break-words font-semibold tabular-nums ${value === undefined ? "text-sm" : "text-2xl"} ${toneClass}`}
+					>
+						{value ?? t("today.briefing.unavailable", "Unavailable")}
+					</span>
 				</div>
 				<div className="space-y-1">
 					<h2 className="font-medium text-sm">{title}</h2>
 					<p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</div>
 	);
 }
 
-function NeedsActionCard({ items, t }: { items: BriefingActionItem[]; t: TFunction }) {
+function NeedsActionCard({
+	items,
+	t,
+	incomplete,
+	error,
+	onRetry,
+}: {
+	items: BriefingActionItem[];
+	t: TFunction;
+	incomplete: boolean;
+	error?: string;
+	onRetry?: () => void;
+}) {
 	return (
 		<Card className="gap-4">
 			<CardHeader className="gap-2">
@@ -240,30 +304,41 @@ function NeedsActionCard({ items, t }: { items: BriefingActionItem[]; t: TFuncti
 							)}
 						</CardDescription>
 					</div>
-					<Badge variant={items.length > 0 ? "default" : "secondary"}>{items.length}</Badge>
+					<Badge variant={items.length > 0 ? "default" : "secondary"}>
+						{incomplete ? t("today.briefing.partial", "Partial") : items.length}
+					</Badge>
 				</div>
 			</CardHeader>
 			<CardContent>
+				{error ? <SectionError message={error} onRetry={onRetry} /> : null}
+				{incomplete ? (
+					<p role="status" className="mb-3 text-sm text-muted-foreground">
+						{t(
+							"today.briefing.incomplete",
+							"Some checks are unavailable. Review section errors; these results are incomplete.",
+						)}
+					</p>
+				) : null}
 				{items.length > 0 ? (
 					<div className="divide-y rounded-lg border">
 						{items.map((item) => (
 							<ActionRow key={item.id} item={item} />
 						))}
 					</div>
-				) : (
+				) : !incomplete ? (
 					<EmptyState
 						message={t(
-							"today.briefing.needsAction.empty",
-							"All clear. No manager action is needed right now.",
+							"today.briefing.needsAction.noExceptions",
+							"No operational follow-up detected in this snapshot. This does not confirm employee presence.",
 						)}
 					/>
-				)}
+				) : null}
 			</CardContent>
 		</Card>
 	);
 }
 
-function SectionCard({ section, icon: Icon }: SectionCardProps) {
+function SectionCard({ section, icon: Icon, onRetry }: SectionCardProps) {
 	const { t } = useTranslate();
 
 	return (
@@ -271,10 +346,10 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 			<CardHeader className="gap-2">
 				<div className="flex items-start justify-between gap-3">
 					<div className="space-y-1">
-						<h3 className="flex items-center gap-2 font-semibold text-base leading-none">
+						<h2 className="flex items-center gap-2 font-semibold text-base leading-snug">
 							<Icon className="size-4 text-primary" aria-hidden="true" />
 							{section.titleKey ? t(section.titleKey, section.title) : section.title}
-						</h3>
+						</h2>
 						<CardDescription>
 							{section.descriptionKey
 								? t(section.descriptionKey, section.description)
@@ -282,19 +357,33 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 						</CardDescription>
 					</div>
 					<Badge variant={section.items.length > 0 ? "outline" : "secondary"}>
-						{section.items.length}
+						{section.error ? t("today.briefing.unavailable", "Unavailable") : section.items.length}
 					</Badge>
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				{section.error ? <SectionError message={section.error} /> : null}
+				{section.error ? (
+					<SectionError
+						message={section.error}
+						onRetry={onRetry}
+						title={section.titleKey ? t(section.titleKey, section.title) : section.title}
+					/>
+				) : null}
+				{section.error && section.items.length > 0 ? (
+					<p role="status" className="text-sm text-muted-foreground">
+						{t(
+							"today.briefing.retainedSection",
+							"Previous results shown. Retry to check for changes.",
+						)}
+					</p>
+				) : null}
 				{section.items.length > 0 ? (
 					<div className="divide-y rounded-lg border">
 						{section.items.map((item) => (
 							<ActionRow key={item.id} item={item} compact />
 						))}
 					</div>
-				) : (
+				) : !section.error ? (
 					<EmptyState
 						message={
 							section.emptyStateKey
@@ -302,7 +391,7 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 								: (section.emptyState ?? t("today.briefing.sections.empty", "No issues detected."))
 						}
 					/>
-				)}
+				) : null}
 			</CardContent>
 		</Card>
 	);
@@ -361,10 +450,45 @@ function EmptyState({ message }: EmptyStateProps) {
 	);
 }
 
-function SectionError({ message }: { message: string }) {
+export function SectionError({
+	message,
+	onRetry,
+	title,
+}: {
+	message: string;
+	onRetry?: () => void;
+	title?: string;
+}) {
+	const { t } = useTranslate();
 	return (
-		<div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
-			{message}
+		<div
+			role="alert"
+			className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm"
+		>
+			<p>{message}</p>
+			<Button
+				type="button"
+				size="sm"
+				variant="outline"
+				onClick={onRetry}
+				aria-label={
+					title
+						? t("today.briefing.retrySection", "Retry {title}", { title })
+						: t("today.briefing.retry", "Retry briefing")
+				}
+			>
+				{t("common.retry", "Retry")}
+			</Button>
 		</div>
 	);
 }
+
+const summarySection = {
+	criticalIssues: "attendance",
+	openApprovals: "approvals",
+	attendanceExceptions: "attendance",
+	payrollIssues: "payroll",
+	coverageRisks: "coverage",
+	overtimeWarnings: "overtime",
+	absencesToday: "absences",
+} as const;

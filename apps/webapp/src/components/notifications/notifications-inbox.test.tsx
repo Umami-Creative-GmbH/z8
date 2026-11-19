@@ -15,6 +15,16 @@ vi.mock("@/hooks/use-organization", () => ({
 	useOrganization: vi.fn(),
 }));
 
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: {
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org_123" },
+		},
+		isPending: false,
+	}),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 	useTranslate: () => ({
@@ -83,10 +93,12 @@ describe("NotificationsInbox", () => {
 
 		expect(screen.getByText("Notifications")).toBeTruthy();
 		expect(screen.getByText("No notifications")).toBeTruthy();
-		expect(screen.getByText("You are all caught up. New updates will appear here.")).toBeTruthy();
-		expect(screen.getByRole("link", { name: /settings/i }).getAttribute("href")).toBe(
-			"/settings/notifications",
-		);
+		expect(
+			screen.getByText("You are all caught up. New updates will appear here."),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: /settings/i }).getAttribute("href"),
+		).toBe("/settings/notifications");
 		expect(useNotificationsMock).toHaveBeenCalledWith({
 			enabled: true,
 			limit: 100,
@@ -101,7 +113,9 @@ describe("NotificationsInbox", () => {
 
 		expect(screen.getByText("No unread notifications")).toBeTruthy();
 		expect(
-			screen.getByText("You are all caught up. New unread updates will appear here."),
+			screen.getByText(
+				"You are all caught up. New unread updates will appear here.",
+			),
 		).toBeTruthy();
 	});
 });

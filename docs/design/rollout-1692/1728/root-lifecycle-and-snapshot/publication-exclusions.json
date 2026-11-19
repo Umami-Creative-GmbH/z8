@@ -1,0 +1,12 @@
+{
+  "indexedArtifacts": 109,
+  "publicIndexedArtifacts": 108,
+  "excluded": [
+    {
+      "path": "pg-all-private.log",
+      "bytes": 2968,
+      "sha256": "af809973f2d2b8808c8e1fea790da2e4a5972e254112c929bd6aa23fc5a8fb00",
+      "reason": "Private raw PostgreSQL log remains local; hash-only entry retained in the original index."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
@@ -12,15 +12,15 @@ import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
-	findEmployeesNotOnCurrentRoster,
-	formerEmployeeRefusal,
-} from "@/lib/employee-lifecycle/current-roster-guard";
-import {
 	AuthorizationError,
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	type AssignmentContext,
 	decideSkillOverride,
@@ -880,7 +880,7 @@ export const ShiftServiceLive = Layer.effect(
 							.where(
 								and(
 									eq(shift.organizationId, organizationId),
-									sql`${shift.id} = ANY(${shiftIds})`,
+									inArray(shift.id, shiftIds),
 								),
 							);
 					});

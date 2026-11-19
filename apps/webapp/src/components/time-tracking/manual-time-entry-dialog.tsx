@@ -1118,13 +1118,14 @@ function ManualEntryFormContent({
 					<form.Field name="workLocationType">
 						{(field) => (
 							<fieldset
-								className="@container/widget grid gap-2"
+								className="@container/widget grid min-w-0 gap-2"
 								disabled={!isContextReady || isTimezoneContinuationPending}
 							>
 								<legend className="mb-2 text-sm font-medium">
 									{t("timeTracking.workLocation", "Work location")}
 								</legend>
 								<WorkLocationSelector
+									layout="two-column"
 									value={field.state.value}
 									onChange={field.handleChange}
 									t={t}

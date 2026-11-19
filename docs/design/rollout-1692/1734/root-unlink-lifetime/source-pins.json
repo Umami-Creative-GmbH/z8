@@ -1,0 +1,623 @@
+{
+  "state": "PROVISIONAL_RECORDED_CANDIDATE",
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "tree": "8c3a3993377ebde26099a95c55a2f31855791364",
+  "applicationTree": "4b73ae53152a8dd08703811ad2e5232b62cf6065",
+  "correctionSource": "81a94f940b7b7fbd13a823665b993b616973b2ae",
+  "provisionalCorrectionMerge": "a5b0f7d8ff912c30197b81ba6ffe574ef68d6215",
+  "incoming": "e194f9f367ff747ecab779ebd47c2ba34c684b84",
+  "incomingMerge": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+  "historicalConsumers": "a904b3d19815bd511c67514fb48078cd4aec262f",
+  "lastVerified": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+  "verifiedCommit": null,
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "archivePath": "archive/source/apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "bytes": 4118,
+      "rawSha256": "c0892fb16b400539574b5033a47bc3bdee5d33c6eb82f3b62df5fab405bce2d9",
+      "lfBytes": 4002,
+      "lfSha256": "2b1fd0d522d4a9986a941eb8edfc4177c5cb9364e672fd6ef95b1638e4a501cb",
+      "computedCanonicalGitBlob": "a3cec59c45eab6ef5bbdfab8efcc4da3df6c15ca",
+      "recordedGitBlob": "a3cec59c45eab6ef5bbdfab8efcc4da3df6c15ca",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+      "bytes": 11410,
+      "rawSha256": "9b6cefb865e360e1f899f2ee22e8278fb4dd979fbf30dded0c71f254ef75dd81",
+      "lfBytes": 11027,
+      "lfSha256": "da7b84ce2f970bc8c261174f154edd7ad79a7af1ef04e77c019b3610ee8ed98b",
+      "computedCanonicalGitBlob": "a076b2b49071332e383bd2c3b428cfb30e6f1d27",
+      "recordedGitBlob": "a076b2b49071332e383bd2c3b428cfb30e6f1d27",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-own-absence-sick-notes.ts",
+      "archivePath": "archive/source/apps/webapp/src/components/absences/sick-notes/use-own-absence-sick-notes.ts",
+      "bytes": 1382,
+      "rawSha256": "c49c8681223cbb22559fd7051bb7645375e60542b05bc3669339d22f295ad076",
+      "lfBytes": 1345,
+      "lfSha256": "29daf8e08d942b54fe38dbbc5bddc5659f81c6013a11bb23af39cd5b1b3b04b5",
+      "computedCanonicalGitBlob": "89d113b27e5515ff3684961d2451df47dc281a88",
+      "recordedGitBlob": null,
+      "provenance": "Additional publication source boundary; computed LF/blob only, root audits actual Git blob"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+      "archivePath": "archive/source/apps/webapp/src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+      "bytes": 2091,
+      "rawSha256": "6b61dbde2e1ae753fae4d70ff46a0a77c2de018ac71a7e70b0832692b6bf07d0",
+      "lfBytes": 2024,
+      "lfSha256": "94e127ad5e8e21921ce5fe65e687ec5eee604d31901064647502eb87b00be7bb",
+      "computedCanonicalGitBlob": "6acd2a096ff0778dfc9d4c1fabf58a61d6ea2d8a",
+      "recordedGitBlob": "6acd2a096ff0778dfc9d4c1fabf58a61d6ea2d8a",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "bytes": 14562,
+      "rawSha256": "5a25257f626362474baa0beeb022fa3e4d3967aa34c480537f82d26bcc9debec",
+      "lfBytes": 14054,
+      "lfSha256": "a38b5844f7ce9f19a700aecabb65d2c9c8243bed7e5b3cc5133911c64f0bf690",
+      "computedCanonicalGitBlob": "2f1595d157c30dbdd3fe220ff75e1b5200d58ed5",
+      "recordedGitBlob": "2f1595d157c30dbdd3fe220ff75e1b5200d58ed5",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+      "bytes": 14449,
+      "rawSha256": "683ee55e85406e8053ec91970226356e5ce2e71f711ceadf9ee866b3aadfae28",
+      "lfBytes": 13986,
+      "lfSha256": "8770a66352338eed04a20b336991544324eb396fdd1c97e7fc546b7863ebac2f",
+      "computedCanonicalGitBlob": "466c4763753df1675476ed5a5e98c28fe96313a8",
+      "recordedGitBlob": null,
+      "provenance": "Additional publication source boundary; computed LF/blob only, root audits actual Git blob"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "bytes": 20203,
+      "rawSha256": "06e69cbf71b9958c70dcee378e67815d2a67f8c895b546da28e10689200f7b5d",
+      "lfBytes": 19513,
+      "lfSha256": "7e03b0e9b9194bf88a9ce987da8a2e73d89fc25f9d0dfc9f60290bcbe19cc3f8",
+      "computedCanonicalGitBlob": "b8ecfdd7dd805c667a1930d57c4d5007153ea92a",
+      "recordedGitBlob": "b8ecfdd7dd805c667a1930d57c4d5007153ea92a",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+      "bytes": 16256,
+      "rawSha256": "77417fecd6f77218837e8d5382348233677f5d2c991c6ab31c259ec4c98810b2",
+      "lfBytes": 15782,
+      "lfSha256": "4c9b8c3842aa44ffc236c70a26b78df5f3f59cdabec48c68ee59c165e861495e",
+      "computedCanonicalGitBlob": "2af40c4e9b8497e56cb466734d93c40be9e2d411",
+      "recordedGitBlob": "2af40c4e9b8497e56cb466734d93c40be9e2d411",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-note-links.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/personnel-file/sick-note-links.tsx",
+      "bytes": 10999,
+      "rawSha256": "a6480296c15d15a34150f15665eb0cebbf47e9593810bc315d6349d13f81b63d",
+      "lfBytes": 10658,
+      "lfSha256": "73a7d51291eabf7c6a4d2dc38aca5de1c63c7973fd3b7c692dbd7448c954a8ce",
+      "computedCanonicalGitBlob": "f77638ce4063167e4a2415facce1a460dcfa92ef",
+      "recordedGitBlob": null,
+      "provenance": "Additional publication source boundary; computed LF/blob only, root audits actual Git blob"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "bytes": 7321,
+      "rawSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "lfBytes": 7081,
+      "lfSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "computedCanonicalGitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "recordedGitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "archivePath": "archive/source/apps/webapp/src/components/site-header.tsx",
+      "bytes": 5117,
+      "rawSha256": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lfBytes": 4969,
+      "lfSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "computedCanonicalGitBlob": "ce04338a66447465689b321227db26da97cabe56",
+      "recordedGitBlob": "ce04338a66447465689b321227db26da97cabe56",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "archivePath": "archive/source/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "bytes": 10143,
+      "rawSha256": "53b4f78946922cdb6923798db2e0b8b8c3667084cef1f5a4dfc4ef13ec458561",
+      "lfBytes": 9924,
+      "lfSha256": "9aae95c2e8766c75fe939e6d57c4086f95dcfc2ca2ce16a3caadf7a2d3fc94e9",
+      "computedCanonicalGitBlob": "513a8a30666efd30a712d296f0b0b49063be0a3b",
+      "recordedGitBlob": null,
+      "provenance": "Additional publication source boundary; computed LF/blob only, root audits actual Git blob"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "archivePath": "archive/source/apps/webapp/src/lib/navigation/route-metadata.ts",
+      "bytes": 7409,
+      "rawSha256": "b981444d81f2bf922849c6823c9ad1990501ccd974e29a8d504be6514077604f",
+      "lfBytes": 7140,
+      "lfSha256": "67fd2f5eb03d57fd84104a292b3038645658e74cb403aead7fc9aa42787a5945",
+      "computedCanonicalGitBlob": "896047173635780ce8dc8b00479c9982cdc9a032",
+      "recordedGitBlob": "896047173635780ce8dc8b00479c9982cdc9a032",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/keys.ts",
+      "archivePath": "archive/source/apps/webapp/src/lib/query/keys.ts",
+      "bytes": 37263,
+      "rawSha256": "c8b19ad609774388a6d68711c7f3b657467dbd9ec0cc891e8571b8edab6c9707",
+      "lfBytes": 36431,
+      "lfSha256": "13d15febe8fad3e9267d2f7a2a0209506f5061def5a0d018a2d48ecdae59534b",
+      "computedCanonicalGitBlob": "1563a863ad990995ff9f9a56aa56b28b124c9386",
+      "recordedGitBlob": null,
+      "provenance": "Additional publication source boundary; computed LF/blob only, root audits actual Git blob"
+    },
+    {
+      "path": "apps/webapp/src/lib/run-with-cleanup.ts",
+      "archivePath": "archive/source/apps/webapp/src/lib/run-with-cleanup.ts",
+      "bytes": 179,
+      "rawSha256": "914bdbeffcfc6ebcebc63f5a8a8dddceafe2c4f34def8552360376661780c151",
+      "lfBytes": 169,
+      "lfSha256": "7de9598c3232e22ba4783f9e4851bea572c652dee3c6a3098721002262cd2dc8",
+      "computedCanonicalGitBlob": "c86518134ffb792b1299137170a990a1f2e2ca10",
+      "recordedGitBlob": "c86518134ffb792b1299137170a990a1f2e2ca10",
+      "provenance": "Matches recorded independent/root source pins including canonical blob"
+    }
+  ],
+  "configPins": [
+    {
+      "path": ".npmrc",
+      "archivePath": "archive/config/.npmrc",
+      "bytes": 105,
+      "rawSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "lfBytes": 102,
+      "lfSha256": "dd998aaa9f9922968f3267afc734950541138c7d0e00665590907f81824641c0",
+      "computedCanonicalGitBlob": "901e422dfa4838df9e44e94aff5f9804c71f54bf",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "archivePath": "archive/config/apps/desktop/package.json",
+      "bytes": 1294,
+      "rawSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "lfBytes": 1249,
+      "lfSha256": "67b6912a0634c8d1c1d504e99bc4dbc3273c305d96d6c678e1459ccef9b28ebf",
+      "computedCanonicalGitBlob": "cd85e43b66add6695d43a3f175b30e9073d0d8c4",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "archivePath": "archive/config/apps/desktop/tsconfig.json",
+      "bytes": 633,
+      "rawSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "lfBytes": 609,
+      "lfSha256": "f59bde5e2e38c1470a5aac02b87339f56a94b99a240f3505eb9a74ed9407eb01",
+      "computedCanonicalGitBlob": "123792ce31a9d6fdada4546a5d96042d8af60d7c",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "archivePath": "archive/config/apps/desktop/tsconfig.node.json",
+      "bytes": 223,
+      "rawSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "lfBytes": 213,
+      "lfSha256": "9e2abb169ea87b7190613a1d4da57ca608463a453bd4231fa3aeee5e308370dd",
+      "computedCanonicalGitBlob": "42872c59f5b01c9155864572bc2fbd5833a7406c",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "archivePath": "archive/config/apps/desktop/vitest.config.ts",
+      "bytes": 156,
+      "rawSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "lfBytes": 152,
+      "lfSha256": "c2dbb9dfc889a5e75e47ffc12f69a322de097cf5fec3ecf441c0801857263502",
+      "computedCanonicalGitBlob": "0f9a3209e3538b13d8009d113d3735303cdb97b6",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/docs/next.config.mjs",
+      "archivePath": "archive/config/apps/docs/next.config.mjs",
+      "bytes": 207,
+      "rawSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "lfBytes": 197,
+      "lfSha256": "86ab8a58ffa347d40b42acc70fe78bfa297b7ea70d18e84cf1fd1fb236795d55",
+      "computedCanonicalGitBlob": "457dcf29d20b23969c6b6daac0100b66a2d7fde2",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/docs/package.json",
+      "archivePath": "archive/config/apps/docs/package.json",
+      "bytes": 745,
+      "rawSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "lfBytes": 715,
+      "lfSha256": "1b2cc9cf320f8502a224271a8979d576cb65a5db3062c78133ce6fc084f023ac",
+      "computedCanonicalGitBlob": "3aeb05dace6b34ecfb5d99bc2427143c28862e0b",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/docs/tsconfig.json",
+      "archivePath": "archive/config/apps/docs/tsconfig.json",
+      "bytes": 854,
+      "rawSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "lfBytes": 811,
+      "lfSha256": "6fa9a44e852f873578c5d92c4d5e0e801c90bf13a0f724e5fe6761e772bb4ee8",
+      "computedCanonicalGitBlob": "a235ed0aa4cd034f5f85b407eaeb67c11b712928",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/marketing/biome.jsonc",
+      "archivePath": "archive/config/apps/marketing/biome.jsonc",
+      "bytes": 1450,
+      "rawSha256": "2e9f25762a0f614245768779d41720c5dadfaf34c55b1941fe47a4e4f3d2365e",
+      "lfBytes": 1379,
+      "lfSha256": "aaadb426502d0d513c908b00d7fb2af0e1c5932fb540959e50ea168534456904",
+      "computedCanonicalGitBlob": "f4c2096713746e8ea10e7a9cd5709ef4968538a4",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/marketing/next.config.ts",
+      "archivePath": "archive/config/apps/marketing/next.config.ts",
+      "bytes": 280,
+      "rawSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "lfBytes": 264,
+      "lfSha256": "a713b10723519883797a0234aed41c1926511030635b89f6a09a4f70158416d6",
+      "computedCanonicalGitBlob": "18969479290931565660edaf6f8a99c5f1198d7d",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "archivePath": "archive/config/apps/marketing/package.json",
+      "bytes": 816,
+      "rawSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "lfBytes": 784,
+      "lfSha256": "f8453307c0a5cd240b2c24bd683fcd8d262c127a93154e302730add2d94cb1f2",
+      "computedCanonicalGitBlob": "2727137574d71cc268f4d7a58ba524acedaa2cce",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/marketing/tsconfig.json",
+      "archivePath": "archive/config/apps/marketing/tsconfig.json",
+      "bytes": 654,
+      "rawSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "lfBytes": 620,
+      "lfSha256": "38279c637fd0e81d04f624c839d610c39d62158fdd5efb7da64f6f1a2f45d950",
+      "computedCanonicalGitBlob": "3180b6b614e1902ddfb14c322b7edfb34b244cd6",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "archivePath": "archive/config/apps/mobile/package.json",
+      "bytes": 1375,
+      "rawSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "lfBytes": 1338,
+      "lfSha256": "1fd56c297b4e087ea8048d00eb546897e7c720ef8934d908c1a125e6cffa3fe4",
+      "computedCanonicalGitBlob": "142e458a0bf96ec328fe7e711db62b4d93f89b1b",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/mobile/tsconfig.json",
+      "archivePath": "archive/config/apps/mobile/tsconfig.json",
+      "bytes": 371,
+      "rawSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "lfBytes": 355,
+      "lfSha256": "d71de2c271d2a8020017f4944e0e929b62fee1cedb676f5d043e5cf2abccb310",
+      "computedCanonicalGitBlob": "f93aa9f526f3be3cce9b373324a73d9581d945d8",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "archivePath": "archive/config/apps/webapp/biome.jsonc",
+      "bytes": 1756,
+      "rawSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "lfBytes": 1672,
+      "lfSha256": "b0f8500d2fb0110c4ee2915ddf00fd12f9c146544f016b9422f651f93a029b68",
+      "computedCanonicalGitBlob": "8b3443699f4cd49c80712705436546ca5934476a",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "archivePath": "archive/config/apps/webapp/next.config.ts",
+      "bytes": 4308,
+      "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "lfBytes": 4154,
+      "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "computedCanonicalGitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "archivePath": "archive/config/apps/webapp/package.json",
+      "bytes": 8541,
+      "rawSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "lfBytes": 8339,
+      "lfSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "computedCanonicalGitBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "archivePath": "archive/config/apps/webapp/tsconfig.json",
+      "bytes": 687,
+      "rawSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "lfBytes": 653,
+      "lfSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "computedCanonicalGitBlob": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "archivePath": "archive/config/apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "rawSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "lfBytes": 202,
+      "lfSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "computedCanonicalGitBlob": "e1ff03407fa993bf86febced177e215913454df1",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "archivePath": "archive/config/apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "rawSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "lfBytes": 244,
+      "lfSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "computedCanonicalGitBlob": "8bf7f766f1e6385391c06810d2127373c3f1457b",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "archivePath": "archive/config/apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "rawSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "lfBytes": 437,
+      "lfSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "computedCanonicalGitBlob": "70cb54aa1232d668bccf8230215e4dfc2d699c45",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "archivePath": "archive/config/apps/webapp/vitest.config.ts",
+      "bytes": 1840,
+      "rawSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "lfBytes": 1782,
+      "lfSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "computedCanonicalGitBlob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "archivePath": "archive/config/docker/targets/db-seed/package.json",
+      "bytes": 401,
+      "rawSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "lfBytes": 383,
+      "lfSha256": "617ac9f1ac1b9af81652aa095888963b1fc20634cca2001186412ab02e689e8e",
+      "computedCanonicalGitBlob": "97e91091024ec5d7af90983658b27d15e5e1ef6c",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-lock.yaml",
+      "archivePath": "archive/config/docker/targets/db-seed/pnpm-lock.yaml",
+      "bytes": 34617,
+      "rawSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "lfBytes": 34617,
+      "lfSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "computedCanonicalGitBlob": "7cfb4ba913dfe0910477a6916bee08b65cdf1774",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-workspace.yaml",
+      "archivePath": "archive/config/docker/targets/db-seed/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "lfBytes": 1361,
+      "lfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "computedCanonicalGitBlob": "3e42bba732734f87c407d35526bade9425a45775",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "archivePath": "archive/config/docker/targets/migration/package.json",
+      "bytes": 272,
+      "rawSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "lfBytes": 259,
+      "lfSha256": "fd7eca485085fc9e71c850e3ac6149b1848a9e90978735a430fb9f864cb1da3d",
+      "computedCanonicalGitBlob": "cfde57d378dd1e0d414aefef67f18e2beef7e912",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-lock.yaml",
+      "archivePath": "archive/config/docker/targets/migration/pnpm-lock.yaml",
+      "bytes": 22958,
+      "rawSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "lfBytes": 22958,
+      "lfSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "computedCanonicalGitBlob": "f890e49c7a68ed9c513e769f4d3d41bf4207c8a0",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-workspace.yaml",
+      "archivePath": "archive/config/docker/targets/migration/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "lfBytes": 1361,
+      "lfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "computedCanonicalGitBlob": "3e42bba732734f87c407d35526bade9425a45775",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "archivePath": "archive/config/docker/targets/worker/package.json",
+      "bytes": 1534,
+      "rawSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "lfBytes": 1478,
+      "lfSha256": "3b2a2afb8d560a8c12626802acf4436eff50f708dc215f40bfa6e4c00a679cd6",
+      "computedCanonicalGitBlob": "dd58f83c1e42c7824cd4bda4f7e36b94f998bc42",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-lock.yaml",
+      "archivePath": "archive/config/docker/targets/worker/pnpm-lock.yaml",
+      "bytes": 188668,
+      "rawSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "lfBytes": 188668,
+      "lfSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "computedCanonicalGitBlob": "471e295e875774ee3a99f5b0625aa89ce9e18589",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-workspace.yaml",
+      "archivePath": "archive/config/docker/targets/worker/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "lfBytes": 1361,
+      "lfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "computedCanonicalGitBlob": "3e42bba732734f87c407d35526bade9425a45775",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "archivePath": "archive/config/docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "bytes": 942,
+      "rawSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "lfBytes": 938,
+      "lfSha256": "275338b163b78082598c96456718d272b66b108dbe3d524bc3e3a6df9071fb33",
+      "computedCanonicalGitBlob": "38d9f2cb96ce977e0d9b601cc4beb84e0618fc1e",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "archivePath": "archive/config/docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "bytes": 971,
+      "rawSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "lfBytes": 967,
+      "lfSha256": "077cdcfa5215c7ea365847ad26773bcc796bc635fdda5fd1a7c023e7346e6f24",
+      "computedCanonicalGitBlob": "e33989c220645b4e00d890dc81e217ec33e6e243",
+      "provenance": "Read-only publication measurement; frozen config roster inherited, old pin values not reused"
+    },
+    {
+      "path": "package.json",
+      "archivePath": "archive/config/package.json",
+      "bytes": 6018,
+      "rawSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "lfBytes": 5951,
+      "lfSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "computedCanonicalGitBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "archivePath": "archive/config/pnpm-lock.yaml",
+      "bytes": 771361,
+      "rawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "lfBytes": 771361,
+      "lfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "computedCanonicalGitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "provenance": "Matches fresh independent preservation config pin"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "archivePath": "archive/config/pnpm-workspace.yaml",
+      "bytes": 1880,
+      "rawSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "lfBytes": 1816,
+      "lfSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "computedCanonicalGitBlob": "72bd6c845fc48f077c52fd789d799cb0928b6873",
+      "provenance": "Matches fresh independent preservation config pin"
+    }
+  ],
+  "reportOriginalPrefix": {
+    "path": "docs/design/rollout-1692/1734.md",
+    "bytes": 18486,
+    "rawSha256": "6b485ccb5569ed22b2168a69d9d222416400d524fe53c7f6079942e98f124d03",
+    "lfBytes": 18240,
+    "lfSha256": "c56f8d1aef673926060a105d4ba4bca60e9be3b77cfe5e6a6adf58daff5bc985",
+    "computedCanonicalGitBlob": "dea4afc3587dd3eb17cbb52ba7239151dd1ead97",
+    "boundary": "Original raw prefix; computed LF blob is publication provenance, root independently audits actual Git bytes."
+  },
+  "canonicalBoundary": "Working bytes are copied raw; LF normalization is used only for digest/blob identity and never rewrites source. Computed Git blob is SHA1(blob <LF-byte-length> NUL <LF-content>); root independently audits actual Git blobs and report canonicalization.",
+  "source81AndCandidateApplicationTreeIdentical": true,
+  "source81AndCandidateApplicationTreeEvidence": "Root-supplied clean candidate plus checks.json applicationTree; publisher performed no Git operation.",
+  "historicalBoundary": "Exact pinned premerge/merged control source copies survive in archive/merger-stop; overlay-pins.json records exact a904 historical page/overview consumers. Historical page bytes and uncommitted intermediate root test shapes are not fabricated or replayed.",
+  "dependencies": [
+    {
+      "name": "next",
+      "version": "16.4.6",
+      "packageJson": "node_modules/.pnpm/next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915/node_modules/next/package.json",
+      "sha256": "ed29e68845a44d4cd30518dd0df0554fcf6f6ada99b81f4e8798d26dc6964f82"
+    },
+    {
+      "name": "react",
+      "version": "19.3.1",
+      "packageJson": "node_modules/.pnpm/react@19.3.1/node_modules/react/package.json",
+      "sha256": "9cc9c3de5441a2eea7f41f52f3f2a15a4fc51f90c0b72741f0d7638643a85e67"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.1",
+      "packageJson": "node_modules/.pnpm/react-dom@19.3.1_react@19.3.1/node_modules/react-dom/package.json",
+      "sha256": "89d54f11575c9b0f7819962d9d72a31970dfb4d103f07e8b1d1b37e6d1fc3258"
+    },
+    {
+      "name": "@tanstack/react-query",
+      "version": "5.107.1",
+      "packageJson": "node_modules/.pnpm/@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416/node_modules/@tanstack/react-query/package.json",
+      "sha256": "2a2d66d46321b0a124a3ad5f8d6378ec08621bcc18f91ab3128b4fc884d51cbe"
+    },
+    {
+      "name": "vitest",
+      "version": "5.1.0",
+      "packageJson": "node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/package.json",
+      "sha256": "cc2979885d9d149c8456128e7ae48038d815352cf1e6d1932eb631057a99f973"
+    },
+    {
+      "name": "pg",
+      "version": "8.23.1",
+      "packageJson": "node_modules/.pnpm/pg@8.23.1/node_modules/pg/package.json",
+      "sha256": "b1e53333a3d0c2c47c49a5cb919d221135dc03145df740925b899bc2baacc435"
+    },
+    {
+      "name": "sharp",
+      "version": "0.35.5",
+      "packageJson": "node_modules/.pnpm/sharp@0.35.5_@types+node@26.6.6/node_modules/sharp/package.json",
+      "sha256": "ad4a2535d72eb638053a38867b1abf43c328cd1c1dbae5cf4172d498365a8b97"
+    }
+  ],
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "physical": true,
+      "real": "node_modules"
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true,
+      "real": "apps/webapp/node_modules"
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true,
+      "real": "node_modules/.pnpm"
+    }
+  ],
+  "internalLeafLinks": 158,
+  "topologySha256": "b5c76e8143f0754f12522ddd486d0645e558d9c5047d186a9cb54274db61a0fd",
+  "licenses": {
+    "count": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "provenance": "Inherited, not regenerated"
+  }
+}

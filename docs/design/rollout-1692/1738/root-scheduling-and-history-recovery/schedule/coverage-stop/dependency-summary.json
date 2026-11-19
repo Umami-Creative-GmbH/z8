@@ -1,0 +1,17 @@
+{
+    "physicalParents":  [
+                            "node_modules",
+                            "apps/webapp/node_modules",
+                            "node_modules/.pnpm"
+                        ],
+    "frozenRootAppLeaves":  158,
+    "rootLeaves":  5,
+    "webappLeaves":  153,
+    "separatePnpmInternalLinks":  1598,
+    "externalPnpmTargets":  0,
+    "lockSha256":  "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "licenseSha256":  "FD8CA4BF29B59368907AE8D52A5149B3959A901194F424AD605044F67C2F0BBF",
+    "licenseObjectKeyCount":  125,
+    "initialPinsCountCorrection":  "licenseCount=1 was PowerShell wrapper count, not 125 package keys",
+    "installOrRepairRun":  false
+}

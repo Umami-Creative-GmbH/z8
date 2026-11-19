@@ -1,0 +1,4 @@
+[fix/1736-report-scope-recovery 0fa4e6c93] Fix #1736 report scope recovery and stable revoke lifetime
+ 16 files changed, 444 insertions(+), 712 deletions(-)
+ create mode 100644 apps/webapp/src/components/reports/projects/project-report-scope-recovery.test.tsx
+ create mode 100644 apps/webapp/src/components/reports/projects/report-scope-failure.tsx

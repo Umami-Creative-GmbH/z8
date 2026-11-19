@@ -1,0 +1,61 @@
+{
+  "buttons": [
+    {
+      "text": "Certificate",
+      "aria": null,
+      "role": "combobox"
+    },
+    {
+      "text": "Fixture team 0",
+      "aria": "Fixture team 0",
+      "role": "switch"
+    },
+    {
+      "text": "Fixture team 1",
+      "aria": "Fixture team 1",
+      "role": "switch"
+    },
+    {
+      "text": "Select employees",
+      "aria": null,
+      "role": "combobox"
+    },
+    {
+      "text": "Pick a date",
+      "aria": null,
+      "role": null
+    },
+    {
+      "text": "Cancel",
+      "aria": null,
+      "role": null
+    },
+    {
+      "text": "Request",
+      "aria": null,
+      "role": null
+    },
+    {
+      "text": "Close",
+      "aria": null,
+      "role": null
+    }
+  ],
+  "inputs": [
+    {
+      "id": "base-ui-_r_2l_-hidden-input",
+      "type": "text",
+      "name": ""
+    },
+    {
+      "id": "_r_2t_-form-item",
+      "type": "text",
+      "name": ""
+    },
+    {
+      "id": "_r_32_-form-item",
+      "type": "textarea",
+      "name": ""
+    }
+  ]
+}

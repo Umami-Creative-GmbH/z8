@@ -1,0 +1,62 @@
+{
+  "remainingOwnedContainers": 0,
+  "listenerPort": 53297,
+  "remainingOwnedProcesses": 0,
+  "previewTab": "closed",
+  "originalNativeSession": "inactive; daemon exited",
+  "cleanup": "exact own identities only; no global sweep",
+  "runtimeControllers": "exited",
+  "listeners": 0,
+  "auditNativeSession": "closed",
+  "containers": [
+    {
+      "name": "z8_perf_2b7404884ffa_postgres",
+      "present": false
+    },
+    {
+      "name": "z8_perf_2b7404884ffa_redis",
+      "present": false
+    },
+    {
+      "name": "z8_perf_2b7404884ffa_storage",
+      "present": false
+    }
+  ],
+  "recordedOwnedPidsChecked": [
+    67516,
+    83260,
+    41536,
+    79480,
+    72220,
+    19028,
+    60540,
+    76880,
+    74044,
+    37476,
+    77848,
+    71072,
+    47240,
+    83928,
+    76836,
+    67160,
+    2204,
+    72360,
+    46468,
+    59628,
+    59576,
+    82296,
+    82868,
+    26228,
+    30604,
+    44024,
+    82684,
+    65968,
+    7692,
+    10372,
+    62248,
+    73948,
+    44788,
+    90300,
+    89028
+  ]
+}

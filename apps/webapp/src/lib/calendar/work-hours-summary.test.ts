@@ -261,9 +261,9 @@ describe("buildDailyWorkHoursSummaries with live work", () => {
 
 describe("format helpers", () => {
 	it("formats required hours and signed deltas", () => {
-		expect(formatTimeHours(480)).toBe("8:00h");
-		expect(formatTimeHours(449)).toBe("7:29h");
-		expect(formatSignedMinutes(7)).toBe("+0:07h");
-		expect(formatSignedMinutes(-31)).toBe("-0:31h");
+		expect(formatTimeHours(480)).toBe("8h 00m");
+		expect(formatTimeHours(449)).toBe("7h 29m");
+		expect(formatSignedMinutes(7)).toBe("+0h 07m");
+		expect(formatSignedMinutes(-31)).toBe("-0h 31m");
 	});
 });

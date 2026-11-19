@@ -1,0 +1,15 @@
+{
+  "head": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+  "session": "next-dev-loop-1834-t3-fdc2d97a-f605ff250f82822d",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "canonicalSha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "canonicalSha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+    }
+  ],
+  "targetTreePresent": true
+}

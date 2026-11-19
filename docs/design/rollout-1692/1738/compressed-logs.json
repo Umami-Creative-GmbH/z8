@@ -1,0 +1,16 @@
+[
+  {
+    "original": "biome-ordinary.log",
+    "sha256": "5cb844a8abf512ed6b60b5bdf513a68523dec7bb6e4bb729efc96bb8127e0531",
+    "bytes": 145390,
+    "archive": "biome-ordinary.log.gz",
+    "archiveSha256": "7226f756032a9fe391bea93e44fe504a9f9440cf207dc4ca204fe7064fff26f6"
+  },
+  {
+    "original": "unit.log",
+    "sha256": "1372460c1848357f3b1795cf42285f2ae9d41e83bce0c568e548628ef0c50ee8",
+    "bytes": 98816,
+    "archive": "unit.log.gz",
+    "archiveSha256": "7a7858380b14d57c892fbbc926d91606dabdb3724ecffeb32cbbce7a57927883"
+  }
+]

@@ -2,7 +2,7 @@
 
 /* eslint-disable react-doctor/no-giant-component */
 
-import { IconLoader2, IconX } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp, IconLoader2, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -433,44 +433,54 @@ export function WorkCategorySetDialog({
 									{/* Selected categories (sortable) */}
 									{selectedCategories.length > 0 && (
 										<div className="space-y-2">
-											<p className="text-sm text-muted-foreground">
+											<p
+												id="work-category-set-order-hint"
+												className="text-sm text-muted-foreground"
+											>
 												{t(
-													"settings.workCategories.selectedCategories",
-													"Selected categories (drag to reorder)",
+													"settings.workCategories.selectedCategoriesOrder",
+													"Selected categories (use the arrows to reorder)",
 												)}
 											</p>
-											<div className="space-y-1 rounded-lg border p-2">
+											<ol
+												aria-describedby="work-category-set-order-hint"
+												className="space-y-1 rounded-lg border p-2"
+											>
 												{selectedCategories.map((category, index) => (
-													<div
+													<li
 														key={category.id}
-														className="flex items-center gap-2 rounded-md bg-muted/50 p-2"
+														className="flex items-center gap-2 rounded-md bg-muted/50 p-1"
 													>
-														<div className="flex flex-col gap-0.5">
+														<div className="flex items-center">
 															<Button
 																type="button"
 																variant="ghost"
 																size="icon"
-																className="size-4 p-0"
+																className="size-8"
 																onClick={() => moveUp(index)}
 																disabled={index === 0}
-																aria-label={t("common.moveUp", "Move up")}
+																aria-label={t(
+																	"settings.workCategories.moveCategoryUp",
+																	"Move {name} up",
+																	{ name: category.name },
+																)}
 															>
-																<span className="text-xs" aria-hidden="true">
-																	&#9650;
-																</span>
+																<IconChevronUp className="size-4" aria-hidden="true" />
 															</Button>
 															<Button
 																type="button"
 																variant="ghost"
 																size="icon"
-																className="size-4 p-0"
+																className="size-8"
 																onClick={() => moveDown(index)}
 																disabled={index === selectedCategories.length - 1}
-																aria-label={t("common.moveDown", "Move down")}
+																aria-label={t(
+																	"settings.workCategories.moveCategoryDown",
+																	"Move {name} down",
+																	{ name: category.name },
+																)}
 															>
-																<span className="text-xs" aria-hidden="true">
-																	&#9660;
-																</span>
+																<IconChevronDown className="size-4" aria-hidden="true" />
 															</Button>
 														</div>
 														{category.color && (
@@ -480,23 +490,29 @@ export function WorkCategorySetDialog({
 																aria-hidden="true"
 															/>
 														)}
-														<span className="flex-1 font-medium text-sm">{category.name}</span>
-														<Badge variant="outline" className="text-xs">
+														<span className="min-w-0 flex-1 truncate font-medium text-sm">
+															{category.name}
+														</span>
+														<Badge variant="outline" className="text-xs tabular-nums">
 															{formatFactorAsMultiplier(parseFloat(category.factor))}
 														</Badge>
 														<Button
 															type="button"
 															variant="ghost"
 															size="icon"
-															className="size-6"
+															className="size-8"
 															onClick={() => removeCategory(category.id)}
-															aria-label={t("common.remove", "Remove")}
+															aria-label={t(
+																"settings.workCategories.removeCategoryFromSet",
+																"Remove {name} from set",
+																{ name: category.name },
+															)}
 														>
-															<IconX className="size-3" aria-hidden="true" />
+															<IconX className="size-4" aria-hidden="true" />
 														</Button>
-													</div>
+													</li>
 												))}
-											</div>
+											</ol>
 										</div>
 									)}
 

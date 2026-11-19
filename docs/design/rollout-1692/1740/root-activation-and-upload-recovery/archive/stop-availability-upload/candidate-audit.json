@@ -1,0 +1,736 @@
+{
+  "candidate": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+  "branch": "review/1740-upload-recovery-v2",
+  "applicationTree": "add0d3054451325670d60f28c0ebdbe6e28bfada",
+  "sourceApplicationTree": "add0d3054451325670d60f28c0ebdbe6e28bfada",
+  "historicalControl": "e597efc34bc2bdc1fa5369496781fe6bb0105888",
+  "historicalAppTree": "d664630c31a37e8e3ef015810e4842abd701e4e2",
+  "clean": true,
+  "pins": [
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/attach-sick-note-dialog.tsx",
+      "bytes": 9396,
+      "sha256": "abb4835bb1560498aa477ecea3c55baf20e153701c4e9d89c58ef26418a14a28",
+      "blob": "88f9eedfe44830f8b7cdab345f3a489d9e1283ae"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+      "bytes": 5380,
+      "sha256": "c6c726bbc124ccb60121abf9ad4511c343ddd2fbdfa5370e4c316a843f58c440",
+      "blob": "fb7a127eb1f45338335c52c4c8385c581051656c"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+      "bytes": 8173,
+      "sha256": "3e0b351f7b986f869b13f4cdb2636eb1d291ea2e4fd33513de29bfebb38dbc78",
+      "blob": "9e2992a988d6adc753dee449bc1f369fdebd54a1"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "bytes": 6088,
+      "sha256": "42fbb75f558fb5a30ce4773bc351527f3ab34b37132da7f413f2700c225131ca",
+      "blob": "e578c58d5b305fc26a236980355b85c94ffcfba2"
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+      "bytes": 6242,
+      "sha256": "1710b1f98edf0247934973b85fe45057453c832d50bef0eba33d8da613bee52c",
+      "blob": "e05242bd5f738e6785fe4818be5468702cb01776"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "bytes": 1840,
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "blob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4"
+    },
+    {
+      "path": "package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "blob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "blob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "blob": "04abfc145288bbae42bbaccdb88a5c012c4b186c"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "blob": "72bd6c845fc48f077c52fd789d799cb0928b6873"
+    }
+  ],
+  "changedPaths": [
+    "apps/webapp/src/components/absences/sick-notes/attach-sick-note-dialog.tsx",
+    "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+    "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+    "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+    "apps/webapp/src/hooks/use-tus-file-upload.ts",
+    "docs/design/rollout-1692/1740.md",
+    "docs/design/rollout-1692/README.md",
+    "docs/design/rollout-1692/integration.json"
+  ],
+  "productionOwnerDiff": [
+    "apps/webapp/src/components/absences/sick-notes/attach-sick-note-dialog.tsx",
+    "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+    "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+    "apps/webapp/src/hooks/use-tus-file-upload.ts"
+  ],
+  "dependencies": {
+    "manager": "12.16.1",
+    "guards": [
+      "pnpm_config_verify_deps_before_run=false",
+      "--config.verify-deps-before-run=false"
+    ],
+    "install": "offline frozen-lockfile ignore-scripts package-import-method=copy verify-store-integrity",
+    "physicalRoots": 3,
+    "linkCount": 158,
+    "rootLinks": 5,
+    "appLinks": 153,
+    "allLinksInternal": true,
+    "links": [
+      {
+        "path": "node_modules\\@esbuild\\win32-x64",
+        "target": "node_modules\\.pnpm\\@esbuild+win32-x64@0.28.2\\node_modules\\@esbuild\\win32-x64"
+      },
+      {
+        "path": "node_modules\\puppeteer-core",
+        "target": "node_modules\\.pnpm\\puppeteer-core@25.17.0_yauzl@2.10.0\\node_modules\\puppeteer-core"
+      },
+      {
+        "path": "node_modules\\react-doctor",
+        "target": "node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor"
+      },
+      {
+        "path": "node_modules\\shadcn",
+        "target": "node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn"
+      },
+      {
+        "path": "node_modules\\turbo",
+        "target": "node_modules\\.pnpm\\turbo@2.11.11\\node_modules\\turbo"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@aws-sdk\\client-s3",
+        "target": "node_modules\\.pnpm\\@aws-sdk+client-s3@3.1167.0\\node_modules\\@aws-sdk\\client-s3"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@aws-sdk\\s3-request-presigner",
+        "target": "node_modules\\.pnpm\\@aws-sdk+s3-request-presigner@3.1167.0\\node_modules\\@aws-sdk\\s3-request-presigner"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@base-ui\\react",
+        "target": "node_modules\\.pnpm\\@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea\\node_modules\\@base-ui\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@better-auth\\api-key",
+        "target": "node_modules\\.pnpm\\@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523\\node_modules\\@better-auth\\api-key"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@better-auth\\core",
+        "target": "node_modules\\.pnpm\\@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766\\node_modules\\@better-auth\\core"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@better-auth\\drizzle-adapter",
+        "target": "node_modules\\.pnpm\\@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278\\node_modules\\@better-auth\\drizzle-adapter"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@better-auth\\passkey",
+        "target": "node_modules\\.pnpm\\@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24\\node_modules\\@better-auth\\passkey"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@better-auth\\scim",
+        "target": "node_modules\\.pnpm\\@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599\\node_modules\\@better-auth\\scim"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@better-auth\\sso",
+        "target": "node_modules\\.pnpm\\@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d\\node_modules\\@better-auth\\sso"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@biomejs\\biome",
+        "target": "node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@bprogress\\core",
+        "target": "node_modules\\.pnpm\\@bprogress+core@1.3.4\\node_modules\\@bprogress\\core"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@capacitor\\core",
+        "target": "node_modules\\.pnpm\\@capacitor+core@8.6.0\\node_modules\\@capacitor\\core"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@casl\\ability",
+        "target": "node_modules\\.pnpm\\@casl+ability@7.1.2\\node_modules\\@casl\\ability"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dagrejs\\dagre",
+        "target": "node_modules\\.pnpm\\@dagrejs+dagre@3.1.3\\node_modules\\@dagrejs\\dagre"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@daypicker\\react",
+        "target": "node_modules\\.pnpm\\@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1\\node_modules\\@daypicker\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dicebear\\core",
+        "target": "node_modules\\.pnpm\\@dicebear+core@10.7.0\\node_modules\\@dicebear\\core"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dicebear\\styles",
+        "target": "node_modules\\.pnpm\\@dicebear+styles@10.6.0\\node_modules\\@dicebear\\styles"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dnd-kit\\core",
+        "target": "node_modules\\.pnpm\\@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7\\node_modules\\@dnd-kit\\core"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dnd-kit\\modifiers",
+        "target": "node_modules\\.pnpm\\@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5\\node_modules\\@dnd-kit\\modifiers"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dnd-kit\\sortable",
+        "target": "node_modules\\.pnpm\\@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632\\node_modules\\@dnd-kit\\sortable"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@dnd-kit\\utilities",
+        "target": "node_modules\\.pnpm\\@dnd-kit+utilities@3.2.2_react@19.3.1\\node_modules\\@dnd-kit\\utilities"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@faker-js\\faker",
+        "target": "node_modules\\.pnpm\\@faker-js+faker@10.6.0\\node_modules\\@faker-js\\faker"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@marsidev\\react-turnstile",
+        "target": "node_modules\\.pnpm\\@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef\\node_modules\\@marsidev\\react-turnstile"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@modelcontextprotocol\\client",
+        "target": "node_modules\\.pnpm\\@modelcontextprotocol+client@2.4.0\\node_modules\\@modelcontextprotocol\\client"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@modelcontextprotocol\\server",
+        "target": "node_modules\\.pnpm\\@modelcontextprotocol+server@2.4.0\\node_modules\\@modelcontextprotocol\\server"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\api",
+        "target": "node_modules\\.pnpm\\@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\api"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\auto-instrumentations-node",
+        "target": "node_modules\\.pnpm\\@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a\\node_modules\\@opentelemetry\\auto-instrumentations-node"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http",
+        "target": "node_modules\\.pnpm\\@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\exporter-trace-otlp-http",
+        "target": "node_modules\\.pnpm\\@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3\\node_modules\\@opentelemetry\\exporter-trace-otlp-http"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\resources",
+        "target": "node_modules\\.pnpm\\@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\resources"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\sdk-node",
+        "target": "node_modules\\.pnpm\\@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f\\node_modules\\@opentelemetry\\sdk-node"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\sdk-trace",
+        "target": "node_modules\\.pnpm\\@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\sdk-trace"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@opentelemetry\\semantic-conventions",
+        "target": "node_modules\\.pnpm\\@opentelemetry+semantic-conventions@1.45.0\\node_modules\\@opentelemetry\\semantic-conventions"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@posthog\\nextjs-config",
+        "target": "node_modules\\.pnpm\\@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511\\node_modules\\@posthog\\nextjs-config"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@react-email\\editor",
+        "target": "node_modules\\.pnpm\\@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b\\node_modules\\@react-email\\editor"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@react-email\\ui",
+        "target": "node_modules\\.pnpm\\@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe\\node_modules\\@react-email\\ui"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@react-pdf\\renderer",
+        "target": "node_modules\\.pnpm\\@react-pdf+renderer@4.9.0_react@19.3.1\\node_modules\\@react-pdf\\renderer"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@schedule-x\\calendar",
+        "target": "node_modules\\.pnpm\\@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00\\node_modules\\@schedule-x\\calendar"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@schedule-x\\calendar-controls",
+        "target": "node_modules\\.pnpm\\@schedule-x+calendar-controls@4.9.1\\node_modules\\@schedule-x\\calendar-controls"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@schedule-x\\drag-and-drop",
+        "target": "node_modules\\.pnpm\\@schedule-x+drag-and-drop@3.7.3\\node_modules\\@schedule-x\\drag-and-drop"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@schedule-x\\event-modal",
+        "target": "node_modules\\.pnpm\\@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c\\node_modules\\@schedule-x\\event-modal"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@schedule-x\\react",
+        "target": "node_modules\\.pnpm\\@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168\\node_modules\\@schedule-x\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@schedule-x\\theme-default",
+        "target": "node_modules\\.pnpm\\@schedule-x+theme-default@4.9.1\\node_modules\\@schedule-x\\theme-default"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@slack\\web-api",
+        "target": "node_modules\\.pnpm\\@slack+web-api@8.3.0\\node_modules\\@slack\\web-api"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@t3-oss\\env-nextjs",
+        "target": "node_modules\\.pnpm\\@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7\\node_modules\\@t3-oss\\env-nextjs"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tabler\\icons-react",
+        "target": "node_modules\\.pnpm\\@tabler+icons-react@3.51.0_react@19.3.1\\node_modules\\@tabler\\icons-react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tailwindcss\\postcss",
+        "target": "node_modules\\.pnpm\\@tailwindcss+postcss@4.3.5\\node_modules\\@tailwindcss\\postcss"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-form",
+        "target": "node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-hotkeys",
+        "target": "node_modules\\.pnpm\\@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6\\node_modules\\@tanstack\\react-hotkeys"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-query",
+        "target": "node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-query-devtools",
+        "target": "node_modules\\.pnpm\\@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402\\node_modules\\@tanstack\\react-query-devtools"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-store",
+        "target": "node_modules\\.pnpm\\@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c\\node_modules\\@tanstack\\react-store"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-table",
+        "target": "node_modules\\.pnpm\\@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0\\node_modules\\@tanstack\\react-table"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tanstack\\react-virtual",
+        "target": "node_modules\\.pnpm\\@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01\\node_modules\\@tanstack\\react-virtual"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@testing-library\\react",
+        "target": "node_modules\\.pnpm\\@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8\\node_modules\\@testing-library\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@testing-library\\user-event",
+        "target": "node_modules\\.pnpm\\@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6\\node_modules\\@testing-library\\user-event"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tolgee\\format-icu",
+        "target": "node_modules\\.pnpm\\@tolgee+format-icu@7.3.0\\node_modules\\@tolgee\\format-icu"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tolgee\\react",
+        "target": "node_modules\\.pnpm\\@tolgee+react@7.3.0_react@19.3.1\\node_modules\\@tolgee\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tolgee\\web",
+        "target": "node_modules\\.pnpm\\@tolgee+web@7.3.0\\node_modules\\@tolgee\\web"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tus\\file-store",
+        "target": "node_modules\\.pnpm\\@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9\\node_modules\\@tus\\file-store"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tus\\s3-store",
+        "target": "node_modules\\.pnpm\\@tus+s3-store@2.1.0_supports-color@8.1.1\\node_modules\\@tus\\s3-store"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@tus\\server",
+        "target": "node_modules\\.pnpm\\@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5\\node_modules\\@tus\\server"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\canvas-confetti",
+        "target": "node_modules\\.pnpm\\@types+canvas-confetti@1.9.0\\node_modules\\@types\\canvas-confetti"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\luxon",
+        "target": "node_modules\\.pnpm\\@types+luxon@3.7.6\\node_modules\\@types\\luxon"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\node",
+        "target": "node_modules\\.pnpm\\@types+node@26.6.6\\node_modules\\@types\\node"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\nodemailer",
+        "target": "node_modules\\.pnpm\\@types+nodemailer@8.0.2\\node_modules\\@types\\nodemailer"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\papaparse",
+        "target": "node_modules\\.pnpm\\@types+papaparse@5.5.2\\node_modules\\@types\\papaparse"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\pg",
+        "target": "node_modules\\.pnpm\\@types+pg@8.23.1\\node_modules\\@types\\pg"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\qrcode",
+        "target": "node_modules\\.pnpm\\@types+qrcode@1.5.6\\node_modules\\@types\\qrcode"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\react",
+        "target": "node_modules\\.pnpm\\@types+react@19.3.0\\node_modules\\@types\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\react-dom",
+        "target": "node_modules\\.pnpm\\@types+react-dom@19.3.0_@types+react@19.3.0\\node_modules\\@types\\react-dom"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\sanitize-html",
+        "target": "node_modules\\.pnpm\\@types+sanitize-html@2.16.2\\node_modules\\@types\\sanitize-html"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@types\\web-push",
+        "target": "node_modules\\.pnpm\\@types+web-push@3.6.4\\node_modules\\@types\\web-push"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@uppy\\core",
+        "target": "node_modules\\.pnpm\\@uppy+core@6.3.1\\node_modules\\@uppy\\core"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@uppy\\locales",
+        "target": "node_modules\\.pnpm\\@uppy+locales@5.3.2\\node_modules\\@uppy\\locales"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@uppy\\tus",
+        "target": "node_modules\\.pnpm\\@uppy+tus@6.0.1_@uppy+core@6.3.1\\node_modules\\@uppy\\tus"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@upstash\\ratelimit",
+        "target": "node_modules\\.pnpm\\@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0\\node_modules\\@upstash\\ratelimit"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@vitest\\coverage-v8",
+        "target": "node_modules\\.pnpm\\@vitest+coverage-v8@5.1.0_vitest@5.1.0\\node_modules\\@vitest\\coverage-v8"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\@xyflow\\react",
+        "target": "node_modules\\.pnpm\\@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b\\node_modules\\@xyflow\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\babel-plugin-react-compiler",
+        "target": "node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\better-auth",
+        "target": "node_modules\\.pnpm\\better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0\\node_modules\\better-auth"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\botbuilder",
+        "target": "node_modules\\.pnpm\\botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905\\node_modules\\botbuilder"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\bullmq",
+        "target": "node_modules\\.pnpm\\bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1\\node_modules\\bullmq"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\canvas-confetti",
+        "target": "node_modules\\.pnpm\\canvas-confetti@1.9.4\\node_modules\\canvas-confetti"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\class-variance-authority",
+        "target": "node_modules\\.pnpm\\class-variance-authority@0.7.1\\node_modules\\class-variance-authority"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\clsx",
+        "target": "node_modules\\.pnpm\\clsx@2.1.1\\node_modules\\clsx"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\cmdk",
+        "target": "node_modules\\.pnpm\\cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0\\node_modules\\cmdk"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\country-flag-icons",
+        "target": "node_modules\\.pnpm\\country-flag-icons@1.6.20\\node_modules\\country-flag-icons"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\cron-parser",
+        "target": "node_modules\\.pnpm\\cron-parser@5.10.4\\node_modules\\cron-parser"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\date-holidays",
+        "target": "node_modules\\.pnpm\\date-holidays@3.39.1\\node_modules\\date-holidays"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\dotenv",
+        "target": "node_modules\\.pnpm\\dotenv@18.0.10\\node_modules\\dotenv"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\dotenv-cli",
+        "target": "node_modules\\.pnpm\\dotenv-cli@11.1.0\\node_modules\\dotenv-cli"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\drizzle-kit",
+        "target": "node_modules\\.pnpm\\drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5\\node_modules\\drizzle-kit"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\drizzle-orm",
+        "target": "node_modules\\.pnpm\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\node_modules\\drizzle-orm"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\effect",
+        "target": "node_modules\\.pnpm\\effect@4.1.4\\node_modules\\effect"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\embla-carousel-react",
+        "target": "node_modules\\.pnpm\\embla-carousel-react@8.6.0_react@19.3.1\\node_modules\\embla-carousel-react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\exceljs",
+        "target": "node_modules\\.pnpm\\exceljs@4.4.0\\node_modules\\exceljs"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\fast-xml-parser",
+        "target": "node_modules\\.pnpm\\fast-xml-parser@5.12.0\\node_modules\\fast-xml-parser"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\file-type",
+        "target": "node_modules\\.pnpm\\file-type@22.3.0_supports-color@8.1.1\\node_modules\\file-type"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\input-otp",
+        "target": "node_modules\\.pnpm\\input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1\\node_modules\\input-otp"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\ioredis",
+        "target": "node_modules\\.pnpm\\ioredis@6.0.0_supports-color@8.1.1\\node_modules\\ioredis"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\jsdom",
+        "target": "node_modules\\.pnpm\\jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0\\node_modules\\jsdom"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\jsqr",
+        "target": "node_modules\\.pnpm\\jsqr@1.4.0\\node_modules\\jsqr"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\jszip",
+        "target": "node_modules\\.pnpm\\jszip@3.10.2\\node_modules\\jszip"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\luxon",
+        "target": "node_modules\\.pnpm\\luxon@3.7.2\\node_modules\\luxon"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\nanoid",
+        "target": "node_modules\\.pnpm\\nanoid@6.0.2\\node_modules\\nanoid"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\next",
+        "target": "node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\next-intl",
+        "target": "node_modules\\.pnpm\\next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb\\node_modules\\next-intl"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\node-vault",
+        "target": "node_modules\\.pnpm\\node-vault@0.13.0_supports-color@8.1.1\\node_modules\\node-vault"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\nodemailer",
+        "target": "node_modules\\.pnpm\\nodemailer@10.5.0\\node_modules\\nodemailer"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\papaparse",
+        "target": "node_modules\\.pnpm\\papaparse@5.7.1\\node_modules\\papaparse"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\pdfjs-dist",
+        "target": "node_modules\\.pnpm\\pdfjs-dist@6.5.438\\node_modules\\pdfjs-dist"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\pg",
+        "target": "node_modules\\.pnpm\\pg@8.23.1\\node_modules\\pg"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\pino",
+        "target": "node_modules\\.pnpm\\pino@10.4.0\\node_modules\\pino"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\pino-opentelemetry-transport",
+        "target": "node_modules\\.pnpm\\pino-opentelemetry-transport@4.0.2_pino@10.4.0\\node_modules\\pino-opentelemetry-transport"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\pino-pretty",
+        "target": "node_modules\\.pnpm\\pino-pretty@13.2.0\\node_modules\\pino-pretty"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\portless",
+        "target": "node_modules\\.pnpm\\portless@0.17.0\\node_modules\\portless"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\postcss",
+        "target": "node_modules\\.pnpm\\postcss@8.5.32\\node_modules\\postcss"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\posthog-js",
+        "target": "node_modules\\.pnpm\\posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1\\node_modules\\posthog-js"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\posthog-node",
+        "target": "node_modules\\.pnpm\\posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883\\node_modules\\posthog-node"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\preact",
+        "target": "node_modules\\.pnpm\\preact@11.2.0\\node_modules\\preact"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\qrcode",
+        "target": "node_modules\\.pnpm\\qrcode@1.5.4\\node_modules\\qrcode"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\qrcode.react",
+        "target": "node_modules\\.pnpm\\qrcode.react@4.2.0_react@19.3.1\\node_modules\\qrcode.react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\react",
+        "target": "node_modules\\.pnpm\\react@19.3.1\\node_modules\\react"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\react-dom",
+        "target": "node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\react-email",
+        "target": "node_modules\\.pnpm\\react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d\\node_modules\\react-email"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\react-resizable-panels",
+        "target": "node_modules\\.pnpm\\react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd\\node_modules\\react-resizable-panels"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\recharts",
+        "target": "node_modules\\.pnpm\\recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508\\node_modules\\recharts"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\resend",
+        "target": "node_modules\\.pnpm\\resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991\\node_modules\\resend"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\sanitize-html",
+        "target": "node_modules\\.pnpm\\sanitize-html@2.18.2\\node_modules\\sanitize-html"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\server-only",
+        "target": "node_modules\\.pnpm\\server-only@0.0.1\\node_modules\\server-only"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\shadcn",
+        "target": "node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\sharp",
+        "target": "node_modules\\.pnpm\\sharp@0.35.5_@types+node@26.6.6\\node_modules\\sharp"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\sonner",
+        "target": "node_modules\\.pnpm\\sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1\\node_modules\\sonner"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\streamdown",
+        "target": "node_modules\\.pnpm\\streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39\\node_modules\\streamdown"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\stripe",
+        "target": "node_modules\\.pnpm\\stripe@23.1.0_@types+node@26.6.6\\node_modules\\stripe"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\suncalc",
+        "target": "node_modules\\.pnpm\\suncalc@2.1.4\\node_modules\\suncalc"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\superjson",
+        "target": "node_modules\\.pnpm\\superjson@2.2.6\\node_modules\\superjson"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\swr",
+        "target": "node_modules\\.pnpm\\swr@2.5.1_react@19.3.1\\node_modules\\swr"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\tailwind-merge",
+        "target": "node_modules\\.pnpm\\tailwind-merge@3.7.0\\node_modules\\tailwind-merge"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\tailwindcss",
+        "target": "node_modules\\.pnpm\\tailwindcss@4.3.5\\node_modules\\tailwindcss"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\temporal-polyfill",
+        "target": "node_modules\\.pnpm\\temporal-polyfill@1.0.8\\node_modules\\temporal-polyfill"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\timepicker-ui",
+        "target": "node_modules\\.pnpm\\timepicker-ui@4.7.0\\node_modules\\timepicker-ui"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\tsx",
+        "target": "node_modules\\.pnpm\\tsx@4.23.15\\node_modules\\tsx"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\tw-animate-css",
+        "target": "node_modules\\.pnpm\\tw-animate-css@1.4.0\\node_modules\\tw-animate-css"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\typescript",
+        "target": "node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\ultracite",
+        "target": "node_modules\\.pnpm\\ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb\\node_modules\\ultracite"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\undici",
+        "target": "node_modules\\.pnpm\\undici@8.12.4\\node_modules\\undici"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\vaul",
+        "target": "node_modules\\.pnpm\\vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908\\node_modules\\vaul"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\vitest",
+        "target": "node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\web-push",
+        "target": "node_modules\\.pnpm\\web-push@4.0.0_supports-color@8.1.1\\node_modules\\web-push"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\zod",
+        "target": "node_modules\\.pnpm\\zod@4.6.7\\node_modules\\zod"
+      },
+      {
+        "path": "apps\\webapp\\node_modules\\zustand",
+        "target": "node_modules\\.pnpm\\zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f\\node_modules\\zustand"
+      }
+    ]
+  },
+  "bridgeRemoved": true,
+  "verifiedCommit": null
+}

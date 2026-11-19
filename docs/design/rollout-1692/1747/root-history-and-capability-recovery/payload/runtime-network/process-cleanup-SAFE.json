@@ -1,0 +1,10 @@
+{
+  "remainingOwnedProcesses": 0,
+  "noPeerCleanup": true,
+  "stoppedExactProcesses": 37,
+  "exactRootMarkersVerified": true,
+  "browserContextsClosed": true,
+  "creationExecutableParentVerified": true,
+  "alreadyExited": 3,
+  "ephemeralProfileRemoved": true
+}

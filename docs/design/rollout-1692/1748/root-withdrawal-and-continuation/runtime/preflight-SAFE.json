@@ -1,0 +1,16 @@
+{
+  "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "trackedCount": 18587,
+  "indexHash": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac",
+  "status": "",
+  "pins": {
+    "lock": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "license": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "guard": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+    "fixture": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+  },
+  "internalLinkCount": 222,
+  "verifiedCommit": null
+}

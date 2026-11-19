@@ -1,0 +1,30 @@
+✔ Select projects › desktop, docs, marketing, webapp
+Scanning changes: feat/payslip-batch-workspace → 96dea2d9b2dfa5f83325fd7c0bf925e0da9b1ecb
+
+No changed source files in X:\t3-code\worktrees\z8\t3-9592eb70-1d830c19755b58c9\apps\desktop, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-9592eb70-1d830c19755b58c9\apps\docs, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-9592eb70-1d830c19755b58c9\apps\marketing, skipping.
+
+✔ Scanned 7 files in 18.0s
+
+React Doctor — t3-9592eb70-1d830c19755b58c9
+Score unavailable.
+
+4 issues
+Maintainability: 1 warning
+Performance: 2 warnings
+Bugs: 1 warning
+
+⚠ React function has high control-flow complexity
+  react-doctor/no-high-complexity-react-function
+  src/components/personnel-file/payslip-batch-workspace.tsx:109
+⚠ React Compiler can't optimize this ×2
+  react-hooks-js/set-state-in-effect
+  src/components/personnel-file/payslip-batch-workspace.tsx:133
+  src/components/personnel-file/payslip-batch-workspace.tsx:488
+⚠ Parent kept in sync with a callback effect
+  react-doctor/no-prop-callback-in-effect
+  src/components/personnel-file/payslip-batch-workspace.tsx:494
+  Full diagnostics written to C:\Users\KAIHEN~1\AppData\Local\Temp\react-doctor-e329d0b1-d034-46f0-90b8-bfe1631c7303

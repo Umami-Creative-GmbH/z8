@@ -1,0 +1,20 @@
+{
+  "pass": true,
+  "syntheticBoundary": "First actual listAbsenceSickNotesAction transport held before server dispatch; subsequent requests untouched",
+  "events": [
+    {
+      "pending": {
+        "currentTargetDescription": true,
+        "staleTitle": false,
+        "busy": true
+      }
+    },
+    {
+      "settled": {
+        "newTargetEmpty": true,
+        "staleTitle": false,
+        "realActionRequests": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"phase":"after","status":"accepted-recovery","consumers":[{"name":"vehicle-reports","status":"accepted-recovery","failedTransport":1,"responseStatuses":[200],"captures":6}]}

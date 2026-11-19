@@ -1,0 +1,18 @@
+Passed: desktop-light fits viewport with loaded font, one heading and seven day controls
+Passed: phone-light fits viewport with loaded font, one heading and seven day controls
+Passed: wide-dark-large fits viewport with loaded font, one heading and seven day controls
+Passed: phone-dark-large fits viewport with loaded font, one heading and seven day controls
+Passed: exact refreshed source restored after baseline overlay
+file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/assert.js:15
+        throw new Error(message);
+              ^
+
+Error: Unknown key: "Control+A"
+    at assert (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/assert.js:15:15)
+    at #keyDescriptionForString (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Input.js:72:9)
+    at CdpKeyboard.down (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Input.js:28:58)
+    at CdpKeyboard.press (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Input.js:143:20)
+    at fill (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:26:83)
+    at async file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:45:2
+
+Node.js v26.9.0

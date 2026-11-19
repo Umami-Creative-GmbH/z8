@@ -1,0 +1,30 @@
+{
+  "selections": [
+    {
+      "selection": "exact-incoming",
+      "files": 31,
+      "tests": 215,
+      "overlapFiles": 0,
+      "overlapTests": 0,
+      "success": true
+    },
+    {
+      "selection": "compatibility",
+      "files": 99,
+      "tests": 791,
+      "overlapFiles": 10,
+      "overlapTests": 75,
+      "success": true
+    },
+    {
+      "selection": "root-fixes",
+      "files": 6,
+      "tests": 42,
+      "overlapFiles": 0,
+      "overlapTests": 0,
+      "success": true
+    }
+  ],
+  "uniqueFiles": 126,
+  "uniqueTests": 973
+}

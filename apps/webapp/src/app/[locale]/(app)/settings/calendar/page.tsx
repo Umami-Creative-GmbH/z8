@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { CalendarSettingsForm } from "@/components/settings/calendar-settings-form";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
@@ -40,14 +41,12 @@ async function CalendarSettingsPageContent() {
 			};
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.calendar.title", "Calendar Sync")}
-					</h1>
-					<p className="text-muted-foreground">
-						{accessTier === "orgAdmin"
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("settings.calendar.title", "Calendar Sync")}
+					description={
+						accessTier === "orgAdmin"
 							? t(
 									"settings.calendar.description",
 									"Configure calendar providers, ICS feeds, and sync settings for your organization",
@@ -55,9 +54,9 @@ async function CalendarSettingsPageContent() {
 							: t(
 									"settings.calendar.managerDescription",
 									"Review calendar integrations that affect your teams, areas, and managed projects.",
-								)}
-					</p>
-				</div>
+								)
+					}
+				/>
 
 				<CalendarSettingsForm
 					initialSettings={settings}
@@ -70,10 +69,10 @@ async function CalendarSettingsPageContent() {
 
 function CalendarSettingsPageLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
 				<div className="space-y-2">
-					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-8 w-48 sm:h-9" />
 					<Skeleton className="h-5 w-full max-w-xl" />
 				</div>
 				<Skeleton className="h-64 w-full" />

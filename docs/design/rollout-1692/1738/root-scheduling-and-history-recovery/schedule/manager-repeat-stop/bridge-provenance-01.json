@@ -1,0 +1,6 @@
+{
+  "target": "apps/webapp/scripts/1738-manager-independent-fixture-bridge.ts",
+  "sha256": "b488be70a227f1e893c60b1a8e37b99b808fb8898dd06200c8a7d4aed0cf0b93",
+  "domainOnly": true,
+  "authMemberGrantChanges": false
+}

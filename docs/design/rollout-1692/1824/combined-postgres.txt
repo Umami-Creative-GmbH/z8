@@ -1,0 +1,4 @@
+ Test Files  2 passed (2)
+      Tests  39 passed (39)
+   Start at  08:51:50
+   Duration  8.50s (tests 80%, import 14%, transform 5%, setup 1%)

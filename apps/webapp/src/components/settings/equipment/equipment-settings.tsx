@@ -95,8 +95,12 @@ export function EquipmentSettings({
 			/>
 			<EquipmentArchiveDialog
 				target={archiveTarget}
+				pending={pending}
 				onClose={() => setArchiveTarget(null)}
-				onConfirm={archive}
+				onConfirm={async (target) => {
+					// The dialog stays open until the archive settles; a failure keeps it open.
+					if (await archive(target)) setArchiveTarget(null);
+				}}
 			/>
 		</div>
 	);

@@ -1,0 +1,263 @@
+src\components\absences\sick-notes\use-sick-note-unlink-reservation.ts format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    37 37 │   }␍
+    38 38 │   ␍
+    39    │ - const·reservations·=·new·WeakMap<QueryClient,·ReturnType<typeof·createReservations>>();␍
+       39 │ + const·reservations·=·new·WeakMap<␍
+       40 │ + → QueryClient,␍
+       41 │ + → ReturnType<typeof·createReservations>␍
+       42 │ + >();␍
+    40 43 │   function forClient(client: QueryClient) {␍
+    41 44 │     let state = reservations.get(client);␍
+    ····· │ 
+    54 57 │   }) {␍
+    55 58 │     const state = forClient(useQueryClient());␍
+    56    │ - → const·snapshot·=·useSyncExternalStore(state.subscribe,·state.getSnapshot,·serverSnapshot);␍
+       59 │ + → const·snapshot·=·useSyncExternalStore(␍
+       60 │ + → → state.subscribe,␍
+       61 │ + → → state.getSnapshot,␍
+       62 │ + → → serverSnapshot,␍
+       63 │ + → );␍
+    57 64 │     const key = (documentId: string) =>␍
+    58 65 │       JSON.stringify([scope.userId, scope.organizationId, documentId]);␍
+  
+
+src\components\personnel-file\sick-leave-unlink-lifetime.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → cleanup,␍
+          6 │ + → fireEvent,␍
+          7 │ + → render,␍
+          8 │ + → screen,␍
+          9 │ + → waitFor,␍
+         10 │ + → within,␍
+         11 │ + }·from·"@testing-library/react";␍
+      4  12 │   import { Activity, type ReactNode } from "react";␍
+      5  13 │   import { Temporal } from "temporal-polyfill";␍
+    ······· │ 
+     23  31 │     leave: vi.fn(),␍
+     24  32 │   }));␍
+     25     │ - const·auth·=·vi.hoisted(()·=>·({·userId:·"actor-a",·organizationId:·"org-a",·pending:·false·}));␍
+         33 │ + const·auth·=·vi.hoisted(()·=>·({␍
+         34 │ + → userId:·"actor-a",␍
+         35 │ + → organizationId:·"org-a",␍
+         36 │ + → pending:·false,␍
+         37 │ + }));␍
+     26  38 │   const feedback = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));␍
+     27  39 │   vi.mock("@/lib/auth-client", () => ({␍
+     28  40 │     useSession: () => ({␍
+     29     │ - → → data:·{·user:·{·id:·auth.userId·},·session:·{·activeOrganizationId:·auth.organizationId·}·},␍
+         41 │ + → → data:·{␍
+         42 │ + → → → user:·{·id:·auth.userId·},␍
+         43 │ + → → → session:·{·activeOrganizationId:·auth.organizationId·},␍
+         44 │ + → → },␍
+     30  45 │       isPending: auth.pending,␍
+     31  46 │     }),␍
+    ······· │ 
+     37  52 │     deleteEmployeeDocumentAction: vi.fn(),␍
+     38  53 │   }));␍
+     39     │ - vi.mock("@/app/[locale]/(app)/personnel-files/skill-certificate-actions",·()·=>·({␍
+     40     │ - → listCertificateSkillOptionsAction:·vi.fn(),␍
+     41     │ - → setCertificateSkillAction:·vi.fn(),␍
+     42     │ - }));␍
+         54 │ + vi.mock(␍
+         55 │ + → "@/app/[locale]/(app)/personnel-files/skill-certificate-actions",␍
+         56 │ + → ()·=>·({␍
+         57 │ + → → listCertificateSkillOptionsAction:·vi.fn(),␍
+         58 │ + → → setCertificateSkillAction:·vi.fn(),␍
+         59 │ + → }),␍
+         60 │ + );␍
+     43  61 │   vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({␍
+     44  62 │     listAbsenceSickNotesAction: actions.list,␍
+    ······· │ 
+     53  71 │     useTranslate: () => ({␍
+     54  72 │       t: (_key: string, fallback: string, values?: Record<string, unknown>) =>␍
+     55     │ - → → → fallback.replace(/\{(\w+)\}/g,·(_,·key)·=>·String(values?.[key]·??·`{${key}}`)),␍
+         73 │ + → → → fallback.replace(/\{(\w+)\}/g,·(_,·key)·=>␍
+         74 │ + → → → → String(values?.[key]·??·`{${key}}`),␍
+         75 │ + → → → ),␍
+     56  76 │     }),␍
+     57  77 │   }));␍
+     58     │ - vi.mock("@/components/providers/app-locale-provider",·()·=>·({·useAppLocale:·()·=>·"en-GB"·}));␍
+     59     │ - vi.mock("next/navigation",·()·=>·({·useSearchParams:·()·=>·new·URLSearchParams()·}));␍
+         78 │ + vi.mock("@/components/providers/app-locale-provider",·()·=>·({␍
+         79 │ + → useAppLocale:·()·=>·"en-GB",␍
+         80 │ + }));␍
+         81 │ + vi.mock("next/navigation",·()·=>·({␍
+         82 │ + → useSearchParams:·()·=>·new·URLSearchParams(),␍
+         83 │ + }));␍
+     60  84 │   vi.mock("@/navigation", () => ({␍
+     61     │ - → Link:·({·href,·children,·...props·}:·{·href:·string;·children:·ReactNode·})·=>·(␍
+         85 │ + → Link:·({␍
+         86 │ + → → href,␍
+         87 │ + → → children,␍
+         88 │ + → → ...props␍
+         89 │ + → }:·{␍
+         90 │ + → → href:·string;␍
+         91 │ + → → children:·ReactNode;␍
+         92 │ + → })·=>·(␍
+     62  93 │       <a href={href} {...props}>␍
+     63  94 │         {children}␍
+    ······· │ 
+     95 126 │     sickNotes: [{ id: note.id, title: "Synthetic row note" }],␍
+     96 127 │   };␍
+     97     │ - const·defaults·=·parseSickLeaveOverviewParams({},·Temporal.PlainDate.from("2026-11-16"));␍
+        128 │ + const·defaults·=·parseSickLeaveOverviewParams(␍
+        129 │ + → {},␍
+        130 │ + → Temporal.PlainDate.from("2026-11-16"),␍
+        131 │ + );␍
+     98 132 │   const clients: QueryClient[] = [];␍
+     99 133 │   beforeEach(() => {␍
+    ······· │ 
+    110 144 │   ␍
+    111 145 │   function DownstreamCounts() {␍
+    112     │ - → const·own·=·useOwnAbsenceSickNotes([{·id:·row.absenceId,·category:·{·type:·"sick"·}·}]);␍
+        146 │ + → const·own·=·useOwnAbsenceSickNotes([␍
+        147 │ + → → {·id:·row.absenceId,·category:·{·type:·"sick"·}·},␍
+        148 │ + → ]);␍
+    113 149 │     const leave = useEmployeeSickLeave(row.employeeId);␍
+    114 150 │     return (␍
+    115 151 │       <>␍
+    116     │ - → → → <output·aria-label="Self·note·count">{own.markers[row.absenceId]?.count·??·0}</output>␍
+        152 │ + → → → <output·aria-label="Self·note·count">␍
+        153 │ + → → → → {own.markers[row.absenceId]?.count·??·0}␍
+        154 │ + → → → </output>␍
+    117 155 │         <output aria-label="Employee note count">␍
+    118     │ - → → → → {leave.data?.find((item)·=>·item.id·===·row.absenceId)?.sickNoteCount·??·"loading"}␍
+        156 │ + → → → → {leave.data?.find((item)·=>·item.id·===·row.absenceId)?.sickNoteCount·??␍
+        157 │ + → → → → → "loading"}␍
+    119 158 │         </output>␍
+    120 159 │       </>␍
+    ······· │ 
+    125 164 │     "refreshes real marker, employee-count and document observers after an accepted %s unlink retires",␍
+    126 165 │     async (origin) => {␍
+    127     │ - → → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+        166 │ + → → const·client·=·new·QueryClient({␍
+        167 │ + → → → defaultOptions:·{·queries:·{·retry:·false·}·},␍
+        168 │ + → → });␍
+    128 169 │       clients.push(client);␍
+    129 170 │       const capability = {␍
+    ······· │ 
+    155 196 │         data: {␍
+    156 197 │           canAttach: true,␍
+    157     │ - → → → → markers:·linked·?·{·[row.absenceId]:·{·count:·1,·viewable:·true·}·}·:·{},␍
+        198 │ + → → → → markers:·linked␍
+        199 │ + → → → → → ?·{·[row.absenceId]:·{·count:·1,·viewable:·true·}·}␍
+        200 │ + → → → → → :·{},␍
+    158 201 │         },␍
+    159 202 │       }));␍
+    ······· │ 
+    222 265 │       await waitFor(() => {␍
+    223 266 │         expect(screen.getByLabelText("Self note count").textContent).toBe("1");␍
+    224     │ - → → → expect(screen.getByLabelText("Employee·note·count").textContent).toBe("1");␍
+        267 │ + → → → expect(screen.getByLabelText("Employee·note·count").textContent).toBe(␍
+        268 │ + → → → → "1",␍
+        269 │ + → → → );␍
+    225 270 │       });␍
+    226 271 │       const button =␍
+    227 272 │         origin === "shared"␍
+    228     │ - → → → → ?·await·screen.findByRole("button",·{·name:·"Unlink·Synthetic·current·note"·})␍
+    229     │ - → → → → :·await·within(screen.getByLabelText("Original·personnel·file")).findByRole("button",·{␍
+        273 │ + → → → → ?·await·screen.findByRole("button",·{␍
+        274 │ + → → → → → → name:·"Unlink·Synthetic·current·note",␍
+        275 │ + → → → → → })␍
+        276 │ + → → → → :·await·within(␍
+        277 │ + → → → → → → screen.getByLabelText("Original·personnel·file"),␍
+        278 │ + → → → → → ).findByRole("button",·{␍
+    230 279 │               name: "Unlink Synthetic current note from its sick leave",␍
+    231 280 │             });␍
+    ······· │ 
+    239 288 │       await waitFor(() => {␍
+    240 289 │         expect(screen.getByLabelText("Self note count").textContent).toBe("0");␍
+    241     │ - → → → expect(screen.getByLabelText("Employee·note·count").textContent).toBe("0");␍
+        290 │ + → → → expect(screen.getByLabelText("Employee·note·count").textContent).toBe(␍
+        291 │ + → → → → "0",␍
+        292 │ + → → → );␍
+    242 293 │         expect(␍
+    243     │ - → → → → within(screen.getByLabelText("Observed·personnel·file")).getByRole("button",·{␍
+    244     │ - → → → → → name:·"Link·Synthetic·current·note·to·sick·leave",␍
+    245     │ - → → → → → hidden:·true,␍
+    246     │ - → → → → }),␍
+        294 │ + → → → → within(screen.getByLabelText("Observed·personnel·file")).getByRole(␍
+  165 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      8   8 │   describe("route metadata", () => {␍
+      9   9 │     it("adopts the due-for-deletion review without adopting deeper or invalid personnel routes", () => {␍
+     10     │ - → → expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(true);␍
+     11     │ - → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(true);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail")).toBe(false);␍
+         10 │ + → → expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(␍
+         11 │ + → → → true,␍
+         12 │ + → → );␍
+         13 │ + → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(␍
+         14 │ + → → → true,␍
+         15 │ + → → );␍
+         16 │ + → → expect(␍
+         17 │ + → → → appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail"),␍
+         18 │ + → → ).toBe(false);␍
+     13  19 │       expect(appPageOwnsHeading("/en/personnel-files/requests")).toBe(false);␍
+     14  20 │     });␍
+     15  21 │     it("adopts the request queue without adopting its independent descendants", () => {␍
+     16     │ - → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);␍
+     17     │ - → → expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);␍
+         22 │ + → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(␍
+         23 │ + → → → true,␍
+         24 │ + → → );␍
+         25 │ + → → expect(␍
+         26 │ + → → → appPageOwnsHeading("/en/personnel-files/document-requests/extra"),␍
+         27 │ + → → ).toBe(false);␍
+     18  28 │       expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);␍
+     19  29 │     });␍
+    ······· │ 
+     21  31 │       expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);␍
+     22  32 │       expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);␍
+     23     │ - → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);␍
+         33 │ + → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(␍
+         34 │ + → → → false,␍
+         35 │ + → → );␍
+     24  36 │       expect(appPageOwnsHeading("/en/settings/other")).toBe(false);␍
+     25  37 │     });␍
+    ······· │ 
+     37  49 │     });␍
+     38  50 │     it("adopts the payslip batch start and detail headings", () => {␍
+     39     │ - → → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(true);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(true);␍
+         51 │ + → → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(␍
+         52 │ + → → → true,␍
+         53 │ + → → );␍
+         54 │ + → → expect(␍
+         55 │ + → → → appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id"),␍
+         56 │ + → → ).toBe(true);␍
+     41  57 │     });␍
+     42  58 │     it("adopts only the sick-leave overview heading, preserving independent personnel routes", () => {␍
+    ······· │ 
+     72  88 │     it("adopts the personnel file directory and sick-leave overview while preserving descendant boundaries", () => {␍
+     73  89 │       expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);␍
+     74     │ - → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(true);␍
+         90 │ + → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(␍
+         91 │ + → → → true,␍
+         92 │ + → → );␍
+     75  93 │       expect(appPageOwnsHeading("/en/personnel-files/sick-leave")).toBe(true);␍
+     76  94 │       for (const path of [␍
+  
+
+Checked 9 files in 15ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

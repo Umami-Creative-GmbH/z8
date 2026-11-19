@@ -1,11 +1,22 @@
 "use client";
-import { IconArrowDown, IconArrowsSort, IconArrowUp, IconUserSearch } from "@tabler/icons-react";
+import {
+	IconArrowDown,
+	IconArrowsSort,
+	IconArrowUp,
+	IconUserSearch,
+} from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Empty,
 	EmptyDescription,
@@ -49,8 +60,32 @@ import { DrivingDeadlineDate } from "./deadline-date";
 const SEARCH_DELAY_MS = 300;
 type StatusFilter = DrivingLicenceWorklistStatus | "all";
 
-type Order = { sort: DrivingLicenceWorklistSort; direction: DrivingLicenceWorklistDirection };
+type Order = {
+	sort: DrivingLicenceWorklistSort;
+	direction: DrivingLicenceWorklistDirection;
+};
 const DEFAULT_ORDER: Order = { sort: "deadline", direction: "asc" };
+
+function WorklistOrderLabel({
+	fetching,
+	defaultOrder,
+}: {
+	fetching: boolean;
+	defaultOrder: boolean;
+}) {
+	const { t } = useTranslate();
+	if (fetching)
+		return t("drivingLicence.checks.refreshing", "Updating check worklist…");
+	if (defaultOrder)
+		return t(
+			"drivingLicence.checks.dueOrder",
+			"Checks due now first, then the next deadline.",
+		);
+	return t(
+		"drivingLicence.checks.customOrder",
+		"Sorted by the selected column and direction.",
+	);
+}
 
 /** A column header that sorts the table on the server; the same column again flips it. */
 function SortableHead({
@@ -65,10 +100,20 @@ function SortableHead({
 	children: string;
 }) {
 	const active = order.sort === column;
-	const Icon = !active ? IconArrowsSort : order.direction === "asc" ? IconArrowUp : IconArrowDown;
+	const Icon = !active
+		? IconArrowsSort
+		: order.direction === "asc"
+			? IconArrowUp
+			: IconArrowDown;
 	return (
 		<TableHead
-			aria-sort={active ? (order.direction === "asc" ? "ascending" : "descending") : "none"}
+			aria-sort={
+				active
+					? order.direction === "asc"
+						? "ascending"
+						: "descending"
+					: "none"
+			}
 		>
 			<Button
 				type="button"
@@ -118,11 +163,15 @@ export function DrivingLicenceVerifierWorklist() {
 	const [status, setStatus] = useState<StatusFilter>("all");
 	const [order, setOrder] = useState<Order>(DEFAULT_ORDER);
 	useEffect(() => {
-		const timer = setTimeout(() => setSubmittedSearch(search.trim()), SEARCH_DELAY_MS);
+		const timer = setTimeout(
+			() => setSubmittedSearch(search.trim()),
+			SEARCH_DELAY_MS,
+		);
 		return () => clearTimeout(timer);
 	}, [search]);
 	const isDefaultOrder =
-		order.sort === DEFAULT_ORDER.sort && order.direction === DEFAULT_ORDER.direction;
+		order.sort === DEFAULT_ORDER.sort &&
+		order.direction === DEFAULT_ORDER.direction;
 	const query = {
 		search: submittedSearch,
 		status: status === "all" ? undefined : status,
@@ -133,12 +182,17 @@ export function DrivingLicenceVerifierWorklist() {
 	const worklist = useQuery({
 		queryKey: queryKeys.drivingLicence.worklist(organizationId, userId, query),
 		queryFn: () => getDrivingLicenceCheckWorklistAction(query),
+		enabled: !!organizationId && !!userId,
+		retry: false,
 		placeholderData: (previous) => previous,
 	});
 	const rows = worklist.data?.success ? worklist.data.data : null;
 	const filtered = !!query.search || !!query.status;
 	const filterOptions: { value: StatusFilter; label: string }[] = [
-		{ value: "all", label: t("drivingLicence.checks.filter.all", "All statuses") },
+		{
+			value: "all",
+			label: t("drivingLicence.checks.filter.all", "All statuses"),
+		},
 		...DRIVING_LICENCE_WORKLIST_STATUSES.map((value) => ({
 			value,
 			label: statusLabels[value].short,
@@ -146,7 +200,7 @@ export function DrivingLicenceVerifierWorklist() {
 	];
 
 	return (
-		<Card>
+		<Card className="min-w-0" aria-busy={worklist.isFetching}>
 			<CardHeader>
 				<CardTitle>
 					<h2 className="text-lg font-semibold">
@@ -161,9 +215,26 @@ export function DrivingLicenceVerifierWorklist() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<p role="status" className="text-sm text-muted-foreground">
+						<WorklistOrderLabel
+							fetching={worklist.isFetching}
+							defaultOrder={isDefaultOrder}
+						/>
+					</p>
+					<Button
+						variant="outline"
+						disabled={worklist.isFetching}
+						onClick={() => void worklist.refetch()}
+					>
+						{t("drivingLicence.checks.refresh", "Refresh check worklist")}
+					</Button>
+				</div>
 				<div className="flex flex-wrap items-end gap-3">
-					<div className="flex min-w-56 flex-1 flex-col gap-1.5">
-						<Label htmlFor={searchId}>{t("drivingLicence.checks.search", "Search by name")}</Label>
+					<div className="flex min-w-0 basis-56 flex-1 flex-col gap-1.5">
+						<Label htmlFor={searchId}>
+							{t("drivingLicence.checks.search", "Search by name")}
+						</Label>
 						<Input
 							id={searchId}
 							type="search"
@@ -174,14 +245,16 @@ export function DrivingLicenceVerifierWorklist() {
 							onChange={(event) => setSearch(event.target.value)}
 						/>
 					</div>
-					<div className="flex min-w-48 flex-col gap-1.5">
+					<div className="flex min-w-0 basis-48 flex-col gap-1.5">
 						<span id={statusId} className="text-sm font-medium">
 							{t("drivingLicence.checks.filter.status", "Status")}
 						</span>
 						<Select
 							value={status}
 							items={filterOptions}
-							onValueChange={(value) => setStatus((value as StatusFilter | null) ?? "all")}
+							onValueChange={(value) =>
+								setStatus((value as StatusFilter | null) ?? "all")
+							}
 						>
 							<SelectTrigger aria-labelledby={statusId} className="w-full">
 								<SelectValue />
@@ -196,25 +269,63 @@ export function DrivingLicenceVerifierWorklist() {
 						</Select>
 					</div>
 				</div>
-				{worklist.isPending ? (
-					<p role="status" className="text-sm text-muted-foreground">
-						{t("drivingLicence.checks.loading", "Loading intended drivers…")}
-					</p>
-				) : !rows ? (
-					<p role="alert" className="text-sm text-destructive">
-						{t(
-							"drivingLicence.checks.loadError",
-							"The list could not be loaded. Check your current verifier responsibility.",
-						)}
-					</p>
-				) : !rows.length ? (
-					<WorklistEmpty filtered={filtered} />
-				) : (
-					<WorklistTable rows={rows} busy={worklist.isFetching} order={order} onSort={setOrder} />
-				)}
+				{worklist.isError || (worklist.data && !worklist.data.success) ? (
+					<div role="alert" className="space-y-2 text-sm">
+						<p>
+							{t(
+								"drivingLicence.checks.loadError",
+								"The list could not be loaded. Check your current verifier responsibility.",
+							)}
+						</p>
+						<Button
+							variant="outline"
+							disabled={worklist.isFetching}
+							onClick={() => void worklist.refetch()}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
+				) : null}
+				<WorklistRecords
+					loading={worklist.isPending}
+					rows={rows}
+					filtered={filtered}
+				>
+					{rows ? (
+						<WorklistTable
+							rows={rows}
+							busy={worklist.isFetching}
+							order={order}
+							onSort={setOrder}
+						/>
+					) : null}
+				</WorklistRecords>
 			</CardContent>
 		</Card>
 	);
+}
+
+function WorklistRecords({
+	loading,
+	rows,
+	filtered,
+	children,
+}: {
+	loading: boolean;
+	rows: readonly DrivingLicenceWorklistRow[] | null;
+	filtered: boolean;
+	children: React.ReactNode;
+}) {
+	const { t } = useTranslate();
+	if (loading)
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				{t("drivingLicence.checks.loading", "Loading intended drivers…")}
+			</p>
+		);
+	if (!rows) return null;
+	if (!rows.length) return <WorklistEmpty filtered={filtered} />;
+	return children;
 }
 
 /** No rows: either nothing matches the search or filter, or nobody is in scope yet. */
@@ -223,7 +334,10 @@ function WorklistEmpty({ filtered }: { filtered: boolean }) {
 	if (filtered)
 		return (
 			<p role="status" className="text-sm text-muted-foreground">
-				{t("drivingLicence.checks.noMatches", "No intended drivers match the search or filter.")}
+				{t(
+					"drivingLicence.checks.noMatches",
+					"No intended drivers match the search or filter.",
+				)}
 			</p>
 		);
 	return (
@@ -232,7 +346,9 @@ function WorklistEmpty({ filtered }: { filtered: boolean }) {
 				<EmptyMedia variant="icon">
 					<IconUserSearch aria-hidden="true" />
 				</EmptyMedia>
-				<EmptyTitle>{t("drivingLicence.checks.empty.title", "Nobody to check yet")}</EmptyTitle>
+				<EmptyTitle>
+					{t("drivingLicence.checks.empty.title", "Nobody to check yet")}
+				</EmptyTitle>
 				<EmptyDescription>
 					{t(
 						"drivingLicence.checks.empty.description",
@@ -264,7 +380,9 @@ function WorklistTable({
 					<SortableHead column="name" order={order} onSort={onSort}>
 						{t("drivingLicence.checks.column.name", "Name")}
 					</SortableHead>
-					<TableHead>{t("drivingLicence.checks.column.status", "Status")}</TableHead>
+					<TableHead>
+						{t("drivingLicence.checks.column.status", "Status")}
+					</TableHead>
 					<SortableHead column="deadline" order={order} onSort={onSort}>
 						{t("drivingLicence.checks.column.deadline", "Next deadline")}
 					</SortableHead>
@@ -272,7 +390,9 @@ function WorklistTable({
 						{t("drivingLicence.checks.column.team", "Team")}
 					</SortableHead>
 					<TableHead>
-						<span className="sr-only">{t("drivingLicence.checks.column.action", "Action")}</span>
+						<span className="sr-only">
+							{t("drivingLicence.checks.column.action", "Action")}
+						</span>
 					</TableHead>
 				</TableRow>
 			</TableHeader>
@@ -299,15 +419,24 @@ function WorklistTable({
 						</TableCell>
 						<TableCell>{person.team ? person.team.name : "—"}</TableCell>
 						<TableCell className="text-right">
-							<Button asChild variant="outline" size="sm">
+							<Button
+								asChild
+								variant="outline"
+								size="sm"
+								className="h-auto min-h-8 max-w-full whitespace-normal break-words text-left"
+							>
 								<Link href={drivingLicenceCheckPath(person.employeeId)}>
 									{person.canVerify
 										? t("drivingLicence.worklist.open", "Check {name}", {
 												name: person.name,
 											})
-										: t("drivingLicence.worklist.viewEnded", "View ended record for {name}", {
-												name: person.name,
-											})}
+										: t(
+												"drivingLicence.worklist.viewEnded",
+												"View ended record for {name}",
+												{
+													name: person.name,
+												},
+											)}
 								</Link>
 							</Button>
 						</TableCell>

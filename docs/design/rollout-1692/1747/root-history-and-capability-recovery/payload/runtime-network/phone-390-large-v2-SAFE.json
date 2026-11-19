@@ -1,0 +1,101 @@
+{
+  "at": "2026-11-18T03:53:21.999Z",
+  "samples": [
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fontSize": "18px",
+      "dark": true,
+      "h1Count": 1,
+      "h1": {
+        "x": 18,
+        "y": 91,
+        "width": 354,
+        "height": 35.984375,
+        "right": 372,
+        "bottom": 126.984375
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "right": 390,
+        "bottom": 844
+      },
+      "sidebar": null,
+      "h1Hit": true,
+      "createHit": true,
+      "bodyScrollWidth": 390,
+      "dialogs": 0
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fontSize": "18px",
+      "dark": true,
+      "h1Count": 1,
+      "h1": {
+        "x": 18,
+        "y": 91,
+        "width": 354,
+        "height": 35.984375,
+        "right": 372,
+        "bottom": 126.984375
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "right": 390,
+        "bottom": 844
+      },
+      "sidebar": null,
+      "h1Hit": true,
+      "createHit": true,
+      "bodyScrollWidth": 390,
+      "dialogs": 0
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fontSize": "18px",
+      "dark": true,
+      "h1Count": 1,
+      "h1": {
+        "x": 18,
+        "y": 91,
+        "width": 354,
+        "height": 35.984375,
+        "right": 372,
+        "bottom": 126.984375
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "right": 390,
+        "bottom": 844
+      },
+      "sidebar": null,
+      "h1Hit": true,
+      "createHit": true,
+      "bodyScrollWidth": 390,
+      "dialogs": 0
+    }
+  ],
+  "stable": true,
+  "noOcclusion": true,
+  "currentSourceOnly": true,
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "capture": "viewport clip at measured main bounds, excludes sidebar/account identifiers; geometry independently sampled",
+  "qualification": "Current-only Chromium viewport, dev overlays visible; no historical/device/true-zoom proof."
+}

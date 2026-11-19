@@ -1,0 +1,16 @@
+{
+  "kind": "deterministic safe clone of actual browser error observation; original raw hash retained, owned origin normalized",
+  "rawSha256": "878109cd9971e2d0c88069626b1c00d37578d2810ba6af73bcd3d51274782bef",
+  "candidate": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "actualPointerClick": true,
+  "visibleToasts": [
+    "Export failedCannot read properties of null (reading 'props')"
+  ],
+  "error": {
+    "name": "TypeError",
+    "message": "Cannot read properties of null (reading 'props')",
+    "stack": "TypeError: Cannot read properties of null (reading 'props')\n    at render (<owned-loopback-origin>/_next/static/chunks/node_modules__pnpm_1sepsdargwcs3._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:8633:42)\n    at Object.toBlob (<owned-loopback-origin>/_next/static/chunks/node_modules__pnpm_1sepsdargwcs3._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:8677:82)\n    at exportToPDF (<owned-loopback-origin>/_next/static/chunks/apps_webapp_src_1yqh65lfl1qui._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:12954:15)\n    at async <owned-loopback-origin>/_next/static/chunks/apps_webapp_src_1yqh65lfl1qui._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:5654:35\n    at async ExportButtons[handleExport] (<owned-loopback-origin>/_next/static/chunks/apps_webapp_src_1yqh65lfl1qui._.js?dpl=241a77742d3ecd69dfdb907a5eb013438cdddb34:5651:38)"
+  },
+  "report": "Person 0, 2025-01-01 through 2025-12-31",
+  "buttons": null
+}

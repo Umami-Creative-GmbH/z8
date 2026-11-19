@@ -1,0 +1,121 @@
+{
+  "files": [
+    "src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+    "src/components/personnel-file/sick-leave-overview.tsx",
+    "src/components/personnel-file/sick-leave-overview.test.tsx",
+    "src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+    "src/components/personnel-file/personnel-file-panel.tsx",
+    "src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+    "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+    "src/lib/navigation/route-metadata.ts",
+    "src/lib/navigation/route-metadata.test.ts"
+  ],
+  "checks": [
+    {
+      "name": "lint",
+      "executable": "[PINNED_PNPM_EXECUTABLE]",
+      "args": [
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=./biome.jsonc",
+        "--formatter-enabled=false",
+        "src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+        "src/components/personnel-file/sick-leave-overview.tsx",
+        "src/components/personnel-file/sick-leave-overview.test.tsx",
+        "src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+        "src/components/personnel-file/personnel-file-panel.tsx",
+        "src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+        "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+        "src/lib/navigation/route-metadata.ts",
+        "src/lib/navigation/route-metadata.test.ts"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "format-existing-80",
+      "executable": "[PINNED_PNPM_EXECUTABLE]",
+      "args": [
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=./biome.jsonc",
+        "--line-width=80",
+        "--line-ending=crlf",
+        "src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+        "src/components/personnel-file/personnel-file-panel.tsx"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "format-new-100",
+      "executable": "[PINNED_PNPM_EXECUTABLE]",
+      "args": [
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=./biome.jsonc",
+        "--line-ending=crlf",
+        "src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+        "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "format-all-100",
+      "executable": "[PINNED_PNPM_EXECUTABLE]",
+      "args": [
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=./biome.jsonc",
+        "--line-ending=crlf",
+        "src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+        "src/components/personnel-file/sick-leave-overview.tsx",
+        "src/components/personnel-file/sick-leave-overview.test.tsx",
+        "src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+        "src/components/personnel-file/personnel-file-panel.tsx",
+        "src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+        "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+        "src/lib/navigation/route-metadata.ts",
+        "src/lib/navigation/route-metadata.test.ts"
+      ],
+      "exit": 1
+    },
+    {
+      "name": "ordinary",
+      "executable": "[PINNED_PNPM_EXECUTABLE]",
+      "args": [
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--line-ending=crlf",
+        "src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+        "src/components/personnel-file/sick-leave-overview.tsx",
+        "src/components/personnel-file/sick-leave-overview.test.tsx",
+        "src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+        "src/components/personnel-file/personnel-file-panel.tsx",
+        "src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+        "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+        "src/lib/navigation/route-metadata.ts",
+        "src/lib/navigation/route-metadata.test.ts"
+      ],
+      "exit": 1
+    }
+  ]
+}

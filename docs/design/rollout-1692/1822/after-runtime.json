@@ -1,0 +1,62 @@
+[
+  {
+    "name": "desktop-light",
+    "pageWidth": 1600,
+    "viewport": 1600,
+    "headingCount": 1,
+    "choices": 61,
+    "listHeight": 446,
+    "listScrollHeight": 4964
+  },
+  {
+    "name": "phone-light",
+    "pageWidth": 390,
+    "viewport": 390,
+    "headingCount": 1,
+    "choices": 61,
+    "listHeight": 420,
+    "listScrollHeight": 5012
+  },
+  {
+    "name": "wide-dark",
+    "pageWidth": 2400,
+    "viewport": 2400,
+    "headingCount": 1,
+    "choices": 61,
+    "listHeight": 446,
+    "listScrollHeight": 4964
+  },
+  {
+    "name": "phone-dark-large-text",
+    "pageWidth": 390,
+    "viewport": 390,
+    "headingCount": 1,
+    "choices": 61,
+    "listHeight": 420,
+    "listScrollHeight": 6310
+  },
+  {
+    "state": "pending membership refused",
+    "error": "You are not a member of this organization",
+    "choices": 61
+  },
+  {
+    "state": "activation pending",
+    "disabled": true,
+    "choices": 61
+  },
+  {
+    "state": "duplicate prevention",
+    "switchRequests": 1
+  },
+  {
+    "state": "activation complete",
+    "activeOrganizationId": "perf-small-5e8524d1dff7",
+    "saved": "perf-small-5e8524d1dff7",
+    "expected": "perf-small-5e8524d1dff7",
+    "path": "/en/licenses"
+  },
+  {
+    "browserErrors": []
+  }
+]

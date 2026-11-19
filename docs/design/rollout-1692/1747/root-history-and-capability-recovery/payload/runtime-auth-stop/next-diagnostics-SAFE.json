@@ -1,0 +1,68 @@
+{
+  "at": "2026-11-18T03:31:45.209Z",
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "currentPath": "/en/sign-in",
+  "primaryTargetStable": true,
+  "results": {
+    "get_project_metadata": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:52677\"}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1794972704451
+    },
+    "compile_route": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"routeSpecifier\":\"/[locale]/travel-expenses\",\"issues\":[]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1794972704456
+    },
+    "get_errors": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1794972705200
+    },
+    "get_page_metadata": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"sessions\":[{\"url\":\"/en/sign-in\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(auth)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(auth)/sign-in/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1794972705204
+    }
+  },
+  "nativeAgentBrowserAvailable": false,
+  "nativeFailure": "PSSecurityException UnauthorizedAccess on native PowerShell launcher; no bypass attempted",
+  "axeInstalled": false,
+  "axeAuditPerformed": false,
+  "reactMethod": "CDP DOM fiber ancestry resolved names only; no props/state inspection or native extension proof",
+  "requestedReactNames": [
+    "TravelExpenseManagement",
+    "ExpenseHistory"
+  ],
+  "requestedReactNamesObserved": [],
+  "qualification": "Browser session remained sign-in. Route-only compile does not prove authenticated route rendering or global compilation."
+}

@@ -1,0 +1,82 @@
+{
+    "source":  "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+    "projectPath":  "X:\\t3-code\\worktrees\\z8\\t3-3f71886f-a70d401b2ed88574\\apps\\webapp",
+    "compilationIssues":  [
+
+                          ],
+    "configErrors":  [
+
+                     ],
+    "sessionErrors":  [
+
+                      ],
+    "sessions":  [
+                     {
+                         "routerType":  "app",
+                         "url":  "/en/team/period-submissions?period=2026-11-02",
+                         "segments":  [
+                                          {
+                                              "path":  "app/[locale]/(app)/layout.tsx",
+                                              "type":  "layout",
+                                              "isBoundary":  false,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "app/[locale]/(app)/team/layout.tsx",
+                                              "type":  "layout",
+                                              "isBoundary":  false,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "app/[locale]/layout.tsx",
+                                              "type":  "layout",
+                                              "isBoundary":  false,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "global-error.js",
+                                              "type":  "boundary:global-error",
+                                              "isBoundary":  true,
+                                              "isBuiltin":  true
+                                          },
+                                          {
+                                              "path":  "not-found.js",
+                                              "type":  "boundary:not-found",
+                                              "isBoundary":  true,
+                                              "isBuiltin":  true
+                                          },
+                                          {
+                                              "path":  "app/[locale]/(app)/error.tsx",
+                                              "type":  "boundary:error",
+                                              "isBoundary":  true,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "app/[locale]/(app)/not-found.tsx",
+                                              "type":  "boundary:not-found",
+                                              "isBoundary":  true,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "app/[locale]/error.tsx",
+                                              "type":  "boundary:error",
+                                              "isBoundary":  true,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "app/[locale]/not-found.tsx",
+                                              "type":  "boundary:not-found",
+                                              "isBoundary":  true,
+                                              "isBuiltin":  false
+                                          },
+                                          {
+                                              "path":  "app/[locale]/(app)/team/period-submissions/page.tsx",
+                                              "type":  "page",
+                                              "isBoundary":  false,
+                                              "isBuiltin":  false
+                                          }
+                                      ]
+                     }
+                 ],
+    "routePresent":  true
+}

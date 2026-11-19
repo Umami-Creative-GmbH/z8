@@ -1,0 +1,125 @@
+{
+  "source": "9870df191c6b686106b38dcfa1bf6590ed611541",
+  "provisionalIntegration": "931c3f41d7a75a4b03d13f3dbad2e6de4eac4260",
+  "incomingMerge": "1513a20116706380dd65a93b35104ca4eeea6066",
+  "lastVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/reports/report-filters.tsx",
+      "rawSha256": "9e6487f1dabffde0eb115c688ba604b3845e22e25bd8b0a61e698cf69131d0ad",
+      "lfSha256": "b47dc52914dd7d7ce87a743568675b75d9a320c0ca82e400734d16ea5986a8cb",
+      "gitBlob": "e6f772a32ddec1c01e6b7be71c1badbd89ee881c"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/date-range-picker.tsx",
+      "rawSha256": "8617cbeb3bc2f01dbeac3b99dd0a972eed8722b2fd1ecc3ac94024de0d89aec8",
+      "lfSha256": "499a4bf3b24730ecdf120d5ba3ef2e1511a0bd0b3845c75e46cbd551a2f270ad",
+      "gitBlob": "03b48288735e98e414eb0a5f5f96986841655c18"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/date-range-picker.test.tsx",
+      "rawSha256": "aa49daa170cd0fdc364f96517f3c6bb41850ec3310316199fa16bde9569a3247",
+      "lfSha256": "734159696746fa9efa72859bfae1932775d69426dbc52a79c1b5a0f54fc03ce1",
+      "gitBlob": "252b367be6409c4ed8fa01485a32ee209c84fb01"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "rawSha256": "7038b86db56f68543c13d97145902aac280863217afb0df437ef677bf22620b0",
+      "lfSha256": "8ad9b6f4ab98326a139578af695320d63e6121a4dc64c46cf175d4ea64e47a17",
+      "gitBlob": "a6e8c30975c0747d3a504bab86bd6e2c4e202dc6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "rawSha256": "05e622ecfc5f6dfa48cfd6f06403e48c2f0bb5267ee6a2098c74d9ec9f270aa2",
+      "lfSha256": "4bb8e784e751c17d4d56530449c8603815914a491a3db8563c0219ba5f23c52d",
+      "gitBlob": "2f399f354364943b8198a2860c08cd646a4215e0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "rawSha256": "a0a4599bf8c4a2a8c4ee46de372a06a318159b54665b7df3038ce72be4011c23",
+      "lfSha256": "32a0ca51bfdbcbdadbb2b65f9dd9e23008a6fa0e995db17f1a0fc48be03b8075",
+      "gitBlob": "e70174b099d8edf81cd92443d534ade530d5c0f9"
+    }
+  ],
+  "redGreen": {
+    "original": "first-red.json",
+    "originalCases": 6,
+    "originalPassed": 4,
+    "originalFailed": 2,
+    "minimized": "recovery-red.json",
+    "firstGreen": "recovery-green.json",
+    "retainedFailure": "retained-settings-red.json",
+    "compatible": "recovery-compatible-confirmed.json",
+    "final": "unit-final.json",
+    "differentialAfter": "original-loop-after-fix.json",
+    "differentialAfterPassed": 5,
+    "differentialAfterFailed": 1,
+    "premergeControlIntentionallyUnchanged": true,
+    "permanentCases": 3,
+    "sourceBoundary": "Real OrganizationContextProvider/QueryClient/reports controls; auth/context HTTP/report-action transport mocked. Red intermediate source stages were not committed; no invented hash."
+  },
+  "unit": {
+    "cases": 289,
+    "files": 51,
+    "passed": 289,
+    "failed": 0,
+    "skipped": 0,
+    "command": "unit-command.json"
+  },
+  "types": {
+    "file": "typecheck-final.log",
+    "projects": 3,
+    "typegen": true,
+    "exit": 0,
+    "observedSession": 84592
+  },
+  "quality": {
+    "file": "quality.json",
+    "files": 13,
+    "lintExit": 0,
+    "ownedSixFile": "owned-six-quality.log",
+    "ownedSixExplicit100CrlfExit": 0,
+    "fullExplicit100Errors": 7,
+    "ordinaryErrors": 6,
+    "doctor": {
+      "file": "doctor.log",
+      "base": "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+      "files": 13,
+      "errors": 0,
+      "warnings": 1,
+      "warning": "Unchanged incoming use-report-employees readiness layout-effect advisory",
+      "exit": 0
+    }
+  },
+  "attemptHistory": "attempt-limitations.json",
+  "stop": {
+    "directory": ".tmp/merge1735-audit",
+    "sealSha256": "e730a6ba2d1f7906738437ff956db5de71f8381cd584f7b58dd214d25e4079a4",
+    "allowlistSha256": "95a66f3c022c2346f069397c8826e19866624300f3079001488b87f870845ad0",
+    "files": 70,
+    "unchanged": true
+  },
+  "preservation": {
+    "verifiedAncestors": 58,
+    "tree": "162acb2f915fd577e9ccd537eeba1afac076bf10",
+    "applicationTree": "2b2b1e89b9fde7d8d86467009efa1d9d269a0800",
+    "prior1733and1734ProofUnchanged": true,
+    "protected1734SourcePins": 15,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "noProviderActionCalculationTimeAuthorizationExportOwnerChange": true,
+    "diagnosticBridgesRemoved": 31
+  },
+  "pending": [
+    "Fresh independent public recovery/retained-scope/Activity/pending-session/protected controls.",
+    "Canonical report PostgreSQL14/2 and meaningful downstream exported content checks.",
+    "Actual completed parsed CSV/XLSX/PDF, real read failure/Retry and permitted role/scope readback, matched source-pinned preferences/native/Next evidence.",
+    "Existing format profiles, overwritten intermediate raw history, fullproduction/catalog/provider/device/truezoom/exhaustiveABA/globalroster limits remain explicit."
+  ],
+  "counts": {
+    "integrated": 58,
+    "awaiting-integration": 27,
+    "implementing": 1,
+    "pending": 71
+  },
+  "receivedAuditExportCommit": "37e6929e3af572718a9617f1332c171348e30cef"
+}

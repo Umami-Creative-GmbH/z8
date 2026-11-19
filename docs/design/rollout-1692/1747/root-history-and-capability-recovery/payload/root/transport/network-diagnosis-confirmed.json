@@ -1,0 +1,71 @@
+{
+  "scope": "Read-only extraction from own stopped private server log; raw content not printed or copied",
+  "frozenHead": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "privateLogSha256": "e851fe8a14e68062818747184f2f27c800bae898da07ffc0a3d9cfe238d793b3",
+  "turnstileErrorCount": 2,
+  "authErrorCategories": [
+    {
+      "siteverifyReferenced": false,
+      "denied": true,
+      "connect": true,
+      "fetchFailed": true,
+      "code": [
+        "EACCES"
+      ]
+    },
+    {
+      "siteverifyReferenced": false,
+      "denied": true,
+      "connect": true,
+      "fetchFailed": true,
+      "code": [
+        "EACCES"
+      ]
+    }
+  ],
+  "oldSuccessfulGeneration": {
+    "turnstileErrors": 0,
+    "accessDeniedCount": 0
+  },
+  "canonicalBoundary": {
+    "service": "apps/webapp/src/lib/turnstile/service.ts",
+    "authGuard": "apps/webapp/src/lib/turnstile/auth-plugin.ts",
+    "behavior": "Canonical verifier posts to Cloudflare siteverify and auth guard rejects unsuccessful verification. No auth/source/config/token changes."
+  },
+  "classification": "Both stopped auth verifier error spans record fetch failed/connect EACCES. The same token-free public endpoint HEAD fails EACCES in default sandbox and reaches HTTP405 with approved network access. This supports testing a normal server launch with network permission; no auth/provider/config/TLS/proxy/token bypass.",
+  "runtimeResultUnchanged": "0/22 product checks; no scoped R165 P1; no retry executed",
+  "tokenFreeTransportComparison": {
+    "normalSandbox": {
+      "endpoint": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      "method": "HEAD",
+      "credentials": false,
+      "token": false,
+      "configurationChanged": false,
+      "transportReached": false,
+      "name": "TypeError",
+      "message": "fetch failed",
+      "causeCode": "EACCES"
+    },
+    "approvedNetworkContext": {
+      "endpoint": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      "method": "HEAD",
+      "credentials": false,
+      "token": false,
+      "configurationChanged": false,
+      "transportReached": true,
+      "status": 405
+    },
+    "qualification": "HTTP405 for HEAD demonstrates transport reachability, not CAPTCHA validity or sign-in success. No token, credential or auth-state request was sent.",
+    "scripts": [
+      {
+        "path": "transport-probe.mjs",
+        "sha256": "3c323e68c536855814b7de1c6aacb546d70408bb4a3a7dbc9f4b60265aeef9d0"
+      },
+      {
+        "path": "transport-probe-default.mjs",
+        "sha256": "785c555aa098851fca63c620bb9eac95fc36568a620c8138878f81f61e859428"
+      }
+    ]
+  },
+  "readiness": "All22 prior R165 product predicates remain unpassed. A new canonical fixture and normal form remain required."
+}

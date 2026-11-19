@@ -1,0 +1,25 @@
+{
+    "name":  "biome-explicit-crlf",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "sourceHead":  "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+    "env":  {
+                "pnpm_config_verify_deps_before_run":  "false"
+            },
+    "argv":  [
+                 "pnpm",
+                 "--config.verify-deps-before-run=false",
+                 "--filter",
+                 "webapp",
+                 "exec",
+                 "biome",
+                 "check",
+                 "--error-on-warnings",
+                 "--config-path=biome.jsonc",
+                 "--line-ending=crlf",
+                 "src/app/[locale]/onboarding/welcome/page-client.tsx",
+                 "src/app/[locale]/onboarding/welcome/page.test.tsx",
+                 "src/app/[locale]/onboarding/welcome/page.tsx"
+             ],
+    "started":  "2026-11-15T22:09:39.3858854Z",
+    "exitCode":  1
+}

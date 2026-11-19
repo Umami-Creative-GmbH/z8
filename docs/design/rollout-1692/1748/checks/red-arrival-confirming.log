@@ -1,0 +1,80 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-2a184f7c-c55e0704d64f87a8/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/travel-expense-claim-detail.test.tsx (14 tests | 1 failed) 1549ms
+   ❯ stored travel claim detail (10)
+     × does not revive a late read after pending retained-session data and Activity restoration 1026ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/travel-expense-claim-detail.test.tsx > stored travel claim detail > does not revive a late read after pending retained-session data and Activity restoration
+TestingLibraryElementError: Unable to find an element with the text: Confirming the current organization and employee…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-4"
+    >
+      <div
+        role="status"
+      >
+        <p
+          class="sr-only"
+        >
+          Loading claim…
+        </p>
+        <div
+          aria-hidden="true"
+          class="animate-pulse rounded-md bg-accent motion-reduce:animate-none h-48 w-full"
+          data-slot="skeleton"
+        />
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-4"
+    >
+      <div
+        role="status"
+      >
+        <p
+          class="sr-only"
+        >
+          Loading claim…
+        </p>
+        <div
+          aria-hidden="true"
+          class="animate-pulse rounded-md bg-accent motion-reduce:animate-none h-48 w-full"
+          data-slot="skeleton"
+        />
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/travel-expenses/travel-expense-claim-detail.test.tsx:128:23
+    126|   actor.isPending = true;
+    127|   mounted.rerender(view("visible"));
+    128|   expect(await screen.findByText("Confirming the current organization …
+       |                       ^
+    129|   await act(async () => { finish(Response.json(storedDetail)); });
+    130|   expect(screen.queryByText("Original context")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  07:54:26
+   Duration  2.32s (tests 72%, environment 17%, import 7%, transform 2%, setup 1%)
+

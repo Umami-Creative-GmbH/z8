@@ -1,0 +1,17 @@
+{
+  "label": "static-syntax-babel",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "node",
+    ".tmp/review1748-both/syntax.cjs"
+  ],
+  "exit": 0,
+  "seconds": 0.18,
+  "logBytes": 29,
+  "logSha256": "1bc211a486d91798ff38f9c99a071ecb099dec562326137b130113b40e92e94e"
+}

@@ -4,6 +4,8 @@ import { useTranslate } from "@tolgee/react";
 import type { HolidayWithCategory } from "@/app/[locale]/(app)/settings/holidays/actions";
 import { DataTable } from "@/components/data-table-server";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { useHolidays } from "@/lib/query/use-holidays";
 import {
 	HolidayBulkDeleteDialog,
@@ -69,14 +71,35 @@ export function HolidayList({
 		return <HolidayListLoading canManage={canManage} onAddClick={onAddClick} />;
 	}
 
-	if (isError) {
-		return <HolidayListError canManage={canManage} onAddClick={onAddClick} onRetry={refresh} />;
+	if (isError && holidays.length === 0) {
+		return (
+			<HolidayListError
+				canManage={canManage}
+				onAddClick={onAddClick}
+				onRetry={refresh}
+			/>
+		);
 	}
 
 	return (
 		<>
 			<div className="space-y-4">
 				<HolidayListHeading />
+				{isError ? (
+					<Alert variant="destructive">
+						<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+							{t("settings.holidays.loadError", "Failed to load holidays")}
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={refresh}
+								disabled={isFetching}
+							>
+								{t("common.retry", "Retry")}
+							</Button>
+						</AlertDescription>
+					</Alert>
+				) : null}
 
 				<HolidayListToolbar
 					search={search}
@@ -92,6 +115,7 @@ export function HolidayList({
 				/>
 
 				<DataTable
+					mobileLayout="stacked"
 					columns={columns}
 					data={holidays}
 					pageCount={pageCount}
@@ -106,10 +130,14 @@ export function HolidayList({
 					enableRowSelection={canManage}
 					getRowId={(row) => row.id}
 					isFetching={isFetching}
-					emptyMessage={t(
-						"settings.holidays.list.empty",
-						"No holidays found. Add your first holiday to get started.",
-					)}
+					emptyMessage={
+						search || categoryId !== "all"
+							? t("table.noResults", "No results.")
+							: t(
+									"settings.holidays.list.empty",
+									"No holidays found. Add your first holiday to get started.",
+								)
+					}
 				/>
 
 				<HolidayListPagination
@@ -132,6 +160,7 @@ export function HolidayList({
 						{ name: deletion.holidayToDelete?.name || "" },
 					)}
 					isDeleting={deletion.deleteMutation.isPending}
+					error={deletion.deleteError}
 					onConfirm={deletion.confirmDelete}
 				/>
 			) : null}
@@ -142,6 +171,7 @@ export function HolidayList({
 					onOpenChange={deletion.setBulkDeleteConfirmOpen}
 					count={selectedCount}
 					isDeleting={deletion.bulkDeleteMutation.isPending}
+					error={deletion.bulkDeleteError}
 					onConfirm={deletion.confirmBulkDelete}
 				/>
 			) : null}

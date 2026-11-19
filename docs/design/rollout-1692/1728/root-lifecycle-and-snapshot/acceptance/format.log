@@ -1,0 +1,502 @@
+src\components\personnel-file\expiring-documents.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → fireEvent,␍
+      5     │ - → render,␍
+      6     │ - → screen,␍
+      7     │ - → waitFor,␍
+      8     │ - → within,␍
+      9     │ - }·from·"@testing-library/react";␍
+          3 │ + import·{·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+     10   4 │   import type { ReactNode } from "react";␍
+     11   5 │   import { toast } from "sonner";␍
+    ······· │ 
+     19  13 │   vi.mock("@tolgee/react", () => ({␍
+     20  14 │     useTranslate: () => ({␍
+     21     │ - → → t:·(␍
+     22     │ - → → → _key:·string,␍
+     23     │ - → → → fallback:·string,␍
+     24     │ - → → → params?:·Record<string,·string·|·number>,␍
+     25     │ - → → )·=>␍
+     26     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·name:·string)·=>␍
+     27     │ - → → → → String(params?.[name]·??·match),␍
+     28     │ - → → → ),␍
+         15 │ + → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·string·|·number>)·=>␍
+         16 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·name:·string)·=>·String(params?.[name]·??·match)),␍
+     29  17 │     }),␍
+     30  18 │   }));␍
+    ······· │ 
+     50  38 │   }));␍
+     51  39 │   vi.mock("@/components/ui/action-panel", () => {␍
+     52     │ - → const·Pass·=·({·children·}:·{·children?:·ReactNode·})·=>·(␍
+     53     │ - → → <div>{children}</div>␍
+     54     │ - → );␍
+         40 │ + → const·Pass·=·({·children·}:·{·children?:·ReactNode·})·=>·<div>{children}</div>;␍
+     55  41 │     return {␍
+     56     │ - → → ActionPanel:·({␍
+     57     │ - → → → children,␍
+     58     │ - → → → open,␍
+     59     │ - → → }:·{␍
+     60     │ - → → → children?:·ReactNode;␍
+     61     │ - → → → open:·boolean;␍
+     62     │ - → → })·=>·(open·?·<div·role="dialog">{children}</div>·:·null),␍
+         42 │ + → → ActionPanel:·({·children,·open·}:·{·children?:·ReactNode;·open:·boolean·})·=>␍
+         43 │ + → → → open·?·<div·role="dialog">{children}</div>·:·null,␍
+     63  44 │       ActionPanelBody: Pass,␍
+     64  45 │       ActionPanelContent: Pass,␍
+    ······· │ 
+     66  47 │       ActionPanelFooter: Pass,␍
+     67  48 │       ActionPanelHeader: Pass,␍
+     68     │ - → → ActionPanelTitle:·({·children·}:·{·children?:·ReactNode·})·=>·(␍
+     69     │ - → → → <h2>{children}</h2>␍
+     70     │ - → → ),␍
+         49 │ + → → ActionPanelTitle:·({·children·}:·{·children?:·ReactNode·})·=>·<h2>{children}</h2>,␍
+     71  50 │     };␍
+     72  51 │   });␍
+     73  52 │   vi.mock("@/components/ui/date-picker", () => ({␍
+     74     │ - → DatePicker:·({␍
+     75     │ - → → value,␍
+     76     │ - → → onChange,␍
+     77     │ - → }:·{␍
+     78     │ - → → value?:·string·|·null;␍
+     79     │ - → → onChange:·(v:·string)·=>·void;␍
+     80     │ - → })·=>·(␍
+         53 │ + → DatePicker:·({·value,·onChange·}:·{·value?:·string·|·null;·onChange:·(v:·string)·=>·void·})·=>·(␍
+     81  54 │       <input␍
+     82  55 │         aria-label="Deadline picker"␍
+    ······· │ 
+     86  59 │     ),␍
+     87  60 │   }));␍
+     88     │ - vi.mock(␍
+     89     │ - → "@/app/[locale]/(app)/personnel-files/document-request-actions",␍
+     90     │ - → ()·=>·({␍
+     91     │ - → → createDocumentRequestAction:·vi.fn(),␍
+     92     │ - → }),␍
+     93     │ - );␍
+         61 │ + vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({␍
+         62 │ + → createDocumentRequestAction:·vi.fn(),␍
+         63 │ + }));␍
+     94  64 │   ␍
+     95  65 │   function expiring(overrides: Partial<ExpiringDocument>): ExpiringDocument {␍
+    ······· │ 
+    126  96 │   ␍
+    127  97 │   function renderCard() {␍
+    128     │ - → render(␍
+    129     │ - → → <ExpiringDocumentsCard␍
+    130     │ - → → → documents={documents}␍
+    131     │ - → → → leadDays={30}␍
+    132     │ - → → → today="2026-10-18"␍
+    133     │ - → → />,␍
+    134     │ - → );␍
+         98 │ + → render(<ExpiringDocumentsCard·documents={documents}·leadDays={30}·today="2026-10-18"·/>);␍
+    135  99 │   }␍
+    136 100 │   ␍
+    ······· │ 
+    138 102 │     renderCard();␍
+    139 103 │     expect(␍
+    140     │ - → → screen.getByRole("heading",·{·level:·2,·name:·/Expiring·documents/·})␍
+    141     │ - → → → .textContent,␍
+        104 │ + → → screen.getByRole("heading",·{·level:·2,·name:·/Expiring·documents/·}).textContent,␍
+    142 105 │     ).toContain("3");␍
+    143     │ - → expect(␍
+    144     │ - → → screen␍
+    145     │ - → → → .getByRole("link",·{·name:·/First·aid·card·2024/·})␍
+    146     │ - → → → .getAttribute("href"),␍
+    147     │ - → ).toBe("/personnel-files/employee-1?category=certificate");␍
+        106 │ + → expect(screen.getByRole("link",·{·name:·/First·aid·card·2024/·}).getAttribute("href")).toBe(␍
+        107 │ + → → "/personnel-files/employee-1?category=certificate",␍
+        108 │ + → );␍
+    148 109 │   });␍
+    149 110 │   ␍
+    ······· │ 
+    165 126 │       renderCard();␍
+    166 127 │       const first = rowOf("First aid card 2024");␍
+    167     │ - → → expect(␍
+    168     │ - → → → within(first).getByRole("link",·{·name:·/First·aid·card·2024/·}),␍
+    169     │ - → → ).toHaveProperty(␍
+        128 │ + → → expect(within(first).getByRole("link",·{·name:·/First·aid·card·2024/·})).toHaveProperty(␍
+    170 129 │         "href",␍
+    171 130 │         expect.stringContaining("/personnel-files/employee-1"),␍
+  
+
+src\components\personnel-file\expiring-documents.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      7   7 │   import { Badge } from "@/components/ui/badge";␍
+      8   8 │   import { Button } from "@/components/ui/button";␍
+      9     │ - import·{␍
+     10     │ - → Card,␍
+     11     │ - → CardContent,␍
+     12     │ - → CardDescription,␍
+     13     │ - → CardHeader,␍
+     14     │ - → CardTitle,␍
+     15     │ - }·from·"@/components/ui/card";␍
+          9 │ + import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+     16  10 │   import { formatDateOnly } from "@/components/ui/date-picker-utils";␍
+     17  11 │   import type { ExpiryDescription } from "@/lib/expiry-reminders/expiry";␍
+    ······· │ 
+     57  51 │   ␍
+     58  52 │   function renewalOf(document: ExpiringDocument): RenewedDocumentPrefill | null {␍
+     59     │ - → if·(␍
+     60     │ - → → document.renewalRequested·||␍
+     61     │ - → → !isDocumentRequestCategory(document.category)␍
+     62     │ - → )␍
+     63     │ - → → return·null;␍
+         53 │ + → if·(document.renewalRequested·||·!isDocumentRequestCategory(document.category))·return·null;␍
+     64  54 │     return {␍
+     65  55 │       documentId: document.documentId,␍
+    ······· │ 
+    103  93 │           <CardTitle>␍
+    104  94 │             <h2 className="flex flex-wrap items-center gap-2">␍
+    105     │ - → → → → → → <IconCalendarExclamation␍
+    106     │ - → → → → → → → aria-hidden="true"␍
+    107     │ - → → → → → → → className="size-5·text-muted-foreground"␍
+    108     │ - → → → → → → />␍
+         95 │ + → → → → → → <IconCalendarExclamation·aria-hidden="true"·className="size-5·text-muted-foreground"·/>␍
+    109  96 │               {t("settings.personnelFiles.expiring.title", "Expiring documents")}␍
+    110  97 │               <Badge variant="secondary" className="tabular-nums">␍
+    ······· │ 
+    124 111 │           {documents.length === 0 ? (␍
+    125 112 │             <p className="text-sm text-muted-foreground">␍
+    126     │ - → → → → → → {t(␍
+    127     │ - → → → → → → → "settings.personnelFiles.expiring.empty",␍
+    128     │ - → → → → → → → "No·documents·are·expiring.",␍
+    129     │ - → → → → → → )}␍
+        113 │ + → → → → → → {t("settings.personnelFiles.expiring.empty",·"No·documents·are·expiring.")}␍
+    130 114 │             </p>␍
+    131 115 │           ) : (␍
+    ······· │ 
+    143 127 │                     >␍
+    144 128 │                       <span className="flex flex-wrap items-center gap-2">␍
+    145     │ - → → → → → → → → → → → <span·className="truncate·font-medium">␍
+    146     │ - → → → → → → → → → → → → {document.title}␍
+    147     │ - → → → → → → → → → → → </span>␍
+    148     │ - → → → → → → → → → → → <Badge·variant="secondary">␍
+    149     │ - → → → → → → → → → → → → {labels.categories[document.category]}␍
+    150     │ - → → → → → → → → → → → </Badge>␍
+        129 │ + → → → → → → → → → → → <span·className="truncate·font-medium">{document.title}</span>␍
+        130 │ + → → → → → → → → → → → <Badge·variant="secondary">{labels.categories[document.category]}</Badge>␍
+    151 131 │                       </span>␍
+    152 132 │                       <span className="block text-sm text-muted-foreground">␍
+    ······· │ 
+    161 141 │                     {document.renewalRequested ? (␍
+    162 142 │                       <Badge variant="outline">␍
+    163     │ - → → → → → → → → → → → {t(␍
+    164     │ - → → → → → → → → → → → → "settings.personnelFiles.expiring.renewalRequested",␍
+    165     │ - → → → → → → → → → → → → "Renewal·requested",␍
+    166     │ - → → → → → → → → → → → )}␍
+        143 │ + → → → → → → → → → → → {t("settings.personnelFiles.expiring.renewalRequested",·"Renewal·requested")}␍
+    167 144 │                       </Badge>␍
+    168 145 │                     ) : renewal ? (␍
+    ······· │ 
+    187 164 │                       >␍
+    188 165 │                         <IconFileImport aria-hidden="true" className="size-4" />␍
+    189     │ - → → → → → → → → → → → {t(␍
+    190     │ - → → → → → → → → → → → → "settings.personnelFiles.expiring.requestRenewal",␍
+    191     │ - → → → → → → → → → → → → "Request·renewal",␍
+    192     │ - → → → → → → → → → → → )}␍
+        166 │ + → → → → → → → → → → → {t("settings.personnelFiles.expiring.requestRenewal",·"Request·renewal")}␍
+    193 167 │                       </Button>␍
+    194 168 │                     ) : null}␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      7   3 │   ␍
+      8   4 │   describe("route metadata", () => {␍
+    ······· │ 
+     16  12 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     17  13 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     18     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+     19     │ - → → → true,␍
+     20     │ - → → );␍
+     21     │ - → → expect(␍
+     22     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+     23     │ - → → ).toBe(false);␍
+         14 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+         15 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     24  16 │     });␍
+     25  17 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     53  45 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     54  46 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     55     │ - → → expect(␍
+     56     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     57     │ - → → ).toBe(true);␍
+         47 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     58  48 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     59     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     60     │ - → → → false,␍
+     61     │ - → → );␍
+         49 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     62  50 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     63  51 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     69  57 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     70  58 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     71     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+     72     │ - → → → true,␍
+     73     │ - → → );␍
+     74     │ - → → expect(␍
+     75     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+     76     │ - → → ).toBe(false);␍
+         59 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+         60 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     77  61 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     78  62 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+     81  65 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     82  66 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     83     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+     84     │ - → → → true,␍
+     85     │ - → → );␍
+         67 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+     86  68 │     });␍
+     87  69 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+     88     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+     89     │ - → → → true,␍
+     90     │ - → → );␍
+     91     │ - → → expect(␍
+     92     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+     93     │ - → → ).toBe(false);␍
+         70 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+         71 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+     94  72 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     95  73 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+     98  76 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     99  77 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+    100     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+    101     │ - → → → true,␍
+    102     │ - → → );␍
+         78 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+    103  79 │     });␍
+    104  80 │     it("adopts only the complete review arrival route", () => {␍
+    105     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+    106     │ - → → → true,␍
+    107     │ - → → );␍
+    108     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+    109     │ - → → → false,␍
+    110     │ - → → );␍
+    111     │ - → → expect(␍
+    112     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+    113     │ - → → ).toBe(false);␍
+         81 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+         82 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+         83 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+    114  84 │     });␍
+    115  85 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+    116  86 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+    117     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+    118     │ - → → → false,␍
+    119     │ - → → );␍
+         87 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+    120  88 │     });␍
+    121  89 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+    122  90 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+    123     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+    124     │ - → → → false,␍
+    125     │ - → → );␍
+         91 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+    126  92 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+    127     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+    128     │ - → → → false,␍
+    129     │ - → → );␍
+         93 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+    130  94 │     });␍
+    131  95 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    174 138 │   ␍
+    175 139 │     it("normalizes locale and trailing slash segments", () => {␍
+    176     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    177     │ - → → → "/settings/security",␍
+    178     │ - → → );␍
+        140 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    179 141 │     });␍
+    180 142 │   });␍
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+    171     │ - → → (entry)·=>·({␍
+    172     │ - → → → id:·`settings-${entry.id}`,␍
+    173     │ - → → → href:·entry.href,␍
+    174     │ - → → → titleKey:·entry.titleKey,␍
+    175     │ - → → → titleDefault:·entry.titleDefault,␍
+    176     │ - → → }),␍
+    177     │ - → ),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+        171 │ + → → id:·`settings-${entry.id}`,␍
+        172 │ + → → href:·entry.href,␍
+        173 │ + → → titleKey:·entry.titleKey,␍
+        174 │ + → → titleDefault:·entry.titleDefault,␍
+        175 │ + → })),␍
+    178 176 │     {␍
+    179 177 │       id: "settings",␍
+    ······· │ 
+    192 190 │   ␍
+    193 191 │   export function normalizeAppPath(pathname: string): string {␍
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname␍
+    195     │ - → → .split("/")␍
+    196     │ - → → .filter(Boolean);␍
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(␍
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+    199     │ - → )␍
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+    200 194 │       ? remainingSegments␍
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    256 250 │       [...APP_ROUTE_METADATA]␍
+    257 251 │         .sort((left, right) => right.href.length - left.href.length)␍
+    258     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+    259     │ - → → UNKNOWN_ROUTE_METADATA␍
+        252 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+    260 253 │     );␍
+    261 254 │   }␍
+  
+
+src\lib\personnel-file\access-store.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{␍
+      2     │ - → and,␍
+      3     │ - → asc,␍
+      4     │ - → eq,␍
+      5     │ - → inArray,␍
+      6     │ - → ne,␍
+      7     │ - → or,␍
+      8     │ - → type·SQL,␍
+      9     │ - → type·SQLWrapper,␍
+     10     │ - → sql,␍
+     11     │ - }·from·"drizzle-orm";␍
+          1 │ + import·{·and,·asc,·eq,·inArray,·ne,·or,·type·SQL,·type·SQLWrapper,·sql·}·from·"drizzle-orm";␍
+     12   2 │   import type { db as appDb } from "@/db";␍
+     13   3 │   import { member, organization, user } from "@/db/auth-schema";␍
+     14     │ - import·{␍
+     15     │ - → employee,␍
+     16     │ - → employeeDocument,␍
+     17     │ - → employeeDocumentRequest,␍
+     18     │ - → teamMembership,␍
+     19     │ - }·from·"@/db/schema";␍
+          4 │ + import·{·employee,·employeeDocument,·employeeDocumentRequest,·teamMembership·}·from·"@/db/schema";␍
+     20   5 │   import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-identity";␍
+     21   6 │   import { hasOrganizationRole } from "@/lib/auth/organization-role";␍
+    ······· │ 
+     67  52 │     input: { userId: string; organizationId: string; now?: Instant },␍
+     68  53 │   ): Promise<PersonnelFileAccess | null> {␍
+     69     │ - → if·(!(await·isPersonnelFilesEnabled(database,·input.organizationId)))␍
+     70     │ - → → return·null;␍
+         54 │ + → if·(!(await·isPersonnelFilesEnabled(database,·input.organizationId)))·return·null;␍
+     71  55 │     const [[membership], [profile]] = await Promise.all([␍
+     72  56 │       database␍
+    ······· │ 
+     88  72 │         .from(employee)␍
+     89  73 │         .where(␍
+     90     │ - → → → → and(␍
+     91     │ - → → → → → eq(employee.userId,·input.userId),␍
+     92     │ - → → → → → eq(employee.organizationId,·input.organizationId),␍
+     93     │ - → → → → ),␍
+         74 │ + → → → → and(eq(employee.userId,·input.userId),·eq(employee.organizationId,·input.organizationId)),␍
+     94  75 │         )␍
+     95  76 │         .limit(1),␍
+    ······· │ 
+    110  91 │   export async function resolvePersonnelFileAccessForIdentity(␍
+    111  92 │     database: Reader,␍
+    112     │ - → identity:·Pick<␍
+    113     │ - → → AuthorizedOrganizationIdentity,␍
+    114     │ - → → "userId"·|·"organizationId"·|·"membershipRole"␍
+    115     │ - → >·&·{·selfEmployeeId:·string·|·null·},␍
+         93 │ + → identity:·Pick<AuthorizedOrganizationIdentity,·"userId"·|·"organizationId"·|·"membershipRole">·&·{␍
+         94 │ + → → selfEmployeeId:·string·|·null;␍
+         95 │ + → },␍
+    116  96 │   ): Promise<PersonnelFileAccess> {␍
+    117  97 │     const input = identity;␍
+    ······· │ 
+    150 130 │       .from(employee)␍
+    151 131 │       .where(␍
+    152     │ - → → → and(␍
+    153     │ - → → → → eq(employee.id,·input.employeeId),␍
+    154     │ - → → → → eq(employee.organizationId,·input.organizationId),␍
+    155     │ - → → → ),␍
+        132 │ + → → → and(eq(employee.id,·input.employeeId),·eq(employee.organizationId,·input.organizationId)),␍
+    156 133 │       )␍
+    157 134 │       .limit(1);␍
+    ······· │ 
+    261 238 │     employeeIdColumn: SQLWrapper = employeeDocument.employeeId,␍
+    262 239 │   ): SQL {␍
+    263     │ - → const·inScope·=·employeeInScope(␍
+    264     │ - → → access.organizationId,␍
+    265     │ - → → scope,␍
+    266     │ - → → employeeIdColumn,␍
+    267     │ - → );␍
+        240 │ + → const·inScope·=·employeeInScope(access.organizationId,·scope,·employeeIdColumn);␍
+    268 241 │     return access.selfEmployeeId␍
+    269 242 │       ? (and(inScope, ne(employeeIdColumn, access.selfEmployeeId)) as SQL)␍
+    ······· │ 
+    295 268 │     const { category } = filter;␍
+    296 269 │     const scopes = access.grants␍
+    297     │ - → → .filter((grant)·=>␍
+    298     │ - → → → category·?·grant.categories.has(category)·:·grant.categories.size·>·0,␍
+    299     │ - → → )␍
+        270 │ + → → .filter((grant)·=>·(category·?·grant.categories.has(category)·:·grant.categories.size·>·0))␍
+    300 271 │       .map((grant) => managedEmployeeCondition(access, grant.scope, employee.id));␍
+    301 272 │     if (scopes.length === 0) return [];␍
+    ······· │ 
+    339 310 │     const scopes = access.grants␍
+    340 311 │       .filter((grant) => grant.categories.has(category))␍
+    341     │ - → → .map((grant)·=>␍
+    342     │ - → → → managedEmployeeCondition(access,·grant.scope,·employeeIdColumn),␍
+    343     │ - → → );␍
+        312 │ + → → .map((grant)·=>·managedEmployeeCondition(access,·grant.scope,·employeeIdColumn));␍
+    344 313 │     return scopes.length > 0 ? (or(...scopes) as SQL) : sql`false`;␍
+    345 314 │   }␍
+    ······· │ 
+    352 321 │    * sight of the request. Always scoped to the actor's organization.␍
+    353 322 │    */␍
+    354     │ - export·function·managedDocumentRequestsCondition(␍
+    355     │ - → access:·PersonnelFileAccess,␍
+    356     │ - ):·SQL·{␍
+        323 │ + export·function·managedDocumentRequestsCondition(access:·PersonnelFileAccess):·SQL·{␍
+    357 324 │     const managed = access.grants.flatMap((grant) => {␍
+    358 325 │       const categories = DOCUMENT_REQUEST_CATEGORIES.filter((category) =>␍
+    ······· │ 
+    362 329 │       return [␍
+    363 330 │         and(␍
+    364     │ - → → → → managedEmployeeCondition(␍
+    365     │ - → → → → → access,␍
+    366     │ - → → → → → grant.scope,␍
+    367     │ - → → → → → employeeDocumentRequest.employeeId,␍
+    368     │ - → → → → ),␍
+        331 │ + → → → → managedEmployeeCondition(access,·grant.scope,·employeeDocumentRequest.employeeId),␍
+    369 332 │           inArray(employeeDocumentRequest.category, categories),␍
+    370 333 │         ) as SQL,␍
+  
+
+Checked 12 files in 8ms. No fixes applied.
+Found 5 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

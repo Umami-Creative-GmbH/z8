@@ -1,0 +1,20 @@
+{
+  "desktop": {
+    "headingCount": 1,
+    "heading": "Login to your account",
+    "overflow": false,
+    "unfilled": true,
+    "loginEnabled": true,
+    "widgetComplete": true
+  },
+  "mobile": {
+    "headingCount": 1,
+    "overflow": false,
+    "unfilled": true,
+    "loginCount": 1
+  },
+  "focus": {
+    "passwordFocused": true,
+    "focusVisible": true
+  }
+}

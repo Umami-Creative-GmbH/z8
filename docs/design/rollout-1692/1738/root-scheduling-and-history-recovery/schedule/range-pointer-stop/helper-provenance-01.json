@@ -1,0 +1,84 @@
+{
+  "sources": [
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\fixture-helper-01.mjs",
+      "sourceSha256": "c0842bd12d98c61cbc6000c42df4686f006b684bfd870431547e8e2de3c39d01",
+      "target": "fixture-helper-01.mjs",
+      "sha256": "2392b069835bd2870ef690e889bfeb142761e6f9279b07be617f95b980feda78",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    },
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\dev-01-private.mjs",
+      "sourceSha256": "d81ea0edf544df6a30ddf32abd2148ecf17833aa04423e0601a387e5fae09bcd",
+      "target": "dev-01-private.mjs",
+      "sha256": "0c595035f3b6214da5e26e2056d1805606e59f4d54683d8ec212e6225a9ea65b",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    },
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\browser-controller-01.private.mjs",
+      "sourceSha256": "bac0f480e49ab43608ecce25668a85adf6a4c964e3c716d7bb5fd729facad3b4",
+      "target": "browser-controller-01.private.mjs",
+      "sha256": "51cf432e4692ce1e56f56177ed65520d69e7b25a86d4ac1a43a2446915bc7dde",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    },
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\start-browser-01.mjs",
+      "sourceSha256": "cd618b292fd90eacbd6869dd519ae7e1cd188f2a82a4aa100ec2849efa890dac",
+      "target": "start-browser-01.mjs",
+      "sha256": "a6893263883426cb8ea3a5b5be4cbbf8e38c80acc7c37a92c42297bdb6e5fa39",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    },
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\rpc-03.mjs",
+      "sourceSha256": "e00edaf644bcb4c6bcbcd500b47ade6bb4aa42915a15facca4db40685d7ef468",
+      "target": "rpc-03.mjs",
+      "sha256": "f2a4e213a48a4035aba6685830818a608b619fc61f43e17e353c5841e3b313e3",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    },
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\scheduling-fixture-bridge-02.ts",
+      "sourceSha256": "a3602d955cd9a438111dbf6ffa3c07b1becfaac278c06b20d5f9ee5b2877409d",
+      "target": "scheduling-fixture-bridge-02.ts",
+      "sha256": "8decb3c3ce02b2259f7c2fb56eb9d226714bf00b5ff37ea5db52bae716a02ba8",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    },
+    {
+      "from": ".tmp\\1738-publish-independent-checks\\run-fixture-tool-03.mjs",
+      "sourceSha256": "c7994f3a9fc6abb87fce27ef16b15ca14937c831de4af144d58e06df2b48f6bd",
+      "target": "run-fixture-tool-03.mjs",
+      "sha256": "a141d15ebfa1c11e2b453e3418971eedf0d67d7adc9e628cd65f9afb4d9f2ae0",
+      "adaptations": [
+        "new namespace",
+        "new own label",
+        "new own import bridge"
+      ]
+    }
+  ],
+  "bootstrap": "canonical fixture prepare only; initial normal credentials/member prerequisites; no fixture-auth call",
+  "login": "fresh transient Chromium real development form/widget; no cookie/session/storage reads, writes or copies",
+  "notifications": "denied"
+}

@@ -1,0 +1,18 @@
+{
+  "phase": "before",
+  "kind": "canonical-fixture-read-only",
+  "small": {
+    "absences": 416,
+    "absenceDigest": "41154eb5062cfbed28ec59ad037e88540c32601499659e3902daf504fbe4fdb0",
+    "workDigest": "2a7ead4396ad621d5de71c97eae6a0c1e11a3de6753741f18658590a63ca4e85",
+    "entryDigest": "e5bd24ad3865ffbded7bd7b7a758c50e84e3306528f3a93d2793ab2e2ef757b4",
+    "reviewRecords": []
+  },
+  "large": {
+    "absences": 10400,
+    "absenceDigest": "fcc0f3929392454f10946c9c622777ed70e08e088b77ad10af38872dab6e35f4",
+    "workDigest": "ecd8e16bbaede1192d5eb133e40067c78220125cdf1060076933556a4c61a99c",
+    "entryDigest": "a3a84d601b9452ef7c9d9d447106195073feb689ba0e30bc28ccdb1d8169834a",
+    "reviewRecords": []
+  }
+}

@@ -21,6 +21,14 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -204,8 +212,9 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 	const [editingId, setEditingId] = useState<string | null>(null);
 
 	const {
-		data: templates = [],
+		data: templatesResult,
 		isLoading,
+		isError,
 		isFetching,
 		refetch,
 	} = useQuery({
@@ -216,6 +225,10 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 			return result.data;
 		},
 	});
+
+	const templates = templatesResult ?? [];
+	// A failed background refetch keeps the loaded list; only a failed first load shows the error.
+	const loadFailed = isError && !templatesResult;
 
 	const hours = useMemo(
 		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
@@ -242,10 +255,10 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 	);
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<div className="flex flex-col gap-2">
-					<h2 className="text-2xl font-semibold tracking-tight">
+		<div className="flex flex-1 flex-col gap-6">
+			<div className="flex flex-wrap items-end justify-between gap-4">
+				<div className="min-w-0 flex-[1_1_18rem] space-y-1">
+					<h2 className="text-lg font-semibold tracking-tight">
 						{t("settings.projects.templates.title", "Project templates")}
 					</h2>
 					<p className="text-sm text-muted-foreground">
@@ -255,10 +268,18 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 						)}
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => refetch()}
+						disabled={isFetching}
+						aria-label={t("common.refresh", "Refresh")}
+					>
+						<IconRefresh
+							aria-hidden="true"
+							className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+						/>
 					</Button>
 					{createButton}
 				</div>
@@ -274,26 +295,49 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 						<Skeleton className="h-10 w-full" />
 					</CardContent>
 				</Card>
-			) : templates.length === 0 ? (
+			) : loadFailed ? (
 				<Card>
-					<CardContent className="flex flex-col items-center justify-center py-12 text-center">
-						<IconTemplate className="size-12 text-muted-foreground" aria-hidden="true" />
-						<h3 className="mt-4 text-lg font-medium">
-							{t("settings.projects.templates.empty.title", "No templates yet")}
-						</h3>
-						<p className="mt-2 max-w-md text-sm text-muted-foreground">
+					<CardContent className="flex flex-col items-start gap-3">
+						<p className="text-sm text-destructive" role="alert">
 							{t(
-								"settings.projects.templates.empty.description",
-								"Save the tasks, budget and people you set up for every similar project once, and start new projects from it.",
+								"settings.projects.templates.loadFailed",
+								"Project templates could not be loaded. Check your connection and try again.",
 							)}
 						</p>
-						<div className="mt-4">{createButton}</div>
+						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+							<IconRefresh aria-hidden="true" className="size-4" />
+							{t("common.retry", "Retry")}
+						</Button>
+					</CardContent>
+				</Card>
+			) : templates.length === 0 ? (
+				<Card>
+					<CardContent>
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<IconTemplate aria-hidden="true" />
+								</EmptyMedia>
+								<EmptyTitle role="heading" aria-level={3}>
+									{t("settings.projects.templates.empty.title", "No templates yet")}
+								</EmptyTitle>
+								<EmptyDescription>
+									{t(
+										"settings.projects.templates.empty.description",
+										"Save the tasks, budget and people you set up for every similar project once, and start new projects from it.",
+									)}
+								</EmptyDescription>
+							</EmptyHeader>
+							<EmptyContent>{createButton}</EmptyContent>
+						</Empty>
 					</CardContent>
 				</Card>
 			) : (
 				<Card>
 					<CardHeader>
-						<CardTitle>{t("settings.projects.templates.listTitle", "All templates")}</CardTitle>
+						<CardTitle role="heading" aria-level={3}>
+							{t("settings.projects.templates.listTitle", "All templates")}
+						</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.projects.templates.listCount",
@@ -336,8 +380,10 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 													icon={template.icon}
 													className="size-4 shrink-0 text-muted-foreground"
 												/>
-												<div className="min-w-0">
-													<div className="font-medium">{template.name}</div>
+												<div className="min-w-0 max-w-xs">
+													<div className="truncate font-medium" title={template.name}>
+														{template.name}
+													</div>
 													{template.description && (
 														<div className="line-clamp-1 text-sm text-muted-foreground">
 															{template.description}
@@ -353,7 +399,7 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 												{ count: template.taskCount },
 											)}
 										</TableCell>
-										<TableCell>
+										<TableCell className="tabular-nums">
 											{template.budgetHours ? (
 												t("settings.projects.templates.budgetHours", "{hours} h", {
 													hours: hours.format(Number(template.budgetHours)),

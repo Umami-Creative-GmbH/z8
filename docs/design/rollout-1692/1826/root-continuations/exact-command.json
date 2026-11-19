@@ -1,0 +1,24 @@
+{
+  "command": [
+    "pnpm",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "src/components/organization-mfa",
+    "src/components/settings/auth/use-two-factor-setup-controller.test.ts",
+    "src/components/settings/auth/two-factor-enrollment-response.test.ts",
+    "src/lib/organization-mfa",
+    "src/lib/auth/callback-url.test.ts",
+    "src/tolgee/extracted-key-defaults.test.ts",
+    "src/components/ui/page-header.test.tsx",
+    "src/components/ui/tanstack-form.test.tsx",
+    "--maxWorkers=2",
+    "--reporter=json",
+    "--outputFile=../../.tmp/1826-root-checks/exact.json"
+  ],
+  "exitCode": 0
+}

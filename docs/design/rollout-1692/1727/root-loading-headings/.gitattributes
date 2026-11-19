@@ -1,0 +1,3 @@
+# Preserve exact source-overlay snapshots used by the raw and canonical pins.
+before-*.tsx.txt -text
+after-*.tsx.txt -text

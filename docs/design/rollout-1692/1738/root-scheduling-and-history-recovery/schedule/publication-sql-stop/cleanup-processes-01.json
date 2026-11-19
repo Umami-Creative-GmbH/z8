@@ -1,0 +1,7 @@
+{
+  "browserControllerStopped": true,
+  "ownNextProcessCount": 2,
+  "allocatedListenersAbsent": true,
+  "nextStopped": true,
+  "scope": "Exact PID/executable/path/creation/parent/command/listener identity verified; no peer process touched"
+}

@@ -1,0 +1,107 @@
+{
+  "stage": "renewal-create",
+  "checks": [
+    "Four matched viewport/theme/text captures; one main h1; no document overflow. Large comparison is explicit CSS emulation, not saved preference.",
+    "Keyboard Enter opened the actual directory employee file with its real document panel.",
+    "Actual expiry link opened existing employee file with category query.",
+    "Actual supporting request link reached existing request overview.",
+    "Existing renewal panel showed HR-only warning; Cancel closed without persistence.",
+    "Actual renewal action persisted exactly one open request; scoped real PostgreSQL readback verified."
+  ],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\after-desktop-light.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\after-wide-dark.png",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\after-phone-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\after-phone-dark-large.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\after-renewal-created.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ]
+    }
+  ],
+  "errors": [],
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+      "sha256": "af57bb41afd0ba2b452d63a69eccc29cf1e23e45c08d6c52c832a5d2b8792fea",
+      "canonicalSha256": "af57bb41afd0ba2b452d63a69eccc29cf1e23e45c08d6c52c832a5d2b8792fea"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+      "sha256": "6beb8b0f054063a179f048329e8ca3929debb875e689706e1ed0df2c9f34cea4",
+      "canonicalSha256": "6beb8b0f054063a179f048329e8ca3929debb875e689706e1ed0df2c9f34cea4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+      "sha256": "4cd6a005611a8022fc01cca0da5fa7761306b4b3aa8b31efdc2d8187e8e97617",
+      "canonicalSha256": "4cd6a005611a8022fc01cca0da5fa7761306b4b3aa8b31efdc2d8187e8e97617"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "f596cb5bb03d9ed2db5ae1925cb88de7476ae42a09f6d223d3d9f5b84bcfb6d9",
+      "canonicalSha256": "f596cb5bb03d9ed2db5ae1925cb88de7476ae42a09f6d223d3d9f5b84bcfb6d9"
+    }
+  ],
+  "head": "3c7bc534edeb355d862c3f38759444658863af20"
+}

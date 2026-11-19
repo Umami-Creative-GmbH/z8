@@ -1,0 +1,32 @@
+diff --git a/apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx b/apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx
+index 003da6bdd..1481a21a2 100644
+--- a/apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx
++++ b/apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx
+@@ -522,6 +522,27 @@ describe("status filters", () => {
+ });
+ 
+ describe("travel history recovery", () => {
++	it("R165 repro: a retired legacy continuation must not navigate a new session", async () => {
++		const legacy = await import("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions");
++		let complete!: (value: unknown) => void;
++		vi.mocked(legacy.convertLegacyTravelExpenseDraftAction).mockImplementationOnce(
++			() => new Promise(resolve => { complete = resolve; }) as never,
++		);
++		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([
++			claimRow({ status: "draft", stage: "needs_action", canContinue: true }),
++		]));
++		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
++		const tree = () => <QueryClientProvider client={client}><TravelExpenseManagement userId="user" organizationId="org" employeeId="owner" /></QueryClientProvider>;
++		const view = render(tree());
++		fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
++		await vi.waitFor(() => expect(legacy.convertLegacyTravelExpenseDraftAction).toHaveBeenCalled());
++		identity.pending = true; view.rerender(tree());
++		await act(async () => complete({ success: true, data: { kind: "converted", reportId: "retired-conversion" } }));
++		await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
++		expect(router.push).not.toHaveBeenCalled();
++		client.clear();
++	});
++
+ 	it("keeps the selected status filter when Activity refreshes personal history", async () => {
+ 		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+ 			respond([

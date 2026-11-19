@@ -49,7 +49,13 @@ export function useShiftTemplateManagementController({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [templateToDelete, setTemplateToDelete] =
 		useState<ShiftTemplate | null>(null);
-	const { data: templates = [], isLoading } = useQuery({
+	const {
+		data: templates = [],
+		isLoading,
+		isError,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: queryKeys.shiftTemplates.list(organizationId),
 		queryFn: async () => {
 			const result = await getShiftTemplates();
@@ -169,6 +175,10 @@ export function useShiftTemplateManagementController({
 		dialogOpen,
 		editingTemplate,
 		isLoading,
+		/** The template list failed to load; distinct from an empty list. */
+		isError,
+		isFetching,
+		refetch,
 		requireScopedSubareaSelection: manageableSubareaIdSet !== null,
 		setDeleteDialogOpen,
 		setDialogOpen,

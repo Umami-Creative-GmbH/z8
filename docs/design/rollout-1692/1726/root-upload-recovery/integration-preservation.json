@@ -1,0 +1,14 @@
+{
+  "verified": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+  "base": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "tree": "ca202f142274855554c06b23a3e220ee51388392",
+  "preservedPriorPaths": 12387,
+  "originalRawPaths": 100,
+  "priorVerifiedAncestors": 38,
+  "counts": {
+    "integrated": 39,
+    "awaiting-integration": 4,
+    "implementing": 2,
+    "pending": 112
+  }
+}

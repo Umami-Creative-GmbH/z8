@@ -1,5 +1,10 @@
 "use client";
 
+import {
+	IconAlertTriangle,
+	IconLoader2,
+	IconRefresh,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
@@ -13,6 +18,7 @@ import {
 	updateApprovalEscalationPolicy,
 } from "@/app/[locale]/(app)/settings/approval-escalation/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	type ActionFailure,
@@ -56,7 +62,7 @@ export function ApprovalEscalationManagement({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const queryKey = approvalEscalationQueryKey(organizationId);
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, isRefetching, refetch } = useQuery({
 		queryKey,
 		queryFn: getApprovalEscalationOverview,
 	});
@@ -211,12 +217,31 @@ export function ApprovalEscalationManagement({
 	}
 	if (!overview) {
 		return (
-			<Alert variant="destructive">
-				<AlertDescription>
-					{t(
-						"settings.approvalEscalation.loadFailed",
-						"Escalation settings could not be loaded.",
-					)}
+			<Alert variant="destructive" className="[&>svg]:translate-y-2">
+				<IconAlertTriangle className="size-4" aria-hidden="true" />
+				<AlertDescription className="flex flex-wrap items-center gap-3">
+					<span className="py-1.5">
+						{t(
+							"settings.approvalEscalation.loadFailed",
+							"Escalation settings could not be loaded.",
+						)}
+					</span>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => refetch()}
+						disabled={isRefetching}
+					>
+						{isRefetching ? (
+							<IconLoader2
+								className="mr-2 size-4 motion-safe:animate-spin"
+								aria-hidden="true"
+							/>
+						) : (
+							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+						)}
+						{t("common.retry", "Retry")}
+					</Button>
 				</AlertDescription>
 			</Alert>
 		);

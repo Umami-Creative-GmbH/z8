@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "issue": {
+    "state": "OPEN",
+    "assignee": "KaiSoellch",
+    "finalUserReviewPending": true
+  },
+  "status": "Bounded implementation and shared-consumer handoff verified; final rollout/user acceptance remains open.",
+  "verifiedCommit": "e3957741a7f0f1aeeba748cce3af27a42870fcf1",
+  "source": {
+    "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+    "provisionalMerge": "df0fafc4d827969d37482df69cfe2abb92fee599",
+    "corrections": [
+      "4cab7a5b594db3bc7e4dfdf56026d25737a2b2f4",
+      "4a6eaaa2f3f2ee5ac25055b0fdc11722028b3186"
+    ],
+    "runtimeHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "currentProofAppUnchanged": true
+  },
+  "requiredFoundation": {
+    "issue": 1695,
+    "verifiedCommit": "bfacad421ffe77f50729ea5895c546698ef28383",
+    "ancestor": true
+  },
+  "evidence": "root-withdrawal-and-continuation/README.md",
+  "gitBlobAudit": "root-proof-git-blob-audit.json",
+  "publication": {
+    "archiveFiles": 202,
+    "archiveBytes": 2705287,
+    "exactPayloads": 172,
+    "payloadBytes": 2297645,
+    "sourceClones": 14,
+    "stagedOriginalPathsAudited": 203,
+    "independentAuditSha256": "adc8ee488fa5a357436be84dbeb372961a55c637c9aa9bdf1b0016ad1785444d",
+    "sealSha256": "2b72a454e595678698e9153bcdd17a7bbf367095e08e5991af86f88b74690507",
+    "archiveModesPassed": true,
+    "archiveByteExactInGit": true
+  },
+  "acceptedHandoffScope": [
+    "Authorized retained legacy claim identity, original/calculated amounts, notes, captured dates/zone, missing evidence disclosure and UTC history presentation.",
+    "Canonical original receipt preview/completed download and own/other/foreign read refusal. Download completion is a producer runtime observation; excluded bytes were not independently re-read.",
+    "Canonical missing-object conversion refusal without a partial graph; valid conversion/provenance and original-row preservation.",
+    "Actual report-link click, report arrival/reload with retained provenance and fields, plus actual CDP DOM-fiber names for detail and conversion panel.",
+    "Permitted local partial reimbursement and scoped readback, with no external payment.",
+    "Local read Retry, authorized retention, durable canonical withdrawal and fresh-success recovery; shared history/list continuation and arrival retirement covered by independent public tests.",
+    "Bounded preferences, keyboard/phone Escape/focus, layouts and connected Next diagnostics on their exact recorded snapshots."
+  ],
+  "testAccounting": {
+    "independentUnit": {
+      "identities": 545,
+      "files": 48,
+      "includesRootSelection": 518,
+      "independentControls": 27
+    },
+    "canonicalPostgresql": {
+      "cases": 51,
+      "files": 4,
+      "defaultTimeouts": true
+    },
+    "rootPriorFullTypes": "All three pass with the genuine existing artifact; isolated independent main TS remains qualified by missing ignored licenses.json.",
+    "lintDoctor": "Ten-file lint and complete Doctor zero findings.",
+    "runtimeA": {
+      "declaredAssertions": 140,
+      "runtime": 46,
+      "persistence": 88,
+      "preservation": 6,
+      "acceptedIndependentTotal": null,
+      "unsupportedOldIds": [
+        42
+      ],
+      "narrowedOldIds": [
+        16
+      ]
+    },
+    "focusedB": {
+      "passed": 29,
+      "total": 32,
+      "unpassedIds": [
+        13,
+        14,
+        28
+      ],
+      "unitPgBuildRuns": 0
+    },
+    "noCombinedCoverageTotal": true
+  },
+  "remainingAcceptance": [
+    "Live pre-release route commitment/lifetime cleanup and successful retired completion remain unproved. Held real response and final list demonstrate bounded end state only.",
+    "Main axe and native React extension/CLI acceptance remain unpassed; observed React names use CDP DOM-fiber ancestry.",
+    "Pending partial-approval/intermediate-only terminal fallback and held duplicate conversion lack new live proof; permanent/public and canonical tests remain distinct.",
+    "No exhaustive live revocation, account/org/Activity authority combinations, full production generation, remote catalogs/Tolgee, providers, devices, true zoom, global157-node or final user review claim.",
+    "Focused foreign travel tables were empty controls. Published digest comparisons are not independent database reruns.",
+    "Current captures are qualified crops with overlays, not matched historical recaptures. Historical conversion after-capture predates final lifetime change; duplicate captures and overwritten raw seed exception gap remain disclosed."
+  ],
+  "qualityQualifications": {
+    "ordinaryAndSharedMetadataFormattingUnpassed": true,
+    "rawArchiveWhitespace": {
+      "exit": 2,
+      "diagnosticLines": 18103,
+      "paths": 61,
+      "rawLogSha256": "0c942b5d679e07d0a6355a1ac6e1c1bc677664ab76b68bdea8d57cf30df55631"
+    },
+    "noEvidenceNormalization": true
+  },
+  "rootDecision": "The preserved core route and shared interface evidence supports downstream integration. Remaining live/global checks stay explicit final-review obligations; this is not a blanket route or rollout acceptance.",
+  "pullRequest": {
+    "url": "https://github.com/Umami-Creative-GmbH/z8/pull/1854",
+    "draft": true,
+    "mergeToDev": false,
+    "deployment": false
+  }
+}

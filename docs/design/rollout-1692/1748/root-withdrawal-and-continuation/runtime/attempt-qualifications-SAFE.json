@@ -1,0 +1,170 @@
+{
+  "excludedAcceptanceAttempts": [
+    {
+      "id": 11,
+      "name": "Draft continueButton",
+      "result": "FAIL",
+      "classification": "Harness timing/control attempt; excluded from acceptance count"
+    },
+    {
+      "id": 1,
+      "name": "Sign-in harness uses exact fresh fixture credentials",
+      "result": "FAIL",
+      "classification": "Harness timing/control attempt; excluded from acceptance count"
+    },
+    {
+      "id": 78,
+      "name": "Approved claim canonical admin read and settle capability offered",
+      "result": "FAIL",
+      "arrivalReload": true,
+      "hasClaimNotes": false,
+      "reimbursementForm": false,
+      "noEmployee": true,
+      "formFields": [],
+      "classification": "Harness timing/control attempt; excluded from acceptance count"
+    }
+  ],
+  "browserHarnessFailures": [
+    {
+      "privateAttempt": "browser-attempt-1794961681497-private.json",
+      "name": "ConnectionClosedError",
+      "category": "Sandboxed browser connection failure",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794961757680-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794961891867-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794961906862-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962153837-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962179677-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962204677-private.json",
+      "name": "TypeError",
+      "category": "Unsupported harness event API",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962238530-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962295475-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962440751-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962450311-private.json",
+      "name": "Error",
+      "category": "Selector mismatch",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962575171-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962615564-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962843389-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    },
+    {
+      "privateAttempt": "browser-attempt-1794962879497-private.json",
+      "name": "TimeoutError",
+      "category": "Bounded harness wait timeout",
+      "notRouteP1": true
+    }
+  ],
+  "otherAttempts": [
+    {
+      "name": "Initial preflight git listing",
+      "exit": 1,
+      "reason": "Node default maxBuffer ENOBUFS; retried read-only with larger buffer"
+    },
+    {
+      "name": "Sandbox process inventory",
+      "reason": "CIM access denied; normal elevated identity read used"
+    },
+    {
+      "name": "Sandbox pnpm version probe",
+      "reported": "12.21.0",
+      "reason": "Pinned engine lock denied; no package work used fallback. Elevated probe returned 12.16.1."
+    },
+    {
+      "name": "First business seed",
+      "exit": 1,
+      "reason": "Missing userId in canonical private manifest; failed first claim insert. No claim rows written; one extra owned object remained only inside disposable service. Raw error accidentally reached tool output with synthetic fixture identifiers; no credentials were printed. Not repeated in SAFE evidence."
+    },
+    {
+      "name": "Initial browser login helper",
+      "reason": "Old helper waited for Sign in while actual control was Login; first invalid-credentials response was a harness attempt. Later before-submit exact-field verification and real Login succeeded. No deliberate wrong-password test."
+    },
+    {
+      "name": "First background transport attempts",
+      "reason": "Wrong request matcher, then stale global handler collision. Replaced with URL-scoped non-auth Fetch interception. Only final two 503 requests count."
+    },
+    {
+      "name": "Font-size submenu attempt",
+      "reason": "Click did not open submenu; hover/keyboard ArrowRight did. Final real Large selection/reload passed."
+    },
+    {
+      "name": "Reader/admin first arrival",
+      "reason": "NoEmployee guard before explicit public organization selection; no claim API request. These were not canonical refusal proofs. After actual selection, reader 404s and authorized admin settlement passed."
+    },
+    {
+      "name": "First database final readback",
+      "exit": 0,
+      "assertions": "87/88",
+      "reason": "Harness expected 135.750000, actual exact stored decimal 135.75. Decimal-equivalence control passed; final same 88 identities pass."
+    },
+    {
+      "name": "Controller shell interrupt",
+      "reason": "Shell exited but controller process/listener survived. Exact PID/path/creation/listener verification followed by owned Stop-Process completed cleanup."
+    }
+  ],
+  "rawAttemptsPrivateOnly": true,
+  "unitCasesRun": 0,
+  "postgresSuitesRun": 0,
+  "confirmedP1": 0
+}

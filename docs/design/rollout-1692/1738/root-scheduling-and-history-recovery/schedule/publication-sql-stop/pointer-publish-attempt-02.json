@@ -1,0 +1,177 @@
+{
+  "candidate": "08c266493f3a3cba07de3fe81e8d054a7377fd4d",
+  "correction": "8491e46aaac7e4e4b4b26d4dacd19d963580610a",
+  "sourceEdited": false,
+  "normalDevelopmentPublicLogin": true,
+  "notificationsDenied": true,
+  "authStateCopiedSavedRestored": false,
+  "images": [
+    {
+      "path": "current-publish-expanded-1600-02.png",
+      "bytes": 87439,
+      "sha256": "02603e4888dbc254968ee402d2060edb0d5e1aadbeb8c9ffe06fba6d91626d2b",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-collapsed-1600-02.png",
+      "bytes": 87691,
+      "sha256": "639f784186d96240c9e081700b28e0d13e43faaa6c9f237fb23787f3d448b530",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-expanded-390-02.png",
+      "bytes": 44616,
+      "sha256": "f0ddb51fb8a1c8ed5d62839186fe3feaaaa874a77fd1ec66b07aa9593a4a0506",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-expanded-2400-02.png",
+      "bytes": 90889,
+      "sha256": "85bda9fa211574db1e1398ad37f2d6feb6308b9452b7f513e036b579363c5d29",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    }
+  ],
+  "expanded": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "collapsed": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": false,
+    "documentWidth": 1600
+  },
+  "expandedAgain": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "phone": {
+    "viewport": [
+      390,
+      844
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 230.78125,
+        "y": 764,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 390
+  },
+  "wide": {
+    "viewport": [
+      2400,
+      1400
+    ],
+    "fontSize": "16px",
+    "dark": true,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 2240.78125,
+        "y": 1320,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 2400
+  },
+  "dialog": {
+    "title": "Create Shift",
+    "cancelEnabled": true,
+    "cancelHit": false,
+    "dialogZ": "50",
+    "publishZ": "30"
+  },
+  "verdict": "ATTEMPT_FAILED",
+  "failure": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n\nfalse !== true\n"
+  },
+  "publishCalls": 0
+}

@@ -1,0 +1,75 @@
+{
+  "phase": "before",
+  "fixture": "new disposable synthetic small-admin / Performance small",
+  "source": {
+    "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+    "localAI": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx": "8273a2925911a2be2bd0b502da4c2ac1207d7ecbfe78c149fbacdf02b940ccc1",
+      "apps/webapp/src/app/[locale]/onboarding/profile/actions.ts": "6c5fba4af8af1f3d850edeaf0f03519c939ec6dafb160f5b3b58dcb40800bda1",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+      "apps/webapp/src/lib/validations/onboarding.ts": "d84c95afcfb6fdab7b6e95505a8e0bb7745be5ac90a307d67ebacdf5f0bca2ad"
+    }
+  },
+  "captures": [
+    {
+      "name": "desktop",
+      "width": 1600,
+      "height": 1000,
+      "dark": false,
+      "font": 16,
+      "viewport": 1600,
+      "body": 1600,
+      "h1": 1
+    },
+    {
+      "name": "wide",
+      "width": 2400,
+      "height": 1200,
+      "dark": false,
+      "font": 16,
+      "viewport": 2400,
+      "body": 2400,
+      "h1": 1
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "dark": false,
+      "font": 16,
+      "viewport": 390,
+      "body": 390,
+      "h1": 1
+    },
+    {
+      "name": "phone-dark-large",
+      "width": 390,
+      "height": 844,
+      "dark": true,
+      "font": 18,
+      "viewport": 390,
+      "body": 390,
+      "h1": 1
+    },
+    {
+      "name": "desktop-dark-large",
+      "width": 1600,
+      "height": 1000,
+      "dark": true,
+      "font": 18,
+      "viewport": 1600,
+      "body": 1600,
+      "h1": 1
+    }
+  ],
+  "errors": [],
+  "calendar": {
+    "left": 47,
+    "right": 326,
+    "width": 279,
+    "viewport": 390
+  },
+  "focusReturn": true
+}

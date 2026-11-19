@@ -1,0 +1,17 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: desktop-light fits viewport with loaded font, one heading and seven day controls
+    at check (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:19:32)
+    at capture (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:32:22)
+    at async file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:39:86 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v26.9.0

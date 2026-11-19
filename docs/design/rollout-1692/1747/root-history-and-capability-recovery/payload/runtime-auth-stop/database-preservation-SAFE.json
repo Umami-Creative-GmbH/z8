@@ -1,0 +1,134 @@
+{
+  "at": "2026-11-18T03:31:44.391Z",
+  "beforeAuthToAfterTablesUnchanged": true,
+  "differences": [],
+  "seedDeltas": [
+    {
+      "org": "small",
+      "table": "travel_expense_attachment",
+      "delta": 4
+    },
+    {
+      "org": "small",
+      "table": "travel_expense_claim",
+      "delta": 4
+    },
+    {
+      "org": "small",
+      "table": "travel_expense_decision_log",
+      "delta": 1
+    },
+    {
+      "org": "large",
+      "table": "travel_expense_attachment",
+      "delta": 1
+    },
+    {
+      "org": "large",
+      "table": "travel_expense_claim",
+      "delta": 1
+    }
+  ],
+  "originalClaimsAttachmentsDecisionsUnchanged": true,
+  "timeTables": [
+    {
+      "table": "time_record",
+      "small": {
+        "count": 2088,
+        "sha256": "4358621d2e9340f4b6667de2a1e79d5bfeb614f467ce71c11d6a4057d1526349"
+      },
+      "large": {
+        "count": 52200,
+        "sha256": "905dc30bae7362d61b6af3258969c316ab797570c74fb880b693b3460917db4b"
+      },
+      "unchangedBothOrgs": true
+    },
+    {
+      "table": "time_entry",
+      "small": {
+        "count": 4176,
+        "sha256": "45ac5dca067825c98975fe72955322da239e78677b4e3c7e778e81ba17acf302"
+      },
+      "large": {
+        "count": 104400,
+        "sha256": "9b541336b33c526f84c342114832ebfda9d66f7682301123a9fce5402c89a96e"
+      },
+      "unchangedBothOrgs": true
+    },
+    {
+      "table": "work_period",
+      "small": {
+        "count": 2088,
+        "sha256": "fb57768b166ace971279eedc367557220692d61e81d85e50c0f2f17403f1d157"
+      },
+      "large": {
+        "count": 52200,
+        "sha256": "81666d9e014a1d96d4740a0a27cedbf659a43b9cbe6fca17f960817579b38857"
+      },
+      "unchangedBothOrgs": true
+    }
+  ],
+  "reportGraphs": [
+    {
+      "table": "travel_expense_report",
+      "small": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "large": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    {
+      "table": "travel_expense_report_item",
+      "small": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "large": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    {
+      "table": "travel_expense_legacy_draft_conversion",
+      "small": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "large": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "alias": "legacy-draft",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "legacy-review",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "legacy-approved",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "other-employee",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "foreign-org",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    }
+  ],
+  "qualification": "Only synthetic canonical seed writes occurred; no authenticated UI business mutations reached. Not readback acceptance of creation controls."
+}

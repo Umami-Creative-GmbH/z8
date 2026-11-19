@@ -10,6 +10,7 @@ import {
 } from "@/components/settings/work-diagnostics/work-proposal-targets";
 import { WorkRepairPanel } from "@/components/settings/work-diagnostics/work-repair-panel";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db, user } from "@/db";
 import { employee } from "@/db/schema";
@@ -37,7 +38,7 @@ type WorkDiagnosticsPageProps = {
 
 export default function WorkDiagnosticsPage(props: WorkDiagnosticsPageProps) {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<Suspense fallback={<WorkDiagnosticsHeaderLoading />}>
 				<WorkDiagnosticsHeader />
 			</Suspense>
@@ -60,17 +61,13 @@ function WorkDiagnosticsHeaderLoading() {
 async function WorkDiagnosticsHeader() {
 	const t = await getTranslate();
 	return (
-		<div className="space-y-1">
-			<h1 className="text-2xl font-semibold">
-				{t("settings.workDiagnostics.title", "Work Diagnostics")}
-			</h1>
-			<p className="text-muted-foreground">
-				{t(
-					"settings.workDiagnostics.pageDescription",
-					"Record-level diagnostics for historical work: missing or conflicting representations, adoption provenance, suspected manual-entry defects and time entry chain assurance.",
-				)}
-			</p>
-		</div>
+		<PageHeader
+			title={t("settings.workDiagnostics.title", "Work Diagnostics")}
+			description={t(
+				"settings.workDiagnostics.pageDescription",
+				"Record-level diagnostics for historical work: missing or conflicting representations, adoption provenance, suspected manual-entry defects and time entry chain assurance.",
+			)}
+		/>
 	);
 }
 

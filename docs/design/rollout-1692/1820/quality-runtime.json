@@ -1,0 +1,82 @@
+{
+  "unit": {
+    "tests": 71,
+    "suites": 9
+  },
+  "doctor": {
+    "after": 93,
+    "remaining": "personal-day.tsx:92 existing complexity warning",
+    "before": 93
+  },
+  "types": "next typegen and all three TypeScript projects passed",
+  "accessibility": {
+    "counts": {
+      "inapplicable": 70,
+      "incomplete": 0,
+      "passes": 18,
+      "violations": 1
+    },
+    "engine": "4.12.1",
+    "violations": [
+      {
+        "help": "Elements must meet minimum color contrast ratio thresholds",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodeCount": 1,
+        "nodes": [
+          {
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.28 (foreground color: #76797f, background color: #fcfdff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+            "html": "<div class=\"absolute right-3 bottom-1.5 text-[10px] text-foreground/55\">Version a8ec7c2</div>",
+            "target": [
+              ".right-3"
+            ]
+          }
+        ],
+        "tags": [
+          "cat.color",
+          "wcag2aa",
+          "wcag143",
+          "TTv5",
+          "TT13.c",
+          "EN-301-549",
+          "EN-9.1.4.3",
+          "ACT",
+          "RGAAv4",
+          "RGAA-3.2.1"
+        ]
+      }
+    ]
+  },
+  "routeMapAndPageMetadataRead": true,
+  "lint": "3 touched source files clean",
+  "react": {
+    "invitationComponentInspected": true,
+    "state": "ready; error null; signingOut false; real accepted invitation status",
+    "components": [
+      "DomainAuthProvider",
+      "AcceptInvitationPage",
+      "AcceptInvitationPageContent",
+      "AcceptInvitationForm",
+      "AuthFormWrapper"
+    ],
+    "nativeTreeSucceeded": true
+  },
+  "next": {
+    "get_project_metadata": {
+      "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-a3c378e0-32538fb27bf2767e\\apps\\webapp",
+      "devServerUrl": "http://localhost:53755"
+    },
+    "get_compilation_issues": {
+      "issues": []
+    },
+    "get_errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  },
+  "integration": {
+    "tests": 64,
+    "suites": 2
+  }
+}

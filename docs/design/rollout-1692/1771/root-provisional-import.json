@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "status": "provisional import; bounded independent checks pass; runtime acceptance pending",
+  "verifiedCommit": null,
+  "worker": "66bf3486891a7bfd306db01cb37e96bd897cc712",
+  "candidate": "94c7966201b00dd097b4d51b84b0e93f46368917",
+  "candidateTree": "429337f9976b8297164c30384f4619fe376149db",
+  "candidateParents": [
+    "242cbaca01a8647adf25ee69e434e66c06c0c7d8",
+    "66bf3486891a7bfd306db01cb37e96bd897cc712"
+  ],
+  "rootImport": "90aa9b9b7a005f907b4f809541834b926717a47f",
+  "rootImportTree": "97947dbd4fbc465a874decdcb9b53cc13fd1bcd2",
+  "appTree": "9581b7c60ecac9051d53ff3215c19a88a34a08b6",
+  "rootImportMatchesPrediction": true,
+  "appTreeExactCandidate": true,
+  "sourceAndTypesWereNotRerunAtRoot": "Identical complete app tree and config blobs import the fresh candidate checks without additional executions.",
+  "freshUnit": {
+    "cases": 825,
+    "physicalFiles": 70,
+    "identityRule": "Union by normalized physical file, full name, occurrence; repeated selections never added. 13 route cases include 7 assembled behavior cases and 6 pure metadata cases. Most compatibility suites retain existing internal mocks/source checks.",
+    "allPassed": true,
+    "publicAssembledCases": 9,
+    "ownerEscapeRepro": 1,
+    "invitationControls": 21,
+    "exactReaders": {
+      "useEmployeesTs": 2,
+      "employeeReadTransportTsx": 11
+    },
+    "legacyCompatibility": "Contains existing internal mocks and source assertions; broad count is not all public-seam evidence."
+  },
+  "freshPostgres": {
+    "cases": 173,
+    "physicalFiles": 5,
+    "migrationVerifier": true,
+    "canonicalRunner": true,
+    "allPassed": true
+  },
+  "workerOverlap": {
+    "units": 779,
+    "unitFiles": 64,
+    "postgres": 39,
+    "postgresFiles": 3,
+    "alreadyIncluded": true,
+    "exactWorkerCoverage": "Peer public all-covered receipt; intake did not read excluded worker identity arrays."
+  },
+  "quality": {
+    "typegen": true,
+    "completeTypeProjects": 3,
+    "lintImportFiles": 9,
+    "doctorFiles": 9,
+    "doctorErrors": 0,
+    "doctorWarnings": 0,
+    "doctorScore": null,
+    "explicitOwnedFormatFilesPass": 8,
+    "explicitSharedFormattingFailures": 1,
+    "ordinaryFormattingFailures": 9
+  },
+  "preservation": {
+    "rootUnchangedPaths": 18158,
+    "incomingDelta": 22,
+    "rootMetadataPathsRetained": 4,
+    "expectedPathMapEntries": 18180,
+    "verifiedTicketAnchors": 63,
+    "baseline": true,
+    "invitationCorrectionSourcesExact": 3,
+    "presenceCorrectionPreserved": true,
+    "priorArchives": [
+      445,
+      127,
+      72
+    ],
+    "sourceTemplates": 172,
+    "aliases": 19,
+    "signInClaimAndApiHandoffRetained": true,
+    "physical158PackageLinks": "Fresh reviewer traversal receipt; root/intake did not traverse again."
+  },
+  "seal": {
+    "payloads": 26,
+    "payloadBytes": 3461337,
+    "jsonParsed": 12,
+    "allowlistSha256": "b9fb21acbfb2bd5f7cc9ce81048df9c14c993fa8afae523a2c51879d77933848",
+    "sealSha256": "6dcb0c5fdc248d178e17fb29f91505b34d16ed0212a90d3c9b3c0c48774bc069",
+    "handoffSha256": "9d7c25a99132ceaa19df933915b91ad372b93f211a2e58a6bfaf57d2150f09cf",
+    "independentIntakeOutputReceiptSha256": "6ac41c176f686dd45657c8f819bbefe800293d6d10083227f035bc02b180d7d4"
+  },
+  "incomingArtifacts": {
+    "files": 13,
+    "json": 9,
+    "acceptedPng": 0,
+    "localMarkdownLinks": 10,
+    "pinQualifications": [
+      "New root presence heading literal legitimately differs from worker metadata pin.",
+      "Root invitation correction legitimately differs from older worker invitation owner pin."
+    ]
+  },
+  "limitations": [
+    "No current browser/Next/native or full fixture acceptance, matched before-after captures, actual invitation/email delivery or employee edit journey.",
+    "Public/provider synthetic arrivals and canonical PG coverage do not prove live revocation or exhaustive account/org races.",
+    "Old root next-intl test import failure did not reproduce in the reviewer physical install; those current compatibility cases passed, no root dependency repair performed.",
+    "Automatic review rejections and safe alternative test-discovery/license-copy attempts are retained in the sealed handoff; no source fix or authority workaround was applied.",
+    "Ordinary/shared metadata formatting, wider roster, generation/catalog/provider/device/truezoom limits remain."
+  ],
+  "ownedRunningResourcesReported": 0
+}

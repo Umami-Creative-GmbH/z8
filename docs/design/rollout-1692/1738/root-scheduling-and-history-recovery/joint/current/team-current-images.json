@@ -1,0 +1,116 @@
+[
+  {
+    "imageName": "team-desktop-light.png",
+    "theme": "Light",
+    "name": "desktop",
+    "width": 1600,
+    "height": 1100,
+    "geometry": {
+      "documentWidth": 1600,
+      "viewportWidth": 1600,
+      "fontSize": "18px",
+      "headings": [
+        "Your Team"
+      ],
+      "table": true,
+      "localScrollers": []
+    },
+    "currentOnly": true,
+    "source": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86"
+  },
+  {
+    "imageName": "team-desktop-dark.png",
+    "theme": "Dark",
+    "name": "desktop",
+    "width": 1600,
+    "height": 1100,
+    "geometry": {
+      "documentWidth": 1600,
+      "viewportWidth": 1600,
+      "fontSize": "18px",
+      "headings": [
+        "Your Team"
+      ],
+      "table": true,
+      "localScrollers": []
+    },
+    "currentOnly": true,
+    "source": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86"
+  },
+  {
+    "imageName": "team-wide-light.png",
+    "theme": "Light",
+    "name": "wide",
+    "width": 2400,
+    "height": 1400,
+    "geometry": {
+      "documentWidth": 2400,
+      "viewportWidth": 2400,
+      "fontSize": "18px",
+      "headings": [
+        "Your Team"
+      ],
+      "table": true,
+      "localScrollers": []
+    },
+    "currentOnly": true,
+    "source": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86"
+  },
+  {
+    "imageName": "team-wide-dark.png",
+    "theme": "Dark",
+    "name": "wide",
+    "width": 2400,
+    "height": 1400,
+    "geometry": {
+      "documentWidth": 2400,
+      "viewportWidth": 2400,
+      "fontSize": "18px",
+      "headings": [
+        "Your Team"
+      ],
+      "table": true,
+      "localScrollers": []
+    },
+    "currentOnly": true,
+    "source": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86"
+  },
+  {
+    "imageName": "team-phone-light.png",
+    "theme": "Light",
+    "name": "phone",
+    "width": 390,
+    "height": 844,
+    "geometry": {
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "fontSize": "18px",
+      "headings": [
+        "Your Team"
+      ],
+      "table": true,
+      "localScrollers": []
+    },
+    "currentOnly": true,
+    "source": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86"
+  },
+  {
+    "imageName": "team-phone-dark.png",
+    "theme": "Dark",
+    "name": "phone",
+    "width": 390,
+    "height": 844,
+    "geometry": {
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "fontSize": "18px",
+      "headings": [
+        "Your Team"
+      ],
+      "table": true,
+      "localScrollers": []
+    },
+    "currentOnly": true,
+    "source": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86"
+  }
+]

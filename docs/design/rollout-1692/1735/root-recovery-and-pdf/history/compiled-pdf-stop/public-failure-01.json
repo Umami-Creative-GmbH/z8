@@ -1,0 +1,6 @@
+﻿{
+    "attempt":  "public-01",
+    "exit":  1,
+    "result":  "PowerShell ErrorAction Stop elevated native Vite stderr warning to a terminating NativeCommandError; no JSON test result emitted",
+    "kind":  "harness"
+}

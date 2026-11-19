@@ -38,6 +38,51 @@ describe("WellnessSettingsForm", () => {
 		).toBeTruthy();
 	});
 
+	it("labels the reminder switch and frequency slider", () => {
+		render(
+			<WellnessSettingsForm
+				initialSettings={{
+					enabled: true,
+					preset: "moderate",
+					intervalMinutes: 45,
+					dailyGoal: 8,
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("switch", { name: "Water Reminders" })).toBeTruthy();
+		expect(screen.getByRole("slider", { name: "Reminder Frequency" })).toBeTruthy();
+		expect(screen.getByText("Moderate")).toBeTruthy();
+	});
+
+	it("saves turning reminders off", async () => {
+		const user = userEvent.setup();
+		vi.mocked(updateWellnessSettings).mockResolvedValue({
+			success: true,
+			data: undefined,
+		});
+		render(
+			<WellnessSettingsForm
+				initialSettings={{
+					enabled: true,
+					preset: "moderate",
+					intervalMinutes: 45,
+					dailyGoal: 8,
+				}}
+			/>,
+		);
+
+		await user.click(screen.getByRole("switch", { name: "Water Reminders" }));
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		await waitFor(() =>
+			expect(updateWellnessSettings).toHaveBeenCalledWith(
+				expect.objectContaining({ enabled: false }),
+			),
+		);
+		expect(toast.success).toHaveBeenCalledWith("Wellness settings saved");
+	});
+
 	it("re-enables save and reports the existing error when updating rejects", async () => {
 		const user = userEvent.setup();
 		vi.mocked(updateWellnessSettings).mockRejectedValue(

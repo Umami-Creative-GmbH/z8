@@ -1,8 +1,10 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PayslipBatchLoadingHeading } from "@/components/personnel-file/payslip-batch-loading-heading";
 import { PayslipBatchWorkspace } from "@/components/personnel-file/payslip-batch-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
@@ -27,20 +29,24 @@ async function PayslipBatchContent({ params }: PayslipBatchPageProps) {
 	if (!batch) notFound();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<header className="space-y-2">
-				<Link
-					href="/personnel-files/payslip-batches"
-					className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-				>
-					<IconArrowLeft aria-hidden="true" className="size-4" />
-					{t("settings.personnelFiles.batch.back", "Payslip batches")}
-				</Link>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.personnelFiles.batch.title", "Payslip batch")}
-				</h1>
-			</header>
-			<PayslipBatchWorkspace batchId={batch.id} />
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("settings.personnelFiles.batch.title", "Payslip batch")}
+				scope={
+					<Link
+						href="/personnel-files/payslip-batches"
+						className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+					>
+						<IconArrowLeft aria-hidden="true" className="size-4" />
+						{t("settings.personnelFiles.batch.back", "Payslip batches")}
+					</Link>
+				}
+			/>
+			<PayslipBatchWorkspace
+				batchId={batch.id}
+				userId={current.access.userId}
+				organizationId={current.access.organizationId}
+			/>
 		</div>
 	);
 }
@@ -52,10 +58,10 @@ function PayslipBatchLoading() {
 				labelKey: "settings.personnelFiles.batch.loadingBatch",
 				labelDefault: "Loading the payslip batch",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
-			<Skeleton aria-hidden="true" className="h-8 w-48" />
+			<PayslipBatchLoadingHeading />
 			<Skeleton aria-hidden="true" className="h-64 w-full" />
 		</LoadingRegion>
 	);

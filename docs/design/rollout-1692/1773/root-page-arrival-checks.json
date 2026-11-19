@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "issue": 1773,
+  "verifiedCommit": null,
+  "status": "provisional",
+  "correctionCommit": "f145c3cd6f2be2d934ad7b0fa0e795c006c50826",
+  "integrationCommit": "988659d25e441c440f88eadc7101a52296bd1305",
+  "sourceAppTree": "e84528962fc332c1ea104a7b7fc871b95f28856c",
+  "currentCombinedAppTree": "2cc569361241e54e62bdc800616e379e659ae0de",
+  "independentHistorical": {
+    "candidate": "d419705414604072813bb348468a2f24ded4c39e",
+    "cases": 174,
+    "physicalFiles": 12,
+    "rootCasesIncluded": 148,
+    "independentCases": 26,
+    "independentProductControls": 25,
+    "boundaryCharacterizations": 1,
+    "passed": 174,
+    "p1WithinFirstHookGuarantee": 0,
+    "mainTypeQualification": "Missing ignored licenses.json; typegen/workflow/smoke passed. Root full types are separate.",
+    "doctor": "0 errors / 0 warnings",
+    "ordinaryFormattingFindings": 2,
+    "safeAllowlistSha256": "bccb26b4c4da460b5bc01af5158135966ec701233e26e0085d1c539412993373",
+    "safeFiles": 26,
+    "safeBytes": 288945,
+    "intakeAuditSha256": "7210f113e6a1b529132a8e785b9c56d7e8382c5dbc9f607ad137aa972ab1a41e"
+  },
+  "rootRed": {
+    "cases": 18,
+    "passed": 16,
+    "failed": 2,
+    "failures": "Unvisited API-key and webhook panels restored success over a newer refusal."
+  },
+  "changes": [
+    "The actual combined page records both source-array arrivals before tab activation.",
+    "Registration is idempotent weak metadata only; it creates no queries, starts no reads, publishes no cache data and consumes no snapshot.",
+    "Existing child initialData/effect consumption, generation ordering, current mutations and fresh-source recovery remain unchanged."
+  ],
+  "guarantee": "First observation by the route owner now covers received but unvisited tab snapshots. A source never observed by the route before refusal still has no wire-time stamp; network-age ordering is not asserted.",
+  "checks": {
+    "permanentSelection": {
+      "passed": 152,
+      "physicalFiles": 11,
+      "distinctLabels": 152,
+      "failed": 0,
+      "skipped": 0,
+      "reconciliation": "Prior148 + three new unvisited/dormant controls + one additive Today metadata test."
+    },
+    "adaptedIndependent": {
+      "passed": 26,
+      "physicalFiles": 1,
+      "changes": "Only the old boundary characterization now requires refusal, disabled controls and no stale row;25controls unchanged.",
+      "originalSourceSha256": "a6af455920c2d3141b5bd083de5b65af308e8b3f370ece21efe5b358e1b98263",
+      "adaptedSourceSha256": "7465b004e9a1820a9737cbd9dbfaeb05b2769e20bc84dda62a61ef58e1fad949"
+    },
+    "freshUnion": {
+      "passed": 178,
+      "physicalFiles": 12,
+      "noRerunsAdded": true
+    },
+    "publicPermanent": {
+      "passed": 57,
+      "physicalFiles": 3,
+      "includedIn152": true
+    },
+    "types": "Static Next typegen and all3 complete projects pass; repeated on the final combined Today/developer source.",
+    "lintImports": "3 files pass",
+    "explicitFormatting": "100-column CRLF3files pass",
+    "ordinaryFormatting": "3 findings, failed",
+    "doctor": {
+      "errorCount": 0,
+      "warningCount": 0,
+      "affectedFileCount": 0,
+      "totalDiagnosticCount": 0,
+      "score": null,
+      "scoreLabel": null
+    },
+    "postgresFresh": 0,
+    "runtimeFresh": 0
+  },
+  "failedAttempt": "After the production fix, one API test wrongly required hiding an unrelated visited webhook namespace. The API cache-refusal predicate already passed. Assertion scoped correctly; other predicates retained.",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.tsx",
+      "sha256": "52d6507cf7eb103a3b65cd21c37b6425e0336231ffc2bf3c1591a8de45942f10",
+      "gitBlob": "c72cab289bd4a89a25d4ef2747f4e31b801e3efa",
+      "gitSha256": "d7a10981c1920f34a134c4eec5ec74eccea06a48ea840192914701a0456e131d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "sha256": "83b79408614c94cbd812de36dda7d84bada008690bd99289ddfc035bbe2abe37",
+      "gitBlob": "d492c304d977650a998d31ffa629437c7e4279b3",
+      "gitSha256": "4dfe1e5d8de17cb8850fd3035b929475c1eb92235399f8e8c0f2036a0e1c09dd"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-server-arrival.test.tsx",
+      "sha256": "a0e5c02eb7d3fd9163b484d34a6f257328a812a681461fd71684186eb6bdb635",
+      "gitBlob": "546ca89e99c6f2f5a25925ba658fd4aa545a9e6d",
+      "gitSha256": "6041f9bc39cecf2c380568b2ac9b23dab8350320d92b593a528c226f2db2b982"
+    }
+  ],
+  "preservation": {
+    "outside3SourcePaths": 18486,
+    "all63VerifiedAnchorsPlusBaseline": true,
+    "todayCorrectionPreserved": true,
+    "oldProofsAndOriginalArchivesUnchanged": true,
+    "noDependenciesChanged": true,
+    "noAuthDomainCredentialSigningDeliveryOwnerChanged": true
+  },
+  "cleanup": "All test/type/Doctor sessions exited; hash-guarded temporary26-case bridge removed; no browser/Next/PG/fixture started.",
+  "remaining": [
+    "Fresh independent review of page-observation ordering, including unvisited tabs/remounts.",
+    "Authenticated API-key/webhook actions, one-time reveals, public role/refusal/pending and visual/native/Next acceptance remain unpassed.",
+    "Full production generation/catalog/provider/device/true-zoom/global-transition matrices remain unpassed."
+  ]
+}

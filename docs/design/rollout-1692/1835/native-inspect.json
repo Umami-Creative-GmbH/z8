@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"loaded\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"source\":[\"http://localhost:57703/_next/static/chunks/apps_webapp_src_02nzp0zuevg_n._.js?dpl=3c7bc534edeb355d862c3f38759444658863af20\",1138,1],\"text\":\"Forget(WorkTemplateSetup) #396\\nkey: \\\"perf-small-0-3fec5be2cffa:perf-small-3fec5be2cffa\\\"\\nhooks:\\n  Translate: undefined (2 sub)\\n  Router$1: undefined (3 sub)\\n  [9] State: false\\n  [10] State: true\\n  [11] State: null\\n  [12] Ref: Symbol(work-template arrival)\\n  [13] Ref: false\\n  [14] Ref: <form />\\n  [15] LayoutEffect: WorkTemplateSetup[useLayoutEffect()]() {}\\n  Form: undefined (9 sub)\\n  Store: undefined (1 sub)\\n  [31] Effect: WorkTemplateSetup[useEffect()]() {}\\nrendered by: Forget(WorkTemplatesPage) > WorkTemplatesPage\"},\"error\":null}\n",
+  "err": ""
+}

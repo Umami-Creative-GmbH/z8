@@ -1,0 +1,21 @@
+{
+  "actualProtectedPriorNamespaces": [
+    "1747-current-runtime-20261118a",
+    "1747-auth-environment-diagnosis-20261118",
+    "1748-*",
+    "1746-*",
+    "1773-*"
+  ],
+  "v1BaselineFileCount": 109,
+  "networkDiagnosisBaselineFileCount": 6,
+  "v1Index": {
+    "path": ".tmp/1747-current-runtime-20261118a/SAFE/SHA256-final.json",
+    "sha256": "2060b5911818b40a3fd8b4a94b66d4b247c686eb8217f4c0f2cd761ae5494a59",
+    "expected": "2060b5911818b40a3fd8b4a94b66d4b247c686eb8217f4c0f2cd761ae5494a59"
+  },
+  "nativeIntake": {
+    "sha256": "d441bd2cb0053852137faf95655f5359b8ac3be188092a6139f0030e5ad91419",
+    "expected": "d441bd2cb0053852137faf95655f5359b8ac3be188092a6139f0030e5ad91419"
+  },
+  "qualification": "Clarifies reused preservation receipt prose: the actual baseline additionally includes old v1 and newer network diagnosis. Their bytes were rehashed unchanged. Other ignored namespaces outside recorded baseline were not fully rehashed. Old v1 remains 0/22; no retrospective correction of its cause-unproved classification."
+}

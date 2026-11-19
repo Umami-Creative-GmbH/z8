@@ -1,0 +1,25 @@
+{
+  "derived": true,
+  "method": "Complete copied Vitest assertion arrays; physical paths normalized at /apps/webapp/; file/fullname labels retain parameterized duplicates as occurrences. No tests executed.",
+  "rootUnit": {
+    "occurrences": 546,
+    "physicalFiles": 44,
+    "uniqueFileFullNames": 537,
+    "duplicateNameOccurrences": 9
+  },
+  "rootPostgres": {
+    "cases": 35,
+    "physicalFiles": 6,
+    "reviewReran": false
+  },
+  "independent": {
+    "uniqueCases": 33,
+    "physicalFiles": 3,
+    "executions": 43,
+    "reruns": 10,
+    "overlapRootPermanent": 22,
+    "newCases": 11
+  },
+  "uniqueCaseGrandTotal": null,
+  "liveCountsAdded": false
+}

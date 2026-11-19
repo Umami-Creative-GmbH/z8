@@ -1,0 +1,96 @@
+{
+  "sourceCommit": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+  "base": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+  "recoveryCorrection": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+  "sourcePins": {
+    "apps/webapp/src/components/reports/projects/customer-billable-view.tsx": "223075e470aee7999c84172ff536d711c898b034a55d47cd9378fe29124eda99",
+    "apps/webapp/src/components/reports/projects/project-filters.tsx": "4eb1808497b17277034380a787552f1600308914ce8ee2eb7b295a9af5b247f9",
+    "apps/webapp/src/components/reports/projects/project-report-scope-recovery.test.tsx": "fa65e7b17cfb0e06af17baeeebc9f623e4a8171b5ac6f229d3b163a5781ed64e",
+    "apps/webapp/src/components/reports/projects/project-reports-container.tsx": "f5fce1eaa79e48263dcf54bf9f5e408f8ae404a1964684eb7cea09f5f343c078",
+    "apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx": "bf9fee0db3ba4234fab055dddacc57243059f2c69dc960b121048976d7bd9b4b",
+    "apps/webapp/src/components/reports/projects/project-summary-cards.tsx": "7f709efcbe67de3af325ef1328a2069d2b2c8999edfa5151e0f4ddc4a7d4b618",
+    "apps/webapp/src/components/reports/projects/report-scope-failure.tsx": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+    "apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx": "7244fee96ef84ff7c8341ede68fdaec342b652f62bc5a76d9797fe0e9afe40d1",
+    "apps/webapp/src/components/reports/projects/report-share-dialog.tsx": "46648adf872af56a9d14c9f9bc0a378587b835d0cb7322de065bbd00da080cb6",
+    "apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx": "5e4a1442cbeecc7ad1ccd61958763f7fa1e85b6ad00839f54e96c284444f51f2",
+    "apps/webapp/src/components/reports/projects/report-share-link-list.tsx": "9b81924c5aabd80bfa78409b5ddad58db1f8cab8d963380884436d7fc0e09f53",
+    "apps/webapp/src/components/reports/projects/shared-report-view.tsx": "c9224e4bd5f50c716012f71c8bfb3a23409af19202a2330a53ffe7b5490aec4a",
+    "apps/webapp/src/components/reports/report-document-export-buttons.test.tsx": "107d17ae431d6d1ad76bb4c8fca212486f7e1ae85c334a8dcd94cbc15ee6502c",
+    "apps/webapp/src/components/reports/report-document-export-buttons.tsx": "81cc49ded87be25cdc0d3039d0028cf6e501f6a020b51ebcfde5fd4d8725c8e7",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts": "fbed43def474c6b2a2160c74eaae1822230e9ade7ee493bd41a3dbac3f421a2b",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d",
+    "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts": "e10babf67681056903dff34010a19341e3169ac2d2c74515b930959645561eb1",
+    "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx": "0d5c9e60afd17e4b05335c0ea6581245b509475ed619f31166007ec9ab14ab52"
+  },
+  "runs": [
+    {
+      "name": "unit",
+      "physicalFiles": 55,
+      "passed": 550
+    },
+    {
+      "name": "public",
+      "physicalFiles": 3,
+      "passed": 10
+    },
+    {
+      "name": "focused-final",
+      "physicalFiles": 1,
+      "passed": 4
+    }
+  ],
+  "unitFiles": 58,
+  "unitCases": 560,
+  "doctor": {
+    "scannedRevision": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+    "commandPinsMatchCommittedSource": true,
+    "errors": 0,
+    "warnings": 4,
+    "qualification": "Four retained effect warnings. Initial scan field references provisional HEAD while the final heading patch was dirty; all eighteen canonical command pins equal committed source."
+  },
+  "runtime": {
+    "before": {
+      "path": "runtime-before-controlled/runtime-before.json",
+      "checks": 6,
+      "captures": 8
+    },
+    "after": {
+      "path": "runtime-after-controlled/runtime-after.json",
+      "checks": 6,
+      "captures": 12
+    },
+    "native": {
+      "checks": 2,
+      "path": "native-ready/native-result.json",
+      "qualification": "Settled real project workspace and settings list, not in-flight revoke or failure-owner React inspection."
+    }
+  },
+  "postgres": {
+    "freshSuites": 0,
+    "inheritedFiles": 6,
+    "inheritedCases": 36
+  },
+  "downloads": {
+    "freshRootDownloads": 0,
+    "mergerFreshParsed": 9,
+    "hours": {
+      "project": 5,
+      "customer": 6,
+      "shared": 5
+    },
+    "browserCompletion": "inherited exact worker snapshots"
+  },
+  "qualifications": [
+    "Both failed org-context consumers now announce generic unavailable feedback and call their existing scope.refetch, including truthful settled missing-scope handling. No report generation is admitted until actor/org scope returns; no context-provider, action, grant, server permission or calculation change.",
+    "Same-id metadata refresh keeps the revoke generation/pending lock. A permanent realQueryClient red observed two command calls before, one after. An additional red shows an open confirmation ignoring withdrawn current canRevoke; both the command guard and disabled control now honor current active/revocable facts. Revoke action authorization remains canonical; no live concurrent revocation or Activity mutation-repeat claim.",
+    "Actual settings browser showed two headings. One exact metadata opt-in and public regression now retain only the page h1; other settings/descendants and all prior opt-ins remain.",
+    "Twelve other incoming files receive only scoped explicit100-columnCRLF/import formatting; existing esbuild compiles their before/current sources identically. Initial TypeScript7 createPrinter inspection failed before comparison; no dependency installed. Four semantic/new report paths plus two heading paths are excluded from this formatting-only proof.",
+    "Canonical before overlays exact historical two consumers plus heading metadata on otherwise current server/providers/PDF, with stopped/restarted Next. It is not full historical application execution. Canonical browser contexts use the established notification-denied fixture permission; no server preference or production notification changes. Driver asserts no blocking dialogs and waits for settled geometry.",
+    "Earlier runs retain geometry settling failure, pointer Refresh with no observed GET, incorrect Puppeteer finished() API, discovered duplicate settings heading, and notification-sheet obstruction. Earlier run marked accepted-defect-reproduction has useful transport observations but its images are not canonical accepted captures after occlusion review. No exact driver-byte identity claim for every intermediate attempt. Canonical20 images are separately selected; other PNGs remain failed/qualified evidence.",
+    "Canonical original auth/context GET failures followed by actual local Retry pointer and completed response bodies pass in both consumers. Historical screens require external Refresh to recover. Native settled owners pass; Next compilation/config probes are clear, while the unchanged settings auth/Suspense diagnostic remains; no fresh real same-id-metadata revoke browser race is claimed, only public realQueryClient proof.",
+    "Real installed ReactCompiler/@react-pdf rendering and parsed multi-page/project/customer/frozen/vehicle/invoice boundaries pass in the fresh unit selection. Nine existing CSV/XLSX/PDF files were freshly parsed by merger; completion events and original12 accepted report captures remain inherited, not fresh root downloads. No fresh standalone PostgreSQL suite or provider/customer/invoice operation.",
+    "One owned shutdown race occurred after path/creation/listener verification when the root exited before Stop-Process. Exact follow-up PID/listener checks found both absent; the final helper safely tolerates that exit only after rechecking. All owned browsers, port53808 and three labeled services are cleaned, no cookie/state copied/restored/saved.",
+    "Existing development/Pets/Insight overlays remain visible; clean config/session/compile probes do not resolve global transition findings. Production generation, remote Tolgee/all locales, exhaustive role/offline/accessibility, provider/device and true zoom acceptance remain unpassed. Issues remain OPEN; no dev merge/deployment."
+  ],
+  "nextRuntimeQualification": "Compilation/config probes clear. Settings session diagnostics retain the exact same uncached-auth-outside-Suspense warning in historical and current phases and native settings inspection; not a clean settings probe. Page, request-session and auth-helpers remain unchanged. This page-owned instant-navigation obligation stays with its settings rollout ticket. Initial universal-clean verifier assumption failed and was corrected against the exact preserved baseline diagnostic."
+}

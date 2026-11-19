@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"C640C2C2E03ABB06EEDF7CD1504FD343\",\"title\":\"z8 - time app\",\"url\":\"http://localhost:63744/en/personnel-files/payslip-batches/febe7a4e-dad6-4974-8746-c1ca4b6f15cf\"},\"error\":null}\n",
+  "err": ""
+}

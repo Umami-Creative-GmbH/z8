@@ -54,6 +54,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Approval settings tabs", () => {
+	it("renders one page heading inside the shared page frame", () => {
+		const { container } = render(<ApprovalSettingsTabs panels={panels} />);
+		const headings = screen.getAllByRole("heading", { level: 1 });
+		expect(headings).toHaveLength(1);
+		expect(headings[0]?.textContent).toBe("Approval");
+		expect(container.querySelector(".page-frame .page-measure")).toBeTruthy();
+	});
 	it("opens approval policies and defers the other panels", () => {
 		render(<ApprovalSettingsTabs panels={panels} />);
 		expect(

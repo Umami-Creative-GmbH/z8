@@ -1,0 +1,93 @@
+{
+  "defaultTimeouts": true,
+  "attempts": [
+    {
+      "path": "public-probes-result.json",
+      "tests": 0,
+      "passed": 0,
+      "failed": 0,
+      "success": false
+    },
+    {
+      "path": "public-probes-result-2.json",
+      "tests": 5,
+      "passed": 4,
+      "failed": 1,
+      "success": false
+    },
+    {
+      "path": "canonical-provider-result.json",
+      "tests": 2,
+      "passed": 0,
+      "failed": 2,
+      "success": false
+    }
+  ],
+  "cases": [
+    {
+      "report": "public-probes-result-2.json",
+      "physicalPath": "apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx",
+      "fullName": "fresh public R051 lifetime probes holds one shared-panel unlink reservation across hidden retirement",
+      "parameterOccurrence": 1,
+      "status": "passed",
+      "failureMessages": []
+    },
+    {
+      "report": "public-probes-result-2.json",
+      "physicalPath": "apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx",
+      "fullName": "fresh public R051 lifetime probes holds one shared-panel unlink reservation across target retirement",
+      "parameterOccurrence": 1,
+      "status": "passed",
+      "failureMessages": []
+    },
+    {
+      "report": "public-probes-result-2.json",
+      "physicalPath": "apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx",
+      "fullName": "fresh public R051 lifetime probes holds one shared-panel unlink reservation across actor retirement",
+      "parameterOccurrence": 1,
+      "status": "passed",
+      "failureMessages": []
+    },
+    {
+      "report": "public-probes-result-2.json",
+      "physicalPath": "apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx",
+      "fullName": "fresh public R051 lifetime probes holds one shared-panel unlink reservation across organization retirement",
+      "parameterOccurrence": 1,
+      "status": "passed",
+      "failureMessages": []
+    },
+    {
+      "report": "public-probes-result-2.json",
+      "physicalPath": "apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx",
+      "fullName": "fresh public R051 lifetime probes keeps the assembled overview command reserved during displayed organization A-B-A",
+      "parameterOccurrence": 1,
+      "status": "failed",
+      "failureMessages": [
+        "AssertionError: expected 2 to be 1 // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx:47:133\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+      ]
+    },
+    {
+      "report": "canonical-provider-result.json",
+      "physicalPath": "apps/webapp/src/.tmp/canonical-provider.test.tsx",
+      "fullName": "canonical provider original request reservation candidate prevents a second same-document unlink after organization A-B-A remount",
+      "parameterOccurrence": 1,
+      "status": "failed",
+      "failureMessages": [
+        "AssertionError: expected 2 to be 1 // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/.tmp/canonical-provider.test.tsx:36:164\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+      ]
+    },
+    {
+      "report": "canonical-provider-result.json",
+      "physicalPath": "apps/webapp/src/.tmp/canonical-provider.test.tsx",
+      "fullName": "canonical provider original request reservation parent prevents a second same-document unlink after organization A-B-A remount",
+      "parameterOccurrence": 1,
+      "status": "failed",
+      "failureMessages": [
+        "AssertionError: expected 2 to be 1 // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/.tmp/canonical-provider.test.tsx:36:164\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+      ]
+    }
+  ],
+  "distinctCases": 7,
+  "physicalFiles": 2,
+  "scope": "7 fresh case instances over 2 physical probe files, 4 pass/3 fail; one failed case is the premerge source control. Initial missing bridge directory attempt ran zero tests. No broader selection/PG/worker totals are added."
+}

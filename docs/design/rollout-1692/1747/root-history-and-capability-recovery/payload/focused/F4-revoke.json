@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-18T04:23:49.317Z",
+  "normalConfirmationTitle": [
+    "Revoke expense officer?"
+  ],
+  "canonicalReadback": [
+    {
+      "scope": "all",
+      "can_export": false,
+      "can_record_reimbursements": false,
+      "is_active": false
+    }
+  ],
+  "actualSchemaField": "is_active",
+  "pass": true,
+  "authoritySQLWrites": 0
+}

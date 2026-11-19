@@ -85,7 +85,7 @@ async function EmployeeAllowancesContent() {
 function EmployeeAllowancesLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.employeeVacationAllowances",
@@ -93,13 +93,13 @@ function EmployeeAllowancesLoading() {
 			}}
 		>
 			<div className="space-y-2">
-				<Skeleton aria-hidden="true" className="h-8 w-64" />
-				<Skeleton aria-hidden="true" className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-64 max-w-full" />
+				<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton aria-hidden="true" className="h-6 w-48" />
-					<Skeleton aria-hidden="true" className="h-4 w-96" />
+					<Skeleton aria-hidden="true" className="h-6 w-48 max-w-full" />
+					<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">

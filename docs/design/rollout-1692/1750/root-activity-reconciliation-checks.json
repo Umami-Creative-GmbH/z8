@@ -1,0 +1,63 @@
+{
+  "issue": 1750,
+  "verifiedCommit": null,
+  "source": "ef7fccc4ecc73d6caca24f917dbb32003f0cdf96",
+  "sourceTree": "8af8906fa33e7505800906bba98d3d69b69c0385",
+  "appTree": "07b121e57dfae17571c3e39844044e1524b145ae",
+  "parent": "a5bcfa5d282f1c4229d9f91e367b70d20bb087e6",
+  "independentInput": {
+    "source": "4dc30d2ed07b71b8cbf222807e88c85facc9fd8d",
+    "appTree": "a2b883f0e6e369aeed7d8e8f337dbfb06dfc633a",
+    "committed": { "files": 2, "passed": 10, "failed": 0 },
+    "independent": { "files": 1, "passed": 8, "failed": 2 },
+    "historicalComponentControls": { "passed": 2, "failed": 0, "excluded": 8 },
+    "finding": "A successful submission or withdrawal after Activity reconnect yielded zero report rereads. The retired submission confirmation enabled an identical second request, which the synthetic action refused. Withdrawal kept its old frozen view. One regression covers both failures.",
+    "standards": "Consecutive duplicate loading and submitting resets. This finding has no overlap with the lifecycle failure.",
+    "qualification": "Actual page, providers and React Activity with synthetic read and command transport. Broader execution stopped at the confirmed regression. No persisted-write or live-authorization outcome was measured."
+  },
+  "rootReproduction": {
+    "red": { "files": 1, "passed": 14, "failed": 2, "exit": 1 },
+    "baselineReportReadsBeforeAndAfter": { "submission": [3, 3], "withdrawal": [2, 2] },
+    "firstGreen": { "files": 1, "passed": 16, "failed": 0, "exit": 0 },
+    "finalAdditionalCase": "A successful submission followed by a temporary read failure retains Retry and refuses another submission until the successful canonical reread."
+  },
+  "correction": {
+    "feedback": "Only the still-current activation emits toast or refusal feedback.",
+    "reconciliation": "Server-confirmed submission or withdrawal retires its confirmation and revalidates the report reads that share the initiating report and read scope. History invalidation uses the initiating employee and organization. New data still comes from the existing authorized readers.",
+    "retry": "An accepted command remains disabled after a failed reread. The existing Retry reloads the report. Command refusal preserves its normal retry path."
+  },
+  "exactFinalUnit": {
+    "files": 50,
+    "distinctPassed": 518,
+    "failed": 0,
+    "skipped": 0,
+    "exit": 0,
+    "includedFocused": { "submission": 17, "refresh": 4, "workspaceScope": 6 },
+    "nonadditive": "Earlier root and independent runs overlap this selection. Historical PostgreSQL is separate."
+  },
+  "quality": {
+    "typegenAndThreeProjectsExit": 0,
+    "firstTypeAttempt": "TypeScript rejected outcome narrowing in the compound condition. The successful and refused outcomes now branch explicitly; the exact final type check passed.",
+    "scopedPaths": 5,
+    "lintExit": 0,
+    "explicit100ColumnCrlfExit": 0,
+    "ordinaryFormattingExit": 1,
+    "ordinaryFormattingFindings": 5,
+    "sourceWhitespaceExit": 0,
+    "doctor": {
+      "version": "0.9.22",
+      "files": 5,
+      "errors": 0,
+      "warnings": [
+        "Review-loading reset diagnostic. Both rejection paths release the reservation and clear loading.",
+        "TripReportBody exceeds the component length threshold."
+      ]
+    }
+  },
+  "unpassed": [
+    "Fresh independent review of the Activity correction",
+    "Fresh PostgreSQL and live submit/withdraw acceptance",
+    "Current connected Next, native instrumentation and native download checks",
+    "Previously documented wider authority, production, catalog and device limits"
+  ]
+}

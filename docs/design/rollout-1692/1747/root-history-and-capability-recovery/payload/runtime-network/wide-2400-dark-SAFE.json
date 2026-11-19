@@ -1,0 +1,125 @@
+{
+  "at": "2026-11-18T03:52:09.895Z",
+  "samples": [
+    {
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "fontSize": "16px",
+      "dark": true,
+      "h1Count": 1,
+      "h1": {
+        "x": 280,
+        "y": 89,
+        "width": 2096,
+        "height": 36,
+        "right": 2376,
+        "bottom": 125
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 2144,
+        "height": 1200,
+        "right": 2400,
+        "bottom": 1200
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1200,
+        "right": 256,
+        "bottom": 1200
+      },
+      "sidebarState": "expanded",
+      "h1Hit": true,
+      "createHit": true,
+      "bodyScrollWidth": 2400,
+      "dialogs": 0
+    },
+    {
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "fontSize": "16px",
+      "dark": true,
+      "h1Count": 1,
+      "h1": {
+        "x": 280,
+        "y": 89,
+        "width": 2096,
+        "height": 36,
+        "right": 2376,
+        "bottom": 125
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 2144,
+        "height": 1200,
+        "right": 2400,
+        "bottom": 1200
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1200,
+        "right": 256,
+        "bottom": 1200
+      },
+      "sidebarState": "expanded",
+      "h1Hit": true,
+      "createHit": true,
+      "bodyScrollWidth": 2400,
+      "dialogs": 0
+    },
+    {
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "fontSize": "16px",
+      "dark": true,
+      "h1Count": 1,
+      "h1": {
+        "x": 280,
+        "y": 89,
+        "width": 2096,
+        "height": 36,
+        "right": 2376,
+        "bottom": 125
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 2144,
+        "height": 1200,
+        "right": 2400,
+        "bottom": 1200
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1200,
+        "right": 256,
+        "bottom": 1200
+      },
+      "sidebarState": "expanded",
+      "h1Hit": true,
+      "createHit": true,
+      "bodyScrollWidth": 2400,
+      "dialogs": 0
+    }
+  ],
+  "stable": true,
+  "noOcclusion": true,
+  "currentSourceOnly": true,
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "capture": "actual main crop excludes sidebar/account identifiers; full sidebar/main/h1 geometry sampled separately",
+  "qualification": "Development overlay may be visible. Current-only Chromium viewport; no historical comparison, physical-device or true zoom proof."
+}

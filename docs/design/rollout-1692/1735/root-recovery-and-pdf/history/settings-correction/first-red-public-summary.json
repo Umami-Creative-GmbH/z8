@@ -1,0 +1,47 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-root-checks/first-red.json",
+    "bytes": 4058,
+    "sha256": "c6ed57aa12b5bcd8fa49f5f8a28165ec349404a2567e18c0a7292cc9ada18138"
+  },
+  "reported": {
+    "total": 6,
+    "passed": 4,
+    "failed": 2,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/test/root1735-probe-bridge/public-probes.test.tsx",
+      "status": "failed",
+      "cases": [
+        {
+          "fullName": "current: healthy canonical context admits report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "premerge: healthy canonical context admits report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "current: initial canonical context error is visible with local Retry",
+          "status": "failed"
+        },
+        {
+          "fullName": "premerge: initial canonical context error is visible with local Retry",
+          "status": "failed"
+        },
+        {
+          "fullName": "current: unchanged provider recovers through its public refetch when a consumer offers it",
+          "status": "passed"
+        },
+        {
+          "fullName": "premerge: unchanged provider recovers through its public refetch when a consumer offers it",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "formatExit": 1,
+  "lintExit": 0,
+  "files": [
+    "src/app/[locale]/(app)/personnel-files/payslip-batches/actions.ts",
+    "src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+    "src/components/personnel-file/payslip-batch-start.test.tsx",
+    "src/components/personnel-file/payslip-batch-start.tsx",
+    "src/components/personnel-file/payslip-batches-heading.tsx",
+    "src/components/personnel-file/payslip-batches-loading.test.tsx",
+    "src/components/personnel-file/payslip-batches-scope.tsx",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/navigation/route-metadata.ts",
+    "src/lib/personnel-file/payslip-batch.integration.test.ts"
+  ]
+}

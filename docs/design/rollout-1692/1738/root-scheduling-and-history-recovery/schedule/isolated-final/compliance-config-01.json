@@ -1,0 +1,8 @@
+{
+  "publicAdminUI": true,
+  "activation": "named form button DOM click",
+  "policy": "Fixture weekdays",
+  "regulationEnabled": true,
+  "maxDailyHours": 6,
+  "initialRegulationEnabled": false
+}

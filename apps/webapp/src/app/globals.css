@@ -1,3 +1,4 @@
+@layer theme, base, xyflow, components, utilities;
 @import "tailwindcss";
 @import "timepicker-ui/main.css";
 @import "tw-animate-css";
@@ -6,6 +7,44 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant motion-safe (@media (prefers-reduced-motion: no-preference));
 @custom-variant motion-reduce (@media (prefers-reduced-motion: reduce));
+
+/*
+ * App page frame. Every (app) route uses one frame so the page title, gutters and
+ * top offset stay put when people navigate. See docs/refs/ux-language.md.
+ * - page-frame: centered, bounded at 120rem (1920px). The default for every page.
+ * - page-frame-full: same gutters, no bound. Only for planning canvases that need the room.
+ * - page-measure: readable width for forms and settings, left-aligned inside the frame.
+ */
+@utility page-frame {
+	width: 100%;
+	max-width: 120rem;
+	margin-inline: auto;
+	padding-inline: --spacing(4);
+	padding-block: --spacing(4);
+	@variant md {
+		padding-block: --spacing(6);
+	}
+	@variant lg {
+		padding-inline: --spacing(6);
+	}
+}
+
+@utility page-frame-full {
+	width: 100%;
+	padding-inline: --spacing(4);
+	padding-block: --spacing(4);
+	@variant md {
+		padding-block: --spacing(6);
+	}
+	@variant lg {
+		padding-inline: --spacing(6);
+	}
+}
+
+@utility page-measure {
+	width: 100%;
+	max-width: 56rem;
+}
 
 @theme inline {
 	--radius-sm: calc(var(--radius) - 4px);
@@ -27,6 +66,12 @@
 	--color-accent: var(--accent);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	/* Status roles: pair with text or an icon, never color alone. */
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
@@ -179,6 +224,11 @@
 	--accent: oklch(0.94 0.025 265);
 	--accent-foreground: oklch(0.2 0.02 260);
 	--destructive: oklch(0.577 0.235 27);
+	--destructive-foreground: oklch(0.985 0.008 27);
+	--success: oklch(0.52 0.13 155);
+	--success-foreground: oklch(0.985 0.012 155);
+	--warning: oklch(0.555 0.15 60);
+	--warning-foreground: oklch(0.985 0.015 85);
 	--border: oklch(0.905 0.012 260);
 	--input: oklch(0.905 0.012 260);
 	--ring: oklch(0.55 0.12 265);
@@ -215,6 +265,12 @@
 	--accent: oklch(0.25 0.025 265);
 	--accent-foreground: oklch(0.985 0.008 260);
 	--destructive: oklch(0.704 0.191 22);
+	/* Dark text: white on the light dark-mode red stays below 3:1. */
+	--destructive-foreground: oklch(0.2 0.04 22);
+	--success: oklch(0.74 0.15 158);
+	--success-foreground: oklch(0.2 0.03 158);
+	--warning: oklch(0.8 0.15 75);
+	--warning-foreground: oklch(0.22 0.04 75);
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
 	--ring: oklch(0.55 0.12 265);

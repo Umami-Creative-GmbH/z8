@@ -1,0 +1,54 @@
+{
+  "toolsListActual": true,
+  "compilationParsed": true,
+  "compilationIssueCount": 0,
+  "errorsParsed": true,
+  "configErrorCount": 0,
+  "sessionErrorCount": 0,
+  "connectedSessionCount": 1,
+  "exactClaimRoute": true,
+  "metadataSegments": [
+    {
+      "path": "app/[locale]/(app)/layout.tsx",
+      "type": "layout"
+    },
+    {
+      "path": "app/[locale]/(app)/travel-expenses/layout.tsx",
+      "type": "layout"
+    },
+    {
+      "path": "app/[locale]/layout.tsx",
+      "type": "layout"
+    },
+    {
+      "path": "global-error.js",
+      "type": "boundary:global-error"
+    },
+    {
+      "path": "not-found.js",
+      "type": "boundary:not-found"
+    },
+    {
+      "path": "app/[locale]/(app)/error.tsx",
+      "type": "boundary:error"
+    },
+    {
+      "path": "app/[locale]/(app)/not-found.tsx",
+      "type": "boundary:not-found"
+    },
+    {
+      "path": "app/[locale]/error.tsx",
+      "type": "boundary:error"
+    },
+    {
+      "path": "app/[locale]/not-found.tsx",
+      "type": "boundary:not-found"
+    },
+    {
+      "path": "app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "type": "page"
+    }
+  ],
+  "primaryStable": true,
+  "pageCount": 1
+}

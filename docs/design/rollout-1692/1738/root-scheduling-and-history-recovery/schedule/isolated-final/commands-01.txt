@@ -1,0 +1,69 @@
+Literal shell commands from this run (cwd is this own T3 worktree). Every pnpm call sets the env guard and explicit flag. Secrets are read only from newly generated private fixture files, never placed in command text.
+
+$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version
+  sandbox: engine-store operation-lock denied; printed fallback12.21.0; not accepted as pinned. Later require_escalated:12.16.1.
+New-Item -ItemType Directory -Path '.tmp/1738-isolated-comparison-v2-checks' -Force | Out-Null; $env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false install --offline --frozen-lockfile --package-import-method=copy --ignore-scripts *> '.tmp/1738-isolated-comparison-v2-checks/install-01-private.log'; $installExit=$LASTEXITCODE; Write-Output "installExit=$installExit"; exit $installExit
+node .tmp/1738-isolated-comparison-v2-checks/prepare-own.mjs
+node .tmp/1738-isolated-comparison-v2-checks/prepare-own-v2.mjs
+$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node .tmp/1738-isolated-comparison-v2-checks/fixture-helper-01.mjs prepare .tmp/1738-isolated-comparison-v2-checks/fixture-01-private
+$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node .tmp/1738-isolated-comparison-v2-checks/run-fixture-tool-03.mjs seed 01
+$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node .tmp/1738-isolated-comparison-v2-checks/run-fixture-tool-03.mjs readback 01
+  The identical readback command also ran with suffixes02,03,04,05,06,07,08,09, each once; distinct outputs are preserved.
+node .tmp/1738-isolated-comparison-v2-checks/dev-01-private.mjs dev . .tmp/1738-isolated-comparison-v2-checks/fixture-01-private
+node .tmp/1738-isolated-comparison-v2-checks/start-browser-01.mjs
+. .tmp/1738-isolated-comparison-v2-checks/stop-own-next.ps1 01
+. .tmp/1738-isolated-comparison-v2-checks/select-historical.ps1
+  Parser failure before execution; v2 corrected verifier syntax only.
+. .tmp/1738-isolated-comparison-v2-checks/select-historical-v2.ps1
+  Exact embedded Git selection: git switch --detach 83a3b30f648e74416d628c96509dcee4c765cdba
+node .tmp/1738-isolated-comparison-v2-checks/prepare-version-runtime.mjs 02
+node .tmp/1738-isolated-comparison-v2-checks/dev-02-private.mjs dev . .tmp/1738-isolated-comparison-v2-checks/fixture-01-private
+node .tmp/1738-isolated-comparison-v2-checks/start-browser-02.mjs
+. .tmp/1738-isolated-comparison-v2-checks/stop-own-next-v2.ps1 02
+git switch test/isolated-recheck
+git switch --detach 83a3b30f648e74416d628c96509dcee4c765cdba
+node .tmp/1738-isolated-comparison-v2-checks/prepare-version-runtime-v2.mjs 04
+node .tmp/1738-isolated-comparison-v2-checks/dev-04-private.mjs dev . .tmp/1738-isolated-comparison-v2-checks/fixture-01-private
+node .tmp/1738-isolated-comparison-v2-checks/start-browser-04.mjs
+. .tmp/1738-isolated-comparison-v2-checks/stop-own-next-v3.ps1 04
+git switch test/isolated-recheck
+node .tmp/1738-isolated-comparison-v2-checks/prepare-version-runtime-v2.mjs 05
+node .tmp/1738-isolated-comparison-v2-checks/dev-05-private.mjs dev . .tmp/1738-isolated-comparison-v2-checks/fixture-01-private
+node .tmp/1738-isolated-comparison-v2-checks/start-browser-05.mjs
+. .tmp/1738-isolated-comparison-v2-checks/stop-own-next-v3.ps1 05
+$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node .tmp/1738-isolated-comparison-v2-checks/fixture-helper-01.mjs cleanup .tmp/1738-isolated-comparison-v2-checks/fixture-01-private
+node .tmp/1738-isolated-comparison-v2-checks/final-preservation.mjs
+node .tmp/1738-isolated-comparison-v2-checks/final-preservation-v2.mjs
+. .tmp/1738-isolated-comparison-v2-checks/verify-cleanup.ps1
+
+Literal browser boundary fragments, executed via the own controller/Puppeteer connection (not a claimed standalone replay):
+await rpc('login',{actor:'small-manager'});
+await rpc('goto',{path:'/en/scheduling?date=2026-11-16'});
+await rpc('failure',{name:'getShiftTemplates',mode:'hold'});
+await rpc('failure',{name:'getScheduleComplianceSummary',mode:'hold'});
+await rpc('failure',{name:'getShiftTemplates',mode:'clear'});
+await rpc('failure',{name:'getScheduleComplianceSummary',mode:'clear'});
+await rpc('failure',{name:'upsertShift',mode:'abort'});
+await page.locator('[role=dialog] button[type=submit]').click();
+await rpc('failure',{name:'upsertShift',mode:'clear'});
+await rpc('failure',{name:'upsertShift',mode:'hold'});
+await page.mouse.click(box.x+box.width/2,box.y+box.height/2);
+await page.evaluate(()=>[...document.querySelectorAll('[role=dialog] button')].find(n=>n.textContent==='Delete').click());
+await page.evaluate(()=>[...document.querySelectorAll('[role=dialog] button')].find(n=>n.textContent==='Confirm Delete').click());
+await page.locator('button[data-sidebar=trigger]').click();
+await rpc('reload');
+await page.evaluate(()=>localStorage.getItem('sidebar_state'));
+await rpc('fresh'); await rpc('login',{actor:'small-admin'});
+await rpc('goto',{path:'/en/settings/coverage-rules'});
+await page.locator('#minimumStaffCount').fill('5');
+await page.locator('#allow-publish-gaps').click();
+await rpc('goto',{path:'/en/settings/work-policies'});
+await page.locator('[role=dialog] input[placeholder="—"]').fill('6');
+await page.evaluate(()=>[...document.querySelectorAll('[role=dialog] button')].find(n=>n.textContent==='Save').click());
+await policyPage.locator('[role=dialog] input[placeholder="—"]').fill(String(hours));
+  Clarified test used hours5 then finally6; ownership and before/after assertions retained in compliance-current-stale-01.json.
+await page.evaluate(()=>[...document.querySelectorAll('[role=dialog] button')].find(n=>n.textContent==='Acknowledge and Publish').click());
+await r5('capture',{name:c.name});
+await r5('close');
+
+Next JSON-RPC endpoint /_next/mcp, POST content-type application/json, accept application/json,text/event-stream: tools/list then tools/call get_compilation_issues,get_errors,get_page_metadata; one bounded reload/get_errors repetition. Private raw Next diagnostics are hash-referenced, sanitized summaries only are allowlisted.

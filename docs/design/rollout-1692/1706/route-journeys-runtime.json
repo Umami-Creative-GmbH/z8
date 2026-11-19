@@ -1,0 +1,25 @@
+{
+  "businessZone": "Europe/Berlin",
+  "browserZone": "America/Los_Angeles",
+  "presetBoundary": "2024-12-31T23:00:00.000Z / 2025-12-31T22:59:59.999Z",
+  "dailyRows": 261,
+  "firstDailyRow": "Jan 1, 2025\t64h\t64h",
+  "customRange": "2025-01-01 / 2025-01-02",
+  "customBoundary": "2024-12-31T23:00:00.000Z / 2025-01-02T22:59:59.999Z",
+  "customRows": [
+    "Person 1\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 2\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 4\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 5\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 6\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 7\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 3\t16.0h\t16.0h\t+0.0h\t40h/wk",
+    "Person 0\t16.0h\t16.0h\t+0.0h\t40h/wk"
+  ],
+  "navigation": {
+    "path": "/en/analytics/work-hours",
+    "title": "Work Hours",
+    "selectedTab": "Work Hours"
+  },
+  "errors": []
+}

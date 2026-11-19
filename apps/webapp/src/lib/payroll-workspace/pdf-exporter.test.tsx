@@ -16,6 +16,7 @@ function countPDFPages(pdf: Uint8Array): number {
 }
 
 const summary: PayrollWorkspaceSummary = {
+	organizationId: "organization-a",
 	organizationName: "Acme GmbH",
 	period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 	generatedAt: "2026-06-30T12:00:00.000Z",

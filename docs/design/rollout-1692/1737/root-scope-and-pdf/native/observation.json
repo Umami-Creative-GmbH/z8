@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"origin\":\"http://localhost:64135/en/reports/vehicles\",\"result\":{\"dialogs\":0,\"headings\":[\"Distance per Vehicle\"],\"path\":\"/en/reports/vehicles\"}},\"error\":null}\n",
+  "err": ""
+}

@@ -1,0 +1,27 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+ ❯ |unit| src/lib/navigation/route-metadata.test.ts (44 tests | 1 failed | 43 skipped) 5ms
+   ❯ route metadata (44)
+     × uses the report reader's UUID admission without adopting malformed identifiers 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/lib/navigation/route-metadata.test.ts > route metadata > uses the report reader's UUID admission without adopting malformed identifiers
+AssertionError: expected false to be true // Object.is equality
+- Expected
++ Received
+- true
++ false
+ ❯ src/lib/navigation/route-metadata.test.ts:169:98
+    167|
+    168|  it("uses the report reader's UUID admission without adopting malforme…
+    169|   expect(appPageOwnsHeading("/en/travel-expenses/reports/6A020000-0000…
+       |                                                                                                  ^
+    170|   for (const id of ["6a020000-0000-f000-8000-000000000001", "6a020000-…
+    171|    expect(appPageOwnsHeading(`/en/travel-expenses/reports/${id}`)).toB…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 43 skipped (44)
+   Start at  13:23:12
+   Duration  205ms (setup 57%, transform 29%, import 5%, worker 4%, tests 4%)

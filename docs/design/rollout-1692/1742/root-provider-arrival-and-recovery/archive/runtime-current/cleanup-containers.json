@@ -1,0 +1,14 @@
+{
+  "label": "z8-performance-fixture-1450",
+  "exactNames": [
+    "z8_perf_6d1a7f656a15_postgres",
+    "z8_perf_6d1a7f656a15_redis",
+    "z8_perf_6d1a7f656a15_storage"
+  ],
+  "confirmedAbsent": [
+    "z8_perf_6d1a7f656a15_postgres",
+    "z8_perf_6d1a7f656a15_redis",
+    "z8_perf_6d1a7f656a15_storage"
+  ],
+  "allAbsent": true
+}

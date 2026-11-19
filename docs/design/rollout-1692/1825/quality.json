@@ -1,0 +1,19 @@
+{
+  "biome": {
+    "files": 4,
+    "exit": 0
+  },
+  "typecheck": {
+    "exit": 0,
+    "stages": 4
+  },
+  "postgres": "not applicable to static read-only presentation",
+  "integration": "900a70a8a1991ee60b18888e9137764c34a6bb40",
+  "head": "7a2060a5cf13b4d840983b8c8f8e01fab276437b",
+  "unit": {
+    "suites": 15,
+    "tests": 46,
+    "exit": 0
+  },
+  "productionBuild": "not claimed; known root static-generation/catalog limits retained"
+}

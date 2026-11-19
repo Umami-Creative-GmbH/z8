@@ -2,8 +2,8 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
-import { EmployeeEmailLabel } from "@/components/settings/kiosk/employee-email-label";
 import { MissingRequiredValuesBadge } from "@/components/settings/custom-fields/custom-field-values-section";
+import { EmployeeEmailLabel } from "@/components/settings/kiosk/employee-email-label";
 import { Badge } from "@/components/ui/badge";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
@@ -32,10 +32,7 @@ export function createEmployeeColumns({
 	settingsAccess,
 	onOptimisticStatusChange,
 	onRemoved,
-}: CreateEmployeeColumnsOptions): ColumnDef<
-	EmployeeTableFeatures,
-	EmployeeDirectoryRow
->[] {
+}: CreateEmployeeColumnsOptions): ColumnDef<EmployeeTableFeatures, EmployeeDirectoryRow>[] {
 	return [
 		{
 			id: "employeeName",
@@ -63,9 +60,9 @@ export function createEmployeeColumns({
 							clockStatus={employee.clockStatus ?? "unknown"}
 							size="sm"
 						/>
-						<div className="min-w-0">
-							<div className="truncate font-medium">{displayName}</div>
-							<div className="truncate text-sm text-muted-foreground">
+						<div className="min-w-0 whitespace-normal">
+							<div className="break-words font-medium [overflow-wrap:anywhere]">{displayName}</div>
+							<div className="break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
 								<EmployeeEmailLabel email={row.original.user.email} />
 							</div>
 							{row.original.kind === "employee" && row.original.missingRequiredCustomFields && (
@@ -99,20 +96,14 @@ export function createEmployeeColumns({
 		{
 			accessorKey: "team.name",
 			header: () => (
-				<TranslatedColumnHeader
-					nameKey="settings.employees.directory.table.team"
-					fallback="Team"
-				/>
+				<TranslatedColumnHeader nameKey="settings.employees.directory.table.team" fallback="Team" />
 			),
 			cell: ({ row }) => row.original.team?.name || "—",
 		},
 		{
 			accessorKey: "role",
 			header: () => (
-				<TranslatedColumnHeader
-					nameKey="settings.employees.directory.table.role"
-					fallback="Role"
-				/>
+				<TranslatedColumnHeader nameKey="settings.employees.directory.table.role" fallback="Role" />
 			),
 			cell: ({ row }) => (
 				<Badge
@@ -136,9 +127,7 @@ export function createEmployeeColumns({
 					fallback="Contract"
 				/>
 			),
-			cell: ({ row }) => (
-				<ContractTypeCell contractType={row.original.contractType} />
-			),
+			cell: ({ row }) => <ContractTypeCell contractType={row.original.contractType} />,
 		},
 		{
 			accessorKey: "isActive",
@@ -160,7 +149,7 @@ export function createEmployeeColumns({
 				/>
 			),
 			cell: ({ row }) => (
-				<div className="flex items-center justify-end gap-1">
+				<div className="flex flex-wrap items-center justify-end gap-1">
 					<ViewDetailsCell employee={row.original} />
 					{row.original.kind === "employee" && (
 						<EmployeeLifecycleActions

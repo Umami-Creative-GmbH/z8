@@ -1,0 +1,814 @@
+{
+  "base": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+  "incoming": "6175e84f63208e234ac55c7c3933620072d0fb3c",
+  "merge": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+  "tree": "91e20a4150d477776bdb34c343bb62c73f032cdf",
+  "parents": [
+    "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+    "6175e84f63208e234ac55c7c3933620072d0fb3c"
+  ],
+  "independentMergeTree": "98608138a3aeac131c1a3b952618da0ec2f4be5e",
+  "resolution": "Only additive union of settings/report-share-links and reports/vehicles heading opt-ins",
+  "baselinePaths": 14516,
+  "preservedBaselinePaths": 14511,
+  "changedPaths": 94,
+  "changedSourcePaths": 8,
+  "priorRolloutPaths": 4254,
+  "verifiedAncestors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5"
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f"
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383"
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211"
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde"
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc"
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733"
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715"
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805"
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896"
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1"
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1"
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007"
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a"
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb"
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10"
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30"
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741"
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784"
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd"
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8"
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83"
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc"
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179"
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c"
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2"
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8"
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a"
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27"
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190"
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a"
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51"
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b"
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe"
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069"
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670"
+    },
+    {
+      "issue": 1833,
+      "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36"
+    },
+    {
+      "issue": 1834,
+      "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914"
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7"
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3"
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a"
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510"
+    },
+    {
+      "issue": 1736,
+      "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f"
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    }
+  ],
+  "baselineDigest": "8e92bd6d957e5eafb15d2160b4bf9c8d8b48d402e8575802cc33dc0130037757",
+  "changed": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx",
+      "before": "51f41f09bd265abb5b9beef8b38b591629334d92",
+      "incoming": "f2ba48ee3760263e6bcbfc02c0bb92587d545234",
+      "merged": "f2ba48ee3760263e6bcbfc02c0bb92587d545234"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.test.tsx",
+      "before": null,
+      "incoming": "0e15f60f29f16f5ef4472ad38d516509436aeefc",
+      "merged": "0e15f60f29f16f5ef4472ad38d516509436aeefc"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx",
+      "before": "0c1a27facd63f92632b5b5fa436c5beb0a3d67da",
+      "incoming": "30838364b497ce6e801ea3889af805138588e5a1",
+      "merged": "30838364b497ce6e801ea3889af805138588e5a1"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx",
+      "before": null,
+      "incoming": "5c2e83a7e3bbdd8d759142d92cdcbc852c7e8945",
+      "merged": "5c2e83a7e3bbdd8d759142d92cdcbc852c7e8945"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx",
+      "before": null,
+      "incoming": "b59417c290536f3c6a6c95d0cf6cfc9915849a48",
+      "merged": "b59417c290536f3c6a6c95d0cf6cfc9915849a48"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "before": "ef949b6ed7821a8de7317f80b645cde20a664e26",
+      "incoming": "598c4e821d8ef26439f244dc4ce45ed14a72e523",
+      "merged": "598c4e821d8ef26439f244dc4ce45ed14a72e523"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "before": "65a78ec282c9d6cd2bd80c4d65c7ba2180ad6752",
+      "incoming": "24b65f8cf61cf7f146e9589cb57e24bec427b863",
+      "merged": "b66cb83b72615fba15965d906a30d366bbe434bb"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "before": "0eee3e641d9d5b7675fbbf1a7d57704d361ea6c9",
+      "incoming": "f7e7537591846c80f1bcabf32a219ac91d445f95",
+      "merged": "b487c390ca07832fb42920169427bd8e369d0f2d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737.md",
+      "before": null,
+      "incoming": "50ef381a391a9dd201373bcba4cc2928cbc18c03",
+      "merged": "50ef381a391a9dd201373bcba4cc2928cbc18c03"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/.gitattributes",
+      "before": null,
+      "incoming": "78d7f9045faa6786edc65945fed91f9d4ce67c1b",
+      "merged": "78d7f9045faa6786edc65945fed91f9d4ce67c1b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/accepted-capture-command.log",
+      "before": null,
+      "incoming": "b4388f664cc4e39f0b5e9c50dcc6719bde8c4b15",
+      "merged": "b4388f664cc4e39f0b5e9c50dcc6719bde8c4b15"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/accepted-captures.json",
+      "before": null,
+      "incoming": "a007b11b839c1716700b55bc143cd92943038ecb",
+      "merged": "a007b11b839c1716700b55bc143cd92943038ecb"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/accepted-desktop.png",
+      "before": null,
+      "incoming": "4f32e32dd5d057c227c7e4d570507d67b9e843ff",
+      "merged": "4f32e32dd5d057c227c7e4d570507d67b9e843ff"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/accepted-phone.png",
+      "before": null,
+      "incoming": "6fc0c13ca5cbb6f27cab3e61654b4ec3c0243d11",
+      "merged": "6fc0c13ca5cbb6f27cab3e61654b4ec3c0243d11"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/accepted-wide.png",
+      "before": null,
+      "incoming": "2ba52f9c04c47a9c9bd323faca9a11c3e547abdd",
+      "merged": "2ba52f9c04c47a9c9bd323faca9a11c3e547abdd"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/actual.csv",
+      "before": null,
+      "incoming": "7cca1bca7a029bb26b9aeed81d63168f291f1414",
+      "merged": "7cca1bca7a029bb26b9aeed81d63168f291f1414"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/actual.xlsx",
+      "before": null,
+      "incoming": "214596e6266958dd1f43c40076aa8958d3878a24",
+      "merged": "214596e6266958dd1f43c40076aa8958d3878a24"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/affected-units.log",
+      "before": null,
+      "incoming": "62b36b968f3acda7d96dcd1a0dc50f9933b086f6",
+      "merged": "62b36b968f3acda7d96dcd1a0dc50f9933b086f6"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/artifact-verification.json",
+      "before": null,
+      "incoming": "f68decf8c2630580c5a02ccf31f4ffff1b9c0413",
+      "merged": "f68decf8c2630580c5a02ccf31f4ffff1b9c0413"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/biome-explicit-fix.log",
+      "before": null,
+      "incoming": "2ce7b105022237c86d5d1e9111aece7497f33a05",
+      "merged": "2ce7b105022237c86d5d1e9111aece7497f33a05"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/biome-explicit-green.log",
+      "before": null,
+      "incoming": "060c7ff5bc2804177f072ac334d36bf1eac2e2d7",
+      "merged": "060c7ff5bc2804177f072ac334d36bf1eac2e2d7"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/biome-explicit.log",
+      "before": null,
+      "incoming": "29687da7da2878c732af238d8611eec88a2f11e2",
+      "merged": "29687da7da2878c732af238d8611eec88a2f11e2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/biome-final.log",
+      "before": null,
+      "incoming": "4b37141dd9f0e0a80a24ba990023f1bc8f96e9cf",
+      "merged": "4b37141dd9f0e0a80a24ba990023f1bc8f96e9cf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/biome-first.log",
+      "before": null,
+      "incoming": "4da5672f9292cc60bf9747312e2e376d9f891d85",
+      "merged": "4da5672f9292cc60bf9747312e2e376d9f891d85"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/capture.mjs",
+      "before": null,
+      "incoming": "44acd91cc99797703a3ab6ee47ba48ba986f91f5",
+      "merged": "44acd91cc99797703a3ab6ee47ba48ba986f91f5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/cleanup.json",
+      "before": null,
+      "incoming": "2da051f2e67954f46aa0cddb96af8e0ba4e3fa4f",
+      "merged": "2da051f2e67954f46aa0cddb96af8e0ba4e3fa4f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/csv-download-retry.log",
+      "before": null,
+      "incoming": "9dc1721c3741f9d2b85ae0a64d04be71b84776f8",
+      "merged": "9dc1721c3741f9d2b85ae0a64d04be71b84776f8"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/current-captures.json",
+      "before": null,
+      "incoming": "52f11eeb1265d81af52e3ef043f0a078c13ef5ff",
+      "merged": "52f11eeb1265d81af52e3ef043f0a078c13ef5ff"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/current-desktop.png",
+      "before": null,
+      "incoming": "680d914a1fb7a501cbf33b3f0ba1a87047a5bc9d",
+      "merged": "680d914a1fb7a501cbf33b3f0ba1a87047a5bc9d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/current-phone.png",
+      "before": null,
+      "incoming": "6bd64188c98e1cd1f39deca6fe8a539dac024ab0",
+      "merged": "6bd64188c98e1cd1f39deca6fe8a539dac024ab0"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/current-wide.png",
+      "before": null,
+      "incoming": "d7c25b8e86e8c812f0cce12445dfeec51fa8ff2a",
+      "merged": "d7c25b8e86e8c812f0cce12445dfeec51fa8ff2a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/dark-large-phone-state.json",
+      "before": null,
+      "incoming": "60f204a96549f7a292b68206080c55d6dc685949",
+      "merged": "60f204a96549f7a292b68206080c55d6dc685949"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/dark-large-phone.png",
+      "before": null,
+      "incoming": "f7b1c9273582fa88785326c273c5f9df039df413",
+      "merged": "f7b1c9273582fa88785326c273c5f9df039df413"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/doctor-final.log",
+      "before": null,
+      "incoming": "e37f1bb9d764c9229fdb98375abc3414c9724bc4",
+      "merged": "e37f1bb9d764c9229fdb98375abc3414c9724bc4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/doctor-retry.log",
+      "before": null,
+      "incoming": "e36b8da6f4897a4dac4bdb06600cc64bf68f0f7a",
+      "merged": "e36b8da6f4897a4dac4bdb06600cc64bf68f0f7a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/doctor-sealed.log",
+      "before": null,
+      "incoming": "2c0b8b6f50098a152f847c397c4a1219f8161bbe",
+      "merged": "2c0b8b6f50098a152f847c397c4a1219f8161bbe"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/doctor.log",
+      "before": null,
+      "incoming": "3556857d0020b190ddaa6fb0b3711afbb0c8baea",
+      "merged": "3556857d0020b190ddaa6fb0b3711afbb0c8baea"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/download-parity.json",
+      "before": null,
+      "incoming": "6d71fe86c79768543f59b1f8d2d7a018ac19c935",
+      "merged": "6d71fe86c79768543f59b1f8d2d7a018ac19c935"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/download-probe.mjs",
+      "before": null,
+      "incoming": "8036a59f949c8598a8ca79e535c7ba7fe1b30f9b",
+      "merged": "8036a59f949c8598a8ca79e535c7ba7fe1b30f9b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/downloads.json",
+      "before": null,
+      "incoming": "776e243af196c50280055f1f34b7666ae6b8b55a",
+      "merged": "776e243af196c50280055f1f34b7666ae6b8b55a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/excel-download-retry.log",
+      "before": null,
+      "incoming": "9dc1721c3741f9d2b85ae0a64d04be71b84776f8",
+      "merged": "9dc1721c3741f9d2b85ae0a64d04be71b84776f8"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/expanded-lifetimes.log",
+      "before": null,
+      "incoming": "7aae4e49a612804daec002ee8c4985550df91a5a",
+      "merged": "7aae4e49a612804daec002ee8c4985550df91a5a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-capture-command.log",
+      "before": null,
+      "incoming": "d01316c93c4fd2174b33ee7131793badf0b2c563",
+      "merged": "d01316c93c4fd2174b33ee7131793badf0b2c563"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-captures.json",
+      "before": null,
+      "incoming": "0ffc40b7c4fc87669ceed0d94f09a6e3f8dd30a6",
+      "merged": "0ffc40b7c4fc87669ceed0d94f09a6e3f8dd30a6"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-desktop.png",
+      "before": null,
+      "incoming": "882313dd28af3b1f2ebf6ba22b977aa23f3abd1c",
+      "merged": "882313dd28af3b1f2ebf6ba22b977aa23f3abd1c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-phone.png",
+      "before": null,
+      "incoming": "a99ebe0f31aa59f6e559baea00134e72ff9e4851",
+      "merged": "a99ebe0f31aa59f6e559baea00134e72ff9e4851"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-types.log",
+      "before": null,
+      "incoming": "42ac6332bf2febc68b891b08a0bd1668c915ea22",
+      "merged": "42ac6332bf2febc68b891b08a0bd1668c915ea22"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-units.log",
+      "before": null,
+      "incoming": "3a46592fbd16d28c592feef5fdf40432d47caff3",
+      "merged": "3a46592fbd16d28c592feef5fdf40432d47caff3"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/final-wide.png",
+      "before": null,
+      "incoming": "a38ce3256b51559ff8c2d85c4253fd4467f90b6d",
+      "merged": "a38ce3256b51559ff8c2d85c4253fd4467f90b6d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/green-core.log",
+      "before": null,
+      "incoming": "a20450223e949461d69179e5b0b7d50ec1c15b9d",
+      "merged": "a20450223e949461d69179e5b0b7d50ec1c15b9d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/green-expanded-lifetimes.log",
+      "before": null,
+      "incoming": "83fe7e6a8ae0e17b12f1a222f6d4f4aa9f58133f",
+      "merged": "83fe7e6a8ae0e17b12f1a222f6d4f4aa9f58133f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/green-scope.log",
+      "before": null,
+      "incoming": "a33ddda466c20a53946888ede7d34c5e8e5ac2b5",
+      "merged": "a33ddda466c20a53946888ede7d34c5e8e5ac2b5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/historical-captures.json",
+      "before": null,
+      "incoming": "3d44876fdb5eafbc65b01b998017d7bc3f2cc0c4",
+      "merged": "3d44876fdb5eafbc65b01b998017d7bc3f2cc0c4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/historical-desktop.png",
+      "before": null,
+      "incoming": "ced928c26db3e4f5d1263ecb25af5b182c2175f4",
+      "merged": "ced928c26db3e4f5d1263ecb25af5b182c2175f4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/historical-phone.png",
+      "before": null,
+      "incoming": "3e9957542b6efae12f2c1f46e4999baaa24cadc0",
+      "merged": "3e9957542b6efae12f2c1f46e4999baaa24cadc0"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/historical-wide.png",
+      "before": null,
+      "incoming": "f958f9bf666faedc0825a0c3e2910432d58a6a97",
+      "merged": "f958f9bf666faedc0825a0c3e2910432d58a6a97"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/install-completed.log",
+      "before": null,
+      "incoming": "48adbc62b733899bff0b8c249fe97bbad579a960",
+      "merged": "48adbc62b733899bff0b8c249fe97bbad579a960"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/install-sandbox-failure.log",
+      "before": null,
+      "incoming": "9a54b3315776b074cdd1907020e394224235bfdc",
+      "merged": "9a54b3315776b074cdd1907020e394224235bfdc"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/keyboard-state.json",
+      "before": null,
+      "incoming": "d76a11e790492441555bb715cf57b62be6db027b",
+      "merged": "d76a11e790492441555bb715cf57b62be6db027b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/lifetimes-first.log",
+      "before": null,
+      "incoming": "672fdc5d01a1148768ba913de6607adaf5f8f123",
+      "merged": "672fdc5d01a1148768ba913de6607adaf5f8f123"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/lint-explicit.log",
+      "before": null,
+      "incoming": "7150db176d8b4d87f758712316a38b747c241989",
+      "merged": "7150db176d8b4d87f758712316a38b747c241989"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/matched-capture-command.log",
+      "before": null,
+      "incoming": "51c86ae1f6f2ad056a89aeda1ca5f3a50e8a32cf",
+      "merged": "51c86ae1f6f2ad056a89aeda1ca5f3a50e8a32cf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/matched-captures.json",
+      "before": null,
+      "incoming": "736d0a228d5cce160dcee70e0c447b3d91762a83",
+      "merged": "736d0a228d5cce160dcee70e0c447b3d91762a83"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/matched-desktop.png",
+      "before": null,
+      "incoming": "cda8a046f4a7eaea1b91950d533b71b6ce731f8e",
+      "merged": "cda8a046f4a7eaea1b91950d533b71b6ce731f8e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/matched-phone.png",
+      "before": null,
+      "incoming": "364b98f1116422fbc33f693c7e6e9db7367e1390",
+      "merged": "364b98f1116422fbc33f693c7e6e9db7367e1390"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/matched-wide.png",
+      "before": null,
+      "incoming": "2510178586d61aac5c66f2a3541ee35ffb3ad677",
+      "merged": "2510178586d61aac5c66f2a3541ee35ffb3ad677"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/native-download.log",
+      "before": null,
+      "incoming": "b7012710df21bd2a21df52bf7f9d69309fd85e3f",
+      "merged": "b7012710df21bd2a21df52bf7f9d69309fd85e3f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/next-final.json",
+      "before": null,
+      "incoming": "2a1f9e85b6935f401ee4a1ca30e3b79c4682c36e",
+      "merged": "2a1f9e85b6935f401ee4a1ca30e3b79c4682c36e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/offline-retained-final.png",
+      "before": null,
+      "incoming": "82a5d8f72bfc582128b2a3ccc59dd56d3ed78e6b",
+      "merged": "82a5d8f72bfc582128b2a3ccc59dd56d3ed78e6b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/offline-retained.png",
+      "before": null,
+      "incoming": "bdbfebb9ddc394ba0be65c250123cb1c41987abb",
+      "merged": "bdbfebb9ddc394ba0be65c250123cb1c41987abb"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/parse-downloads.mjs",
+      "before": null,
+      "incoming": "4fe334766d8c217e65b72285a7a647a192d01fa3",
+      "merged": "4fe334766d8c217e65b72285a7a647a192d01fa3"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/pdf-download.log",
+      "before": null,
+      "incoming": "664ee9d2bed0a363d98c72e33ce0678a309000df",
+      "merged": "664ee9d2bed0a363d98c72e33ce0678a309000df"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/postgres-retry.log",
+      "before": null,
+      "incoming": "bf9d34bbc815ae0bed0cbbe5a93f19ad739bfd4a",
+      "merged": "bf9d34bbc815ae0bed0cbbe5a93f19ad739bfd4a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/postgres.log",
+      "before": null,
+      "incoming": "d6e0da90cd61a04057da045de84fee443607acb1",
+      "merged": "d6e0da90cd61a04057da045de84fee443607acb1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/recovered-final.png",
+      "before": null,
+      "incoming": "acd436c29d03bb3edf9eeb10f28bb35ea45cb50a",
+      "merged": "acd436c29d03bb3edf9eeb10f28bb35ea45cb50a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/red-heading.log",
+      "before": null,
+      "incoming": "a264a66e0627c37dcfb99234b9062e7098534f97",
+      "merged": "a264a66e0627c37dcfb99234b9062e7098534f97"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/red-lifetimes-historical.log",
+      "before": null,
+      "incoming": "aed09c17d17819ec5bad75797f8d21daa641d97c",
+      "merged": "aed09c17d17819ec5bad75797f8d21daa641d97c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/red-scope.log",
+      "before": null,
+      "incoming": "0132bdae5df0bfdcdd864f747ee54e04ba1f33e6",
+      "merged": "0132bdae5df0bfdcdd864f747ee54e04ba1f33e6"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/runtime-diagnostics.json",
+      "before": null,
+      "incoming": "06681eea87e63df4dab50e5eff648651eb732ea2",
+      "merged": "06681eea87e63df4dab50e5eff648651eb732ea2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/seal-evidence.mjs",
+      "before": null,
+      "incoming": "e0b8f6f018232b5260aaf457cf1ead3e1698431f",
+      "merged": "e0b8f6f018232b5260aaf457cf1ead3e1698431f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-biome.log",
+      "before": null,
+      "incoming": "b510b6fad9ea0c2a5c0c321cf6abcbaa7207c9ee",
+      "merged": "b510b6fad9ea0c2a5c0c321cf6abcbaa7207c9ee"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-capture-command.log",
+      "before": null,
+      "incoming": "c64dc48861574af9ec0d1b82d45d4cf40d886625",
+      "merged": "c64dc48861574af9ec0d1b82d45d4cf40d886625"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-captures.json",
+      "before": null,
+      "incoming": "cc27a79b1e240ec43c5124482f3bc5426c4b2254",
+      "merged": "cc27a79b1e240ec43c5124482f3bc5426c4b2254"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-desktop.png",
+      "before": null,
+      "incoming": "e5dd12350d77ce6655704ab8932fad8ef0907472",
+      "merged": "e5dd12350d77ce6655704ab8932fad8ef0907472"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-download.log",
+      "before": null,
+      "incoming": "b7012710df21bd2a21df52bf7f9d69309fd85e3f",
+      "merged": "b7012710df21bd2a21df52bf7f9d69309fd85e3f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-phone.png",
+      "before": null,
+      "incoming": "dcba2e095bc4efd73c28cfac027079b7f4439464",
+      "merged": "dcba2e095bc4efd73c28cfac027079b7f4439464"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-types.log",
+      "before": null,
+      "incoming": "42ac6332bf2febc68b891b08a0bd1668c915ea22",
+      "merged": "42ac6332bf2febc68b891b08a0bd1668c915ea22"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-units.log",
+      "before": null,
+      "incoming": "bbe454d4ea0d7be6abec29aa959eb8e6aaf60faa",
+      "merged": "bbe454d4ea0d7be6abec29aa959eb8e6aaf60faa"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/sealed-wide.png",
+      "before": null,
+      "incoming": "e953165e6fab9ad6992e608757a3af81047cd92d",
+      "merged": "e953165e6fab9ad6992e608757a3af81047cd92d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/typegen.log",
+      "before": null,
+      "incoming": "ae852e747d49ab889ae368212e18820a2bc19511",
+      "merged": "ae852e747d49ab889ae368212e18820a2bc19511"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/types-first.log",
+      "before": null,
+      "incoming": "55a07f7b50313bcf3e44f127bacb1d10ed564654",
+      "merged": "55a07f7b50313bcf3e44f127bacb1d10ed564654"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/types.log",
+      "before": null,
+      "incoming": "42ac6332bf2febc68b891b08a0bd1668c915ea22",
+      "merged": "42ac6332bf2febc68b891b08a0bd1668c915ea22"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/verified-types.log",
+      "before": null,
+      "incoming": "42ac6332bf2febc68b891b08a0bd1668c915ea22",
+      "merged": "42ac6332bf2febc68b891b08a0bd1668c915ea22"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/verified-units.log",
+      "before": null,
+      "incoming": "ce3902a9cb0c10c17a12af2313fb5b0fa134a454",
+      "merged": "ce3902a9cb0c10c17a12af2313fb5b0fa134a454"
+    }
+  ],
+  "dependencies": {
+    "links": 158,
+    "hashes": 6,
+    "unchanged": true,
+    "physicalRoots": true
+  },
+  "artifacts": {
+    "pngFullDecoded": 22,
+    "jsonParsed": 14,
+    "scriptSyntax": 4,
+    "sourcePins": 5,
+    "historicalRenderedSourcePins": 3,
+    "matchedCaptureRecords": 6,
+    "reportLinks": 38,
+    "parsedCompletedDownloads": 2,
+    "totalKm": 147,
+    "januaryKm": 101,
+    "februaryKm": 46,
+    "archivedKm": 118,
+    "ownKm": 29
+  },
+  "routes": {
+    "total": 172,
+    "persistent": 153,
+    "aliases": 19,
+    "aliasBlobsUnchanged": true
+  },
+  "limits": [
+    "Original capture/download events are inherited; bytes, pixels and document content freshly checked.",
+    "Historical unused export/picker source pins are not original rendered source pins.",
+    "Source blockers prohibit new Next/browser/fixture runtime until root correction."
+  ]
+}

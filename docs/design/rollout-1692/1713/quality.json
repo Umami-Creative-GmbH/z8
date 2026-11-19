@@ -1,0 +1,61 @@
+{
+    "sourceHead":  "2c269b0b685640bb627a29f90c16322df8da4b0d",
+    "integration":  "6bce36400e094702e650d6c24c38fc79a49623b6",
+    "unit":  {
+                 "suites":  54,
+                 "tests":  462,
+                 "command":  "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/calendar src/hooks/use-calendar-data.test.tsx src/hooks/use-calendar-employees.test.ts src/lib/calendar \u0027src/app/[locale]/(app)/calendar\u0027 src/app/api/calendar/events/route.test.ts src/lib/navigation/route-metadata.test.ts src/components/site-header.test.tsx src/components/ui/sidebar.test.tsx src/components/errors \u0027src/app/[locale]/(app)/approvals/deputy-decisions/error.test.tsx\u0027 \u0027src/app/[locale]/(app)/approvals/review\u0027 src/tolgee/extracted-key-defaults.test.ts"
+             },
+    "types":  {
+                  "passed":  true,
+                  "command":  "pnpm --filter webapp typecheck",
+                  "projects":  [
+                                   "Next route typegen",
+                                   "application",
+                                   "workflow-contracts",
+                                   "smoke"
+                               ]
+              },
+    "biome":  {
+                  "files":  14,
+                  "errors":  0,
+                  "warnings":  0,
+                  "command":  "pnpm --filter webapp exec biome check --line-ending=crlf \u0027src/app/[locale]/(app)/calendar/[employeeId]/page.test.tsx\u0027 \u0027src/app/[locale]/(app)/calendar/[employeeId]/page.tsx\u0027 \u0027src/app/[locale]/(app)/calendar/page.test.tsx\u0027 \u0027src/app/[locale]/(app)/calendar/page.tsx\u0027 \u0027src/components/calendar/calendar-employee-selector.test.tsx\u0027 \u0027src/components/calendar/calendar-employee-selector.tsx\u0027 \u0027src/components/calendar/calendar-main-content.tsx\u0027 \u0027src/components/calendar/calendar-view.test.tsx\u0027 \u0027src/components/calendar/calendar-view.tsx\u0027 \u0027src/components/site-header.test.tsx\u0027 \u0027src/lib/calendar/calendar-employee-context.test.ts\u0027 \u0027src/lib/calendar/calendar-employee-context.ts\u0027 \u0027src/lib/navigation/route-metadata.test.ts\u0027 \u0027src/lib/navigation/route-metadata.ts\u0027"
+              },
+    "doctor":  {
+                   "findings":  0,
+                   "files":  14,
+                   "command":  "pnpm exec react-doctor apps/webapp --verbose --scope changed --base 6bce36400e094702e650d6c24c38fc79a49623b6 --include-untracked --no-supply-chain --no-telemetry --max-duration 90"
+               },
+    "runtime":  {
+                    "runtime":  {
+                                    "assertions":  28,
+                                    "pageErrors":  0
+                                },
+                    "context":  {
+                                    "assertions":  16,
+                                    "pageErrors":  0
+                                },
+                    "target":  {
+                                   "assertions":  15,
+                                   "pageErrors":  0
+                               },
+                    "arrival":  {
+                                    "assertions":  4,
+                                    "pageErrors":  0
+                                }
+                },
+    "remaining":  [
+                      "Complete production build/static generation",
+                      "Fresh PostgreSQL integration suites",
+                      "Remote catalog sync",
+                      "Physical devices and true zoom",
+                      "Exhaustive domain/provider lifecycle"
+                  ],
+    "redGreen":  [
+                     "Stale panels after target/org/viewer arrivals",
+                     "Authorized direct-arrival name and manual context",
+                     "Exact dynamic heading adoption",
+                     "No personal label for selected colleague"
+                 ]
+}

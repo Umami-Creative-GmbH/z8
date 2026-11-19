@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationTimezone } from "@/app/[locale]/(app)/settings/organization/actions";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
@@ -29,13 +29,14 @@ export function OrganizationTimezoneCard({
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
+	const [isSaving, setIsSaving] = useState(false);
 	const [timezone, setTimezone] = useServerDataState(initialTimezone);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = meetsSettingsAccess(settingsAccess, "owner");
 
 	const handleTimezoneChange = async (newTimezone: string) => {
-		if (!canEdit) return;
+		if (!canEdit || isSaving) return;
 
 		const previousTimezone = timezone;
 
@@ -43,7 +44,14 @@ export function OrganizationTimezoneCard({
 		setTimezone(newTimezone);
 		setOrgSettings({ timezone: newTimezone });
 
-		const result = await updateOrganizationTimezone(newTimezone);
+		// Lock the picker until the save settles so a second pick cannot race the first.
+		setIsSaving(true);
+		let result: Awaited<ReturnType<typeof updateOrganizationTimezone>>;
+		try {
+			result = await updateOrganizationTimezone(newTimezone);
+		} finally {
+			setIsSaving(false);
+		}
 
 		if (result.success) {
 			// The save is committed; balances follow once they are rebuilt.
@@ -75,7 +83,9 @@ export function OrganizationTimezoneCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.timezone.title", "Timezone")}</CardTitle>
+				<CardTitle>
+					<h2>{t("organization.timezone.title", "Timezone")}</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.timezone.description",
@@ -89,12 +99,18 @@ export function OrganizationTimezoneCard({
 						<Label htmlFor="timezone-picker">
 							{t("organization.timezone.default", "Default Timezone")}
 						</Label>
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+						{(isPending || isSaving) && (
+							<IconLoader2
+								aria-hidden="true"
+								className="size-4 animate-spin text-muted-foreground"
+							/>
+						)}
 					</div>
 					<TimezonePicker
+						id="timezone-picker"
 						value={timezone}
 						onChange={handleTimezoneChange}
-						disabled={!canEdit || isPending}
+						disabled={!canEdit || isPending || isSaving}
 					/>
 				</div>
 

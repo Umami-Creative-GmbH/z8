@@ -1,0 +1,15 @@
+{
+  "get_compilation_issues": {
+    "issues": []
+  },
+  "get_errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  },
+  "routes": {
+    "status": 200,
+    "succeeded": true,
+    "calendarMention": true
+  },
+  "boundary": "Fresh connected normal corrected Calendar; earlier deliberately wrong target/harness/native/preview and inherited transition findings are retained."
+}

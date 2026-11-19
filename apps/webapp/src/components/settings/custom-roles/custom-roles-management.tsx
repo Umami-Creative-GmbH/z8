@@ -21,19 +21,11 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
@@ -72,6 +64,8 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 	const {
 		data: roles,
 		isLoading,
+		isError,
+		error,
 		isFetching,
 		refetch,
 	} = useQuery({
@@ -93,10 +87,14 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			queryClient.invalidateQueries({ queryKey: ["custom-roles"] });
 			setDeleteTarget(null);
 		},
-		onError: (err: Error) => {
-			toast.error(err.message);
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
+
+	const requestDelete = (role: CustomRoleWithPermissions) => {
+		if (deleteMutation.isPending) return;
+		deleteMutation.reset();
+		setDeleteTarget(role);
+	};
 
 	const handleSaved = () => {
 		queryClient.invalidateQueries({ queryKey: ["custom-roles"] });
@@ -105,49 +103,73 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.roles.title", "Custom Roles")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.roles.introduction",
-							"Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">{t("common:actions.refresh", "Refresh")}</span>
-					</Button>
-					<Button onClick={() => setIsCreateOpen(true)}>
-						<IconPlus className="mr-2 size-4" />
-						{t("settings.roles.actions.create", "Create Role")}
-					</Button>
-				</div>
-			</div>
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+			<PageHeader
+				title={t("settings.roles.title", "Custom Roles")}
+				description={t(
+					"settings.roles.introduction",
+					"Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
+				)}
+				actions={
+					<>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => refetch()}
+							disabled={isFetching}
+							aria-label={t("settings.roles.actions.refresh", "Refresh custom roles")}
+						>
+							<IconRefresh
+								className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
+								aria-hidden="true"
+							/>
+						</Button>
+						<Button onClick={() => setIsCreateOpen(true)}>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t("settings.roles.actions.create", "Create Role")}
+						</Button>
+					</>
+				}
+			/>
 
 			{isLoading ? (
 				<Card>
-					<CardContent className="flex items-center justify-center py-12">
-						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+					<CardContent
+						className="flex items-center justify-center py-12"
+						role="status"
+						aria-label={t("common.loadingRegions.customRoleSettings", "Loading custom role settings")}
+					>
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
 					</CardContent>
 				</Card>
+			) : isError ? (
+				<div
+					role="alert"
+					className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+				>
+					<p className="text-sm">
+						{error?.message ||
+							t("settings.roles.loadFailed", "Custom roles could not be loaded.")}
+					</p>
+					<Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+						{t("common.retry", "Try again")}
+					</Button>
+				</div>
 			) : !roles?.length ? (
 				<Card>
-					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconShieldCog className="size-12 text-muted-foreground" />
-						<h3 className="mt-4 text-lg font-medium">
-							{t("settings.roles.empty.title", "No custom roles yet")}
-						</h3>
-						<p className="mt-2 text-sm text-muted-foreground">
-							{t("settings.roles.empty.description", "Create one to get started.")}
-						</p>
-						<Button onClick={() => setIsCreateOpen(true)} className="mt-4">
-							<IconPlus className="mr-2 size-4" />
+					<CardContent className="flex flex-col items-start gap-3 py-8 sm:items-center sm:text-center">
+						<IconShieldCog className="size-8 text-muted-foreground" aria-hidden="true" />
+						<div className="space-y-1">
+							<h2 className="text-base font-medium">
+								{t("settings.roles.empty.title", "No custom roles yet")}
+							</h2>
+							<p className="text-sm text-muted-foreground">
+								{t("settings.roles.empty.description", "Create one to get started.")}
+							</p>
+						</div>
+						<Button onClick={() => setIsCreateOpen(true)}>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.roles.actions.create", "Create Role")}
 						</Button>
 					</CardContent>
@@ -170,16 +192,24 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 							<TableBody>
 								{roles.map((role) => (
 									<TableRow key={role.id}>
-										<TableCell>
-											<div className="flex items-center gap-2">
+										<TableCell className="max-w-xs">
+											<div className="flex min-w-0 items-center gap-2">
 												<div
-													className="size-3 rounded-full"
+													aria-hidden="true"
+													className="size-3 shrink-0 rounded-full"
 													style={{ backgroundColor: role.color }}
 												/>
-												<div>
-													<div className="font-medium">{role.name}</div>
+												<div className="min-w-0">
+													<div className="truncate font-medium" title={role.name}>
+														{role.name}
+													</div>
 													{role.description && (
-														<div className="text-xs text-muted-foreground">{role.description}</div>
+														<div
+															className="line-clamp-2 text-xs text-muted-foreground"
+															title={role.description}
+														>
+															{role.description}
+														</div>
 													)}
 												</div>
 											</div>
@@ -203,7 +233,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 														})}
 											</Badge>
 										</TableCell>
-										<TableCell>
+										<TableCell className="tabular-nums">
 											{role.assignedCount === 1
 												? t("settings.roles.table.assignedCount.one", "{count} employee", {
 														count: role.assignedCount,
@@ -222,7 +252,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 													})}
 													onClick={() => setEditingRole(role)}
 												>
-													<IconEdit className="size-4" />
+													<IconEdit className="size-4" aria-hidden="true" />
 												</Button>
 												<Button
 													variant="ghost"
@@ -230,9 +260,9 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 													aria-label={t("settings.roles.actions.deleteNamed", "Delete {name}", {
 														name: role.name,
 													})}
-													onClick={() => setDeleteTarget(role)}
+													onClick={() => requestDelete(role)}
 												>
-													<IconTrash className="size-4" />
+													<IconTrash className="size-4" aria-hidden="true" />
 												</Button>
 											</div>
 										</TableCell>
@@ -291,57 +321,42 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			</ActionPanel>
 
 			{/* Delete confirmation */}
-			<AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.roles.deleteDialog.title", "Delete Role")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.roles.deleteDialog.confirm",
-								'Are you sure you want to delete "{name}"?',
-								{
-									name: deleteTarget?.name ?? "",
-								},
-							)}
-							{deleteTarget && deleteTarget.assignedCount > 0 && (
-								<span className="block mt-1 text-destructive">
-									{deleteTarget.assignedCount === 1
-										? t(
-												"settings.roles.deleteDialog.assignedWarning.one",
-												"This role is currently assigned to {count} employee. They will lose the permissions granted by this role.",
-												{ count: deleteTarget.assignedCount },
-											)
-										: t(
-												"settings.roles.deleteDialog.assignedWarning.other",
-												"This role is currently assigned to {count} employees. They will lose the permissions granted by this role.",
-												{ count: deleteTarget.assignedCount },
-											)}
-								</span>
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setDeleteTarget(null)}>
-							{t("common:actions.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction asChild>
-							<Button
-								variant="destructive"
-								onClick={(event) => {
-									event.preventDefault();
-									if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
-								}}
-								disabled={deleteMutation.isPending}
-							>
-								{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-								{t("common:actions.delete", "Delete")}
-							</Button>
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={!!deleteTarget}
+				onOpenChange={(open) => {
+					if (!open) setDeleteTarget(null);
+				}}
+				title={t("settings.roles.deleteDialog.title", "Delete Role")}
+				description={
+					<>
+						{t("settings.roles.deleteDialog.confirm", 'Are you sure you want to delete "{name}"?', {
+							name: deleteTarget?.name ?? "",
+						})}
+						{deleteTarget && deleteTarget.assignedCount > 0 && (
+							<span className="block mt-1 text-destructive">
+								{deleteTarget.assignedCount === 1
+									? t(
+											"settings.roles.deleteDialog.assignedWarning.one",
+											"This role is currently assigned to {count} employee. They will lose the permissions granted by this role.",
+											{ count: deleteTarget.assignedCount },
+										)
+									: t(
+											"settings.roles.deleteDialog.assignedWarning.other",
+											"This role is currently assigned to {count} employees. They will lose the permissions granted by this role.",
+											{ count: deleteTarget.assignedCount },
+										)}
+							</span>
+						)}
+					</>
+				}
+				confirmLabel={t("settings.roles.deleteDialog.confirmAction", "Delete role")}
+				isDeleting={deleteMutation.isPending}
+				error={deleteMutation.error?.message ?? null}
+				onConfirm={() => {
+					if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(deleteTarget.id);
+				}}
+			/>
+			</div>
 		</div>
 	);
 }

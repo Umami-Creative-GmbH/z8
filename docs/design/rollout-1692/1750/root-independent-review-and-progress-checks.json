@@ -1,0 +1,30 @@
+{
+  "issue": 1750,
+  "verifiedCommit": null,
+  "independentReview": {
+    "source": "c592ac234b69d3a5e9b612f8f151919fa4184d38",
+    "appSourceTree": "f363d2b2868dfcfa00ceab636182e9ec2ae9301c",
+    "safeReceiptSha256": "729ce780751e67eaee743fabd6909b7069b480005a5419b67b186e8832e17b7b",
+    "safeProbeSha256": "b952df82f74c2614f558ae798e5fe2dcdeccc78ab1b5b75a97597d239815bcce",
+    "committedUnits": { "files": 50, "passed": 522, "failed": 0 },
+    "independentCases": { "files": 1, "passed": 14, "failed": 1 },
+    "canonicalPostgreSQL": { "files": 12, "passed": 169, "failed": 0, "migrationVerificationExit": 0 },
+    "spec": { "p1": 0, "p3": 1, "finding": "Attachment progress fell from 90 to 0 on Activity reconnect while the same POST remained pending. The action stayed locked and still reconciled." },
+    "standards": { "additionalFindings": 0 },
+    "quality": "Next typegen, workflow-contract and smoke types, scoped lint and explicit formatting passed. The isolated application type check lacked the ignored generated license file. Ordinary format reported seven differences. Doctor reported zero errors and three warnings.",
+    "custody": "All four pins and 67 anchor occurrences matched. The checkout and index were clean and no owned resources remained active."
+  },
+  "progressCorrection": {
+    "source": "1ad48b7d15410daffa4135e366c4b811f48fa80c",
+    "tree": "eca3ec54115b482be90d79ddbc67623cd2eda22d",
+    "appSourceTree": "1138b19614ef785d7434dbe64b6a4f63da00e2d8",
+    "parent": "875ca1959a33afca227f0d4e6d9332ec2a8c05fb",
+    "change": "The attachment phase now retains its 90 percent value from the attachment reservation when the disconnected uploader resets. Upload progression and canonical server endpoints remain unchanged.",
+    "red": { "files": 1, "passed": 13, "failed": 2, "exit": 1, "observed": "0 after reconnect for both success and refusal fixtures" },
+    "green": { "files": 1, "passed": 15, "failed": 0, "exit": 0 },
+    "committedUnits": { "files": 50, "distinctPassed": 522, "failed": 0, "skipped": 0, "exit": 0 },
+    "quality": { "typegenAndThreeProjectsExit": 0, "scopedFiles": 2, "explicitFormattingExit": 0, "lintExit": 0, "ordinaryFormattingExit": 1, "ordinaryFormattingFindings": 2, "doctorErrors": 0, "doctorWarnings": 0, "sourceWhitespaceExit": 0 }
+  },
+  "counting": "The independent counts are tied to the previous source. The progress correction changes only the receipt component and its test. The 169 canonical PostgreSQL cases were not rerun for this display-only change. Focused unit results are included in the current 522.",
+  "runtime": "Current live acceptance remains in progress using a separate disposable synthetic fixture. No readiness conclusion follows from these tests."
+}

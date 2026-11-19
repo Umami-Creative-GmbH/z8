@@ -117,7 +117,8 @@ describe("EmailTemplateSettingsClient", () => {
 	it("renders the template list and initial editor", () => {
 		render(<EmailTemplateSettingsClient templates={templates} />);
 
-		expect(screen.getByRole("heading", { name: "Email Templates" })).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "System templates" })).toBeTruthy();
+		expect(screen.queryByText("Operational communications")).toBeNull();
 		expect(screen.getAllByText("Email verification").length).toBeGreaterThan(0);
 		expect(screen.getByText("Password reset")).toBeTruthy();
 		expect(screen.getByText("Email editor")).toBeTruthy();
@@ -130,10 +131,6 @@ describe("EmailTemplateSettingsClient", () => {
 	it("uses settings email template static literal keys for page copy", () => {
 		render(<EmailTemplateSettingsClient templates={templates} />);
 
-		expect(tMock).toHaveBeenCalledWith(
-			"settings.emailTemplates.eyebrow",
-			"Operational communications",
-		);
 		expect(tMock).toHaveBeenCalledWith("settings.emailTemplates.status.default", "Default");
 		expect(tMock).toHaveBeenCalledWith(
 			"settings.emailTemplates.systemTemplates",
@@ -152,6 +149,85 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(toastErrorMock).toHaveBeenCalledWith(
 			"Edit the email body before saving a first custom template.",
 		);
+	});
+
+	it("offers reset only for a customized template and names it in the confirmation", async () => {
+		resetEmailTemplateMock.mockResolvedValue({ success: true });
+		const { unmount } = render(<EmailTemplateSettingsClient templates={templates} />);
+		expect(
+			screen.getByRole("button", { name: "Reset to system template" }),
+		).toHaveProperty("disabled", true);
+		unmount();
+
+		render(
+			<EmailTemplateSettingsClient
+				templates={templates.map((template) =>
+					template.definition.key === "email-verification"
+						? {
+								...template,
+								override: {
+									subject: "Custom",
+									html: "<p>Custom</p>",
+									plainText: "Custom",
+									editorDocument: { type: "doc" },
+									isEnabled: true,
+								},
+							}
+						: template,
+				)}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Reset to system template" }));
+		await screen.findByText("Reset “{template}” to the system template?");
+		expect(tMock).toHaveBeenCalledWith(
+			"settings.emailTemplates.resetDialog.title",
+			"Reset “{template}” to the system template?",
+			{ template: "Email verification" },
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(resetEmailTemplateMock).not.toHaveBeenCalled();
+	});
+
+	it("shows progress on the pending action and blocks duplicate submissions", async () => {
+		let finishSave: (value: { success: true }) => void = () => {};
+		saveEmailTemplateMock.mockReturnValue(
+			new Promise((resolve) => {
+				finishSave = resolve;
+			}),
+		);
+		render(
+			<EmailTemplateSettingsClient
+				templates={templates.map((template) =>
+					template.definition.key === "email-verification"
+						? {
+								...template,
+								override: {
+									subject: "Custom",
+									html: "<p>Custom</p>",
+									plainText: "Custom",
+									editorDocument: { type: "doc" },
+									isEnabled: true,
+								},
+							}
+						: template,
+				)}
+			/>,
+		);
+
+		const save = screen.getByRole("button", { name: "Save" });
+		fireEvent.click(save);
+		await waitFor(() => expect(save).toHaveProperty("disabled", true));
+		expect(save.querySelector(".motion-safe\\:animate-spin")).toBeTruthy();
+		expect(
+			screen
+				.getByRole("button", { name: "Send test" })
+				.querySelector(".motion-safe\\:animate-spin"),
+		).toBeNull();
+		fireEvent.click(save);
+		expect(saveEmailTemplateMock).toHaveBeenCalledTimes(1);
+
+		finishSave({ success: true });
+		await waitFor(() => expect(save).toHaveProperty("disabled", false));
 	});
 
 	it("uses placeholder starter content instead of rendered preview values", () => {
@@ -286,14 +362,16 @@ describe("EmailTemplateSettingsClient", () => {
 				: template,
 		);
 		render(<EmailTemplateSettingsClient templates={overriddenTemplates} />);
-		const selectedStatus = () =>
-			screen
-				.getByRole("heading", { name: "Email Templates" })
-				.parentElement?.parentElement?.querySelector('[data-slot="badge"]');
+		const selectedStatus = () => screen.getByTestId("email-template-selected-status");
 
 		expect(selectedStatus()?.textContent).toBe("Customized");
 		expect(screen.getByLabelText("Subject")).toHaveProperty("value", "Existing custom subject");
 		fireEvent.click(screen.getByRole("button", { name: "Reset to system template" }));
+		expect(resetEmailTemplateMock).not.toHaveBeenCalled();
+		expect(
+			await screen.findByText("Reset “{template}” to the system template?"),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Reset template" }));
 
 		await waitFor(() => {
 			expect(resetEmailTemplateMock).toHaveBeenCalledWith("email-verification");
@@ -312,5 +390,34 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(toastErrorMock).toHaveBeenCalledWith(
 			"Edit the email body before saving a first custom template.",
 		);
+	});
+
+	it("keeps the reset confirmation open with the reason when the reset fails", async () => {
+		resetEmailTemplateMock.mockResolvedValue({ success: false, error: "Reset refused" });
+		const overriddenTemplates = templates.map((template) =>
+			template.definition.key === "email-verification"
+				? {
+						...template,
+						override: {
+							subject: "Existing custom subject",
+							html: "<p>Existing custom body</p>",
+							plainText: "Existing custom body",
+							editorDocument: { type: "doc" },
+							isEnabled: true,
+						},
+					}
+				: template,
+		);
+		render(<EmailTemplateSettingsClient templates={overriddenTemplates} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Reset to system template" }));
+		await screen.findByText("Reset “{template}” to the system template?");
+		fireEvent.click(screen.getByRole("button", { name: "Reset template" }));
+
+		await waitFor(() => expect(resetEmailTemplateMock).toHaveBeenCalledTimes(1));
+		expect((await screen.findByRole("alert")).textContent).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(screen.getByTestId("email-template-selected-status").textContent).toBe("Customized");
+		expect(toastErrorMock).not.toHaveBeenCalled();
 	});
 });

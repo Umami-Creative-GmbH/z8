@@ -1,0 +1,246 @@
+{
+  "schema": 1,
+  "issue": 1839,
+  "head": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+  "appTree": "138aab92cde099756c13347827a90112763def68",
+  "tree": "c46bc8d4f045c8fff2d9a6f51c678784e0cb2f80",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "verifiedCommit": null,
+  "readiness": null,
+  "sourcePinFormat": "Filesystem SHA256 (CRLF where present); full frozen tracked snapshots and clean index identify the exact HEAD.",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(auth)/layout.tsx",
+      "sha256": "b205b8491b6ca44d91f141708fd8df1d111f41a8765cc2c4ece6377bd721ccbd"
+    },
+    {
+      "path": "apps/webapp/src/components/login/alternative-auth.tsx",
+      "sha256": "89193dda62a15b27c64832f4e15075093335ea22e33eaeb8e9902a5f9ecf99a5"
+    },
+    {
+      "path": "apps/webapp/src/components/login/credentials-fields.tsx",
+      "sha256": "e7ca681ecd517d7fa7b18cbc557e73584a7f9429ee5559570f13e2085e7f7885"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-actions.tsx",
+      "sha256": "bb64a6533052f45b8c09d714cb7796e5e4a2d310dd9f0d770164b5d1a0724bc3"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-client-arrival.test.tsx",
+      "sha256": "998294cfb352cc0d5f320412ebba53fd0e975a6691c9e4f7c72582f2923c9fbd"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "sha256": "1138a3f1c050a71eeca7c0de2ebce4fd47c0b5360f9822117af0901fb05d7812"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.tsx",
+      "sha256": "902304ed457b6c80065011fcc749b549edfa0f8fd96427a1e108f01a0d3349ef"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-method-lifetime.test.tsx",
+      "sha256": "d1f7251dce9c1580359b32f62c52eae47582ab457825a5348759c13820ad87b1"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-state.test.ts",
+      "sha256": "cd4ec542a1cdb92e044f5ce9adc5fbb6554c2e680384683e5571819389583e78"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-state.ts",
+      "sha256": "85af75a8d63c6847ac6c01b3f4e17574c70354031b19532ec945d32dc65d23e0"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "sha256": "9d0abb5a3d4505875ed7f37c222c80bba95b2ebf3bc6a3698fcd73fc7a3077cb"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-verification.tsx",
+      "sha256": "4052ce659c9a21ce66406980bc1b468875920b5d1f5815a413cd269d31b518c6"
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form-lazy.tsx",
+      "sha256": "586379db3f37f0f81949caae71e0b07012d5947d79fd728182d65dbb20faf93f"
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "sha256": "85298049b4e821bec6130912c0aaec6ce449b89d4c034d6baf78a3cb352e5db1"
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form.tsx",
+      "sha256": "b4e8ef2a495234b0727eac8c0e1caa69516d6c4b3517a971521b84e45f5d5f9c"
+    },
+    {
+      "path": "apps/webapp/src/components/login/two-factor-form.tsx",
+      "sha256": "259e574238c8ba98d4dbca562ba175150b9127afd92c0e33ef8b8b3ba9246e35"
+    },
+    {
+      "path": "apps/webapp/src/components/login/use-login-auth.ts",
+      "sha256": "6f0aed33c9b0580c015a405f73cdd853e02cc534b7420ad5885df914b88c1aad"
+    },
+    {
+      "path": "apps/webapp/src/lib/auth-domain-config.ts",
+      "sha256": "88d7c9882c874cb5bc645b4aed1007c6e76a722787280fcfa32f6f5e1c87fa8a"
+    },
+    {
+      "path": "apps/webapp/src/lib/auth.ts",
+      "sha256": "6cb3d4e6f933a58626c0af9e72cf85ad259b47e85ae4c67556e03ad3274ff7f2"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "sha256": "43ad2cd078afd39fd609d57bcb7e555521462e1bc587befeabaf09fcbaee5a71"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/auth-plugin.ts",
+      "sha256": "5764ae8d034927f0e7e24ddbf9a5fb97a60096c0e153894a8cb4551fae6aae3e"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/auth-policy.ts",
+      "sha256": "0afa1cafe10cbe7671a2d2957c58ffdedb5ec6cf2d7f698418b885f5672ab40e"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "sha256": "8b4879dbb1bc50a2dbe4c3fc292f91ebb5154f7e80fb599ffe54d44834466e5a"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/development-keys.ts",
+      "sha256": "63ac9e3fe2a1c7baeb388d71009242f2193cada7b894c4bee4986b4e840d5fea"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/index.ts",
+      "sha256": "00e542ebeb53306f8d2103453518b3bea9f844ec75802c2a1527df9996d8f322"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "sha256": "3d0cee489f1d0f9460c3f8f80c802f03301abddd4d9b7826132b91b0f8789cc8"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/service.ts",
+      "sha256": "0cd123f12129bedc660a38833d392b6edbe8055f4eca9e543d9191c28232e645"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "sha256": "372b7e667447c01ab43ceb27e925e2f9768bb1e48faeabd4e725ef67d93f57b5"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/verify.ts",
+      "sha256": "e1358d4e248ac61840c1b0f003ada38b39ec4c2b82c269f5112654a996236768"
+    }
+  ],
+  "actualRuntimeAssertions": {
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "assertions": [
+      {
+        "id": "normal-signin-document",
+        "passed": true,
+        "observed": 200
+      },
+      {
+        "id": "desktop-one-heading",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "desktop-heading",
+        "passed": true,
+        "observed": "Login to your account"
+      },
+      {
+        "id": "desktop-empty-credentials",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "desktop-no-horizontal-overflow",
+        "passed": true,
+        "observed": false
+      },
+      {
+        "id": "desktop-login-enabled",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "normal-widget-completed",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "phone-one-heading",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "phone-no-horizontal-overflow",
+        "passed": true,
+        "observed": false
+      },
+      {
+        "id": "phone-empty-credentials",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "phone-one-login-button",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "keyboard-email-to-password",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "keyboard-focus-visible",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "normal-email-signin",
+        "passed": true,
+        "observed": 200
+      },
+      {
+        "id": "intended-callback",
+        "passed": true,
+        "observed": "/en/team/presence"
+      },
+      {
+        "id": "same-browser-session-read",
+        "passed": true,
+        "observed": 200
+      },
+      {
+        "id": "session-present",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "canonical-employee-user-match",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "expected-fixture-account",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "expected-active-organization",
+        "passed": true,
+        "observed": true
+      }
+    ]
+  },
+  "freshUnitCases": 0,
+  "freshPostgresSuiteCases": 0,
+  "confirmedP1": 0,
+  "limits": [
+    "Deliberate wrong-password submission was blocked by automatic approval review before execution. Server refusal, nonsecret draft retention after refusal, explicit widget reset and credential retry remain unpassed.",
+    "Normal unchanged development widget reached Verification complete and normal email authentication returned 200. No CAPTCHA token value, shape, forced result or historical empty-token cause was inspected or claimed.",
+    "No real OAuth, SSO, passkey, 2FA, native handoff, physical device or true zoom acceptance.",
+    "310 unit occurrences/31 files are inherited and unadded. Prior 43 PostgreSQL cases are not fresh; fixture preparation added zero cases.",
+    "The Next skill agent-browser launcher remained unavailable under the pre-existing restriction. Selected isolated Chromium was used; no saved session restoration or exports."
+  ]
+}

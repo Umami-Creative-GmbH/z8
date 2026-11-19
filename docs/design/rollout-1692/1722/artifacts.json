@@ -1,0 +1,548 @@
+{
+  "images": [
+    {
+      "file": "docs/design/rollout-1692/1722/actions-1/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "0e9aec894b1d1790691ce73f6fb95d679e344bedf6e37b244a79f59c6b220af8"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-2/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "08f0469c3f67ef1b111a1b5016f7b04b4b7dc6e978fe6991303d3e25b31c32eb"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-2/late-account-refusal.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "8212a265918315ecf434b0a83bc1f1f220ebffe7257ca56a982a8ffcd6420a5c"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-3/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "2e6c27199e20105eec187ca2e885396c971e4ad7a8e323ab9802e5501a4e8550"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-4/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "182d2a4df58277e352d17554ecfe59daf87b38f06b7db33c35d15a77ebf3ff82"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-4/late-account-refusal.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "8f6aeba02c0f5cab6a1afb340fecdfc9d9d30d8a5d3e5bdca948a80c0d1c51b4"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-4/partial-recovered.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "fe4a489ea539ac642b6a593adeb53d4ecd41025ff81425927379d7c4cd81f475"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-4/partial-source.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "b5ff020f859b1d78bbc17b8dc13b776f4f6603449595f59dad1dd4276529afb1"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-5/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "42f710ab5f66b5b35caa1b9038b257803fcce6498f3c23248cad196f700eceab"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-5/late-account-refusal.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "3570b318d855c5ea5c37c7669f5af4a1b658aebca7f41e28150746abf9c3a7d4"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-5/partial-recovered.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "b10a2aa854c109aece1d1f90531ddc58d5d7203e3f5b16bc54dd408e921d05bf"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-5/partial-source.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "29f4413245741adfc53c589f0df159eb4f6381c8d62139dd9472934d42ba63dd"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-6/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "3b015c52e3e04a06050e37198371b94e3b66c72907b52690f31bfe15fc7d4939"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-6/late-account-refusal.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "739acff885ff09cc903f2e0faa201d6191ecab534969afc5b5ef81f57835c6db"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-6/partial-recovered.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "6d26f8774efd0d474f76b8b694b5c0fb4439a528eedd75d81a4d1ddfbe90e272"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/actions-6/partial-source.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "1b82ea10b9be8dbe890544ee93d06851b024a8571c6510d550986a3e209f2659"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-1/failed.png",
+      "png": {
+        "width": 800,
+        "height": 600
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-2/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "a4fa3017861b0057065c271292b6b6a0534573600c362d1615c30d45e4c71975"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-3/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "938f189c6802c05f0f78ead7d45eb8d9b2912d625ff945fb19814f7b4c7c0778"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-4/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "eaa7066ac44085057969a5194b7a6fc5aac8fc21950a6b68429d8ee87bd7a6ab"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-5/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "12ed1fa02e4e47d02aff9a750c33f7eacfdb2ea2c92051d826343ac82e7fb09a"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-6/before-desktop-light.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "6d16bf46056005125cdc02d80fc3482b22d03569efc0925b1df30392e9704ea2"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-6/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "8685dac040cda27bd4ba8040baccf21391372101dec1e2f5ed944e0b1fdb240d"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-desktop-light.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "870f3f831a8ebedaff0c1edaafb25778b3b9d6bbb11e4240e6127536d4e458aa"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-filtered-rejected.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "682ca3e4209d7316915af3768aff8e4e9d522e0aefdd5c71c145539ccdf60be6"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-phone-dark-saved18.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "191b15b3a4821218134806efbb7211cd8aa6dc07d5e34b59433d6cd2d786c4c3"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-phone-drawer-closed.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "c0300ffd55be44104e1ee639e1ff3f39225fb99894a711ce1ac29d3886923f38"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-phone-filters.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "31df8e480aac1656852fc2a4ccc75546aaac60652b6fa1f245a5489e8b2d25ff"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-unavailable-arrival.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "06be09968302d5a70c9a4c1011db0a9c5c5e4e8fb395f63fdef8a9f23147e4ce"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/after-wide-dark-saved18.png",
+      "png": {
+        "width": 2200,
+        "height": 1100
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "c9883b233d8593158ea82a20e5009ce2a1a375c66b286559e1f2e5feab082a7d"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/before-desktop-light.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "7a2257934293793af0f12e2f5fa68c919437f4a5d4e0694ac22ef1e8ed772180"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/before-phone-dark-saved18.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "9af7bc49a524ee854f0079a2c08107b0c8b235d5ff1fec565ac579cef080d321"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/before-phone-filters.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "26779e70e20a64fb788923d613839e1007e4b0b89a7ea98e1dc7031591506625"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/attempt-7/before-wide-dark-saved18.png",
+      "png": {
+        "width": 2200,
+        "height": 1100
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "2a66ac112e32dc61701beae208384341f4636fae31ad3ff87537cb1e729d698e"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/cancelled-absence-readback.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "0621a8974111167486f557edc9408202cb40b4ac020e1e8b15089ba6333f5220"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/correction/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "e8966846d031b38b6e171b41272d01ad9d761f58abdcc97ae585496f5ef9ecd4"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/correction-edit/failed.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "b2cc0831134b89123781b38e51f0622a0354a777b0622377b87be1dfb1e4eb11"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/create-request-label-failure.png",
+      "png": {
+        "width": 800,
+        "height": 600
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "a5d8c9f985c793e9bc07ff0de39ecaea9dbfce51f15dca0a04da022ce2760c3d"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/create-request-merge-conflict.png",
+      "png": {
+        "width": 800,
+        "height": 600
+      },
+      "cssViewport": null,
+      "note": "No separate CSS measurement recorded for this screenshot; do not infer it from PNG pixels.",
+      "sha256": "200056b326805dab686f5bf342e8883660d7d2123d06dada8e9daae35671af02"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-desktop-light.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "note": "Measured final comparison.",
+      "sha256": "5b21b3fcc009a019cddafe760c1513b97e532ea1e7b1d86cc0ae5c26b73c1c3d"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-filtered-rejected.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "note": "Measured final comparison.",
+      "sha256": "66a258e4b146539c71553bdcce1f6b1ac5418b776bce9b2893feeaafba5e986c"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-phone-dark-saved18.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "note": "Measured final comparison.",
+      "sha256": "23790cac28f3cdea77ac4c4930bac81018112a3b328f7748a21db18c15a13cea"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-phone-drawer-closed.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "note": "Measured final comparison.",
+      "sha256": "dccba578901f7f8b2c36e320c1231723d3dfe08a65377c3730d18990be4cf63d"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-phone-filters.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "note": "Measured final comparison.",
+      "sha256": "c57aa02ee76a36dac8d0a938cf4a80f0b386c09438e6660096d08ba5c97421de"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-unavailable-arrival.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "note": "Measured final comparison.",
+      "sha256": "55d6f87d40b030b477a53a31f4256f95281f3efbfd92be4ca01b24071539f96b"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/after-wide-dark-saved18.png",
+      "png": {
+        "width": 2200,
+        "height": 1100
+      },
+      "cssViewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "note": "Measured final comparison.",
+      "sha256": "ae6f7f21593e3691d65dc3e336009f135ad742264f4ffa951da5e3fdd5e0c85c"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/before-desktop-light.png",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "note": "Measured final comparison.",
+      "sha256": "099f8998f6e2950508273e6b4de0353d7d06bfcde73630738e15674a56de3b13"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/before-phone-dark-saved18.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "note": "Measured final comparison.",
+      "sha256": "b823e0b18794a442bb454303995d06054feebc4864d995d551cb03cdb78a5333"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/before-phone-filters.png",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "note": "Measured final comparison.",
+      "sha256": "cb201b5cd1f286d81f4604c837690c444b2c830aa1ed61ab034ccf93a924df06"
+    },
+    {
+      "file": "docs/design/rollout-1692/1722/final-comparison/before-wide-dark-saved18.png",
+      "png": {
+        "width": 2200,
+        "height": 1100
+      },
+      "cssViewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "note": "Measured final comparison.",
+      "sha256": "ae4acf79fdef13011e65f96fc976074587729816c655b519bf872f69da85b8b4"
+    }
+  ],
+  "sourceMatches": {
+    "apps/webapp/src/app/[locale]/(app)/my-requests/my-requests-client.tsx": true,
+    "apps/webapp/src/app/[locale]/(app)/my-requests/page.tsx": true,
+    "apps/webapp/src/lib/navigation/route-metadata.ts": true
+  },
+  "sourceHead": "5815a21a731224ee1af45d6b9407da8aaf55e592",
+  "branch": "feature/1722-my-requests",
+  "latestLocalIntegration": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+  "latestIsAncestor": true,
+  "requiredBaseIsAncestor": true,
+  "H1IsAncestor": true
+}

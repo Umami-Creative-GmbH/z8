@@ -2,6 +2,8 @@
 
 import {
 	IconArrowForwardUp,
+	IconCheck,
+	IconCopy,
 	IconExternalLink,
 	IconLoader2,
 	IconRefresh,
@@ -10,6 +12,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { listApprovalEscalationCandidates } from "@/app/[locale]/(app)/settings/approval-escalation/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,10 +44,14 @@ import type { EscalationCandidateView } from "@/lib/approvals/escalation/transfe
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
 import {
+	attemptKindLabel,
+	attemptOutcomeLabel,
+	attentionApprovalTypeLabel,
 	attentionEventLabel,
 	attentionReasonLabel,
 	channelLabel,
 	type EscalationTranslate,
+	evidenceKeyLabel,
 	formatEscalationInstant,
 } from "./escalation-labels";
 
@@ -82,9 +89,7 @@ function AttentionFacts({
 		],
 		[
 			t("settings.approvalEscalation.attention.approvalType", "Approval"),
-			[item.approvalType, item.approvalRequestId ?? item.workflowId]
-				.filter(Boolean)
-				.join(" · ") || "—",
+			item.approvalType ? attentionApprovalTypeLabel(item.approvalType, t) : "—",
 		],
 		[
 			t("settings.approvalEscalation.attention.firstRaised", "First raised"),
@@ -130,6 +135,160 @@ function AttentionFacts({
 	);
 }
 
+function CopyTechnicalValueButton({
+	label,
+	value,
+	t,
+}: {
+	label: string;
+	value: string;
+	t: EscalationTranslate;
+}) {
+	const [copied, setCopied] = useState(false);
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(value);
+		} catch {
+			toast.error(
+				t(
+					"settings.approvalEscalation.attention.technical.copyFailed",
+					"The value could not be copied. Select it and copy it manually.",
+				),
+			);
+			return;
+		}
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	};
+
+	return (
+		<Button
+			type="button"
+			variant="ghost"
+			size="icon"
+			className="size-7 shrink-0"
+			onClick={handleCopy}
+			aria-label={
+				copied
+					? t(
+							"settings.approvalEscalation.attention.technical.copied",
+							"{label} copied",
+							{ label },
+						)
+					: t(
+							"settings.approvalEscalation.attention.technical.copy",
+							"Copy {label}",
+							{ label },
+						)
+			}
+		>
+			{copied ? (
+				<IconCheck className="size-4 text-success" aria-hidden="true" />
+			) : (
+				<IconCopy className="size-4" aria-hidden="true" />
+			)}
+		</Button>
+	);
+}
+
+/** Raw identifiers, kept for audit evidence but out of the reading path. */
+function AttentionTechnicalDetails({
+	item,
+	t,
+}: {
+	item: EscalationAttentionView;
+	t: EscalationTranslate;
+}) {
+	const rows: Array<[string, string]> = [
+		[
+			t(
+				"settings.approvalEscalation.attention.technical.attentionId",
+				"Attention item ID",
+			),
+			item.id,
+		],
+	];
+	if (item.approvalRequestId) {
+		rows.push([
+			t(
+				"settings.approvalEscalation.attention.technical.approvalRequestId",
+				"Approval request ID",
+			),
+			item.approvalRequestId,
+		]);
+	}
+	if (item.workflowId) {
+		rows.push([
+			t(
+				"settings.approvalEscalation.attention.technical.workflowId",
+				"Workflow ID",
+			),
+			item.workflowId,
+		]);
+	}
+	if (item.assignmentId) {
+		rows.push([
+			t(
+				"settings.approvalEscalation.attention.technical.assignmentId",
+				"Assignment ID",
+			),
+			item.assignmentId,
+		]);
+	}
+	if (item.approvalType) {
+		rows.push([
+			t(
+				"settings.approvalEscalation.attention.technical.approvalType",
+				"Approval type code",
+			),
+			item.approvalType,
+		]);
+	}
+	const references = [
+		...new Set(
+			item.attempts.flatMap((attempt) =>
+				attempt.reference ? [attempt.reference] : [],
+			),
+		),
+	];
+	for (const reference of references) {
+		rows.push([
+			t(
+				"settings.approvalEscalation.attention.technical.attemptReference",
+				"Attempt reference",
+			),
+			reference,
+		]);
+	}
+
+	return (
+		<details className="group/technical">
+			<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+				{t(
+					"settings.approvalEscalation.attention.technical.title",
+					"Technical details",
+				)}
+			</summary>
+			<dl className="mt-2 space-y-1">
+				{rows.map(([label, value]) => (
+					<div
+						key={`${label}-${value}`}
+						className="flex min-w-0 flex-wrap items-center gap-x-2"
+					>
+						<dt className="text-muted-foreground">{label}</dt>
+						<dd className="flex min-w-0 items-center gap-1">
+							<span className="min-w-0 break-all font-mono text-xs leading-5">
+								{value}
+							</span>
+							<CopyTechnicalValueButton label={label} value={value} t={t} />
+						</dd>
+					</div>
+				))}
+			</dl>
+		</details>
+	);
+}
+
 function AttentionDetails({
 	item,
 	t,
@@ -159,7 +318,9 @@ function AttentionDetails({
 						<dl className="space-y-1">
 							{evidence.map(([key, value]) => (
 								<div key={key} className="flex min-w-0 flex-wrap gap-x-2">
-									<dt className="text-muted-foreground">{key}</dt>
+									<dt className="text-muted-foreground">
+										{evidenceKeyLabel(key, t)}
+									</dt>
 									<dd className="min-w-0 break-all font-mono text-xs leading-5">
 										{formatEvidenceValue(value)}
 									</dd>
@@ -187,9 +348,9 @@ function AttentionDetails({
 									className="break-words"
 								>
 									{formatEscalationInstant(attempt.at, displayContext)} ·{" "}
-									{attempt.kind}
+									{attemptKindLabel(attempt.kind, t)}
 									{attempt.channel ? ` · ${channelLabel(attempt.channel)}` : ""}{" "}
-									· {attempt.outcome}
+									· {attemptOutcomeLabel(attempt.outcome, t)}
 								</li>
 							))}
 						</ul>
@@ -212,6 +373,7 @@ function AttentionDetails({
 						))}
 					</ol>
 				</section>
+				<AttentionTechnicalDetails item={item} t={t} />
 			</div>
 		</details>
 	);

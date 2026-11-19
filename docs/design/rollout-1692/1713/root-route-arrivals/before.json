@@ -1,0 +1,102 @@
+{
+  "phase": "before",
+  "sourceCommit": "d4f4859527122f39dfda456671d48de131bab51c",
+  "checkoutCommit": "7fed18b191760826b1076de827ff9de27f026ea9",
+  "sourceHash": "a2850dce59954d7b135bc86405276753767a4f954e37392517379530a5266b12",
+  "sourceStatus": "M apps/webapp/src/components/calendar/calendar-view.tsx",
+  "fixture": "Synthetic small-manager, unchanged roster/date zones and no work mutations",
+  "checks": [
+    {
+      "name": "real manager picker is available",
+      "passed": true
+    },
+    {
+      "name": "one Calendar heading",
+      "passed": true
+    },
+    {
+      "name": "picker route and rendered target agree",
+      "passed": true,
+      "details": {
+        "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+        "heading": "Fixture Person 5",
+        "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+        "scopeInstance": 2,
+        "timeOrigin": 1794729606593.5,
+        "dialogOpen": false,
+        "width": 1600,
+        "documentWidth": 1600,
+        "font": "16px",
+        "dark": false,
+        "h1": [
+          "Calendar"
+        ]
+      }
+    }
+  ],
+  "reads": [
+    {
+      "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+      "status": 200,
+      "rangeStart": "2026-11-09",
+      "rangeEnd": "2026-11-15"
+    },
+    {
+      "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+      "status": 200,
+      "rangeStart": "2026-11-09",
+      "rangeEnd": "2026-11-15"
+    }
+  ],
+  "errors": [],
+  "desktopInitial": {
+    "path": "/en/calendar/0a185406-f736-4006-a9fd-1a74e81b1667",
+    "heading": "Fixture Person 3",
+    "employeeId": "0a185406-f736-4006-a9fd-1a74e81b1667",
+    "scopeInstance": 1,
+    "timeOrigin": 1794729606593.5,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "desktopChosen": {
+    "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "heading": "Fixture Person 5",
+    "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "scopeInstance": 2,
+    "timeOrigin": 1794729606593.5,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  },
+  "panelBoundary": "Record/manual reset is covered by the permanent assembled regressions. Real range attempts could not obtain the grid target; no successful browser panel-reset claim.",
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 30000ms exceeded"
+  },
+  "failureObservation": {
+    "path": "/en/calendar/0a185406-f736-4006-a9fd-1a74e81b1667",
+    "heading": "Fixture Person 5",
+    "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+    "scopeInstance": 1,
+    "timeOrigin": 1794729606593.5,
+    "dialogOpen": false,
+    "width": 1600,
+    "documentWidth": 1600,
+    "font": "16px",
+    "dark": false,
+    "h1": [
+      "Calendar"
+    ]
+  }
+}

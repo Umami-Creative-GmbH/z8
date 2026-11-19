@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {readFile} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+const root=resolve(process.argv[2]),dir=resolve(process.argv[3]);
+const r=JSON.parse(await readFile(join(dir,'runtime-private.json'),'utf8')),f=JSON.parse(await readFile(join(dir,'fixture-private.json'),'utf8')),s=JSON.parse(await readFile(join(dir,'services.json'),'utf8'));
+assert.equal(f.kind,'disposable');assert.equal(r.env.POSTGRES_HOST,'127.0.0.1');assert.match(r.env.POSTGRES_DB,/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/);
+for(const c of s.containers)assert.equal(execFileSync('docker',['inspect','--format','{{ index .Config.Labels "z8.agent-owned" }}',c],{encoding:'utf8',windowsHide:true}).trim(),s.label);
+const env={...Object.fromEntries(Object.entries(process.env).filter(([k])=>/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME)$/i.test(k))),...r.env,BILLING_ENABLED:'false',TELEMETRY_ENABLED:'false',ENABLE_CRON_JOBS:'false',NEXT_TELEMETRY_DISABLED:'1'};
+const result=spawnSync(process.execPath,[join(root,'apps/webapp/node_modules/vitest/vitest.mjs'),'run','--root',join(root,'apps/webapp'),'--project','integration','src/app/[locale]/onboarding/notifications/actions.integration.test.ts','src/app/api/notifications/admission.integration.test.ts','--reporter=json','--outputFile='+join(root,'docs/design/rollout-1692/1828/postgres.json')],{cwd:root,env,stdio:'inherit',windowsHide:true});
+process.exitCode=result.status??1;

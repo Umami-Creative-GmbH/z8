@@ -1,0 +1,21 @@
+{
+  "actualCreatedAbsenceAbsentFromDatabase": true,
+  "actualFocusedReturnUnavailable": true,
+  "head": "5815a21a731224ee1af45d6b9407da8aaf55e592",
+  "sourceHashes": {
+    "apps/webapp/src/app/[locale]/(app)/my-requests/my-requests-client.tsx": "47797ca3557007840584250b26f91f58ab8f2e96aa29c229cc7d3f6009049684",
+    "apps/webapp/src/app/[locale]/(app)/my-requests/page.tsx": "ad2fba55dcb169c113e6a8b8740c86608ac5293aa26476dcdb4578457e70d303"
+  },
+  "png": {
+    "width": 1600,
+    "height": 1000
+  },
+  "dom": {
+    "cssViewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "font": "16px",
+    "fonts": "loaded"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "status": "bounded-runtime-qualified",
+  "verifiedCommit": null,
+  "frozenCommit": "016807ebc4d602aba4a0efc217e04cba0a38a8d9",
+  "appTree": "268193988ddf0ba1e566f2627f9d5422467e3a3a",
+  "namedRuntimeAssertions": {
+    "passed": 25,
+    "failed": 0,
+    "unpassed": [
+      "Native React TodayWorkspace/TodayBriefing",
+      "Main-region axe"
+    ]
+  },
+  "attempts": {
+    "browserPayloads": 31,
+    "harnessErrors": 9,
+    "unitCases": 0,
+    "postgresSuiteCases": 0,
+    "nonadditive": true
+  },
+  "accepted": [
+    "Actual admin and standard manager admission; actual nonmanager route restriction.",
+    "Canonical fixture scope/read-only counts support manager assignment; no outsider pending-row negative matrix was seeded.",
+    "Business day, UTC snapshot update, six summary values, urgent and supporting sections.",
+    "Settled desktop/collapsed/wide-dark/phone geometry and saved18px/theme/reload; mobile Escape/focus and actual rendered destinations.",
+    "Actual read outage/retention and Retry/header Refresh recovery; decision actions unavailable while read is stale.",
+    "One fresh disposable Approve and one Reject persisted; natural pending/duplicate controls and intended POST counts observed.",
+    "Final connected Today config/session-error/compilation-issue arrays empty; one visible main/h1, hidden retained prior main0x0 qualified."
+  ],
+  "preservationLimits": [
+    "Captured foreign tables and time_entry/work_period digests stayed unchanged.",
+    "Canonical time_record and unrelated same-org absence before-digests were NOT captured; no byte-preservation claim for those populations.",
+    "25named assertions are distinct from31payload attempts and9harness errors. No new unit/PG suite cases."
+  ],
+  "intake": {
+    "files": 63,
+    "bytes": 766455,
+    "jsonParsed": 15,
+    "pngFullyDecodedAndReviewed": 6,
+    "indexSha256": "244f2e8199ff343d737016b207d222a5833ac1f672ad69effd54097f85d961bc",
+    "handoffSha256": "af587cec5cc9ba83b39fe43f6e7dd9d3d9e587f6192f58866f16912110a64e2e",
+    "independentAuditSha256": "a55d17eb72e95d045cbbd0d7df69f0498355a7d901404fd411c2d540cd5698e1",
+    "qualification": "Hash/JSON/syntax/image intake did not recertify historical preservation/process inventories."
+  },
+  "retainedQualifications": [
+    "Native React TodayWorkspace/TodayBriefing introspection: CLI blocked by ExecutionPolicy; no workaround/upgrade.",
+    "Main-region axe audit and incomplete results: axe-core absent; no installation.",
+    "Live held ABA, late retirement/response-body settlement, role revocation and cross-org return races remain assembled-test coverage, not live passes.",
+    "No multi-organization membership in canonical actor fixture; no live cross-org switch or same-session cross-account authority matrix. Separate normal account contexts were used.",
+    "No outsider pending requester was created; admin wider population and manager assignment counts are canonical SQL evidence, not a full live negative-row matrix.",
+    "Canonical time_record and unrelated same-org absence before-digests were not captured; do not infer their byte preservation from captured table digests.",
+    "Only actual rendered supporting destination links were followed; empty Attendance/Absence/Coverage sections supplied no row destination links.",
+    "Visible developer overlays/Issue badge not separately classified; screenshots retain overlays and some transition indicators. Desktop/wide captures intentionally omit account footer by cropping upper viewport; no historical matched-pair claim.",
+    "Full build/static generation, Tolgee/provider catalogs, physical devices/true zoom, exhaustive global transitions and live revocation remain unpassed.",
+    "Known R148 saved-locale query loss is inherited/documented separately; not retested or changed here."
+  ],
+  "failedAttemptNotes": [
+    "Two node_repl preflight attempts failed before baseline (process unavailable, collect undeclared); module-not-found fixture invocation ran no fixture. Successful baseline preceded actual prepare.",
+    "Sandbox CIM supervisor attempt failed and sandbox Chromium timed out. Exact namespace process check found zero leftovers before ordinary elevated launches.",
+    "Native agent-browser skills get core exited 1 because script execution is disabled. No ExecutionPolicy/.cmd/launcher workaround.",
+    "Early navigation/title-only/pre-initialization and offline probes are excluded. URL/content/public init waits established controls.",
+    "One command payload SyntaxError executed no browser action. Second absence submission initially clicked before planner-enabled Submit; resumed only after ready, no duplicate request.",
+    "Opposing Reject was initially attempted before the current control re-enabled; timeout and persisted pending status retained. Later enabled-control keyboard attempt produced the only Reject POST.",
+    "Initial process creation comparison mixed Windows /Date(ms)/ with ISO submillisecond representation. Millisecond-normalized identity and parent/path/listener checks pass.",
+    "A final MCP call ran after browser closure and reported no connected session. Replaced by a fresh ordinary isolated normal UI login and connected final arrays before closure.",
+    "Output handling limitation: early broad public DOM probes printed synthetic account identifiers. They cannot be retracted from the tool transcript. SAFE excludes them and validates against exact private fixture credentials; no password, token, headers, response bodies, authstate or private failure-image inspection.",
+    "Optional file reads and Windows rg glob probes had missing-path/glob failures; no source/dependency mutation."
+  ],
+  "release": {
+    "ownership": false,
+    "reportedOwnedProcesses": 0,
+    "reportedOwnedListeners": 0,
+    "reportedOwnedContainers": 0,
+    "reportedOwnedProfiles": 0,
+    "leaseReleased": true,
+    "trackedBytes": 18501,
+    "indexConfigDependencyHashesPreservedAsReceipt": true,
+    "linksAsReceipt": 158
+  },
+  "privateSafeIndex": ".tmp/1746-current-runtime-20261117a/SAFE/index.json",
+  "sourceBoundary": "Runtime is pinned to016807ebc/app26819398. The separately developed shared locale-query fix has not had live acceptance; it does not rewrite this runtime result."
+}

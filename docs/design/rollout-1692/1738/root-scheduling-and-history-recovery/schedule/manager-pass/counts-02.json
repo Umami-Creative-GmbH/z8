@@ -1,0 +1,54 @@
+{
+  "fresh": {
+    "unitCases": 0,
+    "postgresTestCases": 0,
+    "canonicalFixturePrepares": 1,
+    "initialDomainSeedCalls": 1,
+    "initialSeededShifts": 12,
+    "scopedReadbacks": 4,
+    "transientChromiumBrowsers": 1,
+    "freshContexts": 7,
+    "normalWidgetFormLogins": 7,
+    "admittedRoles": 4,
+    "acceptedOperationalImages": 6,
+    "historicalMatchedPairs": 0,
+    "actualPublishedRows": 0,
+    "successfulPlanningOutcomes": {
+      "create": 1,
+      "edit": 1,
+      "delete": 1
+    },
+    "passiveNamedWriteRequests": {
+      "upsertShift": 2,
+      "deleteShift": 1
+    },
+    "unnamedActionRequests": 17
+  },
+  "inherited": {
+    "unitCases": 313,
+    "unitFiles": 48,
+    "postgresCases": 6,
+    "postgresFiles": 2,
+    "mixedSnapshotCases": 319,
+    "mixedSnapshotFiles": 50,
+    "types": "all3projects/typegen",
+    "doctor": "zero diagnostics on two correction paths",
+    "ordinaryFormat": "two qualifications retained",
+    "priorPublicationAndDisabledPointer": "unchanged production paths; not rerun"
+  },
+  "attempts": {
+    "managerPriority": 1,
+    "managerReadFlows": 2,
+    "managerCreate": 1,
+    "managerEdit": 2,
+    "managerFinish": 1,
+    "roleScripts": 4,
+    "roleLoginCalls": 6,
+    "nativeNamespaces": 4,
+    "adminReadFlows": 2,
+    "overlayExecution": 0,
+    "overlapNonadditive": true
+  },
+  "countsAreNotNewPermanentTests": true,
+  "accountingCorrection": "Supersedes counts-01 context/login totals: one manager login plus six role-script logins; seven isolated controller contexts, plus native extra tab in the browser default context. No test/result changed."
+}

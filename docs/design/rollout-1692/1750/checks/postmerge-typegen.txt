@@ -1,0 +1,3 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+Generating route types...
+✓ Types generated successfully

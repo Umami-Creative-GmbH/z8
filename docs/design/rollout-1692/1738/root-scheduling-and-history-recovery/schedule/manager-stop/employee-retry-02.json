@@ -1,0 +1,22 @@
+{
+  "normalDevelopment": true,
+  "transport": "exact compiled getShifts public read only",
+  "mutationsArmed": false,
+  "failed": {
+    "alert": "Your shifts could not be loaded. Please try again later.\n\nRetry",
+    "noFreeDays": true,
+    "retry": true
+  },
+  "pending": {
+    "noFreeDays": true,
+    "loadingText": "Toggle Sidebar\n\nScheduling\n\nMore actions\nPerformance small · Europe/Berlin\nMy Schedule\nYour published shifts, week by week\nToday\nNov 16 – Nov 22, 2026\n\nLoading schedule...\n\nMon, Nov 16\nTue, Nov 17\nToday\nWed, Nov 18\nThu, Nov 19\nFri, Nov 20\nSat, Nov 21\nSun, Nov 22",
+    "retryAbsent": true,
+    "alerts": []
+  },
+  "recovered": true,
+  "readAttempts": 5,
+  "automaticFailedAttempts": 4,
+  "explicitRetryHeldAttempts": 1,
+  "writeRequests": 0,
+  "verdict": "PASS"
+}

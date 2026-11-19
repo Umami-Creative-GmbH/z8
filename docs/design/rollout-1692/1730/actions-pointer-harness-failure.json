@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "name": "one semantic route heading",
+      "actual": 1
+    },
+    {
+      "name": "organization calendar explicitly shown",
+      "actual": true
+    },
+    {
+      "name": "first server page has ten request records",
+      "actual": 10
+    }
+  ],
+  "errors": [],
+  "failure": "Pointer-receiving fixture target did not become available."
+}

@@ -1,0 +1,17 @@
+﻿{
+    "browserStarted":  false,
+    "lockAndConfigUnchanged":  true,
+    "runtimeStarted":  false,
+    "temporarySourceProbeRemoved":  true,
+    "releaseReady":  true,
+    "nativeSessionStarted":  false,
+    "physicalDirectoriesUnchanged":  3,
+    "worktreeClean":  true,
+    "ownedExecutionSessionsCompleted":  [
+                                            91709,
+                                            20577,
+                                            36681
+                                        ],
+    "localPackageLinksUnchanged":  158,
+    "fixtureContainersStarted":  0
+}

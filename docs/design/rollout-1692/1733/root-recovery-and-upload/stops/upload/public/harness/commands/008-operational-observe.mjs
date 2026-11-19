@@ -1,0 +1,1 @@
+return{dom:await dom(),operationalId:typeof operationalId==='undefined'?null:operationalId,hasRead:typeof opRead==='function',fileFacts:(await db.query('select file_name,included,assigned_employee_id,document_id from payslip_batch_file where organization_id=$1 and batch_id=$2 order by file_name',[org,operationalId])).rows};

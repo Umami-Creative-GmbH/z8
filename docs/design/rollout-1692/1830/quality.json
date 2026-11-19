@@ -1,0 +1,68 @@
+{
+  "initialAncestor": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "latestLocalAIAncestor": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+    "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx": "6574ed644a92bce32d118bf7747ba30764a1249c30ad897f7bd2e5d7ddecd14d",
+    "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts": "e483dd66b4402046b0e777da105b9512403569ae4db2ce7eb3edbca61f505665",
+    "apps/webapp/src/lib/validations/onboarding.ts": "e02f2606635fd058415c5cfe108d044e16342956bcf40ecf2f11e8f7d5f932e3"
+  },
+  "unit": {
+    "command": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 'src/app/[locale]/onboarding' src/components/onboarding/progress-indicator.test.tsx src/components/ui/tanstack-form.test.tsx src/lib/effect/services/onboarding.service.test.ts src/lib/user-preferences src/lib/datetime/birthday.test.ts src/lib/datetime/calendar-date.test.ts src/lib/validations/onboarding.test.ts src/tolgee/extracted-key-defaults.test.ts src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx src/lib/navigation/route-metadata.test.ts",
+    "suites": 25,
+    "tests": 218,
+    "log": "unit.log",
+    "exitCode": 0
+  },
+  "postgres": {
+    "command": "pnpm node docs/design/rollout-1692/1830/postgres.mjs <new-private-fixture>",
+    "suites": 3,
+    "tests": 84,
+    "log": "postgres.log",
+    "exitCode": 0,
+    "runAfterAncestor": "11671b30d78f9bc12be6f991ed4638218cc75777",
+    "qualification": "Run predates provisional R044; profile action/service, authorization, joining and onboarding sources are unchanged through final base."
+  },
+  "types": {
+    "command": "pnpm --filter webapp typecheck",
+    "profiles": [
+      "next typegen",
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "log": "types.log",
+    "exitCode": 0
+  },
+  "biome": {
+    "command": "pnpm --filter webapp exec biome check --config-path biome.jsonc --line-ending=crlf 'src/app/[locale]/onboarding/profile/page-client.tsx' 'src/app/[locale]/onboarding/profile/page.test.tsx' 'src/app/[locale]/onboarding/profile/actions.test.ts' src/lib/validations/onboarding.ts",
+    "files": 4,
+    "log": "biome.log",
+    "exitCode": 0
+  },
+  "doctor": {
+    "command": "pnpm exec react-doctor apps/webapp --scope changed --base 111dc9e50908ec7f8c478b97c5a96f809b696c0a --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+    "files": 4,
+    "issues": 0,
+    "log": "doctor.log",
+    "exitCode": 0
+  },
+  "runtime": {
+    "sourceHead": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+    "profileHash": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+    "configuration": "Unchanged default next.config with owned dependency trees and caches; no resolver overlay",
+    "actions": 30,
+    "realScopeCases": 4,
+    "mainCapturePairs": 5,
+    "pngs": 18,
+    "limits": "Real runtime source is pinned separately from final R044-integrated tree. All captured onboarding/profile sources and direct shared shell/field/authority dependencies are unchanged; no fresh R044 runtime or native React pass is claimed."
+  },
+  "cleanup": {
+    "ownedBrowsersClosed": true,
+    "verifiedNextTreeStopped": true,
+    "ownedContainersRemoved": 3,
+    "ownedPort": 54545,
+    "portClosed": true
+  },
+  "lockfileSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+}

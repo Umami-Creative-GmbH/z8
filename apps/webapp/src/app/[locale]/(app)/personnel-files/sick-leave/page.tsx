@@ -1,9 +1,13 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { SickLeaveOverview } from "@/components/personnel-file/sick-leave-overview";
+import {
+	SickLeaveLoadingHeading,
+	SickLeaveOverview,
+} from "@/components/personnel-file/sick-leave-overview";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -35,7 +39,11 @@ async function SickLeaveContent({ searchParams }: SickLeavePageProps) {
 		loadCurrentPersonnelFileAccess(),
 		searchParams,
 	]);
-	if (current.status !== "resolved" || !managesCategory(current.access, "sick_note")) notFound();
+	if (
+		current.status !== "resolved" ||
+		!managesCategory(current.access, "sick_note")
+	)
+		notFound();
 	const { access } = current;
 	const { today } = await loadOrganizationDay(db, {
 		organizationId: access.organizationId,
@@ -50,25 +58,25 @@ async function SickLeaveContent({ searchParams }: SickLeavePageProps) {
 	if (result.kind !== "ok") notFound();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<header className="space-y-2">
-				<Button asChild variant="ghost" size="sm" className="-ml-2">
-					<Link href="/personnel-files">
-						<IconArrowLeft aria-hidden="true" className="size-4" />
-						{t("settings.personnelFiles.area.title", "Personnel Files")}
-					</Link>
-				</Button>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.personnelFiles.sickLeave.title", "Sick leave")}
-				</h1>
-				<p className="max-w-prose text-muted-foreground">
-					{t(
-						"settings.personnelFiles.sickLeave.description",
-						"Sick-leave absences of the employees whose sick notes you manage, with the sick notes attached to them. Nothing here reminds or asks employees.",
-					)}
-				</p>
-			</header>
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("settings.personnelFiles.sickLeave.title", "Sick leave")}
+				scope={
+					<Button asChild variant="ghost" size="sm" className="-ml-2">
+						<Link href="/personnel-files">
+							<IconArrowLeft aria-hidden="true" className="size-4" />
+							{t("settings.personnelFiles.area.title", "Personnel Files")}
+						</Link>
+					</Button>
+				}
+				description={t(
+					"settings.personnelFiles.sickLeave.description",
+					"Sick-leave absences of the employees whose sick notes you manage, with the sick notes attached to them. Nothing here reminds or asks employees.",
+				)}
+			/>
 			<SickLeaveOverview
+				userId={access.userId}
+				organizationId={access.organizationId}
 				filters={{ ...filters, page: result.page }}
 				defaultRange={{ from: defaults.from, to: defaults.to }}
 				rows={result.rows}
@@ -89,10 +97,10 @@ function SickLeaveLoading() {
 				labelKey: "settings.personnelFiles.sickLeave.loading",
 				labelDefault: "Loading sick leave",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
-			<Skeleton aria-hidden="true" className="h-8 w-48" />
+			<SickLeaveLoadingHeading />
 			<Skeleton aria-hidden="true" className="h-24 w-full" />
 			<Skeleton aria-hidden="true" className="h-64 w-full" />
 		</LoadingRegion>

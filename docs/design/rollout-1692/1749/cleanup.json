@@ -1,0 +1,21 @@
+{
+  "ownedNextIdentityVerified": true,
+  "ownedNextStopped": true,
+  "recordedProcessesAbsent": true,
+  "ownedPortClosed": true,
+  "nativeBrowserCloseExit": 0,
+  "isolatedPuppeteerContextsClosedInFinally": true,
+  "openedPreviewTabClosed": true,
+  "fixtureCleanupExit": 0,
+  "exactManifestContainerCount": 3,
+  "exactManifestContainersAbsent": 3,
+  "labelVerification": "Canonical cleanup verifies z8.agent-owned against the own manifest before removal",
+  "privateInputsRetained": true,
+  "physicalDependenciesRetained": true,
+  "activeCacheMoved": false,
+  "commands": [
+    "& ./.tmp/1749/stop-next.ps1 -FixturePointer .tmp/1749/fixture-pointer.txt -RecordPath .tmp/1749/stop-final.json",
+    "pnpm --config.verify-deps-before-run=false exec agent-browser --session r167-1749-c653899c close",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup .tmp/1749/fixture"
+  ]
+}

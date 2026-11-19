@@ -1,0 +1,164 @@
+{
+  "stage": "after",
+  "scope": "small-admin / small synthetic organization; unchanged fixture for before/after",
+  "checks": [
+    {
+      "name": "desktop",
+      "width": 1600,
+      "documentWidth": 1600,
+      "headings": [
+        "Calendar"
+      ],
+      "visibleControls": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 0",
+        "Toggle Sidebar",
+        "Current timezone Europe/Berlin, 05:53, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Previous",
+        "Next",
+        "Today",
+        "Refresh",
+        "Day",
+        "Week",
+        "Month",
+        "Year",
+        "",
+        "",
+        "",
+        "",
+        "Open Tanstack query devtools"
+      ],
+      "localScrollers": []
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "documentWidth": 390,
+      "headings": [
+        "Calendar"
+      ],
+      "visibleControls": [
+        "Toggle Sidebar",
+        "Clock In",
+        "Notifications",
+        "More actions",
+        "Previous",
+        "Next",
+        "Today",
+        "Refresh",
+        "Day",
+        "Week",
+        "Month",
+        "Year",
+        "Filters & Legend",
+        "Open Tanstack query devtools"
+      ],
+      "localScrollers": []
+    },
+    {
+      "name": "month-phone",
+      "width": 390,
+      "documentWidth": 390,
+      "headings": [
+        "Calendar"
+      ],
+      "visibleControls": [
+        "Toggle Sidebar",
+        "Clock In",
+        "Notifications",
+        "More actions",
+        "Previous month",
+        "Next month",
+        "Today",
+        "Refresh",
+        "Day",
+        "Week",
+        "Month",
+        "Year",
+        "Monday, December 30, 2024",
+        "Tuesday, December 31, 2024",
+        "Wednesday, January 1, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Thursday, January 2, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Friday, January 3, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Saturday, January 4, 2025",
+        "Sunday, January 5, 2025",
+        "Monday, January 6, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Tuesday, January 7, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 2 events: Person 3 - Fixture home office, Person 3 - 8h",
+        "Wednesday, January 8, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Thursday, January 9, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Friday, January 10, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Saturday, January 11, 2025",
+        "Sunday, January 12, 2025",
+        "Monday, January 13, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Tuesday, January 14, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 2 events: Person 3 - Fixture home office, Person 3 - 8h",
+        "Wednesday, January 15, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Thursday, January 16, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Friday, January 17, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Saturday, January 18, 2025",
+        "Sunday, January 19, 2025",
+        "Monday, January 20, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Tuesday, January 21, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 2 events: Person 3 - Fixture home office, Person 3 - 8h",
+        "Wednesday, January 22, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Thursday, January 23, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Friday, January 24, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Saturday, January 25, 2025",
+        "Sunday, January 26, 2025",
+        "Monday, January 27, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Tuesday, January 28, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 2 events: Person 3 - Fixture home office, Person 3 - 8h",
+        "Wednesday, January 29, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Thursday, January 30, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Friday, January 31, 2025: 8:00 recorded, 8:00 required, +0:00 requirement met. 1 event: Person 3 - 8h",
+        "Saturday, February 1, 2025",
+        "Sunday, February 2, 2025",
+        "Filters & Legend",
+        "Open Tanstack query devtools"
+      ],
+      "localScrollers": [
+        {
+          "width": 356,
+          "scrollWidth": 1024
+        }
+      ]
+    },
+    {
+      "name": "seeded-records",
+      "events": 6,
+      "width": 1600,
+      "documentWidth": 1600,
+      "headings": [
+        "Calendar"
+      ],
+      "visibleControls": [
+        "Switch Organization: Performance small",
+        "Search",
+        "Account: Person 0",
+        "Toggle Sidebar",
+        "Current timezone Europe/Berlin, 05:53, UTC+01:00",
+        "Clock In",
+        "Refresh data",
+        "Toggle theme",
+        "Notifications",
+        "Previous",
+        "Next",
+        "Today",
+        "Refresh",
+        "Day",
+        "Week",
+        "Month",
+        "Year",
+        "",
+        "",
+        "",
+        "",
+        "Open Tanstack query devtools"
+      ],
+      "localScrollers": []
+    }
+  ],
+  "errors": []
+}

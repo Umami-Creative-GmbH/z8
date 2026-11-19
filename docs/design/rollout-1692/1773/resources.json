@@ -1,0 +1,41 @@
+{
+  "containers": [
+    {
+      "name": "z8_perf_bae035d3ed84_postgres",
+      "label": "z8-performance-fixture-1450",
+      "remaining": false
+    },
+    {
+      "name": "z8_perf_bae035d3ed84_redis",
+      "label": "z8-performance-fixture-1450",
+      "remaining": false
+    },
+    {
+      "name": "z8_perf_bae035d3ed84_storage",
+      "label": "z8-performance-fixture-1450",
+      "remaining": false
+    }
+  ],
+  "remainingContainers": 0,
+  "browserCloseResolvedAttempts": 3,
+  "publicDiagnosticBrowserCloseResolved": true,
+  "previewTabClosed": true,
+  "nextStopIdentityVerified": true,
+  "listener": {
+    "ownedNextPort": 57649,
+    "listeners": 0
+  },
+  "readiness": null,
+  "ownedHistoricalNext": {
+    "phase": "before",
+    "source": "a5259338e983fb2d165c0f463763b1740b585fad",
+    "pid": 88228,
+    "parent": 68380,
+    "exe": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-45dd8020-0887033aaaac2586\\apps\\webapp",
+    "origin": "http://localhost:57649",
+    "startedAt": "2026-11-17T12:36:33.125Z"
+  },
+  "stoppedDirectChildPid": 39140,
+  "processCreationObserved": "2026-11-17 13:36:33 Europe/Berlin"
+}

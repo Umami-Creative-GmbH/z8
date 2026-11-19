@@ -1,0 +1,635 @@
+src\components\travel-expenses\expense-history-withdrawal.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·cleanup,·fireEvent,·render,·screen·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ComponentProps,·ReactNode·}·from·"react";␍
+      5     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{·OrganizationContextProvider·}·from·"@/components/providers/organization-context-provider";␍
+      7     │ - import·{␍
+      8     │ - → useViewRefreshAction,␍
+      9     │ - → ViewRefreshProvider,␍
+     10     │ - }·from·"@/components/providers/view-refresh-provider";␍
+     11     │ - import·type·{·ReportHistoryRow·}·from·"@/lib/travel-expenses/expense-history";␍
+     12     │ - import·{·TravelExpenseManagement·}·from·"./travel-expense-management";␍
+     13     │ - ␍
+     14     │ - const·edge·=·vi.hoisted(()·=>·({␍
+     15     │ - → history:·vi.fn(),␍
+     16     │ - → receipt:·vi.fn(),␍
+     17     │ - → mileage:·vi.fn(),␍
+     18     │ - → trip:·vi.fn(),␍
+     19     │ - → push:·vi.fn(),␍
+     20     │ - → refresh:·vi.fn(),␍
+     21     │ - → replace:·vi.fn(),␍
+     22     │ - → session:·{·pending:·false,·user:·"fixture-user",·org:·"fixture-org"·},␍
+     23     │ - }));␍
+     24     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/history-actions",·()·=>·({␍
+     25     │ - → getMyTravelExpenseHistory:·edge.history,␍
+     26     │ - }));␍
+     27     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions",·()·=>·({␍
+     28     │ - → createStandaloneReceiptReportAction:·edge.receipt,␍
+     29     │ - → createTripReportAction:·edge.trip,␍
+     30     │ - → deleteDraftTravelExpenseReportAction:·vi.fn(),␍
+     31     │ - }));␍
+     32     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions",·()·=>·({␍
+     33     │ - → createStandaloneMileageReportAction:·edge.mileage,␍
+     34     │ - }));␍
+     35     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions",·()·=>·({␍
+     36     │ - → getLegacyTravelExpenseConversion:·vi.fn(),␍
+     37     │ - → convertLegacyTravelExpenseDraftAction:·vi.fn(),␍
+     38     │ - }));␍
+     39     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     40     │ - → useSession:·()·=>·({␍
+     41     │ - → → isPending:·edge.session.pending,␍
+     42     │ - → → data:·{·user:·{·id:·edge.session.user·},·session:·{·activeOrganizationId:·edge.session.org·}·},␍
+     43     │ - → }),␍
+     44     │ - → authClient:·{·getSession:·vi.fn()·},␍
+     45     │ - }));␍
+     46     │ - vi.mock("@/navigation",·()·=>·({␍
+     47     │ - → Link:·({·children,·...props·}:·ComponentProps<"a">)·=>·<a·{...props}>{children}</a>,␍
+     48     │ - → useRouter:·()·=>·({·push:·edge.push,·refresh:·edge.refresh,·replace:·edge.replace·}),␍
+     49     │ - }));␍
+     50     │ - vi.mock("next/navigation",·()·=>·({·useRouter:·()·=>·({·refresh:·edge.refresh·})·}));␍
+     51     │ - vi.mock("@tolgee/react",·()·=>·({·useTranslate:·()·=>·({·t:·(_k:·string,·f:·string)·=>·f·})·}));␍
+     52     │ - vi.mock("next-intl",·()·=>·({·useLocale:·()·=>·"en-US",·useTranslations:·()·=>·(k:·string)·=>·k·}));␍
+     53     │ - vi.mock("sonner",·()·=>·({·toast:·{·success:·vi.fn(),·error:·vi.fn()·}·}));␍
+     54     │ - const·initial·=·{␍
+     55     │ - → userId:·"fixture-user",␍
+     56     │ - → organizationId:·"fixture-org",␍
+     57     │ - → employee:·{␍
+     58     │ - → → employeeId:·"fixture-employee",␍
+     59     │ - → → organizationId:·"fixture-org",␍
+     60     │ - → → role:·"employee"·as·const,␍
+     61     │ - → },␍
+     62     │ - → organizationSettings:·null,␍
+     63     │ - → updatedAt:·1,␍
+     64     │ - };␍
+     65     │ - const·row:·ReportHistoryRow·=·{␍
+     66     │ - → source:·"report",␍
+     67     │ - → id:·"fixture-report",␍
+     68     │ - → href:·"/travel-expenses/reports/fixture-report",␍
+     69     │ - → stage:·"needs_action",␍
+     70     │ - → activityAt:·"2026-10-05T10:00:00.000Z",␍
+     71     │ - → balance:·null,␍
+     72     │ - → reimbursement:·null,␍
+     73     │ - → dates:·{·start:·"2026-09-14",·end:·"2026-09-14"·},␍
+     74     │ - → kind:·"standalone",␍
+     75     │ - → status:·"draft",␍
+     76     │ - → itemType:·"receipt",␍
+     77     │ - → title:·"Public·fixture·receipt",␍
+     78     │ - → itemCount:·1,␍
+     79     │ - → receiptCount:·1,␍
+     80     │ - → totals:·{·currency:·"EUR",·reimbursable:·"129.90",·companyPaid:·"0.00",·excludedItemCount:·0·},␍
+     81     │ - → adjustmentOf:·null,␍
+     82     │ - → continuedFromClaimId:·null,␍
+     83     │ - → deletable:·false,␍
+     84     │ - };␍
+     85     │ - const·success·=·()·=>·({·success:·true,·data:·[row]·});␍
+     86     │ - const·clients:·QueryClient[]·=·[];␍
+     87     │ - function·Refresh()·{␍
+     88     │ - → const·{·refresh·}·=·useViewRefreshAction();␍
+     89     │ - → return·(␍
+     90     │ - → → <button·type="button"·onClick={refresh}>␍
+     91     │ - → → → Review·header·refresh␍
+     92     │ - → → </button>␍
+     93     │ - → );␍
+     94     │ - }␍
+     95     │ - function·mount(child?:·ReactNode)·{␍
+     96     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false,·gcTime:·0·}·}·});␍
+     97     │ - → clients.push(client);␍
+     98     │ - → const·view·=·render(␍
+     99     │ - → → <QueryClientProvider·client={client}>␍
+    100     │ - → → → <OrganizationContextProvider·initialContext={initial}>␍
+    101     │ - → → → → <ViewRefreshProvider>␍
+    102     │ - → → → → → <Refresh·/>␍
+    103     │ - → → → → → {child·??·(␍
+    104     │ - → → → → → → <TravelExpenseManagement␍
+    105     │ - → → → → → → → userId="fixture-user"␍
+    106     │ - → → → → → → → organizationId="fixture-org"␍
+    107     │ - → → → → → → → employeeId="fixture-employee"␍
+    108     │ - → → → → → → />␍
+    109     │ - → → → → → )}␍
+    110     │ - → → → → </ViewRefreshProvider>␍
+    111     │ - → → → </OrganizationContextProvider>␍
+    112     │ - → → </QueryClientProvider>,␍
+    113     │ - → );␍
+    114     │ - → return·{·client,·view·};␍
+    115     │ - }␍
+    116     │ - beforeEach(()·=>·{␍
+    117     │ - → vi.clearAllMocks();␍
+    118     │ - → edge.session.pending·=·false;␍
+    119     │ - → edge.history.mockReset();␍
+    120     │ - → edge.history.mockResolvedValue(success());␍
+    121     │ - → vi.stubGlobal(␍
+    122     │ - → → "fetch",␍
+    123     │ - → → vi.fn(async·(url)·=>·{␍
+    124     │ - → → → expect(String(url)).toBe("/api/auth/context");␍
+    125     │ - → → → return·new·Response(␍
+    126     │ - → → → → JSON.stringify({␍
+    127     │ - → → → → → user:·{·id:·"fixture-user"·},␍
+    128     │ - → → → → → session:·{·activeOrganizationId:·"fixture-org"·},␍
+    129     │ - → → → → → employee:·initial.employee,␍
+    130     │ - → → → → → organizationSettings:·null,␍
+    131     │ - → → → → }),␍
+    132     │ - → → → → {·status:·200·},␍
+    133     │ - → → → );␍
+    134     │ - → → }),␍
+    135     │ - → );␍
+    136     │ - });␍
+    137     │ - afterEach(()·=>·{␍
+    138     │ - → cleanup();␍
+    139     │ - → for·(const·c·of·clients.splice(0))·c.clear();␍
+    140     │ - → vi.unstubAllGlobals();␍
+    141     │ - });␍
+    142     │ - it.each([␍
+    143     │ - → ["New·receipt",·"receipt"],␍
+    144     │ - → ["New·mileage",·"mileage"],␍
+    145     │ - → ["New·trip",·"trip"],␍
+    146     │ - ]·as·const)(␍
+    147     │ - → "healthy·actual-provider·personal·history·and·distinct·%s·creation",␍
+    148     │ - → async·(label,·action)·=>·{␍
+    149     │ - → → edge[action].mockResolvedValueOnce({·success:·true,·data:·{·reportId:·`fixture-${action}`·}·});␍
+    150     │ - → → mount();␍
+  399 more lines truncated
+  
+
+src\components\travel-expenses\expense-history.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconHistory,·IconLoader2,·IconReceipt·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useQuery·}·from·"@tanstack/react-query";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·useLocale·}·from·"next-intl";␍
+      7     │ - import·{·useId·}·from·"react";␍
+      8     │ - import·{·getMyTravelExpenseHistory·}·from·"@/app/[locale]/(app)/travel-expenses/history-actions";␍
+      9     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     10     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     11     │ - import·{·Card,·CardAction,·CardContent,·CardDescription,·CardHeader·}·from·"@/components/ui/card";␍
+     12     │ - import·{␍
+     13     │ - → Empty,␍
+     14     │ - → EmptyContent,␍
+     15     │ - → EmptyDescription,␍
+     16     │ - → EmptyHeader,␍
+     17     │ - → EmptyMedia,␍
+     18     │ - → EmptyTitle,␍
+     19     │ - }·from·"@/components/ui/empty";␍
+     20     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     21     │ - import·{·ToggleGroup,·ToggleGroupItem·}·from·"@/components/ui/toggle-group";␍
+     22     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     23     │ - import·{␍
+     24     │ - → countExpenseHistory,␍
+     25     │ - → EXPENSE_HISTORY_FILTERS,␍
+     26     │ - → type·ExpenseHistoryFilter,␍
+     27     │ - → type·ExpenseHistoryRow,␍
+     28     │ - → filterExpenseHistory,␍
+     29     │ - → isExpenseHistoryFilter,␍
+     30     │ - → type·LegacyClaimHistoryRow,␍
+     31     │ - → type·ReportHistoryRow,␍
+     32     │ - }·from·"@/lib/travel-expenses/expense-history";␍
+     33     │ - import·{·Link·}·from·"@/navigation";␍
+     34     │ - import·{·ITEM_TYPE_ICONS,·TRIP_ICON·}·from·"./expense-icons";␍
+     35     │ - import·{·BalanceText,·ReimbursedBadge·}·from·"./finance/settlement-status";␍
+     36     │ - import·{·ContinueLegacyDraftButton·}·from·"./legacy-draft-conversion";␍
+     37     │ - import·{·DeleteDraftReportButton·}·from·"./report/delete-draft-report";␍
+     38     │ - import·{·formatMoney,·formatPlainDate,·formatPlainDateRange·}·from·"./report/format";␍
+     39     │ - import·{·ReportStatusBadge·}·from·"./report/report-status";␍
+     40     │ - import·{·reportName·}·from·"./report-name";␍
+     41     │ - import·{·TravelExpenseLoadError·}·from·"./travel-expense-load-error";␍
+     42     │ - ␍
+     43     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];␍
+     44     │ - type·HistoryReadResult·=·{·kind:·"available";·rows:·ExpenseHistoryRow[]·}·|·{·kind:·"withdrawn"·};␍
+     45     │ - ␍
+     46     │ - const·secondaryLinkClass·=␍
+     47     │ - → "relative·z-10·rounded-sm·text-primary·underline·underline-offset-4·hover:text-primary/80·focus-visible:outline-2";␍
+     48     │ - ␍
+     49     │ - function·datesText(locale:·string,·dates:·{·start:·string·|·null;·end:·string·|·null·})·{␍
+     50     │ - → if·(dates.start·&&·dates.start·===·dates.end)·return·formatPlainDate(locale,·dates.start);␍
+     51     │ - → return·formatPlainDateRange(locale,·dates.start,·dates.end);␍
+     52     │ - }␍
+     53     │ - ␍
+     54     │ - function·filterLabel(t:·Translate,·filter:·ExpenseHistoryFilter):·string·{␍
+     55     │ - → switch·(filter)·{␍
+     56     │ - → → case·"all":␍
+     57     │ - → → → return·t("travelExpenses.history.filter.all",·"All");␍
+     58     │ - → → case·"needs_action":␍
+     59     │ - → → → return·t("travelExpenses.history.filter.needsAction",·"To·finish");␍
+     60     │ - → → case·"in_review":␍
+     61     │ - → → → return·t("travelExpenses.history.filter.inReview",·"In·review");␍
+     62     │ - → → case·"approved":␍
+     63     │ - → → → return·t("travelExpenses.history.filter.approved",·"Approved");␍
+     64     │ - → → case·"awaiting_reimbursement":␍
+     65     │ - → → → return·t("travelExpenses.history.filter.awaitingReimbursement",·"Awaiting·reimbursement");␍
+     66     │ - → → case·"rejected":␍
+     67     │ - → → → return·t("travelExpenses.history.filter.rejected",·"Rejected");␍
+     68     │ - → }␍
+     69     │ - }␍
+     70     │ - ␍
+     71     │ - function·claimTitle(t:·Translate,·row:·LegacyClaimHistoryRow):·string·{␍
+     72     │ - → switch·(row.claimType)·{␍
+     73     │ - → → case·"receipt":␍
+     74     │ - → → → return·t("travelExpenses.history.legacy.receipt",·"Receipt·claim");␍
+     75     │ - → → case·"mileage":␍
+     76     │ - → → → return·t("travelExpenses.history.legacy.mileage",·"Mileage·claim");␍
+     77     │ - → → case·"per_diem":␍
+     78     │ - → → → return·t("travelExpenses.history.legacy.perDiem",·"Per·diem·claim");␍
+     79     │ - → }␍
+     80     │ - }␍
+     81     │ - ␍
+     82     │ - function·RowIcon({·row·}:·{·row:·ExpenseHistoryRow·})·{␍
+     83     │ - → const·Icon·=␍
+     84     │ - → → row.source·===·"legacy_claim"␍
+     85     │ - → → → ?·IconHistory␍
+     86     │ - → → → :·row.kind·===·"trip"␍
+     87     │ - → → → → ?·TRIP_ICON␍
+     88     │ - → → → → :·ITEM_TYPE_ICONS[row.itemType·??·"receipt"];␍
+     89     │ - → return·(␍
+     90     │ - → → <span·className="flex·size-8·shrink-0·items-center·justify-center·rounded-md·bg-muted·text-muted-foreground">␍
+     91     │ - → → → <Icon·aria-hidden="true"·className="size-4"·/>␍
+     92     │ - → → </span>␍
+     93     │ - → );␍
+     94     │ - }␍
+     95     │ - ␍
+     96     │ - function·Balance({·row·}:·{·row:·ExpenseHistoryRow·})·{␍
+     97     │ - → //·A·reimbursed·expense·says·so·in·its·badge.␍
+     98     │ - → if·(!row.balance·||·row.reimbursement·===·"reimbursed")·return·null;␍
+     99     │ - → return·(␍
+    100     │ - → → <>␍
+    101     │ - → → → {row.balance.currencies.map((line)·=>·(␍
+    102     │ - → → → → <span·key={line.currency}·className="block·tabular-nums">␍
+    103     │ - → → → → → <BalanceText·line={line}·/>␍
+    104     │ - → → → → </span>␍
+    105     │ - → → → ))}␍
+    106     │ - → → </>␍
+    107     │ - → );␍
+    108     │ - }␍
+    109     │ - ␍
+    110     │ - function·ReportRowContent({·row·}:·{·row:·ReportHistoryRow·})·{␍
+    111     │ - → const·{·t·}·=·useTranslate();␍
+    112     │ - → const·locale·=·useLocale();␍
+    113     │ - → const·dates·=·datesText(locale,·row.dates);␍
+    114     │ - → const·editable·=·row.status·===·"draft"·||·row.status·===·"returned";␍
+    115     │ - → return·(␍
+    116     │ - → → <>␍
+    117     │ - → → → <div·className="min-w-0·flex-1·space-y-1">␍
+    118     │ - → → → → <p·className="flex·flex-wrap·items-center·gap-2">␍
+    119     │ - → → → → → <Link␍
+    120     │ - → → → → → → href={row.href}␍
+    121     │ - → → → → → → className="break-words·font-medium·after:absolute·after:inset-0·hover:underline·focus-visible:outline-2"␍
+    122     │ - → → → → → >␍
+    123     │ - → → → → → → {reportName(t,·row)}␍
+    124     │ - → → → → → </Link>␍
+    125     │ - → → → → → {row.adjustmentOf·&&·(␍
+    126     │ - → → → → → → <Badge·variant="outline">{t("travelExpenses.history.adjustment",·"Adjustment")}</Badge>␍
+    127     │ - → → → → → )}␍
+    128     │ - → → → → </p>␍
+    129     │ - → → → → <p·className="flex·flex-wrap·items-center·gap-x-3·text-sm·text-muted-foreground">␍
+    130     │ - → → → → → <span>␍
+    131     │ - → → → → → → {dates·??␍
+    132     │ - → → → → → → → (row.kind·===·"trip"␍
+    133     │ - → → → → → → → → ?·t("travelExpenses.report.drafts.noTravelDates",·"No·travel·dates·yet")␍
+    134     │ - → → → → → → → → :·t("travelExpenses.report.drafts.noDate",·"No·date·yet"))}␍
+    135     │ - → → → → → </span>␍
+    136     │ - → → → → → {row.kind·===·"trip"·?·(␍
+    137     │ - → → → → → → <span>␍
+    138     │ - → → → → → → → {t(␍
+    139     │ - → → → → → → → → "travelExpenses.report.drafts.expenses",␍
+    140     │ - → → → → → → → → "{count,·plural,·one·{#·expense}·other·{#·expenses}}",␍
+    141     │ - → → → → → → → → {·count:·row.itemCount·},␍
+    142     │ - → → → → → → → )}␍
+    143     │ - → → → → → → </span>␍
+    144     │ - → → → → → )·:·(␍
+    145     │ - → → → → → → row.receiptCount·>·0·&&·(␍
+    146     │ - → → → → → → → <span>␍
+    147     │ - → → → → → → → → {t(␍
+    148     │ - → → → → → → → → → "travelExpenses.report.drafts.receipts",␍
+    149     │ - → → → → → → → → → "{count,·plural,·one·{#·receipt}·other·{#·receipts}}",␍
+    150     │ - → → → → → → → → → {·count:·row.receiptCount·},␍
+  785 more lines truncated
+  
+
+src\components\travel-expenses\legacy-draft-conversion-consumers.test.tsx format ━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·onlineManager,·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·act,·cleanup,·fireEvent,·render,·screen·}·from·"@testing-library/react";␍
+      5     │ - import·type·{·ReactNode·}·from·"react";␍
+      6     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - import·type·{·LegacyClaimHistoryRow·}·from·"@/lib/travel-expenses/expense-history";␍
+      8     │ - ␍
+      9     │ - const·boundary·=·vi.hoisted(()·=>·({␍
+     10     │ - → pending:·false,␍
+     11     │ - → user:·"reader-a",␍
+     12     │ - → organization:·"org-a",␍
+     13     │ - → convert:·vi.fn(),␍
+     14     │ - → push:·vi.fn(),␍
+     15     │ - → history:·vi.fn(),␍
+     16     │ - }));␍
+     17     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     18     │ - → useSession:·()·=>·({␍
+     19     │ - → → isPending:·boundary.pending,␍
+     20     │ - → → data:·{␍
+     21     │ - → → → user:·{·id:·boundary.user·},␍
+     22     │ - → → → session:·{·activeOrganizationId:·boundary.organization·},␍
+     23     │ - → → },␍
+     24     │ - → }),␍
+     25     │ - → //·Displayed·hook·arrivals·need·not·synchronously·notify·an·atom·subscription.␍
+     26     │ - → authClient:·{␍
+     27     │ - → → $store:·{␍
+     28     │ - → → → atoms:·{␍
+     29     │ - → → → → session:·{␍
+     30     │ - → → → → → get:·()·=>·({␍
+     31     │ - → → → → → → data:·{·user:·{·id:·"reader-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     32     │ - → → → → → }),␍
+     33     │ - → → → → → subscribe:·()·=>·()·=>·{},␍
+     34     │ - → → → → },␍
+     35     │ - → → → },␍
+     36     │ - → → },␍
+     37     │ - → },␍
+     38     │ - }));␍
+     39     │ - vi.mock("@/tolgee/client",·()·=>·({}));␍
+     40     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     41     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     42     │ - }));␍
+     43     │ - vi.mock("next-intl",·()·=>·({·useLocale:·()·=>·"en-US"·}));␍
+     44     │ - vi.mock("@/navigation",·()·=>·({␍
+     45     │ - → useRouter:·()·=>·({·push:·boundary.push,·refresh:·vi.fn(),·replace:·vi.fn()·}),␍
+     46     │ - → Link:·({·children,·...props·}:·{·children:·ReactNode;·href:·string·})·=>·(␍
+     47     │ - → → <a·{...props}>{children}</a>␍
+     48     │ - → ),␍
+     49     │ - }));␍
+     50     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions",·()·=>·({␍
+     51     │ - → convertLegacyTravelExpenseDraftAction:·boundary.convert,␍
+     52     │ - → getLegacyTravelExpenseConversion:·vi.fn(),␍
+     53     │ - }));␍
+     54     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/history-actions",·()·=>·({␍
+     55     │ - → getMyTravelExpenseHistory:·boundary.history,␍
+     56     │ - }));␍
+     57     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions",·()·=>·({␍
+     58     │ - → createStandaloneReceiptReportAction:·vi.fn(),␍
+     59     │ - → createTripReportAction:·vi.fn(),␍
+     60     │ - → deleteDraftTravelExpenseReportAction:·vi.fn(),␍
+     61     │ - }));␍
+     62     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions",·()·=>·({␍
+     63     │ - → createStandaloneMileageReportAction:·vi.fn(),␍
+     64     │ - }));␍
+     65     │ - ␍
+     66     │ - import·{·OrganizationContextProvider·}·from·"@/components/providers/organization-context-provider";␍
+     67     │ - import·{·LegacyClaimActions·}·from·"./legacy-draft-conversion";␍
+     68     │ - import·{·TravelExpenseManagement·}·from·"./travel-expense-management";␍
+     69     │ - ␍
+     70     │ - const·claim:·LegacyClaimHistoryRow·=·{␍
+     71     │ - → source:·"legacy_claim",␍
+     72     │ - → id:·"legacy",␍
+     73     │ - → href:·"/travel-expenses/legacy",␍
+     74     │ - → stage:·"needs_action",␍
+     75     │ - → activityAt:·"2026-04-01T10:00:00Z",␍
+     76     │ - → balance:·null,␍
+     77     │ - → reimbursement:·null,␍
+     78     │ - → dates:·{·start:·null,·end:·null·},␍
+     79     │ - → claimType:·"receipt",␍
+     80     │ - → status:·"draft",␍
+     81     │ - → amount:·{·amount:·"120.50",·currency:·"EUR"·},␍
+     82     │ - → destination:·null,␍
+     83     │ - → canContinue:·true,␍
+     84     │ - };␍
+     85     │ - const·initialContext·=·{␍
+     86     │ - → userId:·"reader-a",␍
+     87     │ - → organizationId:·"org-a",␍
+     88     │ - → employee:·{·employeeId:·"employee-a",·organizationId:·"org-a",·role:·"employee"·as·const·},␍
+     89     │ - → organizationSettings:·null,␍
+     90     │ - → updatedAt:·1,␍
+     91     │ - };␍
+     92     │ - beforeEach(()·=>·{␍
+     93     │ - → vi.stubGlobal(␍
+     94     │ - → → "fetch",␍
+     95     │ - → → vi.fn(␍
+     96     │ - → → → async·()·=>␍
+     97     │ - → → → → new·Response(␍
+     98     │ - → → → → → JSON.stringify({␍
+     99     │ - → → → → → → user:·{·id:·boundary.user·},␍
+    100     │ - → → → → → → session:·{·activeOrganizationId:·boundary.organization·},␍
+    101     │ - → → → → → → employee:·{·...initialContext.employee,·organizationId:·boundary.organization·},␍
+    102     │ - → → → → → → organizationSettings:·null,␍
+    103     │ - → → → → → }),␍
+    104     │ - → → → → → {·status:·200·},␍
+    105     │ - → → → → ),␍
+    106     │ - → → ),␍
+    107     │ - → );␍
+    108     │ - });␍
+    109     │ - async·function·continueClaim()·{␍
+    110     │ - → const·button·=·await·screen.findByRole("button",·{·name:·"Continue·as·report"·});␍
+    111     │ - → await·vi.waitFor(()·=>·expect(button).toHaveProperty("disabled",·false));␍
+    112     │ - → fireEvent.click(button);␍
+    113     │ - }␍
+    114     │ - afterEach(()·=>·{␍
+    115     │ - → cleanup();␍
+    116     │ - → onlineManager.setOnline(true);␍
+    117     │ - → vi.resetAllMocks();␍
+    118     │ - → vi.unstubAllGlobals();␍
+    119     │ - → boundary.pending·=·false;␍
+    120     │ - → boundary.user·=·"reader-a";␍
+    121     │ - → boundary.organization·=·"org-a";␍
+    122     │ - });␍
+    123     │ - ␍
+    124     │ - it.each(["history",·"retained·list"])(␍
+    125     │ - → "retires·a·held·%s·conversion·when·displayed·session·becomes·pending",␍
+    126     │ - → async·(consumer)·=>·{␍
+    127     │ - → → boundary.history.mockResolvedValue({·success:·true,·data:·[claim]·});␍
+    128     │ - → → let·complete!:·(value:·unknown)·=>·void;␍
+    129     │ - → → boundary.convert.mockImplementationOnce(␍
+    130     │ - → → → ()·=>␍
+    131     │ - → → → → new·Promise((resolve)·=>·{␍
+    132     │ - → → → → → complete·=·resolve;␍
+    133     │ - → → → → }),␍
+    134     │ - → → );␍
+    135     │ - → → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+    136     │ - → → const·tree·=·()·=>·(␍
+    137     │ - → → → <QueryClientProvider·client={client}>␍
+    138     │ - → → → → <OrganizationContextProvider·initialContext={initialContext}>␍
+    139     │ - → → → → → {consumer·===·"history"·?·(␍
+    140     │ - → → → → → → <TravelExpenseManagement␍
+    141     │ - → → → → → → → userId="reader-a"␍
+    142     │ - → → → → → → → organizationId="org-a"␍
+    143     │ - → → → → → → → employeeId="employee-a"␍
+    144     │ - → → → → → → />␍
+    145     │ - → → → → → )·:·(␍
+    146     │ - → → → → → → <LegacyClaimActions·claim={claim}·/>␍
+    147     │ - → → → → → )}␍
+    148     │ - → → → → </OrganizationContextProvider>␍
+    149     │ - → → → </QueryClientProvider>␍
+    150     │ - → → );␍
+  371 more lines truncated
+  
+
+src\components\travel-expenses\travel-expense-management.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+      5     │ - import·{·Activity·}·from·"react";␍
+      6     │ - import·{·afterEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - import·type·{␍
+      8     │ - → ExpenseHistoryRow,␍
+      9     │ - → LegacyClaimHistoryRow,␍
+     10     │ - → ReportHistoryRow,␍
+     11     │ - }·from·"@/lib/travel-expenses/expense-history";␍
+     12     │ - import·type·{·SettlementSummary·}·from·"@/lib/travel-expenses/settlement";␍
+     13     │ - ␍
+     14     │ - const·historyActions·=·vi.hoisted(()·=>·({␍
+     15     │ - → getMyTravelExpenseHistory:·vi.fn(),␍
+     16     │ - }));␍
+     17     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/history-actions",·()·=>·historyActions);␍
+     18     │ - const·reportActions·=·vi.hoisted(()·=>·({␍
+     19     │ - → createStandaloneReceiptReportAction:·vi.fn(),␍
+     20     │ - → createTripReportAction:·vi.fn(),␍
+     21     │ - → deleteDraftTravelExpenseReportAction:·vi.fn(),␍
+     22     │ - }));␍
+     23     │ - vi.mock("sonner",·()·=>·({·toast:·{·success:·vi.fn(),·error:·vi.fn()·}·}));␍
+     24     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions",·()·=>·reportActions);␍
+     25     │ - const·mileageActions·=·vi.hoisted(()·=>·({␍
+     26     │ - → createStandaloneMileageReportAction:·vi.fn(),␍
+     27     │ - }));␍
+     28     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions",·()·=>·mileageActions);␍
+     29     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions",·()·=>·({␍
+     30     │ - → convertLegacyTravelExpenseDraftAction:·vi.fn(),␍
+     31     │ - → getLegacyTravelExpenseConversion:·vi.fn(),␍
+     32     │ - }));␍
+     33     │ - const·router·=·vi.hoisted(()·=>·({·push:·vi.fn()·}));␍
+     34     │ - const·identity·=·vi.hoisted(()·=>·({␍
+     35     │ - → userId:·"user",␍
+     36     │ - → activeOrganizationId:·"org",␍
+     37     │ - → employeeId:·"owner",␍
+     38     │ - → pending:·false,␍
+     39     │ - }));␍
+     40     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+     41     │ - → useOrganization:·()·=>·identity,␍
+     42     │ - }));␍
+     43     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     44     │ - → authClient:·{␍
+     45     │ - → → $store:·{␍
+     46     │ - → → → atoms:·{␍
+     47     │ - → → → → session:·{␍
+     48     │ - → → → → → get:·()·=>·({␍
+     49     │ - → → → → → → isPending:·identity.pending,␍
+     50     │ - → → → → → → data:·{␍
+     51     │ - → → → → → → → user:·{·id:·identity.userId·},␍
+     52     │ - → → → → → → → session:·{·activeOrganizationId:·identity.activeOrganizationId·},␍
+     53     │ - → → → → → → },␍
+     54     │ - → → → → → }),␍
+     55     │ - → → → → → subscribe:·()·=>·()·=>·{},␍
+     56     │ - → → → → },␍
+     57     │ - → → → },␍
+     58     │ - → → },␍
+     59     │ - → },␍
+     60     │ - → useSession:·()·=>·({␍
+     61     │ - → → isPending:·identity.pending,␍
+     62     │ - → → data:·{␍
+     63     │ - → → → user:·{·id:·identity.userId·},␍
+     64     │ - → → → session:·{·activeOrganizationId:·identity.activeOrganizationId·},␍
+     65     │ - → → },␍
+     66     │ - → }),␍
+     67     │ - }));␍
+     68     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     69     │ - → useTranslate:·()·=>·({␍
+     70     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>␍
+     71     │ - → → → fallback␍
+     72     │ - → → → → .replace(/\{count,·plural,·one·\{#·(\w+)\}·other·\{#·(\w+)\}\}/,·(_m,·one,·other)·=>␍
+     73     │ - → → → → → params?.count·===·1·?·`1·${one}`·:·`${String(params?.count)}·${other}`,␍
+     74     │ - → → → → )␍
+     75     │ - → → → → .replace(/\{(\w+)\}/g,·(match,·name)·=>·String(params?.[name]·??·match)),␍
+     76     │ - → }),␍
+     77     │ - }));␍
+     78     │ - vi.mock("next-intl",·()·=>·({␍
+     79     │ - → useLocale:·()·=>·"en-US",␍
+     80     │ - → useTranslations:·()·=>·(_key:·string)·=>·_key,␍
+     81     │ - }));␍
+     82     │ - vi.mock("@/navigation",·()·=>·({␍
+     83     │ - → Link:·({·children,·...props·}:·React.ComponentProps<"a">)·=>·<a·{...props}>{children}</a>,␍
+     84     │ - → useRouter:·()·=>·router,␍
+     85     │ - }));␍
+     86     │ - ␍
+     87     │ - import·{·TravelExpenseManagement·}·from·"./travel-expense-management";␍
+     88     │ - ␍
+     89     │ - afterEach(()·=>·{␍
+     90     │ - → cleanup();␍
+     91     │ - → vi.clearAllMocks();␍
+     92     │ - → Object.assign(identity,·{␍
+     93     │ - → → userId:·"user",␍
+     94     │ - → → activeOrganizationId:·"org",␍
+     95     │ - → → employeeId:·"owner",␍
+     96     │ - → → pending:·false,␍
+     97     │ - → });␍
+     98     │ - });␍
+     99     │ - ␍
+    100     │ - function·reportRow(overrides:·Partial<ReportHistoryRow>·&·{·id:·string·}):·ReportHistoryRow·{␍
+    101     │ - → return·{␍
+    102     │ - → → source:·"report",␍
+    103     │ - → → href:·`/travel-expenses/reports/${overrides.id}`,␍
+    104     │ - → → stage:·"needs_action",␍
+    105     │ - → → activityAt:·"2026-10-05T10:00:00.000Z",␍
+    106     │ - → → balance:·null,␍
+    107     │ - → → reimbursement:·null,␍
+    108     │ - → → dates:·{·start:·"2026-09-14",·end:·"2026-09-14"·},␍
+    109     │ - → → kind:·"standalone",␍
+    110     │ - → → status:·"draft",␍
+    111     │ - → → itemType:·"receipt",␍
+    112     │ - → → title:·"Hotel·Hamburg",␍
+    113     │ - → → itemCount:·1,␍
+    114     │ - → → receiptCount:·1,␍
+    115     │ - → → totals:·{·currency:·"EUR",·reimbursable:·"129.90",·companyPaid:·"0.00",·excludedItemCount:·0·},␍
+    116     │ - → → adjustmentOf:·null,␍
+    117     │ - → → continuedFromClaimId:·null,␍
+    118     │ - → → deletable:·false,␍
+    119     │ - → → ...overrides,␍
+    120     │ - → };␍
+    121     │ - }␍
+    122     │ - ␍
+    123     │ - function·claimRow(overrides:·Partial<LegacyClaimHistoryRow>·=·{}):·LegacyClaimHistoryRow·{␍
+    124     │ - → return·{␍
+    125     │ - → → source:·"legacy_claim",␍
+    126     │ - → → id:·"old-claim",␍
+    127     │ - → → href:·"/travel-expenses/old-claim",␍
+    128     │ - → → stage:·"approved",␍
+    129     │ - → → activityAt:·"2026-04-01T10:00:00.000Z",␍
+    130     │ - → → balance:·null,␍
+    131     │ - → → reimbursement:·null,␍
+    132     │ - → → dates:·{·start:·"2026-03-29",·end:·"2026-03-31"·},␍
+    133     │ - → → claimType:·"receipt",␍
+    134     │ - → → status:·"approved",␍
+    135     │ - → → amount:·{·amount:·"120.50",·currency:·"EUR"·},␍
+    136     │ - → → destination:·"Berlin",␍
+    137     │ - → → canContinue:·false,␍
+    138     │ - → → ...overrides,␍
+    139     │ - → };␍
+    140     │ - }␍
+    141     │ - ␍
+    142     │ - const·outstandingBalance:·SettlementSummary·=·{␍
+    143     │ - → state:·"outstanding",␍
+    144     │ - → currencies:·[␍
+    145     │ - → → {␍
+    146     │ - → → → currency:·"EUR",␍
+    147     │ - → → → entitlement:·"89.90",␍
+    148     │ - → → → reimbursed:·"50.00",␍
+    149     │ - → → → recovered:·"0.00",␍
+    150     │ - → → → balance:·"39.90",␍
+  1257 more lines truncated
+  
+
+Checked 4 files in 9ms. No fixes applied.
+Found 4 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

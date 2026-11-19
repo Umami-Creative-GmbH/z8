@@ -1,0 +1,30 @@
+{
+  "scope": "TEMP only; no readiness advancement",
+  "files": [
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1738-intake-34598738e79a4a969c318b84f9b91b7a\\intake-note.txt",
+      "bytes": 14019,
+      "sha256": "8e0bc8625226734a73378cca7d68472560b8e00483016e1c8c4118c3c11d3958"
+    },
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1738-intake-34598738e79a4a969c318b84f9b91b7a\\safe-audit.json",
+      "bytes": 113703,
+      "sha256": "6393b89850c2aaf1a93071d574284f3d457056f37cc41a01c34d78a9062ec8de"
+    },
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1738-intake-34598738e79a4a969c318b84f9b91b7a\\git-pin-audit.json",
+      "bytes": 121509,
+      "sha256": "b44233d079c6daecf9ba2ee79d8116118e4a1a3d2a871f313b04ac99e956c355"
+    },
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1738-intake-34598738e79a4a969c318b84f9b91b7a\\source-config-audit.json",
+      "bytes": 26987,
+      "sha256": "7328906235a29aa7ee10e20c989ee181e79245424baad1d770f9072312f45632"
+    },
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1738-intake-34598738e79a4a969c318b84f9b91b7a\\git-count-correction.json",
+      "bytes": 327,
+      "sha256": "0b1c53058b332e300f6c1d158aadec26544f248f03cd34af08680118ee4ac783"
+    }
+  ]
+}

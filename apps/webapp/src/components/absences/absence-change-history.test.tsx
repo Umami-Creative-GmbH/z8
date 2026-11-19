@@ -7,7 +7,12 @@ import { AbsenceChangeHistory } from "./absence-change-history";
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) =>
+				String(params?.[name] ?? `{${name}}`),
+			),
+	}),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/absences/change-actions", () => ({
@@ -64,4 +69,33 @@ it("retains a rejected request and its explanation without a withdrawal action",
 	);
 	expect(screen.getByText("Recorded dates are correct")).toBeTruthy();
 	expect(screen.queryByRole("button", { name: "Withdraw request" })).toBeNull();
+});
+it("opens with the pending count in its summary while requests await approval", () => {
+	render(
+		<AbsenceChangeHistory
+			requests={[
+				request,
+				{ ...request, id: "second" },
+				{ ...request, id: "decided", status: "rejected" },
+			]}
+			onChanged={vi.fn()}
+		/>,
+	);
+	const summary = screen.getByText("Absence change requests").closest("summary");
+	expect(summary?.textContent).toContain("2 pending");
+	expect(summary?.closest("details")?.open).toBe(true);
+});
+it("stays collapsed without a pending count when every request is decided", () => {
+	render(
+		<AbsenceChangeHistory
+			requests={[
+				{ ...request, status: "rejected" },
+				{ ...request, id: "obsolete", status: "obsolete" },
+			]}
+			onChanged={vi.fn()}
+		/>,
+	);
+	const summary = screen.getByText("Absence change requests").closest("summary");
+	expect(summary?.textContent).not.toContain("pending");
+	expect(summary?.closest("details")?.open).toBe(false);
 });

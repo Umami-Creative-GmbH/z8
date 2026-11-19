@@ -1,0 +1,72 @@
+{
+  "status": "STOP: pending duplicate confirmation requests across Activity resume",
+  "candidate": "44308be60ceba39d69ae3379dc26f8ab206a3a9a",
+  "source": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+  "tree": "87d44c658f4f727b9129797e73cac3abfd9644c6",
+  "applicationTree": "f9ba5b9d9fd32406473a7c8e6dd627045c8e6762",
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "ticket1733VerifiedCommit": null,
+  "contract": [
+    {
+      "path": "docs/design/2026-11-14-webapp-ui-ux-spec.md",
+      "line": 130,
+      "text": "Keep input after failure, prevent duplicate pending submissions, expose a useful retry, and announce feedback."
+    },
+    {
+      "path": "docs/design/2026-11-14-webapp-ui-ux-spec.md",
+      "line": 199,
+      "text": "F3 includes pending duplicate prevention and pending/draft lifetime."
+    }
+  ],
+  "seam": "Actual OrganizationContextProvider + QueryClient + PayslipBatchWorkspace + React Activity and actual controls. HTTP/action/auth boundaries stubbed. No internal component or ref inspection drives the repro.",
+  "steps": [
+    "Read a matching authorized preview with one included matched staged file.",
+    "Click Save 1 payslips, then Save payslips; leave the real public action-boundary promise unresolved.",
+    "An immediate second click on the disabled dialog Save stays at one request.",
+    "Rerender only Activity hidden then visible, preserving provider/client/component tree and actor/org/batch.",
+    "Let actual query refetch return the same still-open server preview.",
+    "Click the newly enabled Save 1 payslips and dialog Save payslips again."
+  ],
+  "expected": "No second confirmation request while the first remains unsettled.",
+  "observed": "Second confirmPayslipBatchAction call occurs while first held promise remains unresolved. Reproduced twice.",
+  "inference": "The Activity layout effect setup resets command.current and confirming before prior request settlement, so a new public confirmation is admitted.",
+  "sourceLocations": {
+    "activitySetup": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx:147",
+    "commandReset": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx:149",
+    "confirmationGuard": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx:200"
+  },
+  "controls": [
+    "Same component held confirmation without Activity resume blocks duplicate (both runs).",
+    "Unchanged #1732 start13 tests all pass, including explicit Activity pending lock-until-settlement.",
+    "Current provider failure -> gated old preview -> generic alert -> local Retry -> actual provider refetch -> recovery passes.",
+    "Retained matching pending session and unchanged start provider recovery pass.",
+    "Actual detail Page fallback + SiteHeader has one safe h1 and no protected intake/confirmation.",
+    "All eight existing incoming workspace cases pass, including prior hidden late completion and queued-edit controls."
+  ],
+  "boundaries": [
+    "This is overlapping confirmation REQUEST evidence at an assembled public component/action seam.",
+    "Canonical duplicate PERSISTENCE, notification duplication, transport/server action serialization and authorization bypass are not demonstrated.",
+    "No live Next cache/navigation reproduction is claimed; React Activity semantics are directly exercised.",
+    "Global pending duplicate prevention contract is violated even though canonical store may remain idempotent.",
+    "No product fix was made; root owns readiness/correction."
+  ],
+  "freshTests": {
+    "caseInstances": 27,
+    "physicalFiles": 4,
+    "pass": 26,
+    "fail": 1,
+    "repeat": "1 pass/1 fail selected; 3 unselected, nonadditive"
+  },
+  "notRun": [
+    "Fresh canonical PG20",
+    "Actual normal route and populated scoped batch",
+    "Live current-context GET failure/Retry",
+    "Live batch preview read failure/Retry",
+    "Real PDF/ZIP intake, matching/drop, confirm/readback/download",
+    "Role/category/held-revocation runtime variants",
+    "Native React fiber and connected Next compiler/errors/route checks",
+    "Fresh matched before/after geometry, images, persisted preferences, keyboard/focus, axe/contrast",
+    "Full generation/catalog/Tolgee/provider/device/true zoom/exhaustive authority/account-org ABA/global four-path guard"
+  ],
+  "reasonNotRun": "Broader acceptance stopped at precise repeated public source blocker, as instructed."
+}

@@ -1,0 +1,59 @@
+{
+  "historicalRef": "96e64b16a10c629cae6ec820b11862ac48511503",
+  "currentHead": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "partialApplication": true,
+  "existingPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "currentActionsAndNewUnusedHelpersRemain": true,
+  "siteHeaderUnchangedBetweenHistoricalRefAndCandidate": true,
+  "scope": "Same fresh small-admin context, organization, en locale, two publicly created batches and exact scoped status/file-count/order snapshot on both sides; organization calendar default11/2026 unchanged. No whole-app historical behavior/authority comparison.",
+  "exactBatchStateEqual": true,
+  "batchStateDigestCurrent": "b385705b8fdcf8c0f5163b17db273ac2bb8bf7d2858499c6b348e03c895a9c38",
+  "batchStateDigestBefore": "b385705b8fdcf8c0f5163b17db273ac2bb8bf7d2858499c6b348e03c895a9c38",
+  "history": {
+    "rows": [
+      {
+        "id": "80c0113f-60d9-42de-a6f7-c8beef1ede8c",
+        "pay_period_year": 2024,
+        "pay_period_month": 9,
+        "status": "open",
+        "file_count": 0
+      },
+      {
+        "id": "c957202b-9d36-481f-a217-1e8420400206",
+        "pay_period_year": 2025,
+        "pay_period_month": 3,
+        "status": "open",
+        "file_count": 0
+      }
+    ],
+    "links": [
+      {
+        "href": "/en/personnel-files/payslip-batches/80c0113f-60d9-42de-a6f7-c8beef1ede8c",
+        "text": "September 2024\n0 files\nNot confirmed"
+      },
+      {
+        "href": "/en/personnel-files/payslip-batches/c957202b-9d36-481f-a217-1e8420400206",
+        "text": "March 2025\n0 files\nNot confirmed"
+      }
+    ]
+  },
+  "pairs": [
+    [
+      "public-before-desktop-light.png",
+      "public-current-desktop-light.png"
+    ],
+    [
+      "public-before-phone-light.png",
+      "public-current-phone-light.png"
+    ],
+    [
+      "public-before-wide-dark-large.png",
+      "public-current-wide-dark-large.png"
+    ]
+  ],
+  "restoredFinal": "public-current-restored-wide-dark-large.png"
+}

@@ -1,0 +1,40 @@
+{
+  "priority": "P1",
+  "status": "STOP_CONFIRMED_PUBLIC_SEAM_BLOCKER",
+  "title": "Local directory Retry leaves shared history eligible to reopen from pre-narrowing cache without a current authorization read",
+  "head": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+  "verifiedCommit": null,
+  "publicSeam": "Actual TeamDirectory -> TeamDirectoryRecords -> TeamMembersList/native badge -> BalanceAdjustmentHistoryDialog -> useBalanceAdjustmentSection with real QueryClient and canonical OrganizationContextProvider. Synthetic auth session external store and authorized server-action, fetch, navigation and translation system boundaries only; no permission, query hook, dialog or list implementation mocked.",
+  "queryDefaults": "Real QueryClient with the application staleTime=60000 and refetchOnWindowFocus=false. No direct cache seeding. History is warmed only by clicking the actual badge and awaiting its returned nonempty record.",
+  "trigger": [
+    "Warm nonempty history for a managed employee; Escape closes it.",
+    "Keep actor, organization, employee and manager role; narrow the management relationship at the authorized server-action boundary so a new history read returns canonical AuthorizationError.",
+    "Return unexpected directory read failure. Actual route retains and marks last loaded employee records.",
+    "Click route Retry. Real canonical context reread completes, then the navigation seam rerenders a second failed real server component result without remounting the QueryClient.",
+    "Reopen the retained employee native balance badge."
+  ],
+  "observed": {
+    "canonicalContextReads": 2,
+    "rscRefreshes": 1,
+    "historyReads": 1,
+    "staleReasonVisible": true,
+    "hasHistoryRefusal": false,
+    "forcedRereadControl": {
+      "historyReads": 2,
+      "refusalVisible": true,
+      "staleReasonVisible": false
+    }
+  },
+  "control": "Using the same mounted real hook and QueryClient, a forced public refetch receives the current canonical refusal, removes the old record, and preserves refusal messaging. Cold refusal/empty and fresh successful relationship-narrowed directory arrivals independently pass.",
+  "expected": "The old history must not reappear as current when the history read would now refuse; local recovery/reopen must reach the authoritative read and keep prior rows withheld until accepted.",
+  "confirmedIn": [
+    "public-cache-02.json:22 passed,1 failed/23 cases",
+    "cache-repro-01.json:1 failed,8 deliberately deselected/1 executed case"
+  ],
+  "limits": [
+    "Synthetic authorized boundary result models relationship narrowing; no live permission revocation, database/auth mutation, browser exploit, production disclosure or actual SQL authorization execution claimed.",
+    "No historical-source overlay, historical browser control or introduced-regression claim. Shared cache hook is unchanged; the retained-directory and local recovery path supplies the concrete current assembled trigger.",
+    "No cache isolation conclusion for shared Calendar/weekly callers across actor/org changes; they remain separate acceptance concerns."
+  ],
+  "nextOwner": "Root owns source correction, whole-branch review, tracker/publication and readiness. Independent verifier made no source changes."
+}

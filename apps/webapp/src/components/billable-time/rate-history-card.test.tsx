@@ -151,6 +151,42 @@ describe("RateHistoryCard", () => {
 		expect(screen.getByPlaceholderText("95,00")).toBeTruthy();
 	});
 
+	it("shows a load failure in place of the history, with retry and without editing", async () => {
+		const user = userEvent.setup();
+		const onRetry = vi.fn();
+		renderCard({ loadError: "Billable rates could not be loaded", onRetry });
+
+		expect(screen.getByText("Billable rate")).toBeTruthy();
+		expect(screen.getByRole("alert").textContent).toBe("Billable rates could not be loaded");
+		expect(screen.queryByText("€95.00/h")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Set rate" })).toBeNull();
+
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+		expect(onRetry).toHaveBeenCalledOnce();
+	});
+
+	it("disables retry while it runs", () => {
+		renderCard({ loadError: "Failed", onRetry: vi.fn(), isRetrying: true });
+
+		expect(screen.getByRole("button", { name: "Retry" })).toHaveProperty("disabled", true);
+	});
+
+	it("announces loading distinctly from an empty history", () => {
+		renderCard({ isLoading: true, periods: [] });
+
+		expect(screen.getByRole("status").textContent).toBe("Loading");
+		expect(screen.queryByText("No rate set yet")).toBeNull();
+	});
+
+	it("names the currency of the hourly rate field", async () => {
+		const user = userEvent.setup();
+		renderCard();
+
+		await user.click(screen.getByRole("button", { name: "Set rate" }));
+
+		expect(screen.getByLabelText("Hourly rate (EUR/h)")).toBeTruthy();
+	});
+
 	it("offers no change form to viewers who cannot edit", () => {
 		renderCard({ canEdit: false, periods: [] });
 

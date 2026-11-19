@@ -47,6 +47,7 @@ import { actionErrorMessage } from "@/lib/organization-action/action-error-messa
 import { queryKeys } from "@/lib/query/keys";
 import { AssignmentManagerSkeleton } from "../assignment-manager-skeleton";
 import { getVacationAssignmentSectionVisibility } from "../policy-assignment-surface";
+import { SettingsLoadError } from "../settings-load-error";
 import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
 import type { VacationAssignmentType } from "./vacation-assignment-dialog";
 import { VacationPolicyPreview } from "./vacation-policy-preview";
@@ -139,7 +140,7 @@ export function VacationAssignmentManager({
 	const { t } = useTranslate();
 	const historyContext = useVacationPolicyHistoryContext(organizationId);
 	const today = historyContext.data?.today;
-	const { companyDefaults, assignments, isLoading, error } =
+	const { companyDefaults, assignments, isLoading, error, retry, isRefetching } =
 		useVacationAssignmentData(organizationId);
 	const endAssignment = useEndVacationAssignment(organizationId, today);
 	// Group assignments by type (filter out organization type - handled by isCompanyDefault)
@@ -164,30 +165,27 @@ export function VacationAssignmentManager({
 
 	if (error) {
 		return (
-			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
-						{t("settings.vacation.assignments.loadError", "Failed to load policy assignments")}
-					</p>
-				</CardContent>
-			</Card>
+			<SettingsLoadError
+				message={t(
+					"settings.vacation.assignments.loadError",
+					"Failed to load policy assignments",
+				)}
+				onRetry={retry}
+				isRetrying={isRefetching}
+			/>
 		);
 	}
 
 	return (
 		<>
 			<div className="space-y-6">
-				{/* Info Banner */}
-				<Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/30">
-					<CardContent className="py-4">
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.vacation.history.inheritanceInfo",
-								"Policies apply in priority order: Employee, Team, Organization, then Company Default. Create assignments only when needed.",
-							)}
-						</p>
-					</CardContent>
-				</Card>
+				{/* How assignments inherit: supporting context, not a status. */}
+				<p className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+					{t(
+						"settings.vacation.history.inheritanceInfo",
+						"Policies apply in priority order: Employee, Team, Organization, then Company Default. Create assignments only when needed.",
+					)}
+				</p>
 
 				<VacationPolicyPreview organizationId={organizationId} />
 				<VacationOrganizationAssignments
@@ -231,7 +229,7 @@ export function VacationAssignmentManager({
 /** The company default policies and the team and employee assignments of the organization. */
 function useVacationAssignmentData(organizationId: string) {
 	// Fetch company default policies (current and next)
-	const { data: companyDefaults, isLoading: defaultsLoading } = useQuery({
+	const defaultsQuery = useQuery({
 		queryKey: queryKeys.vacationPolicies.companyDefault(organizationId),
 		queryFn: async () => {
 			const result = await getCompanyDefaultPolicies();
@@ -243,11 +241,7 @@ function useVacationAssignmentData(organizationId: string) {
 	});
 
 	// Fetch policy assignments (for teams and employees)
-	const {
-		data: assignments,
-		isLoading: assignmentsLoading,
-		error,
-	} = useQuery({
+	const assignmentsQuery = useQuery({
 		queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 		queryFn: async () => {
 			const result = await getVacationPolicyAssignments();
@@ -259,10 +253,12 @@ function useVacationAssignmentData(organizationId: string) {
 	});
 
 	return {
-		companyDefaults,
-		assignments,
-		isLoading: defaultsLoading || assignmentsLoading,
-		error,
+		companyDefaults: defaultsQuery.data,
+		assignments: assignmentsQuery.data,
+		isLoading: defaultsQuery.isLoading || assignmentsQuery.isLoading,
+		error: assignmentsQuery.error,
+		isRefetching: assignmentsQuery.isFetching,
+		retry: () => void assignmentsQuery.refetch(),
 	};
 }
 
@@ -762,7 +758,7 @@ function AssignmentPolicyDetails({
 	const locale = useAppLocale();
 	return (
 		<div className="mt-2 ml-7 space-y-1">
-			<div className="flex items-center gap-2 text-sm">
+			<div className="flex flex-wrap items-center gap-2 text-sm">
 				<Badge variant="outline" className="text-xs">
 					{assignmentStatusLabel(assignment, today, t)}
 				</Badge>
@@ -779,8 +775,11 @@ function AssignmentPolicyDetails({
 				</span>
 			</div>
 			{assignment.effectiveEndDate && (
-				<div className="flex items-center gap-2 text-sm text-amber-600">
-					<Badge variant="outline" className="text-xs border-amber-300">
+				<div className="flex flex-wrap items-center gap-2 text-sm text-warning">
+					<Badge
+						variant="outline"
+						className="text-xs border-warning/50 text-current"
+					>
 						{t("settings.vacation.history.ends", "Ends")}
 					</Badge>
 					<span>

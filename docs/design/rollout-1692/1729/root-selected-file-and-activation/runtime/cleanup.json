@@ -1,0 +1,10 @@
+{
+    "privateFixtureManifestsPreserved":  true,
+    "exactManifestContainersAbsent":  3,
+    "verifiedStoppedPidCount":  18,
+    "cacheMoved":  false,
+    "processInventory":  "Exact task manifest PIDs only; no broad process enumeration",
+    "ownedNextPortClosed":  true,
+    "nativeDaemonAbsent":  true,
+    "nativeClosed":  true
+}

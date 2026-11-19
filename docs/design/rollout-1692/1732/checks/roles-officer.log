@@ -1,0 +1,3 @@
+small-employee sign-in submitted
+small-employee activating
+[{"name":"payslip-only officer admitted with explicit empty history","passed":true},{"name":"HR-only consequence is visible","passed":true},{"name":"real pending start disables duplicate submission","passed":true},{"name":"officer HR-only batch persisted unconfirmed","passed":true},{"name":"late revoked officer receives canonical refusal with retained input","passed":true},{"name":"revoked submission creates no extra batch","passed":true}]

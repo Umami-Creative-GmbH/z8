@@ -1,0 +1,35 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-root-checks/retained-settings-red.json",
+    "bytes": 3068,
+    "sha256": "ef52786c5ee72da7882a41ef7fd8818b83137da444e0e6f218cc45514dc5eb2b"
+  },
+  "reported": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "failed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps failed settings recoverable and prevents duplicate transport while Retry is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the selected period across a failed settings refresh without permitting generation until Retry succeeds",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

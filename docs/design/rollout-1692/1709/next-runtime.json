@@ -1,0 +1,146 @@
+{
+  "nextVersion": "16.4.6",
+  "tools": [
+    "get_project_metadata",
+    "get_errors",
+    "get_page_metadata",
+    "get_logs",
+    "get_server_action_by_id",
+    "get_routes",
+    "get_request_insights",
+    "get_compilation_issues",
+    "compile_route"
+  ],
+  "project": {
+    "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-93cc9fde-f4922827369d35e3\\apps\\webapp",
+    "devServerUrl": "http://localhost:55944"
+  },
+  "routeCount": 318,
+  "inboxRoutePresent": true,
+  "pageMetadata": {
+    "sessions": [
+      {
+        "url": "/en/sign-in?callbackUrl=%2Fen%2F",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(auth)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(auth)/sign-in/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      },
+      {
+        "url": "/en/approvals/inbox",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/approvals/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/approvals/inbox/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ]
+  },
+  "compilation": {
+    "issues": []
+  },
+  "errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  },
+  "scope": "final connected dev sessions; historical transitions are not resolved by these clean probes"
+}

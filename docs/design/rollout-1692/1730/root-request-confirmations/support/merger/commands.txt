@@ -1,0 +1,26 @@
+Executed from root PowerShell. All pnpm calls set pnpm_config_verify_deps_before_run=false and place --config.verify-deps-before-run=false before node/exec. No install, package/config overrides, service startup, or runtime acceptance.
+
+git merge-tree --write-tree HEAD b3ba1c5ce8ac9dafd108feef560695ec462dce3b
+  Initial sandbox object write failed; standard authorized escalation succeeded, with only two expected metadata conflicts. Unresolved tree 89284c89405d5ffbda5745d9522eb5133a7be399.
+git merge --no-ff --no-commit b3ba1c5ce8ac9dafd108feef560695ec462dce3b
+$env:pnpm_config_verify_deps_before_run='false'
+pnpm --config.verify-deps-before-run=false node .tmp/merge1730-reconcile.mjs
+  Initial sandbox pnpm engine lock denied; standard escalation succeeded. No install/repair attempted.
+pnpm --config.verify-deps-before-run=false node .tmp/merge1730-stage.mjs
+  Independent temporary index tree equals real merge index tree dbe5b1e4ab10f9658694683dd1af141132383a41.
+git commit -m "Merge #1730 document requests into UI integration"
+pnpm --config.verify-deps-before-run=false node .tmp/merge1730-build-probes.mjs
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/personnel-file/merge1730-bulk-probe.test.tsx src/components/personnel-file/merge1730-workspace-probe.test.tsx src/components/personnel-file/merge1730-shared-probe.test.tsx --reporter=json --reporter=default --outputFile=../../.tmp/merge1730-audit/probes-first.json *> .tmp/merge1730-audit/probes-first.txt
+  Exit1: 3 physical files,16 assertions,12pass4fail. Public blockers confirmed; stopped broader acceptance.
+pnpm --config.verify-deps-before-run=false node .tmp/merge1730-repeat-probes.mjs
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/personnel-file/merge1730-bulk-probe.test.tsx src/components/personnel-file/merge1730-workspace-probe.test.tsx src/components/personnel-file/merge1730-shared-probe.test.tsx --reporter=json --reporter=default --outputFile=../../.tmp/merge1730-audit/probes-repeat.json *> .tmp/merge1730-audit/probes-repeat.txt
+  Exit1: 3 physical files,18 assertions,12pass6fail; adds actual Escape controls. These overlap first run and must not be summed.
+pnpm --config.verify-deps-before-run=false node .tmp/merge1730-baseline-probe.mjs
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/personnel-file/merge1730-baseline-bulk-probe.test.tsx -t 'retires a submit queued' --reporter=json --reporter=default --outputFile=../../.tmp/merge1730-audit/probes-baseline.json *> .tmp/merge1730-audit/probes-baseline.txt
+  Exit1: pinned root bulk public Activity race1fail,2unselected. Classifies inherited race remaining uncorrected.
+pnpm --config.verify-deps-before-run=false node .tmp/merge1730-finalize.mjs *> .tmp/merge1730-audit/finalize.txt
+  First attempt hit Node default Git stdout buffer; increased only bounded in-memory buffer to8MiB. Rerun exit0. No inventories written. Parsed58JSON, syntax12scripts, fully decoded27PNG, checked58localreportlinks. Existing root15530blobs preserved; only expected9incoming source paths differ. Temporary5sourceprobe files archived then removed. Clean tracked/untracked status.
+git status --short
+  Empty, apart from inherited harmless global ignore permission warnings.
+
+Scripts themselves preserve literal Git object/index/source operations. Fresh vs inherited results, per-physical-file/fullName occurrence uniqueness, digests, source/ancestry/tree/parents, unchanged lock/config hashes, and cleanup are in handoff.json, test-classification.json, artifact-integrity.json, baseline.json, independent-tree.json. Private old fixtures/pointers were not opened. No historical runtime drivers executed.

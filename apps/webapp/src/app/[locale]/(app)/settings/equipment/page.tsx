@@ -10,6 +10,7 @@ import { EquipmentSettings } from "@/components/settings/equipment/equipment-set
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -30,57 +31,55 @@ async function EquipmentSettingsContent() {
 		getEquipmentOfficerGrants(),
 	]);
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<div className="min-w-0 space-y-1">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.equipment.title", "Equipment")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.equipment.description",
-							"Configure equipment types, item identities and record retention.",
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
+				<PageHeader
+					title={t("settings.equipment.title", "Equipment")}
+					description={t(
+						"settings.equipment.description",
+						"Configure equipment types, item identities and record retention.",
+					)}
+					actions={
+						<>
+							<EquipmentRefreshButton />
+							<Button asChild variant="outline">
+								<Link href="/equipment">
+									<IconPackage className="size-4" aria-hidden="true" />
+									{t("settings.equipment.openOverview", "Open equipment overview")}
+								</Link>
+							</Button>
+						</>
+					}
+				/>
+				{result.success ? (
+					<EquipmentSettings key={organizationId} initialData={result.data} />
+				) : (
+					<EquipmentLoadError
+						title={t(
+							"settings.equipment.errors.loadTitle",
+							"Equipment setup could not be loaded",
 						)}
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<EquipmentRefreshButton />
-					<Button asChild variant="outline">
-						<Link href="/equipment">
-							<IconPackage className="size-4" aria-hidden="true" />
-							{t("settings.equipment.openOverview", "Open equipment overview")}
-						</Link>
-					</Button>
-				</div>
+						description={t(
+							"settings.equipment.errors.loadRetry",
+							"Check your organization access, then try again.",
+						)}
+					/>
+				)}
+				{officers.success ? (
+					<EquipmentOfficers data={officers.data} />
+				) : (
+					<EquipmentLoadError
+						title={t(
+							"settings.equipment.officers.loadTitle",
+							"Equipment officers could not be loaded",
+						)}
+						description={t(
+							"settings.equipment.officers.loadRetry",
+							"Equipment responsibilities are unavailable right now. Try again.",
+						)}
+					/>
+				)}
 			</div>
-			{result.success ? (
-				<EquipmentSettings key={organizationId} initialData={result.data} />
-			) : (
-				<EquipmentLoadError
-					title={t(
-						"settings.equipment.errors.loadTitle",
-						"Equipment setup could not be loaded",
-					)}
-					description={t(
-						"settings.equipment.errors.loadRetry",
-						"Check your organization access, then try again.",
-					)}
-				/>
-			)}
-			{officers.success ? (
-				<EquipmentOfficers data={officers.data} />
-			) : (
-				<EquipmentLoadError
-					title={t(
-						"settings.equipment.officers.loadTitle",
-						"Equipment officers could not be loaded",
-					)}
-					description={t(
-						"settings.equipment.officers.loadRetry",
-						"Equipment responsibilities are unavailable right now. Try again.",
-					)}
-				/>
-			)}
 		</div>
 	);
 }
@@ -114,35 +113,37 @@ function SkeletonCard({ rows }: { rows: number }) {
 function EquipmentSettingsLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame"
 			role="status"
 			label={{
 				labelKey: "settings.equipment.loading",
 				labelDefault: "Loading equipment settings",
 			}}
 		>
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<div className="space-y-2">
-					<Skeleton aria-hidden="true" className="h-8 w-40" />
-					<Skeleton aria-hidden="true" className="h-5 w-full max-w-md" />
+			<div className="page-measure min-w-0 space-y-6">
+				<div className="flex flex-wrap items-end justify-between gap-4">
+					<div className="space-y-2">
+						<Skeleton aria-hidden="true" className="h-8 w-40" />
+						<Skeleton aria-hidden="true" className="h-5 w-72 max-w-full" />
+					</div>
+					<div className="flex gap-2">
+						<Skeleton aria-hidden="true" className="size-9" />
+						<Skeleton aria-hidden="true" className="h-9 w-52" />
+					</div>
 				</div>
-				<div className="flex gap-2">
-					<Skeleton aria-hidden="true" className="size-9" />
-					<Skeleton aria-hidden="true" className="h-9 w-52" />
-				</div>
+				<Card>
+					<CardHeader>
+						<Skeleton aria-hidden="true" className="h-5 w-40" />
+						<Skeleton aria-hidden="true" className="h-4 w-full max-w-xl" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton aria-hidden="true" className="h-16 w-full" />
+					</CardContent>
+				</Card>
+				<SkeletonCard rows={3} />
+				<SkeletonCard rows={3} />
+				<SkeletonCard rows={2} />
 			</div>
-			<Card>
-				<CardHeader>
-					<Skeleton aria-hidden="true" className="h-5 w-40" />
-					<Skeleton aria-hidden="true" className="h-4 w-full max-w-xl" />
-				</CardHeader>
-				<CardContent>
-					<Skeleton aria-hidden="true" className="h-16 w-full" />
-				</CardContent>
-			</Card>
-			<SkeletonCard rows={3} />
-			<SkeletonCard rows={3} />
-			<SkeletonCard rows={2} />
 		</LoadingRegion>
 	);
 }

@@ -1,4 +1,36 @@
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { instantFromDate, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { formatPlainDate, getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
+
+/** Locale and the organization's IANA zone that violation instants are shown in. */
+export interface ViolationDisplayContext {
+	locale: string;
+	timezone: string;
+}
+
+/**
+ * A violation's `violationDate` is a stored UTC instant (the start of the offending work),
+ * so the day it belongs to is resolved in the organization's timezone — never the viewer's.
+ */
+export function violationLocalDate(violationDate: Date, timezone: string): PlainDate {
+	return plainDateAt(instantFromDate(violationDate), timezone);
+}
+
+/** The organization-local violation day, formatted in the UI locale. */
+export function formatViolationDate(violationDate: Date, display: ViolationDisplayContext): string {
+	return formatPlainDate(violationLocalDate(violationDate, display.timezone), display.locale, "dateMedium");
+}
+
+/** The organization-local violation day as ISO `YYYY-MM-DD` for exports. */
+export function formatViolationCsvDate(violationDate: Date, timezone: string): string {
+	return violationLocalDate(violationDate, timezone).toString();
+}
+
+/** An instant as organization-local `YYYY-MM-DD HH:mm` for exports. */
+export function formatCsvLocalMinute(value: Date, timezone: string): string {
+	const { date, time } = getInstantLocalMinuteFields(instantFromDate(value), timezone);
+	return `${date} ${time}`;
+}
 
 type EmployeeRecord =
 	| {

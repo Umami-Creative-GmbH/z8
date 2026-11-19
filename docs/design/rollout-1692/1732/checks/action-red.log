@@ -1,0 +1,38 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/apps/webapp
+
+ ❯ |integration| src/lib/personnel-file/payslip-batch.integration.test.ts (20 tests | 1 failed | 19 skipped) 573ms
+   ❯ payslip batches matched by personnel number (#868) (20)
+     ❯ starting a batch (5)
+       × refuses displayed scope drift even when the actor administers both organizations 107ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |integration| src/lib/personnel-file/payslip-batch.integration.test.ts > payslip batches matched by personnel number (#868) > starting a batch > refuses displayed scope drift even when the actor administers both organizations
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/lib/personnel-file/payslip-batch.integration.test.ts:319:28
+    317|     expect(canRunPayslipBatches(accessB.access)).toBe(true);
+    318|     const result = await actions.startPayslipBatchAction({ payPeriod: …
+    319|     expect(result.success).toBe(false);
+       |                            ^
+    320|     expect(await listOwnPayslipBatches(db, accessA.access)).toEqual([]…
+    321|     expect(await listOwnPayslipBatches(db, accessB.access)).toEqual([]…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 skipped (20)
+   Start at  19:35:15
+   Duration  2.92s (transform 42%, import 37%, tests 20%, setup 1%)
+

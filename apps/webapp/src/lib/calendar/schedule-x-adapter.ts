@@ -24,6 +24,10 @@ export interface ScheduleXAdapterOptions {
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	/** Localized "(edited by … at dd.mm.yyyy)" line for a completed work period (#507). */
 	editedByLabel?: (event: CalendarEvent) => string | null;
+	/** Localized title of running work with its live duration; the event title is the fallback. */
+	runningTitle?: (event: CalendarEvent) => string;
+	/** Localized labels of the running work's clock-out button. */
+	runningClockOutLabels?: { label: string; ariaLabel: (name: string) => string };
 }
 
 /**
@@ -383,10 +387,17 @@ export function calendarEventToScheduleX(
 				end = start.add({ minutes: 30 });
 			}
 			const timezoneLabel = buildWorkPeriodTimezoneLabel(event);
-			const stopButtonLabelTarget = event.metadata.employeeName || event.title;
+			const title = event.metadata.isRunning
+				? (options?.runningTitle?.(event) ?? event.title)
+				: event.title;
+			const stopButtonLabelTarget = event.metadata.employeeName || title;
+			const stopLabel = options?.runningClockOutLabels?.label ?? "Stop";
+			const stopAriaLabel =
+				options?.runningClockOutLabels?.ariaLabel(stopButtonLabelTarget) ??
+				`Stop running work period for ${stopButtonLabelTarget}`;
 			const runningClockOutButton =
 				event.metadata.isRunning && options?.clockOutAllowedWorkPeriodIds?.has(event.id)
-					? `<button type="button" data-running-clock-out-button="true" data-work-period-id="${escapeHtml(event.id)}" aria-label="Stop running work period for ${escapeHtml(stopButtonLabelTarget)}" class="ml-auto inline-flex h-5 shrink-0 items-center rounded-sm border border-emerald-700/20 bg-white/80 px-1.5 text-[10px] font-medium text-emerald-900 shadow-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-700">Stop</button>`
+					? `<button type="button" data-running-clock-out-button="true" data-work-period-id="${escapeHtml(event.id)}" aria-label="${escapeHtml(stopAriaLabel)}" class="ml-auto inline-flex h-5 shrink-0 items-center rounded-sm border border-emerald-700/20 bg-white/80 px-1.5 text-[10px] font-medium text-emerald-900 shadow-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-700">${escapeHtml(stopLabel)}</button>`
 					: "";
 
 			// Determine calendar ID based on approval status
@@ -418,7 +429,7 @@ export function calendarEventToScheduleX(
 
 			return {
 				id: event.id,
-				title: event.title,
+				title,
 				start,
 				end,
 				calendarId,
@@ -426,7 +437,7 @@ export function calendarEventToScheduleX(
 				...((event.metadata.isRunning || timezoneLabel || editedByLabel) && {
 					_customContent: {
 						timeGrid: event.metadata.isRunning
-							? `<span class="inline-flex w-full items-center gap-1.5"><span class="relative inline-flex size-2 shrink-0" aria-hidden="true"><span class="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-red-500"></span></span><span>${escapeHtml(event.title)}</span>${timezoneLabel ? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel)}</span>` : ""}${runningClockOutButton}</span>`
+							? `<span class="inline-flex w-full items-center gap-1.5"><span class="relative inline-flex size-2 shrink-0" aria-hidden="true"><span class="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-red-500"></span></span><span>${escapeHtml(title)}</span>${timezoneLabel ? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel)}</span>` : ""}${runningClockOutButton}</span>`
 							: `<span class="inline-flex flex-col gap-0.5"><span>${escapeHtml(event.title)}</span>${timezoneLine}${editedByLine}</span>`,
 					},
 				}),

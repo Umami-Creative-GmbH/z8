@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { FormerEmployeesExportCard } from "@/components/payroll/former-employees-export-card";
 import { PayrollWorkspace } from "@/components/payroll/payroll-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -61,20 +62,18 @@ async function PayrollPageContent() {
 	);
 }
 
-function PayrollPageLoading() {
+async function PayrollPageLoading() {
+	const t = await getTranslate();
 	return (
 		<LoadingRegion
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.payrollWorkspace",
 				labelDefault: "Loading payroll workspace",
 			}}
 		>
-			<div className="space-y-2">
-				<Skeleton aria-hidden="true" className="h-8 w-56" />
-				<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
-			</div>
+			<PageHeader title={t("payroll.title", "Payroll")} />
 			<div className="grid gap-4 md:grid-cols-3">
 				<Skeleton aria-hidden="true" className="h-28 w-full" />
 				<Skeleton aria-hidden="true" className="h-28 w-full" />

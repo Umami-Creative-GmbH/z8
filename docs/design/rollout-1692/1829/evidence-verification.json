@@ -1,0 +1,16 @@
+{
+  "finalOwnedSourceMatchesAllAfterCaptures": true,
+  "beforeCaptures": 13,
+  "afterCaptures": 13,
+  "decodedPNGs": 61,
+  "artifactSecretScan": "passed; private values never emitted",
+  "unit": {
+    "files": 37,
+    "tests": 349
+  },
+  "postgres": {
+    "files": 3,
+    "tests": 78
+  },
+  "qualityCommands": 5
+}

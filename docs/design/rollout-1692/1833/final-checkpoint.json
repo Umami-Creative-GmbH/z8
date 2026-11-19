@@ -1,0 +1,31 @@
+{
+    "verifiedSnapshot":  "383c64f06a86bf94b89b980f9ec1091c6040d554",
+    "mergeCommit":  "a3f45a4584b69b5181149728c35cdeb111f4822c",
+    "earlierRuntimeCheckpoint":  "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+    "runtimeRerunAfter383c64":  false,
+    "ancestry":  [
+                     {
+                         "commit":  "11671b30d78f9bc12be6f991ed4638218cc75777",
+                         "ancestor":  true
+                     },
+                     {
+                         "commit":  "bfacad421ffe77f50729ea5895c546698ef28383",
+                         "ancestor":  true
+                     },
+                     {
+                         "commit":  "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+                         "ancestor":  true
+                     },
+                     {
+                         "commit":  "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+                         "ancestor":  true
+                     },
+                     {
+                         "commit":  "383c64f06a86bf94b89b980f9ec1091c6040d554",
+                         "ancestor":  true
+                     }
+                 ],
+    "reason":  "Incoming application changes only onboarding/complete; wellness source and auth/session/onboarding/shared shell/progress/run-action owners unchanged. Earlier runtime remains explicitly pinned.",
+    "wellnessWorkingSourceSHA256":  "402BD3EFC0758F4245EE046DF7CDAB8A937C78E37F473904A6E6F8A018E14BDB",
+    "earlierRuntimeSourceMatches":  true
+}

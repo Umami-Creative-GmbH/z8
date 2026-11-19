@@ -1,0 +1,23 @@
+{
+  "at": "2026-11-18T03:53:54.083Z",
+  "correctFreshForm": true,
+  "credentialFormSubmissionOrdinal": 2,
+  "publicLoginSuccess": true,
+  "separateFreshContext": true,
+  "pathname": "/en/travel-expenses",
+  "empty": true,
+  "visibleHeadings": [
+    "Travel Expenses",
+    "Your expenses",
+    "Review pending travel expense approvals"
+  ],
+  "ownHistoryRows": 0,
+  "creatorDraftsAbsent": true,
+  "destinations": [
+    {
+      "path": "/en/approvals/inbox",
+      "query": "?types=travel_expense_report,travel_expense_claim"
+    }
+  ],
+  "qualification": "Actual manager and same-org different employee; no foreign-org arrival or finance grant/revocation proof. Exactly two total correct fresh public form submissions; no further login attempted."
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7E1E9319CA1C501AD5EDA081BF2DC4FE02825491B22F7461B07F05776861071C",
+    "Path": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp\\src\\components\\scheduling\\scheduler\\shift-scheduler.tsx"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2665ED6F2D06FE91705C7EA9CBB17A4D16959A8E403B44308B2C8D4C43F94482",
+    "Path": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp\\src\\components\\scheduling\\scheduler\\template-sidebar.tsx"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "374CA8F94C5914701753B9B52AEA2C00927051D9FC555A17F6D6F8F723988B8D",
+    "Path": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp\\src\\components\\scheduling\\shifts\\shift-dialog.tsx"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "Path": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\pnpm-lock.yaml"
+  }
+]

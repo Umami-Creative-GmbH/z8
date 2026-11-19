@@ -1,0 +1,1 @@
+const observed=await dom();results.contextContinuation={requests:contextRequests,actorFieldNames:Object.keys(h.f.actors['small-admin']),h1:observed.h1,formPresent:observed.inputs.some(e=>e.name==='payPeriodYear'),alerts:observed.alerts};return results.contextContinuation;

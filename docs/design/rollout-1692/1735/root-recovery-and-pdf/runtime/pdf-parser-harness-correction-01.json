@@ -1,0 +1,9 @@
+{
+  "initial": "current-pdf-download-01-raw-private.json",
+  "source": "browser-controller-01-private.mjs",
+  "cause": "After native completed event and actual bytes read, Node rejected Windows X: path as ESM import specifier. Parser now uses pathToFileURL; source export never failed.",
+  "newDownload": false,
+  "parsedEveryPage": true,
+  "unhandledPromises": 0,
+  "sourceChanged": false
+}

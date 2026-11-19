@@ -1,0 +1,28 @@
+{
+  "mode": "pg",
+  "args": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/officer-grants.integration.test.ts",
+    "src/lib/personnel-file/expiry-reminders.integration.test.ts",
+    "src/lib/personnel-file/personnel-file.integration.test.ts",
+    "src/lib/personnel-file/document-request-officer.integration.test.ts",
+    "src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+    "src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1728-audit\\pg.json"
+  ],
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "head": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+  "started": "2026-11-16T05:52:38.038Z",
+  "exit": 0,
+  "ended": "2026-11-16T05:53:02.055Z"
+}

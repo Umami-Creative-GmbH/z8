@@ -1,0 +1,76 @@
+{
+  "heading": "## Root bounded integration proof — 2026-11-17",
+  "reports": [
+    {
+      "path": "docs/design/rollout-1692/1738.md",
+      "prefix": {
+        "path": "docs/design/rollout-1692/1738.md",
+        "bytes": 41289,
+        "sha256": "27d9a2c257591db3d15fc647d3251ad8ffd8d261dd46fd6ff09d6429647a26d4"
+      },
+      "append": {
+        "bytes": 5990,
+        "sha256": "8fec4842de0bf2e1cc78ad6876816e57fafc9ec293791080012a0f253f606b29",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 5990,
+          "sha256": "8fec4842de0bf2e1cc78ad6876816e57fafc9ec293791080012a0f253f606b29"
+        },
+        "crlf": {
+          "bytes": 6007,
+          "sha256": "e9ec94165d2509a19ce2304043e8d1a192a31220b9cff90bec2f562fcc898eed"
+        }
+      },
+      "publishedWholeFile": {
+        "bytes": 47279,
+        "sha256": "ffd2633c7ce59ee08a8cc81ae2e48582bc784c0aa5e99262d7bba675fe14dfa5",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 47036,
+          "sha256": "ea047177db1d75277778afadaa972d0260f182df00e33e9823a88833c7ab4d9d"
+        },
+        "crlf": {
+          "bytes": 47296,
+          "sha256": "117f15d953834c5f85ac455eed92ba91a85d99f660ae13808f1225c92e8f667c"
+        }
+      },
+      "prefixPreserved": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1739.md",
+      "prefix": {
+        "path": "docs/design/rollout-1692/1739.md",
+        "bytes": 19532,
+        "sha256": "27a3c344660fff57a6a17540a5baf055d2644cbff068f6275a3dc287c8eaf74d"
+      },
+      "append": {
+        "bytes": 5990,
+        "sha256": "bdb6dc978e63a9b2f3acf8761b2e18cc4fe036812972e65ec1a5ac9eb6548c16",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 5990,
+          "sha256": "bdb6dc978e63a9b2f3acf8761b2e18cc4fe036812972e65ec1a5ac9eb6548c16"
+        },
+        "crlf": {
+          "bytes": 6007,
+          "sha256": "7b96017390b83af47c60186ebec63dbf17e95893aa772ddaefee9c2fcb49a757"
+        }
+      },
+      "publishedWholeFile": {
+        "bytes": 25522,
+        "sha256": "e9228e6564179b86f08e671bf40adb94534009d75ce9d9d32fdbb8ba1c48521d",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 25249,
+          "sha256": "4e11bbc1d18432f242c19d4d4d7a0868bfe5fcf05fae8d65c2a246465b225faa"
+        },
+        "crlf": {
+          "bytes": 25539,
+          "sha256": "68003a4c8546d15b160325df75bd9cf30354931768d46d826db248f2236fd7a8"
+        }
+      },
+      "prefixPreserved": true
+    }
+  ],
+  "qualification": "Only raw original byte prefixes are immutable; root owns independent staged Git-blob audit. No future verifiedCommit."
+}

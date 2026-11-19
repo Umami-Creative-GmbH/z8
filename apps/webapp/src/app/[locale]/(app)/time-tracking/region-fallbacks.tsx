@@ -8,11 +8,7 @@ import { useRouter } from "@/navigation";
 function RegionLoading({ height }: { height: string }) {
 	const { t } = useTranslate();
 	return (
-		<div
-			role="status"
-			aria-label={t("common.loading", "Loading...")}
-			className="px-4 lg:px-6"
-		>
+		<div role="status" aria-label={t("common.loading", "Loading...")}>
 			<Skeleton className={`${height} w-full`} />
 		</div>
 	);
@@ -41,7 +37,7 @@ export function SummaryLoading() {
 		<div
 			role="status"
 			aria-label={t("common.loading", "Loading...")}
-			className="grid gap-4 px-4 md:grid-cols-2 lg:px-6 xl:grid-cols-4"
+			className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
 		>
 			{["week", "hours", "breaks", "balance"].map((key) => (
 				<Skeleton key={key} className="h-28 w-full" />

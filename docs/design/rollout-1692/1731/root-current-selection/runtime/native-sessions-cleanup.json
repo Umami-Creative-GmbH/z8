@@ -1,0 +1,79 @@
+{
+  "sameWindowsUserAsLaunch": true,
+  "sessions": [
+    {
+      "session": "z8-1731-native-ba15580715605ffd",
+      "flavor": "current",
+      "info": {
+        "data": {
+          "active": false,
+          "namespace": null,
+          "pid": null,
+          "runtime": null,
+          "runtimeError": null,
+          "session": "z8-1731-native-ba15580715605ffd",
+          "socketDir": "C:\\Users\\KaiHentschel\\.agent-browser",
+          "version": null
+        },
+        "success": true
+      },
+      "closeExit": 0
+    },
+    {
+      "session": "z8-1731-native-d50736cd17be1ca9",
+      "flavor": "before",
+      "info": {
+        "data": {
+          "active": false,
+          "namespace": null,
+          "pid": null,
+          "runtime": null,
+          "runtimeError": null,
+          "session": "z8-1731-native-d50736cd17be1ca9",
+          "socketDir": "C:\\Users\\KaiHentschel\\.agent-browser",
+          "version": null
+        },
+        "success": true
+      },
+      "closeExit": 0
+    },
+    {
+      "session": "z8-1731-native-22109b391482fff3",
+      "flavor": "restored",
+      "info": {
+        "data": {
+          "active": false,
+          "namespace": null,
+          "pid": null,
+          "runtime": null,
+          "runtimeError": null,
+          "session": "z8-1731-native-22109b391482fff3",
+          "socketDir": "C:\\Users\\KaiHentschel\\.agent-browser",
+          "version": null
+        },
+        "success": true
+      },
+      "closeExit": 1
+    },
+    {
+      "session": "z8-1731-native-ffe5fa3be6ef55d9",
+      "flavor": "restored-final",
+      "info": {
+        "data": {
+          "active": false,
+          "namespace": null,
+          "pid": null,
+          "runtime": null,
+          "runtimeError": null,
+          "session": "z8-1731-native-ffe5fa3be6ef55d9",
+          "socketDir": "C:\\Users\\KaiHentschel\\.agent-browser",
+          "version": null
+        },
+        "success": true
+      },
+      "closeExit": 0
+    }
+  ],
+  "ownActiveSessions": 0,
+  "qualification": "Only exact four newly owned session IDs queried; no global doctor/cleanup or saved state APIs."
+}

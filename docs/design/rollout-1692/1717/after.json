@@ -1,0 +1,41 @@
+{
+  "phase": "after",
+  "route": "/en/equipment",
+  "actor": "small-admin",
+  "observations": [
+    {
+      "name": "desktop-light",
+      "headings": [
+        "Equipment"
+      ],
+      "text": "Toggle Sidebar\n\nEquipment\n\n06:30\nUTC+01:00\nClock In\nToggle theme\nYour authorized equipment records\nAs of Nov 15, 2026 (Europe/Berlin)\nEquipment\nWho holds each item, what must come back, and every recorded handover.\nEquipment settings\nIssue equipment\nOutstanding returns\n2\nAcross 2 employees\nOverdue\n1\nOldest: 14 days overdue\nDue within 14 days\n0\nNothing due soon\nItems ready to issue\n2\nOf 3 identified items\nAssignments\nItems\nAssignments\n\n2 of 3 assignments\n\nOutstanding\n2\nOverdue\n1\nAll\nSearch assignments\nAll holders\nType\nAll types\nShow former employees\nHolder\n\tItem\n\tOutstanding\tReturn deadline\n\tStatus\t\nActions\n\n\nFixture Person 2\n\t\nEQ-HELD\nFixture laptops\n\t\n1 / 1\n\t\nNov 1, 2026\n14 days overdue\n\t\nOverdue\n\t\n\n\nFixture Person 1\n\t\nFixture shirts\nQuantity · Fixture shirts\n\t\n2 / 3\n\t\nNo deadline\n\t\nOutstanding return\n\t",
+      "width": 1600,
+      "viewport": 1600,
+      "rows": 2,
+      "dark": false
+    },
+    {
+      "name": "phone-light",
+      "headings": [
+        "Equipment"
+      ],
+      "text": "Toggle Sidebar\n\nEquipment\n\nMore actions\nYour authorized equipment records\nAs of Nov 15, 2026 (Europe/Berlin)\nEquipment\nWho holds each item, what must come back, and every recorded handover.\nEquipment settings\nIssue equipment\nOutstanding returns\n2\nAcross 2 employees\nOverdue\n1\nOldest: 14 days overdue\nDue within 14 days\n0\nNothing due soon\nItems ready to issue\n2\nOf 3 identified items\nAssignments\nItems\nAssignments\n\n2 of 3 assignments\n\nOutstanding\n2\nOverdue\n1\nAll\nSearch assignments\nAll holders\nType\nAll types\nShow former employees\nHolder\nItem\nOutstanding\nReturn deadline\nStatus\nActions",
+      "width": 390,
+      "viewport": 390,
+      "rows": 2,
+      "dark": false
+    },
+    {
+      "name": "wide-dark",
+      "headings": [
+        "Equipment"
+      ],
+      "text": "Toggle Sidebar\n\nEquipment\n\n06:30\nUTC+01:00\nClock In\nToggle theme\nYour authorized equipment records\nAs of Nov 15, 2026 (Europe/Berlin)\nEquipment\nWho holds each item, what must come back, and every recorded handover.\nEquipment settings\nIssue equipment\nOutstanding returns\n2\nAcross 2 employees\nOverdue\n1\nOldest: 14 days overdue\nDue within 14 days\n0\nNothing due soon\nItems ready to issue\n2\nOf 3 identified items\nAssignments\nItems\nAssignments\n\n2 of 3 assignments\n\nOutstanding\n2\nOverdue\n1\nAll\nSearch assignments\nAll holders\nType\nAll types\nShow former employees\nHolder\n\tItem\n\tOutstanding\tReturn deadline\n\tStatus\t\nActions\n\n\nFixture Person 2\n\t\nEQ-HELD\nFixture laptops\n\t\n1 / 1\n\t\nNov 1, 2026\n14 days overdue\n\t\nOverdue\n\t\n\n\nFixture Person 1\n\t\nFixture shirts\nQuantity · Fixture shirts\n\t\n2 / 3\n\t\nNo deadline\n\t\nOutstanding return\n\t",
+      "width": 1920,
+      "viewport": 1920,
+      "rows": 2,
+      "dark": true
+    }
+  ],
+  "errors": []
+}

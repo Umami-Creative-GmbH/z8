@@ -1,0 +1,27 @@
+[
+  {
+    "name": "doctor",
+    "command": [
+      "pnpm",
+      "exec",
+      "react-doctor",
+      "--project",
+      "webapp",
+      "--scope",
+      "changed",
+      "--base",
+      "e64f66f144b59917d9fc975710df5ff98093cce6",
+      "--verbose",
+      "--no-score",
+      "--no-supply-chain",
+      "--no-telemetry",
+      "--json",
+      "--json-out",
+      ".tmp/1725-root-checks/doctor.json"
+    ],
+    "startedAt": "2026-11-15T13:40:20.986Z",
+    "finishedAt": "2026-11-15T13:40:46.673Z",
+    "exitCode": 0,
+    "log": ".tmp/1725-root-checks/doctor.log"
+  }
+]

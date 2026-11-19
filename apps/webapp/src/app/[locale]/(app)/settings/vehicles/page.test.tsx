@@ -30,6 +30,22 @@ vi.mock("@/components/settings/vehicle-use/vehicle-use-settings", () => ({
 	VehicleUseSwitch: () => <p>Recording controls loaded</p>,
 	VehicleUseAssignments: () => <p>Assignments loaded</p>,
 }));
+vi.mock("@/components/settings/settings-load-error", () => ({
+	SettingsLoadError: ({
+		message,
+		onRetry,
+	}: {
+		message: string;
+		onRetry?: () => void;
+	}) => (
+		<div role="alert">
+			{message}
+			<button type="button" data-retry={onRetry ? "custom" : "route-refresh"}>
+				Retry
+			</button>
+		</div>
+	),
+}));
 vi.mock("@/components/settings/vehicles/vehicle-settings-tabs", () => ({
 	VehicleSettingsTabs: ({ panels }: { panels: Record<string, ReactNode> }) => (
 		<>{Object.values(panels)}</>
@@ -72,11 +88,14 @@ describe("combined Vehicles page", () => {
 		const html = renderToStaticMarkup(await content(VehiclesPage()));
 		expect(html).toContain("Vehicle list loaded");
 		expect(html).toContain("The vehicle use settings could not be loaded.");
+		// The failure offers an in-place retry of the route's server data.
+		expect(html).toContain('data-retry="route-refresh"');
 	});
 	it("keeps recording controls usable when the vehicle list fails to load", async () => {
 		mocks.vehicles.mockResolvedValue({ success: false, error: "failed" });
 		const html = renderToStaticMarkup(await content(VehiclesPage()));
 		expect(html).toContain("Vehicles could not be loaded.");
+		expect(html).toContain('data-retry="route-refresh"');
 		expect(html).toContain("Recording controls loaded");
 	});
 	it("does not load either data set when admin access is refused", async () => {

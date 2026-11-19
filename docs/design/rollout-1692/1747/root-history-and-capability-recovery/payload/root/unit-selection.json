@@ -1,0 +1,15 @@
+[
+  "src/components/travel-expenses/travel-expense-management.test.tsx",
+  "src/components/travel-expenses/travel-expenses-heading.test.ts",
+  "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+  "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+  "src/lib/navigation/route-metadata.test.ts",
+  "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+  "src/components/travel-expenses/travel-expense-list.test.tsx",
+  "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+  "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+  "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+  "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+  "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+  "src/components/travel-expenses/expense-history-withdrawal.test.tsx"
+]

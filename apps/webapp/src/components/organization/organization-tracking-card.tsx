@@ -123,7 +123,10 @@ export function OrganizationTrackingCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.tracking.title", "Time tracking start")}</CardTitle>
+				{/* The tab already shows this name; keep it as the panel's heading for assistive tech only. */}
+				<CardTitle as="h2" className="sr-only">
+					{t("organization.tracking.title", "Time tracking start")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.tracking.description",
@@ -234,7 +237,14 @@ export function OrganizationTrackingCard({
 							type="button"
 							onClick={() => void commit()}
 							disabled={busy || preview.blockers.length > 0}
+							aria-busy={busy || undefined}
 						>
+							{busy ? (
+								<IconLoader2
+									aria-hidden="true"
+									className="size-4 animate-spin motion-reduce:animate-none"
+								/>
+							) : null}
 							{preview.kind === "activation"
 								? t("organization.tracking.activate-reviewed", "Activate reviewed date")
 								: t("organization.tracking.save-reviewed", "Save reviewed date")}

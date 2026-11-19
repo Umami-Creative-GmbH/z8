@@ -1,0 +1,42 @@
+{
+  "issue": 1750,
+  "verifiedCommit": null,
+  "runtimeInput": {
+    "source": "1ad48b7d15410daffa4135e366c4b811f48fa80c",
+    "tree": "eca3ec54115b482be90d79ddbc67623cd2eda22d",
+    "appSourceTree": "1138b19614ef785d7434dbe64b6a4f63da00e2d8",
+    "parent": "875ca1959a33afca227f0d4e6d9332ec2a8c05fb",
+    "finding": "After withdrawal, explicit submission 1 rendered frozen evidence and the withdrawal notice, but the header showed the current Draft status.",
+    "passed": [
+      "Owner autosave, Refresh data, full reload, submit to frozen view, withdrawal back to editable draft and reload",
+      "Separate approval, actual late PNG attachment, reopen, exact owner correction reason, and read-only explicit cycle",
+      "Five authenticated HTTP 200 receipt readbacks matched uploaded SHA-256 values, including the original after withdrawal and a separate late upload",
+      "Settled 390 by 844 layout, Escape focus return, editor retained on resize, exact-route Next compilation and scoped axe with zero violations"
+    ],
+    "unpassed": [
+      "Restricted actor",
+      "Linked adjustment in the browser",
+      "Native file download and React tree",
+      "Live in-flight autosave ordering and Retry",
+      "Live Activity progress continuity"
+    ],
+    "qualification": "Ran in a disposable synthetic fixture. The first pnpm lifecycle attempt contacted the PostHog release host. The successful frozen offline retry disabled lifecycle scripts and used pnpm 12.16.1. The separate license generator's nested dlx reported 12.21.0. Source and index were clean and no owned resources remained after cleanup.",
+    "allowlistHashes": [
+      { "name": "acceptance-readbacks.json", "bytes": 6570, "sha256": "1aa9258bb15943ce4a61942c682ad08884c2802ae8a2d7d92c118735f26e8507" },
+      { "name": "earlier-withdrawn-cycle-redacted.png", "bytes": 61136, "sha256": "ee3a07eec703c4f0ae6c1c26487145aad2703a210defa418bbb503aab9b8deab" },
+      { "name": "owner-mobile-draft.png", "bytes": 44068, "sha256": "efa2a8190fcdf90191d6055bfcf4706c85ac1677c1abd1948ee8363708514f9b" }
+    ]
+  },
+  "correction": {
+    "source": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
+    "tree": "099e6670cf785bae93e8ca5847de4afdd0eeb13e",
+    "appSourceTree": "234c914f8b8617a9412f4264b8d2d6cbbef93e11",
+    "parent": "761563afb3a5f3dbcff223399063739a0a4dce00",
+    "change": "The frozen view uses the selected cycle's canonical outcome for its heading badge. Pending uses the existing Awaiting review badge. Withdrawn and reopened use existing timeline translations. Draft rendering, server reads, actions and authorization stay intact.",
+    "red": { "files": 1, "passed": 17, "failed": 3, "exit": 1 },
+    "focusedGreen": { "files": 1, "passed": 20, "failed": 0, "exit": 0 },
+    "committedSelection": { "files": 50, "distinctPassed": 525, "failed": 0, "skipped": 0, "exit": 0 },
+    "quality": { "typegenAndThreeProjectsExit": 0, "scopedFiles": 4, "lintExit": 0, "explicitCrLfFormatExit": 0, "ordinaryFormatExit": 1, "ordinaryFormatFindings": 4, "doctorErrors": 0, "doctorWarnings": 1, "doctorWarning": "Submitted-report component complexity", "sourceWhitespaceExit": 0 }
+  },
+  "qualification": "Focused cases use the production frozen consumer with explicit cycle 1 and synthetic reads, and verify cycle-bound receipt links. Live results in runtimeInput predate the badge correction. The focused live retest is in progress."
+}

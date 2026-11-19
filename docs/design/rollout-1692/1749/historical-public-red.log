@@ -1,0 +1,824 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-23efd673-c653899c5ba7311d/apps/webapp
+
+ ❯ |unit| src/components/site-header.test.tsx (12 tests | 1 failed) 224ms
+   ❯ SiteHeader (12)
+     × gives only the exact finance route one page heading during arrival 66ms
+ ❯ |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx (7 tests | 6 failed) 652ms
+   × retires queued TanStack payment validation after Activity changes, including return 145ms
+   × retires queued TanStack payment validation after account changes, including return 71ms
+   × retires queued TanStack payment validation after actor changes, including return 63ms
+   × retires queued TanStack payment validation after organization changes, including return 44ms
+   × does not publish a late payment response into another account 79ms
+   × keeps payroll confirmation pending through Escape and transport failure with its payday 127ms
+(node:53784) TimeoutOverflowWarning: 3370183618 does not fit into a 32-bit signed integer.
+Timeout duration was set to 1.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ |unit| src/components/travel-expenses/finance/finance-queue.test.tsx (18 tests | 4 failed) 4054ms
+   ❯ finance queue (#612, #753) (13)
+     × does not present cached accounts as current after an observed actor return while the read is held 1157ms
+     × does not present cached accounts as current after an observed organization return while the read is held 1063ms
+     × keeps a pending bulk payment open through Escape and native duplicate submission 154ms
+     × does not select retained rows while the next page is still loading 71ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/site-header.test.tsx > SiteHeader > gives only the exact finance route one page heading during arrival
+AssertionError: expected [ Array(2) ] to deeply equal [ 'Expense finance' ]
+
+- Expected
++ Received
+
+  [
++   "Travel Expenses",
+    "Expense finance",
+  ]
+
+ ❯ src/components/site-header.test.tsx:72:82
+     70|    </>,
+     71|   );
+     72|   expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.tex…
+       |                                                                                  ^
+     73|    "Expense finance",
+     74|   ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > retires queued TanStack payment validation after Activity changes, including return
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "amount": "20.50",
+        "expectedBalance": Object {
+          "amount": "90.00",
+          "currency": "EUR",
+        },
+        "idempotencyKey": "50a5ce25-e953-499a-9534-2d7012f7770e",
+        "note": null,
+        "occurredOn": "2026-10-01",
+        "reference": "Exact reference",
+        "source": Object {
+          "id": "a",
+          "type": "report",
+        },
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:111:31
+    109|    await new Promise((resolve) => setTimeout(resolve, 30));
+    110|   });
+    111|   expect(boundary.record).not.toHaveBeenCalled();
+       |                               ^
+    112|   expect(settled).not.toHaveBeenCalled();
+    113|   expect((screen.getByLabelText("Payment reference") as HTMLInputEleme…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > retires queued TanStack payment validation after account changes, including return
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "amount": "20.50",
+        "expectedBalance": Object {
+          "amount": "90.00",
+          "currency": "EUR",
+        },
+        "idempotencyKey": "f4319ada-3023-4df8-aa43-5a735dd79636",
+        "note": null,
+        "occurredOn": "2026-10-01",
+        "reference": "Exact reference",
+        "source": Object {
+          "id": "a",
+          "type": "report",
+        },
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:111:31
+    109|    await new Promise((resolve) => setTimeout(resolve, 30));
+    110|   });
+    111|   expect(boundary.record).not.toHaveBeenCalled();
+       |                               ^
+    112|   expect(settled).not.toHaveBeenCalled();
+    113|   expect((screen.getByLabelText("Payment reference") as HTMLInputEleme…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > retires queued TanStack payment validation after actor changes, including return
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "amount": "20.50",
+        "expectedBalance": Object {
+          "amount": "90.00",
+          "currency": "EUR",
+        },
+        "idempotencyKey": "30de5387-c89b-4dca-bc4f-cda4927e6181",
+        "note": null,
+        "occurredOn": "2026-10-01",
+        "reference": "Exact reference",
+        "source": Object {
+          "id": "a",
+          "type": "report",
+        },
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:111:31
+    109|    await new Promise((resolve) => setTimeout(resolve, 30));
+    110|   });
+    111|   expect(boundary.record).not.toHaveBeenCalled();
+       |                               ^
+    112|   expect(settled).not.toHaveBeenCalled();
+    113|   expect((screen.getByLabelText("Payment reference") as HTMLInputEleme…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > retires queued TanStack payment validation after organization changes, including return
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "amount": "20.50",
+        "expectedBalance": Object {
+          "amount": "90.00",
+          "currency": "EUR",
+        },
+        "idempotencyKey": "67179ed1-b567-4091-bdd0-4c0cf5c24fde",
+        "note": null,
+        "occurredOn": "2026-10-01",
+        "reference": "Exact reference",
+        "source": Object {
+          "id": "a",
+          "type": "report",
+        },
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:111:31
+    109|    await new Promise((resolve) => setTimeout(resolve, 30));
+    110|   });
+    111|   expect(boundary.record).not.toHaveBeenCalled();
+       |                               ^
+    112|   expect(settled).not.toHaveBeenCalled();
+    113|   expect((screen.getByLabelText("Payment reference") as HTMLInputEleme…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > does not publish a late payment response into another account
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "Reimbursement recorded.",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:160:31
+    158|   finish({ success: true, data: { status: "recorded", replayed: false,…
+    159|  );
+    160|  expect(boundary.success).not.toHaveBeenCalled();
+       |                               ^
+    161|  expect(settled).not.toHaveBeenCalled();
+    162| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > keeps payroll confirmation pending through Escape and transport failure with its payday
+TestingLibraryElementError: Unable to find an accessible element with the role "dialog"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Confirm as paid":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+    data-slot="button"
+    type="button"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body
+  style="overflow: hidden;"
+>
+  <div>
+    <button
+      class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+      data-slot="button"
+      type="button"
+    >
+      Confirm as paid
+    </button>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:192:16
+    190|  fireEvent.submit(node);
+    191|  fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    192|  expect(screen.getByRole("dialog")).toBeTruthy();
+       |                ^
+    193|  expect(boundary.confirm).toHaveBeenCalledOnce();
+    194|  await act(async () => finish({ success: false, error: "Unavailable" }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-queue.test.tsx > finance queue (#612, #753) > does not present cached accounts as current after an observed actor return while the read is held
+AssertionError: expected 1 to be 2 // Object.is equality
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div>
+      <div
+        class="flex min-w-0 flex-col rounded-xl border bg-card py-6 text-card-foreground shadow-sm gap-4 overflow-hidden pb-0"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Approved expenses
+          </h2>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            Open an expense to see its settlement and record a reimbursement.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6 space-y-4"
+          data-slot="card-content"
+        >
+          <div
+            class="flex flex-wrap items-center justify-between gap-3"
+          >
+            <div
+              aria-label="Show expenses"
+              class="group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs [&.w-full>[data-slot=toggle-group-item]]:flex-1"
+              data-orientation="horizontal"
+              data-slot="toggle-group"
+              data-variant="outline"
+              role="radiogroup"
+            >
+              <button
+                aria-checked="true"
+                aria-disabled="false"
+                class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+                data-pressed=""
+                data-slot="toggle-group-item"
+                data-variant="outline"
+                role="radio"
+                tabindex="0"
+                type="button"
+              >
+                Open
+              </button>
+              <button
+                aria-checked="false"
+                aria-disabled="false"
+                class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+                data-slot="toggle-group-item"
+                data-variant="outline"
+                role="radio"
+                tabindex="-1"
+                type="button"
+              >
+                Reimbursed
+              </button>
+              <button
+                aria-checked="false"
+                aria-disabled="false"
+                class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+                data-slot="toggle-group-item"
+                data-variant="outline"
+                role="radio"
+                tabindex="-1"
+                type="button"
+              >
+                All approved
+              </button>
+            </div>
+          </div>
+          <div
+            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-center"
+          >
+            <button
+              aria-controls="_r_4_"
+              aria-expanded="false"
+              aria-haspopup="dialog"
+              aria-label="Employee"
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-a...
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/components/travel-expenses/finance/finance-queue.test.tsx:255:38
+    253|    else mocks.organization = "other";
+    254|    rendered.rerender(pageView());
+    255|    await waitFor(() => expect(calls).toBe(2));
+       |                                      ^
+    256|    mocks.actor = "finance";
+    257|    mocks.organization = "org";
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-queue.test.tsx > finance queue (#612, #753) > does not present cached accounts as current after an observed organization return while the read is held
+AssertionError: expected 1 to be 2 // Object.is equality
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div>
+      <div
+        class="flex min-w-0 flex-col rounded-xl border bg-card py-6 text-card-foreground shadow-sm gap-4 overflow-hidden pb-0"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Approved expenses
+          </h2>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            Open an expense to see its settlement and record a reimbursement.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6 space-y-4"
+          data-slot="card-content"
+        >
+          <div
+            class="flex flex-wrap items-center justify-between gap-3"
+          >
+            <div
+              aria-label="Show expenses"
+              class="group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs [&.w-full>[data-slot=toggle-group-item]]:flex-1"
+              data-orientation="horizontal"
+              data-slot="toggle-group"
+              data-variant="outline"
+              role="radiogroup"
+            >
+              <button
+                aria-checked="true"
+                aria-disabled="false"
+                class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+                data-pressed=""
+                data-slot="toggle-group-item"
+                data-variant="outline"
+                role="radio"
+                tabindex="0"
+                type="button"
+              >
+                Open
+              </button>
+              <button
+                aria-checked="false"
+                aria-disabled="false"
+                class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+                data-slot="toggle-group-item"
+                data-variant="outline"
+                role="radio"
+                tabindex="-1"
+                type="button"
+              >
+                Reimbursed
+              </button>
+              <button
+                aria-checked="false"
+                aria-disabled="false"
+                class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+                data-slot="toggle-group-item"
+                data-variant="outline"
+                role="radio"
+                tabindex="-1"
+                type="button"
+              >
+                All approved
+              </button>
+            </div>
+          </div>
+          <div
+            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-center"
+          >
+            <button
+              aria-controls="_r_q_"
+              aria-expanded="false"
+              aria-haspopup="dialog"
+              aria-label="Employee"
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-a...
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/components/travel-expenses/finance/finance-queue.test.tsx:255:38
+    253|    else mocks.organization = "other";
+    254|    rendered.rerender(pageView());
+    255|    await waitFor(() => expect(calls).toBe(2));
+       |                                      ^
+    256|    mocks.actor = "finance";
+    257|    mocks.organization = "org";
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-queue.test.tsx > finance queue (#612, #753) > keeps a pending bulk payment open through Escape and native duplicate submission
+TestingLibraryElementError: Unable to find an accessible element with the role "dialog"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Approved expenses":
+  <h2
+    class="font-semibold leading-none"
+  />
+
+  --------------------------------------------------
+  radiogroup:
+
+  Name "Show expenses":
+  <div
+    aria-label="Show expenses"
+    class="group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs [&.w-full>[data-slot=toggle-group-item]]:flex-1"
+    data-orientation="horizontal"
+    data-slot="toggle-group"
+    data-variant="outline"
+    role="radiogroup"
+  />
+
+  --------------------------------------------------
+  radio:
+
+  Name "Open":
+  <button
+    aria-checked="true"
+    aria-disabled="false"
+    class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+    data-pressed=""
+    data-slot="toggle-group-item"
+    data-variant="outline"
+    role="radio"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Reimbursed":
+  <button
+    aria-checked="false"
+    aria-disabled="false"
+    class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+    data-slot="toggle-group-item"
+    data-variant="outline"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  />
+
+  Name "All approved":
+  <button
+    aria-checked="false"
+    aria-disabled="false"
+    class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+    data-slot="toggle-group-item"
+    data-variant="outline"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  />
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Employee":
+  <button
+    aria-controls="_r_1g_"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Employee"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-placeholder=""
+    data-slot="popover-trigger"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Team at approval":
+  <button
+    aria-controls="_r_1j_"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Team at approval"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-placeholder=""
+    data-slot="popover-trigger"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Currency":
+  <button
+    aria-controls="_r_1m_"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Currency"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-placeholder=""
+    data-slot="popover-trigger"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  --------------------------------------------------
+  checkbox:
+
+  Name "Not yet exported":
+  <span
+    aria-checked="false"
+    aria-labelledby="_r_1f_-label"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] peer inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-shadow focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary dark:aria-invalid:ring-destructive/40"
+    data-slot="checkbox"
+    data-unchecked=""
+    id="base-ui-_r_1p_"
+    role="checkbox"
+    tabindex="0"
+  />
+
+  Name "Select all expenses awaiting reimbursement on this page":
+  <span
+    aria-checked="true"
+    aria-label="Select all expenses awaiting reimbursement on this page"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] peer inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-shadow focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary dark:aria-invalid:ring-destructive/40"
+    data-checked=""
+    data-slot="checkbox"
+    id="base-ui-_r_1s_"
+    role="checkbox"
+    tabindex="0"
+  />
+
+  Name "Select Robin · Customer workshop":
+  <span
+    aria-checked="true"
+    aria-label="Select Robin · Customer workshop"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] peer inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-shadow focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary dark:aria-invalid:ring-destructive/40"
+    data-checked=""
+    data-slot="checkbox"
+    id="base-ui-_r_1v_"
+    role="checkbox"
+    tabindex="0"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "Mark as reimbursed":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5 ml-auto"
+    data-slot="button"
+  />
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  <ul
+    aria-busy="false"
+    class="divide-y"
+  />
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  <li
+    class="flex items-center"
+  />
+
+  --------------------------------------------------
+  link:
+
+  Name "Robin · Customer workshop Sep 14, 2026 – Sep 16, 2026Approved Sep 20, 2026, 10:00 AM UTCCompany-paid €240.00 Employee-paid €89.90€89.90 outstanding Awaiting reimbursement":
+  <a
+    class="flex flex-wrap items-center gap-x-3 gap-y-1 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 sm:flex-nowrap min-w-0 flex-1 pr-6 pl-3"
+    href="/travel-expenses/reports/report-1"
+  />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p
+    class="truncate font-medium"
+  />
+
+  Name "":
+  <p
+    class="flex flex-wrap gap-x-3 text-sm text-muted-foreground"
+  />
+
+  Name "":
+  <p
+    class="tabular-nums"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body
+  style="overflow: hidden;"
+>
+  <div>
+    <div
+      class="flex min-w-0 flex-col rounded-xl border bg-card py-6 text-card-foreground shadow-sm gap-4 overflow-hidden pb-0"
+      data-slot="card"
+    >
+      <div
+        class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+        data-slot="card-header"
+      >
+        <h2
+          class="font-semibold leading-none"
+        >
+          Approved expenses
+        </h2>
+        <div
+          class="text-muted-foreground text-sm"
+          data-slot="card-description"
+        >
+          Open an expense to see its settlement and record a reimbursement.
+        </div>
+      </div>
+      <div
+        class="min-w-0 px-6 space-y-4"
+        data-slot="card-content"
+      >
+        <div
+          class="flex flex-wrap items-center justify-between gap-3"
+        >
+          <div
+            aria-label="Show expenses"
+            class="group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs [&.w-full>[data-slot=toggle-group-item]]:flex-1"
+            data-orientation="horizontal"
+            data-slot="toggle-group"
+            data-variant="outline"
+            role="radiogroup"
+          >
+            <button
+              aria-checked="true"
+              aria-disabled="false"
+              class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+              data-pressed=""
+              data-slot="toggle-group-item"
+              data-variant="outline"
+              role="radio"
+              tabindex="0"
+              type="button"
+            >
+              Open
+            </button>
+            <button
+              aria-checked="false"
+              aria-disabled="false"
+              class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+              data-slot="toggle-group-item"
+              data-variant="outline"
+              role="radio"
+              tabindex="-1"
+              type="button"
+            >
+              Reimbursed
+            </button>
+            <button
+              aria-checked="false"
+              aria-disabled="false"
+              class="inline-flex items-center justify-center gap-2 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-pressed:bg-accent data-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-9 min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l whitespace-nowrap px-3"
+              data-slot="toggle-group-item"
+              data-variant="outline"
+              role="radio"
+              tabindex="-1"
+              type="button"
+            >
+              All approved
+            </button>
+          </div>
+        </div>
+        <div
+          class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-center"
+        >
+          <button
+            aria-controls="_r_1g_"
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-label="Employee"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-inpu...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/travel-expenses/finance/finance-queue.test.tsx:288:17
+    286|   fireEvent.submit(form);
+    287|   fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    288|   expect(screen.getByRole("dialog")).toBeTruthy();
+       |                 ^
+    289|   expect(mocks.markReimbursed).toHaveBeenCalledOnce();
+    290|   finish({ success: false, error: "Unavailable" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-queue.test.tsx > finance queue (#612, #753) > does not select retained rows while the next page is still loading
+AssertionError: expected null to be 'true' // Object.is equality
+
+- Expected:
+"true"
+
++ Received:
+null
+
+ ❯ src/components/travel-expenses/finance/finance-queue.test.tsx:312:51
+    310|   await waitFor(() => expect(mocks.getQueue).toHaveBeenCalledTimes(2));
+    311|   const selectAll = screen.getByRole("checkbox", { name: /Select all e…
+    312|   expect(selectAll.getAttribute("aria-disabled")).toBe("true");
+       |                                                   ^
+    313|   fireEvent.click(selectAll);
+    314|   expect(
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+
+ Test Files  3 failed (3)
+      Tests  11 failed | 26 passed (37)
+   Start at  12:09:35
+   Duration  9.76s (tests 35%, import 32%, environment 18%, transform 13%, setup 1%)

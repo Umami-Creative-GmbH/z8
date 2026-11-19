@@ -1,0 +1,2 @@
+# Preserve the exact raw bytes paired with the canonical source hashes.
+source-*.tsx.txt -text

@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TABS = [
@@ -57,31 +58,34 @@ export function ApprovalSettingsTabs({
 	};
 
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
-			<h1 className="text-2xl font-semibold tracking-tight">
-				{t("settings.approvalEscalation.attention.approvalType", "Approval")}
-			</h1>
-			<Tabs value={active} onValueChange={select} className="min-w-0 gap-4">
-				<div className="max-w-full overflow-x-auto">
-					<TabsList
-						aria-label={t(
-							"settings.approvalEscalation.attention.approvalType",
-							"Approval",
-						)}
-					>
-						{tabs.map((tab) => (
-							<TabsTrigger key={tab} value={tab}>
-								{labels[tab]}
-							</TabsTrigger>
-						))}
-					</TabsList>
-				</div>
-				{tabs.map((tab) => (
-					<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
-						{active === tab || visited.has(tab) ? panels[tab] : null}
-					</TabsContent>
-				))}
-			</Tabs>
+		<div className="page-frame flex min-w-0 flex-1 flex-col">
+			<div className="page-measure min-w-0 space-y-6">
+				<PageHeader
+					title={t("settings.navigation.approval.title", "Approval")}
+					description={t(
+						"settings.approvalSettings.pageDescription",
+						"Configure who approves requests, when overdue approvals escalate, and which approval issues need follow-up.",
+					)}
+				/>
+				<Tabs value={active} onValueChange={select} className="min-w-0 gap-4">
+					<div className="max-w-full overflow-x-auto">
+						<TabsList
+							aria-label={t("settings.navigation.approval.title", "Approval")}
+						>
+							{tabs.map((tab) => (
+								<TabsTrigger key={tab} value={tab}>
+									{labels[tab]}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</div>
+					{tabs.map((tab) => (
+						<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
+							{active === tab || visited.has(tab) ? panels[tab] : null}
+						</TabsContent>
+					))}
+				</Tabs>
+			</div>
 		</div>
 	);
 }

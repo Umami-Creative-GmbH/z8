@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
+import { EmployeeSingleSelect } from "@/components/employee-select";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -254,18 +255,35 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						<form.Field name="employeeId">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor={field.name}>
-										{t("settings.surcharges.reports.filters.employeeId", "Employee ID")}
-									</Label>
-									<Input
-										id={field.name}
-										name={field.name}
-										autoComplete="off"
-										spellCheck={false}
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
+									{/* The picker offers the employees the actor may pick; the report
+									    itself still applies its own scope on the server. An empty
+									    value is "All employees". Former employees stay pickable
+									    because reports look at the past. */}
+									<EmployeeSingleSelect
+										value={field.state.value || null}
+										onChange={(employeeId) => field.handleChange(employeeId ?? "")}
+										includeFormerEmployees
+										label={t("settings.surcharges.reports.filters.employee", "Employee")}
+										placeholder={t(
+											"settings.surcharges.reports.filters.allEmployees",
+											"All employees",
+										)}
+										className="grid gap-2 space-y-0"
 									/>
+									{field.state.value ? (
+										<Button
+											type="button"
+											variant="link"
+											size="sm"
+											className="h-auto justify-start p-0"
+											onClick={() => field.handleChange("")}
+										>
+											{t(
+												"settings.surcharges.reports.filters.showAllEmployees",
+												"Show all employees",
+											)}
+										</Button>
+									) : null}
 								</div>
 							)}
 						</form.Field>

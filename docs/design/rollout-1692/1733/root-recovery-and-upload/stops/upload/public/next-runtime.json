@@ -1,0 +1,260 @@
+{
+  "beforeStop": {
+    "get_project_metadata": [
+      {
+        "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+        "devServerUrl": "http://localhost:50721"
+      }
+    ],
+    "get_page_metadata": [
+      {
+        "sessions": [
+          {
+            "url": "/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e",
+            "routerType": "app",
+            "segments": [
+              {
+                "path": "app/[locale]/(app)/layout.tsx",
+                "type": "layout",
+                "isBoundary": false,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+                "type": "layout",
+                "isBoundary": false,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/layout.tsx",
+                "type": "layout",
+                "isBoundary": false,
+                "isBuiltin": false
+              },
+              {
+                "path": "global-error.js",
+                "type": "boundary:global-error",
+                "isBoundary": true,
+                "isBuiltin": true
+              },
+              {
+                "path": "not-found.js",
+                "type": "boundary:not-found",
+                "isBoundary": true,
+                "isBuiltin": true
+              },
+              {
+                "path": "app/[locale]/(app)/error.tsx",
+                "type": "boundary:error",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/(app)/not-found.tsx",
+                "type": "boundary:not-found",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/error.tsx",
+                "type": "boundary:error",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/not-found.tsx",
+                "type": "boundary:not-found",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+                "type": "page",
+                "isBoundary": false,
+                "isBuiltin": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "get_compilation_issues": [
+      {
+        "issues": []
+      }
+    ],
+    "get_errors": [
+      {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    ]
+  },
+  "restoredCurrent": {
+    "get_project_metadata": [
+      {
+        "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+        "devServerUrl": "http://localhost:50721"
+      }
+    ],
+    "get_page_metadata": [
+      {
+        "sessions": [
+          {
+            "url": "/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e",
+            "routerType": "app",
+            "segments": [
+              {
+                "path": "app/[locale]/(app)/layout.tsx",
+                "type": "layout",
+                "isBoundary": false,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+                "type": "layout",
+                "isBoundary": false,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/layout.tsx",
+                "type": "layout",
+                "isBoundary": false,
+                "isBuiltin": false
+              },
+              {
+                "path": "global-error.js",
+                "type": "boundary:global-error",
+                "isBoundary": true,
+                "isBuiltin": true
+              },
+              {
+                "path": "not-found.js",
+                "type": "boundary:not-found",
+                "isBoundary": true,
+                "isBuiltin": true
+              },
+              {
+                "path": "app/[locale]/(app)/error.tsx",
+                "type": "boundary:error",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/(app)/not-found.tsx",
+                "type": "boundary:not-found",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/error.tsx",
+                "type": "boundary:error",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/not-found.tsx",
+                "type": "boundary:not-found",
+                "isBoundary": true,
+                "isBuiltin": false
+              },
+              {
+                "path": "app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+                "type": "page",
+                "isBoundary": false,
+                "isBuiltin": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "get_compilation_issues": [
+      {
+        "issues": []
+      }
+    ],
+    "get_errors": [
+      {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    ]
+  },
+  "source": {
+    "head": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+    "pins": [
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+        "raw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+        "lf": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+        "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+        "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+        "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+        "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+        "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+        "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+        "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+        "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+      },
+      {
+        "path": "apps/webapp/src/components/site-header.tsx",
+        "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+        "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+        "raw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+        "lf": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+        "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+        "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+        "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+        "lf": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "b723feb2fb46e943b3123a3bf7e12208e7036b33f1ab7441ece944a50a3a063e"
+  }
+}

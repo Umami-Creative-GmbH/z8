@@ -1,0 +1,20 @@
+{
+  "head": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "session": "next-dev-loop-1727-t3-36de3f4a-69b59b59b97cbc3d",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "canonicalSha256": "61d99d4004ea9b17ba3db95bebb6a13a087fc0f07305daa995bc3c0d3cfeec2a"
+    },
+    {
+      "path": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+      "canonicalSha256": "fa50925207276d042dbb684787ea50006305a3ba21aa9682e1b56b9da0a8ee62"
+    },
+    {
+      "path": "apps/webapp/src/components/payroll/employee-balance-loading-heading.tsx",
+      "canonicalSha256": "d15a3b96b625c4eedd370e09ec13cd240a41398b8e6dc33b3e3fcf4446d8d836"
+    }
+  ],
+  "targetWorkspacePresent": true,
+  "qualification": "Loaded employee workspace tree; not a native probe of the pending/scope-mismatch heading."
+}

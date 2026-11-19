@@ -1,0 +1,40 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/retention.integration.test.ts",
+    "src/lib/personnel-file/audit-minimisation.integration.test.ts",
+    "src/lib/personnel-file/document-request-retention.integration.test.ts",
+    "src/lib/personnel-file/officer-grants.integration.test.ts",
+    "src/lib/personnel-file/personnel-file.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=../../.tmp/merge1731-audit/postgres.json"
+  ],
+  "exit": 0,
+  "targets": [
+    "src/lib/personnel-file/retention.integration.test.ts",
+    "src/lib/personnel-file/audit-minimisation.integration.test.ts",
+    "src/lib/personnel-file/document-request-retention.integration.test.ts",
+    "src/lib/personnel-file/officer-grants.integration.test.ts",
+    "src/lib/personnel-file/personnel-file.integration.test.ts"
+  ],
+  "fixtureKind": "disposable",
+  "loopback": true,
+  "containers": [
+    "z8_perf_e5ddd6580e6a_postgres",
+    "z8_perf_e5ddd6580e6a_redis",
+    "z8_perf_e5ddd6580e6a_storage"
+  ],
+  "ownershipLabelVerified": true,
+  "canonicalHarness": "src/test/integration-database.ts + integration-setup.ts + integration-harness.ts; migration recovery and fresh chain run by canonical fixture prepare",
+  "boundary": "Session and external object storage replacements remain suite boundary fakes; no browser or real object deletion claim."
+}

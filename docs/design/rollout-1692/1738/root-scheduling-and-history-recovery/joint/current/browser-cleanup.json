@@ -1,0 +1,10 @@
+{
+  "browserLaunchesAccepted": 1,
+  "transientContexts": 3,
+  "normalWidgetFormLogins": 3,
+  "allClosed": true,
+  "authStateSavedCopiedRestoredMinted": false,
+  "notifications": "denied per context",
+  "failedLaunch": "earlier direct puppeteer launch timed out; exact matching browser parents found zero",
+  "preview": "one incognito Preview tab closed after two snapshot timeouts; no login there"
+}

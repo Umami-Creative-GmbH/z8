@@ -1,0 +1,757 @@
+{
+  "schema": 1,
+  "derived": true,
+  "algorithm": "sha256",
+  "scope": "All archive files except the three explicitly excluded final seal controls. Report separately bound by publication-controls/prefix-receipt.json.",
+  "excludes": [
+    "file-index.json",
+    "SHA256SUMS.txt",
+    "seal.json"
+  ],
+  "entries": [
+    {
+      "path": "README.md",
+      "bytes": 10654,
+      "sha256": "0e06e1b3e9732f173ab7d81505e9960dc86864748857c8c605bf243c42a67418",
+      "classification": "derived-publication"
+    },
+    {
+      "path": "archive/intake/intake-note.md",
+      "bytes": 3278,
+      "sha256": "489d6851267f18c30cb2ea8d0adea0eb382a278822cf8155cdccc09364a4744d",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/intake/machine-audit.json",
+      "bytes": 23240,
+      "sha256": "f5ce3315d4e04e1dc15b3ec7add2250b77e05e432a1b2e793897d3515d98502e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/intake/output-receipts.json",
+      "bytes": 430,
+      "sha256": "805fab2adf2b480070dd679b44109a71d7211e0bc93a1853a47c981c7cf34dd9",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/activation/RECHECK-BRIEF.md",
+      "bytes": 7674,
+      "sha256": "56b0264d6b5be7d473e691addfa72c60dd4208116987e409b0e7c2616dd8279a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/activation/correction-journal.json",
+      "bytes": 721,
+      "sha256": "b37d463aa4592015685eeb34f69e4b10cf6853276f6b68f8bb150b21f64b0cd8",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/activation/types-final-02.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/RECHECK-v3-BRIEF.md",
+      "bytes": 6236,
+      "sha256": "8468503f15262e253e183665a3f1cac99ed7485a0457b007bb152464f76701af",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/bridge-removal.json",
+      "bytes": 218,
+      "sha256": "c9cc0d5442a3452e38098c2174d458154620367761a055cc727977386fb491ec",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/correction-summary.json",
+      "bytes": 2807,
+      "sha256": "3526cc4e954982ce092f4d9b58409d9cb86fb6c4ee9c4003a8e12e968e93ca70",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/http-green-01.json",
+      "bytes": 1235,
+      "sha256": "9367790b8729987443140a9342faa64df9b162f49b8328c8710fcdd40caa3ea0",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/http-red-01.json",
+      "bytes": 1701,
+      "sha256": "5e16983d34041442d570c1110121c3f92d08883a61b053884661656d77b681dd",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/lifecycle-green-03.json",
+      "bytes": 6664,
+      "sha256": "d47d58b48dbf5c3468f249cb1c908b451aba42cf6db96073c9c0443d732469db",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/owned-biome-final-01.log",
+      "bytes": 2396,
+      "sha256": "cb2a183cff71335e05e6fde8213b6002fbfb89cd9a0a11a331ae0d8e6470fc4e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/postgres-absence.json",
+      "bytes": 161,
+      "sha256": "a09913d870c09532da584ff4926f6bcb554e6e89ad692e53a6d38ef0834b0ab4",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/postgres-cleanup-receipt.json",
+      "bytes": 1207,
+      "sha256": "3e4f4a0d9bdfc900abaf953b012ae521941d079267c48b566a4970f32c5eab04",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/postgres-final-01.json",
+      "bytes": 34187,
+      "sha256": "b5662d70fa8c027cd72364f351722d18def4074c8e3a5860132d4d5b4168865d",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/shared-units-final-01.json",
+      "bytes": 212458,
+      "sha256": "e266ff347b6b6720dcfa6f8100d33552557530ef01121c58e21f66be2248e15a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/availability/types-final-01.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/upload/RECHECK-v2-BRIEF.md",
+      "bytes": 6560,
+      "sha256": "f62c0f1f5bd94cccd44f6b1b5c32cfc28a35a79dc89f382005021fe4d01534fa",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/upload/bridge-removal.json",
+      "bytes": 243,
+      "sha256": "4e6b4693c3da113cf673936bfdf9c059743285a8064658e3bd96c075905a743c",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/upload/correction-summary.json",
+      "bytes": 2731,
+      "sha256": "2d777e931c06a48ff49e5d489a1f7b0af508a00cfe27bc11a3a34b3c3a905741",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/upload/shared-units-final-02.json",
+      "bytes": 211477,
+      "sha256": "b074807fe13d01e033d39d131c9db9f249f832e7b3f63d82339f75061ebf900e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/upload/test-summary.json",
+      "bytes": 1067,
+      "sha256": "bf9d3b5152aa934dffa6fd60b450ce2ba74a0b58e22c2d5b1a2e3dbfb60f67f1",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/root-static/upload/types-final-02.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/HANDOFF.md",
+      "bytes": 13491,
+      "sha256": "e919389bcde98a414413ac4ad182dde043fe5b5b002ff7dbf327351826e2e8d4",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/SHA256SUMS.txt",
+      "bytes": 3186,
+      "sha256": "be46fe9560d92d68a8026795768d83e0379049932b2f7cead9d12b385f325052",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/audit.cjs",
+      "bytes": 3383,
+      "sha256": "e8f6598b36b38fcc635150cdfbb95b7befd57bab08602652d6a05e2161bc43e3",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/bridge-removal.json",
+      "bytes": 282,
+      "sha256": "79c67218fc59e463996ba691e0c94cf7f965c93e0c06da98871d333a65d93134",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/bridge.cjs",
+      "bytes": 1018,
+      "sha256": "872d27deba75aa7d27839805c8cc7199b6c84baf8c628dbb810795edd774a431",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/browser-upload.config.mts",
+      "bytes": 604,
+      "sha256": "c407d808ec61ac1ad75059d6699e957c5fb05532a53bec6a01925da6f6266bd0",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/candidate-audit.json",
+      "bytes": 7428,
+      "sha256": "ce1ba440a6af72c27555426e0d057d80d69fb55074691774a8e54a82b585daf4",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/capture-pins.json",
+      "bytes": 2056,
+      "sha256": "c1f6141057e27f6ca112490dbc4d37a982838f401a6bec7b48d26858b90ddcd9",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/current-manager-collapsed-light-18.png",
+      "bytes": 113914,
+      "sha256": "c21c2b0c2ec95cd79962ab5130716b34c4575d818fd1774cfee63040b6f030a5",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/current-manager-desktop-dark-18.png",
+      "bytes": 138645,
+      "sha256": "9eedeebbaafd0cd27922186165eb9a9211beb1700529f00c6a39aa0883dbd6b6",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/current-manager-phone-allowances-18.png",
+      "bytes": 40979,
+      "sha256": "3061fd6bb476780477318f15ee53d18efbff9569faf2309a103b7c1786ced78f",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/current-manager-phone-dark-18.png",
+      "bytes": 42290,
+      "sha256": "1d76ee948b798b79ec58390a4b3a70e626cd4876db932f2d1e2e71cf49116184",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/current-manager-phone-light-18.png",
+      "bytes": 43373,
+      "sha256": "ea2c51fdfd80ef394dae6019cc3da9e448dacadecbde3f22c92879114c3db252",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/current-manager-wide-light-18.png",
+      "bytes": 141054,
+      "sha256": "8ed8dd3faee24b87c856445b978dc6907af23d661978f3d3eed5aa8a7301edcb",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/final-audit.cjs",
+      "bytes": 2977,
+      "sha256": "08779e0fdd61fc47f6ef61f782b70dae9f17b96b4e3871c98497c3dacc8efa07",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/final-audit.json",
+      "bytes": 2249,
+      "sha256": "5906bb6d948cc9686bbbfbbc6792e2bbadc6416a6fc5d519dd71fea4770d063a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/fixture-provenance.json",
+      "bytes": 926,
+      "sha256": "70ee3f950c7894a54dc08b3d5b38b26c47de62b1784efd67e8dd3ba698efb13e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/late-commands.test.tsx",
+      "bytes": 10272,
+      "sha256": "633cfa492c96f1cfe5244935ee71de52c15030a0dd41df8da5ec03058c56745b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/live-manager-results.json",
+      "bytes": 969,
+      "sha256": "bf86f199b14d35788e699466f766f4e3b08cd17f4e70d19b1623e90ba3af116a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/live-preferences-results.json",
+      "bytes": 2904,
+      "sha256": "022a785b7e2f1b0be819d17924cc26fe91fffa15c02e5600e20415a93652563e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/live-roles-results.json",
+      "bytes": 649,
+      "sha256": "1c209afe9221429b4b5d283e2f1ef537fb862b2d1af71f1c8b9923d3cce60657",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/native-a11y-results.json",
+      "bytes": 375,
+      "sha256": "fc47ddc46f9f907c2cce7015cebc3e0c9f1d3207657bb4a00624fe26b0f2e548",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/next-cleanup.json",
+      "bytes": 597,
+      "sha256": "ffc8576880a474c49fba67d6fa6216de76fb2d77b67488bcd29ac1c46226f033",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/next-results.json",
+      "bytes": 2211,
+      "sha256": "d022e15fef8dff2e818633cff1cdac00ff6ee7826f0fff1aff8a229fa50583b5",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/partial-cleanup.test.tsx",
+      "bytes": 9662,
+      "sha256": "608d37cffff0b03bce809b0f9671737c74fe8477187c8f159e9e2fde0d7ac2d2",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/phone-allowances.json",
+      "bytes": 385,
+      "sha256": "a985395a5d5a33e192771310a9087b1ac0a112ffddbb1dfe0d77083f2673ac5c",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/prepare.cjs",
+      "bytes": 9855,
+      "sha256": "fb2e28e793ea6082b0cb5284718883e882939c3214c2ba1b11334f361b372d06",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/public-surrounding.test.tsx",
+      "bytes": 16413,
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/readback-before.json",
+      "bytes": 716,
+      "sha256": "5ca3010af6c506a354195115e4099e42da8443ee3f40814cb0995dd32a735470",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/readback-final.json",
+      "bytes": 1662,
+      "sha256": "6ac1469cff43a817c75cf0de561a6f1c6706f74664c128f4a186f5abeae125f0",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/resource-seal.json",
+      "bytes": 1066,
+      "sha256": "7161481d54be3534e9cef5ae5ff604358ca60bbd20b17e9a0143842551c62534",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/results.cjs",
+      "bytes": 4428,
+      "sha256": "5210f2ea259d3808055381e00e02c289cd13fee5711d2559feb89b8a263dbcfa",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/results.json",
+      "bytes": 15842,
+      "sha256": "bf375623db0015ea7e588debbbd1d4c267a1752481f7175e90b3bbb5074a1274",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/safe-allowlist.json",
+      "bytes": 5857,
+      "sha256": "96f622fff9f0d38923cca8d47770d15d9b46d22ce602ef05e2e5263c7bc4932e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/seal.cjs",
+      "bytes": 1901,
+      "sha256": "aaad2fdbce958e6f16759935884aaf6506ccb2a6c4563c9b4e8d7e0d5ccf814f",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/upload-expanded.test.tsx",
+      "bytes": 10212,
+      "sha256": "6492ee2e200ce61a253f73135e24f357430430d71f2ce440a57a1e1605fb357f",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/runtime-current/workspace-recovery.test.tsx",
+      "bytes": 9336,
+      "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/HANDOFF.md",
+      "bytes": 12194,
+      "sha256": "bc0f9baa1db5eb49de4b83e8d60db77c0772504a2313a55d8d3d3b64f0ec8bd1",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/SHA256SUMS.txt",
+      "bytes": 86,
+      "sha256": "f20cc55ed85f5c31e98ca94d30f4fa8983b12837a3ec326dd5caeee9d5c3198b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/audit.cjs",
+      "bytes": 4857,
+      "sha256": "7b9a5de16c891938595afabca59acfc08dde61db48d13003c8a50bfa308d381a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/bridge.cjs",
+      "bytes": 897,
+      "sha256": "8b271b80bd819d8eb635bece067d6fc5de7071342a767edf5f5d390d47c8e1d9",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/browser-upload.config.mts",
+      "bytes": 641,
+      "sha256": "982c7fc84f493b41428677ba9a1fda16b3caf9cf498c1a43fae8ff1d0bb95017",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/candidate-audit.json",
+      "bytes": 8373,
+      "sha256": "208fb6a157b986e34d392e533b07e0bbda82ee9e36fe2160a869dcfed846b3f9",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/candidate-result.txt",
+      "bytes": 562,
+      "sha256": "df2fe83a2df9c9cfe13ec810a5188e226e6aea52cd5b04d89f75fea1238188eb",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/minimize.cjs",
+      "bytes": 773,
+      "sha256": "3896681921fda846d1a785773283b476607d31e77d0114b2a01da2e72679d333",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/premerge-result.txt",
+      "bytes": 561,
+      "sha256": "b04ae07f95454eaa1043066e70cf166d2049bc675caa1d8cf79e888686c94f69",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/public-acceptance.test.tsx",
+      "bytes": 18245,
+      "sha256": "9399cbaeb98ca5a9676519eccb76f01b7865cf95c0ae831e0756b9e63045f628",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/public-passing-13.test.tsx",
+      "bytes": 16413,
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/public-results.txt",
+      "bytes": 2206,
+      "sha256": "099244830fde9532a5d13439c0f3e6d2caebfaca2cd76e6948a153f7ebc0d417",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/resource-seal.json",
+      "bytes": 399,
+      "sha256": "df9f994307b5fc4f878204749e75fa766b58e1cc55f718f492b5ea7f9e61e085",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/results.json",
+      "bytes": 2203,
+      "sha256": "0f29e6240f67d67f6e56807c5c3d34a878b0e4ed3f4e22b0e504b0f636446cdd",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/safe-allowlist.json",
+      "bytes": 2687,
+      "sha256": "4db8061d7a7cf6a25997805dc334b4ad406b00b708fa35011d2da8500bff1e98",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/seal.cjs",
+      "bytes": 4144,
+      "sha256": "b36f10fb2afa11cccabd879baca81820815692968282fe7330a26d1c58738b33",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/upload-cases.fragment",
+      "bytes": 3664,
+      "sha256": "7b6f351c3aa921218f56b6be32f7151021e2695d5e423cf504205883ccb08fa0",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-activity-upload/upload-recovery.test.tsx",
+      "bytes": 8409,
+      "sha256": "17e36d9f082741c567eb2a19e7c10f6d649ed02ca28a4722d42e01aabb84511f",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/HANDOFF.md",
+      "bytes": 10525,
+      "sha256": "84f35c57ff8631f5c9c205f83a3f224ec1f66048ae196da9dc4b0dbe705f80df",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/SHA256SUMS.txt",
+      "bytes": 1426,
+      "sha256": "c586850dd29d490bfe63e1715980f67c714ebf10d4f08b4d3bda7746c5e0be7b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/audit.cjs",
+      "bytes": 3356,
+      "sha256": "629becf06c25ac3bf068cd3b7d68f3178c217a2658efd7ee3e3babd397488743",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/bridge.cjs",
+      "bytes": 975,
+      "sha256": "020826539255ebf84652f7ce85468afc80e193614a1a44092fabf859d213a3c5",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/browser-upload.config.mts",
+      "bytes": 604,
+      "sha256": "c407d808ec61ac1ad75059d6699e957c5fb05532a53bec6a01925da6f6266bd0",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/candidate-audit.json",
+      "bytes": 34111,
+      "sha256": "499a48716b134eb348557f7246996cfcc6012c3438d359da714234a62f25e834",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/cold-cache.cjs",
+      "bytes": 540,
+      "sha256": "efdc48bb6f93f6a1601965cac01bd01fb2171e0e48548e4107d6b7119e17ae59",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/minimize.cjs",
+      "bytes": 4583,
+      "sha256": "271fe166a75c44cad3f8423b61c4784387cd2c58b58d399e1a7f735dc9d67e07",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/public-surrounding.test.tsx",
+      "bytes": 16413,
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/resource-seal.json",
+      "bytes": 429,
+      "sha256": "ab676f178800f8963dad691c37c459ed53f5a4921b6bd9e591bf3d688e4412b2",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/results.cjs",
+      "bytes": 4750,
+      "sha256": "9e24b80c5f71fa7e32c5868a6f61c9cf1a85ca183e44771e29cf41ca772fc286",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/results.json",
+      "bytes": 12220,
+      "sha256": "f784b47f48a8c4f75873599adbc3565a9c691606a7d8b071b59c593c61e5a51a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/safe-allowlist.json",
+      "bytes": 2738,
+      "sha256": "38326c2d6193896329aff7ac7ee66aceb8542d82adb44975323a27eff862d288",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/seal.cjs",
+      "bytes": 1384,
+      "sha256": "c1fffc37c193e12ca233814328bec4065c2e56b83722cebe1156143e91a887ca",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/summarize.cjs",
+      "bytes": 587,
+      "sha256": "9764d67625158633124dc691fe3078f92f5a5b1bdee18c39b1f0e4a417ecee5a",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/upload-review.test.tsx",
+      "bytes": 11719,
+      "sha256": "72dcb4bbd84bced60dee521bba77b33fdbe4d948357a6455563e27727ef7f8c4",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/workspace-recovery-v1.test.tsx",
+      "bytes": 9207,
+      "sha256": "96438f2716937931c581c87f0ff242482637d32ce0c18e13ea563f705b10eaae",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-availability-upload/workspace-recovery.test.tsx",
+      "bytes": 9336,
+      "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/HANDOFF.md",
+      "bytes": 13679,
+      "sha256": "dbe059086ac6d78b240e88c4a599d5c7b6e744c9e1e51f216927616409d5ce4d",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/audit.cjs",
+      "bytes": 5898,
+      "sha256": "8c6246037af3f1088ccfe924bd6842f1297bfe2e865c38ed26a05eece03534ee",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/bridge-hash.json",
+      "bytes": 227,
+      "sha256": "6d31d6d33a2d164350cde502d3046964d365c41b0784430767f8cadcc94fcad5",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/candidate-audit.json",
+      "bytes": 60002,
+      "sha256": "043b0dcce72a16c897746155365489f87e0e3ffc5e960958a32209ae47432072",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/expected-tree.json",
+      "bytes": 2846245,
+      "sha256": "6883150884b3583fd48de28bc3c956a06c5dd518d3b5a1db78f23c3c11458b9e",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/expected.index",
+      "bytes": 2296944,
+      "sha256": "a5fdc2afa8f51654d40c91b86d2a0579bb922366e95f4b41eb73444f313fe0ee",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/premerge-control.test.tsx",
+      "bytes": 7066,
+      "sha256": "47b8949d3842d612e15f742146e3b36a4183c21b9f2d1531b79aceba5f565b57",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/premerge-control.txt",
+      "bytes": 1937,
+      "sha256": "028d485e449b4de33d36079ce6b7226201851682367d68e5dc2601eb28ef4657",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/prepare-merge.cjs",
+      "bytes": 4078,
+      "sha256": "a5e591023a90468ff78e859163cd1afbec152d761bc3156e1a20754d4ca57203",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/public-acceptance.test.tsx",
+      "bytes": 7972,
+      "sha256": "0462a48413c7cc7ae4644088fbbc0c0928a344dd962f1023c59d4a741f95f8d2",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/public-confirmed.txt",
+      "bytes": 2116,
+      "sha256": "b4efb9f377db5e1d5eda778530e477b8bfc66bc62b1e7246954507d8aef2a7a4",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/public-results.json",
+      "bytes": 483,
+      "sha256": "f133ccf2948ec7113a1fc97c03fd6848da30a6ce6236c5b26d0658db6119f561",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/public-run-2.txt",
+      "bytes": 1821,
+      "sha256": "c09a44bf324cc9e5d3fdd71b708e47a49a40f103ff0422183f184f926bf7dbb0",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/public-run-bridge.txt",
+      "bytes": 40313,
+      "sha256": "7aed750a647734d45a84cb972e21b0c21ad923e4e742b56bd431995a37bdb074",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/public-run.txt",
+      "bytes": 667,
+      "sha256": "c08bc0674462ac24755a1b1566635f211fad5daed23a064c827536a5c28fc553",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/resolved-route-metadata.test.ts",
+      "bytes": 10988,
+      "sha256": "7e44742b7c000f1347a1def9b4bf776f655667fd7c5a3334648ef6ebfeedc3c3",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/resolved-route-metadata.ts",
+      "bytes": 7221,
+      "sha256": "ee14541d8cc9ce4dfad7329eed2f2bee09f4d61ec4221f5ab7f53112ee4c0e32",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/resource-seal.json",
+      "bytes": 180,
+      "sha256": "812cd09887ee91d4aaf8a2cb06b3931b39754d24144937a7f4f45b6616eade36",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/safe-allowlist.json",
+      "bytes": 4791,
+      "sha256": "c4b991558d7aebde20adb92f61499d68a5c5e13a126891c07d639a2ecf5f097b",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "archive/stop-queued-activation/vitest.config.mts",
+      "bytes": 500,
+      "sha256": "7f2ad220b088adec0eaca1e88acac1b72252705176ee86e2909e57160db9da70",
+      "classification": "literal-approved-payload"
+    },
+    {
+      "path": "payload-index.json",
+      "bytes": 27987,
+      "sha256": "7d84703f603aa0997115338496c52ae86cb762df3677c6b17a0d0a1fc1fb6e9f",
+      "classification": "derived-publication"
+    },
+    {
+      "path": "publication-controls/prefix-receipt.json",
+      "bytes": 598,
+      "sha256": "c5f3a4ad16174deb03d276cd8638d0619204993dd5c7d39377cdc0636a193bef",
+      "classification": "derived-publication"
+    },
+    {
+      "path": "publication-controls/publication.json",
+      "bytes": 1323,
+      "sha256": "3d476342959e1a7b9a48324209a44ef91bd9d81541f1efce4871397636233051",
+      "classification": "derived-publication"
+    },
+    {
+      "path": "source-config-pins.json",
+      "bytes": 8159,
+      "sha256": "0616e96d551df7500bcd96f9ef84e7887d5aed2d9b70d063b9efd433192ececf",
+      "classification": "derived-publication"
+    },
+    {
+      "path": "syntax-checks.json",
+      "bytes": 12145,
+      "sha256": "bd5f2d9353df60dead87b1c4f054782ce24fbb36a855ff5c1dc8569b0fa4ea14",
+      "classification": "derived-publication"
+    },
+    {
+      "path": "verify-evidence.mjs",
+      "bytes": 15533,
+      "sha256": "4efd70327855364db8f9219c554c55648f7d4a1131eddf1a491c6c316a15253a",
+      "classification": "derived-publication"
+    }
+  ]
+}

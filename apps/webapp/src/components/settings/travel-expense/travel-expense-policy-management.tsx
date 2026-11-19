@@ -1,11 +1,13 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getTravelExpensePolicies } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
 import { formatRatePerKm } from "@/components/travel-expenses/report/mileage-labels";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
@@ -25,7 +27,7 @@ import { queryKeys } from "@/lib/query/keys";
 export function TravelExpensePolicyManagement() {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const { data } = useQuery({
+	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey: queryKeys.travelExpenses.legacyPolicies(),
 		queryFn: async () => {
 			const result = await getTravelExpensePolicies();
@@ -33,6 +35,31 @@ export function TravelExpensePolicyManagement() {
 			return result.data;
 		},
 	});
+	// A failed read must not look like "no earlier records": say so and offer a retry.
+	if (isError && !data) {
+		return (
+			<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
+				<p className="text-sm text-destructive" role="alert">
+					{t(
+						"settings.travelExpenses.legacy.loadFailed",
+						"Earlier policy records could not be loaded",
+					)}
+				</p>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => void refetch()}
+					disabled={isFetching}
+				>
+					{isFetching && (
+						<IconLoader2 aria-hidden="true" className="mr-2 size-4 motion-safe:animate-spin" />
+					)}
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
+		);
+	}
 	if (!data || data.length === 0) return null;
 
 	return (

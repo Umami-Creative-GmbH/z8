@@ -1,0 +1,17 @@
+import fs from 'node:fs';import path from 'node:path';import {createRequire} from 'node:module';
+const dir='.tmp/1734-independent-checks/runtime',req=createRequire(path.resolve('package.json'));
+const browser=await req('puppeteer-core').connect({browserWSEndpoint:JSON.parse(fs.readFileSync(dir+'/browser-process-private.json')).wsEndpoint});
+let page,request,count=0;const manifest=JSON.parse(fs.readFileSync('apps/webapp/.next/dev/server/server-reference-manifest.json'));const id=Object.entries(manifest.node).find(([,v])=>v.exportedName==='listAbsenceSickNotesAction')[0];const events=[];
+try{
+ for(const p of await browser.pages())if(p.url().includes('/personnel-files/sick-leave')&&await p.$('button[aria-label="Account: Person 0"]'))page=p;if(!page)throw Error('Admitted own admin page absent');
+ await page.setRequestInterception(true);page.on('request',async r=>{if(r.isInterceptResolutionHandled())return;if(r.headers()['next-action']===id){count++;if(count===1){request=r;return;}}await r.continue();});
+ await page.locator('button[aria-label="Attach or link sick notes for Person 2, Nov 3, 2026"]').click();for(let i=0;i<100&&!request;i++)await new Promise(r=>setTimeout(r,100));if(!request)throw Error('Original real read not held');
+ await page.waitForFunction(()=>[...document.querySelectorAll('[role=dialog]')].some(d=>d.checkVisibility()&&d.innerText.includes('Nov 3, 2026')&&d.querySelector('[aria-busy=true]')));
+ await page.keyboard.press('Escape');await page.waitForFunction(()=>[...document.querySelectorAll('[role=dialog]')].filter(d=>d.checkVisibility()).length===0);
+ await page.locator('button[aria-label="Attach or link sick notes for Person 6, Nov 4, 2026"]').click();await page.waitForFunction(()=>[...document.querySelectorAll('[role=dialog]')].some(d=>d.checkVisibility()&&d.innerText.includes('Nov 4, 2026')));
+ const pending=await page.evaluate(()=>{const d=[...document.querySelectorAll('[role=dialog]')].find(d=>d.checkVisibility());return {currentTargetDescription:d.innerText.includes('Nov 4, 2026'),staleTitle:d.innerText.includes('Synthetic independent linked note'),busy:!!d.querySelector('[aria-busy=true]')};});if(!pending.currentTargetDescription||pending.staleTitle)throw Error('New pending target exposed old note');events.push({pending});
+ await request.continue();request=null;
+ await page.waitForFunction(()=>[...document.querySelectorAll('[role=dialog]')].some(d=>d.checkVisibility()&&d.innerText.includes('Nov 4, 2026')&&d.innerText.includes('No sick notes you can open.')&&!d.innerText.includes('Synthetic independent linked note')),{timeout:30000});
+ events.push({settled:{newTargetEmpty:true,staleTitle:false,realActionRequests:count}});await page.keyboard.press('Escape');await page.waitForFunction(()=>[...document.querySelectorAll('[role=dialog]')].filter(d=>d.checkVisibility()).length===0);
+ fs.writeFileSync('.tmp/1734-independent-checks/late-read-confirmed.json',JSON.stringify({pass:true,syntheticBoundary:'First actual listAbsenceSickNotesAction transport held before server dispatch; subsequent requests untouched',events},null,2));console.log(JSON.stringify({pass:true,events}));
+}catch(e){fs.writeFileSync(dir+'/late-read-failure-private.json',JSON.stringify({error:e.message,events,count},null,2));if(page)await page.screenshot({path:dir+'/late-read-failure-private.png'}).catch(()=>{});throw e;}finally{if(request&&!request.isInterceptResolutionHandled())await request.continue().catch(()=>{});if(page)await page.setRequestInterception(false).catch(()=>{});browser.disconnect();}

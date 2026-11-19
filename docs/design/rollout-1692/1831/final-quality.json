@@ -1,0 +1,186 @@
+[
+  {
+    "name": "next-typegen",
+    "command": [
+      "pnpm",
+      "node",
+      "--import",
+      "./node_modules/tsx/dist/loader.mjs",
+      "./node_modules/next/dist/bin/next",
+      "typegen"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9\\apps\\webapp",
+    "exitCode": 0
+  },
+  {
+    "name": "types-typecheck",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/typescript/bin/tsc",
+      "--project",
+      "apps/webapp/tsconfig.typecheck.json",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "types-workflow-contracts",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/typescript/bin/tsc",
+      "--project",
+      "apps/webapp/tsconfig.workflow-contracts.json",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "types-smoke",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/typescript/bin/tsc",
+      "--project",
+      "apps/webapp/tsconfig.smoke.json",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "unit",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/vitest/vitest.mjs",
+      "run",
+      "--root",
+      "apps/webapp",
+      "--project",
+      "unit",
+      "--maxWorkers",
+      "2",
+      "src/app/[locale]/onboarding",
+      "src/lib/effect/services/onboarding.service.test.ts",
+      "src/components/onboarding",
+      "src/components/ui/tanstack-form.test.tsx",
+      "src/components/ui/select.test.tsx",
+      "src/components/font-size-toggle.test.tsx",
+      "src/tolgee/extracted-key-defaults.test.ts",
+      "--reporter=json",
+      "--outputFile=../../.tmp/1831-unit-final.json"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "biome-checkout-crlf",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/@biomejs/biome/bin/biome",
+      "check",
+      "--line-ending=crlf",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "biome-explicit-crlf",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/@biomejs/biome/bin/biome",
+      "check",
+      "--config-path=apps/webapp/biome.jsonc",
+      "--line-ending=crlf",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 1
+  },
+  {
+    "name": "biome-explicit-lint",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/@biomejs/biome/bin/biome",
+      "check",
+      "--config-path=apps/webapp/biome.jsonc",
+      "--formatter-enabled=false",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "biome-checkout-lf",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/@biomejs/biome/bin/biome",
+      "check",
+      "--line-ending=lf",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "doctor",
+    "command": [
+      "pnpm",
+      "node",
+      "node_modules/react-doctor/dist/cli.js",
+      "apps/webapp",
+      "--scope",
+      "changed",
+      "--base",
+      "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "--include-untracked",
+      "--verbose",
+      "--no-supply-chain",
+      "--no-telemetry",
+      "--no-score",
+      "--json",
+      "--json-out",
+      ".tmp/1831-doctor-final.json"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+    "exitCode": 0
+  },
+  {
+    "name": "biome-explicit-lf",
+    "command": [
+      "pnpm",
+      "node",
+      "apps/webapp/node_modules/@biomejs/biome/bin/biome",
+      "check",
+      "--config-path=apps/webapp/biome.jsonc",
+      "--line-ending=lf",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts"
+    ],
+    "exitCode": 0
+  }
+]

@@ -1,0 +1,15 @@
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > raw pending session with retained same-scope data keeps the assembled draft and permits a genuine action 959ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > assembled account A-B-A retires the draft and old response, then accepts a new action 1716ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > assembled organization A-B-A retires the draft and old response, then accepts a new action 1826ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > independent list/calendar errors retain the actual form and recover through local Retry 850ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > initial canonical context failure is distinct from healthy list/calendar; local retry coalesces and restores 121ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > canonical role change retires the assembled form and does not dispatch queued work 913ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > canonical employee change retires the assembled form and does not dispatch queued work 941ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > selected employee absence then return retires a queued action and permits a new public submit 1102ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > real pending command ignores late success after Activity return and permits a new command 775ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > real pending command ignores late refusal after Activity return and permits a new command 730ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > real pending command ignores late rejection after Activity return and permits a new command 744ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > assembled current workspace retains list on calendar read failure and retires on organization switch 65ms
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > a queued public submit must not run after Activity hides and returns before onSubmit 631ms
+ Test Files  1 passed (1)
+      Tests  13 passed (13)

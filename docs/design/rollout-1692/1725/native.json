@@ -1,0 +1,49 @@
+{
+  "session": "next-dev-loop-40c2de441694",
+  "treeSuccess": true,
+  "matchedComponents": [
+    "170 1229 1228 Forget(PayrollWorkspace)",
+    "172 1231 1230 Forget(PayrollHeader)",
+    "172 1251 1230 Forget(PayrollPeriodCard)",
+    "172 1407 1230 Forget(PayrollSummaryCards)",
+    "172 1441 1230 Forget(EmployeeTotalsCard)"
+  ],
+  "inspectionSuccess": true,
+  "inspectionDescribesPayrollWorkspace": true,
+  "inspectionSource": [
+    "http://localhost:54000/_next/static/chunks/apps_webapp_src_components_payroll_0nll2tp_w2rbt._.js?dpl=05c66b101e16b98d678a66bf2256f0e875eb9b73",
+    9081,
+    1
+  ],
+  "a11y": {
+    "scope": "#app-page-content",
+    "tags": [
+      "wcag2a",
+      "wcag2aa"
+    ],
+    "axeVersion": "4.12.1",
+    "counts": {
+      "inapplicable": 38,
+      "incomplete": 0,
+      "passes": 21,
+      "violations": 0
+    },
+    "incomplete": [],
+    "lifecycle": {
+      "effectiveLaunch": {
+        "browserLaunched": true,
+        "engine": "chrome",
+        "launchHash": 7677230140062662000
+      },
+      "launched": false,
+      "relaunchedBrowser": false,
+      "restartedBackground": false,
+      "restoreStatus": "missing",
+      "reused": true,
+      "saveStatus": "saved"
+    },
+    "url": "http://localhost:54000/en/payroll",
+    "violations": []
+  },
+  "qualification": "Actual usable native React tree and inspect; initial notification-overlay-only audit discarded. DOM/capture assertions are separate. Raw props/cookies remain private; no native provider/device or render-performance certification."
+}

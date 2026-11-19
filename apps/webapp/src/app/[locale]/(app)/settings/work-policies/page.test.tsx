@@ -5,9 +5,14 @@ const mocks = vi.hoisted(() => ({
 	redirect: vi.fn((href: string) => {
 		throw new Error(`redirect:${href}`);
 	}),
+	loadOrganizationTimezone: vi.fn(),
 }));
 vi.mock("@/lib/auth-helpers", () => ({
 	getCurrentSettingsRouteContext: mocks.context,
+}));
+vi.mock("@/db", () => ({ db: { marker: "db" } }));
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: mocks.loadOrganizationTimezone,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
 	redirectWithLocale: mocks.redirect,
@@ -37,6 +42,7 @@ async function content(page: ReturnType<typeof WorkPoliciesPage>) {
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.context.mockResolvedValue(context("orgAdmin"));
+	mocks.loadOrganizationTimezone.mockResolvedValue("Europe/Berlin");
 });
 describe("combined Work Policies page", () => {
 	it("passes the active organization and admin permissions to both policy views", async () => {
@@ -44,7 +50,9 @@ describe("combined Work Policies page", () => {
 		expect(page.props.panels.work.props).toMatchObject({
 			organizationId: "org-1",
 			accessTier: "orgAdmin",
+			organizationTimezone: "Europe/Berlin",
 		});
+		expect(mocks.loadOrganizationTimezone).toHaveBeenCalledWith({ marker: "db" }, "org-1");
 		expect(page.props.panels.changes.props).toMatchObject({
 			organizationId: "org-1",
 			canManage: true,

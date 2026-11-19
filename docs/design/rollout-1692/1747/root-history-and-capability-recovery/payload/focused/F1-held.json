@@ -1,0 +1,58 @@
+{
+  "at": "2026-11-18T04:20:41.113Z",
+  "events": [
+    {
+      "event": "non-auth-route-POST-held-before-dispatch",
+      "at": "2026-11-18T04:20:41.003Z"
+    },
+    {
+      "event": "earliest-held-sample",
+      "at": "2026-11-18T04:20:41.106Z",
+      "view": {
+        "path": "/en/travel-expenses",
+        "h1": [
+          {
+            "text": "Travel Expenses",
+            "x": 280,
+            "y": 89,
+            "w": 1296,
+            "h": 36
+          }
+        ],
+        "statuses": [
+          "Loading your travel expenses…"
+        ],
+        "alerts": [],
+        "retry": false,
+        "empty": false,
+        "noMatch": false,
+        "rows": 0
+      }
+    },
+    {
+      "event": "committed-route-with-heading-and-loading",
+      "at": "2026-11-18T04:20:41.113Z",
+      "view": {
+        "path": "/en/travel-expenses",
+        "h1": [
+          {
+            "text": "Travel Expenses",
+            "x": 280,
+            "y": 89,
+            "w": 1296,
+            "h": 36
+          }
+        ],
+        "statuses": [
+          "Loading your travel expenses…"
+        ],
+        "alerts": [],
+        "retry": false,
+        "empty": false,
+        "noMatch": false,
+        "rows": 0
+      }
+    }
+  ],
+  "scope": "Current-route non-auth POST held. Shared reads may overlap; exactly one history reader not independently identified. Earliest shell/fallback sample is separately qualified."
+}

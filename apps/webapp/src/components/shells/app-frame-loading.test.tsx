@@ -77,6 +77,19 @@ describe("SettingsContentLoading", () => {
 		expect(container.textContent).toBe("");
 	});
 
+	it("stands in for a single-section configuration page in the same measured frame", () => {
+		const { container } = render(<SettingsContentLoading variant="section" />);
+
+		const status = screen.getByRole("status", {
+			name: "Einstellungen werden geladen",
+		});
+		expect(status.className).toContain("page-frame");
+		expect(status.querySelector(".page-measure")).toBeTruthy();
+		expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(
+			3,
+		);
+	});
+
 	it("defines localized loading labels in every common catalog", () => {
 		const keys = [
 			"application",

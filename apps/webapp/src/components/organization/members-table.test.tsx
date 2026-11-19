@@ -620,6 +620,22 @@ describe("MembersTable invitation target teams", () => {
 		expect(file).not.toContain("toggleEmployeeStatus(");
 	});
 
+	it("shows roles as neutral badges told apart by icon, not by saturated color", () => {
+		renderMembersTable("invitations", [
+			{ ...invitation, role: "owner" },
+			{ ...secondInvitation, role: "admin" },
+			{ ...thirdInvitation, role: "member" },
+		]);
+
+		const panel = screen.getByRole("tabpanel");
+		for (const role of ["owner", "admin", "member"]) {
+			const badge = within(panel).getByText(role);
+			expect(badge.querySelector("svg")).not.toBeNull();
+			expect(badge.className).not.toMatch(/(purple|blue|gray)-\d/);
+		}
+		expect(componentSource()).not.toContain("getRoleBadgeColor");
+	});
+
 	it("allows callers to open pending invitations by default", () => {
 		const file = componentSource();
 

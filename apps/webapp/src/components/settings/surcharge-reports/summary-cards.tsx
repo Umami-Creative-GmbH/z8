@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { formatMinutes } from "./helpers";
 
 type SummaryTotals = {
@@ -15,41 +15,46 @@ type SurchargeSummaryCardsProps = {
 	totals: SummaryTotals;
 };
 
+/** The filtered period's totals as one summary strip, separated by dividers. */
 export function SurchargeSummaryCards({ calculationCount, totals }: SurchargeSummaryCardsProps) {
 	const { t } = useTranslate();
 
 	return (
-		<div className="grid gap-4 md:grid-cols-4">
-			<SummaryCard
-				label={t("settings.surcharges.reports.summary.calculations", "Calculations")}
-				value={`${calculationCount} calculation${calculationCount === 1 ? "" : "s"}`}
-			/>
-			<SummaryCard
-				label={t("settings.surcharges.reports.summary.baseHours", "Base hours")}
-				value={formatMinutes(totals.baseMinutes)}
-			/>
-			<SummaryCard
-				label={t(
-					"settings.surcharges.reports.summary.qualifyingHours",
-					"Qualifying surcharge hours",
-				)}
-				value={formatMinutes(totals.qualifyingMinutes)}
-			/>
-			<SummaryCard
-				label={t("settings.surcharges.reports.summary.creditedHours", "Credited surcharge hours")}
-				value={formatMinutes(totals.surchargeMinutes)}
-			/>
-		</div>
+		<Card className="gap-0 py-0">
+			<dl className="grid divide-y sm:grid-cols-2 sm:divide-y-0 md:grid-cols-4 md:divide-x">
+				<SummaryValue
+					label={t("settings.surcharges.reports.summary.calculations", "Calculations")}
+					value={t(
+						"settings.surcharges.reports.summary.calculationCount",
+						"{count, plural, one {# calculation} other {# calculations}}",
+						{ count: calculationCount },
+					)}
+				/>
+				<SummaryValue
+					label={t("settings.surcharges.reports.summary.baseHours", "Base hours")}
+					value={formatMinutes(totals.baseMinutes)}
+				/>
+				<SummaryValue
+					label={t(
+						"settings.surcharges.reports.summary.qualifyingHours",
+						"Qualifying surcharge hours",
+					)}
+					value={formatMinutes(totals.qualifyingMinutes)}
+				/>
+				<SummaryValue
+					label={t("settings.surcharges.reports.summary.creditedHours", "Credited surcharge hours")}
+					value={formatMinutes(totals.surchargeMinutes)}
+				/>
+			</dl>
+		</Card>
 	);
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function SummaryValue({ label, value }: { label: string; value: string }) {
 	return (
-		<Card>
-			<CardContent className="space-y-1">
-				<div className="text-muted-foreground text-sm">{label}</div>
-				<div className="font-semibold text-2xl">{value}</div>
-			</CardContent>
-		</Card>
+		<div className="min-w-0 space-y-1 px-6 py-4">
+			<dt className="text-muted-foreground text-sm">{label}</dt>
+			<dd className="font-semibold text-2xl tabular-nums">{value}</dd>
+		</div>
 	);
 }

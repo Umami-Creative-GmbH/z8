@@ -23,11 +23,13 @@ import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { ShiftDetailsPanel } from "../shifts/shift-details-panel";
 import { employeeScheduleWeek, employeeShiftEvent } from "./employee-schedule-utils";
 import { EmployeeShiftAgenda } from "./employee-shift-agenda";
+import { ScheduleReadFailure } from "./schedule-read-failure";
 import { calendarRangeToDateRange } from "./shift-scheduler-utils";
 import { useShiftSchedulerData } from "./use-shift-scheduler-data";
 
 interface EmployeeShiftScheduleProps {
 	organizationId: string;
+	employeeId: string;
 	organizationTimezone: string;
 	/** Opens the schedule on the week of this calendar date (YYYY-MM-DD). */
 	focusDate: string | null;
@@ -39,6 +41,7 @@ interface EmployeeShiftScheduleProps {
  */
 export function EmployeeShiftSchedule({
 	organizationId,
+	employeeId,
 	organizationTimezone,
 	focusDate,
 }: EmployeeShiftScheduleProps) {
@@ -56,12 +59,14 @@ export function EmployeeShiftSchedule({
 	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
 
-	const { shifts, shiftsLoading, shiftsFailed } = useShiftSchedulerData({
-		organizationId,
-		organizationTimezone,
-		dateRange: !isMobile && calendarRange ? calendarRange : week.dateRange,
-		isManager: false,
-	});
+	const { shifts, shiftsLoading, shiftsFailed, hasLoadedShifts, shiftsFetching, retryShifts } =
+		useShiftSchedulerData({
+			organizationId,
+			employeeId,
+			organizationTimezone,
+			dateRange: !isMobile && calendarRange ? calendarRange : week.dateRange,
+			isManager: false,
+		});
 
 	// Schedule-X keeps the callbacks of its first render, so the click handler reads shifts here.
 	const shiftsRef = useRef(shifts);
@@ -134,10 +139,14 @@ export function EmployeeShiftSchedule({
 
 	if (!isMobile) {
 		return (
-			<div className="flex h-[calc(100vh-200px)] flex-col gap-4">
-				{shiftsFailed && <LoadFailedNotice />}
-				<div className="relative min-h-0 flex-1 overflow-hidden">
-					<ScheduleXCalendar calendarApp={calendar} />
+			<div className="flex min-w-0 flex-col gap-4">
+				{shiftsFailed && (
+					<LoadFailedNotice onRetry={() => void retryShifts()} pending={shiftsFetching} />
+				)}
+				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border">
+					<div className="h-full min-w-[42rem]">
+						<ScheduleXCalendar calendarApp={calendar} />
+					</div>
 					{shiftsLoading && (
 						<div
 							className="absolute inset-0 flex items-center justify-center bg-background/60"
@@ -186,10 +195,11 @@ export function EmployeeShiftSchedule({
 				</h2>
 			</div>
 
-			{shiftsFailed ? (
+			{shiftsFailed && (
+				<LoadFailedNotice onRetry={() => void retryShifts()} pending={shiftsFetching} />
+			)}
+			{shiftsFailed && !hasLoadedShifts ? null : (
 				// Without loaded shifts the days would wrongly read as free.
-				<LoadFailedNotice />
-			) : (
 				<EmployeeShiftAgenda
 					days={week.days}
 					shifts={shifts}
@@ -208,14 +218,14 @@ export function EmployeeShiftSchedule({
 	);
 }
 
-function LoadFailedNotice() {
+function LoadFailedNotice({ onRetry, pending }: { onRetry: () => void; pending: boolean }) {
 	const { t } = useTranslate();
 	return (
-		<p className="text-destructive text-sm" role="alert">
+		<ScheduleReadFailure onRetry={onRetry} pending={pending}>
 			{t(
 				"scheduling:scheduling.mySchedule.loadFailed",
 				"Your shifts could not be loaded. Please try again later.",
 			)}
-		</p>
+		</ScheduleReadFailure>
 	);
 }

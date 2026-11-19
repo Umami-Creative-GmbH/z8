@@ -5,7 +5,13 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { useRouter } from "@/navigation";
 
 interface NoOrganizationErrorProps {
@@ -25,7 +31,7 @@ export function NoOrganizationError({ className }: NoOrganizationErrorProps) {
 						<IconBuilding className="size-8 text-muted-foreground" />
 					</div>
 					<CardTitle className="text-2xl">
-						{t("errors.noOrganization.title", "No Organization Found")}
+						<h1>{t("errors.noOrganization.title", "No Organization Found")}</h1>
 					</CardTitle>
 					<CardDescription className="text-base">
 						{t(
@@ -35,7 +41,11 @@ export function NoOrganizationError({ className }: NoOrganizationErrorProps) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<Button className="w-full" size="lg" onClick={() => setCreateDialogOpen(true)}>
+					<Button
+						className="w-full"
+						size="lg"
+						onClick={() => setCreateDialogOpen(true)}
+					>
 						<IconBuilding className="mr-2 size-5" />
 						{t("errors.noOrganization.createOrg", "Create Organization")}
 					</Button>
@@ -45,7 +55,9 @@ export function NoOrganizationError({ className }: NoOrganizationErrorProps) {
 							<span className="w-full border-t" />
 						</div>
 						<div className="relative flex justify-center text-xs uppercase">
-							<span className="bg-card px-2 text-muted-foreground">{t("common.or", "Or")}</span>
+							<span className="bg-card px-2 text-muted-foreground">
+								{t("common.or", "Or")}
+							</span>
 						</div>
 					</div>
 

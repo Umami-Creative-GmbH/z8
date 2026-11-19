@@ -34,7 +34,13 @@ describe("WorkPolicyManagement", () => {
 	});
 
 	it("opens on the policies tab by default", () => {
-		render(<WorkPolicyManagement accessTier="orgAdmin" organizationId="org-1" />);
+		render(
+			<WorkPolicyManagement
+				accessTier="orgAdmin"
+				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
+			/>,
+		);
 
 		expect(screen.getByRole("tab", { name: "Policies" }).getAttribute("aria-selected")).toBe(
 			"true",
@@ -45,7 +51,13 @@ describe("WorkPolicyManagement", () => {
 	it("opens the assignments tab from a go-live fix link", () => {
 		searchParams.current = new URLSearchParams("tab=work&view=assignments");
 
-		render(<WorkPolicyManagement accessTier="orgAdmin" organizationId="org-1" />);
+		render(
+			<WorkPolicyManagement
+				accessTier="orgAdmin"
+				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
+			/>,
+		);
 
 		expect(screen.getByRole("tab", { name: "Assignments" }).getAttribute("aria-selected")).toBe(
 			"true",

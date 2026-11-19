@@ -1,0 +1,268 @@
+{
+  "current": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:58556\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_routes",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"appRouter\": [\n    \"/[locale]\",\n    \"/[locale]/absences\",\n    \"/[locale]/accept-invitation/[invitationId]\",\n    \"/[locale]/analytics\",\n    \"/[locale]/analytics/overtime-burn-down\",\n    \"/[locale]/analytics/team-performance\",\n    \"/[locale]/analytics/vacation-trends\",\n    \"/[locale]/analytics/work-hours\",\n    \"/[locale]/approvals\",\n    \"/[locale]/approvals/deputy-decisions/[absenceId]\",\n    \"/[locale]/approvals/inbox\",\n    \"/[locale]/approvals/review/[organizationId]/[kind]/[id]\",\n    \"/[locale]/billing/suspended\",\n    \"/[locale]/calendar\",\n    \"/[locale]/calendar/[employeeId]\",\n    \"/[locale]/compliance\",\n    \"/[locale]/driving-licence\",\n    \"/[locale]/driving-licence/checks/[employee]\",\n    \"/[locale]/equipment\",\n    \"/[locale]/equipment/assignments/[assignmentId]\",\n    \"/[locale]/equipment/employees/[employeeId]\",\n    \"/[locale]/forgot-password\",\n    \"/[locale]/init\",\n    \"/[locale]/join/[code]\",\n    \"/[locale]/kiosk\",\n    \"/[locale]/licenses\",\n    \"/[locale]/mfa\",\n    \"/[locale]/my-documents\",\n    \"/[locale]/my-equipment\",\n    \"/[locale]/my-requests\",\n    \"/[locale]/notifications\",\n    \"/[locale]/onboarding/complete\",\n    \"/[locale]/onboarding/notifications\",\n    \"/[locale]/onboarding/organization\",\n    \"/[locale]/onboarding/profile\",\n    \"/[locale]/onboarding/vacation-policy\",\n    \"/[locale]/onboarding/welcome\",\n    \"/[locale]/onboarding/wellness\",\n    \"/[locale]/onboarding/work-schedule\",\n    \"/[locale]/onboarding/work-templates\",\n    \"/[locale]/organization\",\n    \"/[locale]/payroll\",\n    \"/[locale]/payroll/work-balances\",\n    \"/[locale]/payroll/work-balances/[employeeId]\",\n    \"/[locale]/personnel-files\",\n    \"/[locale]/personnel-files/[employeeId]\",\n    \"/[locale]/personnel-files/document-requests\",\n    \"/[locale]/personnel-files/due-for-deletion\",\n    \"/[locale]/personnel-files/payslip-batches\",\n    \"/[locale]/personnel-files/payslip-batches/[batchId]\",\n    \"/[locale]/personnel-files/sick-leave\",\n    \"/[locale]/platform-admin\",\n    \"/[locale]/platform-admin/analytics\",\n    \"/[locale]/platform-admin/billing\",\n    \"/[locale]/platform-admin/diagnostics\",\n    \"/[locale]/platform-admin/organizations\",\n    \"/[locale]/platform-admin/settings\",\n    \"/[locale]/platform-admin/system-email-templates\",\n    \"/[locale]/platform-admin/users\",\n    \"/[locale]/platform-admin/worker-queue\",\n    \"/[locale]/reports\",\n    \"/[locale]/reports/projects\",\n    \"/[locale]/reports/vehicles\",\n    \"/[locale]/reset-password\",\n    \"/[locale]/scheduling\",\n    \"/[locale]/settings\",\n    \"/[locale]/settings/approval-escalation\",\n    \"/[locale]/settings/approval-policies\",\n    \"/[locale]/settings/audit-export\",\n    \"/[locale]/settings/audit-log\",\n    \"/[locale]/settings/avv\",\n    \"/[locale]/settings/billable-time\",\n    \"/[locale]/settings/billable-time/accounting\",\n    \"/[locale]/settings/billable-time/cost-rates\",\n    \"/[locale]/settings/billable-time/hand-off\",\n    \"/[locale]/settings/billable-time/rates\",\n    \"/[locale]/settings/billing\",\n    \"/[locale]/settings/calendar\",\n    \"/[locale]/settings/change-policies\",\n    \"/[locale]/settings/clocking\",\n    \"/[locale]/settings/clockodo-import\",\n    \"/[locale]/settings/closed-months\",\n    \"/[locale]/settings/compliance\",\n    \"/[locale]/settings/compliance/works-council\",\n    \"/[locale]/settings/coverage-rules\",\n    \"/[locale]/settings/custom-fields\",\n    \"/[locale]/settings/customers\",\n    \"/[locale]/settings/demo\",\n    \"/[locale]/settings/discord\",\n    \"/[locale]/settings/driving-licence\",\n    \"/[locale]/settings/email-templates\",\n    \"/[locale]/settings/employees\",\n    \"/[locale]/settings/employees/[employeeId]\",\n    \"/[locale]/settings/employees/new\",\n    \"/[locale]/settings/enterprise\",\n    \"/[locale]/settings/enterprise/api-keys\",\n    \"/[locale]/settings/enterprise/api-keys/[keyId]\",\n    \"/[locale]/settings/enterprise/audit-log\",\n    \"/[locale]/settings/enterprise/branding\",\n    \"/[locale]/settings/enterprise/domains\",\n    \"/[locale]/settings/enterprise/email\",\n    \"/[locale]/settings/enterprise/identity-setup\",\n    \"/[locale]/settings/enterprise/sso\",\n    \"/[locale]/settings/equipment\",\n    \"/[locale]/settings/export\",\n    \"/[locale]/settings/export-operations\",\n    \"/[locale]/settings/export/history/[organizationId]\",\n    \"/[locale]/settings/holidays\",\n    \"/[locale]/settings/implementation-checklist\",\n    \"/[locale]/settings/import\",\n    \"/[locale]/settings/import/[batchId]\",\n    \"/[locale]/settings/kiosks\",\n    \"/[locale]/settings/locations\",\n    \"/[locale]/settings/locations/[locationId]\",\n    \"/[locale]/settings/my-data\",\n    \"/[locale]/settings/notification-channels\",\n    \"/[locale]/settings/notifications\",\n    \"/[locale]/settings/organization\",\n    \"/[locale]/settings/organizations\",\n    \"/[locale]/settings/payroll-access\",\n    \"/[locale]/settings/payroll-export\",\n    \"/[locale]/settings/payroll-readiness\",\n    \"/[locale]/settings/permissions\",\n    \"/[locale]/settings/personnel-files\",\n    \"/[locale]/settings/position-capture\",\n    \"/[locale]/settings/position-stamps\",\n    \"/[locale]/settings/profile\",\n    \"/[locale]/settings/projects\",\n    \"/[locale]/settings/report-share-links\",\n    \"/[locale]/settings/roles\",\n    \"/[locale]/settings/scheduled-exports\",\n    \"/[locale]/settings/security\",\n    \"/[locale]/settings/shifts\",\n    \"/[locale]/settings/skills\",\n    \"/[locale]/settings/slack\",\n    \"/[locale]/settings/statistics\",\n    \"/[locale]/settings/surcharges\",\n    \"/[locale]/settings/teams\",\n    \"/[locale]/settings/teams-notifications\",\n    \"/[locale]/settings/teams/[teamId]\",\n    \"/[locale]/settings/telegram\",\n    \"/[locale]/settings/travel-expenses\",\n    \"/[locale]/settings/vacation\",\n    \"/[locale]/settings/vacation/employees\",\n    \"/[locale]/settings/vacation/employees/[employeeId]\",\n    \"/[locale]/settings/vehicle-use\",\n    \"/[locale]/settings/vehicles\",\n    \"/[locale]/settings/webhooks\",\n    \"/[locale]/settings/wellness\",\n    \"/[locale]/settings/work-categories\",\n    \"/[locale]/settings/work-diagnostics\",\n    \"/[locale]/settings/work-policies\",\n    \"/[locale]/setup\",\n    \"/[locale]/share/[token]\",\n    \"/[locale]/sign-in\",\n    \"/[locale]/sign-up\",\n    \"/[locale]/team\",\n    \"/[locale]/team/absences\",\n    \"/[locale]/team/driving\",\n    \"/[locale]/team/period-submissions\",\n    \"/[locale]/team/presence\",\n    \"/[locale]/team/presence/[locationId]\",\n    \"/[locale]/time-tracking\",\n    \"/[locale]/today\",\n    \"/[locale]/travel-expenses\",\n    \"/[locale]/travel-expenses/[claimId]\",\n    \"/[locale]/travel-expenses/finance\",\n    \"/[locale]/travel-expenses/reports/[reportId]\",\n    \"/[locale]/verify-2fa\",\n    \"/[locale]/verify-email\",\n    \"/[locale]/verify-email-pending\",\n    \"/[locale]/works-council\",\n    \"/[locale]/works-council/export\",\n    \"/api/analytics/export\",\n    \"/api/app-version\",\n    \"/api/approvals/inbox\",\n    \"/api/approvals/inbox/[id]\",\n    \"/api/approvals/inbox/[id]/approve\",\n    \"/api/approvals/inbox/[id]/reject\",\n    \"/api/approvals/inbox/bulk-approve\",\n    \"/api/approvals/inbox/bulk-reject\",\n    \"/api/approvals/inbox/counts\",\n    \"/api/audit-export/public-key\",\n    \"/api/audit-export/verify\",\n    \"/api/auth/[...all]\",\n    \"/api/auth/app-exchange\",\n    \"/api/auth/app-login\",\n    \"/api/auth/app-sign-in\",\n    \"/api/auth/callback/social-org/[provider]\",\n    \"/api/auth/context\",\n    \"/api/auth/desktop-login\",\n    \"/api/auth/providers\",\n    \"/api/auth/session-expired\",\n    \"/api/auth/social-org/[provider]\",\n    \"/api/auth/verify-turnstile\",\n    \"/api/billing/checkout\",\n    \"/api/billing/portal\",\n    \"/api/billing/subscription\",\n    \"/api/billing/webhook\",\n    \"/api/calendar/conflicts\",\n    \"/api/calendar/connections\",\n    \"/api/calendar/connections/[id]\",\n    \"/api/calendar/events\",\n    \"/api/calendar/ics-feeds\",\n    \"/api/calendar/ics-feeds/[id]\",\n    \"/api/calendar/ics-feeds/[id]/regenerate\",\n    \"/api/calendar/ics/[secret]\",\n    \"/api/calendar/oauth/[provider]\",\n    \"/api/calendar/oauth/callback/[provider]\",\n    \"/api/cron/[jobName]\",\n    \"/api/cron/status/[executionId]\",\n    \"/api/dashboard/layout\",\n    \"/api/dashboard/widgets/[widget]\",\n    \"/api/desktop/context\",\n    \"/api/desktop/open\",\n    \"/api/desktop/organizations\",\n    \"/api/desktop/vehicle-use-warnings\",\n    \"/api/discord/interactions/[token]\",\n    \"/api/discord/link\",\n    \"/api/discord/setup\",\n    \"/api/driving-licence/evidence\",\n    \"/api/driving-licence/operational-employees\",\n    \"/api/driving-licence/status\",\n    \"/api/health\",\n    \"/api/jobs/[jobId]/status\",\n    \"/api/kiosk/board\",\n    \"/api/kiosk/clock\",\n    \"/api/kiosk/clock/outcome\",\n    \"/api/kiosk/commands\",\n    \"/api/kiosk/commands/[operationId]\",\n    \"/api/kiosk/employee-status\",\n    \"/api/kiosk/employees\",\n    \"/api/kiosk/fob\",\n    \"/api/kiosk/fob/registration\",\n    \"/api/kiosk/pair\",\n    \"/api/kiosk/session\",\n    \"/api/location/countries\",\n    \"/api/location/regions\",\n    \"/api/location/states\",\n    \"/api/mcp\",\n    \"/api/notifications\",\n    \"/api/notifications/count\",\n    \"/api/notifications/preferences\",\n    \"/api/notifications/push/native-token\",\n    \"/api/notifications/push/subscribe\",\n    \"/api/notifications/push/subscriptions\",\n    \"/api/notifications/push/unsubscribe\",\n    \"/api/notifications/push/vapid-key\",\n    \"/api/org-admin/holiday-categories\",\n    \"/api/org-admin/holiday-categories/[id]\",\n    \"/api/org-admin/holiday-presets\",\n    \"/api/org-admin/holiday-presets/[id]\",\n    \"/api/org-admin/holidays\",\n    \"/api/org-admin/holidays/[id]\",\n    \"/api/org-admin/holidays/import\",\n    \"/api/org-admin/holidays/preview\",\n    \"/api/organization-mfa/policy\",\n    \"/api/organization/vehicles/[vehicleId]/photos/[photoId]\",\n    \"/api/organizations/list\",\n    \"/api/organizations/sso\",\n    \"/api/organizations/switch\",\n    \"/api/payroll/comparisons/[resultId]\",\n    \"/api/personnel-files/documents/[documentId]\",\n    \"/api/personnel-files/employees/[employeeId]/zip\",\n    \"/api/platform-admin/billing\",\n    \"/api/session/organization-status\",\n    \"/api/settings/employees/read/[dataset]\",\n    \"/api/settings/skills\",\n    \"/api/setup/authorize\",\n    \"/api/slack/commands\",\n    \"/api/slack/events\",\n    \"/api/slack/interactions\",\n    \"/api/slack/link\",\n    \"/api/slack/oauth/authorize\",\n    \"/api/slack/oauth/callback\",\n    \"/api/slack/setup\",\n    \"/api/teams/messages\",\n    \"/api/teams/setup\",\n    \"/api/telegram/link\",\n    \"/api/telegram/setup\",\n    \"/api/telegram/webhook/[token]\",\n    \"/api/time-clock\",\n    \"/api/time-clock/status\",\n    \"/api/time-entries\",\n    \"/api/time-entries/[entryId]\",\n    \"/api/time-entries/clock-out-on-behalf\",\n    \"/api/time-entries/commands\",\n    \"/api/time-entries/commands/[operationId]\",\n    \"/api/time-entries/corrections\",\n    \"/api/time-entries/diagnostics\",\n    \"/api/time-entries/diagnostics/proposals\",\n    \"/api/time-entries/diagnostics/repair\",\n    \"/api/time-entries/offline-context\",\n    \"/api/time-entries/status\",\n    \"/api/time-entries/verify\",\n    \"/api/travel-expenses/[claimId]\",\n    \"/api/travel-expenses/[claimId]/receipts/[attachmentId]\",\n    \"/api/travel-expenses/exports/[batchId]\",\n    \"/api/travel-expenses/reports/[reportId]/receipts/[receiptId]\",\n    \"/api/tus/[[...path]]\",\n    \"/api/upload/personnel-file\",\n    \"/api/upload/personnel-file/payslip-batch\",\n    \"/api/upload/process\",\n    \"/api/upload/travel-expense/process\",\n    \"/api/upload/travel-expense/report-receipt\",\n    \"/api/user/onboarding-status\",\n    \"/api/v1/[...path]\",\n    \"/api/v1/absences\",\n    \"/api/v1/customers\",\n    \"/api/v1/customers/custom-fields\",\n    \"/api/v1/employees\",\n    \"/api/v1/employees/custom-fields\",\n    \"/api/v1/openapi.json\",\n    \"/api/v1/projects\",\n    \"/api/v1/projects/custom-fields\",\n    \"/api/v1/work-periods\",\n    \"/api/wellness/water-action\",\n    \"/api/wellness/water-reminder\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]},{\"url\":\"/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "restored": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:58556\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_routes",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"appRouter\": [\n    \"/[locale]\",\n    \"/[locale]/absences\",\n    \"/[locale]/accept-invitation/[invitationId]\",\n    \"/[locale]/analytics\",\n    \"/[locale]/analytics/overtime-burn-down\",\n    \"/[locale]/analytics/team-performance\",\n    \"/[locale]/analytics/vacation-trends\",\n    \"/[locale]/analytics/work-hours\",\n    \"/[locale]/approvals\",\n    \"/[locale]/approvals/deputy-decisions/[absenceId]\",\n    \"/[locale]/approvals/inbox\",\n    \"/[locale]/approvals/review/[organizationId]/[kind]/[id]\",\n    \"/[locale]/billing/suspended\",\n    \"/[locale]/calendar\",\n    \"/[locale]/calendar/[employeeId]\",\n    \"/[locale]/compliance\",\n    \"/[locale]/driving-licence\",\n    \"/[locale]/driving-licence/checks/[employee]\",\n    \"/[locale]/equipment\",\n    \"/[locale]/equipment/assignments/[assignmentId]\",\n    \"/[locale]/equipment/employees/[employeeId]\",\n    \"/[locale]/forgot-password\",\n    \"/[locale]/init\",\n    \"/[locale]/join/[code]\",\n    \"/[locale]/kiosk\",\n    \"/[locale]/licenses\",\n    \"/[locale]/mfa\",\n    \"/[locale]/my-documents\",\n    \"/[locale]/my-equipment\",\n    \"/[locale]/my-requests\",\n    \"/[locale]/notifications\",\n    \"/[locale]/onboarding/complete\",\n    \"/[locale]/onboarding/notifications\",\n    \"/[locale]/onboarding/organization\",\n    \"/[locale]/onboarding/profile\",\n    \"/[locale]/onboarding/vacation-policy\",\n    \"/[locale]/onboarding/welcome\",\n    \"/[locale]/onboarding/wellness\",\n    \"/[locale]/onboarding/work-schedule\",\n    \"/[locale]/onboarding/work-templates\",\n    \"/[locale]/organization\",\n    \"/[locale]/payroll\",\n    \"/[locale]/payroll/work-balances\",\n    \"/[locale]/payroll/work-balances/[employeeId]\",\n    \"/[locale]/personnel-files\",\n    \"/[locale]/personnel-files/[employeeId]\",\n    \"/[locale]/personnel-files/document-requests\",\n    \"/[locale]/personnel-files/due-for-deletion\",\n    \"/[locale]/personnel-files/payslip-batches\",\n    \"/[locale]/personnel-files/payslip-batches/[batchId]\",\n    \"/[locale]/personnel-files/sick-leave\",\n    \"/[locale]/platform-admin\",\n    \"/[locale]/platform-admin/analytics\",\n    \"/[locale]/platform-admin/billing\",\n    \"/[locale]/platform-admin/diagnostics\",\n    \"/[locale]/platform-admin/organizations\",\n    \"/[locale]/platform-admin/settings\",\n    \"/[locale]/platform-admin/system-email-templates\",\n    \"/[locale]/platform-admin/users\",\n    \"/[locale]/platform-admin/worker-queue\",\n    \"/[locale]/reports\",\n    \"/[locale]/reports/projects\",\n    \"/[locale]/reports/vehicles\",\n    \"/[locale]/reset-password\",\n    \"/[locale]/scheduling\",\n    \"/[locale]/settings\",\n    \"/[locale]/settings/approval-escalation\",\n    \"/[locale]/settings/approval-policies\",\n    \"/[locale]/settings/audit-export\",\n    \"/[locale]/settings/audit-log\",\n    \"/[locale]/settings/avv\",\n    \"/[locale]/settings/billable-time\",\n    \"/[locale]/settings/billable-time/accounting\",\n    \"/[locale]/settings/billable-time/cost-rates\",\n    \"/[locale]/settings/billable-time/hand-off\",\n    \"/[locale]/settings/billable-time/rates\",\n    \"/[locale]/settings/billing\",\n    \"/[locale]/settings/calendar\",\n    \"/[locale]/settings/change-policies\",\n    \"/[locale]/settings/clocking\",\n    \"/[locale]/settings/clockodo-import\",\n    \"/[locale]/settings/closed-months\",\n    \"/[locale]/settings/compliance\",\n    \"/[locale]/settings/compliance/works-council\",\n    \"/[locale]/settings/coverage-rules\",\n    \"/[locale]/settings/custom-fields\",\n    \"/[locale]/settings/customers\",\n    \"/[locale]/settings/demo\",\n    \"/[locale]/settings/discord\",\n    \"/[locale]/settings/driving-licence\",\n    \"/[locale]/settings/email-templates\",\n    \"/[locale]/settings/employees\",\n    \"/[locale]/settings/employees/[employeeId]\",\n    \"/[locale]/settings/employees/new\",\n    \"/[locale]/settings/enterprise\",\n    \"/[locale]/settings/enterprise/api-keys\",\n    \"/[locale]/settings/enterprise/api-keys/[keyId]\",\n    \"/[locale]/settings/enterprise/audit-log\",\n    \"/[locale]/settings/enterprise/branding\",\n    \"/[locale]/settings/enterprise/domains\",\n    \"/[locale]/settings/enterprise/email\",\n    \"/[locale]/settings/enterprise/identity-setup\",\n    \"/[locale]/settings/enterprise/sso\",\n    \"/[locale]/settings/equipment\",\n    \"/[locale]/settings/export\",\n    \"/[locale]/settings/export-operations\",\n    \"/[locale]/settings/export/history/[organizationId]\",\n    \"/[locale]/settings/holidays\",\n    \"/[locale]/settings/implementation-checklist\",\n    \"/[locale]/settings/import\",\n    \"/[locale]/settings/import/[batchId]\",\n    \"/[locale]/settings/kiosks\",\n    \"/[locale]/settings/locations\",\n    \"/[locale]/settings/locations/[locationId]\",\n    \"/[locale]/settings/my-data\",\n    \"/[locale]/settings/notification-channels\",\n    \"/[locale]/settings/notifications\",\n    \"/[locale]/settings/organization\",\n    \"/[locale]/settings/organizations\",\n    \"/[locale]/settings/payroll-access\",\n    \"/[locale]/settings/payroll-export\",\n    \"/[locale]/settings/payroll-readiness\",\n    \"/[locale]/settings/permissions\",\n    \"/[locale]/settings/personnel-files\",\n    \"/[locale]/settings/position-capture\",\n    \"/[locale]/settings/position-stamps\",\n    \"/[locale]/settings/profile\",\n    \"/[locale]/settings/projects\",\n    \"/[locale]/settings/report-share-links\",\n    \"/[locale]/settings/roles\",\n    \"/[locale]/settings/scheduled-exports\",\n    \"/[locale]/settings/security\",\n    \"/[locale]/settings/shifts\",\n    \"/[locale]/settings/skills\",\n    \"/[locale]/settings/slack\",\n    \"/[locale]/settings/statistics\",\n    \"/[locale]/settings/surcharges\",\n    \"/[locale]/settings/teams\",\n    \"/[locale]/settings/teams-notifications\",\n    \"/[locale]/settings/teams/[teamId]\",\n    \"/[locale]/settings/telegram\",\n    \"/[locale]/settings/travel-expenses\",\n    \"/[locale]/settings/vacation\",\n    \"/[locale]/settings/vacation/employees\",\n    \"/[locale]/settings/vacation/employees/[employeeId]\",\n    \"/[locale]/settings/vehicle-use\",\n    \"/[locale]/settings/vehicles\",\n    \"/[locale]/settings/webhooks\",\n    \"/[locale]/settings/wellness\",\n    \"/[locale]/settings/work-categories\",\n    \"/[locale]/settings/work-diagnostics\",\n    \"/[locale]/settings/work-policies\",\n    \"/[locale]/setup\",\n    \"/[locale]/share/[token]\",\n    \"/[locale]/sign-in\",\n    \"/[locale]/sign-up\",\n    \"/[locale]/team\",\n    \"/[locale]/team/absences\",\n    \"/[locale]/team/driving\",\n    \"/[locale]/team/period-submissions\",\n    \"/[locale]/team/presence\",\n    \"/[locale]/team/presence/[locationId]\",\n    \"/[locale]/time-tracking\",\n    \"/[locale]/today\",\n    \"/[locale]/travel-expenses\",\n    \"/[locale]/travel-expenses/[claimId]\",\n    \"/[locale]/travel-expenses/finance\",\n    \"/[locale]/travel-expenses/reports/[reportId]\",\n    \"/[locale]/verify-2fa\",\n    \"/[locale]/verify-email\",\n    \"/[locale]/verify-email-pending\",\n    \"/[locale]/works-council\",\n    \"/[locale]/works-council/export\",\n    \"/api/analytics/export\",\n    \"/api/app-version\",\n    \"/api/approvals/inbox\",\n    \"/api/approvals/inbox/[id]\",\n    \"/api/approvals/inbox/[id]/approve\",\n    \"/api/approvals/inbox/[id]/reject\",\n    \"/api/approvals/inbox/bulk-approve\",\n    \"/api/approvals/inbox/bulk-reject\",\n    \"/api/approvals/inbox/counts\",\n    \"/api/audit-export/public-key\",\n    \"/api/audit-export/verify\",\n    \"/api/auth/[...all]\",\n    \"/api/auth/app-exchange\",\n    \"/api/auth/app-login\",\n    \"/api/auth/app-sign-in\",\n    \"/api/auth/callback/social-org/[provider]\",\n    \"/api/auth/context\",\n    \"/api/auth/desktop-login\",\n    \"/api/auth/providers\",\n    \"/api/auth/session-expired\",\n    \"/api/auth/social-org/[provider]\",\n    \"/api/auth/verify-turnstile\",\n    \"/api/billing/checkout\",\n    \"/api/billing/portal\",\n    \"/api/billing/subscription\",\n    \"/api/billing/webhook\",\n    \"/api/calendar/conflicts\",\n    \"/api/calendar/connections\",\n    \"/api/calendar/connections/[id]\",\n    \"/api/calendar/events\",\n    \"/api/calendar/ics-feeds\",\n    \"/api/calendar/ics-feeds/[id]\",\n    \"/api/calendar/ics-feeds/[id]/regenerate\",\n    \"/api/calendar/ics/[secret]\",\n    \"/api/calendar/oauth/[provider]\",\n    \"/api/calendar/oauth/callback/[provider]\",\n    \"/api/cron/[jobName]\",\n    \"/api/cron/status/[executionId]\",\n    \"/api/dashboard/layout\",\n    \"/api/dashboard/widgets/[widget]\",\n    \"/api/desktop/context\",\n    \"/api/desktop/open\",\n    \"/api/desktop/organizations\",\n    \"/api/desktop/vehicle-use-warnings\",\n    \"/api/discord/interactions/[token]\",\n    \"/api/discord/link\",\n    \"/api/discord/setup\",\n    \"/api/driving-licence/evidence\",\n    \"/api/driving-licence/operational-employees\",\n    \"/api/driving-licence/status\",\n    \"/api/health\",\n    \"/api/jobs/[jobId]/status\",\n    \"/api/kiosk/board\",\n    \"/api/kiosk/clock\",\n    \"/api/kiosk/clock/outcome\",\n    \"/api/kiosk/commands\",\n    \"/api/kiosk/commands/[operationId]\",\n    \"/api/kiosk/employee-status\",\n    \"/api/kiosk/employees\",\n    \"/api/kiosk/fob\",\n    \"/api/kiosk/fob/registration\",\n    \"/api/kiosk/pair\",\n    \"/api/kiosk/session\",\n    \"/api/location/countries\",\n    \"/api/location/regions\",\n    \"/api/location/states\",\n    \"/api/mcp\",\n    \"/api/notifications\",\n    \"/api/notifications/count\",\n    \"/api/notifications/preferences\",\n    \"/api/notifications/push/native-token\",\n    \"/api/notifications/push/subscribe\",\n    \"/api/notifications/push/subscriptions\",\n    \"/api/notifications/push/unsubscribe\",\n    \"/api/notifications/push/vapid-key\",\n    \"/api/org-admin/holiday-categories\",\n    \"/api/org-admin/holiday-categories/[id]\",\n    \"/api/org-admin/holiday-presets\",\n    \"/api/org-admin/holiday-presets/[id]\",\n    \"/api/org-admin/holidays\",\n    \"/api/org-admin/holidays/[id]\",\n    \"/api/org-admin/holidays/import\",\n    \"/api/org-admin/holidays/preview\",\n    \"/api/organization-mfa/policy\",\n    \"/api/organization/vehicles/[vehicleId]/photos/[photoId]\",\n    \"/api/organizations/list\",\n    \"/api/organizations/sso\",\n    \"/api/organizations/switch\",\n    \"/api/payroll/comparisons/[resultId]\",\n    \"/api/personnel-files/documents/[documentId]\",\n    \"/api/personnel-files/employees/[employeeId]/zip\",\n    \"/api/platform-admin/billing\",\n    \"/api/session/organization-status\",\n    \"/api/settings/employees/read/[dataset]\",\n    \"/api/settings/skills\",\n    \"/api/setup/authorize\",\n    \"/api/slack/commands\",\n    \"/api/slack/events\",\n    \"/api/slack/interactions\",\n    \"/api/slack/link\",\n    \"/api/slack/oauth/authorize\",\n    \"/api/slack/oauth/callback\",\n    \"/api/slack/setup\",\n    \"/api/teams/messages\",\n    \"/api/teams/setup\",\n    \"/api/telegram/link\",\n    \"/api/telegram/setup\",\n    \"/api/telegram/webhook/[token]\",\n    \"/api/time-clock\",\n    \"/api/time-clock/status\",\n    \"/api/time-entries\",\n    \"/api/time-entries/[entryId]\",\n    \"/api/time-entries/clock-out-on-behalf\",\n    \"/api/time-entries/commands\",\n    \"/api/time-entries/commands/[operationId]\",\n    \"/api/time-entries/corrections\",\n    \"/api/time-entries/diagnostics\",\n    \"/api/time-entries/diagnostics/proposals\",\n    \"/api/time-entries/diagnostics/repair\",\n    \"/api/time-entries/offline-context\",\n    \"/api/time-entries/status\",\n    \"/api/time-entries/verify\",\n    \"/api/travel-expenses/[claimId]\",\n    \"/api/travel-expenses/[claimId]/receipts/[attachmentId]\",\n    \"/api/travel-expenses/exports/[batchId]\",\n    \"/api/travel-expenses/reports/[reportId]/receipts/[receiptId]\",\n    \"/api/tus/[[...path]]\",\n    \"/api/upload/personnel-file\",\n    \"/api/upload/personnel-file/payslip-batch\",\n    \"/api/upload/process\",\n    \"/api/upload/travel-expense/process\",\n    \"/api/upload/travel-expense/report-receipt\",\n    \"/api/user/onboarding-status\",\n    \"/api/v1/[...path]\",\n    \"/api/v1/absences\",\n    \"/api/v1/customers\",\n    \"/api/v1/customers/custom-fields\",\n    \"/api/v1/employees\",\n    \"/api/v1/employees/custom-fields\",\n    \"/api/v1/openapi.json\",\n    \"/api/v1/projects\",\n    \"/api/v1/projects/custom-fields\",\n    \"/api/v1/work-periods\",\n    \"/api/wellness/water-action\",\n    \"/api/wellness/water-reminder\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "source": {
+    "head": "166975f3c981d7f1f8d9e51bbce09fbe63b32568",
+    "pins": [
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+        "raw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+        "lf": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+        "raw": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+        "lf": "d47097f4a836f9eb1959fb2ad99db4928ccf86f8fe300761945571168b9a5dfa"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "raw": "0e989f59fb4c59ac8e481d00c627500ee82d47f496a84c91a97273117aeb1a55",
+        "lf": "ea84cf54e8efdb0e6cf029bbe36147eb3df0ec2600dcf5809ab435a4c2b339ec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+        "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+        "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+        "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+        "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+        "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+        "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+        "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+        "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+      },
+      {
+        "path": "apps/webapp/src/components/site-header.tsx",
+        "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+        "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+        "raw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+        "lf": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+        "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+        "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+        "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+        "lf": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "5ddcf32a1aeeed466587fd7454e3978e883366fdb40d5be6d8e521cf9a45e2d3"
+  }
+}

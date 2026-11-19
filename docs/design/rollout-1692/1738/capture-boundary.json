@@ -1,0 +1,11 @@
+{
+  "capture": "before-login-blocked.png",
+  "sha256": "3a050bdb7c2f99fdd33189cfdcd6c307120ca1ee91e71730a06cf08f73822e12",
+  "width": 1264,
+  "height": 625,
+  "source": "58ea18603a936d102f0625e3303f4c05689a9961; no product edits at capture",
+  "fixture": "new label z8-scheduling-fixture-1738; small-admin normal auth attempted",
+  "actual": "unauthenticated sign-in, HTTP 400 TURNSTILE_REQUIRED",
+  "beforeAfterScheduling": "not captured; blocked; screenshot is not scheduling acceptance",
+  "finalSource": "checks/source-36c60f925612dbdab3e9ba5b6166dd816325300ee4ebe124726dd230a3b7f51d.json"
+}

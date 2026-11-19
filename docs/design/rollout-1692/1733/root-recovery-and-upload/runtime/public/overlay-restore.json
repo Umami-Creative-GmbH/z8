@@ -1,0 +1,29 @@
+{
+  "mode": "restore",
+  "ref": "c72c947e0faa21966fa24decc493ae96df3115f8",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+      "restoredRaw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+      "exactRawRestore": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "restoredRaw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+      "exactRawRestore": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "restoredRaw": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+      "exactRawRestore": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "restoredRaw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+      "exactRawRestore": true
+    }
+  ],
+  "serverStoppedBeforeMutation": true,
+  "partialApplication": true,
+  "purpose": "Minimal public reused-upload regression control only. Existing historical page/workspace/upload/metadata consumers; actions and rest of application current. No whole historical app or broad comparison acceptance."
+}

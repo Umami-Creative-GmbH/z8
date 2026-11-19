@@ -1,7 +1,10 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { EmployeeSingleSelect, type SelectableEmployee } from "@/components/employee-select";
+import {
+	EmployeeSingleSelect,
+	type SelectableEmployee,
+} from "@/components/employee-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCalendarEmployees } from "@/hooks/use-calendar-employees";
 
@@ -11,7 +14,10 @@ interface CalendarEmployeeSelectorProps {
 	/** Currently selected employee ID */
 	selectedEmployeeId: string | null;
 	/** Callback when employee selection changes */
-	onEmployeeChange: (employeeId: string | null, employee?: SelectableEmployee) => void;
+	onEmployeeChange: (
+		employeeId: string | null,
+		employee?: SelectableEmployee,
+	) => void;
 	/** Whether current user is manager or above (controls visibility) */
 	isManagerOrAbove: boolean;
 }
@@ -35,7 +41,8 @@ export function CalendarEmployeeSelector({
 	isManagerOrAbove,
 }: CalendarEmployeeSelectorProps) {
 	const { t } = useTranslate();
-	const { employees, isLoading, error } = useCalendarEmployees(currentEmployeeId);
+	const { employees, isLoading, error } =
+		useCalendarEmployees(currentEmployeeId);
 
 	// Don't render for regular employees
 	if (!isManagerOrAbove) {
@@ -63,6 +70,7 @@ export function CalendarEmployeeSelector({
 
 	// If no managed employees (just current user), show read-only indicator
 	if (employees.length <= 1) {
+		if (selectedEmployeeId !== currentEmployeeId) return null;
 		return (
 			<div className="text-sm text-muted-foreground">
 				{t("calendar.employeeSelector.myCalendar", "My Calendar")}
@@ -82,7 +90,10 @@ export function CalendarEmployeeSelector({
 			employees={employees}
 			showFilters={false}
 			label={t("calendar.employeeSelector.label", "View Calendar")}
-			placeholder={t("calendar.employeeSelector.placeholder", "Select team member...")}
+			placeholder={t(
+				"calendar.employeeSelector.placeholder",
+				"Select team member...",
+			)}
 			className="w-full"
 		/>
 	);

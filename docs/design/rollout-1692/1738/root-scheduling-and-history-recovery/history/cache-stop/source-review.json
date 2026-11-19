@@ -1,0 +1,86 @@
+{
+  "head": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+  "precorrection": "31625ce088b22f27fbff338b09867d4a7883d35d",
+  "source": "fecaa3ceb5a9b20e9d34b0107411da69349a98a8",
+  "integration": "b2679fd0134de97a323d9b4e3e4488635e379a2d",
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+      "rawSha256": "52e29972231d3694c31d27859003cce9796e846a97b18b5a8727cec79110aecb",
+      "lfSha256": "5ac044cd72599896398ba9dcc7710862839b43491a92464d324b99557bb1758b",
+      "gitBlob": "7130fd2f0868a1de4a6dd112f7a95ccd420aae02"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "rawSha256": "f83a8d6ff156d84e7c4f854deafe746eb62ec84c5ec50ebd078fc073894bde58",
+      "lfSha256": "a6c5f0319ed15d61b8b2920a8bb2568bf709e998772962b2992c7ef80e97eb53",
+      "gitBlob": "f2d71385744d0a396380eda65911ab73dfd7e078"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.test.tsx",
+      "rawSha256": "5ea8826a124f1002b30500b89663d0b9c0816883ac5dfe2d2837d070e8b49088",
+      "lfSha256": "a4e2288a87687b4b0413d6146091a2c549d45767bf8e4c2b615115dec11e5b0f",
+      "gitBlob": "57539f94d514e89ec48843d95ad526b7fb9d47c2"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "rawSha256": "159f4de9e04320e577a5902e7a91c20b4eeb909fa09faa9f4bbbe883688e70bd",
+      "lfSha256": "469f38b29054a0818ce53903d7f808a6dfc770e43415ba167ed66685fc7b940e",
+      "gitBlob": "41ddba29220147d7d85677756460c4ef0e8ca58e"
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+      "rawSha256": "cc3ec5f626a005dd60cdb43bc1b59a8b18927f0bbead4e2a343bd5d6cce745d1",
+      "lfSha256": "e9f3c74db150bfbc3ca80ac306dfd6369e92391fd47eb41f19554605b6321204",
+      "gitBlob": "23c2050cce6c5a7b2c733ac0aedb5e8f3e417a71"
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+      "rawSha256": "c38ebb32be9a81dacd4a7c4145eb35a86d72f056f1fd35faf97f84bc2f1b8a0b",
+      "lfSha256": "cae03aebb570d5e20893993ed8482a365a980e87d6a5f5471f622c3f5e110cfa",
+      "gitBlob": "9f4b152e4f7b46cc25b141c822d012950699223f"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+      "rawSha256": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+      "lfSha256": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e",
+      "gitBlob": "6e49764a57d8e3ba5b4bd5944986855a2502b938"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "rawSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "lfSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.tsx",
+      "rawSha256": "c3f18cd100050998a9d82fa8a7cd61abe5f8b60265f9e505d76abef2c795894b",
+      "lfSha256": "a525ff4b2ba9dbd413aeffec32119b67870540cf97ec318a44b4a921dfad9b44",
+      "gitBlob": "e4fbe7dcde80b9423aef7ac67edb43f352da5239"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "rawSha256": "5fd544ce440e37cfa577b222ba986e48a28659a4f34c8ef27a08d66464f4b7c6",
+      "lfSha256": "1e2a3c324464fe6e4624ee38753404f4237d22eb987db114797d62748a6a61a2",
+      "gitBlob": "860294950506ddf320e64dc672ecbfd8f0136c3a"
+    }
+  ],
+  "correctionPaths": [
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+    "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+    "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+    "docs/design/rollout-1692/1739.md"
+  ],
+  "correctionMergeOutsidePathsPreserved": 17399,
+  "correctionMergeMatchesSource": true,
+  "publicationDelta": [
+    "docs/design/rollout-1692/README.md",
+    "docs/design/rollout-1692/integration.json"
+  ],
+  "originalReportLfPrefixPreserved": true,
+  "historyHookUnchangedSincePrecorrection": true,
+  "interpretation": "The Retry and native-trigger corrections are behaviorally confirmed. The cache finding combines the new explicitly retained directory records path and unchanged shared history cache semantics. No historical runtime comparison, introduced-regression classification, or live authorization exploitation is claimed."
+}

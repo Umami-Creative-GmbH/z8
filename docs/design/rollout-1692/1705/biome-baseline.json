@@ -1,0 +1,46 @@
+[
+  {
+    "file": "src/lib/analytics/types.ts",
+    "unchanged": true,
+    "diagnostics": [
+      {
+        "category": "lint/suspicious/noExplicitAny",
+        "severity": "warning"
+      },
+      {
+        "category": "lint/suspicious/noExplicitAny",
+        "severity": "warning"
+      }
+    ]
+  },
+  {
+    "file": "src/lib/effect/services/analytics.service.ts",
+    "unchanged": true,
+    "diagnostics": [
+      {
+        "category": "assist/source/organizeImports",
+        "severity": "error"
+      },
+      {
+        "category": "format",
+        "severity": "error"
+      },
+      {
+        "category": "lint/complexity/useMathMinMax",
+        "severity": "warning"
+      },
+      {
+        "category": "lint/complexity/useMathMinMax",
+        "severity": "warning"
+      },
+      {
+        "category": "lint/complexity/useMathMinMax",
+        "severity": "warning"
+      },
+      {
+        "category": "lint/complexity/useMathMinMax",
+        "severity": "warning"
+      }
+    ]
+  }
+]

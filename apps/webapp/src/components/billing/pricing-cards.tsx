@@ -3,16 +3,13 @@
 import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { formatEuroAmount, SEAT_PRICES_CENTS } from "@/lib/billing/seat-prices";
-import {
-	MONTHLY_PRICE,
-	YEARLY_PRICE_PER_MONTH,
-	YEARLY_PRICE_TOTAL,
-} from "./pricing-cards.constants";
+import { formatEuroCurrency } from "./format-euro-currency";
 
 interface BillingPricingCardsProps {
 	buttonLabels: { monthly: string; yearly: string };
@@ -35,12 +32,19 @@ export function BillingPricingCards({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	// Formatted before translation so the yearly kiosk price reads "1.50" (or "1,50"), never "1.5".
-	const kioskPrice = (cents: number) => formatEuroAmount(cents, locale);
+	// For catalog strings that already carry the euro sign ("€{price}/seat/month").
+	const amount = (cents: number) => formatEuroAmount(cents, locale);
+	// The headline prices stand alone, so they carry the locale's own currency format.
+	const currency = (cents: number) => formatEuroCurrency(cents, locale);
+	const monthlyHeadingId = useId();
+	const yearlyHeadingId = useId();
 
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{title ?? t("billing.choosePlan", "Choose Your Plan")}</CardTitle>
+				<CardTitle>
+					<h2>{title ?? t("billing.choosePlan", "Choose Your Plan")}</h2>
+				</CardTitle>
 				<CardDescription>
 					{description ??
 						t(
@@ -51,16 +55,23 @@ export function BillingPricingCards({
 			</CardHeader>
 			<CardContent>
 				<div className="grid gap-6 md:grid-cols-2">
-					<Card className="border-2">
-						<CardHeader>
-							<CardTitle>{t("billing.plans.monthly.title", "Monthly")}</CardTitle>
-							<CardDescription>
+					<section
+						aria-labelledby={monthlyHeadingId}
+						className="flex flex-col gap-4 rounded-lg border-2 p-5"
+					>
+						<div className="space-y-1.5">
+							<h3 id={monthlyHeadingId} className="font-semibold leading-none">
+								{t("billing.plans.monthly.title", "Monthly")}
+							</h3>
+							<p className="text-sm text-muted-foreground">
 								{t("billing.plans.monthly.description", "Flexible month-to-month billing")}
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
+							</p>
+						</div>
+						<div className="flex flex-1 flex-col gap-4">
 							<div>
-								<span className="text-4xl font-bold">€{MONTHLY_PRICE}</span>
+								<span className="text-4xl font-semibold tabular-nums">
+									{currency(SEAT_PRICES_CENTS.full.month)}
+								</span>
 								<span className="text-muted-foreground">
 									{t("billing.perSeatMonth", "/seat/month")}
 								</span>
@@ -69,53 +80,58 @@ export function BillingPricingCards({
 										{t(
 											"billing.kioskSeatPriceMonthly",
 											"Kiosk seats (kiosk-only employees): €{price}/seat/month",
-											{ price: kioskPrice(SEAT_PRICES_CENTS.kiosk.month) },
+											{ price: amount(SEAT_PRICES_CENTS.kiosk.month) },
 										)}
 									</p>
 								) : null}
 							</div>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-center gap-2">
-									<IconCheck className="size-4 text-green-600" />
+									<IconCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
 									{t("billing.features.cancelAnytime", "Cancel anytime")}
 								</li>
 								<li className="flex items-center gap-2">
-									<IconCheck className="size-4 text-green-600" />
+									<IconCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
 									{t("billing.features.allFeatures", "All features included")}
 								</li>
 							</ul>
 							<Button
-								className="w-full"
+								className="mt-auto w-full"
 								variant="outline"
 								onClick={() => onSubscribe("month")}
 								disabled={isLoading}
 							>
 								{isLoading ? t("billing.starting", "Starting...") : buttonLabels.monthly}
 							</Button>
-						</CardContent>
-					</Card>
+						</div>
+					</section>
 
-					<Card className="border-2 border-primary">
-						<CardHeader>
-							<div className="flex items-center justify-between">
-								<div>
-									<CardTitle>{t("billing.plans.yearly.title", "Yearly")}</CardTitle>
-									<CardDescription>
-										{t("billing.plans.yearly.description", "Save 25% with annual billing")}
-									</CardDescription>
-								</div>
-								<Badge>{t("billing.bestValue", "Best Value")}</Badge>
+					<section
+						aria-labelledby={yearlyHeadingId}
+						className="flex flex-col gap-4 rounded-lg border-2 border-primary p-5"
+					>
+						<div className="flex flex-wrap items-start justify-between gap-2">
+							<div className="min-w-0 space-y-1.5">
+								<h3 id={yearlyHeadingId} className="font-semibold leading-none">
+									{t("billing.plans.yearly.title", "Yearly")}
+								</h3>
+								<p className="text-sm text-muted-foreground">
+									{t("billing.plans.yearly.description", "Save 25% with annual billing")}
+								</p>
 							</div>
-						</CardHeader>
-						<CardContent className="space-y-4">
+							<Badge>{t("billing.bestValue", "Best Value")}</Badge>
+						</div>
+						<div className="flex flex-1 flex-col gap-4">
 							<div>
-								<span className="text-4xl font-bold">€{YEARLY_PRICE_PER_MONTH}</span>
+								<span className="text-4xl font-semibold tabular-nums">
+									{currency(SEAT_PRICES_CENTS.full.yearPerMonth)}
+								</span>
 								<span className="text-muted-foreground">
 									{t("billing.perSeatMonth", "/seat/month")}
 								</span>
 								<p className="text-sm text-muted-foreground">
 									{t("billing.seatBilledAnnually", "€{price}/seat billed annually", {
-										price: YEARLY_PRICE_TOTAL,
+										price: amount(SEAT_PRICES_CENTS.full.yearPerMonth * 12),
 									})}
 								</p>
 								{kioskSeatsEnabled ? (
@@ -124,8 +140,8 @@ export function BillingPricingCards({
 											"billing.kioskSeatPriceYearly",
 											"Kiosk seats (kiosk-only employees): €{price}/seat/month, €{total}/seat billed annually",
 											{
-												price: kioskPrice(SEAT_PRICES_CENTS.kiosk.yearPerMonth),
-												total: kioskPrice(SEAT_PRICES_CENTS.kiosk.yearPerMonth * 12),
+												price: amount(SEAT_PRICES_CENTS.kiosk.yearPerMonth),
+												total: amount(SEAT_PRICES_CENTS.kiosk.yearPerMonth * 12),
 											},
 										)}
 									</p>
@@ -133,23 +149,23 @@ export function BillingPricingCards({
 							</div>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-center gap-2">
-									<IconCheck className="size-4 text-green-600" />
+									<IconCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
 									{t("billing.features.yearlyDiscount", "25% discount vs monthly")}
 								</li>
 								<li className="flex items-center gap-2">
-									<IconCheck className="size-4 text-green-600" />
+									<IconCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
 									{t("billing.features.allFeatures", "All features included")}
 								</li>
 							</ul>
 							<Button
-								className="w-full"
+								className="mt-auto w-full"
 								onClick={() => onSubscribe("year")}
 								disabled={isLoading}
 							>
 								{isLoading ? t("billing.starting", "Starting...") : buttonLabels.yearly}
 							</Button>
-						</CardContent>
-					</Card>
+						</div>
+					</section>
 				</div>
 			</CardContent>
 		</Card>

@@ -38,7 +38,7 @@ export function useNotificationPreferences() {
 	const preferencesQueryKeyPrefix = queryKeys.notifications.preferences();
 
 	// Fetch preferences using server action
-	const { data, isLoading, error } = useQuery({
+	const { data, isLoading, error, refetch, isRefetching } = useQuery({
 		queryKey: preferencesQueryKey,
 		queryFn: async (): Promise<UserPreferencesResponse> => {
 			const result = await getNotificationPreferences();
@@ -150,6 +150,9 @@ export function useNotificationPreferences() {
 		availableChannels: data?.availableChannels ?? DEFAULT_AVAILABLE_CHANNELS,
 		isLoading,
 		error,
+		/** Retries loading the preferences in place after a load error. */
+		refetch,
+		isRefetching,
 		updatePreference: updatePreference.mutate,
 		updatePreferenceAsync: updatePreference.mutateAsync,
 		isUpdating: updatePreference.isPending,

@@ -1,0 +1,293 @@
+{
+    "status":  "MERGED_FRESH_CHECKS_PASS_LIMITS_RETAINED",
+    "branch":  "ai/1692-app-wide-ui-refresh",
+    "base":  "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+    "incoming":  "274170732c4bcd42a1ee48103f458f0d3722149b",
+    "merge":  "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+    "parents":  [
+                    "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+                    "274170732c4bcd42a1ee48103f458f0d3722149b"
+                ],
+    "tree":  "dbe10052bf9cbb9e5d31621aad1d1b1bc9048cc4",
+    "clean":  true,
+    "sourceBlockers":  [
+
+                       ],
+    "nativeMerge":  {
+                        "command":  [
+                                        "git",
+                                        "merge",
+                                        "--no-ff",
+                                        "--no-commit",
+                                        "274170732c4bcd42a1ee48103f458f0d3722149b"
+                                    ],
+                        "commitCommand":  [
+                                              "git",
+                                              "commit",
+                                              "-m",
+                                              "Merge #1827 onboarding completion into UI refresh integration"
+                                          ],
+                        "conflicts":  0,
+                        "expectedTree":  "dbe10052bf9cbb9e5d31621aad1d1b1bc9048cc4",
+                        "independentCommand":  [
+                                                   "git",
+                                                   "merge-tree",
+                                                   "--write-tree",
+                                                   "584db58aa2e5789e6f0e94d0f2c2f69b62f18807",
+                                                   "274170732c4bcd42a1ee48103f458f0d3722149b"
+                                               ]
+                    },
+    "tests":  {
+                  "runs":  [
+                               {
+                                   "name":  "exact",
+                                   "physicalFiles":  4,
+                                   "cases":  36,
+                                   "passed":  36,
+                                   "failed":  0,
+                                   "skipped":  0,
+                                   "overlapCasesWithPriorRuns":  0,
+                                   "initialRunPassed":  true
+                               },
+                               {
+                                   "name":  "compatibility",
+                                   "physicalFiles":  141,
+                                   "cases":  1382,
+                                   "passed":  1382,
+                                   "failed":  0,
+                                   "skipped":  0,
+                                   "overlapCasesWithPriorRuns":  36,
+                                   "initialRunPassed":  true
+                               },
+                               {
+                                   "name":  "adversarial",
+                                   "physicalFiles":  2,
+                                   "cases":  18,
+                                   "passed":  18,
+                                   "failed":  0,
+                                   "skipped":  0,
+                                   "overlapCasesWithPriorRuns":  0,
+                                   "initialRunPassed":  true
+                               }
+                           ],
+                  "unique":  {
+                                 "physicalFiles":  143,
+                                 "cases":  1400,
+                                 "passed":  1400,
+                                 "failed":  0
+                             },
+                  "deduplication":  "Normalized physical path + fullName + occurrence multiplicity within a file. Overlapping exact/current selections are not added; parameterized cases retain multiplicity.",
+                  "newProbes":  9,
+                  "latestRoot1727Probes":  9,
+                  "attempts":  "All merger test runs passed initially; no test/source edit or rerun needed."
+              },
+    "types":  {
+                  "passed":  true,
+                  "profiles":  [
+                                   "next typegen",
+                                   "tsconfig.typecheck.json",
+                                   "tsconfig.workflow-contracts.json",
+                                   "tsconfig.smoke.json"
+                               ],
+                  "log":  ".tmp/merge1827-audit/types.log"
+              },
+    "quality":  {
+                    "profiles":  [
+                                     {
+                                         "name":  "biome-default",
+                                         "exitCode":  1
+                                     },
+                                     {
+                                         "name":  "biome-crlf",
+                                         "exitCode":  1
+                                     },
+                                     {
+                                         "name":  "biome-explicit",
+                                         "exitCode":  1
+                                     },
+                                     {
+                                         "name":  "biome-explicit-crlf",
+                                         "exitCode":  0
+                                     },
+                                     {
+                                         "name":  "biome-lint-import",
+                                         "exitCode":  1
+                                     },
+                                     {
+                                         "name":  "biome-explicit-lint",
+                                         "exitCode":  0
+                                     },
+                                     {
+                                         "name":  "doctor",
+                                         "exitCode":  0
+                                     }
+                                 ],
+                    "lineEndings":  [
+                                        {
+                                            "path":  "apps/webapp/src/app/[locale]/onboarding/complete/actions.integration.test.ts",
+                                            "sha256":  "767095228d21fc316c2f7f987a267c0b8ba55f9f88299bc8dea1ba0eb18ccdaa",
+                                            "crlf":  65,
+                                            "bareLF":  0
+                                        },
+                                        {
+                                            "path":  "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx",
+                                            "sha256":  "a002677ef7426700555880195f062d1e7528be454cc9e7d1f0fa2fc7173191e0",
+                                            "crlf":  297,
+                                            "bareLF":  0
+                                        },
+                                        {
+                                            "path":  "apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+                                            "sha256":  "be4537c54fe072d85e42dfc9107b5334e4601ad5ba6e13edf9b45a27edd0a1d3",
+                                            "crlf":  266,
+                                            "bareLF":  0
+                                        }
+                                    ],
+                    "doctor":  {
+                                   "version":  "0.9.22",
+                                   "sourceRevision":  "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+                                   "files":  3,
+                                   "errors":  0,
+                                   "reviewedWarnings":  3,
+                                   "triage":  [
+                                                  "Layout-effect reset is intentional before-paint Activity invalidation; passing hide/reactivation probes prevent stale continuation.",
+                                                  "Both post-await current guards are necessary to reject late completion/summary results; they cannot move before await."
+                                              ],
+                                   "score":  null
+                               },
+                    "ordinaryConfigQualification":  "Default and ordinary CRLF report formatting differences in three files plus two noNonNullAssertion fixture warnings. Formatter-disabled ordinary lint retains the same two warnings. Existing explicit webapp config disables that rule; explicit lint and explicit CRLF check pass. No formatter or suppression edits."
+                },
+    "preservation":  {
+                         "unaffectedPaths":  12627,
+                         "priorRolloutPaths":  2380,
+                         "incomingRawPaths":  91,
+                         "verifiedTicketAncestors":  40,
+                         "baselineAncestor":  true,
+                         "root1726And1727Corrections":  true,
+                         "authoritativeOwners":  5,
+                         "allIncomingBlobsMatch":  true,
+                         "noHeadingOptInRemoval":  true
+                     },
+    "artifacts":  {
+                      "decodedPNGs":  22,
+                      "parsedJSON":  19,
+                      "syntaxCheckedScripts":  9,
+                      "finalCapturePins":  54,
+                      "beforeCapturePins":  30,
+                      "independentSourceFiles":  6,
+                      "documentLinks":  34,
+                      "contrastSamples":  8,
+                      "minimumRecordedContrast":  4.77115358635208,
+                      "recordedLiveAssertions":  18,
+                      "nativeTargetAndBlob":  true,
+                      "initialNativeRestoreReachedSignIn":  true,
+                      "stdinAuthRecorded":  true,
+                      "recordedPGSuites":  3,
+                      "recordedPGTests":  17
+                  },
+    "evidence":  {
+                     "fresh":  "Merged-tree tests/types/static quality and full archived PNG/JSON/script/link/source-pin audit only.",
+                     "inherited":  "Worker4units36/14completion;3PG17;18livebrowserassertions/22PNGs;actual private-stdin native auth and target tree;Next/contrast observations. No fresh PG/browser/native/dev/provider services started.",
+                     "native":  "Initial saved-state open reached sign-in. Accepted target tree follows real sign-in over private stdin. Its single consumer blob independently matches implementation233 and merged source; six separate runtime source files also match. Metadata HEAD remained old LOCAL37 and is not relabeled as final.",
+                     "screenshotInspection":  [
+                                                  "after-desktop-light.png",
+                                                  "after-phone-dark-large.png",
+                                                  "after-summary-failed.png"
+                                              ],
+                     "runtimeProducer":  "Inspected verify-runtime.mjs: real production completion, public status and scoped DB readback; summary transport failure/read-only retry leaves timestamp unchanged; separate employee identity. No replay performed.",
+                     "privateValueExclusion":  "Inherited worker exact secret-value exclusion only; private fixture is unavailable after cleanup, so no fresh exact-value scan claimed."
+                 },
+    "whitespace":  {
+                       "source":  0,
+                       "sourceProseScripts":  2,
+                       "fullArchive":  2,
+                       "qualification":  "Product TS/TSX diff passes. Archived verify-native.mjs retains one trailing-space line and blank EOF; verify-runtime.mjs retains blank EOF. Diagnostic transcript padding also retained. No archive-wide whitespace pass."
+                   },
+    "dependencies":  {
+                         "guard":  "Every pnpm invocation set pnpm_config_verify_deps_before_run=false and passed --config.verify-deps-before-run=false before node/exec/run.",
+                         "lockSHA256":  "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+                         "localPhysicalRoots":  true,
+                         "checkedLeafLinks":  158,
+                         "externalLeafTargets":  0,
+                         "installerOrRepairRun":  false,
+                         "qualification":  "Current local topology/lock verified; no pre-incident byte-pristine or exhaustive side-effects claim."
+                     },
+    "reviews":  {
+                    "axes":  [
+                                 "Standards",
+                                 "Spec"
+                             ],
+                    "skills":  [
+                                   "implement-spec",
+                                   "vercel-react-best-practices",
+                                   "vercel-composition-patterns",
+                                   "web-design-guidelines",
+                                   "react-doctor",
+                                   "tdd public seams inherited"
+                               ],
+                    "guidelines":  "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+                    "outcome":  "No source/spec blocker. Account/org-keyed presentation and mounted-account completion cache preserve distinct personal completion and workspace authority; actual actions/domain/init owners and all heading opt-ins unchanged."
+                },
+    "commands":  {
+                     "checks":  ".tmp/merge1827-audit/check-commands.json",
+                     "testAndTypesRunner":  ".tmp/merge1827-audit/run-checks.ps1",
+                     "quality":  ".tmp/merge1827-audit/quality-commands.json",
+                     "adversarial":  [
+                                         "pnpm",
+                                         "--config.verify-deps-before-run=false",
+                                         "--filter",
+                                         "webapp",
+                                         "exec",
+                                         "vitest",
+                                         "run",
+                                         "--config",
+                                         "../../.tmp/merge1827-audit/vitest.config.mts",
+                                         "--project",
+                                         "audit",
+                                         "--maxWorkers",
+                                         "2",
+                                         "--reporter=json",
+                                         "--outputFile=X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1827-audit/adversarial-unit.json"
+                                     ],
+                     "artifactAudit":  [
+                                           "pnpm",
+                                           "--config.verify-deps-before-run=false",
+                                           "node",
+                                           ".tmp/merge1827-audit/verify-artifacts.mjs"
+                                       ],
+                     "summarize":  [
+                                       "pnpm",
+                                       "--config.verify-deps-before-run=false",
+                                       "node",
+                                       ".tmp/merge1827-audit/summarize.mjs"
+                                   ]
+                 },
+    "attempts":  [
+                     "Initial unquoted HEAD^{tree} was interpreted by PowerShell; corrected quoted revision read succeeded. No Git mutation resulted from the failed read.",
+                     "All tests/types/explicit quality and independent artifact audit passed on their first run. Ordinary profile failures are retained, not fixed or relabeled.",
+                     "Default process inventory was denied by sandbox; read-only escalated inventory succeeded. Initial broad tsc substring matched Hentschel in another worker helper path; exact word-boundary matching correctly excluded those three foreign processes. Nothing was stopped."
+                 ],
+    "autoReview":  {
+                       "rejected":  true,
+                       "executed":  false,
+                       "action":  "Optional existing root1726/root1727 verify-evidence.mjs --current-source executions",
+                       "reason":  "Reviewer considered the archived verifiers known or credibly likely to write tracked evidence, contradicting read-only scope.",
+                       "handling":  "Neither optional root verifier ran; no workaround or retry. Prior root verification remains inherited. Independent audit freshly proves all2380priorrollout paths and unchanged authoritative/current root source are byte-identical.",
+                       "requestedCommands":  [
+                                                 "pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1727/root-loading-headings/verify-evidence.mjs --current-source",
+                                                 "pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1726/root-upload-recovery/verify-evidence.mjs --current-source"
+                                             ]
+                   },
+    "limits":  [
+                   "Full production static generation/build and remote Tolgee catalog sync remain unpassed.",
+                   "Providers, all roles/locales, physical device/store wrapper, true browser zoom and global transitions remain unverified.",
+                   "Late browser account/org ABA and cached Activity remain assembled-only.",
+                   "Original SQL membership deletion/restoration was rejected and unexecuted; no retry or new authority-domain/provider mutation.",
+                   "No source fixes/report/ledger/README/raw changes, tracker writes, push/PR/dev merge/deploy, or subagents."
+               ],
+    "ownership":  {
+                      "ownedServicesStarted":  0,
+                      "ownedPackageProcessesRemaining":  0,
+                      "release":  "RELEASE exclusive integration checkout mutation and package/runtime ownership to root. All owned checks exited; no services started; unrelated worker processes untouched.",
+                      "processInspection":  ".tmp/merge1827-audit/process-release-final.json"
+                  }
+}

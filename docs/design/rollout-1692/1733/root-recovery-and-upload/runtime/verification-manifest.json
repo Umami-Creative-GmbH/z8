@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "outcome": "READY_WITH_QUALIFICATIONS",
+  "candidate": "166975f3c981d7f1f8d9e51bbce09fbe63b32568",
+  "tree": "02a53818fa6160423339a36e371c52630ca569cc",
+  "applicationTree": "e47b421aaa5617f6c270e11b8859938204fde16b",
+  "verifiedCommit": null,
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "freshCases": 62,
+  "freshPhysicalFiles": 6,
+  "root460Separate": true,
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "rawSha256": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+      "lfSha256": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db",
+      "gitBlob": "5af47d41c2e64a8dfa75d620a31d044c5bed0ced",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "rawSha256": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+      "lfSha256": "d47097f4a836f9eb1959fb2ad99db4928ccf86f8fe300761945571168b9a5dfa",
+      "gitBlob": "bcded9ee75492bbde64f11ed62933d1866fe9e38",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "rawSha256": "0e989f59fb4c59ac8e481d00c627500ee82d47f496a84c91a97273117aeb1a55",
+      "lfSha256": "ea84cf54e8efdb0e6cf029bbe36147eb3df0ec2600dcf5809ab435a4c2b339ec",
+      "gitBlob": "9eec146c690f3076c6cc1f32f753282cb53d9a93",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+      "rawSha256": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+      "lfSha256": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08",
+      "gitBlob": "a6473e380609a6cc5569b8c1dceec10a6118c3d1",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+      "rawSha256": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+      "lfSha256": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695",
+      "gitBlob": "bcdf2bfa6596c82c077188f1c4bd6de01be6ec6e",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "rawSha256": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+      "lfSha256": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e",
+      "gitBlob": "cb5258989e1ea98f63aeb1288a56b43bd16589a1",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "rawSha256": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+      "lfSha256": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43",
+      "gitBlob": "e9db902ead4f397cfa5a8e4b5d6c3a27a30032a7",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+      "rawSha256": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+      "lfSha256": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8",
+      "gitBlob": "78ce1d2278988ce0719e7b7ab0a7bbfa0edeb2d4",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "rawSha256": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lfSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitBlob": "ce04338a66447465689b321227db26da97cabe56",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+      "rawSha256": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+      "lfSha256": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086",
+      "gitBlob": "5ee6065fc71213f2068237949951efa2a5909ef9",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+      "rawSha256": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+      "lfSha256": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f",
+      "gitBlob": "ecdef9fa66c9c18473c30ca6621f6815e8ed46b7",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "rawSha256": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+      "lfSha256": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitBlob": "323245b2faafb355b8a562caa24d9679828ad2dd",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rawSha256": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+      "lfSha256": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f",
+      "gitBlob": "7db5fd1cc4042ffde22c50850b6822afa69d1620",
+      "matchesHeadLF": true
+    }
+  ],
+  "configPins": 36,
+  "dependencyParents": 3,
+  "dependencyLinks": 158,
+  "verifiedAncestors": 56,
+  "priorStopPublicFilesPreserved": 95,
+  "pngs": 19,
+  "canonicalFixture": true,
+  "noAuthStateTransfer": true,
+  "ordinarySdkResumeStoragePreserved": true,
+  "credentialsExcluded": true,
+  "publicScriptsHaveExplicitPlaceholders": true,
+  "cleanup": "Zero owned resources; see public/zero-containers.json and public/zero-processes.json",
+  "rootOwnsReadiness": true
+}

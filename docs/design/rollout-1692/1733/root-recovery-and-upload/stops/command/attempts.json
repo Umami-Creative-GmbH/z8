@@ -1,0 +1,78 @@
+{
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "perCommandOption": "--config.verify-deps-before-run=false",
+    "installOrRepair": false
+  },
+  "attempts": [
+    {
+      "id": "probe-build-initial",
+      "command": "node .tmp/1733-root-checks/runtime/build-public-probes.mjs",
+      "exit": 1,
+      "outcome": "CRLF exact replacement assertion failed before any bridge write. Normalized copied fixture text in generator; no source edit.",
+      "initialFailedGeneratorHashRetained": false
+    },
+    {
+      "id": "probe-build",
+      "command": "node .tmp/1733-root-checks/runtime/build-public-probes.mjs",
+      "exit": 0,
+      "outcome": "Two exact owned temporary test bridges created"
+    },
+    {
+      "id": "package-lock-denial",
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1733-root-checks/runtime/run-public-probes.mjs",
+      "exit": 1,
+      "outcome": "Sandbox could not open shared package-manager engine operation lock; no dependency repair attempted"
+    },
+    {
+      "id": "public-probes",
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1733-root-checks/runtime/run-public-probes.mjs",
+      "exit": 1,
+      "escalated": true,
+      "outcome": "26 pass / 1 source blocker fail; 27 cases / 4 physical files",
+      "argvRecord": "public-probe-command.json"
+    },
+    {
+      "id": "minimal-repeat",
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1733-root-checks/runtime/repeat-minimal-probe.mjs",
+      "exit": 1,
+      "escalated": true,
+      "outcome": "1 pass / 1 same source blocker fail; 3 unselected provider cases. Nonadditive repeat.",
+      "argvRecord": "minimal-repeat-command.json"
+    },
+    {
+      "id": "preservation-initial",
+      "command": "node .tmp/1733-root-checks/runtime/clean-and-seal.mjs",
+      "exit": 1,
+      "outcome": "Both bridges removed exactly; initial audit assumption that README/ledger still equal c72 was false because root grant44308 intentionally published provisional status. No verifier tracked-file change."
+    },
+    {
+      "id": "preservation",
+      "command": "node .tmp/1733-root-checks/runtime/clean-and-seal.mjs",
+      "exit": 0,
+      "outcome": "Grant44308 clean; source/config/dependency/preservation pins pass with two root-owned status updates classified"
+    },
+    {
+      "id": "process-initial",
+      "command": "Narrow Win32_Process CIM read for node.exe/pnpm.exe containing exact granted checkout path",
+      "shellExit": 0,
+      "semanticPass": false,
+      "outcome": "Access denied; initial PowerShell default nonterminating error produced a misleading empty count. Empty count NOT accepted."
+    },
+    {
+      "id": "process-approved",
+      "command": "Same narrow CIM read with ErrorActionPreference=Stop",
+      "exit": 0,
+      "escalated": true,
+      "outcome": "Actual successful read: zero matching node/pnpm processes"
+    },
+    {
+      "id": "whitespace-status",
+      "command": "git diff --check; git status --porcelain=v1",
+      "exit": 0,
+      "outcome": "No whitespace diff and clean tracked/untracked status"
+    }
+  ],
+  "physicalPnpmExecutableBoundary": "Literal submitted shell commands and inner argv are recorded. Inner physical executable is resolved from wrapper npm_execpath; its absolute path was not recorded, so no physical-executable pin is claimed.",
+  "approvalReviewRejections": 0
+}

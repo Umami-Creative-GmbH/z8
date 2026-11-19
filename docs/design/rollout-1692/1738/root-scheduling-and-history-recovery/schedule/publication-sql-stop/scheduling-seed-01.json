@@ -1,0 +1,92 @@
+{
+  "mode": "seed",
+  "gate": "canonical verifySuiteDatabase/integrationAdminPool UTC sessions",
+  "authMemberGrantMutations": false,
+  "domainOnly": true,
+  "summaries": [
+    {
+      "scope": "small",
+      "timezone": "Europe/Berlin",
+      "shifts": [
+        {
+          "status": "published",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent employee published",
+          "own_employee": true
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-16T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent open overnight draft",
+          "own_employee": null
+        },
+        {
+          "status": "published",
+          "date": "2026-11-17T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent open published",
+          "own_employee": null
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-18T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent assigned publish draft",
+          "own_employee": true
+        }
+      ],
+      "counts": {
+        "time_entries": 4176,
+        "work_periods": 2088
+      }
+    },
+    {
+      "scope": "large",
+      "timezone": "Europe/Berlin",
+      "shifts": [
+        {
+          "status": "published",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent employee published",
+          "own_employee": true
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-16T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent open overnight draft",
+          "own_employee": null
+        },
+        {
+          "status": "published",
+          "date": "2026-11-17T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent open published",
+          "own_employee": null
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-18T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent assigned publish draft",
+          "own_employee": true
+        }
+      ],
+      "counts": {
+        "time_entries": 104400,
+        "work_periods": 52200
+      }
+    }
+  ]
+}

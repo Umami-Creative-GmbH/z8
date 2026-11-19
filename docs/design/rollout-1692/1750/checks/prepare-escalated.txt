@@ -1,0 +1,2 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+Owned disposable services and synthetic fixture prepared. Run fixture start, then baseline. Keep this private directory out of artifacts.

@@ -1,0 +1,326 @@
+{
+  "verdict": "PASS_COMPLETED_PDF_CSV_XLSX_CONTROLS",
+  "observed": {
+    "organizationScoped": true,
+    "employeeScoped": true,
+    "range": {
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+    },
+    "timeMeaning": "Canonical time_record minutes joined through work_period, captured clock-in UTC offsets; own fixture has complete same-day periods",
+    "months": [
+      {
+        "month": "2025-01",
+        "minutes": 11040,
+        "days": 23
+      },
+      {
+        "month": "2025-02",
+        "minutes": 9600,
+        "days": 20
+      },
+      {
+        "month": "2025-03",
+        "minutes": 10080,
+        "days": 21
+      },
+      {
+        "month": "2025-04",
+        "minutes": 10560,
+        "days": 22
+      },
+      {
+        "month": "2025-05",
+        "minutes": 10560,
+        "days": 22
+      },
+      {
+        "month": "2025-06",
+        "minutes": 10080,
+        "days": 21
+      },
+      {
+        "month": "2025-07",
+        "minutes": 11040,
+        "days": 23
+      },
+      {
+        "month": "2025-08",
+        "minutes": 10080,
+        "days": 21
+      },
+      {
+        "month": "2025-09",
+        "minutes": 10560,
+        "days": 22
+      },
+      {
+        "month": "2025-10",
+        "minutes": 11040,
+        "days": 23
+      },
+      {
+        "month": "2025-11",
+        "minutes": 9600,
+        "days": 20
+      },
+      {
+        "month": "2025-12",
+        "minutes": 11040,
+        "days": 23
+      }
+    ],
+    "home": [
+      {
+        "date": "2025-01-07",
+        "minutes": 480
+      },
+      {
+        "date": "2025-01-14",
+        "minutes": 480
+      },
+      {
+        "date": "2025-01-21",
+        "minutes": 480
+      },
+      {
+        "date": "2025-01-28",
+        "minutes": 480
+      },
+      {
+        "date": "2025-02-04",
+        "minutes": 480
+      },
+      {
+        "date": "2025-02-11",
+        "minutes": 480
+      },
+      {
+        "date": "2025-02-18",
+        "minutes": 480
+      },
+      {
+        "date": "2025-02-25",
+        "minutes": 480
+      },
+      {
+        "date": "2025-03-04",
+        "minutes": 480
+      },
+      {
+        "date": "2025-03-11",
+        "minutes": 480
+      },
+      {
+        "date": "2025-03-18",
+        "minutes": 480
+      },
+      {
+        "date": "2025-03-25",
+        "minutes": 480
+      },
+      {
+        "date": "2025-04-01",
+        "minutes": 480
+      },
+      {
+        "date": "2025-04-08",
+        "minutes": 480
+      },
+      {
+        "date": "2025-04-15",
+        "minutes": 480
+      },
+      {
+        "date": "2025-04-22",
+        "minutes": 480
+      },
+      {
+        "date": "2025-04-29",
+        "minutes": 480
+      },
+      {
+        "date": "2025-05-06",
+        "minutes": 480
+      },
+      {
+        "date": "2025-05-13",
+        "minutes": 480
+      },
+      {
+        "date": "2025-05-20",
+        "minutes": 480
+      },
+      {
+        "date": "2025-05-27",
+        "minutes": 480
+      },
+      {
+        "date": "2025-06-03",
+        "minutes": 480
+      },
+      {
+        "date": "2025-06-10",
+        "minutes": 480
+      },
+      {
+        "date": "2025-06-17",
+        "minutes": 480
+      },
+      {
+        "date": "2025-06-24",
+        "minutes": 480
+      },
+      {
+        "date": "2025-07-01",
+        "minutes": 480
+      },
+      {
+        "date": "2025-07-08",
+        "minutes": 480
+      },
+      {
+        "date": "2025-07-15",
+        "minutes": 480
+      },
+      {
+        "date": "2025-07-22",
+        "minutes": 480
+      },
+      {
+        "date": "2025-07-29",
+        "minutes": 480
+      },
+      {
+        "date": "2025-08-05",
+        "minutes": 480
+      },
+      {
+        "date": "2025-08-12",
+        "minutes": 480
+      },
+      {
+        "date": "2025-08-19",
+        "minutes": 480
+      },
+      {
+        "date": "2025-08-26",
+        "minutes": 480
+      },
+      {
+        "date": "2025-09-02",
+        "minutes": 480
+      },
+      {
+        "date": "2025-09-09",
+        "minutes": 480
+      },
+      {
+        "date": "2025-09-16",
+        "minutes": 480
+      },
+      {
+        "date": "2025-09-23",
+        "minutes": 480
+      },
+      {
+        "date": "2025-09-30",
+        "minutes": 480
+      },
+      {
+        "date": "2025-10-07",
+        "minutes": 480
+      },
+      {
+        "date": "2025-10-14",
+        "minutes": 480
+      },
+      {
+        "date": "2025-10-21",
+        "minutes": 480
+      },
+      {
+        "date": "2025-10-28",
+        "minutes": 480
+      },
+      {
+        "date": "2025-11-04",
+        "minutes": 480
+      },
+      {
+        "date": "2025-11-11",
+        "minutes": 480
+      },
+      {
+        "date": "2025-11-18",
+        "minutes": 480
+      },
+      {
+        "date": "2025-11-25",
+        "minutes": 480
+      },
+      {
+        "date": "2025-12-02",
+        "minutes": 480
+      },
+      {
+        "date": "2025-12-09",
+        "minutes": 480
+      },
+      {
+        "date": "2025-12-16",
+        "minutes": 480
+      },
+      {
+        "date": "2025-12-23",
+        "minutes": 480
+      },
+      {
+        "date": "2025-12-30",
+        "minutes": 480
+      }
+    ],
+    "minutes": 125280,
+    "days": 261,
+    "homeMinutes": 24960,
+    "homeDays": 52
+  },
+  "pdf": {
+    "completed": true,
+    "bytes": 9344,
+    "sha256": "f5b26a7a7d97f4a4f7460e642d50b788f1f6b2c41bd4284fe4fc727b2532e4a5",
+    "pages": 3
+  },
+  "controls": {
+    "csv": {
+      "completed": true,
+      "bytes": 1706,
+      "sha256": "8e4d71f1cb62903939621f358ac9f666a2aa00c775923bbe8f113247370adc4a"
+    },
+    "xlsx": {
+      "completed": true,
+      "bytes": 10605,
+      "sha256": "7d0e617d639f7f447fc281465ef0872fdc25bccb64ab41d1426dde202f315df7",
+      "sheets": [
+        "Summary",
+        "Work Hours",
+        "Absences",
+        "Home Office (Tax)"
+      ]
+    }
+  },
+  "comparisons": [
+    "employee name",
+    "fixed period",
+    "canonical total minutes and workdays",
+    "all twelve month rows",
+    "all 52 CSV home-office date rows",
+    "home office and absence totals",
+    "zero vacation and sick values observed",
+    "custom fields absent in default own fixture; live redaction not claimed"
+  ],
+  "limitations": [
+    "Own fixture has no populated custom fields or historical hourly earnings; canonical PG covers those separately",
+    "Canonical readback is direct organization/employee-scoped verification, not live auth/revocation evidence"
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "scope": "Exact curated runtime payload bytes; metadata wrappers are separately sealed in the publication handoff.",
+  "count": 29,
+  "bytes": 1139397,
+  "types": {
+    "json": 23,
+    "png": 5,
+    "markdown": 1
+  },
+  "payloads": [
+    {
+      "path": "runtime/README.md",
+      "bytes": 2755,
+      "sha256": "3d2dd33d2cc6e33612e22bc023bbd2661e932bd7269a18e9e82ac5a5d298ce35"
+    },
+    {
+      "path": "runtime/1839-acceptance.json",
+      "bytes": 8427,
+      "sha256": "500d3f22c966a5f5fe5c335d7ef4ec1201e873d23bacd3c40beaa8839f9254c8"
+    },
+    {
+      "path": "runtime/1744-acceptance.json",
+      "bytes": 10335,
+      "sha256": "b5f0c868ce31bc8342caf6dc90fdbc350aa615189fbb01739287d002cff2d47a"
+    },
+    {
+      "path": "runtime/preservation.json",
+      "bytes": 448,
+      "sha256": "5b1beb36260e4db163f17f886ffbe78814b9154d95b20f54203e16dbec119838"
+    },
+    {
+      "path": "runtime/anchors.json",
+      "bytes": 7802,
+      "sha256": "fb1bd5c90cf5ef512194d56125913e02dc465dd09b801b170793ec7d405e00aa"
+    },
+    {
+      "path": "runtime/commands.json",
+      "bytes": 3232,
+      "sha256": "d26b99a58a5ad1439d53fa9e0b2ceb26b8ca22e2cb4ce5c55c70fda1659bb443"
+    },
+    {
+      "path": "runtime/qualifications.json",
+      "bytes": 3158,
+      "sha256": "9e6bd52f8c5081fc7307031514d0384e98d69bc5aab915227fd0f453ada1b098"
+    },
+    {
+      "path": "runtime/RELEASE.json",
+      "bytes": 1083,
+      "sha256": "38a65bc61db357615fc7aea48fea6d04a61cc1599d126909cc8574a1622f9050"
+    },
+    {
+      "path": "runtime/resource-cleanup.json",
+      "bytes": 841,
+      "sha256": "1809412756ee4bf4709d3ed5e0a143138ad57c5e1c941c92c86ba286171a75b6"
+    },
+    {
+      "path": "runtime/next-cleanup.json",
+      "bytes": 227,
+      "sha256": "614b721ff16b93f8fa914b72ba9446337f816df94cc3536bf8fc65479379d266"
+    },
+    {
+      "path": "runtime/next-final-diagnostics.json",
+      "bytes": 306,
+      "sha256": "818d245560f4bb3ea1fe91f37ca6ecda6624e0295551838de9c53c01cc53558b"
+    },
+    {
+      "path": "runtime/domain-preservation-before.json",
+      "bytes": 211,
+      "sha256": "0cf926f7e7d89a1e4baf39d3727c2a0d975e14768136131adebd4eb487fbbe30"
+    },
+    {
+      "path": "runtime/domain-preservation-after.json",
+      "bytes": 624,
+      "sha256": "00ef0ecc9f8ee3ceafb481f10de6835157919aa4dd6a75483890cf003504d8cd"
+    },
+    {
+      "path": "runtime/public-fixture-setup.json",
+      "bytes": 203,
+      "sha256": "05d4b6cc12e9be516443287021b1f3fa3063c3cf7a0a6aee4e01b724fe6d0a21"
+    },
+    {
+      "path": "runtime/signin-composition.json",
+      "bytes": 363,
+      "sha256": "d122bda6cc2556593f24b38f0c79fa68ff8a2aac7800749c2afca37a913ff9a5"
+    },
+    {
+      "path": "runtime/signin-admission.json",
+      "bytes": 627,
+      "sha256": "e3932f70478b6da0042628b69ef82d6205aa849e3165478cbd3cb2ecb3ff0db7"
+    },
+    {
+      "path": "runtime/blocked-refusal.json",
+      "bytes": 180,
+      "sha256": "0f72f7ac62c19553b1a5157a650a0532d2cd2ef91095df3336447e5229ef8179"
+    },
+    {
+      "path": "runtime/presence-parity.json",
+      "bytes": 163,
+      "sha256": "d9fc543f34a6a1cb449527cb93fbb50bfee0b423ad984acb8a2533381b504c4a"
+    },
+    {
+      "path": "runtime/presence-since-parity.json",
+      "bytes": 175,
+      "sha256": "6d898bbb70365150470e1e755aea9dd3579562e4f56cd3506e975f1dde01795b"
+    },
+    {
+      "path": "runtime/presence-mobile-preferences.json",
+      "bytes": 233,
+      "sha256": "4e364ad2eb88a985e6d243cb92b8ab6c42a4aaabd6c336ec45e688c425113165"
+    },
+    {
+      "path": "runtime/presence-sidebar.json",
+      "bytes": 52,
+      "sha256": "6ed9d57ac41cb46c9ae17602eb6bdb56fafc297e76a90f0abaa21e31b136ed59"
+    },
+    {
+      "path": "runtime/presence-employee-navigation.json",
+      "bytes": 138,
+      "sha256": "8b2ecc7ba0471644c95af5b086e469d27ed8295053936f1e14e65931def18222"
+    },
+    {
+      "path": "runtime/presence-retry.json",
+      "bytes": 96,
+      "sha256": "5ac3feb57421a85527a23c711d3bc8479abf28d932623c6a7f544963ad44bc03"
+    },
+    {
+      "path": "runtime/presence-not-found.json",
+      "bytes": 122,
+      "sha256": "6108260c4bf5b438cdaa0f319d6449260f33d28dbc58d75b4a1958d3a5b4b6d8"
+    },
+    {
+      "path": "runtime/sign-in-desktop-unfilled.png",
+      "bytes": 910799,
+      "sha256": "7164213254c944f1d7ac4c3a9752838a6cc1216bfdbdb7cf9b5593bd7c7aebbb"
+    },
+    {
+      "path": "runtime/sign-in-mobile-unfilled.png",
+      "bytes": 73590,
+      "sha256": "dffebe6b713dc51448e386fb638f124fb8ca9846de8374ff58da2c1e888bd0e7"
+    },
+    {
+      "path": "runtime/presence-desktop-synthetic.png",
+      "bytes": 51446,
+      "sha256": "38162f4053c27611eb74b9491fe6d66d9aa27cd4c9130584cbc3194e1bf0959d"
+    },
+    {
+      "path": "runtime/presence-mobile-dark-synthetic.png",
+      "bytes": 32520,
+      "sha256": "780277cff352a577b1176ab159c5fdd26a1766acd09a3924ce1a1e15eac19fcd"
+    },
+    {
+      "path": "runtime/presence-retired-retry-synthetic.png",
+      "bytes": 29241,
+      "sha256": "c3c2d6118b84f16b1c8d1bcbbe91c63d6edd1c910626aff7bef04a35aabeb191"
+    }
+  ],
+  "seal": {
+    "algorithm": "sha256",
+    "recipe": "Sort UTF-8 path + NUL + decimal bytes + NUL + lowercase SHA256 + LF records lexicographically, concatenate, SHA256.",
+    "sha256": "f4e3dceb9db72c056d79e19d9143bd56293ae086f3f957ae5d526532c799bc3c"
+  }
+}

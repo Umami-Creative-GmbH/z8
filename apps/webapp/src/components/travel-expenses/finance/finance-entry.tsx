@@ -1,5 +1,4 @@
 import { IconArrowRight, IconCash } from "@tabler/icons-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -8,10 +7,10 @@ import { getTranslate } from "@/tolgee/server";
 export async function TravelExpenseFinanceEntry() {
 	const t = await getTranslate();
 	return (
-		<Alert>
+		<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4">
 			<IconCash aria-hidden="true" className="size-4" />
-			<AlertTitle>{t("travelExpenses.finance.entry.title", "Expense finance")}</AlertTitle>
-			<AlertDescription className="flex flex-wrap items-center justify-between gap-4">
+			<h2 className="font-medium">{t("travelExpenses.finance.entry.title", "Expense finance")}</h2>
+			<div className="flex flex-1 flex-wrap items-end justify-between gap-3 text-sm text-muted-foreground">
 				<span>
 					{t(
 						"travelExpenses.finance.entry.description",
@@ -24,7 +23,7 @@ export async function TravelExpenseFinanceEntry() {
 						<IconArrowRight aria-hidden="true" className="ml-2 size-4" />
 					</Link>
 				</Button>
-			</AlertDescription>
-		</Alert>
+			</div>
+		</section>
 	);
 }

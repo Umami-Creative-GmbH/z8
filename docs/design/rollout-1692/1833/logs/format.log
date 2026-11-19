@@ -1,0 +1,18 @@
+src\app\[locale]\onboarding\wellness\page.test.tsx:86:4 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    84 │ 		await waitFor(() => expect(skipWellnessSetupMock).toHaveBeenCalledOnce());
+    85 │ 		fireEvent.submit(
+  > 86 │ 			screen.getByRole("button", { name: "Continue" }).closest("form")!,
+       │ 			^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    87 │ 		);
+    88 │ 		await act(async () => {});
+  
+  i A non-null assertion tells TypeScript to ignore a possible null or undefined value. If the value is missing at runtime, the code fails with an error that the compiler could not catch.
+  
+  i Check that the value is defined before using it, for example with an if statement or optional chaining, instead of asserting it.
+  
+
+Checked 2 files in 12ms. Fixed 2 files.
+Found 1 warning.

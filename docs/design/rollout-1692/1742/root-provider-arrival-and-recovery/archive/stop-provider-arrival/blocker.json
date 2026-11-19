@@ -1,0 +1,75 @@
+{
+  "severity": "P1 / critical acceptance blocker",
+  "status": "confirmed; no fix applied",
+  "source": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-client.tsx",
+  "lines": [
+    40,
+    49,
+    65,
+    188,
+    197
+  ],
+  "title": "Canonical display employee/role arrival fails to fence an already queued wider period read",
+  "reproduction": [
+    "Render actual OrganizationContextProvider + QueryClient + ViewRefreshProvider + HeaderRefreshButton + PeriodSubmissionsClient with canonical all-scope records.",
+    "Start the real Refresh submissions control and hold only its server-action transport delivery.",
+    "Invoke actual header Refresh data. Its fetch transport returns a canonical display context with same account/org but replacement employee and role employee. Router refresh transport remains pending/undelivered.",
+    "Wait for the actual provider to publish replacement employee/employee role without error.",
+    "Deliver the previously queued all-scope result. Late wider rows, All covered employees and Inbox remain/render."
+  ],
+  "observed": {
+    "providerEmployee": "replacement-reader",
+    "providerRole": "employee",
+    "providerError": null,
+    "readCalls": 2,
+    "lateWiderRowPresent": true,
+    "inboxPresent": true,
+    "allScopeStillVisible": true,
+    "sessionUserUnchanged": true,
+    "sessionOrgUnchanged": true
+  },
+  "expected": "Treat the changed canonical employee/role context as an arrival identity boundary: invalidate outstanding old local reads and reconcile canonical server access before presenting old wider results as current. This must not authorize by a client role shortcut.",
+  "controls": [
+    "Same provider employee/role: queued current result accepted.",
+    "Actual server access envelope all -> managed: workspace replaced; old wider success rejected; forbidden removes rows/Inbox.",
+    "Earlier public checks also pass pending-session, account/org ABA, Activity, period, read recovery, healthy-empty/off and five-outcome/range controls."
+  ],
+  "cause": "Client admission checks raw session pending/user/org only; workspace identity uses RSC user/org/scope/period only. Actual provider employee/role changes do not detach its reader, so current() lifetime/operation still succeeds. Header refresh coalesces into the outstanding operation while RSC access has not arrived.",
+  "classification": {
+    "premerge": "7cf9871f8c782deb9ad279c9e2dfb5ed8e6fa60c",
+    "fullPremergeTree": "fe418419a7657b68290e25f89f97d2528b3c892a",
+    "files": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx",
+        "premergeBlob": "cb75f9a5b286fa52c5f31d58a9e1979356144059",
+        "candidateBlob": "79e8cb3662bce41af141f69196e7ca23f0227ee3"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.tsx",
+        "premergeBlob": "0d38ef17e8dcb257fdceeb1e13e50bd1baf44544",
+        "candidateBlob": "1eeff48598413167a3fe7a46b8f542856aa5d80f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-data.ts",
+        "premergeBlob": "5948e20c3b7dae5b10d02923600e292debd9c936",
+        "candidateBlob": "a179f6f504d6af7be65c0e9a4531b67765608d71"
+      }
+    ],
+    "classification": "Confirmed incoming implementation acceptance gap, not caused by metadata merge/test reconciliation: candidate client blob exactly equals incoming. Premerge is server-rendered snapshot without this local reader; source inspection finds no provider employee/role arrival fence there either. No executed same-seam historical comparison and no claim of new historical regression.",
+    "inherited": "Provider, refresh provider, canonical services and server access owners unchanged. Older route retained a server snapshot; its reactive employee/role behavior is unverified here.",
+    "limits": "Synthetic queued action transport does not prove live server revocation, atomic authorization, or a live exploit. Canonical action authorization remains server-owned."
+  },
+  "limits": [
+    "No claim of atomic revocation or live exploit. Canonical server access remains authoritative and unchanged.",
+    "Confirmed incoming local-reader gap, not a metadata-union regression. Historical retained-snapshot behavior has source inspection only; no executed full premerge consumer comparison or claim of a new historical regression.",
+    "Combined employee+role arrival reproduced; standalone employee-only and role-only variants not separately accepted.",
+    "No source fix or further broad acceptance after blocker."
+  ],
+  "evidence": [
+    "minimal-arrival.test.tsx",
+    "minimal-header-confirmed.json",
+    "public-contract.test.tsx",
+    "public-contract-result.json",
+    "test-accounting.json"
+  ]
+}

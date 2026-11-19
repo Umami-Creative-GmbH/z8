@@ -1,8 +1,8 @@
 "use client";
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconAlertCircle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, type RefObject, useRef } from "react";
+import { type ReactNode, type RefObject, useContext, useRef } from "react";
 import {
 	ActionPanelBody,
 	ActionPanelDescription,
@@ -10,6 +10,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +32,7 @@ import {
 	equipmentConditionSchema,
 } from "@/lib/organization/equipment/contracts";
 import { conditionLabel, type EquipmentTranslate } from "./equipment-copy";
+import { EquipmentFormErrorContext } from "./equipment-form-error-context";
 import {
 	actualDateError,
 	quantityError,
@@ -69,6 +71,7 @@ export function EquipmentFormPanel({
 	children: ReactNode;
 }) {
 	const { t } = useTranslate();
+	const error = useContext(EquipmentFormErrorContext);
 	return (
 		<>
 			<ActionPanelHeader>
@@ -91,6 +94,14 @@ export function EquipmentFormPanel({
 				<ActionPanelBody className="min-w-0 space-y-4 break-words">
 					{children}
 				</ActionPanelBody>
+				{error ? (
+					<Alert className="mx-6 mb-3 w-auto shrink-0 border-destructive/40">
+						<IconAlertCircle aria-hidden="true" className="text-destructive" />
+						<AlertDescription className="break-words text-card-foreground">
+							{error}
+						</AlertDescription>
+					</Alert>
+				) : null}
 				<ActionPanelFooter>
 					<Button
 						type="button"

@@ -1,12 +1,22 @@
 "use client";
 
-import { IconAlertTriangle, IconBeach, IconCalendarTime, IconClock } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconBeach,
+	IconCalendarTime,
+	IconClock,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
+import { Link } from "@/navigation";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
@@ -22,7 +32,9 @@ function getUsageColor(percentage: number) {
 export function VacationBalanceWidget({
 	initialSnapshot,
 }: {
-	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["vacation-balance"]>;
+	initialSnapshot?: DashboardWidgetSnapshot<
+		DashboardWidgetData["vacation-balance"]
+	>;
 } = {}) {
 	const { t } = useTranslate();
 	const { data, loading, refreshing, refetch, error } = useDashboardWidget(
@@ -50,11 +62,16 @@ export function VacationBalanceWidget({
 				{error ||
 				(!loading &&
 					!balance &&
-					(!data?.configuration || data.configuration.status === "resolved")) ? (
+					(!data?.configuration ||
+						data.configuration.status === "resolved")) ? (
 					<WidgetReadError
 						title={t("dashboard.vacation.title", "Vacation Balance")}
 						message={
-							error || t("dashboard.vacation.unavailable", "Vacation balance is unavailable.")
+							error ||
+							t(
+								"dashboard.vacation.unavailable",
+								"Vacation balance is unavailable.",
+							)
 						}
 						retry={refetch}
 						refreshing={refreshing}
@@ -67,7 +84,11 @@ export function VacationBalanceWidget({
 	);
 }
 
-function VacationBalanceContent({ data }: { data: DashboardWidgetData["vacation-balance"] }) {
+function VacationBalanceContent({
+	data,
+}: {
+	data: DashboardWidgetData["vacation-balance"];
+}) {
 	const { t } = useTranslate();
 	const { balance } = data;
 	// Calculate percentage used
@@ -92,7 +113,9 @@ function VacationBalanceContent({ data }: { data: DashboardWidgetData["vacation-
 					{/* Main Balance Display */}
 					<div className="flex items-center justify-between">
 						<div>
-							<p className="text-3xl font-bold">{balance.remainingDays.toFixed(1)}</p>
+							<p className="text-3xl font-bold">
+								{balance.remainingDays.toFixed(1)}
+							</p>
 							<p className="text-sm text-muted-foreground">
 								{t("dashboard.vacation.days-remaining", "days remaining")}
 							</p>
@@ -120,7 +143,9 @@ function VacationBalanceContent({ data }: { data: DashboardWidgetData["vacation-
 					</div>
 
 					{/* Progress Bar */}
-					<PreviouslyTakenVacationExplanation days={balance.previouslyTakenDays} />
+					<PreviouslyTakenVacationExplanation
+						days={balance.previouslyTakenDays}
+					/>
 					<div className="space-y-1">
 						<Progress value={Math.min(usedPercentage, 100)} className="h-2" />
 						<div className="flex items-center justify-between text-xs">
@@ -140,13 +165,17 @@ function VacationBalanceContent({ data }: { data: DashboardWidgetData["vacation-
 					{/* Breakdown */}
 					<div className="grid grid-cols-3 gap-2 pt-2 border-t">
 						<div className="text-center">
-							<p className="text-lg font-semibold">{balance.usedDays.toFixed(1)}</p>
+							<p className="text-lg font-semibold">
+								{balance.usedDays.toFixed(1)}
+							</p>
 							<p className="text-xs text-muted-foreground">
 								{t("dashboard.vacation.label-used", "Used")}
 							</p>
 						</div>
 						<div className="text-center">
-							<p className="text-lg font-semibold">{balance.pendingDays.toFixed(1)}</p>
+							<p className="text-lg font-semibold">
+								{balance.pendingDays.toFixed(1)}
+							</p>
 							<p className="text-xs text-muted-foreground">
 								{t("dashboard.vacation.label-pending", "Pending")}
 							</p>
@@ -162,12 +191,19 @@ function VacationBalanceContent({ data }: { data: DashboardWidgetData["vacation-
 					</div>
 
 					{/* Carryover Section */}
+					<Button className="w-full" variant="outline" asChild>
+						<Link href="/absences">
+							{t("absences.requestAbsence", "Request absence")}
+						</Link>
+					</Button>
 					{balance.hasCarryover && balance.carryoverDays > 0 && (
 						<div className="pt-2 border-t">
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">
 									<IconCalendarTime className="size-4 text-muted-foreground" />
-									<span className="text-sm">{t("dashboard.vacation.carryover", "Carryover")}</span>
+									<span className="text-sm">
+										{t("dashboard.vacation.carryover", "Carryover")}
+									</span>
 								</div>
 								<Badge variant="secondary">
 									{t("dashboard.vacation.carryover-days", "{days} days", {
@@ -182,17 +218,25 @@ function VacationBalanceContent({ data }: { data: DashboardWidgetData["vacation-
 										<div className="flex items-center gap-2 p-2 text-sm bg-amber-50 dark:bg-amber-950 rounded-md border border-amber-200 dark:border-amber-800">
 											<IconAlertTriangle className="size-4 text-amber-500 flex-shrink-0" />
 											<span className="text-amber-700 dark:text-amber-300">
-												{t("dashboard.vacation.expires-in", "Expires in {days} days", {
-													days: balance.carryoverExpiryDaysRemaining,
-												})}
+												{t(
+													"dashboard.vacation.expires-in",
+													"Expires in {days} days",
+													{
+														days: balance.carryoverExpiryDaysRemaining,
+													},
+												)}
 											</span>
 										</div>
 									) : (
 										<p className="text-xs text-muted-foreground flex items-center gap-1">
 											<IconClock className="size-3" />
-											{t("dashboard.vacation.expires-in", "Expires in {days} days", {
-												days: balance.carryoverExpiryDaysRemaining,
-											})}
+											{t(
+												"dashboard.vacation.expires-in",
+												"Expires in {days} days",
+												{
+													days: balance.carryoverExpiryDaysRemaining,
+												},
+											)}
 										</p>
 									)}
 								</div>

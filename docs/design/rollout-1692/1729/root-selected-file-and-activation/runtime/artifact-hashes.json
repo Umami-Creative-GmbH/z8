@@ -1,0 +1,371 @@
+{
+  "head": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+  "publicArtifactDigests": [
+    {
+      "file": "HANDOFF-runtime.md",
+      "bytes": 4898,
+      "sha256": "5cd51db5895eda1cf92c866292a8219ecfa724c4b2f9fe4222b56a8ec4dbb8f3"
+    },
+    {
+      "file": "attempt-01-pnpm-engine-lock.txt",
+      "bytes": 247,
+      "sha256": "c2b7e24e97616cdb439b337d59da558d8daf7e2946162f11bdc3fdccd926a69c"
+    },
+    {
+      "file": "binary-empty-after-reasoned-delete.png",
+      "bytes": 95736,
+      "sha256": "f1bb22a9ec7af4fc485a9f387e74880adcd00b54582f99491ff982d89193e2cb"
+    },
+    {
+      "file": "binary.json",
+      "bytes": 7651,
+      "sha256": "d65748b0dd691165bb8f3d7992bd25a0863e6856f0d3786fb5b1ba14f43c0ffa"
+    },
+    {
+      "file": "binary.mjs",
+      "bytes": 8371,
+      "sha256": "9fb238be6190df1d590f6b245559ef7743901fa4817b4cafbc3ac113df6a71d4"
+    },
+    {
+      "file": "cleanup-audit.ps1",
+      "bytes": 2944,
+      "sha256": "052674840fbe5eac9ec8ad1fc5f6695ce5cd8f9e396d8e855accbdb63a52b72b"
+    },
+    {
+      "file": "cleanup.json",
+      "bytes": 343,
+      "sha256": "340f48b41635a6f242a6ca8339ddb412eaf569bc8acfa22f6f72dad8cc243954"
+    },
+    {
+      "file": "common.mjs",
+      "bytes": 6545,
+      "sha256": "37a9741df0bb9cddd6d5fa3307b9ce9738a8baafd7adcd3f697afb564b1cf390"
+    },
+    {
+      "file": "compare.mjs",
+      "bytes": 3459,
+      "sha256": "2f9054403a2bff204fee4b46283927d2b079239e676efe16689085116c1a2a50"
+    },
+    {
+      "file": "desktop-collapsed-saved18.png",
+      "bytes": 109358,
+      "sha256": "381508d92f7566fe9acfe8c22713d232cbc46dfcc94f00b0fa89065c4c3779e5"
+    },
+    {
+      "file": "desktop-expanded-saved18.png",
+      "bytes": 134508,
+      "sha256": "ef7d8d1638d93e39e3082cd3138a08acba679936115f5bf5c06441330c3d5443"
+    },
+    {
+      "file": "dev.mjs",
+      "bytes": 4128,
+      "sha256": "50ddb17161d57e611769a3e0db4c2e557bb5a286d4b16bae07bbfd0a7699263a"
+    },
+    {
+      "file": "journey-01-failure-public-feature.png",
+      "bytes": 171522,
+      "sha256": "8233431574b7f57af17267315c50b9c8e07753f988dbcb42f1beca39d296d869"
+    },
+    {
+      "file": "journey-01-source.mjs",
+      "bytes": 13977,
+      "sha256": "5dce8b2f70c8d11c8b742bcb344e71b0104e71b61dc0d001ec4e6f5b46728365"
+    },
+    {
+      "file": "journey-01.json",
+      "bytes": 7369,
+      "sha256": "39e02ec79b4ae70476fc1f31bfb25374638aa2b36b230127504fb71be7233453"
+    },
+    {
+      "file": "journey-02-failure-selected-route.png",
+      "bytes": 118499,
+      "sha256": "e633b83ddc81a0f5445bf2a4d4877b8e683de9905cd0a6c16e440373767f5f05"
+    },
+    {
+      "file": "journey-02-source.mjs",
+      "bytes": 14172,
+      "sha256": "5f2a3bd13c4e05d7e2bd4d7adf9b53c39345b19fdba3eefb21e9b2042883eadd"
+    },
+    {
+      "file": "journey-02.json",
+      "bytes": 9804,
+      "sha256": "a7004636b3e2d66b5256dd6c2a68ec040b794c38fdb72f3ebfa260e95c8174fa"
+    },
+    {
+      "file": "journey-03-actual-pending.png",
+      "bytes": 94655,
+      "sha256": "563c2741c602a7780b7bbbae4f6aaa9c0b7803257b1b26df849ba742abadebbd"
+    },
+    {
+      "file": "journey-03-actual-reader-failed.png",
+      "bytes": 97600,
+      "sha256": "4cbd59686227155a56040188250bbe8164668dcf9d4299f5698bec3ef59539d5"
+    },
+    {
+      "file": "journey-03-current-desktop.png",
+      "bytes": 117215,
+      "sha256": "48a68e5ee88baf052a4f50fef0203751227fcc834c7b07662e26932832309b56"
+    },
+    {
+      "file": "journey-03-current-phone.png",
+      "bytes": 49920,
+      "sha256": "cac4b0f935986309306b454ebec330e14bbb6386e22552e65840dee424d74c14"
+    },
+    {
+      "file": "journey-03-current-wide-dark.png",
+      "bytes": 122214,
+      "sha256": "3e7727ea943affc41ae885088282e3477a9f10496a5fa719d5c7c4a828a7ac97"
+    },
+    {
+      "file": "journey-03-failure-reader-failure.png",
+      "bytes": 115713,
+      "sha256": "9018f608bbac1397bae3f9118ac6cdc6bdf4a125a1ad30ecaec81ea20f27f3c8"
+    },
+    {
+      "file": "journey-03-source.mjs",
+      "bytes": 14381,
+      "sha256": "daf9139545d04830cf413f311f0e7c8aa64afbe7f557bdb54df4d1f972199630"
+    },
+    {
+      "file": "journey-03.json",
+      "bytes": 22397,
+      "sha256": "2244eb8a5d0013ef4ea5d73422a446134dd0f493fa486f300994f670a8aa0401"
+    },
+    {
+      "file": "journey-04-actual-pending.png",
+      "bytes": 94673,
+      "sha256": "b30b984b053c0421f7a3f771bbcd35b74a9aaa0daa13933ad3b9ff1008d17ecb"
+    },
+    {
+      "file": "journey-04-actual-reader-failed.png",
+      "bytes": 97614,
+      "sha256": "442107bd03e87baae1568b472354220a98c906254316d2fe4fabd6c93a949e30"
+    },
+    {
+      "file": "journey-04-current-desktop.png",
+      "bytes": 112606,
+      "sha256": "42a12007461c414c56992fb560ab74db64b15ee539d1f3e3e6e45782381ecde3"
+    },
+    {
+      "file": "journey-04-current-phone.png",
+      "bytes": 48300,
+      "sha256": "e578001458a5474ead38d58e6d620e3a48bd6cf4f77cc3ef83b87940c8617ead"
+    },
+    {
+      "file": "journey-04-current-wide-dark.png",
+      "bytes": 120412,
+      "sha256": "336f0f6cea9d61c9ffc017619c52b06ffaf050d0f0bdaf88c15687e31e6a07bc"
+    },
+    {
+      "file": "journey-04-failure-settled-late-save.png",
+      "bytes": 114717,
+      "sha256": "91ad5bdfb8c1ef458a1148c65978c0b5f76ecb6a1a2e50b6c53aa699f2e647f9"
+    },
+    {
+      "file": "journey-04-officer-category-denial.png",
+      "bytes": 91949,
+      "sha256": "76a3cd8aec0a82934d46fa2465a3aac000c05da02286a962a783a57da70fac5f"
+    },
+    {
+      "file": "journey-04-retained-after-refetch-failure.png",
+      "bytes": 123586,
+      "sha256": "54ba242a3cc4aaf59360343290472f02f312540b88dc557d0c69014705a3e30a"
+    },
+    {
+      "file": "journey-04-source.mjs",
+      "bytes": 14141,
+      "sha256": "46ccb03f061bc4c1392b4dda06486934254e7135ffde358b77d7bece82731c2d"
+    },
+    {
+      "file": "journey-04.json",
+      "bytes": 35723,
+      "sha256": "f4203c902f340e7b6fee9eddada2a141af458b2b45c32e429e585f7d25dc718e"
+    },
+    {
+      "file": "journey-05-officer-category-denial.png",
+      "bytes": 93317,
+      "sha256": "b9c2ad36e7b08e990194e4643a2a55711fafdcab1b891408b9f1a61b58de5ae4"
+    },
+    {
+      "file": "journey-05-revoked-save-refused-retained-exact-draft.png",
+      "bytes": 107534,
+      "sha256": "91ac241bd74722d956259b0e992463c4196e8b6a820dba46d346e8acc8a3b052"
+    },
+    {
+      "file": "journey-05.json",
+      "bytes": 38591,
+      "sha256": "2dccad4cb4f815190ea40e44abe1fe336c8d1fd0d15c2f9b1c9458e021fe9bb7"
+    },
+    {
+      "file": "journey.mjs",
+      "bytes": 14141,
+      "sha256": "46ccb03f061bc4c1392b4dda06486934254e7135ffde358b77d7bece82731c2d"
+    },
+    {
+      "file": "matched-before-desktop.png",
+      "bytes": 121501,
+      "sha256": "05c83eb1c06672df79b13ecf7143e4531d45108cc56d15b6d3652f4a562ce05c"
+    },
+    {
+      "file": "matched-before-phone.png",
+      "bytes": 34189,
+      "sha256": "109a60c4e6614077817d4a6929a570eca07de466648dc672af8e12d25f678f94"
+    },
+    {
+      "file": "matched-before-wide-dark.png",
+      "bytes": 120507,
+      "sha256": "b23d3a97c530173210953321c30a106d012adf61dcdc07bedaf2f785c46846a4"
+    },
+    {
+      "file": "matched-before.json",
+      "bytes": 35205,
+      "sha256": "20ac7d0a4407a92323b65b7db7885f65e62e69328bc003cc8af17569a9ba77b6"
+    },
+    {
+      "file": "matched-current-desktop.png",
+      "bytes": 115607,
+      "sha256": "8cc019d4d7086c306a716e30a023d5ecd093c5a4cef31c7174e2aac151be2d3f"
+    },
+    {
+      "file": "matched-current-phone.png",
+      "bytes": 48250,
+      "sha256": "d830c26b083e75b7efeaac2bd9242a56021dcdd7bca4847b52fde9d67a1af386"
+    },
+    {
+      "file": "matched-current-wide-dark.png",
+      "bytes": 120253,
+      "sha256": "de51b22f02a2848c93d805c1f07a7678a3f2e7bfd73725e5f8b31840b0368c9e"
+    },
+    {
+      "file": "matched-current.json",
+      "bytes": 35420,
+      "sha256": "8464443203adfa1cee0681e777401a7d994c8630a56f6d28c153ea652cbf758b"
+    },
+    {
+      "file": "native.json",
+      "bytes": 31378,
+      "sha256": "e69cc4a68ac5bf662a932d8182b159623372d4f8507d66e973d7957b06c69582"
+    },
+    {
+      "file": "native.mjs",
+      "bytes": 3207,
+      "sha256": "559f64904b6a8a179d95492626df9fbdfb99212a104d65bfdcac74f00528f60a"
+    },
+    {
+      "file": "next-stop-after-overlay.json",
+      "bytes": 398,
+      "sha256": "63ac680fc48a94098388ed1857314a4da0781900a1e9879536b9405b13c09eeb"
+    },
+    {
+      "file": "next-stop-before-overlay.json",
+      "bytes": 428,
+      "sha256": "50ab695304eb3b79f5c466c6a091cea9eaf6a0fda5ca1360edb90262baf951f5"
+    },
+    {
+      "file": "next-stop-final.json",
+      "bytes": 461,
+      "sha256": "0e70f14824db65820c5ba367f88ad0b6f2014d9e72eb16d89e2a8d24994affff"
+    },
+    {
+      "file": "overlay-applied.json",
+      "bytes": 9379,
+      "sha256": "b2f49aded3c5c980a14f0863fedcb7d09f06ab37c5f7ae7131c3911fca783cc1"
+    },
+    {
+      "file": "overlay-restored.json",
+      "bytes": 3487,
+      "sha256": "9abca489a17d165dba5dccdb393449304a9cb1995d7a619a0d2fb49500f6b967"
+    },
+    {
+      "file": "overlay.mjs",
+      "bytes": 2466,
+      "sha256": "6eb3d2223106df18dea29848b3e386abb725ad34a9446a1105cf31c963eca947"
+    },
+    {
+      "file": "phone-small-admin-saved18-dark.png",
+      "bytes": 45224,
+      "sha256": "ab1ac02ab381b5f0a300a1e3635ed439542fd640c32e5f1b9980b3b23c992ef5"
+    },
+    {
+      "file": "phone-small-admin-saved18-light.png",
+      "bytes": 47129,
+      "sha256": "344ef756567b8e0a5cc2bfd341d1e9533d97c55eb0429adca72f5daaa1f39170"
+    },
+    {
+      "file": "phone-small-employee-saved18-dark.png",
+      "bytes": 44511,
+      "sha256": "a1911412e800cff9fd91576bd47739b39abe499c5d6958f3759d8deb5460dc5b"
+    },
+    {
+      "file": "phone-small-employee-saved18-light.png",
+      "bytes": 45707,
+      "sha256": "2ededa558c4a2ce186926225f1cb444cb74b6ae0c8f5345ea47c920afdb730e2"
+    },
+    {
+      "file": "phones.json",
+      "bytes": 30755,
+      "sha256": "b4dd9435343d2c04f93e460fb58a31735e76e1bc79bddda78f81d58d8b3dc0d3"
+    },
+    {
+      "file": "phones.mjs",
+      "bytes": 5068,
+      "sha256": "eee014fde6d7b92c211148626bd056e0f4580cc06bac9ae01b83dc01507d07b6"
+    },
+    {
+      "file": "postgres-command.json",
+      "bytes": 5297,
+      "sha256": "45a44586778accb8208bd66937ff1a92fbf7f38444c7eb5a70d49016ed5a7e37"
+    },
+    {
+      "file": "postgres.json",
+      "bytes": 68248,
+      "sha256": "4a8737fb3e48db68898d457b6bed05439308f8e8333fd5bff1c54e5b34e6e7c3"
+    },
+    {
+      "file": "postgres.mjs",
+      "bytes": 1441,
+      "sha256": "dd2b57d4275aa0f823af5d5bf3b0efb9c8a844b8c99b18210e6d94615fffa117"
+    },
+    {
+      "file": "restored-smoke.json",
+      "bytes": 26252,
+      "sha256": "121f55a19c29f5dae955909c7c36b5eda38d8aef51528002bab178455ad4a637"
+    },
+    {
+      "file": "restored-smoke.mjs",
+      "bytes": 1949,
+      "sha256": "2a717269432a793fcfc35857ae21730e55f42f08fe9ca0a66e620b5ab97d3676"
+    },
+    {
+      "file": "roles.mjs",
+      "bytes": 9773,
+      "sha256": "0571f08adc81b2000e7de0e5ffefb213ba4526e1a9862c39ba29bb5264efd0a3"
+    },
+    {
+      "file": "seal.mjs",
+      "bytes": 12056,
+      "sha256": "5c6a06f69627b537d7e65bc5c8ad053f43c1e8375afbb80e72c9778266d7d2c1"
+    },
+    {
+      "file": "setup.mjs",
+      "bytes": 2913,
+      "sha256": "7591b4c2dae159aa70e5f7f279eec0b3f10bf6c47f4a3b28ff210ab1605a0962"
+    },
+    {
+      "file": "source-start.json",
+      "bytes": 41383,
+      "sha256": "473962504548f6c2163001655a4ed5b721e496d2eb9726d17e0d9a4f68dcd363"
+    },
+    {
+      "file": "stop-next.ps1",
+      "bytes": 2968,
+      "sha256": "538761e515b18150fbd2592440e731acc05f94400955ea592d3db567db8a3e02"
+    },
+    {
+      "file": "verification-manifest.json",
+      "bytes": 31887,
+      "sha256": "42932dae354a8f270c5abe8f4badc70cc4052253a5a73b96f861476a8e857323"
+    }
+  ],
+  "privateLogsExcluded": true
+}

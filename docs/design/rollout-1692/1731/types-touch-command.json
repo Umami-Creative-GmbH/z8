@@ -1,0 +1,10 @@
+{
+  "exit": 0,
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "typecheck"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+    "name":  "summary",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "sourceHead":  "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+    "env":  {
+                "pnpm_config_verify_deps_before_run":  "false"
+            },
+    "argv":  [
+                 "pnpm",
+                 "--config.verify-deps-before-run=false",
+                 "node",
+                 ".tmp/merge1833-audit/summarize.mjs"
+             ],
+    "started":  "2026-11-15T22:52:09.8430095Z",
+    "exitCode":  0
+}

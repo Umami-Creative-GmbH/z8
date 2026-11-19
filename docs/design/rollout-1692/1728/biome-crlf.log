@@ -1,0 +1,1111 @@
+src\app\[locale]\(app)\personnel-files\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·notFound·}·from·"next/navigation";
+      2     │ - import·{·Suspense·}·from·"react";
+      3     │ - import·{·ExpiringDocumentsCard·}·from·"@/components/personnel-file/expiring-documents";
+      4     │ - import·{
+      5     │ - → PersonnelFilesHeading,
+      6     │ - → PersonnelFilesReadFailure,
+      7     │ - → PersonnelFilesWorkspace,
+      8     │ - }·from·"@/components/personnel-file/personnel-files-workspace";
+      9     │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+     10     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+     11     │ - import·{·db·}·from·"@/db";
+     12     │ - import·{·systemClock·}·from·"@/lib/datetime/temporal-core";
+     13     │ - import·{
+     14     │ - → managesAnyDocuments,
+     15     │ - → managesCategory,
+     16     │ - → managesDocumentRequests,
+     17     │ - }·from·"@/lib/personnel-file/access";
+     18     │ - import·{·listManagedEmployees·}·from·"@/lib/personnel-file/access-store";
+     19     │ - import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";
+     20     │ - import·{
+     21     │ - → listExpiringDocuments,
+     22     │ - → loadExpiryReminderWindow,
+     23     │ - }·from·"@/lib/personnel-file/expiry-store";
+     24     │ - import·{·canRunPayslipBatches·}·from·"@/lib/personnel-file/payslip-batch-store";
+     25     │ - import·{·getTranslate·}·from·"@/tolgee/server";
+     26     │ - 
+     27     │ - /**·R045:·retain·canonical·category·AND·employee·scope,·including·own-file·exclusion.·*/
+     28     │ - async·function·PersonnelFilesContent()·{
+     29     │ - → const·[t,·current]·=·await·Promise.all([
+     30     │ - → → getTranslate(),
+     31     │ - → → loadCurrentPersonnelFileAccess(),
+     32     │ - → ]);
+     33     │ - → if·(current.status·!==·"resolved"·||·!managesAnyDocuments(current.access))
+     34     │ - → → notFound();
+     35     │ - → const·{·access·}·=·current;
+     36     │ - → const·now·=·systemClock.nowInstant();
+     37     │ - → //·Independent·sections·can·recover·without·calling·an·unavailable·read·empty.
+     38     │ - → const·[employees,·expiry]·=·await·Promise.allSettled([
+     39     │ - → → listManagedEmployees(db,·access),
+     40     │ - → → Promise.all([
+     41     │ - → → → listExpiringDocuments(db,·access,·{·now·}),
+     42     │ - → → → loadExpiryReminderWindow(db,·{
+     43     │ - → → → → organizationId:·access.organizationId,
+     44     │ - → → → → now,
+     45     │ - → → → }),
+     46     │ - → → ]),
+     47     │ - → ]);
+     48     │ - → return·(
+     49     │ - → → <PersonnelFilesWorkspace
+     50     │ - → → → key={`${access.userId}:${access.organizationId}`}
+     51     │ - → → → userId={access.userId}
+     52     │ - → → → organizationId={access.organizationId}
+     53     │ - → → → employees={employees.status·===·"fulfilled"·?·employees.value·:·null}
+     54     │ - → → → capability={{
+     55     │ - → → → → payslipBatches:·canRunPayslipBatches(access),
+     56     │ - → → → → documentRequests:·managesDocumentRequests(access),
+     57     │ - → → → → sickLeave:·managesCategory(access,·"sick_note"),
+     58     │ - → → → → officerSettings:·access.grants.some(
+     59     │ - → → → → → (grant)·=>·grant.source·===·"organization_admin",
+     60     │ - → → → → ),
+     61     │ - → → → }}
+     62     │ - → → → attention={
+     63     │ - → → → → expiry.status·===·"fulfilled"·?·(
+     64     │ - → → → → → <ExpiringDocumentsCard
+     65     │ - → → → → → → documents={expiry.value[0]}
+     66     │ - → → → → → → leadDays={expiry.value[1].leadDays}
+     67     │ - → → → → → → today={expiry.value[1].today}
+     68     │ - → → → → → />
+     69     │ - → → → → )·:·(
+     70     │ - → → → → → <PersonnelFilesReadFailure>
+     71     │ - → → → → → → {t(
+     72     │ - → → → → → → → "settings.personnelFiles.area.expiryFailed",
+     73     │ - → → → → → → → "Expiring·documents·could·not·be·loaded.·Try·again.",
+     74     │ - → → → → → → )}
+     75     │ - → → → → → </PersonnelFilesReadFailure>
+     76     │ - → → → → )
+     77     │ - → → → }
+     78     │ - → → />
+     79     │ - → );
+     80     │ - }
+     81     │ - 
+     82     │ - function·PersonnelFilesLoading()·{
+     83     │ - → return·(
+     84     │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-8·p-4·md:p-6">
+     85     │ - → → → <PersonnelFilesHeading·/>
+     86     │ - → → → <LoadingRegion
+     87     │ - → → → → label={{
+     88     │ - → → → → → labelKey:·"settings.personnelFiles.area.loading",
+     89     │ - → → → → → labelDefault:·"Loading·personnel·files",
+     90     │ - → → → → }}
+     91     │ - → → → → className="space-y-4"
+     92     │ - → → → → role="status"
+     93     │ - → → → >
+     94     │ - → → → → <Skeleton·aria-hidden="true"·className="h-32·w-full"·/>
+     95     │ - → → → → <Skeleton·aria-hidden="true"·className="h-64·w-full"·/>
+     96     │ - → → → </LoadingRegion>
+     97     │ - → → </div>
+     98     │ - → );
+     99     │ - }
+    100     │ - export·default·function·PersonnelFilesPage()·{
+    101     │ - → return·(
+    102     │ - → → <Suspense·fallback={<PersonnelFilesLoading·/>}>
+    103     │ - → → → <PersonnelFilesContent·/>
+    104     │ - → → </Suspense>
+    105     │ - → );
+    106     │ - }
+          1 │ + import·{·notFound·}·from·"next/navigation";␍
+          2 │ + import·{·Suspense·}·from·"react";␍
+          3 │ + import·{·ExpiringDocumentsCard·}·from·"@/components/personnel-file/expiring-documents";␍
+          4 │ + import·{␍
+          5 │ + → PersonnelFilesHeading,␍
+          6 │ + → PersonnelFilesReadFailure,␍
+          7 │ + → PersonnelFilesWorkspace,␍
+          8 │ + }·from·"@/components/personnel-file/personnel-files-workspace";␍
+          9 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+         10 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+         11 │ + import·{·db·}·from·"@/db";␍
+         12 │ + import·{·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+         13 │ + import·{␍
+         14 │ + → managesAnyDocuments,␍
+         15 │ + → managesCategory,␍
+         16 │ + → managesDocumentRequests,␍
+         17 │ + }·from·"@/lib/personnel-file/access";␍
+         18 │ + import·{·listManagedEmployees·}·from·"@/lib/personnel-file/access-store";␍
+         19 │ + import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";␍
+         20 │ + import·{␍
+         21 │ + → listExpiringDocuments,␍
+         22 │ + → loadExpiryReminderWindow,␍
+         23 │ + }·from·"@/lib/personnel-file/expiry-store";␍
+         24 │ + import·{·canRunPayslipBatches·}·from·"@/lib/personnel-file/payslip-batch-store";␍
+         25 │ + import·{·getTranslate·}·from·"@/tolgee/server";␍
+         26 │ + ␍
+         27 │ + /**·R045:·retain·canonical·category·AND·employee·scope,·including·own-file·exclusion.·*/␍
+         28 │ + async·function·PersonnelFilesContent()·{␍
+         29 │ + → const·[t,·current]·=·await·Promise.all([␍
+         30 │ + → → getTranslate(),␍
+         31 │ + → → loadCurrentPersonnelFileAccess(),␍
+         32 │ + → ]);␍
+         33 │ + → if·(current.status·!==·"resolved"·||·!managesAnyDocuments(current.access))␍
+         34 │ + → → notFound();␍
+         35 │ + → const·{·access·}·=·current;␍
+         36 │ + → const·now·=·systemClock.nowInstant();␍
+         37 │ + → //·Independent·sections·can·recover·without·calling·an·unavailable·read·empty.␍
+         38 │ + → const·[employees,·expiry]·=·await·Promise.allSettled([␍
+         39 │ + → → listManagedEmployees(db,·access),␍
+         40 │ + → → Promise.all([␍
+         41 │ + → → → listExpiringDocuments(db,·access,·{·now·}),␍
+         42 │ + → → → loadExpiryReminderWindow(db,·{␍
+         43 │ + → → → → organizationId:·access.organizationId,␍
+         44 │ + → → → → now,␍
+  63 more lines truncated
+  
+
+src\components\personnel-file\expiring-documents.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/
+      2     │ - 
+      3     │ - import·{
+      4     │ - → fireEvent,
+      5     │ - → render,
+      6     │ - → screen,
+      7     │ - → waitFor,
+      8     │ - → within,
+      9     │ - }·from·"@testing-library/react";
+     10     │ - import·type·{·ReactNode·}·from·"react";
+     11     │ - import·{·toast·}·from·"sonner";
+     12     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";
+     13     │ - import·{·createDocumentRequestAction·}·from·"@/app/[locale]/(app)/personnel-files/document-request-actions";
+     14     │ - import·type·{·ExpiringDocument·}·from·"@/lib/personnel-file/expiry-store";
+     15     │ - import·{·ExpiringDocumentsCard·}·from·"./expiring-documents";
+     16     │ - 
+     17     │ - const·nav·=·vi.hoisted(()·=>·({·refresh:·vi.fn()·}));
+     18     │ - 
+     19     │ - vi.mock("@tolgee/react",·()·=>·({
+     20     │ - → useTranslate:·()·=>·({
+     21     │ - → → t:·(
+     22     │ - → → → _key:·string,
+     23     │ - → → → fallback:·string,
+     24     │ - → → → params?:·Record<string,·string·|·number>,
+     25     │ - → → )·=>
+     26     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·name:·string)·=>
+     27     │ - → → → → String(params?.[name]·??·match),
+     28     │ - → → → ),
+     29     │ - → }),
+     30     │ - }));
+     31     │ - vi.mock("sonner",·()·=>·({·toast:·{·success:·vi.fn(),·error:·vi.fn()·}·}));
+     32     │ - vi.mock("@/components/providers/app-locale-provider",·()·=>·({
+     33     │ - → useAppLocale:·()·=>·"en",
+     34     │ - }));
+     35     │ - vi.mock("@/navigation",·()·=>·({
+     36     │ - → Link:·({
+     37     │ - → → href,
+     38     │ - → → children,
+     39     │ - → → className,
+     40     │ - → }:·{
+     41     │ - → → href:·string;
+     42     │ - → → children?:·ReactNode;
+     43     │ - → → className?:·string;
+     44     │ - → })·=>·(
+     45     │ - → → <a·href={href}·className={className}>
+     46     │ - → → → {children}
+     47     │ - → → </a>
+     48     │ - → ),
+     49     │ - → useRouter:·()·=>·({·refresh:·nav.refresh·}),
+     50     │ - }));
+     51     │ - vi.mock("@/components/ui/action-panel",·()·=>·{
+     52     │ - → const·Pass·=·({·children·}:·{·children?:·ReactNode·})·=>·(
+     53     │ - → → <div>{children}</div>
+     54     │ - → );
+     55     │ - → return·{
+     56     │ - → → ActionPanel:·({
+     57     │ - → → → children,
+     58     │ - → → → open,
+     59     │ - → → }:·{
+     60     │ - → → → children?:·ReactNode;
+     61     │ - → → → open:·boolean;
+     62     │ - → → })·=>·(open·?·<div·role="dialog">{children}</div>·:·null),
+     63     │ - → → ActionPanelBody:·Pass,
+     64     │ - → → ActionPanelContent:·Pass,
+     65     │ - → → ActionPanelDescription:·Pass,
+     66     │ - → → ActionPanelFooter:·Pass,
+     67     │ - → → ActionPanelHeader:·Pass,
+     68     │ - → → ActionPanelTitle:·({·children·}:·{·children?:·ReactNode·})·=>·(
+     69     │ - → → → <h2>{children}</h2>
+     70     │ - → → ),
+     71     │ - → };
+     72     │ - });
+     73     │ - vi.mock("@/components/ui/date-picker",·()·=>·({
+     74     │ - → DatePicker:·({
+     75     │ - → → value,
+     76     │ - → → onChange,
+     77     │ - → }:·{
+     78     │ - → → value?:·string·|·null;
+     79     │ - → → onChange:·(v:·string)·=>·void;
+     80     │ - → })·=>·(
+     81     │ - → → <input
+     82     │ - → → → aria-label="Deadline·picker"
+     83     │ - → → → value={value·??·""}
+     84     │ - → → → onChange={(event)·=>·onChange(event.target.value)}
+     85     │ - → → />
+     86     │ - → ),
+     87     │ - }));
+     88     │ - vi.mock(
+     89     │ - → "@/app/[locale]/(app)/personnel-files/document-request-actions",
+     90     │ - → ()·=>·({
+     91     │ - → → createDocumentRequestAction:·vi.fn(),
+     92     │ - → }),
+     93     │ - );
+     94     │ - 
+     95     │ - function·expiring(overrides:·Partial<ExpiringDocument>):·ExpiringDocument·{
+     96     │ - → return·{
+     97     │ - → → documentId:·"document-1",
+     98     │ - → → employeeId:·"employee-1",
+     99     │ - → → employeeName:·"Anna·Example",
+    100     │ - → → title:·"First·aid·card·2024",
+    101     │ - → → category:·"certificate",
+    102     │ - → → visibility:·"shared",
+    103     │ - → → expiryDate:·"2026-10-31",
+    104     │ - → → expiry:·{·status:·"upcoming",·days:·13·},
+    105     │ - → → renewalRequested:·false,
+    106     │ - → → ...overrides,
+    107     │ - → }·as·ExpiringDocument;
+    108     │ - }
+    109     │ - 
+    110     │ - const·documents·=·[
+    111     │ - → expiring({}),
+    112     │ - → expiring({
+    113     │ - → → documentId:·"document-2",
+    114     │ - → → employeeId:·"employee-2",
+    115     │ - → → employeeName:·"Ben·Example",
+    116     │ - → → title:·"Language·course",
+    117     │ - → → category:·"other",
+    118     │ - → → renewalRequested:·true,
+    119     │ - → }),
+    120     │ - → expiring({
+    121     │ - → → documentId:·"document-3",
+    122     │ - → → title:·"Medical·fitness",
+    123     │ - → → visibility:·"hr_only",
+    124     │ - → }),
+    125     │ - ];
+    126     │ - 
+    127     │ - function·renderCard()·{
+    128     │ - → render(
+    129     │ - → → <ExpiringDocumentsCard
+    130     │ - → → → documents={documents}
+    131     │ - → → → leadDays={30}
+    132     │ - → → → today="2026-10-18"
+    133     │ - → → />,
+    134     │ - → );
+    135     │ - }
+    136     │ - 
+    137     │ - it("names·the·attention·section·and·opens·the·authorized·document·category",·()·=>·{
+    138     │ - → renderCard();
+    139     │ - → expect(
+    140     │ - → → screen.getByRole("heading",·{·level:·2,·name:·/Expiring·documents/·})
+    141     │ - → → → .textContent,
+    142     │ - → ).toContain("3");
+    143     │ - → expect(
+    144     │ - → → screen
+    145     │ - → → → .getByRole("link",·{·name:·/First·aid·card·2024/·})
+    146     │ - → → → .getAttribute("href"),
+    147     │ - → ).toBe("/personnel-files/employee-1?category=certificate");
+    148     │ - });
+    149     │ - 
+    150     │ - function·rowOf(title:·string):·HTMLElement·{
+  379 more lines truncated
+  
+
+src\components\personnel-file\expiring-documents.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconCalendarExclamation,·IconFileImport·}·from·"@tabler/icons-react";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useState·}·from·"react";
+      6     │ - import·{·useAppLocale·}·from·"@/components/providers/app-locale-provider";
+      7     │ - import·{·Badge·}·from·"@/components/ui/badge";
+      8     │ - import·{·Button·}·from·"@/components/ui/button";
+      9     │ - import·{
+     10     │ - → Card,
+     11     │ - → CardContent,
+     12     │ - → CardDescription,
+     13     │ - → CardHeader,
+     14     │ - → CardTitle,
+     15     │ - }·from·"@/components/ui/card";
+     16     │ - import·{·formatDateOnly·}·from·"@/components/ui/date-picker-utils";
+     17     │ - import·type·{·ExpiryDescription·}·from·"@/lib/expiry-reminders/expiry";
+     18     │ - import·{·isDocumentRequestCategory·}·from·"@/lib/personnel-file/document-request.types";
+     19     │ - import·type·{·ExpiringDocument·}·from·"@/lib/personnel-file/expiry-store";
+     20     │ - import·{·Link,·useRouter·}·from·"@/navigation";
+     21     │ - import·{
+     22     │ - → CreateDocumentRequestDialog,
+     23     │ - → type·RenewedDocumentPrefill,
+     24     │ - }·from·"./create-document-request-dialog";
+     25     │ - import·{·usePersonnelFileLabels·}·from·"./document-labels";
+     26     │ - 
+     27     │ - function·ExpiryBadge({·expiry·}:·{·expiry:·ExpiryDescription·})·{
+     28     │ - → const·{·t·}·=·useTranslate();
+     29     │ - → if·(expiry.status·===·"expired")·{
+     30     │ - → → return·(
+     31     │ - → → → <Badge·variant="destructive">
+     32     │ - → → → → {t(
+     33     │ - → → → → → "settings.personnelFiles.expiring.expiredAgo",
+     34     │ - → → → → → "Expired·{days,·plural,·one·{#·day}·other·{#·days}}·ago",
+     35     │ - → → → → → {·days:·expiry.days·},
+     36     │ - → → → → )}
+     37     │ - → → → </Badge>
+     38     │ - → → );
+     39     │ - → }
+     40     │ - → if·(expiry.status·===·"today")·{
+     41     │ - → → return·(
+     42     │ - → → → <Badge·variant="destructive">
+     43     │ - → → → → {t("settings.personnelFiles.expiring.today",·"Expires·today")}
+     44     │ - → → → </Badge>
+     45     │ - → → );
+     46     │ - → }
+     47     │ - → return·(
+     48     │ - → → <Badge·variant="outline">
+     49     │ - → → → {t(
+     50     │ - → → → → "settings.personnelFiles.expiring.inDays",
+     51     │ - → → → → "Expires·in·{days,·plural,·one·{#·day}·other·{#·days}}",
+     52     │ - → → → → {·days:·expiry.days·},
+     53     │ - → → → )}
+     54     │ - → → </Badge>
+     55     │ - → );
+     56     │ - }
+     57     │ - 
+     58     │ - function·renewalOf(document:·ExpiringDocument):·RenewedDocumentPrefill·|·null·{
+     59     │ - → if·(
+     60     │ - → → document.renewalRequested·||
+     61     │ - → → !isDocumentRequestCategory(document.category)
+     62     │ - → )
+     63     │ - → → return·null;
+     64     │ - → return·{
+     65     │ - → → documentId:·document.documentId,
+     66     │ - → → title:·document.title,
+     67     │ - → → category:·document.category,
+     68     │ - → → visibility:·document.visibility,
+     69     │ - → };
+     70     │ - }
+     71     │ - 
+     72     │ - /**
+     73     │ - ·*·Expiring·documents·(#869)·in·the·Personnel·files·area:·the·documents·the
+     74     │ - ·*·viewer·manages·that·expire·within·the·organization's·lead·time·or·have
+     75     │ - ·*·already·expired,·earliest·first,·each·linking·to·the·employee's·file.
+     76     │ - ·*·'Request·renewal'·(#1404)·asks·the·employee·for·its·replacement·with·a
+     77     │ - ·*·document·request·naming·it;·a·document·whose·renewal·is·requested·shows
+     78     │ - ·*·that·instead.·The·server·re-checks·coverage·and·the·one·active·request·per
+     79     │ - ·*·document.
+     80     │ - ·*/
+     81     │ - export·function·ExpiringDocumentsCard({
+     82     │ - → documents,
+     83     │ - → leadDays,
+     84     │ - → today,
+     85     │ - }:·{
+     86     │ - → documents:·readonly·ExpiringDocument[];
+     87     │ - → leadDays:·number;
+     88     │ - → /**·The·organization's·today·(`YYYY-MM-DD`):·the·earliest·deadline.·*/
+     89     │ - → today:·string;
+     90     │ - })·{
+     91     │ - → const·{·t·}·=·useTranslate();
+     92     │ - → const·locale·=·useAppLocale();
+     93     │ - → const·labels·=·usePersonnelFileLabels();
+     94     │ - → const·router·=·useRouter();
+     95     │ - → const·[renewing,·setRenewing]·=·useState<{
+     96     │ - → → employeeId:·string;
+     97     │ - → → renewal:·RenewedDocumentPrefill;
+     98     │ - → }·|·null>(null);
+     99     │ - 
+    100     │ - → return·(
+    101     │ - → → <Card>
+    102     │ - → → → <CardHeader>
+    103     │ - → → → → <CardTitle>
+    104     │ - → → → → → <h2·className="flex·flex-wrap·items-center·gap-2">
+    105     │ - → → → → → → <IconCalendarExclamation
+    106     │ - → → → → → → → aria-hidden="true"
+    107     │ - → → → → → → → className="size-5·text-muted-foreground"
+    108     │ - → → → → → → />
+    109     │ - → → → → → → {t("settings.personnelFiles.expiring.title",·"Expiring·documents")}
+    110     │ - → → → → → → <Badge·variant="secondary"·className="tabular-nums">
+    111     │ - → → → → → → → {documents.length}
+    112     │ - → → → → → → </Badge>
+    113     │ - → → → → → </h2>
+    114     │ - → → → → </CardTitle>
+    115     │ - → → → → <CardDescription>
+    116     │ - → → → → → {t(
+    117     │ - → → → → → → "settings.personnelFiles.expiring.description",
+    118     │ - → → → → → → "Documents·that·expire·within·the·next·{days,·plural,·one·{#·day}·other·{#·days}},·and·documents·that·already·expired.",
+    119     │ - → → → → → → {·days:·leadDays·},
+    120     │ - → → → → → )}
+    121     │ - → → → → </CardDescription>
+    122     │ - → → → </CardHeader>
+    123     │ - → → → <CardContent>
+    124     │ - → → → → {documents.length·===·0·?·(
+    125     │ - → → → → → <p·className="text-sm·text-muted-foreground">
+    126     │ - → → → → → → {t(
+    127     │ - → → → → → → → "settings.personnelFiles.expiring.empty",
+    128     │ - → → → → → → → "No·documents·are·expiring.",
+    129     │ - → → → → → → )}
+    130     │ - → → → → → </p>
+    131     │ - → → → → )·:·(
+    132     │ - → → → → → <ul·className="divide-y·rounded-md·border">
+    133     │ - → → → → → → {documents.map((document)·=>·{
+    134     │ - → → → → → → → const·renewal·=·renewalOf(document);
+    135     │ - → → → → → → → return·(
+    136     │ - → → → → → → → → <li
+    137     │ - → → → → → → → → → key={document.documentId}
+    138     │ - → → → → → → → → → className="flex·flex-wrap·items-center·gap-x-3·gap-y-2·p-3·sm:flex-nowrap"
+    139     │ - → → → → → → → → >
+    140     │ - → → → → → → → → → <Link
+    141     │ - → → → → → → → → → → href={`/personnel-files/${document.employeeId}?category=${document.category}`}
+    142     │ - → → → → → → → → → → className="min-w-0·flex-[1_1_100%]·space-y-1·rounded-sm·hover:underline·focus-visible:outline-none·focus-visible:ring-2·focus-visible:ring-ring·sm:flex-1"
+    143     │ - → → → → → → → → → >
+    144     │ - → → → → → → → → → → <span·className="flex·flex-wrap·items-center·gap-2">
+    145     │ - → → → → → → → → → → → <span·className="truncate·font-medium">
+    146     │ - → → → → → → → → → → → → {document.title}
+    147     │ - → → → → → → → → → → → </span>
+    148     │ - → → → → → → → → → → → <Badge·variant="secondary">
+    149     │ - → → → → → → → → → → → → {labels.categories[document.category]}
+    150     │ - → → → → → → → → → → → </Badge>
+  285 more lines truncated
+  
+
+src\components\personnel-file\personnel-files-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom
+      2     │ - import·{·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";
+      3     │ - import·type·{·ReactNode·}·from·"react";
+      4     │ - import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";
+      5     │ - import·{·PersonnelFilesWorkspace·}·from·"./personnel-files-workspace";
+      6     │ - 
+      7     │ - const·boundary·=·vi.hoisted(()·=>·({
+      8     │ - → refresh:·vi.fn(),
+      9     │ - → scope:·{·userId:·"officer",·activeOrganizationId:·"org"·},
+     10     │ - }));
+     11     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({
+     12     │ - → useOrganization:·()·=>·boundary.scope,
+     13     │ - }));
+     14     │ - vi.mock("@tolgee/react",·()·=>·({
+     15     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),
+     16     │ - }));
+     17     │ - vi.mock("next/navigation",·()·=>·({
+     18     │ - → useRouter:·()·=>·({·refresh:·boundary.refresh·}),
+     19     │ - }));
+     20     │ - vi.mock("@/navigation",·()·=>·({
+     21     │ - → Link:·({
+     22     │ - → → href,
+     23     │ - → → children,
+     24     │ - → → ...props
+     25     │ - → }:·{
+     26     │ - → → href:·string;
+     27     │ - → → children:·ReactNode;
+     28     │ - → })·=>·(
+     29     │ - → → <a·href={href}·{...props}>
+     30     │ - → → → {children}
+     31     │ - → → </a>
+     32     │ - → ),
+     33     │ - }));
+     34     │ - 
+     35     │ - const·employees·=·[
+     36     │ - → {·id:·"anna",·name:·"Anna·Example",·employeeNumber:·"001",·isActive:·true·},
+     37     │ - → {·id:·"ben",·name:·"Ben·Former",·employeeNumber:·"002",·isActive:·false·},
+     38     │ - ];
+     39     │ - const·capability·=·{
+     40     │ - → payslipBatches:·false,
+     41     │ - → documentRequests:·true,
+     42     │ - → sickLeave:·false,
+     43     │ - → officerSettings:·false,
+     44     │ - };
+     45     │ - const·props·=·{
+     46     │ - → userId:·"officer",
+     47     │ - → organizationId:·"org",
+     48     │ - → employees,
+     49     │ - → capability,
+     50     │ - → attention:·<a·href="/personnel-files/anna">Expiring·certificate</a>,
+     51     │ - };
+     52     │ - beforeEach(()·=>·{
+     53     │ - → vi.clearAllMocks();
+     54     │ - → boundary.scope·=·{·userId:·"officer",·activeOrganizationId:·"org"·};
+     55     │ - });
+     56     │ - 
+     57     │ - it("leads·with·attention·then·employee·records·and·retains·scoped·destinations·and·former·identity",·()·=>·{
+     58     │ - → render(<PersonnelFilesWorkspace·{...props}·/>);
+     59     │ - → expect(
+     60     │ - → → screen.getByRole("heading",·{·level:·1,·name:·"Personnel·Files"·}),
+     61     │ - → ).toBeTruthy();
+     62     │ - → const·directory·=·screen.getByRole("region",·{·name:·"Employee·records"·});
+     63     │ - → expect(
+     64     │ - → → within(directory)
+     65     │ - → → → .getByRole("link",·{·name:·/Anna·Example/·})
+     66     │ - → → → .getAttribute("href"),
+     67     │ - → ).toBe("/personnel-files/anna");
+     68     │ - → expect(
+     69     │ - → → within(directory).getByRole("link",·{
+     70     │ - → → → name:·/Ben·Former.*Former·employee/,
+     71     │ - → → }),
+     72     │ - → ).toBeTruthy();
+     73     │ - → expect(
+     74     │ - → → screen
+     75     │ - → → → .getByText("Expiring·certificate")
+     76     │ - → → → .compareDocumentPosition(directory)·&·Node.DOCUMENT_POSITION_FOLLOWING,
+     77     │ - → ).toBeTruthy();
+     78     │ - → const·destinations·=·screen.getByRole("navigation",·{
+     79     │ - → → name:·"Personnel·file·workflows",
+     80     │ - → });
+     81     │ - → expect(
+     82     │ - → → within(destinations)
+     83     │ - → → → .getAllByRole("link")
+     84     │ - → → → .map((link)·=>·link.getAttribute("href")),
+     85     │ - → ).toEqual([
+     86     │ - → → "/personnel-files/document-requests",
+     87     │ - → → "/personnel-files/due-for-deletion",
+     88     │ - → ]);
+     89     │ - → expect(screen.queryByRole("link",·{·name:·"Payslip·batch"·})).toBeNull();
+     90     │ - });
+     91     │ - 
+     92     │ - it("distinguishes·unknown·directory·from·an·empty·scope·and·retries·the·server·owner",·()·=>·{
+     93     │ - → render(<PersonnelFilesWorkspace·{...props}·employees={null}·/>);
+     94     │ - → expect(screen.queryByText("No·employees·are·in·your·scope·yet.")).toBeNull();
+     95     │ - → expect(screen.getByRole("alert").textContent).toContain(
+     96     │ - → → "Employee·records·could·not·be·loaded",
+     97     │ - → );
+     98     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));
+     99     │ - → expect(boundary.refresh).toHaveBeenCalledTimes(1);
+    100     │ - });
+    101     │ - 
+    102     │ - it("keeps·empty·scope·guidance·and·only·capability-admitted·workflow·links",·()·=>·{
+    103     │ - → render(
+    104     │ - → → <PersonnelFilesWorkspace
+    105     │ - → → → {...props}
+    106     │ - → → → employees={[]}
+    107     │ - → → → capability={{
+    108     │ - → → → → payslipBatches:·true,
+    109     │ - → → → → documentRequests:·false,
+    110     │ - → → → → sickLeave:·true,
+    111     │ - → → → → officerSettings:·true,
+    112     │ - → → → }}
+    113     │ - → → />,
+    114     │ - → );
+    115     │ - → expect(screen.getByText("No·employees·are·in·your·scope·yet.")).toBeTruthy();
+    116     │ - → expect(
+    117     │ - → → screen.getByText(/Contact·an·organization·administrator/),
+    118     │ - → ).toBeTruthy();
+    119     │ - → for·(const·href·of·[
+    120     │ - → → "/personnel-files/payslip-batches",
+    121     │ - → → "/personnel-files/sick-leave",
+    122     │ - → → "/settings/personnel-files",
+    123     │ - → ])
+    124     │ - → → expect(
+    125     │ - → → → screen
+    126     │ - → → → → .getAllByRole("link")
+    127     │ - → → → → .some((link)·=>·link.getAttribute("href")·===·href),
+    128     │ - → → ).toBe(true);
+    129     │ - → expect(screen.queryByRole("link",·{·name:·"Document·requests"·})).toBeNull();
+    130     │ - });
+    131     │ - 
+    132     │ - it("hides·previous·and·late-arriving·records·and·open·attention·panels·after·scope·changes",·()·=>·{
+    133     │ - → const·{·rerender·}·=·render(<PersonnelFilesWorkspace·{...props}·/>);
+    134     │ - → boundary.scope.activeOrganizationId·=·"other";
+    135     │ - → rerender(<PersonnelFilesWorkspace·{...props}·/>);
+    136     │ - → expect(screen.queryByText("Anna·Example")).toBeNull();
+    137     │ - → expect(screen.queryByText("Expiring·certificate")).toBeNull();
+    138     │ - → boundary.scope·=·{·userId:·"other-user",·activeOrganizationId:·"org"·};
+    139     │ - → rerender(<PersonnelFilesWorkspace·{...props}·/>);
+    140     │ - → expect(screen.queryByRole("navigation")).toBeNull();
+    141     │ - });
+          1 │ + //·@vitest-environment·jsdom␍
+          2 │ + import·{·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+          3 │ + import·type·{·ReactNode·}·from·"react";␍
+          4 │ + import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+          5 │ + import·{·PersonnelFilesWorkspace·}·from·"./personnel-files-workspace";␍
+          6 │ + ␍
+          7 │ + const·boundary·=·vi.hoisted(()·=>·({␍
+          8 │ + → refresh:·vi.fn(),␍
+          9 │ + → scope:·{·userId:·"officer",·activeOrganizationId:·"org"·},␍
+  133 more lines truncated
+  
+
+src\components\personnel-file\personnel-files-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{
+      4     │ - → IconClipboardList,
+      5     │ - → IconFileStack,
+      6     │ - → IconFirstAidKit,
+      7     │ - → IconSettings,
+      8     │ - → IconTrashX,
+      9     │ - }·from·"@tabler/icons-react";
+     10     │ - import·{·useTranslate·}·from·"@tolgee/react";
+     11     │ - import·{·useRouter·}·from·"next/navigation";
+     12     │ - import·{·type·ReactNode,·useId,·useTransition·}·from·"react";
+     13     │ - import·{·EmployeeDirectoryCard·}·from·"@/components/employees/employee-directory-card";
+     14     │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+     15     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+     16     │ - import·{·Badge·}·from·"@/components/ui/badge";
+     17     │ - import·{·Button·}·from·"@/components/ui/button";
+     18     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";
+     19     │ - import·type·{·ManagedEmployee·}·from·"@/lib/personnel-file/access-store";
+     20     │ - import·{·Link·}·from·"@/navigation";
+     21     │ - 
+     22     │ - export·function·PersonnelFilesHeading()·{
+     23     │ - → const·{·t·}·=·useTranslate();
+     24     │ - → return·(
+     25     │ - → → <PageHeader
+     26     │ - → → → title={t("settings.personnelFiles.area.title",·"Personnel·Files")}
+     27     │ - → → → description={t(
+     28     │ - → → → → "settings.personnelFiles.area.description",
+     29     │ - → → → → "The·employees·whose·personnel·file·you·manage.",
+     30     │ - → → → )}
+     31     │ - → → />
+     32     │ - → );
+     33     │ - }
+     34     │ - 
+     35     │ - /**·A·failed·read·is·unknown,·never·an·empty·scope·or·a·zero·attention·count.·*/
+     36     │ - export·function·PersonnelFilesReadFailure({
+     37     │ - → children,
+     38     │ - }:·{
+     39     │ - → children:·ReactNode;
+     40     │ - })·{
+     41     │ - → const·{·t·}·=·useTranslate();
+     42     │ - → const·router·=·useRouter();
+     43     │ - → const·[pending,·startTransition]·=·useTransition();
+     44     │ - → return·(
+     45     │ - → → <Alert·role="alert">
+     46     │ - → → → <AlertDescription·className="space-y-3">
+     47     │ - → → → → <p>{children}</p>
+     48     │ - → → → → <Button
+     49     │ - → → → → → type="button"
+     50     │ - → → → → → variant="outline"
+     51     │ - → → → → → disabled={pending}
+     52     │ - → → → → → aria-busy={pending}
+     53     │ - → → → → → onClick={()·=>·startTransition(()·=>·router.refresh())}
+     54     │ - → → → → >
+     55     │ - → → → → → {t("common.retry",·"Retry")}
+     56     │ - → → → → </Button>
+     57     │ - → → → </AlertDescription>
+     58     │ - → → </Alert>
+     59     │ - → );
+     60     │ - }
+     61     │ - 
+     62     │ - /**·Display·scope·only.·Server·admission·and·category/employee·queries·remain·authoritative.·*/
+     63     │ - export·function·PersonnelFilesWorkspace({
+     64     │ - → userId,
+     65     │ - → organizationId,
+     66     │ - → employees,
+     67     │ - → capability,
+     68     │ - → attention,
+     69     │ - }:·{
+     70     │ - → userId:·string;
+     71     │ - → organizationId:·string;
+     72     │ - → employees:·readonly·ManagedEmployee[]·|·null;
+     73     │ - → capability:·{
+     74     │ - → → payslipBatches:·boolean;
+     75     │ - → → documentRequests:·boolean;
+     76     │ - → → sickLeave:·boolean;
+     77     │ - → → officerSettings:·boolean;
+     78     │ - → };
+     79     │ - → attention:·ReactNode;
+     80     │ - })·{
+     81     │ - → const·{·t·}·=·useTranslate();
+     82     │ - → const·current·=·useOrganization();
+     83     │ - → const·directoryHeading·=·useId();
+     84     │ - → const·workflowsHeading·=·useId();
+     85     │ - → if·(
+     86     │ - → → current.userId·!==·userId·||
+     87     │ - → → current.activeOrganizationId·!==·organizationId
+     88     │ - → )
+     89     │ - → → return·null;
+     90     │ - → return·(
+     91     │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-8·p-4·md:p-6">
+     92     │ - → → → <PersonnelFilesHeading·/>
+     93     │ - → → → {attention}
+     94     │ - → → → <section·aria-labelledby={directoryHeading}·className="min-w-0·space-y-4">
+     95     │ - → → → → <div·className="flex·flex-wrap·items-center·gap-3">
+     96     │ - → → → → → <h2·id={directoryHeading}·className="text-lg·font-semibold">
+     97     │ - → → → → → → {t(
+     98     │ - → → → → → → → "settings.personnelFiles.area.employeeRecords",
+     99     │ - → → → → → → → "Employee·records",
+    100     │ - → → → → → → )}
+    101     │ - → → → → → </h2>
+    102     │ - → → → → → {employees·?·(
+    103     │ - → → → → → → <Badge·variant="secondary"·className="tabular-nums">
+    104     │ - → → → → → → → {employees.length}
+    105     │ - → → → → → → </Badge>
+    106     │ - → → → → → )·:·null}
+    107     │ - → → → → </div>
+    108     │ - → → → → {employees·===·null·?·(
+    109     │ - → → → → → <PersonnelFilesReadFailure>
+    110     │ - → → → → → → {t(
+    111     │ - → → → → → → → "settings.personnelFiles.area.employeesFailed",
+    112     │ - → → → → → → → "Employee·records·could·not·be·loaded.·Try·again.",
+    113     │ - → → → → → → )}
+    114     │ - → → → → → </PersonnelFilesReadFailure>
+    115     │ - → → → → )·:·employees.length·===·0·?·(
+    116     │ - → → → → → <div·className="space-y-2·rounded-lg·border·bg-card·p-6·text-sm">
+    117     │ - → → → → → → <p·className="font-medium">
+    118     │ - → → → → → → → {t(
+    119     │ - → → → → → → → → "settings.personnelFiles.area.empty",
+    120     │ - → → → → → → → → "No·employees·are·in·your·scope·yet.",
+    121     │ - → → → → → → → )}
+    122     │ - → → → → → → </p>
+    123     │ - → → → → → → <p·className="text-muted-foreground">
+    124     │ - → → → → → → → {t(
+    125     │ - → → → → → → → → "settings.personnelFiles.area.emptyGuidance",
+    126     │ - → → → → → → → → "Contact·an·organization·administrator·to·review·the·employees,·teams·and·document·categories·assigned·to·you.",
+    127     │ - → → → → → → → )}
+    128     │ - → → → → → → </p>
+    129     │ - → → → → → </div>
+    130     │ - → → → → )·:·(
+    131     │ - → → → → → <EmployeeDirectoryCard
+    132     │ - → → → → → → employees={employees}
+    133     │ - → → → → → → basePath="/personnel-files"
+    134     │ - → → → → → → formerEmployeeLabel={t(
+    135     │ - → → → → → → → "settings.personnelFiles.area.former",
+    136     │ - → → → → → → → "Former·employee",
+    137     │ - → → → → → → )}
+    138     │ - → → → → → />
+    139     │ - → → → → )}
+    140     │ - → → → </section>
+    141     │ - → → → <nav
+    142     │ - → → → → aria-labelledby={workflowsHeading}
+    143     │ - → → → → className="space-y-3·border-t·pt-6"
+    144     │ - → → → >
+    145     │ - → → → → <h2·id={workflowsHeading}·className="text-sm·font-semibold">
+    146     │ - → → → → → {t(
+    147     │ - → → → → → → "settings.personnelFiles.area.workflows",
+    148     │ - → → → → → → "Personnel·file·workflows",
+    149     │ - → → → → → )}
+    150     │ - → → → → </h2>
+  263 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";
+      2     │ - import·{
+      3     │ - → appPageOwnsHeading,
+      4     │ - → normalizeAppPath,
+      5     │ - → resolveAppRouteMetadata,
+      6     │ - }·from·"./route-metadata";
+      7     │ - 
+      8     │ - describe("route·metadata",·()·=>·{
+      9     │ - → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{
+     10     │ - → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+     11     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
+     12     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
+     13     │ - → → → true,
+     14     │ - → → );
+     15     │ - → → expect(
+     16     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),
+     17     │ - → → ).toBe(false);
+     18     │ - → });
+     19     │ - → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{
+     20     │ - → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);
+     21     │ - → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
+     22     │ - → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+     23     │ - → });
+     24     │ - → it("adopts·only·the·personal·requests·page·heading",·()·=>·{
+     25     │ - → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
+     26     │ - → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
+     27     │ - → });
+     28     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{
+     29     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);
+     30     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
+     31     │ - → → expect(appPageOwnsHeading("/en/personnel-files/employee-1")).toBe(false);
+     32     │ - → });
+     33     │ - → it("adopts·only·the·personnel·file·directory,·preserving·all·descendant·owners",·()·=>·{
+     34     │ - → → expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);
+     35     │ - → → for·(const·path·of·[
+     36     │ - → → → "/en/personnel-files/id",
+     37     │ - → → → "/en/personnel-files/document-requests",
+     38     │ - → → → "/en/personnel-files/payslip-batches",
+     39     │ - → → → "/en/personnel-files/payslip-batches/id",
+     40     │ - → → → "/en/personnel-files/sick-leave",
+     41     │ - → → → "/en/personnel-files/due-for-deletion",
+     42     │ - → → → "/en/settings/personnel-files",
+     43     │ - → → ])
+     44     │ - → → → expect(appPageOwnsHeading(path)).toBe(false);
+     45     │ - → });
+     46     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{
+     47     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);
+     48     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);
+     49     │ - → → expect(
+     50     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),
+     51     │ - → → ).toBe(true);
+     52     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);
+     53     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(
+     54     │ - → → → false,
+     55     │ - → → );
+     56     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);
+     57     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
+     58     │ - → });
+     59     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{
+     60     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);
+     61     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);
+     62     │ - → });
+     63     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{
+     64     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
+     65     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+     66     │ - → → → true,
+     67     │ - → → );
+     68     │ - → → expect(
+     69     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
+     70     │ - → → ).toBe(false);
+     71     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
+     72     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
+     73     │ - → });
+     74     │ - → it("retains·independent·approvals·page·headings",·()·=>·{
+     75     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+     76     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
+     77     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
+     78     │ - → → → true,
+     79     │ - → → );
+     80     │ - → });
+     81     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{
+     82     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(
+     83     │ - → → → true,
+     84     │ - → → );
+     85     │ - → → expect(
+     86     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),
+     87     │ - → → ).toBe(false);
+     88     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);
+     89     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
+     90     │ - → });
+     91     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{
+     92     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);
+     93     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);
+     94     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(
+     95     │ - → → → true,
+     96     │ - → → );
+     97     │ - → });
+     98     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{
+     99     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(
+    100     │ - → → → true,
+    101     │ - → → );
+    102     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(
+    103     │ - → → → false,
+    104     │ - → → );
+    105     │ - → → expect(
+    106     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),
+    107     │ - → → ).toBe(false);
+    108     │ - → });
+    109     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{
+    110     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
+    111     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
+    112     │ - → → → false,
+    113     │ - → → );
+    114     │ - → });
+    115     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{
+    116     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
+    117     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(
+    118     │ - → → → false,
+    119     │ - → → );
+    120     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);
+    121     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(
+    122     │ - → → → false,
+    123     │ - → → );
+    124     │ - → });
+    125     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{
+    126     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);
+    127     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);
+    128     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);
+    129     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);
+    130     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);
+    131     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);
+    132     │ - → });
+    133     │ - → it("adopts·only·the·portfolio·pilot·title,·leaving·other·reports·and·descendants·with·shell·titles",·()·=>·{
+    134     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);
+    135     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);
+    136     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);
+    137     │ - → });
+    138     │ - → it.each([
+    139     │ - → → ["/en",·"Dashboard"],
+    140     │ - → → ["/de/my-requests",·"My·Requests"],
+    141     │ - → → ["/en/organization",·"Org·Explorer"],
+    142     │ - → → ["/en/payroll",·"Payroll"],
+    143     │ - → → ["/en/scheduling",·"Scheduling"],
+    144     │ - → → ["/en/approvals/inbox",·"Approvals"],
+    145     │ - → → ["/en/compliance",·"Compliance"],
+    146     │ - → → ["/en/works-council",·"Works·Council"],
+    147     │ - → → ["/en/team/absences",·"Team·Absences"],
+    148     │ - → → ["/en/team/driving",·"Driving·Details"],
+    149     │ - → → ["/en/driving-licence",·"My·driving·authorization"],
+    150     │ - → → ["/en/driving-licence/checks/employee-1",·"My·driving·authorization"],
+  197 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";
+      3     │ - 
+      4     │ - export·type·AppRouteMetadata·=·{
+      5     │ - → id:·string;
+      6     │ - → href:·string;
+      7     │ - → titleKey:·string;
+      8     │ - → titleDefault:·string;
+      9     │ - };
+     10     │ - 
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[
+     12     │ - → {
+     13     │ - → → id:·"dashboard",
+     14     │ - → → href:·"/",
+     15     │ - → → titleKey:·"nav.dashboard",
+     16     │ - → → titleDefault:·"Dashboard",
+     17     │ - → },
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.
+     21     │ - → {
+     22     │ - → → id:·"equipment",
+     23     │ - → → href:·"/equipment",
+     24     │ - → → titleKey:·"nav.equipment",
+     25     │ - → → titleDefault:·"Equipment",
+     26     │ - → },
+     27     │ - → {
+     28     │ - → → id:·"my-equipment",
+     29     │ - → → href:·"/my-equipment",
+     30     │ - → → titleKey:·"nav.my-equipment",
+     31     │ - → → titleDefault:·"My·equipment",
+     32     │ - → },
+     33     │ - → {
+     34     │ - → → id:·"notifications",
+     35     │ - → → href:·"/notifications",
+     36     │ - → → titleKey:·"notifications.title",
+     37     │ - → → titleDefault:·"Notifications",
+     38     │ - → },
+     39     │ - → {
+     40     │ - → → id:·"calendar",
+     41     │ - → → href:·"/calendar",
+     42     │ - → → titleKey:·"nav.calendar",
+     43     │ - → → titleDefault:·"Calendar",
+     44     │ - → },
+     45     │ - → {
+     46     │ - → → id:·"time-tracking",
+     47     │ - → → href:·"/time-tracking",
+     48     │ - → → titleKey:·"nav.time-tracking",
+     49     │ - → → titleDefault:·"Time·Tracking",
+     50     │ - → },
+     51     │ - → {
+     52     │ - → → id:·"my-requests",
+     53     │ - → → href:·"/my-requests",
+     54     │ - → → titleKey:·"nav.my-requests",
+     55     │ - → → titleDefault:·"My·Requests",
+     56     │ - → },
+     57     │ - → {
+     58     │ - → → id:·"org-explorer",
+     59     │ - → → href:·"/organization",
+     60     │ - → → titleKey:·"nav.org-explorer",
+     61     │ - → → titleDefault:·"Org·Explorer",
+     62     │ - → },
+     63     │ - → {
+     64     │ - → → id:·"absences",
+     65     │ - → → href:·"/absences",
+     66     │ - → → titleKey:·"nav.absences",
+     67     │ - → → titleDefault:·"Absences",
+     68     │ - → },
+     69     │ - → {
+     70     │ - → → id:·"travel-expenses",
+     71     │ - → → href:·"/travel-expenses",
+     72     │ - → → titleKey:·"nav.travel-expenses",
+     73     │ - → → titleDefault:·"Travel·Expenses",
+     74     │ - → },
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.
+     77     │ - → {
+     78     │ - → → id:·"driving-licence",
+     79     │ - → → href:·"/driving-licence",
+     80     │ - → → titleKey:·"drivingLicence.myTitle",
+     81     │ - → → titleDefault:·"My·driving·authorization",
+     82     │ - → },
+     83     │ - → {
+     84     │ - → → id:·"reports-projects",
+     85     │ - → → href:·"/reports/projects",
+     86     │ - → → titleKey:·"reports.projects.title",
+     87     │ - → → titleDefault:·"Project·Reports",
+     88     │ - → },
+     89     │ - → {
+     90     │ - → → id:·"reports-vehicles",
+     91     │ - → → href:·"/reports/vehicles",
+     92     │ - → → titleKey:·"reports.vehicles.title",
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",
+     94     │ - → },
+     95     │ - → {
+     96     │ - → → id:·"reports",
+     97     │ - → → href:·"/reports",
+     98     │ - → → titleKey:·"nav.reports",
+     99     │ - → → titleDefault:·"Reports",
+    100     │ - → },
+    101     │ - → {
+    102     │ - → → id:·"team-absences",
+    103     │ - → → href:·"/team/absences",
+    104     │ - → → titleKey:·"nav.teamAbsences",
+    105     │ - → → titleDefault:·"Team·Absences",
+    106     │ - → },
+    107     │ - → {
+    108     │ - → → id:·"team-presence",
+    109     │ - → → href:·"/team/presence",
+    110     │ - → → titleKey:·"nav.teamPresence",
+    111     │ - → → titleDefault:·"Who·Is·In",
+    112     │ - → },
+    113     │ - → {
+    114     │ - → → id:·"team-period-submissions",
+    115     │ - → → href:·"/team/period-submissions",
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",
+    117     │ - → → titleDefault:·"Period·Submissions",
+    118     │ - → },
+    119     │ - → {
+    120     │ - → → id:·"team-driving",
+    121     │ - → → href:·"/team/driving",
+    122     │ - → → titleKey:·"nav.teamDriving",
+    123     │ - → → titleDefault:·"Driving·Details",
+    124     │ - → },
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},
+    126     │ - → {
+    127     │ - → → id:·"approvals",
+    128     │ - → → href:·"/approvals",
+    129     │ - → → titleKey:·"nav.approvals",
+    130     │ - → → titleDefault:·"Approvals",
+    131     │ - → },
+    132     │ - → {
+    133     │ - → → id:·"analytics",
+    134     │ - → → href:·"/analytics",
+    135     │ - → → titleKey:·"nav.analytics",
+    136     │ - → → titleDefault:·"Analytics",
+    137     │ - → },
+    138     │ - → {
+    139     │ - → → id:·"payroll",
+    140     │ - → → href:·"/payroll",
+    141     │ - → → titleKey:·"nav.payroll",
+    142     │ - → → titleDefault:·"Payroll",
+    143     │ - → },
+    144     │ - → {
+    145     │ - → → id:·"scheduling",
+    146     │ - → → href:·"/scheduling",
+    147     │ - → → titleKey:·"nav.scheduling",
+    148     │ - → → titleDefault:·"Scheduling",
+    149     │ - → },
+    150     │ - → {
+  369 more lines truncated
+  
+
+Checked 7 files in 8ms. No fixes applied.
+Found 7 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-2f159aee-
+  │ 10fac1c1d358d617\apps\webapp
+

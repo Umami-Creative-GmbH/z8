@@ -1,0 +1,81 @@
+{
+  "verdict": "PASS_BOUNDED_CURRENT_PDF_AND_ROUTE_ACCEPTANCE",
+  "candidate": "1d328a1b352fa6504d58b443367b6aabeda56fcb",
+  "tree": "e2419f58997932018c617f0babcea93a9a66d4d1",
+  "sourceCorrection": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+  "latestVerifiedUnchanged": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "verifiedCommit1735": null,
+  "freshCompiled": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "physicalFiles": 2,
+    "nonadditiveToRoot294": true
+  },
+  "inheritedPublic": {
+    "passed": 9,
+    "physicalFiles": 1,
+    "source": "prior241a; unchanged consumer correction owners"
+  },
+  "inheritedPostgres": {
+    "passed": 14,
+    "physicalFiles": 2,
+    "canonicalOwnersUnchanged": true
+  },
+  "actualCompletedParsedDownloads": [
+    {
+      "format": "pdf",
+      "completed": true,
+      "parsed": true,
+      "bytes": 9344,
+      "sha256": "f5b26a7a7d97f4a4f7460e642d50b788f1f6b2c41bd4284fe4fc727b2532e4a5",
+      "pages": 3
+    },
+    {
+      "format": "csv",
+      "completed": true,
+      "parsed": true,
+      "bytes": 1706,
+      "sha256": "8e4d71f1cb62903939621f358ac9f666a2aa00c775923bbe8f113247370adc4a",
+      "pages": null
+    },
+    {
+      "format": "xlsx",
+      "completed": true,
+      "parsed": true,
+      "bytes": 10605,
+      "sha256": "7d0e617d639f7f447fc281465ef0872fdc25bccb64ab41d1426dde202f315df7",
+      "pages": null
+    }
+  ],
+  "canonicalParity": "organization+employee-scoped canonical125280minutes/261days/all12months;52home-office dates24960minutes;absence/vacation/sick totals;period and original PDF footer/display context",
+  "normalLogins": "fresh isolated Chromium contexts, normal dev login/public dummy Turnstile, notifications denied",
+  "liveRecovery": "actual generation abort with retained report and captured-command local Retry; actual roster aborts through ordinary automatic retries then local Retry",
+  "roles": "employee/restricted own, manager1/3/5/7, admin0..7 and actual otherPerson3 report",
+  "preferencesNavigation": "saved18+collapsed sidebar reload, refresh, actual vehicles route and return, real keyboard firstEscape/focus",
+  "pixels": "12acceptedreviewed; five matched current/historical head/tail states plus two18px preferences",
+  "historical": "nine-file partial consumer overlay only; own Next stopped before apply/restore; raw current bytes restored",
+  "native": "Corrected fresh fixture02: admitted report subtree and exact ReportsContainer fiber detailed inspect passed; documented second numeric ID column selected and returned target name independently checked. Earlier LayoutRouter misselection remains preserved/qualified.",
+  "next": "Final correction fixture02 connected /en/reports session on same unchanged restored source; issues[],configErrors[],sessionErrors[]; decoded JSON/raw HTTP hash qualification in next-provenance-01.",
+  "cleanup": "Two sequential own disposable fixtures: each exact three label-owned services absent (six total removed); all four own browsers/controllers, three named native sessions and owned listeners absent.",
+  "credentialHandling": {
+    "passwordsTokensCookiesOrAuthStatePrintedOrCopied": false,
+    "generatedSyntheticEmailPrintedOnceByInitialStandalonePdfParser": true,
+    "containment": "No password/token/cookie/auth state exposed; later output/public clones and screenshots redact generated email; original exports/manifests remain private and excluded"
+  },
+  "limitations": [
+    "No live settings/organization-context refusal injection; inherited public9 controls cover modeled boundaries separately.",
+    "No live custom-field redaction or hourly earnings seeded; canonicalPG/projected compiled controls are separate.",
+    "No live cross-tab actor/org ABA/revocation/held export races; modeled public controls not relabeled live.",
+    "No production generation/Tolgee/provider/customer/payment/email/device/truezoom/exhaustive locale/contrast/performance/offline/global roster blanket acceptance.",
+    "Four broader roster guard findings remain unresolved/unrun; prior format/Doctor/raw-history qualifications unchanged.",
+    "Initial shell preflight/harness failures are retained as source+summary and original tool transcripts; not all shell stdout was redirected to a durable raw log.",
+    "Detailed inspect02 selected router ancestor because depth was mistaken for fiber ID; fresh inspect03 corrected and verified exact ReportsContainer.",
+    "Next private records preserve decoded JSON; original SSE framing was not separately retained."
+  ],
+  "sourceProductOrReadinessWrites": false,
+  "rootOwnsPublicationAndAdvancement": true,
+  "release": "RELEASE ALL root checkout/index/Git/package/runtime/process ownership after successful final seal verification.",
+  "temporaryHistoricalSourceWrites": "Nine authorized consumer files applied with own Next stopped and restored byte-exact; no permanent product change.",
+  "nativeExactTargetCorrection": "native-harness-target-correction-01.json"
+}

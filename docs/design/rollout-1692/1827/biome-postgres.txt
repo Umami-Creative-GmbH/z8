@@ -1,0 +1,21 @@
+src\app\[locale]\onboarding\complete\actions.integration.test.ts:1:10 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+  > 1 │ import { Effect, Layer } from "effect";
+      │          ^^^^^^
+    2 │ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+    3 │ import { integrationAdminPool } from "@/test/integration-database";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+    1 │ import·{·Effect,·Layer·}·from·"effect";␍
+      │          --------                      
+
+Skipped 3 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 1 file in 9ms. Fixed 1 file.
+Found 1 warning.

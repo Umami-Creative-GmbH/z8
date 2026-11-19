@@ -1,0 +1,39 @@
+{
+  "classification": "environment-prerequisite-blocker",
+  "productDefect": false,
+  "command": {
+    "executable": "pnpm",
+    "args": [
+      "--config.verify-deps-before-run=false",
+      "install",
+      "--offline",
+      "--frozen-lockfile",
+      "--package-import-method=copy",
+      "--ignore-scripts"
+    ],
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-6cc515f6-8a0a4c1209e48861",
+    "env": {
+      "pnpm_config_verify_deps_before_run": "false"
+    }
+  },
+  "exitCode": 1,
+  "code": "ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK",
+  "visibleError": "Failed to open the store operation lock at LOCALAPPDATA/pnpm-store-operation-locks/all-stores.lock: access denied (os error 5).",
+  "effects": "Installation exited before creating root or app node_modules; own Next runtime cannot start.",
+  "diagnosticVersionQuery": {
+    "exitCode": 0,
+    "version": "12.21.0",
+    "warning": "Cannot use the pnpm version this project pins: same operation-lock access denial.",
+    "installPerformed": false
+  },
+  "pinnedPackageManager": "pnpm@12.16.1",
+  "escalationRequested": false,
+  "storeRelocated": false,
+  "alternateManagerUsed": false,
+  "configOverlay": false,
+  "dependencyOverlay": false,
+  "parentOrPeerDependenciesUsed": false,
+  "sourceOverlayAttempted": false,
+  "sourceOverlayRetried": false,
+  "stopReason": "Brief requires stop on confirmed blocker and own physical frozen/offline dependencies. No external lock permission change, fallback-version install, shared dependency borrowing, or configuration workaround attempted."
+}

@@ -1,0 +1,40 @@
+{
+  "at": "2026-11-18T04:23:18.165Z",
+  "events": [
+    {
+      "event": "real-create-response-held-after-execution",
+      "at": "2026-11-18T04:23:17.235Z",
+      "responseStage": true,
+      "successStatus": true
+    },
+    {
+      "event": "SECOND-trusted-CDP-pointer-same-measured-button-center",
+      "at": "2026-11-18T04:23:17.361Z",
+      "geometry": {
+        "x": 492,
+        "y": 201,
+        "w": 424,
+        "h": 48,
+        "disabled": true,
+        "busy": "true"
+      }
+    }
+  ],
+  "requests": 1,
+  "heldCount": 1,
+  "createdGraphDelta": 1,
+  "items": [
+    {
+      "type": "receipt"
+    }
+  ],
+  "geometry": {
+    "x": 492,
+    "y": 201,
+    "w": 424,
+    "h": 48,
+    "disabled": true,
+    "busy": "true"
+  },
+  "preReleasePath": "/en/travel-expenses"
+}

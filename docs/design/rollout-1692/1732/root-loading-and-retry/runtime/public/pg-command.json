@@ -1,0 +1,20 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/payslip-batch.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1732-root-checks\\runtime\\pg20-raw-private.json"
+  ],
+  "exit": 0,
+  "physicalFiles": 1,
+  "standardIntegrationHarness": true,
+  "separateDisposableFixture": true
+}

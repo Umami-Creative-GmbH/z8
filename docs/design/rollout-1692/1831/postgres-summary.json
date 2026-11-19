@@ -1,0 +1,27 @@
+{
+  "uniqueFiles": 4,
+  "passed": 26,
+  "failed": 0,
+  "suites": [
+    {
+      "file": "apps/webapp/src/lib/absences/assigned-vacation-postings.integration.test.ts",
+      "passed": 11,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/absences/vacation-accrual.integration.test.ts",
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/absences/vacation-policy-resolution.integration.test.ts",
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/absences/working-week-allowance.integration.test.ts",
+      "passed": 3,
+      "failed": 0
+    }
+  ]
+}

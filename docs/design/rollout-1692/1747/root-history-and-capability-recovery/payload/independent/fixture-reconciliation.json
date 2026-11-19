@@ -1,0 +1,54 @@
+{
+  "base": "c70858bfe507eb99f844a455230e312cc8247b61",
+  "results": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "beforeAssertions": 9,
+      "afterAssertions": 10,
+      "removed": [],
+      "added": [
+        "expect(button).toHaveProperty(\"disabled\", false)"
+      ],
+      "namesUnchanged": true,
+      "testNames": [
+        "retires a held %s conversion when displayed session becomes pending",
+        "does not show a retired conversion refusal in a later displayed account",
+        "does not start a queued continuation after displayed session proof is interrupted",
+        "never reactivates a held continuation after account A returns from account B"
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx",
+      "beforeAssertions": 63,
+      "afterAssertions": 63,
+      "removed": [],
+      "added": [],
+      "namesUnchanged": true,
+      "testNames": [
+        "retires a held creation when a retained session becomes pending and returns",
+        "recovers locally from a rejected creation without losing the personal history",
+        "creates a standalone receipt report and opens its editor",
+        "creates a trip report and opens its editor",
+        "guides a first-time user with an empty state instead of an empty table",
+        "lists drafts, decided reports and earlier claims in one list",
+        "labels an adjustment with a link to the report it corrects",
+        "shows the settlement balance of approved expenses, including an overpayment",
+        "shows Reimbursed instead of Approved on a fully reimbursed expense (#751)",
+        "offers to continue a legacy draft as a report",
+        "deletes a never-submitted draft from its row after confirmation (#684)",
+        "warns that deleting a continued draft deletes the earlier claim too",
+        "filters by review status with counts",
+        "filters to expenses awaiting reimbursement (#751)",
+        "explains an empty filter and offers to show everything",
+        "keeps the selected status filter when Activity refreshes personal history",
+        "retires held reads on %s A→B→A returns",
+        "refreshes a completed personal read after an Activity return and retires held creation",
+        "retains Retry after a previously empty history fails to refresh",
+        "preserves loaded rows during a background refresh",
+        "shows retry guidance on initial failure and recovers without an empty-history message",
+        "keeps loaded rows and shows retry when a background refresh fails"
+      ]
+    }
+  ],
+  "qualification": "AST textual assertion-chain multiset comparison; no execution of baseline fixtures and no claim of live session authorization."
+}

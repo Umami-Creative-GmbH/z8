@@ -71,11 +71,18 @@ function SharedReportContent({
 }: SharedReportViewProps) {
 	const { t } = useTranslate();
 	const labels = useProjectReportExportLabels();
-	const display = { locale, timezone: organizationTimeZone, timeFormat: "24h" as const };
+	const display = {
+		locale,
+		timezone: organizationTimeZone,
+		timeFormat: "24h" as const,
+	};
 	const takenAt = formatInstant(Temporal.Instant.from(createdAt), display, "dateTimeMedium");
 	const expiresOn = formatInstant(Temporal.Instant.from(expiresAt), display, "dateTimeMedium");
 	// The snapshot's time stands in for "generated on": the figures are as of then.
-	const document = buildSharedSnapshotDocument(snapshot, { labels, generatedAt: takenAt });
+	const document = buildSharedSnapshotDocument(snapshot, {
+		labels,
+		generatedAt: takenAt,
+	});
 
 	return (
 		<main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:py-10">
@@ -85,14 +92,28 @@ function SharedReportContent({
 				<ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
 					<li className="flex items-center gap-1.5">
 						<IconShare aria-hidden="true" className="size-4" />
-						{t("reports.share.page.sharedBy", "Shared by {name}", { name: creatorName })}
+						{t("reports.share.page.sharedBy", "Shared by {name}", {
+							name: creatorName,
+						})}
 					</li>
-					<li>{t("reports.share.page.takenAt", "Snapshot taken {date}", { date: takenAt })}</li>
-					<li>{t("reports.share.page.expiresAt", "Link expires {date}", { date: expiresOn })}</li>
+					<li>
+						{t("reports.share.page.takenAt", "Snapshot taken {date}", {
+							date: takenAt,
+						})}
+					</li>
+					<li>
+						{t("reports.share.page.expiresAt", "Link expires {date}", {
+							date: expiresOn,
+						})}
+					</li>
 				</ul>
 				<ReportDocumentExportButtons
+					source={snapshot}
 					buildDocument={(context) =>
-						buildSharedSnapshotDocument(snapshot, { ...context, generatedAt: takenAt })
+						buildSharedSnapshotDocument(snapshot, {
+							...context,
+							generatedAt: takenAt,
+						})
 					}
 				/>
 			</header>

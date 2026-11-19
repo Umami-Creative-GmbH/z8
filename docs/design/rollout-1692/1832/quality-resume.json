@@ -1,0 +1,95 @@
+{
+  "sourceHashes": {
+    "src/app/[locale]/onboarding/welcome/page-client.tsx": "1d7724773e0191e9cac108b0889cc8fc8d5ea6ab5abd2e14b134901620486836",
+    "src/app/[locale]/onboarding/welcome/page.tsx": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1",
+    "src/app/[locale]/onboarding/welcome/page.test.tsx": "ed58c81376ea0bc1fbff57a8d4c5f224ae038fed14077b2c8777ffab9a9a1504"
+  },
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "next",
+        "typegen"
+      ],
+      "exitCode": 0,
+      "stdout": "Generating route types...\n✓ Types generated successfully\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.workflow-contracts.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "tsc",
+        "-p",
+        "tsconfig.smoke.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/welcome/page-client.tsx",
+        "src/app/[locale]/onboarding/welcome/page.tsx",
+        "src/app/[locale]/onboarding/welcome/page.test.tsx"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "Checked 3 files in 7ms. No fixes applied.\n"
+    }
+  ]
+}

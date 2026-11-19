@@ -1,0 +1,40 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-26f93436-9113146a88895020/apps/webapp
+
+ ❯ |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx (1 test | 1 failed) 100ms
+   × does not reuse retired actor/organization options on A → B → A while the current roster read is held 99ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx > does not reuse retired actor/organization options on A → B → A while the current roster read is held
+AssertionError: expected <span class="truncate"></span> to be null
+
+- Expected:
+null
+
++ Received:
+<span
+  class="truncate"
+>
+  Cached actor A
+</span>
+
+ ❯ src/app/[locale]/(app)/reports/employee-scope.test.tsx:48:47
+     46|   mounted.rerender(view("employee-a", "actor-a", "org-a"));
+     47|  });
+     48|  expect(screen.queryByText("Cached actor A")).toBeNull();
+       |                                               ^
+     49|  expect(screen.queryByText("Former confidential A")).toBeNull();
+     50|  expect(mocks.read).toHaveBeenCalledTimes(3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  22:10:31
+   Duration  4.19s (import 56%, transform 25%, environment 15%, tests 3%, setup 1%)
+

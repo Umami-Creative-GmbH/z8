@@ -1,0 +1,27 @@
+{
+    "name":  "adversarial-unit",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "env":  {
+                "pnpm_config_verify_deps_before_run":  "false"
+            },
+    "argv":  [
+                 "pnpm",
+                 "--config.verify-deps-before-run=false",
+                 "--filter",
+                 "webapp",
+                 "exec",
+                 "vitest",
+                 "run",
+                 "--config",
+                 "../../.tmp/merge1829-audit/vitest.config.ts",
+                 "--project",
+                 "audit",
+                 "--maxWorkers",
+                 "1",
+                 "--reporter=json",
+                 "--outputFile",
+                 "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\adversarial-unit.json"
+             ],
+    "started":  "2026-11-15T18:05:38.6526221Z",
+    "exitCode":  1
+}

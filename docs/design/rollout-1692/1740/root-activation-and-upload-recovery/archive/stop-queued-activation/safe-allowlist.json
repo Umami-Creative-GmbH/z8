@@ -1,0 +1,101 @@
+{
+    "namespace":  "X:\\t3-code\\worktrees\\z8\\t3-41aa9e05-0348e7c30589d86c\\.tmp\\1740-isolated-merger-checks",
+    "classification":  "Own synthetic probes, public tracked receipts/pins, expected Git index and handoff only",
+    "files":  [
+                  {
+                      "name":  "audit.cjs",
+                      "bytes":  5898,
+                      "sha256":  "8c6246037af3f1088ccfe924bd6842f1297bfe2e865c38ed26a05eece03534ee"
+                  },
+                  {
+                      "name":  "bridge-hash.json",
+                      "bytes":  227,
+                      "sha256":  "6d31d6d33a2d164350cde502d3046964d365c41b0784430767f8cadcc94fcad5"
+                  },
+                  {
+                      "name":  "candidate-audit.json",
+                      "bytes":  60002,
+                      "sha256":  "043b0dcce72a16c897746155365489f87e0e3ffc5e960958a32209ae47432072"
+                  },
+                  {
+                      "name":  "expected-tree.json",
+                      "bytes":  2846245,
+                      "sha256":  "6883150884b3583fd48de28bc3c956a06c5dd518d3b5a1db78f23c3c11458b9e"
+                  },
+                  {
+                      "name":  "expected.index",
+                      "bytes":  2296944,
+                      "sha256":  "a5fdc2afa8f51654d40c91b86d2a0579bb922366e95f4b41eb73444f313fe0ee"
+                  },
+                  {
+                      "name":  "HANDOFF.md",
+                      "bytes":  13679,
+                      "sha256":  "dbe059086ac6d78b240e88c4a599d5c7b6e744c9e1e51f216927616409d5ce4d"
+                  },
+                  {
+                      "name":  "premerge-control.test.tsx",
+                      "bytes":  7066,
+                      "sha256":  "47b8949d3842d612e15f742146e3b36a4183c21b9f2d1531b79aceba5f565b57"
+                  },
+                  {
+                      "name":  "premerge-control.txt",
+                      "bytes":  1937,
+                      "sha256":  "028d485e449b4de33d36079ce6b7226201851682367d68e5dc2601eb28ef4657"
+                  },
+                  {
+                      "name":  "prepare-merge.cjs",
+                      "bytes":  4078,
+                      "sha256":  "a5e591023a90468ff78e859163cd1afbec152d761bc3156e1a20754d4ca57203"
+                  },
+                  {
+                      "name":  "public-acceptance.test.tsx",
+                      "bytes":  7972,
+                      "sha256":  "0462a48413c7cc7ae4644088fbbc0c0928a344dd962f1023c59d4a741f95f8d2"
+                  },
+                  {
+                      "name":  "public-confirmed.txt",
+                      "bytes":  2116,
+                      "sha256":  "b4efb9f377db5e1d5eda778530e477b8bfc66bc62b1e7246954507d8aef2a7a4"
+                  },
+                  {
+                      "name":  "public-results.json",
+                      "bytes":  483,
+                      "sha256":  "f133ccf2948ec7113a1fc97c03fd6848da30a6ce6236c5b26d0658db6119f561"
+                  },
+                  {
+                      "name":  "public-run-2.txt",
+                      "bytes":  1821,
+                      "sha256":  "c09a44bf324cc9e5d3fdd71b708e47a49a40f103ff0422183f184f926bf7dbb0"
+                  },
+                  {
+                      "name":  "public-run-bridge.txt",
+                      "bytes":  40313,
+                      "sha256":  "7aed750a647734d45a84cb972e21b0c21ad923e4e742b56bd431995a37bdb074"
+                  },
+                  {
+                      "name":  "public-run.txt",
+                      "bytes":  667,
+                      "sha256":  "c08bc0674462ac24755a1b1566635f211fad5daed23a064c827536a5c28fc553"
+                  },
+                  {
+                      "name":  "resolved-route-metadata.test.ts",
+                      "bytes":  10988,
+                      "sha256":  "7e44742b7c000f1347a1def9b4bf776f655667fd7c5a3334648ef6ebfeedc3c3"
+                  },
+                  {
+                      "name":  "resolved-route-metadata.ts",
+                      "bytes":  7221,
+                      "sha256":  "ee14541d8cc9ce4dfad7329eed2f2bee09f4d61ec4221f5ab7f53112ee4c0e32"
+                  },
+                  {
+                      "name":  "resource-seal.json",
+                      "bytes":  180,
+                      "sha256":  "812cd09887ee91d4aaf8a2cb06b3931b39754d24144937a7f4f45b6616eade36"
+                  },
+                  {
+                      "name":  "vitest.config.mts",
+                      "bytes":  500,
+                      "sha256":  "7f2ad220b088adec0eaca1e88acac1b72252705176ee86e2909e57160db9da70"
+                  }
+              ]
+}

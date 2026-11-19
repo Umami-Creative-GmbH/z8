@@ -262,7 +262,7 @@ describe("surcharge model save refresh", () => {
 		);
 		await screen.findByText("Weekend");
 		fireEvent.click(
-			screen.getByRole("button", { name: "Edit Surcharge Model" }),
+			screen.getByRole("button", { name: "Edit Surcharge Model: Weekend" }),
 		);
 		fireEvent.change(await screen.findByLabelText("Model Name"), {
 			target: { value: "Accepted weekend" },
@@ -295,7 +295,7 @@ describe("surcharge model save refresh", () => {
 		);
 		await screen.findByText("Weekend");
 		fireEvent.click(
-			screen.getByRole("button", { name: "Edit Surcharge Model" }),
+			screen.getByRole("button", { name: "Edit Surcharge Model: Weekend" }),
 		);
 		fireEvent.change(await screen.findByLabelText("Model Name"), {
 			target: { value: "Accepted weekend" },

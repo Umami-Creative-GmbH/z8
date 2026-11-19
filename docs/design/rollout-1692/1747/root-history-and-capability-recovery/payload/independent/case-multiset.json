@@ -1,0 +1,3200 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "identity": [
+    "file",
+    "fullName",
+    "occurrence"
+  ],
+  "latest": [
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent durable withdrawal removes report and legacy provenance, amounts, counts and controls through both outages, then recovers fresh rows",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent ordinary structured outage retains available row evidence and controls",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent ordinary transport outage retains available row evidence and controls",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent initial refusal stays unknown through outages and fresh empty success alone restores healthy empty counts",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent no-match filter cannot conceal refusal; recovery preserves the selected filter",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held row continuation is retired by history refusal, even after same-scope fresh recovery",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent positive continuation control navigates once while its arrival remains active",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held read cannot restore old rows after pending arrival retirement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held read cannot restore old rows after account arrival retirement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held read cannot restore old rows after organization arrival retirement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held read cannot restore old rows after employee arrival retirement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held read cannot restore old rows after provider arrival retirement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held read cannot restore old rows after Activity arrival retirement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation cannot navigate after pending arrival retirement and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation cannot navigate after account arrival retirement and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation cannot navigate after organization arrival retirement and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation cannot navigate after employee arrival retirement and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation cannot navigate after provider arrival retirement and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation cannot navigate after Activity arrival retirement and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+      "fullName": "independent held continuation refusal details cannot reappear after canonical history withdrawal and fresh recovery",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority-final"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "healthy actual-provider personal history and distinct New receipt creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "healthy actual-provider personal history and distinct New mileage creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "healthy actual-provider personal history and distinct New trip creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "header refresh and local Retry reach the actual failed history owner; transport outage retains authorized rows",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "canonical personal-history refusal withdraws formerly authorized rows",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "initial canonical refusal remains unknown and local Retry restores fresh evidence",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "refusal stays withdrawn through structured and rejected outages until fresh success",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "ordinary structured read failure retains authorized history and Retry",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "fullName": "fresh empty success after refusal replaces withdrawn evidence with a healthy empty history",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "fullName": "retires a held history conversion when displayed session becomes pending",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "fullName": "retires a held retained list conversion when displayed session becomes pending",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "fullName": "does not show a retired conversion refusal in a later displayed account",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "fullName": "does not start a queued continuation after displayed session proof is interrupted",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "fullName": "never reactivates a held continuation after account A returns from account B",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "independent positive control: available conversion link survives a transient failure and Retry recovers",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "independent initial conversion refusal control: Unauthorized",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "independent initial conversion refusal control: Travel expense claim not found",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "independent critical objection: conversion-owner withdrawal remains hidden after a later transient failure without fresh success",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "keeps a withdrawn report hidden through failed retries and restores only a fresh success: Unauthorized",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "keeps a withdrawn report hidden through failed retries and restores only a fresh success: Travel expense claim not found",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "does not restore continuation until a fresh read offers it: Unauthorized",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "does not restore continuation until a fresh read offers it: Travel expense claim not found",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "does not restore a withdrawn report when a cache reset only obtains an outage",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "fullName": "does not revive a withdrawn report or navigate when an earlier conversion completes",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail does not revive earlier evidence after a late claim arrival and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail does not revive earlier evidence after a late organization arrival and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail does not revive earlier evidence after a late employee arrival and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail does not revive earlier evidence after a late account arrival and return",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail does not revive a late read after pending retained-session data and Activity restoration",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail withdraws retained receipts when a refresh is canonically refused",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail keeps a terminal timestamp when only intermediate approval evidence survived",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail shows an intermediate approval alongside the original final decision",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail formats persisted currency amounts for the active locale",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail shows the stored decision timestamp when a legacy claim has no decision log",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail opens an existing claim with unknown legacy dates, original notes, receipts and decision history",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail labels the claim type, status and decisions with catalog keys (#680)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail offers retry after a failed detail load and restores the claim",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "stored travel claim detail keeps loaded detail and its receipts visible when a refresh fails",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) withdraws a converted report link when the conversion owner refuses the read",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) does not start a queued conversion after the claim reader is retired",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) reserves one conversion when two activations arrive before rendering",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) ignores a conversion success after the reader leaves the claim",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) keeps the known converted report link during a transient conversion-read failure",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) continues the owner's draft as a report and opens it",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) explains a refused conversion and changes nothing",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) links a converted draft to its report",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "fullName": "legacy draft continuation (#616) never offers continuation for a submitted claim or someone else's draft",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "control: an authorized read retains original evidence through a transient 503 and recovers",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "restores evidence only after Retry obtains a fresh success following 401 and 503",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "restores evidence only after Retry obtains a fresh success following 403 and 503",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "restores evidence only after Retry obtains a fresh success following 404 and 503",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "keeps withdrawn evidence hidden through rejected reads and failed retries",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "does not restore withdrawn evidence when a cache reset is followed by a failed read",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "control: an initial canonical 404 exposes no original evidence or receipt action",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "fullName": "keeps canonically withdrawn evidence and receipt actions hidden when the next refresh is only a 503",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "fullName": "employee travel claim history shows the stored logical dates independently of the UTC bounds",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "fullName": "employee travel claim history identifies unknown legacy dates instead of deriving a viewer date",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "fullName": "employee travel claim history links each persisted claim to its own detail page",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "fullName": "legacy drafts in the claim history (#616) offers to continue an open draft as a report",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "fullName": "legacy drafts in the claim history (#616) links a continued draft to its report instead",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "creating reports retires a held creation when a retained session becomes pending and returns",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "creating reports recovers locally from a rejected creation without losing the personal history",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "creating reports creates a standalone receipt report and opens its editor",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "creating reports creates a trip report and opens its editor",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "creating reports guides a first-time user with an empty state instead of an empty table",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history lists drafts, decided reports and earlier claims in one list",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history labels an adjustment with a link to the report it corrects",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history shows the settlement balance of approved expenses, including an overpayment",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history shows Reimbursed instead of Approved on a fully reimbursed expense (#751)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history offers to continue a legacy draft as a report",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history deletes a never-submitted draft from its row after confirmation (#684)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "unified history warns that deleting a continued draft deletes the earlier claim too",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "status filters filters by review status with counts",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "status filters filters to expenses awaiting reimbursement (#751)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "status filters explains an empty filter and offers to show everything",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery keeps the selected status filter when Activity refreshes personal history",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery retires held reads on actor A→B→A returns",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery retires held reads on organization A→B→A returns",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery retires held reads on employee A→B→A returns",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery retires held reads on pending A→B→A returns",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery refreshes a completed personal read after an Activity return and retires held creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery retains Retry after a previously empty history fails to refresh",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery preserves loaded rows during a background refresh",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery shows retry guidance on initial failure and recovers without an empty-history message",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "fullName": "travel history recovery keeps loaded rows and shows retry when a background refresh fails",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expenses-heading.test.ts",
+      "fullName": "R165 heading adoption hands only the personal workspace heading to the page",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "fullName": "travel expenses i18n does not leave known travel expense UI copy as raw literals",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "fullName": "travel expenses i18n loads travel expense translations for the route namespace",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "opts only the driving queue into page-owned headings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "adopts presence selection and selected-location headings, preserving deeper exclusions",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the manager Today briefing heading without descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the team absence heading, retaining team ownership and independent descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the team directory heading, preserving independently staged descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the due-for-deletion review without adopting deeper or invalid personnel routes",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the request queue without adopting its independent descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the payslip batch start and detail headings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the sick-leave overview heading, preserving independent personnel routes",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the scheduling page heading, preserving its descendants and settings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the personal requests page heading",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the personal documents heading without officer descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the personnel file directory and sick-leave overview while preserving descendant boundaries",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the employee equipment record heading without adopting its collection",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata retains independent approvals page headings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the deputy history record, preserving other approval headings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only the complete review arrival route",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts the exact vacation route while retaining staged descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts exact report titles and preserves descendant shell headings",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /de/my-requests",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/organization",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/payroll",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/scheduling",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/approvals/inbox",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/compliance",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/works-council",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/team/absences",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/team/driving",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/driving-licence",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/driving-licence/checks/employee-1",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/reports/projects",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/reports/vehicles",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/settings/employees/employee-1",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/settings/locations/location-1",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/equipment",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/equipment/employees/employee-1",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/equipment/assignments/assignment-1",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /de/my-equipment",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata resolves /en/settings/equipment",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata matches route prefixes only at path-segment boundaries",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata normalizes locale and trailing slash segments",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "adopts only the exact payslip batch detail heading",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /de/travel-expenses/4053401F-806E-4839-AE66-96B9FA36C054/",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /travel-expenses/00000000-0000-0000-0000-000000000000",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /travel-expenses/ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/finance",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/reports",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/reports/4053401f-806e-4839-ae66-96b9fa36c054",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054/receipts",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/not-a-claim",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "fullName": "retained legacy claim heading ownership: /en/travel-expenses/4053401f-806e-9839-ae66-96b9fa36c054",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "fullName": "keeps employee approval and finance destinations independent (false)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "fullName": "keeps employee approval and finance destinations independent (true)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "fullName": "keeps manager approval and finance destinations independent (false)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "fullName": "keeps admin approval and finance destinations independent (true)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "fullName": "keeps a task heading while admission loads and when no employee is admitted",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "unified expense history lists new reports and earlier claims together, most recent activity first",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "unified expense history labels an adjustment with the report it corrects and leaves the balance on the original",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "unified expense history shows a converted legacy draft only as the report it was continued as",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "unified expense history keeps balances only for approved expenses",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "unified expense history offers deleting only drafts that were never submitted (#684)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "status filters groups drafts and returned reports as needing the employee's action",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "status filters groups pending reviews, approvals and rejections across both sources",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "status filters counts each filter",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "reimbursement state (#751) marks an approved expense whose balance is fully covered as reimbursed",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "reimbursement state (#751) marks an approved expense that still owes the employee money as awaiting reimbursement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "reimbursement state (#751) does not call an expense with nothing owed or paid reimbursed",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "reimbursement state (#751) gives no reimbursement state to overpaid, unbalanced, adjustment or unapproved expenses",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "reimbursement state (#751) filters and counts the expenses awaiting reimbursement",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "fullName": "reimbursement state (#751) offers the awaiting reimbursement filter right after Approved",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion continues a one-day receipt draft as a standalone receipt with its entered amount, date and notes",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion never picks one day out of a multi-day legacy range for a receipt",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion carries no date from a claim created before logical dates were captured",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion keeps a foreign receipt in its original currency and a zero-decimal currency exactly",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion does not carry an amount the new model would refuse",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion keeps notes too long for a description out of the expense, flagged",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion continues a mileage draft without inventing a distance, route or vehicle from its typed total",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion continues a per diem draft as a trip with its days and destination but no itinerary times",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion uses the employee's zone for a per diem trip without a recorded zone and flags an unknown country",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion matches legacy country text only exactly: codes and English or German names",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "legacyReceiptIdentity uses the recorded content identity without reading the object",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "legacyReceiptIdentity establishes a historical receipt's identity from its stored bytes",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "legacyReceiptIdentity refuses content that is unreadable, differs from what was recorded or is not a receipt type",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "fullName": "planLegacyDraftConversion projects carries the legacy project as the expense's own project, flagged for eligibility",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "unit13"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-history.integration.test.ts",
+      "fullName": "unified expense history and role journeys (#617) presents every report and earlier claim of the employee with statuses, logical dates and balances",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-history.integration.test.ts",
+      "fullName": "unified expense history and role journeys (#617) lets the reviewer of an adjustment open the approved report it corrects, and nobody else",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) gives no finance access without a grant, and everything to owners",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) audits grant changes and lets an unchanged grant naming a departed employee be saved again",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) keeps a report with the Berlin officer after its employee moves to Munich",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) refuses out-of-scope report pages, receipts and settlement panels",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) records reimbursements only in scope, and never for an export-only officer",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) lets a reimburse-only officer not export",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) exports in-scope reports only and shows only the batches the officer may see",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) never puts a report without recorded teams in a team scope, nor its batch",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) shows an all-scope officer every batch",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) ends access immediately when the grant is revoked, and audits the revocation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) offers only the current roster as officers and lists former employees apart (#1438)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) says since when, in the organization's timezone, a former employee left (#1439)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "fullName": "expense officer access (#747) refuses grant management to non-administrators and grants in other organizations' terms",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "fullName": "marking an export batch as reimbursed (#755) reimburses each account of a completed batch once, names the batch and replays a retry",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "fullName": "marking an export batch as reimbursed (#755) counts adjustments against their original report's account, once per account",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "fullName": "marking an export batch as reimbursed (#755) refuses an unfinished batch and accounts that are not in the batch",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "fullName": "marking an export batch as reimbursed (#755) skips and lists the accounts outside the officer's reimbursement scope",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "fullName": "marking an export batch as reimbursed (#755) is only for users who record reimbursements and see the batch",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) lets only expense administrators manage dated versions and keeps their timeline",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) never replaces a version implicitly, and a failed or stale replacement keeps the valid version",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) adopts the verified German default only from the edition it was verified for",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) keeps mileage without effective policy coverage in draft with actionable guidance",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) applies the version effective on each expense date",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) refuses a client-supplied amount instead of storing it",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) freezes the applied version through approval; later policy changes never alter or hold it",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) refuses a submission whose calculated amount changed since the employee reviewed it",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) submits a trip with receipt and mileage expenses and counts both",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "fullName": "mileage with versioned organization allowance policies (#606) never prices one organization's mileage with another organization's policy",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) creates a standalone report without trip dates and resumes saved fields after reload",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) keeps an incomplete draft and rejects malformed values without writing",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) refuses a stale save and returns the newer saved item instead of overwriting it",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) lets exactly one of two concurrent saves of the same version win",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) scopes reads, saves, uploads and previews to the owning employee",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) attaches a validated receipt with its checksum, previews it and survives reload",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) rejects files by their actual bytes and size without staging anything",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) records a failed storage write as durable cleanup work",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) serves a small preview of a receipt photo, and only to who may open the receipt (#690)",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) removes a receipt and deletes its stored object and preview through durable cleanup",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) never attaches to an item outside the report and leaves the object for cleanup",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) records cleanup work for receipts deleted by an owner cascade",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "fullName": "standalone receipt report drafts (#600) never deletes a stored object that a report receipt references",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) creates a trip in the employee's zone and resumes shared details and several items",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) keeps incomplete details, rejects malformed ones and refuses stale saves",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) serializes concurrent edits: one detail save wins and every added item gets its own place",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) removes an item with its receipts, but not on top of a newer edit",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) leaves an upload that finishes after its item was removed to cleanup",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) keeps standalone receipts free of trip details and limited to their one expense",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    },
+    {
+      "file": "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "fullName": "trip report drafts (#601) scopes trip details and items to the owning employee",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "pg6"
+    }
+  ],
+  "finalRuns": [
+    {
+      "id": "priority-final",
+      "result": ".tmp/r165-independent-SAFE/priority-final.json",
+      "total": 20,
+      "passed": 20,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "id": "unit13",
+      "result": ".tmp/r165-independent-SAFE/unit13.json",
+      "total": 183,
+      "passed": 183,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "id": "pg6",
+      "result": ".tmp/r165-independent-SAFE/pg6.json",
+      "total": 50,
+      "passed": 50,
+      "failed": 0,
+      "pending": 0
+    }
+  ],
+  "counts": {
+    "unit": 203,
+    "unitFiles": 14,
+    "pg": 50,
+    "pgFiles": 6,
+    "distinct": 253,
+    "files": 20
+  },
+  "nonadditiveRepeats": [
+    {
+      "run": "priority-attempt1",
+      "notAdditive": true,
+      "identities": [
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent durable withdrawal removes report and legacy provenance, amounts, counts and controls through both outages, then recovers fresh rows",
+          "occurrence": 1,
+          "status": "failed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent ordinary structured outage retains available row evidence and controls",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent ordinary transport outage retains available row evidence and controls",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent initial refusal stays unknown through outages and fresh empty success alone restores healthy empty counts",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent no-match filter cannot conceal refusal; recovery preserves the selected filter",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held row continuation is retired by history refusal, even after same-scope fresh recovery",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent positive continuation control navigates once while its arrival remains active",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after pending arrival retirement",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after account arrival retirement",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after organization arrival retirement",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after employee arrival retirement",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after provider arrival retirement",
+          "occurrence": 1,
+          "status": "pending"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after Activity arrival retirement",
+          "occurrence": 1,
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "run": "priority-attempt2",
+      "notAdditive": true,
+      "identities": [
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent durable withdrawal removes report and legacy provenance, amounts, counts and controls through both outages, then recovers fresh rows",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent ordinary structured outage retains available row evidence and controls",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent ordinary transport outage retains available row evidence and controls",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent initial refusal stays unknown through outages and fresh empty success alone restores healthy empty counts",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent no-match filter cannot conceal refusal; recovery preserves the selected filter",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held row continuation is retired by history refusal, even after same-scope fresh recovery",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent positive continuation control navigates once while its arrival remains active",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after pending arrival retirement",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after account arrival retirement",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after organization arrival retirement",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after employee arrival retirement",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after provider arrival retirement",
+          "occurrence": 1,
+          "status": "passed"
+        },
+        {
+          "file": "src/components/travel-expenses/r165-independent-priority.test.tsx",
+          "fullName": "independent held read cannot restore old rows after Activity arrival retirement",
+          "occurrence": 1,
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "overlapsWithFrozen1748": {
+    "inheritedOnly": true,
+    "notAdded": true,
+    "total": 172,
+    "unit": 159,
+    "pg": 13,
+    "identities": [
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "fullName": "retires a held history conversion when displayed session becomes pending",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "fullName": "retires a held retained list conversion when displayed session becomes pending",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "fullName": "does not show a retired conversion refusal in a later displayed account",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "fullName": "does not start a queued continuation after displayed session proof is interrupted",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "fullName": "never reactivates a held continuation after account A returns from account B",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "independent positive control: available conversion link survives a transient failure and Retry recovers",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "independent initial conversion refusal control: Unauthorized",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "independent initial conversion refusal control: Travel expense claim not found",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "independent critical objection: conversion-owner withdrawal remains hidden after a later transient failure without fresh success",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "keeps a withdrawn report hidden through failed retries and restores only a fresh success: Unauthorized",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "keeps a withdrawn report hidden through failed retries and restores only a fresh success: Travel expense claim not found",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "does not restore continuation until a fresh read offers it: Unauthorized",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "does not restore continuation until a fresh read offers it: Travel expense claim not found",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "does not restore a withdrawn report when a cache reset only obtains an outage",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "fullName": "does not revive a withdrawn report or navigate when an earlier conversion completes",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail does not revive earlier evidence after a late claim arrival and return",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail does not revive earlier evidence after a late organization arrival and return",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail does not revive earlier evidence after a late employee arrival and return",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail does not revive earlier evidence after a late account arrival and return",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail does not revive a late read after pending retained-session data and Activity restoration",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail withdraws retained receipts when a refresh is canonically refused",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail keeps a terminal timestamp when only intermediate approval evidence survived",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail shows an intermediate approval alongside the original final decision",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail formats persisted currency amounts for the active locale",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail shows the stored decision timestamp when a legacy claim has no decision log",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail opens an existing claim with unknown legacy dates, original notes, receipts and decision history",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail labels the claim type, status and decisions with catalog keys (#680)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail offers retry after a failed detail load and restores the claim",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "stored travel claim detail keeps loaded detail and its receipts visible when a refresh fails",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) withdraws a converted report link when the conversion owner refuses the read",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) does not start a queued conversion after the claim reader is retired",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) reserves one conversion when two activations arrive before rendering",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) ignores a conversion success after the reader leaves the claim",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) keeps the known converted report link during a transient conversion-read failure",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) continues the owner's draft as a report and opens it",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) explains a refused conversion and changes nothing",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) links a converted draft to its report",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "fullName": "legacy draft continuation (#616) never offers continuation for a submitted claim or someone else's draft",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "control: an authorized read retains original evidence through a transient 503 and recovers",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "restores evidence only after Retry obtains a fresh success following 401 and 503",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "restores evidence only after Retry obtains a fresh success following 403 and 503",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "restores evidence only after Retry obtains a fresh success following 404 and 503",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "keeps withdrawn evidence hidden through rejected reads and failed retries",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "does not restore withdrawn evidence when a cache reset is followed by a failed read",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "control: an initial canonical 404 exposes no original evidence or receipt action",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "fullName": "keeps canonically withdrawn evidence and receipt actions hidden when the next refresh is only a 503",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+        "fullName": "employee travel claim history shows the stored logical dates independently of the UTC bounds",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+        "fullName": "employee travel claim history identifies unknown legacy dates instead of deriving a viewer date",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+        "fullName": "employee travel claim history links each persisted claim to its own detail page",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+        "fullName": "legacy drafts in the claim history (#616) offers to continue an open draft as a report",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-list.test.tsx",
+        "fullName": "legacy drafts in the claim history (#616) links a continued draft to its report instead",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "creating reports creates a standalone receipt report and opens its editor",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "creating reports creates a trip report and opens its editor",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "creating reports guides a first-time user with an empty state instead of an empty table",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history lists drafts, decided reports and earlier claims in one list",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history labels an adjustment with a link to the report it corrects",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history shows the settlement balance of approved expenses, including an overpayment",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history shows Reimbursed instead of Approved on a fully reimbursed expense (#751)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history offers to continue a legacy draft as a report",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history deletes a never-submitted draft from its row after confirmation (#684)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "unified history warns that deleting a continued draft deletes the earlier claim too",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "status filters filters by review status with counts",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "status filters filters to expenses awaiting reimbursement (#751)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "status filters explains an empty filter and offers to show everything",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "travel history recovery preserves loaded rows during a background refresh",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "travel history recovery shows retry guidance on initial failure and recovers without an empty-history message",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "fullName": "travel history recovery keeps loaded rows and shows retry when a background refresh fails",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+        "fullName": "travel expenses i18n does not leave known travel expense UI copy as raw literals",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+        "fullName": "travel expenses i18n loads travel expense translations for the route namespace",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "opts only the driving queue into page-owned headings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "adopts presence selection and selected-location headings, preserving deeper exclusions",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the manager Today briefing heading without descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the team absence heading, retaining team ownership and independent descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the team directory heading, preserving independently staged descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the due-for-deletion review without adopting deeper or invalid personnel routes",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the request queue without adopting its independent descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the payslip batch start and detail headings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the sick-leave overview heading, preserving independent personnel routes",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the scheduling page heading, preserving its descendants and settings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the personal requests page heading",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the personal documents heading without officer descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the personnel file directory and sick-leave overview while preserving descendant boundaries",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the employee equipment record heading without adopting its collection",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata retains independent approvals page headings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the deputy history record, preserving other approval headings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only the complete review arrival route",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts the exact vacation route while retaining staged descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts exact report titles and preserves descendant shell headings",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /de/my-requests",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/organization",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/payroll",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/scheduling",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/approvals/inbox",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/compliance",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/works-council",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/team/absences",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/team/driving",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/driving-licence",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/driving-licence/checks/employee-1",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/reports/projects",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/reports/vehicles",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/settings/employees/employee-1",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/settings/locations/location-1",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/equipment",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/equipment/employees/employee-1",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/equipment/assignments/assignment-1",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /de/my-equipment",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata resolves /en/settings/equipment",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata matches route prefixes only at path-segment boundaries",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata normalizes locale and trailing slash segments",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "adopts only the exact payslip batch detail heading",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /de/travel-expenses/4053401F-806E-4839-AE66-96B9FA36C054/",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /travel-expenses/00000000-0000-0000-0000-000000000000",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /travel-expenses/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/finance",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/reports",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/reports/4053401f-806e-4839-ae66-96b9fa36c054",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054/receipts",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/not-a-claim",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "fullName": "retained legacy claim heading ownership: /en/travel-expenses/4053401f-806e-9839-ae66-96b9fa36c054",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "unified expense history lists new reports and earlier claims together, most recent activity first",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "unified expense history labels an adjustment with the report it corrects and leaves the balance on the original",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "unified expense history shows a converted legacy draft only as the report it was continued as",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "unified expense history keeps balances only for approved expenses",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "unified expense history offers deleting only drafts that were never submitted (#684)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "status filters groups drafts and returned reports as needing the employee's action",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "status filters groups pending reviews, approvals and rejections across both sources",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "status filters counts each filter",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "reimbursement state (#751) marks an approved expense whose balance is fully covered as reimbursed",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "reimbursement state (#751) marks an approved expense that still owes the employee money as awaiting reimbursement",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "reimbursement state (#751) does not call an expense with nothing owed or paid reimbursed",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "reimbursement state (#751) gives no reimbursement state to overpaid, unbalanced, adjustment or unapproved expenses",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "reimbursement state (#751) filters and counts the expenses awaiting reimbursement",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "fullName": "reimbursement state (#751) offers the awaiting reimbursement filter right after Approved",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion continues a one-day receipt draft as a standalone receipt with its entered amount, date and notes",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion never picks one day out of a multi-day legacy range for a receipt",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion carries no date from a claim created before logical dates were captured",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion keeps a foreign receipt in its original currency and a zero-decimal currency exactly",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion does not carry an amount the new model would refuse",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion keeps notes too long for a description out of the expense, flagged",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion continues a mileage draft without inventing a distance, route or vehicle from its typed total",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion continues a per diem draft as a trip with its days and destination but no itinerary times",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion uses the employee's zone for a per diem trip without a recorded zone and flags an unknown country",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion matches legacy country text only exactly: codes and English or German names",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "legacyReceiptIdentity uses the recorded content identity without reading the object",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "legacyReceiptIdentity establishes a historical receipt's identity from its stored bytes",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "legacyReceiptIdentity refuses content that is unreadable, differs from what was recorded or is not a receipt type",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "fullName": "planLegacyDraftConversion projects carries the legacy project as the expense's own project, flagged for eligibility",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "unit13"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) gives no finance access without a grant, and everything to owners",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) audits grant changes and lets an unchanged grant naming a departed employee be saved again",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) keeps a report with the Berlin officer after its employee moves to Munich",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) refuses out-of-scope report pages, receipts and settlement panels",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) records reimbursements only in scope, and never for an export-only officer",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) lets a reimburse-only officer not export",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) exports in-scope reports only and shows only the batches the officer may see",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) never puts a report without recorded teams in a team scope, nor its batch",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) shows an all-scope officer every batch",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) ends access immediately when the grant is revoked, and audits the revocation",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) offers only the current roster as officers and lists former employees apart (#1438)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) says since when, in the organization's timezone, a former employee left (#1439)",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      },
+      {
+        "file": "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "fullName": "expense officer access (#747) refuses grant management to non-administrators and grants in other organizations' terms",
+        "occurrence": 1,
+        "status": "passed",
+        "run": "pg6"
+      }
+    ]
+  },
+  "historicalQualification": "Root 183, standalone 9, reconciled 30, historical exact 7/current and failed premerge control, former worker 87/50, and #1748 545/51 are not added to the 253 current distinct identities."
+}

@@ -1,0 +1,16 @@
+{
+  "base": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+  "comparison": "Exact eight consumer/hook sources; current shared app infrastructure. Same synthetic small-admin, current-month generated report, no dataset mutations.",
+  "attempts": [
+    {
+      "phase": "before",
+      "status": "failed",
+      "message": "spawnSync cmd.exe ETIMEDOUT"
+    },
+    {
+      "phase": "after",
+      "status": "failed",
+      "message": "Command failed: cmd.exe /d /s /c C:/Users/KaiHentschel/AppData/Local/pnpm/bin/agent-browser.cmd --session r1735-261115-unique wait --text \"Generate Report\"\n✗ Failed to read: Eine vorhandene Verbindung wurde vom Remotehost geschlossen. (os error 10054) (the command reached the daemon but no response came back; it may or may not have run, so it was not retried)\n"
+    }
+  ]
+}

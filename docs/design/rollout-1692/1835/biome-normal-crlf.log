@@ -1,0 +1,507 @@
+src\app\[locale]\onboarding\work-templates\actions.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      3   3 │   import { integrationAdminPool } from "@/test/integration-database";␍
+      4   4 │   ␍
+      5     │ - const·actor·=·vi.hoisted(()·=>·({·id:·"r040-1835-admin",·organizationId:·"r040-1835-a"·}));␍
+      6     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+          5 │ + const·actor·=·vi.hoisted(()·=>·({␍
+          6 │ + → id:·"r040-1835-admin",␍
+          7 │ + → organizationId:·"r040-1835-a",␍
+          8 │ + }));␍
+          9 │ + vi.mock("next/headers",·async·()·=>␍
+         10 │ + → (await·import("@/test/integration-harness")).nextHeaders(),␍
+         11 │ + );␍
+      7  12 │   vi.mock("@/lib/auth/request-session", () => ({␍
+      8  13 │     getRequestSession: async () => ({␍
+    ······· │ 
+     16  21 │   }));␍
+     17  22 │   vi.mock("@/lib/effect/runtime", async () => {␍
+     18     │ - → const·{·OnboardingServiceLive·}·=·await·import("@/lib/effect/services/onboarding.service");␍
+     19     │ - → const·{·AuthServiceLive·}·=·await·import("@/lib/effect/services/auth.service");␍
+     20     │ - → const·{·DatabaseServiceLive·}·=·await·import("@/lib/effect/services/database.service");␍
+         23 │ + → const·{·OnboardingServiceLive·}·=·await·import(␍
+         24 │ + → → "@/lib/effect/services/onboarding.service"␍
+         25 │ + → );␍
+         26 │ + → const·{·AuthServiceLive·}·=·await·import(␍
+         27 │ + → → "@/lib/effect/services/auth.service"␍
+         28 │ + → );␍
+         29 │ + → const·{·DatabaseServiceLive·}·=·await·import(␍
+         30 │ + → → "@/lib/effect/services/database.service"␍
+         31 │ + → );␍
+     21  32 │     return (await import("@/test/effect-runtime")).runtimeModuleOver(␍
+     22     │ - → → OnboardingServiceLive.pipe(Layer.provide(Layer.mergeAll(AuthServiceLive,·DatabaseServiceLive))),␍
+         33 │ + → → OnboardingServiceLive.pipe(␍
+         34 │ + → → → Layer.provide(Layer.mergeAll(AuthServiceLive,·DatabaseServiceLive)),␍
+         35 │ + → → ),␍
+     23  36 │     );␍
+     24  37 │   });␍
+     25  38 │   ␍
+     26     │ - import·{·checkIsAdmin,·createWorkTemplateOnboarding,·skipWorkTemplateSetup·}·from·"./actions";␍
+         39 │ + import·{␍
+         40 │ + → checkIsAdmin,␍
+         41 │ + → createWorkTemplateOnboarding,␍
+         42 │ + → skipWorkTemplateSetup,␍
+         43 │ + }·from·"./actions";␍
+     27  44 │   ␍
+     28  45 │   describe("organization work-template production action and scoped PostgreSQL records", () => {␍
+    ······· │ 
+     48  65 │       await pool.query(␍
+     49  66 │         'INSERT INTO "user" (id,name,email,email_verified,created_at,updated_at) VALUES ($1,$1,$2,true,now(),now()),($3,$3,$4,true,now(),now())',␍
+     50     │ - → → → [actor.id,·"r040-admin@example.test",·"r040-1835-member",·"r040-member@example.test"],␍
+         67 │ + → → → [␍
+         68 │ + → → → → actor.id,␍
+         69 │ + → → → → "r040-admin@example.test",␍
+         70 │ + → → → → "r040-1835-member",␍
+         71 │ + → → → → "r040-member@example.test",␍
+         72 │ + → → → ],␍
+     51  73 │       );␍
+     52  74 │       await pool.query(␍
+    ······· │ 
+     66  88 │       );␍
+     67  89 │       const timeBefore = (␍
+     68     │ - → → → await·pool.query("SELECT·count(*)::int·n·FROM·time_entry·WHERE·organization_id=$1",·[␍
+     69     │ - → → → → actor.organizationId,␍
+     70     │ - → → → ])␍
+         90 │ + → → → await·pool.query(␍
+         91 │ + → → → → "SELECT·count(*)::int·n·FROM·time_entry·WHERE·organization_id=$1",␍
+         92 │ + → → → → [actor.organizationId],␍
+         93 │ + → → → )␍
+     71  94 │       ).rows[0].n;␍
+     72  95 │       expect(await checkIsAdmin()).toMatchObject({ success: true, data: true });␍
+     73     │ - → → expect(await·createWorkTemplateOnboarding(input)).toEqual({·success:·true,·data:·undefined·});␍
+         96 │ + → → expect(await·createWorkTemplateOnboarding(input)).toEqual({␍
+         97 │ + → → → success:·true,␍
+         98 │ + → → → data:·undefined,␍
+         99 │ + → → });␍
+     74 100 │       const policies = (␍
+     75     │ - → → → await·pool.query("SELECT·id,name,is_default·FROM·work_policy·WHERE·organization_id=$1",·[␍
+     76     │ - → → → → actor.organizationId,␍
+     77     │ - → → → ])␍
+        101 │ + → → → await·pool.query(␍
+        102 │ + → → → → "SELECT·id,name,is_default·FROM·work_policy·WHERE·organization_id=$1",␍
+        103 │ + → → → → [actor.organizationId],␍
+        104 │ + → → → )␍
+     78 105 │       ).rows;␍
+     79 106 │       expect(policies).toEqual([␍
+    ······· │ 
+    116 143 │           )␍
+    117 144 │         ).rows,␍
+    118     │ - → → ).toEqual([{·organization_id:·actor.organizationId,·assignment_type:·"organization"·}]);␍
+        145 │ + → → ).toEqual([␍
+        146 │ + → → → {␍
+        147 │ + → → → → organization_id:·actor.organizationId,␍
+        148 │ + → → → → assignment_type:·"organization",␍
+        149 │ + → → → },␍
+        150 │ + → → ]);␍
+    119 151 │       expect(␍
+    120     │ - → → → (await·pool.query("SELECT·onboarding_step·FROM·user_settings·WHERE·user_id=$1",·[actor.id]))␍
+    121     │ - → → → → .rows[0],␍
+        152 │ + → → → (␍
+        153 │ + → → → → await·pool.query(␍
+        154 │ + → → → → → "SELECT·onboarding_step·FROM·user_settings·WHERE·user_id=$1",␍
+        155 │ + → → → → → [actor.id],␍
+        156 │ + → → → → )␍
+        157 │ + → → → ).rows[0],␍
+    122 158 │       ).toEqual({ onboarding_step: "wellness" });␍
+    123 159 │       expect(␍
+    124     │ - → → → (await·pool.query("SELECT·week_start_day·FROM·user_settings·WHERE·user_id=$1",·[actor.id]))␍
+    125     │ - → → → → .rows[0].week_start_day,␍
+        160 │ + → → → (␍
+        161 │ + → → → → await·pool.query(␍
+        162 │ + → → → → → "SELECT·week_start_day·FROM·user_settings·WHERE·user_id=$1",␍
+        163 │ + → → → → → [actor.id],␍
+        164 │ + → → → → )␍
+        165 │ + → → → ).rows[0].week_start_day,␍
+    126 166 │       ).toBe("monday");␍
+    127 167 │       expect(␍
+    128 168 │         (␍
+    129     │ - → → → → await·pool.query("SELECT·count(*)::int·n·FROM·time_entry·WHERE·organization_id=$1",·[␍
+    130     │ - → → → → → actor.organizationId,␍
+    131     │ - → → → → ])␍
+        169 │ + → → → → await·pool.query(␍
+        170 │ + → → → → → "SELECT·count(*)::int·n·FROM·time_entry·WHERE·organization_id=$1",␍
+        171 │ + → → → → → [actor.organizationId],␍
+        172 │ + → → → → )␍
+    132 173 │         ).rows[0].n,␍
+    133 174 │       ).toBe(timeBefore);␍
+    ······· │ 
+    141 182 │     });␍
+    142 183 │     it("keeps a non-default template unassigned", async () => {␍
+    143     │ - → → expect((await·createWorkTemplateOnboarding({·...input,·setAsDefault:·false·})).success).toBe(␍
+    144     │ - → → → true,␍
+    145     │ - → → );␍
+        184 │ + → → expect(␍
+        185 │ + → → → (await·createWorkTemplateOnboarding({·...input,·setAsDefault:·false·}))␍
+        186 │ + → → → → .success,␍
+        187 │ + → → ).toBe(true);␍
+    146 188 │       expect(␍
+    147 189 │         (␍
+    148     │ - → → → → await·pool.query("SELECT·is_default·FROM·work_policy·WHERE·organization_id=$1",·[␍
+    149     │ - → → → → → actor.organizationId,␍
+    150     │ - → → → → ])␍
+        190 │ + → → → → await·pool.query(␍
+        191 │ + → → → → → "SELECT·is_default·FROM·work_policy·WHERE·organization_id=$1",␍
+        192 │ + → → → → → [actor.organizationId],␍
+        193 │ + → → → → )␍
+    151 194 │         ).rows,␍
+    152 195 │       ).toEqual([{ is_default: false }]);␍
+    ······· │ 
+    164 207 │       expect(␍
+    165 208 │         (␍
+    166     │ - → → → → await·pool.query("SELECT·count(*)::int·n·FROM·work_policy·WHERE·organization_id=$1",·[␍
+    167     │ - → → → → → actor.organizationId,␍
+    168     │ - → → → → ])␍
+        209 │ + → → → → await·pool.query(␍
+        210 │ + → → → → → "SELECT·count(*)::int·n·FROM·work_policy·WHERE·organization_id=$1",␍
+        211 │ + → → → → → [actor.organizationId],␍
+        212 │ + → → → → )␍
+    169 213 │         ).rows[0].n,␍
+  23 more lines truncated
+  
+
+src\app\[locale]\onboarding\work-templates\page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     11  11 │   import { ProgressIndicator } from "@/components/onboarding/progress-indicator";␍
+     12  12 │   import { Button } from "@/components/ui/button";␍
+     13     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+         13 │ + import·{␍
+         14 │ + → Card,␍
+         15 │ + → CardContent,␍
+         16 │ + → CardDescription,␍
+         17 │ + → CardHeader,␍
+         18 │ + → CardTitle,␍
+         19 │ + }·from·"@/components/ui/card";␍
+     14  20 │   import { Checkbox } from "@/components/ui/checkbox";␍
+     15  21 │   import { Input } from "@/components/ui/input";␍
+    ······· │ 
+     29  35 │   import { useRouter } from "@/navigation";␍
+     30  36 │   import { runOnboardingAction } from "../run-onboarding-action";␍
+     31     │ - import·{·checkIsAdmin,·createWorkTemplateOnboarding,·skipWorkTemplateSetup·}·from·"./actions";␍
+         37 │ + import·{␍
+         38 │ + → checkIsAdmin,␍
+         39 │ + → createWorkTemplateOnboarding,␍
+         40 │ + → skipWorkTemplateSetup,␍
+         41 │ + }·from·"./actions";␍
+     32  42 │   ␍
+     33  43 │   const DAYS_OF_WEEK = [␍
+    ······· │ 
+     43  53 │   // 2024-01-01 is a Monday, so index i in DAYS_OF_WEEK falls on January 1 + i.␍
+     44  54 │   function getShortWeekdayLabel(locale: string, dayIndex: number) {␍
+     45     │ - → return·new·Intl.DateTimeFormat(locale,·{·weekday:·"short",·timeZone:·"UTC"·}).format(␍
+     46     │ - → → Date.UTC(2024,·0,·1·+·dayIndex),␍
+     47     │ - → );␍
+         55 │ + → return·new·Intl.DateTimeFormat(locale,·{␍
+         56 │ + → → weekday:·"short",␍
+         57 │ + → → timeZone:·"UTC",␍
+         58 │ + → }).format(Date.UTC(2024,·0,·1·+·dayIndex));␍
+     48  59 │   }␍
+     49  60 │   ␍
+     50     │ - type·DayOfWeek·=·"monday"·|·"tuesday"·|·"wednesday"·|·"thursday"·|·"friday"·|·"saturday"·|·"sunday";␍
+         61 │ + type·DayOfWeek·=␍
+         62 │ + → |·"monday"␍
+         63 │ + → |·"tuesday"␍
+         64 │ + → |·"wednesday"␍
+         65 │ + → |·"thursday"␍
+         66 │ + → |·"friday"␍
+         67 │ + → |·"saturday"␍
+         68 │ + → |·"sunday";␍
+     51  69 │   ␍
+     52  70 │   type Translate = ReturnType<typeof useTranslate>["t"];␍
+    ······· │ 
+     91 109 │             onChange={(event) => onChange(event.target.value)}␍
+     92 110 │             onBlur={onBlur}␍
+     93     │ - → → → → → placeholder={t("onboarding.workTemplates.namePlaceholder",·"e.g.,·Full-Time,·Part-Time")}␍
+        111 │ + → → → → → placeholder={t(␍
+        112 │ + → → → → → → "onboarding.workTemplates.namePlaceholder",␍
+        113 │ + → → → → → → "e.g.,·Full-Time,·Part-Time",␍
+        114 │ + → → → → → )}␍
+     94 115 │             disabled={disabled}␍
+     95 116 │           />␍
+     96 117 │         </TFormControl>␍
+     97 118 │         <TFormDescription>␍
+     98     │ - → → → → {t("onboarding.workTemplates.nameDesc",·"A·name·to·identify·this·work·schedule.")}␍
+        119 │ + → → → → {t(␍
+        120 │ + → → → → → "onboarding.workTemplates.nameDesc",␍
+        121 │ + → → → → → "A·name·to·identify·this·work·schedule.",␍
+        122 │ + → → → → )}␍
+     99 123 │         </TFormDescription>␍
+    100 124 │         <TFormMessage>{error}</TFormMessage>␍
+    ······· │ 
+    132 156 │             min={0}␍
+    133 157 │             max={168}␍
+    134     │ - → → → → → placeholder={t("onboarding.workTemplates.hoursPerWeekPlaceholder",·"40")}␍
+        158 │ + → → → → → placeholder={t(␍
+        159 │ + → → → → → → "onboarding.workTemplates.hoursPerWeekPlaceholder",␍
+        160 │ + → → → → → → "40",␍
+        161 │ + → → → → → )}␍
+    135 162 │             disabled={disabled}␍
+    136 163 │             value={value}␍
+    ······· │ 
+    163 190 │     const locale = useLocale();␍
+    164 191 │     return (␍
+    165     │ - → → <fieldset·className="grid·gap-2"·aria-describedby="work-template-working-days-description">␍
+        192 │ + → → <fieldset␍
+        193 │ + → → → className="grid·gap-2"␍
+        194 │ + → → → aria-describedby="work-template-working-days-description"␍
+        195 │ + → → >␍
+    166 196 │         <legend className="mb-3 font-medium text-sm leading-none">␍
+    167 197 │           {t("onboarding.workTemplates.workingDays", "Working Days")}␍
+    ······· │ 
+    182 212 │                   onCheckedChange={(checked) => {␍
+    183 213 │                     onChange(␍
+    184     │ - → → → → → → → → → → checked·?·[...value,·day]·:·value.filter((currentDay)·=>·currentDay·!==·day),␍
+        214 │ + → → → → → → → → → → checked␍
+        215 │ + → → → → → → → → → → → ?·[...value,·day]␍
+        216 │ + → → → → → → → → → → → :·value.filter((currentDay)·=>·currentDay·!==·day),␍
+    185 217 │                     );␍
+    186 218 │                   }}␍
+    ······· │ 
+    199 231 │           })}␍
+    200 232 │         </div>␍
+    201     │ - → → → <p·id="work-template-working-days-description"·className="text-sm·text-muted-foreground">␍
+        233 │ + → → → <p␍
+        234 │ + → → → → id="work-template-working-days-description"␍
+        235 │ + → → → → className="text-sm·text-muted-foreground"␍
+        236 │ + → → → >␍
+    202 237 │           {t(␍
+    203 238 │             "onboarding.workTemplates.workingDaysDesc",␍
+    ······· │ 
+    229 264 │         aria-atomic="true"␍
+    230 265 │       >␍
+    231     │ - → → → <h2·id="schedule-preview-heading"·className="flex·items-center·gap-2·text-base·font-semibold">␍
+        266 │ + → → → <h2␍
+        267 │ + → → → → id="schedule-preview-heading"␍
+        268 │ + → → → → className="flex·items-center·gap-2·text-base·font-semibold"␍
+        269 │ + → → → >␍
+    232 270 │           <IconClock aria-hidden="true" className="size-5 text-primary" />␍
+    233 271 │           {t("onboarding.workTemplates.preview", "Schedule Preview")}␍
+    ······· │ 
+    265 303 │         <div className="min-w-0 space-y-0.5">␍
+    266 304 │           <Label htmlFor="work-template-default" className="text-base">␍
+    267     │ - → → → → → {t("onboarding.workTemplates.setAsDefault",·"Set·as·organization·default")}␍
+        305 │ + → → → → → {t(␍
+        306 │ + → → → → → → "onboarding.workTemplates.setAsDefault",␍
+        307 │ + → → → → → → "Set·as·organization·default",␍
+        308 │ + → → → → → )}␍
+    268 309 │           </Label>␍
+    269     │ - → → → → <p·id="work-template-default-description"·className="text-sm·text-muted-foreground">␍
+    270     │ - → → → → → {t("onboarding.workTemplates.setAsDefaultDesc",·"Apply·this·schedule·to·all·employees.")}␍
+        310 │ + → → → → <p␍
+        311 │ + → → → → → id="work-template-default-description"␍
+        312 │ + → → → → → className="text-sm·text-muted-foreground"␍
+        313 │ + → → → → >␍
+        314 │ + → → → → → {t(␍
+        315 │ + → → → → → → "onboarding.workTemplates.setAsDefaultDesc",␍
+        316 │ + → → → → → → "Apply·this·schedule·to·all·employees.",␍
+        317 │ + → → → → → )}␍
+    271 318 │           </p>␍
+    272 319 │         </div>␍
+    ······· │ 
+    282 329 │   }␍
+    283 330 │   ␍
+    284     │ - function·WorkTemplateHeader({·t·}:·{·t:·(key:·string,·defaultValue:·string)·=>·string·})·{␍
+        331 │ + function·WorkTemplateHeader({␍
+        332 │ + → t,␍
+        333 │ + }:·{␍
+        334 │ + → t:·(key:·string,·defaultValue:·string)·=>·string;␍
+        335 │ + })·{␍
+    285 336 │     return (␍
+    286 337 │       <PageHeader␍
+    287 338 │         className="onboarding-heading-panel mb-6 rounded-xl border bg-card p-6 sm:p-8"␍
+    288     │ - → → → title={t("onboarding.workTemplates.title",·"Create·work·schedule·template")}␍
+        339 │ + → → → title={t(␍
+        340 │ + → → → → "onboarding.workTemplates.title",␍
+        341 │ + → → → → "Create·work·schedule·template",␍
+        342 │ + → → → )}␍
+    289 343 │         description={t(␍
+    290 344 │           "onboarding.workTemplates.subtitle",␍
+    ······· │ 
+    321 375 │           disabled={loading || workingDays.length === 0}␍
+    322 376 │           className="sm:min-w-48"␍
+    323     │ - → → → → aria-label={t("onboarding.workTemplates.saveContinue",·"Save·and·continue")}␍
+        377 │ + → → → → aria-label={t(␍
+        378 │ + → → → → → "onboarding.workTemplates.saveContinue",␍
+        379 │ + → → → → → "Save·and·continue",␍
+  99 more lines truncated
+  
+
+src\app\[locale]\onboarding\work-templates\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */␍
+      2   2 │   ␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → fireEvent,␍
+          6 │ + → render,␍
+          7 │ + → screen,␍
+          8 │ + → waitFor,␍
+          9 │ + }·from·"@testing-library/react";␍
+      4  10 │   import userEvent from "@testing-library/user-event";␍
+      5  11 │   import { Activity, StrictMode } from "react";␍
+    ······· │ 
+     14  20 │     toastSuccess: vi.fn(),␍
+     15  21 │     session: {␍
+     16     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+         22 │ + → → data:·{␍
+         23 │ + → → → user:·{·id:·"actor-a"·},␍
+         24 │ + → → → session:·{·activeOrganizationId:·"org-a"·},␍
+         25 │ + → → },␍
+     17  26 │       isPending: false,␍
+     18  27 │     },␍
+    ······· │ 
+     70  79 │     beforeEach(() => {␍
+     71  80 │       mocks.session = {␍
+     72     │ - → → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+         81 │ + → → → data:·{␍
+         82 │ + → → → → user:·{·id:·"actor-a"·},␍
+         83 │ + → → → → session:·{·activeOrganizationId:·"org-a"·},␍
+         84 │ + → → → },␍
+     73  85 │         isPending: false,␍
+     74  86 │       };␍
+    ······· │ 
+     90 102 │         check.resolve({ success: true, data: false });␍
+     91 103 │       });␍
+     92     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));␍
+        104 │ + → → await·waitFor(()·=>␍
+        105 │ + → → → expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),␍
+        106 │ + → → );␍
+     93 107 │       expect(screen.queryByLabelText("Template Name")).toBeNull();␍
+     94 108 │     });␍
+    ······· │ 
+     97 111 │       mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });␍
+     98 112 │       mocks.createWorkTemplateOnboarding␍
+     99     │ - → → → .mockResolvedValueOnce({·success:·false,·error:·"Template·could·not·be·saved"·})␍
+        113 │ + → → → .mockResolvedValueOnce({␍
+        114 │ + → → → → success:·false,␍
+        115 │ + → → → → error:·"Template·could·not·be·saved",␍
+        116 │ + → → → })␍
+    100 117 │         .mockResolvedValueOnce({ success: true });␍
+    101 118 │       render(<WorkTemplatesPage />);␍
+    102 119 │       const name = await screen.findByLabelText("Template Name");␍
+    103 120 │       fireEvent.change(name, { target: { value: "Four day" } });␍
+    104     │ - → → fireEvent.change(screen.getByLabelText("Hours·per·Week"),·{·target:·{·value:·"32.5"·}·});␍
+        121 │ + → → fireEvent.change(screen.getByLabelText("Hours·per·Week"),·{␍
+        122 │ + → → → target:·{·value:·"32.5"·},␍
+        123 │ + → → });␍
+    105 124 │       fireEvent.click(screen.getByRole("checkbox", { name: "Fri" }));␍
+    106 125 │       fireEvent.click(screen.getByRole("switch"));␍
+    107 126 │       fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));␍
+    108     │ - → → expect((await·screen.findByRole("alert")).textContent).toBe("Template·could·not·be·saved");␍
+        127 │ + → → expect((await·screen.findByRole("alert")).textContent).toBe(␍
+        128 │ + → → → "Template·could·not·be·saved",␍
+        129 │ + → → );␍
+    109 130 │       expect(name).toHaveProperty("value", "Four day");␍
+    110 131 │       expect(screen.getByText("4 working days, 8.1 hours per day")).toBeTruthy();␍
+    ······· │ 
+    124 145 │       mocks.createWorkTemplateOnboarding.mockReturnValue(request.promise);␍
+    125 146 │       const view = render(<WorkTemplatesPage />);␍
+    126     │ - → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Save·and·continue"·}));␍
+    127     │ - → → await·waitFor(()·=>·expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledOnce());␍
+        147 │ + → → fireEvent.click(␍
+        148 │ + → → → await·screen.findByRole("button",·{·name:·"Save·and·continue"·}),␍
+        149 │ + → → );␍
+        150 │ + → → await·waitFor(()·=>␍
+        151 │ + → → → expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledOnce(),␍
+        152 │ + → → );␍
+    128 153 │       mocks.session.data.session.activeOrganizationId = "org-b";␍
+    129 154 │       view.rerender(<WorkTemplatesPage />);␍
+    ······· │ 
+    149 174 │       fireEvent.click(continueButton);␍
+    150 175 │   ␍
+    151     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));␍
+        176 │ + → → await·waitFor(()·=>␍
+        177 │ + → → → expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),␍
+        178 │ + → → );␍
+    152 179 │       expect(mocks.push).toHaveBeenCalledOnce();␍
+    153 180 │       expect(continueButton).toHaveProperty("disabled", true);␍
+    ······· │ 
+    160 187 │       render(<WorkTemplatesPage />);␍
+    161 188 │   ␍
+    162     │ - → → expect(await·screen.findByText("5·working·days,·8.0·hours·per·day")).toBeTruthy();␍
+        189 │ + → → expect(␍
+        190 │ + → → → await·screen.findByText("5·working·days,·8.0·hours·per·day"),␍
+        191 │ + → → ).toBeTruthy();␍
+    163 192 │       const weekdayCheckboxes = screen.getAllByRole("checkbox");␍
+    164 193 │       fireEvent.change(screen.getByLabelText("Template Name"), {␍
+    ······· │ 
+    172 201 │       expect(screen.getByText("5 working days, 10.0 hours per day")).toBeTruthy();␍
+    173 202 │   ␍
+    174     │ - → → const·continueButton·=·screen.getByRole("button",·{·name:·"Save·and·continue"·});␍
+        203 │ + → → const·continueButton·=·screen.getByRole("button",·{␍
+        204 │ + → → → name:·"Save·and·continue",␍
+        205 │ + → → });␍
+    175 206 │       fireEvent.click(continueButton);␍
+    176 207 │   ␍
+    ······· │ 
+    183 214 │         });␍
+    184 215 │         expect(continueButton).toHaveProperty("disabled", true);␍
+    185     │ - → → → expect(screen.getByLabelText("Hours·per·Week")).toHaveProperty("disabled",·true);␍
+        216 │ + → → → expect(screen.getByLabelText("Hours·per·Week")).toHaveProperty(␍
+        217 │ + → → → → "disabled",␍
+        218 │ + → → → → true,␍
+        219 │ + → → → );␍
+    186 220 │       });␍
+    187 221 │   ␍
+    188 222 │       request.resolve({ success: true });␍
+    189     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));␍
+        223 │ + → → await·waitFor(()·=>␍
+        224 │ + → → → expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),␍
+        225 │ + → → );␍
+    190 226 │     });␍
+    191 227 │   ␍
+    ······· │ 
+    216 252 │       fireEvent.click(skipButton);␍
+    217 253 │   ␍
+    218     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));␍
+        254 │ + → → await·waitFor(()·=>␍
+        255 │ + → → → expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),␍
+        256 │ + → → );␍
+    219 257 │       expect(mocks.push).toHaveBeenCalledOnce();␍
+    220 258 │       expect(skipButton).toHaveProperty("disabled", true);␍
+    ······· │ 
+    231 269 │       });␍
+    232 270 │       fireEvent.click(continueButton);␍
+    233     │ - → → await·waitFor(()·=>·expect(continueButton).toHaveProperty("disabled",·true));␍
+        271 │ + → → await·waitFor(()·=>␍
+        272 │ + → → → expect(continueButton).toHaveProperty("disabled",·true),␍
+        273 │ + → → );␍
+    234 274 │   ␍
+    235     │ - → → await·act(async·()·=>·request.reject(new·Error("private·creation·failure")));␍
+        275 │ + → → await·act(async·()·=>␍
+        276 │ + → → → request.reject(new·Error("private·creation·failure")),␍
+        277 │ + → → );␍
+    236 278 │   ␍
+    237     │ - → → await·waitFor(()·=>·expect(continueButton).toHaveProperty("disabled",·false));␍
+    238     │ - → → expect(mocks.toastError).toHaveBeenCalledWith("Failed·to·create·work·schedule·template");␍
+        279 │ + → → await·waitFor(()·=>␍
+        280 │ + → → → expect(continueButton).toHaveProperty("disabled",·false),␍
+        281 │ + → → );␍
+        282 │ + → → expect(mocks.toastError).toHaveBeenCalledWith(␍
+        283 │ + → → → "Failed·to·create·work·schedule·template",␍
+        284 │ + → → );␍
+    239 285 │       expect(mocks.toastSuccess).not.toHaveBeenCalled();␍
+    240 286 │       expect(mocks.push).not.toHaveBeenCalled();␍
+    ······· │ 
+    256 302 │   ␍
+    257 303 │       await waitFor(() => expect(skipButton).toHaveProperty("disabled", false));␍
+    258     │ - → → expect(mocks.toastError).toHaveBeenCalledWith("Failed·to·skip·work·schedule·template·setup");␍
+        304 │ + → → expect(mocks.toastError).toHaveBeenCalledWith(␍
+        305 │ + → → → "Failed·to·skip·work·schedule·template·setup",␍
+        306 │ + → → );␍
+  112 more lines truncated
+  
+
+Checked 3 files in 9ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

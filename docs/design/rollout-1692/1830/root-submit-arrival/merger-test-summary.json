@@ -1,0 +1,242 @@
+{
+  "source": "25865312d95c68ec1eaed75363e953745f168802",
+  "runs": [
+    {
+      "name": "exact-unit",
+      "actualPhysicalFiles": 25,
+      "assertionCases": 253,
+      "reportedTotal": 253,
+      "passed": 252,
+      "failed": 1
+    },
+    {
+      "name": "compatibility-unit",
+      "actualPhysicalFiles": 174,
+      "assertionCases": 1748,
+      "reportedTotal": 1748,
+      "passed": 1748,
+      "failed": 0
+    },
+    {
+      "name": "adversarial-unit",
+      "actualPhysicalFiles": 2,
+      "assertionCases": 23,
+      "reportedTotal": 23,
+      "passed": 22,
+      "failed": 1
+    }
+  ],
+  "distinctPhysicalFiles": 176,
+  "distinctAssertionOccurrences": 1771,
+  "distinctPassingCases": 1770,
+  "unresolvedCases": [
+    {
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1830-audit/profile-public.test.tsx",
+      "fullName": "Independent real profile composition and event arrival discards save intent queued before organization arrival",
+      "occurrence": 0,
+      "statuses": [
+        {
+          "run": "adversarial-unit",
+          "status": "failed"
+        }
+      ]
+    }
+  ],
+  "identity": "Resolved physical file + full test name + occurrence ordinal within its run; overlapping exact/compatibility runs are never added together.",
+  "checks": [
+    {
+      "name": "types",
+      "exitCode": 0,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "typecheck"
+      ]
+    },
+    {
+      "name": "doctor",
+      "exitCode": 0,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "react-doctor",
+        "apps/webapp",
+        "--scope",
+        "changed",
+        "--base",
+        "1fb2263e97bf266522f1cf50be957889383701cd",
+        "--verbose",
+        "--no-supply-chain",
+        "--no-telemetry",
+        "--no-score",
+        "--json",
+        "--json-out",
+        "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1830-audit\\doctor.json",
+        "--max-duration",
+        "90"
+      ]
+    },
+    {
+      "name": "biome-default",
+      "exitCode": 1,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "src/app/[locale]/onboarding/profile/page-client.tsx",
+        "src/app/[locale]/onboarding/profile/page.test.tsx",
+        "src/app/[locale]/onboarding/profile/actions.test.ts",
+        "src/lib/validations/onboarding.ts"
+      ]
+    },
+    {
+      "name": "biome-crlf",
+      "exitCode": 1,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/profile/page-client.tsx",
+        "src/app/[locale]/onboarding/profile/page.test.tsx",
+        "src/app/[locale]/onboarding/profile/actions.test.ts",
+        "src/lib/validations/onboarding.ts"
+      ]
+    },
+    {
+      "name": "biome-explicit",
+      "exitCode": 1,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=biome.jsonc",
+        "src/app/[locale]/onboarding/profile/page-client.tsx",
+        "src/app/[locale]/onboarding/profile/page.test.tsx",
+        "src/app/[locale]/onboarding/profile/actions.test.ts",
+        "src/lib/validations/onboarding.ts"
+      ]
+    },
+    {
+      "name": "biome-explicit-crlf",
+      "exitCode": 0,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=biome.jsonc",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/profile/page-client.tsx",
+        "src/app/[locale]/onboarding/profile/page.test.tsx",
+        "src/app/[locale]/onboarding/profile/actions.test.ts",
+        "src/lib/validations/onboarding.ts"
+      ]
+    },
+    {
+      "name": "biome-lint-import",
+      "exitCode": 1,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--formatter-enabled=false",
+        "src/app/[locale]/onboarding/profile/page-client.tsx",
+        "src/app/[locale]/onboarding/profile/page.test.tsx",
+        "src/app/[locale]/onboarding/profile/actions.test.ts",
+        "src/lib/validations/onboarding.ts"
+      ]
+    },
+    {
+      "name": "biome-explicit-lint",
+      "exitCode": 0,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=biome.jsonc",
+        "--formatter-enabled=false",
+        "src/app/[locale]/onboarding/profile/page-client.tsx",
+        "src/app/[locale]/onboarding/profile/page.test.tsx",
+        "src/app/[locale]/onboarding/profile/actions.test.ts",
+        "src/lib/validations/onboarding.ts"
+      ]
+    },
+    {
+      "name": "archive",
+      "exitCode": 0,
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/merge1830-audit/verify-artifacts.mjs"
+      ]
+    }
+  ],
+  "sourceBlocker": {
+    "priority": "P1",
+    "file": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "entryLine": 613,
+    "lateGuardLine": 501,
+    "reproduction": "Fill names under organization A. Click Save, then flush a same-account render under organization B before real TanStack validation completes. The public save action receives the retained A draft once and can navigate on the B generation. Independent test expects no action; it fails. Pending-ready, Activity-hidden and unmount queued-event variants pass.",
+    "probe": ".tmp/merge1830-audit/profile-public.test.tsx:43",
+    "fixOwner": "Root; merger made no source changes."
+  },
+  "inherited": {
+    "postgres": {
+      "files": 3,
+      "tests": 84,
+      "rerun": false
+    },
+    "browser": {
+      "assertions": 30,
+      "heldScopeCases": 4,
+      "rerun": false
+    },
+    "images": {
+      "pngs": 18,
+      "independentFullDecode": true
+    },
+    "nativeReact": "Unpassed in worker; no rerun."
+  },
+  "limits": [
+    "Full production static generation, remote catalog/translation completeness, providers/devices/true zoom/exhaustive accessibility and global transitions remain open.",
+    "Explicit webapp CRLF formatter and explicit lint pass; other ordinary profiles retain semantic-group/non-null/newline findings.",
+    "Exact selection first had a 5s extractor timeout; its same physical assertion passes in compatibility; failed exact run remains retained.",
+    "Initial private probe resolver failures were harness-only (react-dom then intl), retained separately.",
+    "Initial merge-tree/pnpm lock permission failures and initial PowerShell execution-policy failure are retained; accepted retries used ordinary sandbox escalation and guarded pnpm, without installing dependencies.",
+    "First independent archive scan was intentionally stopped after an overbroad historical source-pin search; its read-only successor uses exact recorded commits."
+  ]
+}

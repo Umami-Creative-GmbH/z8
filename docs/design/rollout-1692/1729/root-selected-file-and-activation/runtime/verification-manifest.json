@@ -1,0 +1,704 @@
+{
+  "sealedUtc": "2026-11-16T09:01:25.370Z",
+  "head": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+  "branch": "fix/1729-selected-file-snapshot",
+  "trackedClean": true,
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+      "raw": "39b787df3156a2b2c2eafb53821f51648fbf3cde234768a8a81270cb15a1124e",
+      "lf": "28d24d94a53fbbc7de0894518c82ec86eb5bad507aac002c5c3b1440efb37282"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+      "raw": "f22f136ea4ac3816d2b73a12333707ffc09ce3c6d68779fb0e61058d5017d319",
+      "lf": "a714bf0abf2eedc8cfb7a3b678bb989fddb14909f5f8e3f4dd4f641aceea17ce"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+      "raw": "3698658a57622bf0c5886c700ceb278401d30587a64c921bb1e72f4a262ae542",
+      "lf": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+      "raw": "df85062b4cb3632daa0cbc7e77fd07e4ad175e339d51fb4d19a195ba3dce4662",
+      "lf": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+      "raw": "561bc1bb1b19a8991b019cf8fd11b50265c231ee98616f1f55972d5ce577c469",
+      "lf": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+      "raw": "6fb33d5f71126079245c64b42672b62c72739c59debc9398e707f1393e1f6509",
+      "lf": "b6240274c74cd80cd6cfaa92af891ecca0b9ea23555d58e14a9cc74d01beb598"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+      "raw": "a568df7142da6da735423057140cb634685e5fcbb919a5bef842570bc2d4074d",
+      "lf": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "raw": "e917fa953a8f73d512b2b1550537355e688db3a353650351925c94a2a0c48247",
+      "lf": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "3cb6f35d35f23a4d59af8276dabd1b58124aee1c94c79ba9533b3aace9d040df",
+      "lf": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+      "raw": "c1abaf5a5ac03431af714f975a12ac84be7a6e0062ec721a0c47340b544a673c",
+      "lf": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+      "raw": "d71740756a86b6a3c7649d1c896080b0e6b21e1f5684d20d0bc11e4a0bd7c7e5",
+      "lf": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-dialog.tsx",
+      "raw": "e760d731367082c1a2c8e09b05b384c8d1bdf4492adba78eebda6bbba961e164",
+      "lf": "bebd940d0bbd4c23768baea07b35eaf62b9fc04ad763b13c2c74efac3c1c4414",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/download-personnel-file.tsx",
+      "raw": "96ae9a296a10d589dc0bc1f7f9bd66f8447da5d46818e1e1886b53429f8c376d",
+      "lf": "a25c4a3a2ea5b7d39faf855482a2df84b6b22aaa4e70148202c7590cdf6f7a5f",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+      "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+      "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/actions.ts",
+      "raw": "03bfca107ed8d7bf7684f4e99644123e6cb1942a7eacb9a964bfcdc1d4c8b502",
+      "lf": "b36acef6f506767a3b8ac474404eb7d9f2930f3eb8114fc257e3f417fb16420d",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+      "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+      "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f",
+      "unchangedSourceConsumer": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+      "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+      "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40",
+      "unchangedSourceConsumer": true
+    }
+  ],
+  "configuration": [
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "unchanged": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "unchanged": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "sha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "unchanged": true
+    }
+  ],
+  "dependencies": {
+    "links": 158,
+    "physicalParents": 3,
+    "unchanged": true,
+    "baseline": "source-start.json"
+  },
+  "fresh": {
+    "postgres": {
+      "passed": 163,
+      "failed": 0,
+      "skipped": 0,
+      "physicalFiles": 9
+    },
+    "readEvidence": "journey-04.json (first four checks; final pointer-save harness attempt failed without selected-route write activation)",
+    "rolesEvidence": "journey-05.json (four checks; includes all exact visible draft fields and zero scoped matching writes)",
+    "phonesEvidence": "phones.json (three checks/four light-dark geometry observations; all action rectangles >=32px, phone width390)",
+    "binaryEvidence": "binary.json (seven checks; real native download68bytes and parsed native ZIP274bytes)",
+    "nativeEvidence": "native.json (actual selected EmployeeFileWorkspace/PersonnelFilePanel, normal auth200/active200, closed)",
+    "nextEvidence": "restored-smoke.json and journey-05.json",
+    "matched": {
+      "before": "matched-before.json",
+      "current": "matched-current.json",
+      "captures": 6,
+      "dimensions": [
+        [
+          1600,
+          1000
+        ],
+        [
+          390,
+          844
+        ],
+        [
+          2400,
+          1200
+        ]
+      ],
+      "historicalExistingConsumerFiles": 7,
+      "partialApplicationBoundary": true,
+      "byteExactRestore": true
+    },
+    "fullyDecodedPngs": 31
+  },
+  "inheritedCurrentRootChecks": {
+    "unit": {
+      "passed": 175,
+      "failed": 0,
+      "physicalFiles": 25
+    },
+    "types": "All three type projects + normal Next typegen passed in root logs; not rerun by runtime verifier",
+    "biome": "Root explicit six-file100-columnCRLF pass; not rerun",
+    "doctor": "Root14 files0errors/1 reviewed preventDefault falsepositive; not rerun"
+  },
+  "next": [
+    {
+      "name": "get_project_metadata",
+      "text": [
+        {
+          "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+          "devServerUrl": "http://localhost:56761"
+        }
+      ]
+    },
+    {
+      "name": "get_routes",
+      "text": [
+        {
+          "appRouter": [
+            "/[locale]",
+            "/[locale]/absences",
+            "/[locale]/accept-invitation/[invitationId]",
+            "/[locale]/analytics",
+            "/[locale]/analytics/overtime-burn-down",
+            "/[locale]/analytics/team-performance",
+            "/[locale]/analytics/vacation-trends",
+            "/[locale]/analytics/work-hours",
+            "/[locale]/approvals",
+            "/[locale]/approvals/deputy-decisions/[absenceId]",
+            "/[locale]/approvals/inbox",
+            "/[locale]/approvals/review/[organizationId]/[kind]/[id]",
+            "/[locale]/billing/suspended",
+            "/[locale]/calendar",
+            "/[locale]/calendar/[employeeId]",
+            "/[locale]/compliance",
+            "/[locale]/driving-licence",
+            "/[locale]/driving-licence/checks/[employee]",
+            "/[locale]/equipment",
+            "/[locale]/equipment/assignments/[assignmentId]",
+            "/[locale]/equipment/employees/[employeeId]",
+            "/[locale]/forgot-password",
+            "/[locale]/init",
+            "/[locale]/join/[code]",
+            "/[locale]/kiosk",
+            "/[locale]/licenses",
+            "/[locale]/mfa",
+            "/[locale]/my-documents",
+            "/[locale]/my-equipment",
+            "/[locale]/my-requests",
+            "/[locale]/notifications",
+            "/[locale]/onboarding/complete",
+            "/[locale]/onboarding/notifications",
+            "/[locale]/onboarding/organization",
+            "/[locale]/onboarding/profile",
+            "/[locale]/onboarding/vacation-policy",
+            "/[locale]/onboarding/welcome",
+            "/[locale]/onboarding/wellness",
+            "/[locale]/onboarding/work-schedule",
+            "/[locale]/onboarding/work-templates",
+            "/[locale]/organization",
+            "/[locale]/payroll",
+            "/[locale]/payroll/work-balances",
+            "/[locale]/payroll/work-balances/[employeeId]",
+            "/[locale]/personnel-files",
+            "/[locale]/personnel-files/[employeeId]",
+            "/[locale]/personnel-files/document-requests",
+            "/[locale]/personnel-files/due-for-deletion",
+            "/[locale]/personnel-files/payslip-batches",
+            "/[locale]/personnel-files/payslip-batches/[batchId]",
+            "/[locale]/personnel-files/sick-leave",
+            "/[locale]/platform-admin",
+            "/[locale]/platform-admin/analytics",
+            "/[locale]/platform-admin/billing",
+            "/[locale]/platform-admin/diagnostics",
+            "/[locale]/platform-admin/organizations",
+            "/[locale]/platform-admin/settings",
+            "/[locale]/platform-admin/system-email-templates",
+            "/[locale]/platform-admin/users",
+            "/[locale]/platform-admin/worker-queue",
+            "/[locale]/reports",
+            "/[locale]/reports/projects",
+            "/[locale]/reports/vehicles",
+            "/[locale]/reset-password",
+            "/[locale]/scheduling",
+            "/[locale]/settings",
+            "/[locale]/settings/approval-escalation",
+            "/[locale]/settings/approval-policies",
+            "/[locale]/settings/audit-export",
+            "/[locale]/settings/audit-log",
+            "/[locale]/settings/avv",
+            "/[locale]/settings/billable-time",
+            "/[locale]/settings/billable-time/accounting",
+            "/[locale]/settings/billable-time/cost-rates",
+            "/[locale]/settings/billable-time/hand-off",
+            "/[locale]/settings/billable-time/rates",
+            "/[locale]/settings/billing",
+            "/[locale]/settings/calendar",
+            "/[locale]/settings/change-policies",
+            "/[locale]/settings/clocking",
+            "/[locale]/settings/clockodo-import",
+            "/[locale]/settings/closed-months",
+            "/[locale]/settings/compliance",
+            "/[locale]/settings/compliance/works-council",
+            "/[locale]/settings/coverage-rules",
+            "/[locale]/settings/custom-fields",
+            "/[locale]/settings/customers",
+            "/[locale]/settings/demo",
+            "/[locale]/settings/discord",
+            "/[locale]/settings/driving-licence",
+            "/[locale]/settings/email-templates",
+            "/[locale]/settings/employees",
+            "/[locale]/settings/employees/[employeeId]",
+            "/[locale]/settings/employees/new",
+            "/[locale]/settings/enterprise",
+            "/[locale]/settings/enterprise/api-keys",
+            "/[locale]/settings/enterprise/api-keys/[keyId]",
+            "/[locale]/settings/enterprise/audit-log",
+            "/[locale]/settings/enterprise/branding",
+            "/[locale]/settings/enterprise/domains",
+            "/[locale]/settings/enterprise/email",
+            "/[locale]/settings/enterprise/identity-setup",
+            "/[locale]/settings/enterprise/sso",
+            "/[locale]/settings/equipment",
+            "/[locale]/settings/export",
+            "/[locale]/settings/export-operations",
+            "/[locale]/settings/export/history/[organizationId]",
+            "/[locale]/settings/holidays",
+            "/[locale]/settings/implementation-checklist",
+            "/[locale]/settings/import",
+            "/[locale]/settings/import/[batchId]",
+            "/[locale]/settings/kiosks",
+            "/[locale]/settings/locations",
+            "/[locale]/settings/locations/[locationId]",
+            "/[locale]/settings/my-data",
+            "/[locale]/settings/notification-channels",
+            "/[locale]/settings/notifications",
+            "/[locale]/settings/organization",
+            "/[locale]/settings/organizations",
+            "/[locale]/settings/payroll-access",
+            "/[locale]/settings/payroll-export",
+            "/[locale]/settings/payroll-readiness",
+            "/[locale]/settings/permissions",
+            "/[locale]/settings/personnel-files",
+            "/[locale]/settings/position-capture",
+            "/[locale]/settings/position-stamps",
+            "/[locale]/settings/profile",
+            "/[locale]/settings/projects",
+            "/[locale]/settings/report-share-links",
+            "/[locale]/settings/roles",
+            "/[locale]/settings/scheduled-exports",
+            "/[locale]/settings/security",
+            "/[locale]/settings/shifts",
+            "/[locale]/settings/skills",
+            "/[locale]/settings/slack",
+            "/[locale]/settings/statistics",
+            "/[locale]/settings/surcharges",
+            "/[locale]/settings/teams",
+            "/[locale]/settings/teams-notifications",
+            "/[locale]/settings/teams/[teamId]",
+            "/[locale]/settings/telegram",
+            "/[locale]/settings/travel-expenses",
+            "/[locale]/settings/vacation",
+            "/[locale]/settings/vacation/employees",
+            "/[locale]/settings/vacation/employees/[employeeId]",
+            "/[locale]/settings/vehicle-use",
+            "/[locale]/settings/vehicles",
+            "/[locale]/settings/webhooks",
+            "/[locale]/settings/wellness",
+            "/[locale]/settings/work-categories",
+            "/[locale]/settings/work-diagnostics",
+            "/[locale]/settings/work-policies",
+            "/[locale]/setup",
+            "/[locale]/share/[token]",
+            "/[locale]/sign-in",
+            "/[locale]/sign-up",
+            "/[locale]/team",
+            "/[locale]/team/absences",
+            "/[locale]/team/driving",
+            "/[locale]/team/period-submissions",
+            "/[locale]/team/presence",
+            "/[locale]/team/presence/[locationId]",
+            "/[locale]/time-tracking",
+            "/[locale]/today",
+            "/[locale]/travel-expenses",
+            "/[locale]/travel-expenses/[claimId]",
+            "/[locale]/travel-expenses/finance",
+            "/[locale]/travel-expenses/reports/[reportId]",
+            "/[locale]/verify-2fa",
+            "/[locale]/verify-email",
+            "/[locale]/verify-email-pending",
+            "/[locale]/works-council",
+            "/[locale]/works-council/export",
+            "/api/analytics/export",
+            "/api/app-version",
+            "/api/approvals/inbox",
+            "/api/approvals/inbox/[id]",
+            "/api/approvals/inbox/[id]/approve",
+            "/api/approvals/inbox/[id]/reject",
+            "/api/approvals/inbox/bulk-approve",
+            "/api/approvals/inbox/bulk-reject",
+            "/api/approvals/inbox/counts",
+            "/api/audit-export/public-key",
+            "/api/audit-export/verify",
+            "/api/auth/[...all]",
+            "/api/auth/app-exchange",
+            "/api/auth/app-login",
+            "/api/auth/app-sign-in",
+            "/api/auth/callback/social-org/[provider]",
+            "/api/auth/context",
+            "/api/auth/desktop-login",
+            "/api/auth/providers",
+            "/api/auth/session-expired",
+            "/api/auth/social-org/[provider]",
+            "/api/auth/verify-turnstile",
+            "/api/billing/checkout",
+            "/api/billing/portal",
+            "/api/billing/subscription",
+            "/api/billing/webhook",
+            "/api/calendar/conflicts",
+            "/api/calendar/connections",
+            "/api/calendar/connections/[id]",
+            "/api/calendar/events",
+            "/api/calendar/ics-feeds",
+            "/api/calendar/ics-feeds/[id]",
+            "/api/calendar/ics-feeds/[id]/regenerate",
+            "/api/calendar/ics/[secret]",
+            "/api/calendar/oauth/[provider]",
+            "/api/calendar/oauth/callback/[provider]",
+            "/api/cron/[jobName]",
+            "/api/cron/status/[executionId]",
+            "/api/dashboard/layout",
+            "/api/dashboard/widgets/[widget]",
+            "/api/desktop/context",
+            "/api/desktop/open",
+            "/api/desktop/organizations",
+            "/api/desktop/vehicle-use-warnings",
+            "/api/discord/interactions/[token]",
+            "/api/discord/link",
+            "/api/discord/setup",
+            "/api/driving-licence/evidence",
+            "/api/driving-licence/operational-employees",
+            "/api/driving-licence/status",
+            "/api/health",
+            "/api/jobs/[jobId]/status",
+            "/api/kiosk/board",
+            "/api/kiosk/clock",
+            "/api/kiosk/clock/outcome",
+            "/api/kiosk/commands",
+            "/api/kiosk/commands/[operationId]",
+            "/api/kiosk/employee-status",
+            "/api/kiosk/employees",
+            "/api/kiosk/fob",
+            "/api/kiosk/fob/registration",
+            "/api/kiosk/pair",
+            "/api/kiosk/session",
+            "/api/location/countries",
+            "/api/location/regions",
+            "/api/location/states",
+            "/api/mcp",
+            "/api/notifications",
+            "/api/notifications/count",
+            "/api/notifications/preferences",
+            "/api/notifications/push/native-token",
+            "/api/notifications/push/subscribe",
+            "/api/notifications/push/subscriptions",
+            "/api/notifications/push/unsubscribe",
+            "/api/notifications/push/vapid-key",
+            "/api/org-admin/holiday-categories",
+            "/api/org-admin/holiday-categories/[id]",
+            "/api/org-admin/holiday-presets",
+            "/api/org-admin/holiday-presets/[id]",
+            "/api/org-admin/holidays",
+            "/api/org-admin/holidays/[id]",
+            "/api/org-admin/holidays/import",
+            "/api/org-admin/holidays/preview",
+            "/api/organization-mfa/policy",
+            "/api/organization/vehicles/[vehicleId]/photos/[photoId]",
+            "/api/organizations/list",
+            "/api/organizations/sso",
+            "/api/organizations/switch",
+            "/api/payroll/comparisons/[resultId]",
+            "/api/personnel-files/documents/[documentId]",
+            "/api/personnel-files/employees/[employeeId]/zip",
+            "/api/platform-admin/billing",
+            "/api/session/organization-status",
+            "/api/settings/employees/read/[dataset]",
+            "/api/settings/skills",
+            "/api/setup/authorize",
+            "/api/slack/commands",
+            "/api/slack/events",
+            "/api/slack/interactions",
+            "/api/slack/link",
+            "/api/slack/oauth/authorize",
+            "/api/slack/oauth/callback",
+            "/api/slack/setup",
+            "/api/teams/messages",
+            "/api/teams/setup",
+            "/api/telegram/link",
+            "/api/telegram/setup",
+            "/api/telegram/webhook/[token]",
+            "/api/time-clock",
+            "/api/time-clock/status",
+            "/api/time-entries",
+            "/api/time-entries/[entryId]",
+            "/api/time-entries/clock-out-on-behalf",
+            "/api/time-entries/commands",
+            "/api/time-entries/commands/[operationId]",
+            "/api/time-entries/corrections",
+            "/api/time-entries/diagnostics",
+            "/api/time-entries/diagnostics/proposals",
+            "/api/time-entries/diagnostics/repair",
+            "/api/time-entries/offline-context",
+            "/api/time-entries/status",
+            "/api/time-entries/verify",
+            "/api/travel-expenses/[claimId]",
+            "/api/travel-expenses/[claimId]/receipts/[attachmentId]",
+            "/api/travel-expenses/exports/[batchId]",
+            "/api/travel-expenses/reports/[reportId]/receipts/[receiptId]",
+            "/api/tus/[[...path]]",
+            "/api/upload/personnel-file",
+            "/api/upload/personnel-file/payslip-batch",
+            "/api/upload/process",
+            "/api/upload/travel-expense/process",
+            "/api/upload/travel-expense/report-receipt",
+            "/api/user/onboarding-status",
+            "/api/v1/[...path]",
+            "/api/v1/absences",
+            "/api/v1/customers",
+            "/api/v1/customers/custom-fields",
+            "/api/v1/employees",
+            "/api/v1/employees/custom-fields",
+            "/api/v1/openapi.json",
+            "/api/v1/projects",
+            "/api/v1/projects/custom-fields",
+            "/api/v1/work-periods",
+            "/api/wellness/water-action",
+            "/api/wellness/water-reminder"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "get_page_metadata",
+      "text": [
+        {
+          "sessions": [
+            {
+              "url": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+              "routerType": "app",
+              "segments": [
+                {
+                  "path": "app/[locale]/(app)/layout.tsx",
+                  "type": "layout",
+                  "isBoundary": false,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+                  "type": "layout",
+                  "isBoundary": false,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "app/[locale]/layout.tsx",
+                  "type": "layout",
+                  "isBoundary": false,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "global-error.js",
+                  "type": "boundary:global-error",
+                  "isBoundary": true,
+                  "isBuiltin": true
+                },
+                {
+                  "path": "not-found.js",
+                  "type": "boundary:not-found",
+                  "isBoundary": true,
+                  "isBuiltin": true
+                },
+                {
+                  "path": "app/[locale]/(app)/error.tsx",
+                  "type": "boundary:error",
+                  "isBoundary": true,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "app/[locale]/(app)/not-found.tsx",
+                  "type": "boundary:not-found",
+                  "isBoundary": true,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "app/[locale]/error.tsx",
+                  "type": "boundary:error",
+                  "isBoundary": true,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "app/[locale]/not-found.tsx",
+                  "type": "boundary:not-found",
+                  "isBoundary": true,
+                  "isBuiltin": false
+                },
+                {
+                  "path": "app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+                  "type": "page",
+                  "isBoundary": false,
+                  "isBuiltin": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "get_compilation_issues",
+      "text": [
+        {
+          "issues": []
+        }
+      ]
+    },
+    {
+      "name": "get_errors",
+      "text": [
+        {
+          "configErrors": [],
+          "sessionErrors": []
+        }
+      ]
+    }
+  ],
+  "failedAttempts": [
+    "attempt-01-pnpm-engine-lock.txt (standard approved escalation then fixture prepared)",
+    "journey-01.json (missing fixture seed parameter; no product issue)",
+    "journey-02.json (optional fixture personnel number absent; no product issue)",
+    "journey-03.json (cached category revisit did not refetch within staleTime; switched to actual Refresh data)",
+    "journey-04.json (pointer Save did not activate selected-route command; focused Enter succeeds in journey-05)"
+  ],
+  "limits": [
+    "No full production build/catalog/provider/customer/device/truezoom acceptance.",
+    "Canonical metadata UPDATE/DELETE has no expectedRevision API; no concurrency semantics change.",
+    "Scope snapshot proof does not claim hidden Activity fresh reads, shared late callbacks, all ABA or server authorization bypass prevention.",
+    "No actual sick-note link/unlink or skill assignment in runtime; domain suites retained.",
+    "Fixture optional employee personnel number is absent, no runtime number-presence claim.",
+    "Officer saved18 long-title row is offscreen in screenshot: DOM geometry/field/action measurements prove bounds; My Documents PNG visibly shows long title.",
+    "Existing Pets/Next Rendering overlays retained. Bounds do not certify overlay occlusion or physical touch. Matched historical desktop initially has Loading clock status; no cold-cache/performance/whole-application comparison.",
+    "Earliest AuthenticatedShell no-h1 remains SOURCE-only, no fresh runtime proof.",
+    "No current raw-isActive bug claimed; inherited 1728 cutoff projection correction preserved."
+  ],
+  "cleanup": {
+    "privateFixtureManifestsPreserved": true,
+    "exactManifestContainersAbsent": 3,
+    "verifiedStoppedPidCount": 18,
+    "cacheMoved": false,
+    "processInventory": "Exact task manifest PIDs only; no broad process enumeration",
+    "ownedNextPortClosed": true,
+    "nativeDaemonAbsent": true,
+    "nativeClosed": true
+  },
+  "priorProofs": [
+    {
+      "path": "docs/design/rollout-1692/1728/root-lifecycle-and-snapshot/",
+      "files": 163,
+      "trackedUnchanged": true,
+      "digest": "36ed2e5571753027251b2b06cbd6fc9115d643635afc3bc0fbd006308aa40bfa"
+    },
+    {
+      "path": "docs/design/rollout-1692/1835/",
+      "files": 203,
+      "trackedUnchanged": true,
+      "digest": "3ba64b9cb70d8c0491c27ffe68fb815a7afb408a7dd6d047b7d13977a3063ce4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1737/",
+      "files": 211,
+      "trackedUnchanged": true,
+      "digest": "2f5aea5111bd0591e0b4ef4db7780db5c0fe8c5a7b3e55591978e7d15a7fb4a0"
+    },
+    {
+      "path": "docs/design/rollout-1692/1736/",
+      "files": 266,
+      "trackedUnchanged": true,
+      "digest": "d44b2812b251af4f96f2ccf4db8feff09a514b8ea5d4fbd07e954555625162a3"
+    }
+  ],
+  "commands": [
+    "$env:pnpm_config_verify_deps_before_run='false' (set before every pnpm call)",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare <own-generated-TEMP>",
+    "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project integration --maxWorkers 1 src/lib/personnel-file/officer-grants.integration.test.ts src/lib/personnel-file/expiry-reminders.integration.test.ts src/lib/personnel-file/personnel-file.integration.test.ts src/lib/personnel-file/document-request-officer.integration.test.ts src/lib/personnel-file/personnel-file-zip.integration.test.ts src/lib/personnel-file/skill-certificates.integration.test.ts src/lib/personnel-file/sick-notes-officer.integration.test.ts src/lib/personnel-file/document-request-review.integration.test.ts src/lib/personnel-file/employee-uploads.integration.test.ts --reporter=json --outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1729-root-checks\\runtime\\postgres.json",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/dev.mjs dev <checkout> <own-generated-TEMP>",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/journey.mjs journey-01",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/journey.mjs journey-02",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/journey.mjs journey-03",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/journey.mjs journey-04",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/roles.mjs journey-05",
+    "agent-browser.cmd skills get core",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/native.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/phones.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/binary.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/compare.mjs current",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/compare.mjs before",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .tmp/1729-root-checks/runtime/stop-next.ps1 -FixturePointer .tmp/1729-root-checks/runtime/fixture-pointer-private.txt -RecordPath .tmp/1729-root-checks/runtime/next-stop-before-overlay.json",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .tmp/1729-root-checks/runtime/stop-next.ps1 -FixturePointer .tmp/1729-root-checks/runtime/fixture-pointer-private.txt -RecordPath .tmp/1729-root-checks/runtime/next-stop-after-overlay.json",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .tmp/1729-root-checks/runtime/stop-next.ps1 -FixturePointer .tmp/1729-root-checks/runtime/fixture-pointer-private.txt -RecordPath .tmp/1729-root-checks/runtime/next-stop-final.json",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/overlay.mjs apply",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/overlay.mjs restore",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/restored-smoke.mjs",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup <own-generated-TEMP>",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .tmp/1729-root-checks/runtime/cleanup-audit.ps1",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/setup.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1729-root-checks/runtime/seal.mjs"
+  ],
+  "privateLiteralCommands": "commands-private.json (exclude from public copying)",
+  "intentionalDevWrapperExits": [
+    1,
+    1,
+    1
+  ],
+  "privateEvidencePolicy": "Private fixture pointer, credentials, PostgreSQL/runtime logs and failure DOM files remain ignored and excluded from public artifact list; no cookies/session/storage copied, minted, restored or persisted."
+}

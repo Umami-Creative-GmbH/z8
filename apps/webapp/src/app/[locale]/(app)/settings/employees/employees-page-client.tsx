@@ -5,13 +5,13 @@ import {
 	IconChevronRight,
 	IconPlus,
 	IconRefresh,
-	IconSearch,
 	IconUser,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { flexRender, type SortingState, useTable } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useMemo, useState, useTransition } from "react";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { InviteCodeManagement } from "@/components/organization/invite-code-management";
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
@@ -24,21 +24,8 @@ import type {
 import { EmploymentDateUploadDialog } from "@/components/settings/employment-date-upload-dialog";
 import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
@@ -48,6 +35,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrganization } from "@/hooks/use-organization";
 import {
 	meetsSettingsAccess,
 	type SettingsAccess,
@@ -55,6 +43,7 @@ import {
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import { useRouter } from "@/navigation";
 import { createEmployeeColumns } from "./columns";
 import {
 	type EmployeeDirectoryStatus,
@@ -74,154 +63,209 @@ export interface EmployeesPagePeopleProps {
 	settingsAccess: SettingsAccess | null;
 }
 
-export function EmployeesPageClient(props: {
+interface EmployeeAdministrationProps {
 	accessTier: SettingsAccessTier;
 	organizationId: string;
 	currentUserId: string;
+	currentEmployee: { id: string; role: "admin" | "manager" | "employee" } | null;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 	people?: EmployeesPagePeopleProps;
-}) {
+}
+
+export function EmployeesPageClient(props: EmployeeAdministrationProps) {
+	const organization = useOrganization();
+	const router = useRouter();
 	const { t } = useTranslate();
+	const [pending, startRetry] = useTransition();
+	const current =
+		!organization.error &&
+		organization.userId === props.currentUserId &&
+		organization.activeOrganizationId === props.organizationId &&
+		organization.employeeId === (props.currentEmployee?.id ?? null) &&
+		organization.role === (props.currentEmployee?.role ?? null);
+	if (!current) {
+		return (
+			<div className="page-frame flex min-w-0 flex-col gap-6">
+				<PageHeader title={t("settings.employees.title", "Employees")} />
+				{organization.isLoading ? (
+					<p role="status">{t("common.loading", "Loading...")}</p>
+				) : (
+					<div role="alert" className="space-y-3 rounded-lg border p-4">
+						<p>
+							{t(
+								"settings.employees.scopeChanged",
+								"Employee context is unavailable or changed. Refresh to continue.",
+							)}
+						</p>
+						<Button
+							disabled={pending}
+							onClick={() =>
+								startRetry(async () => {
+									await organization.refetch();
+									router.refresh();
+								})
+							}
+						>
+							{t("common.retry", "Try again")}
+						</Button>
+					</div>
+				)}
+			</div>
+		);
+	}
+	return (
+		<EmployeeAdministration
+			key={JSON.stringify([
+				props.currentUserId,
+				props.organizationId,
+				organization.employeeId,
+				organization.role,
+				props.settingsAccess,
+			])}
+			{...props}
+		/>
+	);
+}
+
+function EmployeeAdministration(props: EmployeeAdministrationProps) {
+	const { t } = useTranslate();
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 	const [isRefreshingPeople, startPeopleRefresh] = useTransition();
 
 	const people = props.people;
-	const shouldShowPeopleTabs =
-		meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people;
-
-	if (!shouldShowPeopleTabs) {
-		return (
-			<div data-testid="employees-content" className="flex flex-1 flex-col gap-4 p-4">
-				<EmployeeDirectoryTab
-					accessTier={props.accessTier}
-					organizationId={props.organizationId}
-					currentUserId={props.currentUserId}
-					settingsAccess={props.settingsAccess}
-					showHeader
-				/>
-			</div>
-		);
-	}
+	const shouldShowPeopleTabs = meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people;
 
 	const handlePeopleRefresh = () => {
-		startPeopleRefresh(() => {
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.members.list(props.organizationId),
-			});
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.invitations.list(props.organizationId),
-			});
+		startPeopleRefresh(async () => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(props.organizationId) }),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.invitations.list(props.organizationId),
+				}),
+			]);
+			router.refresh();
 		});
 	};
 
 	return (
-		<div data-testid="employees-content" className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.employees.title", "Employees")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.employees.description",
-							"Manage employees, members, and invites",
-						)}
-					</p>
-				</div>
-				<div className="flex flex-wrap gap-2"><EmploymentDateUploadDialog /><OpeningBalanceUploadDialog /></div>
-			</div>
-
-			<Tabs defaultValue="employees" className="space-y-4">
-				<TabsList className="flex h-auto flex-wrap justify-start">
-					<TabsTrigger value="employees">
-						{t("settings.employees.tabs.employees", "Employees")}
-					</TabsTrigger>
-					<TabsTrigger value="members">
-						{t("settings.employees.tabs.members", "Members")}
-					</TabsTrigger>
-					<TabsTrigger value="invitations">
-						{t("settings.employees.tabs.invitations", "Invitations")}
-					</TabsTrigger>
-					<TabsTrigger value="invite-codes">
-						{t("settings.employees.tabs.inviteCodes", "Invite Codes")}
-					</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="employees" className="space-y-4">
-					<EmployeeDirectoryTab
-						accessTier={props.accessTier}
-						organizationId={props.organizationId}
-						currentUserId={props.currentUserId}
-						settingsAccess={props.settingsAccess}
-						showHeader={false}
-					/>
-				</TabsContent>
-
-				<TabsContent value="members" className="space-y-4">
-					<MembersTable
-						organizationId={props.organizationId}
-						members={people.members}
-						invitations={[]}
-						settingsAccess={people.settingsAccess}
-						currentUserId={people.currentUserId}
-						onRefresh={handlePeopleRefresh}
-						isRefreshing={isRefreshingPeople}
-					/>
-				</TabsContent>
-
-				<TabsContent value="invitations" className="space-y-4">
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							<h2 className="text-lg font-semibold">
-								{t("settings.employees.invitations.title", "Invitations")}
-							</h2>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.employees.invitations.description",
-									"Invite members and review pending join requests",
-								)}
-							</p>
-						</div>
-						<Button onClick={() => setInviteDialogOpen(true)}>
-							<IconPlus className="mr-2 size-4" />
-							{t("organization.invite.title", "Invite Member")}
-						</Button>
-					</div>
-
-					<MembersTable
-						organizationId={props.organizationId}
-						members={[]}
-						invitations={people.invitations}
-						defaultTab="invitations"
-						settingsAccess={people.settingsAccess}
-						currentUserId={people.currentUserId}
-						onRefresh={handlePeopleRefresh}
-						isRefreshing={isRefreshingPeople}
-					/>
-					<PendingMembersCard
-						organizationId={props.organizationId}
-						settingsAccess={people.settingsAccess}
-					/>
-				</TabsContent>
-
-				<TabsContent value="invite-codes" className="space-y-4">
-					<InviteCodeManagement
-						organizationId={props.organizationId}
-						organizationToday={people.organizationToday}
-						settingsAccess={people.settingsAccess}
-					/>
-				</TabsContent>
-			</Tabs>
-
-			<InviteMemberDialog
-				organizationId={props.organizationId}
-				organizationName={people.organizationName}
-				settingsAccess={people.settingsAccess}
-				open={inviteDialogOpen}
-				onOpenChange={setInviteDialogOpen}
+		<div
+			data-testid="employees-content"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
+		>
+			<PageHeader
+				title={t("settings.employees.title", "Employees")}
+				description={t("settings.employees.description", "Manage employees, members, and invites")}
+				scope={people?.organizationName}
+				actions={
+					shouldShowPeopleTabs ? (
+						<>
+							<EmploymentDateUploadDialog />
+							<OpeningBalanceUploadDialog />
+							<Button onClick={() => setInviteDialogOpen(true)}>
+								<IconPlus className="size-4" aria-hidden="true" />
+								{t("organization.invite.title", "Invite Member")}
+							</Button>
+						</>
+					) : undefined
+				}
 			/>
+			{!shouldShowPeopleTabs ? (
+				<EmployeeDirectoryTab {...props} />
+			) : (
+				<>
+					<Tabs defaultValue="employees" className="space-y-4">
+						<TabsList className="h-auto w-full flex-wrap justify-start gap-1 p-1 sm:w-fit">
+							<TabsTrigger value="employees">
+								{t("settings.employees.tabs.employees", "Employees")}
+							</TabsTrigger>
+							<TabsTrigger value="members">
+								{t("settings.employees.tabs.members", "Members")}
+							</TabsTrigger>
+							<TabsTrigger value="invitations">
+								{t("settings.employees.tabs.invitations", "Invitations")}
+							</TabsTrigger>
+							<TabsTrigger value="invite-codes">
+								{t("settings.employees.tabs.inviteCodes", "Invite Codes")}
+							</TabsTrigger>
+						</TabsList>
+
+						<TabsContent value="employees" className="space-y-4" keepMounted>
+							<EmployeeDirectoryTab
+								accessTier={props.accessTier}
+								organizationId={props.organizationId}
+								currentUserId={props.currentUserId}
+								settingsAccess={props.settingsAccess}
+							/>
+						</TabsContent>
+
+						<TabsContent value="members" className="space-y-4" keepMounted>
+							<MembersTable
+								organizationId={props.organizationId}
+								members={people.members}
+								invitations={[]}
+								settingsAccess={props.settingsAccess}
+								currentUserId={people.currentUserId}
+								onRefresh={handlePeopleRefresh}
+								isRefreshing={isRefreshingPeople}
+							/>
+						</TabsContent>
+
+						<TabsContent value="invitations" className="space-y-4" keepMounted>
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+								<div>
+									<h2 className="text-lg font-semibold">
+										{t("settings.employees.invitations.title", "Invitations")}
+									</h2>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.employees.invitations.description",
+											"Invite members and review pending join requests",
+										)}
+									</p>
+								</div>
+								<Button onClick={() => setInviteDialogOpen(true)}>
+									<IconPlus className="mr-2 size-4" aria-hidden="true" />
+									{t("organization.invite.title", "Invite Member")}
+								</Button>
+							</div>
+
+							<MembersTable
+								organizationId={props.organizationId}
+								members={[]}
+								invitations={people.invitations}
+								defaultTab="invitations"
+								settingsAccess={props.settingsAccess}
+								currentUserId={people.currentUserId}
+								onRefresh={handlePeopleRefresh}
+								isRefreshing={isRefreshingPeople}
+							/>
+							<PendingMembersCard
+								organizationId={props.organizationId}
+								settingsAccess={props.settingsAccess}
+							/>
+						</TabsContent>
+
+						<TabsContent value="invite-codes" className="space-y-4" keepMounted>
+							<InviteCodeManagement
+								organizationId={props.organizationId}
+								organizationToday={people.organizationToday}
+								settingsAccess={props.settingsAccess}
+							/>
+						</TabsContent>
+					</Tabs>
+
+					<InviteMemberDialog
+						organizationId={props.organizationId}
+						organizationName={people.organizationName}
+						settingsAccess={props.settingsAccess}
+						open={inviteDialogOpen}
+						onOpenChange={setInviteDialogOpen}
+					/>
+				</>
+			)}
 		</div>
 	);
 }
@@ -244,81 +288,50 @@ function EmployeeDirectoryFilters({
 	const { t } = useTranslate();
 
 	return (
-		<div className="mb-4 flex flex-col gap-4 sm:flex-row">
-			<div className="relative flex-1">
-				<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-				<Input
-					aria-label={t(
-						"settings.employees.directory.searchLabel",
-						"Search employees",
-					)}
-					placeholder={t(
-						"settings.employees.directory.searchPlaceholder",
-						"Search by name, email, or position...",
-					)}
-					value={searchInput}
-					onChange={(event) => onSearchInputChange(event.target.value)}
-					className="pl-9"
-				/>
-			</div>
-			<Select value={role} onValueChange={onRoleChange}>
-				<SelectTrigger className="w-full sm:w-[180px]">
-					<SelectValue
-						placeholder={t(
-							"settings.employees.directory.roleFilter",
-							"Filter by role",
-						)}
-					/>
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="all">
-						{t("settings.employees.directory.roles.all", "All Roles")}
-					</SelectItem>
-					<SelectItem value="admin">
-						{t("settings.employees.directory.roles.admin", "Admin")}
-					</SelectItem>
-					<SelectItem value="manager">
-						{t("settings.employees.directory.roles.manager", "Manager")}
-					</SelectItem>
-					<SelectItem value="employee">
-						{t("settings.employees.directory.roles.employee", "Employee")}
-					</SelectItem>
-				</SelectContent>
-			</Select>
-			<Select
-				value={status}
-				onValueChange={(value) => onStatusChange(normalizeEmployeeDirectoryStatus(value, "current"))}
-			>
-				<SelectTrigger
-					className="w-full sm:w-[180px]"
-					aria-label={t(
-						"settings.employees.directory.statusFilter",
-						"Filter by status",
-					)}
-				>
-					<SelectValue
-						placeholder={t(
-							"settings.employees.directory.statusFilter",
-							"Filter by status",
-						)}
-					/>
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="current">
-						{t("settings.employees.directory.statuses.current", "Current")}
-					</SelectItem>
-					<SelectItem value="former">
-						{t("settings.employees.directory.statuses.former", "Former")}
-					</SelectItem>
-					<SelectItem value="draft">
-						{t("settings.employees.directory.statuses.draft", "Draft")}
-					</SelectItem>
-					<SelectItem value="all">
-						{t("settings.employees.directory.statuses.all", "All Status")}
-					</SelectItem>
-				</SelectContent>
-			</Select>
-		</div>
+		<DataTableToolbar
+			search={searchInput}
+			onSearchChange={onSearchInputChange}
+			searchLabel={t("settings.employees.directory.searchLabel", "Search employees")}
+			searchPlaceholder={t(
+				"settings.employees.directory.searchPlaceholder",
+				"Search by name, email, or position...",
+			)}
+			filters={[
+				{
+					key: "role",
+					label: t("settings.employees.directory.roleFilter", "Filter by role"),
+					options: [
+						{ value: "all", label: t("settings.employees.directory.roles.all", "All Roles") },
+						{ value: "admin", label: t("settings.employees.directory.roles.admin", "Admin") },
+						{ value: "manager", label: t("settings.employees.directory.roles.manager", "Manager") },
+						{
+							value: "employee",
+							label: t("settings.employees.directory.roles.employee", "Employee"),
+						},
+					],
+				},
+				{
+					key: "status",
+					label: t("settings.employees.directory.statusFilter", "Filter by status"),
+					defaultValue: "current",
+					options: [
+						{
+							value: "current",
+							label: t("settings.employees.directory.statuses.current", "Current"),
+						},
+						{ value: "former", label: t("settings.employees.directory.statuses.former", "Former") },
+						{ value: "draft", label: t("settings.employees.directory.statuses.draft", "Draft") },
+						{ value: "all", label: t("settings.employees.directory.statuses.all", "All Status") },
+					],
+				},
+			]}
+			filterValues={{ role, status }}
+			onFilterChange={(key, value) =>
+				key === "role"
+					? onRoleChange(value)
+					: onStatusChange(normalizeEmployeeDirectoryStatus(value, "current"))
+			}
+		/>
 	);
 }
 
@@ -327,7 +340,6 @@ function EmployeeDirectoryTab(props: {
 	organizationId: string;
 	currentUserId: string;
 	settingsAccess: SettingsAccess | null;
-	showHeader: boolean;
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -400,12 +412,13 @@ function EmployeeDirectoryTab(props: {
 			}),
 	});
 
+	const commitSearch = useEffectEvent(setSearch);
 	useEffect(() => {
 		const timer = setTimeout(() => {
-			setSearch(searchInput);
+			commitSearch(searchInput);
 		}, 300);
 		return () => clearTimeout(timer);
-	}, [searchInput, setSearch]);
+	}, [searchInput]);
 
 	const table = useTable({
 		features: employeeTableFeatures,
@@ -422,187 +435,147 @@ function EmployeeDirectoryTab(props: {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError
-					feature={t(
-						"settings.employees.directory.noEmployeeFeature",
-						"manage employees",
-					)}
+					feature={t("settings.employees.directory.noEmployeeFeature", "manage employees")}
 				/>
 			</div>
 		);
 	}
 
 	return (
-		<>
-			{props.showHeader && (
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">
-							{t("settings.employees.title", "Employees")}
-						</h1>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.employees.description",
-								"Manage employees, members, and invites",
-							)}
-						</p>
-					</div>
+		<Card>
+			<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<CardTitle>{t("settings.employees.directory.title", "Employee Directory")}</CardTitle>
+					<CardDescription aria-live="polite">
+						{!isError &&
+							!isLoading &&
+							t("settings.employees.directory.countFound", "{count} employee(s) found", {
+								count: total,
+							})}
+					</CardDescription>
+				</div>
+				{
 					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
-						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh
+							aria-hidden="true"
+							className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
+						/>
 						<span className="sr-only">{t("settings.employees.directory.refresh", "Refresh")}</span>
 					</Button>
-				</div>
-			)}
+				}
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<EmployeeDirectoryFilters
+					searchInput={searchInput}
+					onSearchInputChange={setSearchInput}
+					role={role}
+					onRoleChange={setRole}
+					status={status}
+					onStatusChange={setStatus}
+				/>
 
-			<Card>
-				<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div>
-						<CardTitle>{t("settings.employees.directory.title", "Employee Directory")}</CardTitle>
-						<CardDescription>
-							{t("settings.employees.directory.countFound", "{count} employee(s) found", {
-								count: total,
-								},
-							)}
-						</CardDescription>
-					</div>
-					{!props.showHeader && (
-						<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
-							<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-							<span className="sr-only">
-								{t("settings.employees.directory.refresh", "Refresh")}
-							</span>
-						</Button>
-					)}
-				</CardHeader>
-				<CardContent>
-					<EmployeeDirectoryFilters
-						searchInput={searchInput}
-						onSearchInputChange={setSearchInput}
-						role={role}
-						onRoleChange={setRole}
-						status={status}
-						onStatusChange={setStatus}
-					/>
-
-					{isError ? (
-						<div role="alert" className="space-y-3 py-4">
-							<p>
-								{error?.message ||
-									t(
-										"settings.employees.directory.loadFailed",
-										"Employee directory could not be loaded",
-									)}
-							</p>
-							<Button
-								variant="outline"
-								onClick={() => void refresh()}
-								disabled={isFetching}
-							>
-								{t("common.retry", "Try again")}
-							</Button>
-						</div>
-					) : isLoading ? (
-						<div className="flex items-center justify-center py-8">
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.employees.directory.loading",
-									"Loading employees...",
+				{isError ? (
+					<div
+						role="alert"
+						className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+					>
+						<p>
+							{error?.message ||
+								t(
+									"settings.employees.directory.loadFailed",
+									"Employee directory could not be loaded",
 								)}
-							</p>
-						</div>
-					) : (
-						<>
-							<div className="overflow-x-auto rounded-md border">
-								<Table mobileLayout="stacked">
-									<TableHeader>
-										{table.getHeaderGroups().map((headerGroup) => (
-											<TableRow key={headerGroup.id}>
-												{headerGroup.headers.map((header) => (
-													<TableHead key={header.id}>
-														{header.isPlaceholder
-															? null
-															: flexRender(
-																	header.column.columnDef.header,
-																	header.getContext(),
-																)}
-													</TableHead>
+						</p>
+						<Button variant="outline" onClick={() => void refresh()} disabled={isFetching}>
+							{t("common.retry", "Try again")}
+						</Button>
+					</div>
+				) : isLoading ? (
+					<div className="flex items-center justify-center py-8">
+						<p className="text-sm text-muted-foreground">
+							{t("settings.employees.directory.loading", "Loading employees...")}
+						</p>
+					</div>
+				) : (
+					<>
+						<div className="overflow-x-auto rounded-md border">
+							<Table mobileLayout="stacked">
+								<TableHeader>
+									{table.getHeaderGroups().map((headerGroup) => (
+										<TableRow key={headerGroup.id}>
+											{headerGroup.headers.map((header) => (
+												<TableHead key={header.id}>
+													{header.isPlaceholder
+														? null
+														: flexRender(header.column.columnDef.header, header.getContext())}
+												</TableHead>
+											))}
+										</TableRow>
+									))}
+								</TableHeader>
+								<TableBody>
+									{table.getRowModel().rows.length ? (
+										table.getRowModel().rows.map((row) => (
+											<TableRow key={row.id}>
+												{row.getVisibleCells().map((cell) => (
+													<TableCell key={cell.id} className="whitespace-normal break-words">
+														{flexRender(cell.column.columnDef.cell, cell.getContext())}
+													</TableCell>
 												))}
 											</TableRow>
-										))}
-									</TableHeader>
-									<TableBody>
-										{table.getRowModel().rows.length ? (
-											table.getRowModel().rows.map((row) => (
-												<TableRow key={row.id}>
-													{row.getVisibleCells().map((cell) => (
-														<TableCell key={cell.id}>
-															{flexRender(
-																cell.column.columnDef.cell,
-																cell.getContext(),
-															)}
-														</TableCell>
-													))}
-												</TableRow>
-											))
-										) : (
-											<TableRow>
-												<TableCell colSpan={columns.length} className="h-24 text-center">
-													<div className="flex flex-col items-center justify-center">
-														<IconUser className="mb-2 size-8 text-muted-foreground" />
-														<p className="text-sm text-muted-foreground">
-															{t(
-																"settings.employees.directory.emptyState",
-																"No employees found",
-															)}
-														</p>
-													</div>
-												</TableCell>
-											</TableRow>
-										)}
-									</TableBody>
-								</Table>
-							</div>
+										))
+									) : (
+										<TableRow>
+											<TableCell colSpan={columns.length} className="h-24 text-center">
+												<div className="flex flex-col items-center justify-center">
+													<IconUser
+													className="mb-2 size-8 text-muted-foreground"
+													aria-hidden="true"
+												/>
+													<p className="text-sm text-muted-foreground">
+														{t("settings.employees.directory.emptyState", "No employees found")}
+													</p>
+												</div>
+											</TableCell>
+										</TableRow>
+									)}
+								</TableBody>
+							</Table>
+						</div>
 
-							{pageCount > 1 && (
-								<div className="mt-4 flex items-center justify-between">
-									<div className="text-sm text-muted-foreground">
-										{t("settings.employees.directory.pagination.pageOf", "Page {page} of {total}", {
-											page: table.state.pagination.pageIndex + 1,
-											total: table.getPageCount(),
-											},
-										)}
-									</div>
-									<div className="flex items-center gap-2">
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => table.previousPage()}
-											disabled={!table.getCanPreviousPage() || isFetching}
-										>
-											<IconChevronLeft className="mr-1 size-4" />
-											{t(
-												"settings.employees.directory.pagination.previous",
-												"Previous",
-											)}
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => table.nextPage()}
-											disabled={!table.getCanNextPage() || isFetching}
-										>
-											{t(
-												"settings.employees.directory.pagination.next",
-												"Next",
-											)}
-											<IconChevronRight className="ml-1 size-4" />
-										</Button>
-									</div>
+						{pageCount > 1 && (
+							<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+								<div className="text-sm tabular-nums text-muted-foreground">
+									{t("settings.employees.directory.pagination.pageOf", "Page {page} of {total}", {
+										page: table.state.pagination.pageIndex + 1,
+										total: table.getPageCount(),
+									})}
 								</div>
-							)}
-						</>
-					)}
-				</CardContent>
-			</Card>
-		</>
+								<div className="flex items-center gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => table.previousPage()}
+										disabled={!table.getCanPreviousPage() || isFetching}
+									>
+										<IconChevronLeft className="mr-1 size-4" aria-hidden="true" />
+										{t("settings.employees.directory.pagination.previous", "Previous")}
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => table.nextPage()}
+										disabled={!table.getCanNextPage() || isFetching}
+									>
+										{t("settings.employees.directory.pagination.next", "Next")}
+										<IconChevronRight className="ml-1 size-4" aria-hidden="true" />
+									</Button>
+								</div>
+							</div>
+						)}
+					</>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

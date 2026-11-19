@@ -1,0 +1,103 @@
+{
+  "runs": [
+    {
+      "name": "exact",
+      "file": "exact-unit.json",
+      "physicalFiles": 11,
+      "cases": 165,
+      "passed": 165,
+      "failed": 0,
+      "skipped": 0,
+      "overlapWithPriorRuns": 0,
+      "failures": []
+    },
+    {
+      "name": "compatibility",
+      "file": "compatibility-unit.json",
+      "physicalFiles": 115,
+      "cases": 1200,
+      "passed": 1199,
+      "failed": 1,
+      "skipped": 0,
+      "overlapWithPriorRuns": 165,
+      "failures": [
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+          "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected true to be false // Object.is equality"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "adversarial",
+      "file": "adversarial-unit.json",
+      "physicalFiles": 1,
+      "cases": 9,
+      "passed": 7,
+      "failed": 2,
+      "skipped": 0,
+      "overlapWithPriorRuns": 0,
+      "failures": [
+        {
+          "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+          "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected [] to have a length of 1 but got +0"
+          ]
+        },
+        {
+          "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+          "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected [] to have a length of 1 but got +0"
+          ]
+        }
+      ]
+    }
+  ],
+  "unique": {
+    "physicalFiles": 116,
+    "cases": 1209,
+    "passed": 1206,
+    "failed": 3,
+    "skipped": 0
+  },
+  "deduplication": "Normalized physical file path + fullName + occurrence multiplicity within that file. Exact/expanded and repeated adversarial runs overlap; no additive totals.",
+  "failures": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+      "occurrence": 1,
+      "status": "failed",
+      "failure": [
+        "AssertionError: expected true to be false // Object.is equality"
+      ]
+    },
+    {
+      "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+      "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+      "occurrence": 1,
+      "status": "failed",
+      "failure": [
+        "AssertionError: expected [] to have a length of 1 but got +0"
+      ]
+    },
+    {
+      "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+      "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+      "occurrence": 1,
+      "status": "failed",
+      "failure": [
+        "AssertionError: expected [] to have a length of 1 but got +0"
+      ]
+    }
+  ]
+}

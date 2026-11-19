@@ -1,0 +1,8 @@
+{
+  "artifact": "focused-personal-history.png",
+  "review": "Decoded and visually inspected. Leftmost title/action/content pixels clipped. Geometry alone did not establish full pixel layout.",
+  "pixelAcceptance": "UNPASSED",
+  "privateContentObserved": false,
+  "rawCaptureClaimSuperseded": "capture.json description of settled content is not accepted as a full pixel pass",
+  "scope": "One main-region crop; no sidebar/wholewindow assertion; no repeat v2 capture matrix."
+}

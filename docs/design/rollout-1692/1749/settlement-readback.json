@@ -1,0 +1,44 @@
+{
+  "entries": [
+    {
+      "source_type": "legacy_claim",
+      "report_id": null,
+      "legacy_claim_id": "06fe5fd8-b6d6-4bf6-b264-f025feac5ca5",
+      "kind": "reimbursement",
+      "amount": "20.50",
+      "currency": "EUR",
+      "occurred_on": "2026-11-16",
+      "reference": "R167-PARTIAL-01",
+      "balance_before": "89.90",
+      "export_batch_id": null,
+      "payroll_run_id": null
+    },
+    {
+      "source_type": "report",
+      "report_id": "8c01cd04-73f3-4588-8a98-ed4ffd3c670b",
+      "legacy_claim_id": null,
+      "kind": "reimbursement",
+      "amount": "75.00",
+      "currency": "EUR",
+      "occurred_on": "2026-11-16",
+      "reference": "R167-BULK-01",
+      "balance_before": "75.00",
+      "export_batch_id": null,
+      "payroll_run_id": null
+    }
+  ],
+  "legacyPartial": {
+    "approved": "89.90",
+    "paid": "20.50",
+    "outstanding": "69.40",
+    "freshBrowserReadback": true
+  },
+  "bulk": {
+    "selected": 2,
+    "recorded": 1,
+    "ownExpenseRefused": 1,
+    "ownExpenseEntries": 0,
+    "reportFreshReadback": "Paid €75.00"
+  },
+  "externalTransfersInitiated": 0
+}

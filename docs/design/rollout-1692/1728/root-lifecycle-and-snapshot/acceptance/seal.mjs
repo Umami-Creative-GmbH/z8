@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile,readdir,stat} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+const out='.tmp/1728-root-checks/acceptance',sha=b=>createHash('sha256').update(b).digest('hex');
+const manifest=JSON.parse(await readFile(out+'/verification-manifest.json','utf8'));manifest.cleanup.finalProcessAudit=JSON.parse(await readFile(out+'/process-cleanup-final.json','utf8'));manifest.status='RELEASE; verification complete with explicit qualifications';assert.equal(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(),'');assert.equal(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),manifest.head);await writeFile(out+'/verification-manifest.json',JSON.stringify(manifest,null,2)+'\n');
+const files=[];for(const name of(await readdir(out)).sort()){const p=out+'/'+name;if((await stat(p)).isFile()&&name!=='artifact-hashes.json'){const b=await readFile(p);files.push({path:name,bytes:b.length,sha256:sha(b)});}}const hashes={files,digest:sha(JSON.stringify(files))};await writeFile(out+'/artifact-hashes.json',JSON.stringify(hashes,null,2)+'\n');console.log(JSON.stringify({status:manifest.status,head:manifest.head,sourceDigest:manifest.sourceDigest,manifestSha256:sha(await readFile(out+'/verification-manifest.json')),artifactDigest:hashes.digest,artifactFiles:files.length}));

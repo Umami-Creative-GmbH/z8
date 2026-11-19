@@ -7,7 +7,7 @@ export function WorkPolicyBreakRulesCell({ policy }: { policy: WorkPolicyWithDet
 	}
 	return (
 		<div className="text-center">
-			<Badge variant="outline">{policy.regulation.breakRules?.length || 0}</Badge>
+			<Badge variant="outline" className="tabular-nums">{policy.regulation.breakRules?.length || 0}</Badge>
 		</div>
 	);
 }

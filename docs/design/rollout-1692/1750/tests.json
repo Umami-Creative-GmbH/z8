@@ -1,0 +1,207 @@
+{
+  "source": "7e466fae2668148a856b6dfb2fdaf605d7366029",
+  "sourceQualification": "Unit/types ran against working bytes subsequently committed as this source. PostgreSQL ran before UI-only follow-ups; domain implementation and integration suites were unchanged.",
+  "groups": [
+    {
+      "name": "unit",
+      "cases": 194,
+      "files": [
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report-name.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report-name.test.ts",
+          "sha256": "60ad20dc67cf1c2851234fb13ee7a0d7f0749bca5cbe27420a0192b87689aac7"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/allowance-override-notice.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\allowance-override-notice.test.tsx",
+          "sha256": "ddb841e96ab21e060911108a2c2f7e8fa0c8657e67d70781b4525ef03a9f5415"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/currency-conversion-field.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\currency-conversion-field.test.tsx",
+          "sha256": "f5eef65ade0c0f814a8b8232fbf11cbfafa6bce4ea527914556856fb81297950"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/item-title.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\item-title.test.ts",
+          "sha256": "df25894ac418824bb21fb7a8531effe9c84769efe2007446a1d3d677d79b71f6"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\legacy-conversion-notice.test.tsx",
+          "sha256": "c3469ae02724e098550e840efff4b1b339194cce999ce3e83c9e7e5fa9655c29"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/mileage-item-editor.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\mileage-item-editor.test.tsx",
+          "sha256": "2621ba254928b95ace7a11ee21807d23a205d2388b76db2eebbb744fcadbfb7e"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/per-diem-breakdown.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\per-diem-breakdown.test.tsx",
+          "sha256": "9d7665d3622c066387e8a7ceb4d634f66cc1a1e18639248a0cb4c644eeb3269b"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/per-diem-day-location.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\per-diem-day-location.test.tsx",
+          "sha256": "34e66f5f63b2905a6bd1cdc5623fe7744fe4b07a630812ffe113ae9f4accb9b2"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/per-diem-item-editor.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\per-diem-item-editor.test.tsx",
+          "sha256": "22296090185b002db92b367786e37039ea410ad244f3baa6c03000b2dbdda36d"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/project-picker.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\project-picker.test.tsx",
+          "sha256": "a1edb6635160026790de4d0cddbe8de560831eea471cf751578dbc4b04a0613e"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/receipt-exception-field.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\receipt-exception-field.test.tsx",
+          "sha256": "8e666b36b67426e1229f87794230d9ea70524f36e37d5d08fde17fe4f2c64f1a"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/report-adjustments.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\report-adjustments.test.tsx",
+          "sha256": "d40fc69b981d1f647eeb43dc032d26e32f783aee467c1eb12324bd58fb556345"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/report-reopen.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\report-reopen.test.tsx",
+          "sha256": "6539852326c6c028f10dc23ebb6d90062ef27a09af372063dbc0d95da0b0bd32"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/report-review-cycle.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\report-review-cycle.test.tsx",
+          "sha256": "6481ded986ab2570f2af765331797375d8b068c43a6c829859555d776b1cd4e3"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/report-submission.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\report-submission.test.tsx",
+          "sha256": "1af71478d8d5c8d96f8fae99a98c67fa126474ddde2eb47299e53aa72e3e5f6f"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/report-workspace-scope.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\report-workspace-scope.test.tsx",
+          "sha256": "e53488345bfcd6cd0608c814d946b558d205c41c5c6240eb9d8391d699c76701"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\submitted-report-receipts.test.tsx",
+          "sha256": "99163796d43b15caa7ce22d0946f49816fdeba126a1a88187f5fdad097062d4c"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\travel-expense-report-editor.test.tsx",
+          "sha256": "0515a37de56fa03ec78722b288485d3bb26e8e0a18ee2ea88a188e2dff55a976"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/trip-report-editor.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\trip-report-editor.test.tsx",
+          "sha256": "43832926fa7ef7d9ac8fed249695911318402b5bd9e72ffade97f5f08ff781c7"
+        },
+        {
+          "file": "apps/webapp/src/components/travel-expenses/report/use-submission-now.test.tsx",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\components\\travel-expenses\\report\\use-submission-now.test.tsx",
+          "sha256": "e3f8f46b0d935c30c3dff675b8ff46d5ef221242e4e629ac54456006a049a90b"
+        },
+        {
+          "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\navigation\\route-metadata.test.ts",
+          "sha256": "087510795103efbde9dbea25ad5021eae39d19b19a7792c1ea637a69e3ec75ef"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/__tests__/draft-saver.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\__tests__\\draft-saver.test.ts",
+          "sha256": "5ab51fa7cdedc5c0404c1ceeb2223ac6d72a9549669ca6b42c5fdcc52a9ae666"
+        }
+      ],
+      "exit": 0,
+      "log": "checks/units-complete.txt"
+    },
+    {
+      "name": "postgresql",
+      "cases": 109,
+      "files": [
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-draft.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-draft.integration.test.ts",
+          "sha256": "d7b0626966f5b4a14836f8d7c0d134968c83110bfa81f781c8c7ff3d9da739a4"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\trip-report-draft.integration.test.ts",
+          "sha256": "9060a1d93f52cc5d3c455df41ad3f1b818ee764ebff693f3b9402dfdc525bb58"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-submission.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-submission.integration.test.ts",
+          "sha256": "0905d1369dc46816c84f20fadfaa917c60bea5fe96f362ae5f9e3bed537616de"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-return.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-return.integration.test.ts",
+          "sha256": "0c147e563abf8fbdfd3c79da3d71d5fcfeb603b4283a4452171e2c0ea31b8cda"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-reopen.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-reopen.integration.test.ts",
+          "sha256": "8a29d402ee04b14b5b85c577bdb5d334cd40c6c06486d31e9b59133f2fb18e1a"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-receipt-exception.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-receipt-exception.integration.test.ts",
+          "sha256": "520844bb504c9f303f4578143d1c7a4ee6b2c5734cb61043793311dd166c582d"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/supplemental-receipt.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\supplemental-receipt.integration.test.ts",
+          "sha256": "57ca1d62e32ddec1f23408ef5cd8300ba7bc49fd7876b4e4faccad414a3d80e2"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\expense-officer-access.integration.test.ts",
+          "sha256": "ced0fbd5f3629203d5459343c7d76058aef7e8d1416ca69c9d5f9b4c53465db0"
+        }
+      ],
+      "exit": 0,
+      "log": "checks/pg.txt"
+    },
+    {
+      "name": "postgresql-extra",
+      "cases": 33,
+      "files": [
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/finance-export.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\finance-export.integration.test.ts",
+          "sha256": "5f8dcb3177363a829be09edbc5e00ed1bde513e7576a527b267ea5fb4eefa9e6"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-adjustment.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-adjustment.integration.test.ts",
+          "sha256": "afafe295862aa9963f4d62e673804f6f959bff6b1294816c5daad1a873b5a694"
+        },
+        {
+          "file": "apps/webapp/src/lib/travel-expenses/report-deletion.integration.test.ts",
+          "realPath": "WORKTREE_ROOT\\apps\\webapp\\src\\lib\\travel-expenses\\report-deletion.integration.test.ts",
+          "sha256": "34d39b0b1935bf5c5480cf37948446151083fb53f2b1b79d883d80712618b442"
+        }
+      ],
+      "exit": 0,
+      "log": "checks/pg-extra.txt"
+    }
+  ],
+  "distinctPhysicalFiles": 33,
+  "distinctCases": 336,
+  "counting": "Disjoint final file sets; aggregate executed cases, not repeated attempts. No invented per-file case catalog.",
+  "postmerge": {
+    "source": "5d0456b2681ba564da3f06354c74443ee8045a45",
+    "unitCases": 194,
+    "unitPhysicalFiles": 22,
+    "exit": 0,
+    "additionalDistinctCases": 0,
+    "postgresqlRerun": false,
+    "appSourceUnchanged": true
+  }
+}

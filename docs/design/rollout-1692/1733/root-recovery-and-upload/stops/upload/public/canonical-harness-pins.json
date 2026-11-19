@@ -1,0 +1,72 @@
+{
+  "candidate": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+  "paths": [
+    {
+      "path": "scripts/performance/fixture.mjs",
+      "rawSha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+      "lfSha256": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "gitBlob": "0b79ab082c1a7f49c07510b711067fd5bf987d65"
+    },
+    {
+      "path": "apps/webapp/scripts/performance-fixture.ts",
+      "rawSha256": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d",
+      "lfSha256": "272495c3e14e0ff98f92f4e1802c1ee987c549eba7a21a3b4be61f1c245ea0fc",
+      "gitBlob": "7bdec4956f752617a44d118bc7176171583f4776"
+    },
+    {
+      "path": "apps/webapp/scripts/verify-approval-migration-recovery.ts",
+      "rawSha256": "b1c4c138502a42ffe5566d376776332807adaff18d0b7a21819eec4f42578e23",
+      "lfSha256": "c4b4212242432447153aa251b2bd3283b56a99ddabff9145dc93a3cc7bef4bac",
+      "gitBlob": "895a79194cfd340bdf82415bd97e04dd0fedbbf0"
+    },
+    {
+      "path": "apps/webapp/src/test/integration-database.ts",
+      "rawSha256": "0c27f90b20c8aad061a1b421a895df0592a2542aec2ef28bcfdd0667e2f8419a",
+      "lfSha256": "e7ac5b7ae7df4aa322b96311795861e53704419f44a1c3eaa4c437134f86823f",
+      "gitBlob": "019544f296af1884b840a6a3dfd44ed3baa6107c"
+    },
+    {
+      "path": "apps/webapp/src/test/integration-harness.ts",
+      "rawSha256": "4f8f6f4520d9a1c048dbbd9dc4ab504ee12a449e60e09125c5336ef0d7f217a9",
+      "lfSha256": "57ba9d0f896a99e7b6caabe20b23643626a2ea6a616214ae826474a9abf2e39d",
+      "gitBlob": "516209fefc64af26d439ec8c019314b4c2dd1403"
+    },
+    {
+      "path": "apps/webapp/src/test/integration-setup.ts",
+      "rawSha256": "475b76323a475ac1174ad1e970bf907b09ae04fe5090a563562fb35f3bfa9ae5",
+      "lfSha256": "525293f12952c93629625c6b486d4689af62b2e6a251461780df3cee0ecf2878",
+      "gitBlob": "b6ea0c62d6b9d6766609f2b7001bdfbe149be43b"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "rawSha256": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+      "lfSha256": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitBlob": "323245b2faafb355b8a562caa24d9679828ad2dd"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "rawSha256": "d00f904d1a7443d54064099badff58574f0accd9c6a54fd9e97e4303a76359f5",
+      "lfSha256": "9d22fcac9d07044dddbec485572a116321a35bd5a82dc3e948d4d09bc446c8ef",
+      "gitBlob": "07e5b15db82e9f0cd8cddc17823c610366e403bb"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-upload-client.ts",
+      "rawSha256": "19b5eb885587fffd49bdd93f0d38f04f43e631c9d0305bba1eadf30bc9e34670",
+      "lfSha256": "16d02617d4e8b2131d14f78686a6987de0b2e42a6bb653d52da80aa14c34dbf7",
+      "gitBlob": "4d337aed4e0715a49bf3b1a7e40c24eb788780ef"
+    },
+    {
+      "path": "apps/webapp/src/app/api/upload/personnel-file/payslip-batch/route.ts",
+      "rawSha256": "c9f90b4128a4f96dac4857953052c083b84ee6f379c2b3252dfcdb5ca245916d",
+      "lfSha256": "3fe4cb0a0da2116943106191f7951767d10966578277edb23db0aba73e4aeb9b",
+      "gitBlob": "8384e97364f2288e5626e370c02ff4cde6fad3d7"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch-store.ts",
+      "rawSha256": "42524697735e611e84dfa8289bea1dd8cb4a4fd3cd18159f252d2d75dab77041",
+      "lfSha256": "30a738f8c8d2046a42c461ddee08a54224d34c700fd0a3ef33300b0d764d3e77",
+      "gitBlob": "2a7ea1e1d81255d25f16237a9c8cc7b8ea0151ef"
+    }
+  ],
+  "licenseArtifact": "Genuine inherited125 licenses provided by root; no new license/catalog generation performed."
+}

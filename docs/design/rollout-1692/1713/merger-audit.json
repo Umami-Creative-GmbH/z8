@@ -1,0 +1,432 @@
+{
+  "head": "d4f4859527122f39dfda456671d48de131bab51c",
+  "parents": [
+    "eec17c6b3a9442866b54bf64345ef7818ecf0dfb",
+    "4d89533232f376eee4e9c2e8f92aa38845e30cd2"
+  ],
+  "tree": "1df50a464405058cad47ddf47a97cfefccb70a4c",
+  "pathsBefore": 11152,
+  "pathsAfter": 11212,
+  "changedPaths": 73,
+  "sourcePaths": [
+    "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.tsx",
+    "apps/webapp/src/app/[locale]/(app)/calendar/page.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx",
+    "apps/webapp/src/components/calendar/calendar-employee-selector.test.tsx",
+    "apps/webapp/src/components/calendar/calendar-employee-selector.tsx",
+    "apps/webapp/src/components/calendar/calendar-main-content.tsx",
+    "apps/webapp/src/components/calendar/calendar-view.test.tsx",
+    "apps/webapp/src/components/calendar/calendar-view.tsx",
+    "apps/webapp/src/components/site-header.test.tsx",
+    "apps/webapp/src/lib/calendar/calendar-employee-context.test.ts",
+    "apps/webapp/src/lib/calendar/calendar-employee-context.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "priorRolloutPathsPreserved": 934,
+  "verifiedLedgerAncestors": 24,
+  "additionalAncestors": [
+    "2dd336ccf",
+    "2d121072a",
+    "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+    "c1d7e96e7",
+    "73182bad5",
+    "4012ed50c",
+    "f4a2acd80",
+    "ccccad7a3512924e01941054f01283057dd62f00",
+    "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+    "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+    "ce99de607",
+    "eec17c6b3a9442866b54bf64345ef7818ecf0dfb",
+    "4d89533232f376eee4e9c2e8f92aa38845e30cd2"
+  ],
+  "existingPathDeletions": 0,
+  "intentionallyCombinedBlobs": [
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "allPriorHeadingOptInsPreserved": {
+    "exact": 17,
+    "patterns": 3,
+    "addedPattern": "/calendar/[^/]+"
+  },
+  "artifacts": {
+    "json": 18,
+    "scripts": 6,
+    "png": 34,
+    "links": 24,
+    "fullDecode": true,
+    "pngs": [
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-boundary-readback.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-boundary-ready.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-denied-arrival.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-desktop-light.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-large-text-desktop.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-large-text-phone.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-manager-new-york.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-missing-arrival.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-mobile-drawer-escape-limit.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-phone-dark-reduced.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-phone-filters-and-month.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-phone-light.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-phone-month.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-records.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-saved-record.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-selected-phone-dark-large-reduced.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-selected-wide-dark-large.png",
+        "width": 2400,
+        "height": 1200
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-selected-zone-manual-range.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-target-access-refusal.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-target-manual-readback.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-target-manual-ready.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-target-org-refusal.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\after-wide-dark.png",
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\attempts\\failed-context-step.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\attempts\\failed-runtime-step.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\attempts\\failed-target-step.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\before-desktop-light.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\before-phone-light.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\before-phone-month.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\before-records.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\selector-final\\after-desktop-light.png",
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\selector-final\\after-phone-light.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\selector-final\\after-phone-month.png",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "file": "docs\\design\\rollout-1692\\1713\\selector-final\\after-records.png",
+        "width": 1600,
+        "height": 1000
+      }
+    ],
+    "paired": [
+      {
+        "name": "desktop",
+        "width": 1600,
+        "headings": [
+          "Calendar"
+        ]
+      },
+      {
+        "name": "phone",
+        "width": 390,
+        "headings": [
+          "Calendar"
+        ]
+      },
+      {
+        "name": "month-phone",
+        "width": 390,
+        "headings": [
+          "Calendar"
+        ]
+      },
+      {
+        "name": "seeded-records",
+        "width": 1600,
+        "events": 6,
+        "headings": [
+          "Calendar"
+        ]
+      }
+    ],
+    "runtime": [
+      {
+        "name": "runtime",
+        "assertions": 28,
+        "uniqueNames": 28
+      },
+      {
+        "name": "context",
+        "assertions": 16,
+        "uniqueNames": 16
+      },
+      {
+        "name": "target",
+        "assertions": 15,
+        "uniqueNames": 14
+      },
+      {
+        "name": "arrival",
+        "assertions": 4,
+        "uniqueNames": 4
+      }
+    ],
+    "inheritedFinalRuntimeSourcePin": "10673de8a632a7c31b2389bf905408277b99c5dd",
+    "pinSource": [
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.test.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/calendar/page.test.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/components/calendar/calendar-employee-selector.test.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/components/calendar/calendar-employee-selector.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/components/calendar/calendar-main-content.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/components/calendar/calendar-view.test.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/components/calendar/calendar-view.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/components/site-header.test.tsx",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/lib/calendar/calendar-employee-context.test.ts",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/lib/calendar/calendar-employee-context.ts",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "equalToFinalIncoming": true
+      },
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "equalToFinalIncoming": true
+      }
+    ]
+  },
+  "lineEndings": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.test.tsx",
+      "crlf": 61,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.tsx",
+      "crlf": 53,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/calendar/page.test.tsx",
+      "crlf": 74,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx",
+      "crlf": 79,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/components/calendar/calendar-employee-selector.test.tsx",
+      "crlf": 40,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/components/calendar/calendar-employee-selector.tsx",
+      "crlf": 100,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/components/calendar/calendar-main-content.tsx",
+      "crlf": 172,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/components/calendar/calendar-view.test.tsx",
+      "crlf": 1478,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/components/calendar/calendar-view.tsx",
+      "crlf": 753,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "crlf": 225,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/calendar/calendar-employee-context.test.ts",
+      "crlf": 195,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/calendar/calendar-employee-context.ts",
+      "crlf": 113,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "crlf": 125,
+      "lf": 0
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "crlf": 248,
+      "lf": 0
+    }
+  ],
+  "diffChecks": [
+    {
+      "ref": "eec17c6b3a9442866b54bf64345ef7818ecf0dfb",
+      "passed": true
+    },
+    {
+      "ref": "4d89533232f376eee4e9c2e8f92aa38845e30cd2",
+      "passed": true
+    }
+  ],
+  "limits": [
+    "No fresh runtime, services, browser, PG suite, build, Tolgee, device, zoom or provider lifecycle run in merger.",
+    "Before/after layout files have no machine-recorded source commits/hashes. Starting 5d5229c18ee87c226819aa6a46e81bc097d34fa8 is declared in report; matching scope/viewports/seeded-record counts and driver exist, but raw source provenance is not independently established.",
+    "Incoming integration-verification latestLocalIntegration=6bce3640 was a historical snapshot, not current eec17c6; fresh combined merge checks address this compatibility gap."
+  ]
+}

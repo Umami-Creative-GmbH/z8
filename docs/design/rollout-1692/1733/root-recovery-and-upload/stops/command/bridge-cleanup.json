@@ -1,0 +1,15 @@
+{
+  "removed": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/independent1733-command-probe.test.tsx",
+      "sha256": "8734c87e20992ee474365f55bc947a9adabd9d31cd2222adb5b25366600da2ab",
+      "exactGeneratedBytes": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/independent1733-heading-probe.test.tsx",
+      "sha256": "98bb8eb174f01c33e07b55882b3c7e3755bbaa7b9da59a2c5e7094c5409b3b8b",
+      "exactGeneratedBytes": true
+    }
+  ],
+  "sourceFix": false
+}

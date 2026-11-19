@@ -8,6 +8,7 @@ import { loadPermissionsPageData } from "./actions";
 import {
 	PermissionEditorDialog,
 	PermissionsEmptyState,
+	PermissionsPageHeader,
 	PermissionsTableCard,
 } from "./page-sections";
 import {
@@ -103,6 +104,7 @@ export function PermissionsPageClient(props: {
 						},
 						isAdmin: props.isOrgAdmin,
 						noEmployee: false,
+						loadFailed: true,
 						employees: [],
 						teams: [],
 						permissions: {},
@@ -135,6 +137,7 @@ export function PermissionsPageClient(props: {
 						},
 						isAdmin: props.isOrgAdmin,
 						noEmployee: false,
+						loadFailed: true,
 						employees: [],
 						teams: [],
 						permissions: {},
@@ -251,23 +254,12 @@ export function PermissionsPageClient(props: {
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.permissions.title", "Team Permissions")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.permissions.description",
-							"Manage employee permissions for team operations",
-						)}
-					</p>
-				</div>
-			</div>
+		<div className="page-frame flex flex-1 flex-col gap-6">
+			<PermissionsPageHeader />
 
 			<PermissionsTableCard
 				loading={state.loading || !isCurrentOrganization}
+				loadFailed={isCurrentOrganization && state.loadFailed}
 				searchQuery={state.searchQuery}
 				onSearchChange={(searchQuery) =>
 					dispatch({ type: "setSearchQuery", searchQuery })

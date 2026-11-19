@@ -1,0 +1,17 @@
+[
+  {
+    "exit": 0,
+    "project": "tsconfig.typecheck.json",
+    "log": ".tmp/1739-checks/final-tsconfig.typecheck.json.log"
+  },
+  {
+    "exit": 0,
+    "project": "tsconfig.workflow-contracts.json",
+    "log": ".tmp/1739-checks/final-tsconfig.workflow-contracts.json.log"
+  },
+  {
+    "exit": 0,
+    "project": "tsconfig.smoke.json",
+    "log": ".tmp/1739-checks/final-tsconfig.smoke.json.log"
+  }
+]

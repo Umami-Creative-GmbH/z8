@@ -1,0 +1,41 @@
+{
+  "base": "f780ef50207e9415c16a87d44c769b94602cc528",
+  "sourceVersion": "412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150",
+  "method": "Same fixture/holder/admin/scope/post-action records; only employee consumer sources and own heading opt-in replaced; current shared shell retained; exact byte restoration",
+  "restored": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/equipment/employees/[employeeId]/page.tsx",
+      "sha256": "62c3ac23a346876e9a1fd61d709788f7c2367d01a0003f5f9f012faa383c3ee5"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-employee.tsx",
+      "sha256": "dbdffa14b1759e42169bcc40e3e3fff972e3c2069e3da14c02df54c4e10637e2"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "45a5167660b5462cd6fee436ec580f6bf2b3ec1cd9df953e9000f1893ea755da"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/equipment/employees/[employeeId]/page.tsx",
+      "sha256": "62c3ac23a346876e9a1fd61d709788f7c2367d01a0003f5f9f012faa383c3ee5"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-employee.tsx",
+      "sha256": "dbdffa14b1759e42169bcc40e3e3fff972e3c2069e3da14c02df54c4e10637e2"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "45a5167660b5462cd6fee436ec580f6bf2b3ec1cd9df953e9000f1893ea755da"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-employee-header.tsx",
+      "sha256": "aabfeb363d18796444f3530db691d2e38d0d72b0f557a16f2b613edf18ea3810"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-employee-loading.tsx",
+      "sha256": "62616c8062dc3e273360a5eb04ed2c250daf135bf58e1665f65e9457e5e3c535"
+    }
+  ]
+}

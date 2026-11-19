@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "payloads": 36,
+  "totalBytes": 482857,
+  "files": [
+    {
+      "file": "HANDOFF.md",
+      "bytes": 3816,
+      "sha256": "dc2c6f6265e550e053a47c3e88ac3bb7c61ed7cd8a07cb5ec1eccd25139e024e"
+    },
+    {
+      "file": "LEASE.json",
+      "bytes": 724,
+      "sha256": "72a3a5aa9b8e246c9e4a959d370cac6537f349e0567128d125aa7afb68011f2d"
+    },
+    {
+      "file": "REPORT.json",
+      "bytes": 3846,
+      "sha256": "e557727adaba4a9e4735d0fbbe9b3fff78736da0dd6b4e57907fe55cb2b06ae4"
+    },
+    {
+      "file": "assertion-ledger-SAFE.json",
+      "bytes": 9746,
+      "sha256": "e67e4a6fdfffbeec844fc063b49c2103d2442a44aad7849e85ed9ec0d474fed7"
+    },
+    {
+      "file": "attempts-SAFE.json",
+      "bytes": 4246,
+      "sha256": "6b151f67a5e8936f28cba11cd11c090068e6646ff784aafa3df97c31f1ce955a"
+    },
+    {
+      "file": "browser-cleanup-SAFE.json",
+      "bytes": 158,
+      "sha256": "0ef6fb53354446a3c0c005b0d48d9093ea3b0938dfe3e012fce8b821ebd8f903"
+    },
+    {
+      "file": "captures-SAFE.json",
+      "bytes": 1818,
+      "sha256": "52d8c41a6c63ed7852e4202ede0c0b89a8052deeabdfe74687598c18ac2d61a2"
+    },
+    {
+      "file": "claim-next-diagnostics-SAFE.json",
+      "bytes": 1181,
+      "sha256": "16a8c26b53a6dba03dad2b1d951d115baeb224d2b0532532e3d11043e285dd98"
+    },
+    {
+      "file": "commands-SAFE.json",
+      "bytes": 2283,
+      "sha256": "0501990c95f17e78d5c499a9ff8d8d271d2819bb36300b14b116a07995eb7370"
+    },
+    {
+      "file": "database-after-SAFE.json",
+      "bytes": 9378,
+      "sha256": "719cc6e74c78157d7f39203c3940cc68204b6f3ca7d31dc88fb3540f38266b5c"
+    },
+    {
+      "file": "database-before-SAFE.json",
+      "bytes": 9378,
+      "sha256": "f80abd3cbfa451a21dc6cb0d429b558b1bcd4a882271ca3bb044e8d43d024687"
+    },
+    {
+      "file": "database-controls-SAFE.json",
+      "bytes": 1660,
+      "sha256": "cb7ed92cd0e97a3606156b77c4558cc577d34304d4464145528e0faa8600e4c5"
+    },
+    {
+      "file": "dependency-links-before-SAFE.json",
+      "bytes": 121,
+      "sha256": "93b16b422cf7cda06d7d4e3e402ef999db30abb39d43e8666e6be69df2d8d2fd"
+    },
+    {
+      "file": "draft-panel-current.png",
+      "bytes": 94760,
+      "sha256": "f0957343f749f1b86d3350ba649f4fdcafdaae1e259427b5adcb35f14cdde8ac"
+    },
+    {
+      "file": "first-conversion-SAFE.json",
+      "bytes": 345,
+      "sha256": "311934873197301b5729c57882c86a22329e5ac4e0692f282cbb8310da1e24fb"
+    },
+    {
+      "file": "graph-fields-SAFE.json",
+      "bytes": 670,
+      "sha256": "ec0320f805b8dc4d17b9fd5e63ecc86653d1247fca95363c246890a5acde06b2"
+    },
+    {
+      "file": "lease-release-SAFE.json",
+      "bytes": 135,
+      "sha256": "2000b759c5b3e2248164165d76300e2379cb6921a0a28cd65dd828412d78e5aa"
+    },
+    {
+      "file": "mcp-tools-SAFE.json",
+      "bytes": 5280,
+      "sha256": "56991efe043588d74dd93c9ef839e94f83b6359eb4cc960e227ad2825b668e58"
+    },
+    {
+      "file": "next-diagnostics-SAFE.json",
+      "bytes": 1724,
+      "sha256": "2d57d9e4284fb7ef0ed4e13d732b16c9ad3489af5faca733f508018066651002"
+    },
+    {
+      "file": "observed-failure-receipts-SAFE.json",
+      "bytes": 615,
+      "sha256": "ae83d378580240e8c6f98fa7dbd52d769f6890143c2523b16eb1b66029a518f7"
+    },
+    {
+      "file": "originals-after-SAFE.json",
+      "bytes": 887,
+      "sha256": "cbdf83d93da19d318045c65412d91278315c2aae05a5c3a82d97795eb0bc9fab"
+    },
+    {
+      "file": "originals-before-SAFE.json",
+      "bytes": 887,
+      "sha256": "cbdf83d93da19d318045c65412d91278315c2aae05a5c3a82d97795eb0bc9fab"
+    },
+    {
+      "file": "pins-before-SAFE.json",
+      "bytes": 510,
+      "sha256": "b133f5cb4ead9ce469afaf84b4ac6d15209250583f5ce964d82d0dce0b2b33b1"
+    },
+    {
+      "file": "preservation-final-SAFE.json",
+      "bytes": 816,
+      "sha256": "ed8b1d274d61e6184f230bf4b8dd6a79e1bc464cb79ceb4c2ee738ae460b1155"
+    },
+    {
+      "file": "process-cleanup-SAFE.json",
+      "bytes": 218,
+      "sha256": "1a12cf15c0f86c000c654875127abe6517a8a8945d61f43a2d0aaea61bed5f30"
+    },
+    {
+      "file": "process-inventory-SAFE.json",
+      "bytes": 125,
+      "sha256": "964be1be69c4d2634a55411264875425f7b976dd2971dcd00e0aaa7c97ef77ad"
+    },
+    {
+      "file": "react-draft-SAFE.json",
+      "bytes": 3189,
+      "sha256": "026d7409f13664c96e615490e27eb0297d9cb55e7aa8dff178e2c9444dd4f9f6"
+    },
+    {
+      "file": "react-draft-attempt1-SAFE.json",
+      "bytes": 2802,
+      "sha256": "6f9636c0bd072872d099029a1dc206269e7380b42cd52bdbd96c9839d7a20239"
+    },
+    {
+      "file": "report-editor-open-current.png",
+      "bytes": 123146,
+      "sha256": "a45109abe49b98c3c2508de8d20f2a55359e4fc1deed5f52dcb5eae8a81ef316"
+    },
+    {
+      "file": "report-editor-reload-current.png",
+      "bytes": 117921,
+      "sha256": "6fe448844d198be270f9ee2eba0b48d29235b039db1296383b60b159cc37bdb5"
+    },
+    {
+      "file": "report-open-reload-SAFE.json",
+      "bytes": 645,
+      "sha256": "c486ae7e9498a3990b50df6c3f021f953f3c8e06175bc5747edcf8224e761f74"
+    },
+    {
+      "file": "resources-final-SAFE.json",
+      "bytes": 297,
+      "sha256": "4903848a5c4919e605490000044d69a5f9da1a0de489f4ccedc2104376f1fe63"
+    },
+    {
+      "file": "retirement-attempt1-SAFE.json",
+      "bytes": 834,
+      "sha256": "43abfd665acc84f379da7560641959204e82ca2a055719ce65a34453f3024ddf"
+    },
+    {
+      "file": "retirement-held-SAFE.json",
+      "bytes": 548,
+      "sha256": "92549b155564806fbee0d6b69c8dab5faa2ce2d69f7824669230cdcba538f27a"
+    },
+    {
+      "file": "retirement-settled-current.png",
+      "bytes": 77945,
+      "sha256": "45db4b6678fbf7c375730f0cdedbd3114b8bb10560dae2469754d37bf01a1d0f"
+    },
+    {
+      "file": "seed-SAFE.json",
+      "bytes": 203,
+      "sha256": "916ec835fe8d0ba36fb518c9ea24923e329d25746793d0690dcbb60f4622f309"
+    }
+  ],
+  "excluded": "All absent files, including private fixtures/credentials/maps/raw errors/runtime logs/helper code/profiles and original archive. Only explicit relative file keys are authorized for public intake."
+}

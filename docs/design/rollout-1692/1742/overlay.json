@@ -1,0 +1,29 @@
+{
+  "base": "cf0203c822ac2837de2c02bc4da816dc741a63e9",
+  "after": "f5d3b34e2e388c87c278633e7bf8f2be71da5185",
+  "scope": "partial application, four consumer files; new dormant route leaves remain; not a full checkout baseline",
+  "stoppedServerRequired": true,
+  "byteExactRestoration": true,
+  "records": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx",
+      "after": "a918fe7e262ca4e2b652a484e4a82f944441c788e65a3e14ccdcec8168738c34",
+      "before": "02dffb61d589e51be8d5a7dcaccdc233924eb2c149b72b18880687235e8a367a"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.tsx",
+      "after": "acdd6312fded3bf6915fc2a2146c520ed21d1f3a26af76c5f61f1fc3d3a6b275",
+      "before": "a555f5c55ff977753124bc60476c00eef007758959eee6ead4a3f62c774b1787"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-data.ts",
+      "after": "48fe2cecbb4f482d44418da97e6712504fa808bf4692924ec1acbd5ee12445da",
+      "before": "09fa697ead8326017833a5e9ac6ecddc31ebc73a7d755187f8d880ce79273a44"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "after": "e7b932e33b6923c7e37c12b0e5e9f9c10850f7b7407f97e452eba1675a829c4d",
+      "before": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b"
+    }
+  ]
+}

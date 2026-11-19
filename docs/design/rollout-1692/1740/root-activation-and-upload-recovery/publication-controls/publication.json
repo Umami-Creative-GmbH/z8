@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "derived": true,
+  "target": "docs/design/rollout-1692/1740/root-activation-and-upload-recovery",
+  "report": "docs/design/rollout-1692/1740.md",
+  "planSha256": "3f690d088adba875b9278d5cdd475a836f840be150f0918a5c1ac7556d472ed7",
+  "payloadCount": 117,
+  "payloadBytes": 6716079,
+  "sourceConfigPins": 17,
+  "sourceCommit": "6757981b6844a2e497c055a1fa5cebd021987675",
+  "frozenReview": "3f7759880ea2b77c199507b8967a73915c48ec91",
+  "rootAtPublication": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+  "verifiedCommit": null,
+  "readiness": null,
+  "indexExcludes": [
+    "file-index.json",
+    "SHA256SUMS.txt",
+    "seal.json"
+  ],
+  "indexScope": "All other public archive files, including copied historical controls. Report separately bound by prefix-receipt.json. No public verifier outputs.",
+  "sealScope": "Hashes file-index.json and SHA256SUMS.txt; seal does not hash itself. Entire final archive and report separately hashed in private handoff.",
+  "missingStatic": [
+    "1740-root-checks/activation-red-02.json",
+    "1740-root-checks/units-final-02.json",
+    "1740-root-checks/correction-mergeaudit.json",
+    "1740-upload-root-checks/lifecycle-final-01.json"
+  ],
+  "ownership": "Only this new archive and append-only report section. Root owns staged Git-blob audit, commit and readiness."
+}

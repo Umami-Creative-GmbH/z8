@@ -1,0 +1,79 @@
+{
+  "derived": true,
+  "parser": {
+    "name": "Existing Next bundled Babel core().parseSync",
+    "nextVersion": "16.4.6",
+    "bundleSha256": "0cb0c45dae15d4080c022d6b60b88d27923ddfb29dd0a1e18aac4df39f4082b6",
+    "bundleBytes": 1364777
+  },
+  "configFile": false,
+  "babelrc": false,
+  "executed": false,
+  "typeOrBuildClaim": false,
+  "python": "Four copied historical Python drivers remain inert; no execution or Python syntax claim.",
+  "entries": [
+    {
+      "path": "archive/runtime-current/independent-arrival-review.test.tsx",
+      "bytes": 16592,
+      "sha256": "5dd04096f1532ea37ed9b8e40cd7f57274d1b2259d98ba53e0aecd839cf05f3a",
+      "parserPlugins": [
+        "typescript",
+        "jsx"
+      ],
+      "exit": 0,
+      "diagnostics": 0,
+      "syntaxOnly": true,
+      "executed": false
+    },
+    {
+      "path": "archive/stop-provider-arrival/expected-metadata.ts",
+      "bytes": 7292,
+      "sha256": "209c86da4bac71af4a26f72df5b6903a5167a52a805099aa410e10824565ed7e",
+      "parserPlugins": [
+        "typescript"
+      ],
+      "exit": 0,
+      "diagnostics": 0,
+      "syntaxOnly": true,
+      "executed": false
+    },
+    {
+      "path": "archive/stop-provider-arrival/expected-metadata.test.ts",
+      "bytes": 11337,
+      "sha256": "93bfe1f5dc5e64f088dda545a3869bb92ca35032436b64f27c1674261e51f36b",
+      "parserPlugins": [
+        "typescript"
+      ],
+      "exit": 0,
+      "diagnostics": 0,
+      "syntaxOnly": true,
+      "executed": false
+    },
+    {
+      "path": "archive/stop-provider-arrival/public-contract.test.tsx",
+      "bytes": 14796,
+      "sha256": "fc91424c442748d68b7522003bb5cbc24e3b18e4028ad531601b6d4e18e19f3c",
+      "parserPlugins": [
+        "typescript",
+        "jsx"
+      ],
+      "exit": 0,
+      "diagnostics": 0,
+      "syntaxOnly": true,
+      "executed": false
+    },
+    {
+      "path": "archive/stop-provider-arrival/minimal-arrival.test.tsx",
+      "bytes": 8677,
+      "sha256": "7a4bc4fd5c2eb2f1c445e06b1c89c3e5ce3e07848aef5d528d0bbfb85c8f1e91",
+      "parserPlugins": [
+        "typescript",
+        "jsx"
+      ],
+      "exit": 0,
+      "diagnostics": 0,
+      "syntaxOnly": true,
+      "executed": false
+    }
+  ]
+}

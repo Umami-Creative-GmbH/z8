@@ -48,7 +48,9 @@ type TFormItemContextValue = {
 	id: string;
 };
 
-const TFormItemContext = React.createContext<TFormItemContextValue>({} as TFormItemContextValue);
+const TFormItemContext = React.createContext<TFormItemContextValue>(
+	{} as TFormItemContextValue,
+);
 
 /**
  * Wrapper component for form fields - provides ID context for accessibility
@@ -59,7 +61,11 @@ function TFormItem({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<TFormItemContext.Provider value={{ id }}>
 			{/* content-start: a field stretched by a taller neighbour keeps its label and input on top. */}
-			<div data-slot="form-item" className={cn("grid content-start gap-2", className)} {...props} />
+			<div
+				data-slot="form-item"
+				className={cn("grid content-start gap-2", className)}
+				{...props}
+			/>
 		</TFormItemContext.Provider>
 	);
 }
@@ -86,7 +92,13 @@ type TFormLabelProps = React.ComponentProps<typeof Label> & {
 	required?: boolean;
 };
 
-function TFormLabel({ className, hasError, required, children, ...props }: TFormLabelProps) {
+function TFormLabel({
+	className,
+	hasError,
+	required,
+	children,
+	...props
+}: TFormLabelProps) {
 	const { id } = useTFormItem();
 
 	return (
@@ -119,7 +131,9 @@ function TFormControl({
 		<Slot
 			data-slot="form-control"
 			id={formItemId}
-			aria-describedby={!hasError ? formDescriptionId : `${formDescriptionId} ${formMessageId}`}
+			aria-describedby={
+				!hasError ? formDescriptionId : `${formDescriptionId} ${formMessageId}`
+			}
 			aria-invalid={hasError}
 			{...props}
 		/>
@@ -160,7 +174,18 @@ function TFormMessage({
 
 	// Get error message from field state or use children
 	const errors = field?.state.meta.errors;
-	const errorMessages = errors?.filter((e): e is string => typeof e === "string");
+	const errorMessages = errors?.flatMap((error) => {
+		if (typeof error === "string") return [error];
+		// Standard Schema validators (for example Zod) return issues, not strings.
+		if (
+			error &&
+			typeof error === "object" &&
+			"message" in error &&
+			typeof error.message === "string"
+		)
+			return [error.message];
+		return [];
+	});
 	const errorMessage = errorMessages?.length ? errorMessages.join(", ") : null;
 	const body = errorMessage ?? children;
 
@@ -182,4 +207,11 @@ function TFormMessage({
 	);
 }
 
-export { TFormControl, TFormDescription, TFormItem, TFormLabel, TFormMessage, useTFormItem };
+export {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+	useTFormItem,
+};

@@ -1,0 +1,1877 @@
+{
+  "created": "2026-11-16T12:11:20.969Z",
+  "head": "87b431bd6116ab90aed9d822db835dc78107bffb",
+  "tree": "ba5a7bec6d0fe7feaedcf7b2d93da359e3a41593",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "status": "",
+  "lastVerified": "8e3876c39725b7a8ef5218439766395401d64b80",
+  "ancestors": [
+    {
+      "issue": "baseline",
+      "sha": "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+      "ancestor": true
+    },
+    {
+      "issue": 1693,
+      "sha": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "sha": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "sha": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "sha": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "sha": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "sha": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "sha": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "sha": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "sha": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "sha": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "sha": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "sha": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "sha": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "sha": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "sha": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "sha": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "sha": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "sha": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "sha": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "sha": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "sha": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "sha": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "sha": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "sha": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "sha": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "sha": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "sha": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "sha": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "sha": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "sha": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "sha": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "sha": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "sha": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "sha": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "sha": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "sha": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1828,
+      "sha": "752c500833e751df9988a3b2434d240124b89a51",
+      "ancestor": true
+    },
+    {
+      "issue": 1829,
+      "sha": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "issue": 1830,
+      "sha": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "ancestor": true
+    },
+    {
+      "issue": 1831,
+      "sha": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "ancestor": true
+    },
+    {
+      "issue": 1832,
+      "sha": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "ancestor": true
+    },
+    {
+      "issue": 1833,
+      "sha": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "ancestor": true
+    },
+    {
+      "issue": 1834,
+      "sha": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "ancestor": true
+    },
+    {
+      "issue": 1835,
+      "sha": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "sha": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "sha": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "sha": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "sha": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1728,
+      "sha": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "ancestor": true
+    },
+    {
+      "issue": 1729,
+      "sha": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "ancestor": true
+    },
+    {
+      "issue": 1730,
+      "sha": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "ancestor": true
+    },
+    {
+      "issue": 1736,
+      "sha": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "ancestor": true
+    },
+    {
+      "issue": 1737,
+      "sha": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "sha": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": "supplied-verified",
+      "sha": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "ancestor": true
+    }
+  ],
+  "manifests": {
+    ".npmrc": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+    "apps/webapp/biome.jsonc": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+    "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "apps/webapp/package.json": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+    "apps/webapp/tsconfig.json": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+    "apps/webapp/tsconfig.smoke.json": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+    "apps/webapp/tsconfig.typecheck.json": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+    "apps/webapp/tsconfig.workflow-contracts.json": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+    "apps/webapp/vitest.config.ts": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+    "package.json": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+    "pnpm-lock.yaml": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "pnpm-workspace.yaml": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+    "node_modules/.modules.yaml": "e8d58c3826da6034c257da4c8e55991b6c2a6c285d9377305e4461e5d5304d4d",
+    "node_modules/.pnpm/lock.yaml": "39e4cc0bf8792f5fc5f714c03ff83f31a579ced56f8fe9f27febcedfc7e41f01"
+  },
+  "dependencyRoots": [
+    {
+      "path": "node_modules",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules",
+      "isDirectory": true,
+      "isSymbolicLink": false,
+      "birthtimeMs": 1794758928312.47,
+      "mtimeMs": 1794759784939.5247
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\node_modules",
+      "isDirectory": true,
+      "isSymbolicLink": false,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794760829915.4607
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm",
+      "isDirectory": true,
+      "isSymbolicLink": false,
+      "birthtimeMs": 1794758928312.47,
+      "mtimeMs": 1794759016291.687
+    }
+  ],
+  "links": [
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@esbuild+win32-x64@0.28.2\\node_modules\\@esbuild\\win32-x64",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@esbuild+win32-x64@0.28.2\\node_modules\\@esbuild\\win32-x64"
+    },
+    {
+      "path": "node_modules/puppeteer-core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\puppeteer-core@25.17.0_yauzl@2.10.0\\node_modules\\puppeteer-core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011287.4568,
+      "mtimeMs": 1794759011287.4568,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\puppeteer-core@25.17.0_yauzl@2.10.0\\node_modules\\puppeteer-core"
+    },
+    {
+      "path": "node_modules/react-doctor",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011287.4568,
+      "mtimeMs": 1794759011287.4568,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor"
+    },
+    {
+      "path": "node_modules/shadcn",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn"
+    },
+    {
+      "path": "node_modules/turbo",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\turbo@2.11.11\\node_modules\\turbo",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\turbo@2.11.11\\node_modules\\turbo"
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/client-s3",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+client-s3@3.1167.0\\node_modules\\@aws-sdk\\client-s3",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+client-s3@3.1167.0\\node_modules\\@aws-sdk\\client-s3"
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/s3-request-presigner",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+s3-request-presigner@3.1167.0\\node_modules\\@aws-sdk\\s3-request-presigner",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+s3-request-presigner@3.1167.0\\node_modules\\@aws-sdk\\s3-request-presigner"
+    },
+    {
+      "path": "apps/webapp/node_modules/@base-ui/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea\\node_modules\\@base-ui\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea\\node_modules\\@base-ui\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/api-key",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523\\node_modules\\@better-auth\\api-key",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523\\node_modules\\@better-auth\\api-key"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766\\node_modules\\@better-auth\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766\\node_modules\\@better-auth\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/drizzle-adapter",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278\\node_modules\\@better-auth\\drizzle-adapter",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011305.5173,
+      "mtimeMs": 1794759011305.5173,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278\\node_modules\\@better-auth\\drizzle-adapter"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/passkey",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24\\node_modules\\@better-auth\\passkey",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24\\node_modules\\@better-auth\\passkey"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/scim",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599\\node_modules\\@better-auth\\scim",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599\\node_modules\\@better-auth\\scim"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/sso",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d\\node_modules\\@better-auth\\sso",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d\\node_modules\\@better-auth\\sso"
+    },
+    {
+      "path": "apps/webapp/node_modules/@biomejs/biome",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome"
+    },
+    {
+      "path": "apps/webapp/node_modules/@bprogress/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@bprogress+core@1.3.4\\node_modules\\@bprogress\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@bprogress+core@1.3.4\\node_modules\\@bprogress\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@capacitor/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@capacitor+core@8.6.0\\node_modules\\@capacitor\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@capacitor+core@8.6.0\\node_modules\\@capacitor\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@casl/ability",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@casl+ability@7.1.2\\node_modules\\@casl\\ability",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@casl+ability@7.1.2\\node_modules\\@casl\\ability"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dagrejs/dagre",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dagrejs+dagre@3.1.3\\node_modules\\@dagrejs\\dagre",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dagrejs+dagre@3.1.3\\node_modules\\@dagrejs\\dagre"
+    },
+    {
+      "path": "apps/webapp/node_modules/@daypicker/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1\\node_modules\\@daypicker\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1\\node_modules\\@daypicker\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+core@10.7.0\\node_modules\\@dicebear\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011305.5173,
+      "mtimeMs": 1794759011305.5173,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+core@10.7.0\\node_modules\\@dicebear\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/styles",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+styles@10.6.0\\node_modules\\@dicebear\\styles",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+styles@10.6.0\\node_modules\\@dicebear\\styles"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7\\node_modules\\@dnd-kit\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7\\node_modules\\@dnd-kit\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/modifiers",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5\\node_modules\\@dnd-kit\\modifiers",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5\\node_modules\\@dnd-kit\\modifiers"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/sortable",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632\\node_modules\\@dnd-kit\\sortable",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632\\node_modules\\@dnd-kit\\sortable"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/utilities",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+utilities@3.2.2_react@19.3.1\\node_modules\\@dnd-kit\\utilities",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011304.5154,
+      "mtimeMs": 1794759011304.5154,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+utilities@3.2.2_react@19.3.1\\node_modules\\@dnd-kit\\utilities"
+    },
+    {
+      "path": "apps/webapp/node_modules/@faker-js/faker",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@faker-js+faker@10.6.0\\node_modules\\@faker-js\\faker",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@faker-js+faker@10.6.0\\node_modules\\@faker-js\\faker"
+    },
+    {
+      "path": "apps/webapp/node_modules/@marsidev/react-turnstile",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef\\node_modules\\@marsidev\\react-turnstile",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef\\node_modules\\@marsidev\\react-turnstile"
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/client",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+client@2.4.0\\node_modules\\@modelcontextprotocol\\client",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+client@2.4.0\\node_modules\\@modelcontextprotocol\\client"
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/server",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+server@2.4.0\\node_modules\\@modelcontextprotocol\\server",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+server@2.4.0\\node_modules\\@modelcontextprotocol\\server"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/api",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\api",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\api"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/auto-instrumentations-node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a\\node_modules\\@opentelemetry\\auto-instrumentations-node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a\\node_modules\\@opentelemetry\\auto-instrumentations-node"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-metrics-otlp-http",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-trace-otlp-http",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3\\node_modules\\@opentelemetry\\exporter-trace-otlp-http",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3\\node_modules\\@opentelemetry\\exporter-trace-otlp-http"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/resources",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\resources",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\resources"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f\\node_modules\\@opentelemetry\\sdk-node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f\\node_modules\\@opentelemetry\\sdk-node"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-trace",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\sdk-trace",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\sdk-trace"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/semantic-conventions",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+semantic-conventions@1.45.0\\node_modules\\@opentelemetry\\semantic-conventions",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+semantic-conventions@1.45.0\\node_modules\\@opentelemetry\\semantic-conventions"
+    },
+    {
+      "path": "apps/webapp/node_modules/@posthog/nextjs-config",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511\\node_modules\\@posthog\\nextjs-config",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511\\node_modules\\@posthog\\nextjs-config"
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/editor",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b\\node_modules\\@react-email\\editor",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b\\node_modules\\@react-email\\editor"
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/ui",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe\\node_modules\\@react-email\\ui",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe\\node_modules\\@react-email\\ui"
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-pdf/renderer",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-pdf+renderer@4.9.0_react@19.3.1\\node_modules\\@react-pdf\\renderer",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.0588,
+      "mtimeMs": 1794759011319.0588,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-pdf+renderer@4.9.0_react@19.3.1\\node_modules\\@react-pdf\\renderer"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00\\node_modules\\@schedule-x\\calendar",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00\\node_modules\\@schedule-x\\calendar"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar-controls",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar-controls@4.9.1\\node_modules\\@schedule-x\\calendar-controls",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar-controls@4.9.1\\node_modules\\@schedule-x\\calendar-controls"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/drag-and-drop",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+drag-and-drop@3.7.3\\node_modules\\@schedule-x\\drag-and-drop",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+drag-and-drop@3.7.3\\node_modules\\@schedule-x\\drag-and-drop"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/event-modal",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c\\node_modules\\@schedule-x\\event-modal",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c\\node_modules\\@schedule-x\\event-modal"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168\\node_modules\\@schedule-x\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168\\node_modules\\@schedule-x\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/theme-default",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+theme-default@4.9.1\\node_modules\\@schedule-x\\theme-default",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+theme-default@4.9.1\\node_modules\\@schedule-x\\theme-default"
+    },
+    {
+      "path": "apps/webapp/node_modules/@slack/web-api",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@slack+web-api@8.3.0\\node_modules\\@slack\\web-api",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@slack+web-api@8.3.0\\node_modules\\@slack\\web-api"
+    },
+    {
+      "path": "apps/webapp/node_modules/@t3-oss/env-nextjs",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7\\node_modules\\@t3-oss\\env-nextjs",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7\\node_modules\\@t3-oss\\env-nextjs"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tabler/icons-react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tabler+icons-react@3.51.0_react@19.3.1\\node_modules\\@tabler\\icons-react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tabler+icons-react@3.51.0_react@19.3.1\\node_modules\\@tabler\\icons-react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tailwindcss/postcss",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tailwindcss+postcss@4.3.5\\node_modules\\@tailwindcss\\postcss",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tailwindcss+postcss@4.3.5\\node_modules\\@tailwindcss\\postcss"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-form",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-hotkeys",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6\\node_modules\\@tanstack\\react-hotkeys",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6\\node_modules\\@tanstack\\react-hotkeys"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query-devtools",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402\\node_modules\\@tanstack\\react-query-devtools",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.0588,
+      "mtimeMs": 1794759011319.0588,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402\\node_modules\\@tanstack\\react-query-devtools"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-store",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c\\node_modules\\@tanstack\\react-store",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c\\node_modules\\@tanstack\\react-store"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-table",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0\\node_modules\\@tanstack\\react-table",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0\\node_modules\\@tanstack\\react-table"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-virtual",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01\\node_modules\\@tanstack\\react-virtual",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01\\node_modules\\@tanstack\\react-virtual"
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8\\node_modules\\@testing-library\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8\\node_modules\\@testing-library\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/user-event",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6\\node_modules\\@testing-library\\user-event",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6\\node_modules\\@testing-library\\user-event"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/format-icu",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+format-icu@7.3.0\\node_modules\\@tolgee\\format-icu",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+format-icu@7.3.0\\node_modules\\@tolgee\\format-icu"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+react@7.3.0_react@19.3.1\\node_modules\\@tolgee\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+react@7.3.0_react@19.3.1\\node_modules\\@tolgee\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/web",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+web@7.3.0\\node_modules\\@tolgee\\web",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+web@7.3.0\\node_modules\\@tolgee\\web"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/file-store",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9\\node_modules\\@tus\\file-store",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9\\node_modules\\@tus\\file-store"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/s3-store",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+s3-store@2.1.0_supports-color@8.1.1\\node_modules\\@tus\\s3-store",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+s3-store@2.1.0_supports-color@8.1.1\\node_modules\\@tus\\s3-store"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/server",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5\\node_modules\\@tus\\server",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5\\node_modules\\@tus\\server"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/canvas-confetti",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+canvas-confetti@1.9.0\\node_modules\\@types\\canvas-confetti",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+canvas-confetti@1.9.0\\node_modules\\@types\\canvas-confetti"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/luxon",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+luxon@3.7.6\\node_modules\\@types\\luxon",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+luxon@3.7.6\\node_modules\\@types\\luxon"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+node@26.6.6\\node_modules\\@types\\node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+node@26.6.6\\node_modules\\@types\\node"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/nodemailer",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+nodemailer@8.0.2\\node_modules\\@types\\nodemailer",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+nodemailer@8.0.2\\node_modules\\@types\\nodemailer"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/papaparse",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+papaparse@5.5.2\\node_modules\\@types\\papaparse",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+papaparse@5.5.2\\node_modules\\@types\\papaparse"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/pg",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+pg@8.23.1\\node_modules\\@types\\pg",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+pg@8.23.1\\node_modules\\@types\\pg"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/qrcode",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+qrcode@1.5.6\\node_modules\\@types\\qrcode",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+qrcode@1.5.6\\node_modules\\@types\\qrcode"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react@19.3.0\\node_modules\\@types\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react@19.3.0\\node_modules\\@types\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react-dom",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react-dom@19.3.0_@types+react@19.3.0\\node_modules\\@types\\react-dom",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react-dom@19.3.0_@types+react@19.3.0\\node_modules\\@types\\react-dom"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/sanitize-html",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+sanitize-html@2.16.2\\node_modules\\@types\\sanitize-html",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+sanitize-html@2.16.2\\node_modules\\@types\\sanitize-html"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/web-push",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+web-push@3.6.4\\node_modules\\@types\\web-push",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+web-push@3.6.4\\node_modules\\@types\\web-push"
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+core@6.3.1\\node_modules\\@uppy\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+core@6.3.1\\node_modules\\@uppy\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/locales",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+locales@5.3.2\\node_modules\\@uppy\\locales",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+locales@5.3.2\\node_modules\\@uppy\\locales"
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/tus",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+tus@6.0.1_@uppy+core@6.3.1\\node_modules\\@uppy\\tus",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+tus@6.0.1_@uppy+core@6.3.1\\node_modules\\@uppy\\tus"
+    },
+    {
+      "path": "apps/webapp/node_modules/@upstash/ratelimit",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0\\node_modules\\@upstash\\ratelimit",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0\\node_modules\\@upstash\\ratelimit"
+    },
+    {
+      "path": "apps/webapp/node_modules/@vitest/coverage-v8",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@vitest+coverage-v8@5.1.0_vitest@5.1.0\\node_modules\\@vitest\\coverage-v8",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@vitest+coverage-v8@5.1.0_vitest@5.1.0\\node_modules\\@vitest\\coverage-v8"
+    },
+    {
+      "path": "apps/webapp/node_modules/@xyflow/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b\\node_modules\\@xyflow\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b\\node_modules\\@xyflow\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/babel-plugin-react-compiler",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler"
+    },
+    {
+      "path": "apps/webapp/node_modules/better-auth",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0\\node_modules\\better-auth",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0\\node_modules\\better-auth"
+    },
+    {
+      "path": "apps/webapp/node_modules/botbuilder",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905\\node_modules\\botbuilder",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905\\node_modules\\botbuilder"
+    },
+    {
+      "path": "apps/webapp/node_modules/bullmq",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1\\node_modules\\bullmq",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1\\node_modules\\bullmq"
+    },
+    {
+      "path": "apps/webapp/node_modules/canvas-confetti",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\canvas-confetti@1.9.4\\node_modules\\canvas-confetti",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\canvas-confetti@1.9.4\\node_modules\\canvas-confetti"
+    },
+    {
+      "path": "apps/webapp/node_modules/class-variance-authority",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\class-variance-authority@0.7.1\\node_modules\\class-variance-authority",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\class-variance-authority@0.7.1\\node_modules\\class-variance-authority"
+    },
+    {
+      "path": "apps/webapp/node_modules/clsx",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\clsx@2.1.1\\node_modules\\clsx",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\clsx@2.1.1\\node_modules\\clsx"
+    },
+    {
+      "path": "apps/webapp/node_modules/cmdk",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0\\node_modules\\cmdk",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0\\node_modules\\cmdk"
+    },
+    {
+      "path": "apps/webapp/node_modules/country-flag-icons",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\country-flag-icons@1.6.20\\node_modules\\country-flag-icons",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\country-flag-icons@1.6.20\\node_modules\\country-flag-icons"
+    },
+    {
+      "path": "apps/webapp/node_modules/cron-parser",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cron-parser@5.10.4\\node_modules\\cron-parser",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cron-parser@5.10.4\\node_modules\\cron-parser"
+    },
+    {
+      "path": "apps/webapp/node_modules/date-holidays",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\date-holidays@3.39.1\\node_modules\\date-holidays",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\date-holidays@3.39.1\\node_modules\\date-holidays"
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv@18.0.10\\node_modules\\dotenv",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv@18.0.10\\node_modules\\dotenv"
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv-cli",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv-cli@11.1.0\\node_modules\\dotenv-cli",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv-cli@11.1.0\\node_modules\\dotenv-cli"
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-kit",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5\\node_modules\\drizzle-kit",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5\\node_modules\\drizzle-kit"
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-orm",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\node_modules\\drizzle-orm",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\node_modules\\drizzle-orm"
+    },
+    {
+      "path": "apps/webapp/node_modules/effect",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\effect@4.1.4\\node_modules\\effect",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\effect@4.1.4\\node_modules\\effect"
+    },
+    {
+      "path": "apps/webapp/node_modules/embla-carousel-react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\embla-carousel-react@8.6.0_react@19.3.1\\node_modules\\embla-carousel-react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\embla-carousel-react@8.6.0_react@19.3.1\\node_modules\\embla-carousel-react"
+    },
+    {
+      "path": "apps/webapp/node_modules/exceljs",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\exceljs@4.4.0\\node_modules\\exceljs",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011289.4583,
+      "mtimeMs": 1794759011289.4583,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\exceljs@4.4.0\\node_modules\\exceljs"
+    },
+    {
+      "path": "apps/webapp/node_modules/fast-xml-parser",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\fast-xml-parser@5.12.0\\node_modules\\fast-xml-parser",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\fast-xml-parser@5.12.0\\node_modules\\fast-xml-parser"
+    },
+    {
+      "path": "apps/webapp/node_modules/file-type",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\file-type@22.3.0_supports-color@8.1.1\\node_modules\\file-type",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\file-type@22.3.0_supports-color@8.1.1\\node_modules\\file-type"
+    },
+    {
+      "path": "apps/webapp/node_modules/input-otp",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1\\node_modules\\input-otp",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1\\node_modules\\input-otp"
+    },
+    {
+      "path": "apps/webapp/node_modules/ioredis",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ioredis@6.0.0_supports-color@8.1.1\\node_modules\\ioredis",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ioredis@6.0.0_supports-color@8.1.1\\node_modules\\ioredis"
+    },
+    {
+      "path": "apps/webapp/node_modules/jsdom",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0\\node_modules\\jsdom",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011304.5154,
+      "mtimeMs": 1794759011304.5154,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0\\node_modules\\jsdom"
+    },
+    {
+      "path": "apps/webapp/node_modules/jsqr",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsqr@1.4.0\\node_modules\\jsqr",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsqr@1.4.0\\node_modules\\jsqr"
+    },
+    {
+      "path": "apps/webapp/node_modules/jszip",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jszip@3.10.2\\node_modules\\jszip",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jszip@3.10.2\\node_modules\\jszip"
+    },
+    {
+      "path": "apps/webapp/node_modules/luxon",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\luxon@3.7.2\\node_modules\\luxon",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\luxon@3.7.2\\node_modules\\luxon"
+    },
+    {
+      "path": "apps/webapp/node_modules/nanoid",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nanoid@6.0.2\\node_modules\\nanoid",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nanoid@6.0.2\\node_modules\\nanoid"
+    },
+    {
+      "path": "apps/webapp/node_modules/next",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next"
+    },
+    {
+      "path": "apps/webapp/node_modules/next-intl",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb\\node_modules\\next-intl",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb\\node_modules\\next-intl"
+    },
+    {
+      "path": "apps/webapp/node_modules/node-vault",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\node-vault@0.13.0_supports-color@8.1.1\\node_modules\\node-vault",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\node-vault@0.13.0_supports-color@8.1.1\\node_modules\\node-vault"
+    },
+    {
+      "path": "apps/webapp/node_modules/nodemailer",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nodemailer@10.5.0\\node_modules\\nodemailer",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011289.4583,
+      "mtimeMs": 1794759011289.4583,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nodemailer@10.5.0\\node_modules\\nodemailer"
+    },
+    {
+      "path": "apps/webapp/node_modules/papaparse",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\papaparse@5.7.1\\node_modules\\papaparse",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\papaparse@5.7.1\\node_modules\\papaparse"
+    },
+    {
+      "path": "apps/webapp/node_modules/pdfjs-dist",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pdfjs-dist@6.5.438\\node_modules\\pdfjs-dist",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pdfjs-dist@6.5.438\\node_modules\\pdfjs-dist"
+    },
+    {
+      "path": "apps/webapp/node_modules/pg",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pg@8.23.1\\node_modules\\pg",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pg@8.23.1\\node_modules\\pg"
+    },
+    {
+      "path": "apps/webapp/node_modules/pino",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino@10.4.0\\node_modules\\pino",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino@10.4.0\\node_modules\\pino"
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-opentelemetry-transport",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-opentelemetry-transport@4.0.2_pino@10.4.0\\node_modules\\pino-opentelemetry-transport",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-opentelemetry-transport@4.0.2_pino@10.4.0\\node_modules\\pino-opentelemetry-transport"
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-pretty",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-pretty@13.2.0\\node_modules\\pino-pretty",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-pretty@13.2.0\\node_modules\\pino-pretty"
+    },
+    {
+      "path": "apps/webapp/node_modules/portless",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\portless@0.17.0\\node_modules\\portless",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\portless@0.17.0\\node_modules\\portless"
+    },
+    {
+      "path": "apps/webapp/node_modules/postcss",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\postcss@8.5.32\\node_modules\\postcss",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\postcss@8.5.32\\node_modules\\postcss"
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-js",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1\\node_modules\\posthog-js",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1\\node_modules\\posthog-js"
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883\\node_modules\\posthog-node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883\\node_modules\\posthog-node"
+    },
+    {
+      "path": "apps/webapp/node_modules/preact",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\preact@11.2.0\\node_modules\\preact",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\preact@11.2.0\\node_modules\\preact"
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode@1.5.4\\node_modules\\qrcode",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode@1.5.4\\node_modules\\qrcode"
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode.react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode.react@4.2.0_react@19.3.1\\node_modules\\qrcode.react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011289.4583,
+      "mtimeMs": 1794759011289.4583,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode.react@4.2.0_react@19.3.1\\node_modules\\qrcode.react"
+    },
+    {
+      "path": "apps/webapp/node_modules/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/react-dom",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom"
+    },
+    {
+      "path": "apps/webapp/node_modules/react-email",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d\\node_modules\\react-email",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d\\node_modules\\react-email"
+    },
+    {
+      "path": "apps/webapp/node_modules/react-resizable-panels",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd\\node_modules\\react-resizable-panels",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd\\node_modules\\react-resizable-panels"
+    },
+    {
+      "path": "apps/webapp/node_modules/recharts",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508\\node_modules\\recharts",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508\\node_modules\\recharts"
+    },
+    {
+      "path": "apps/webapp/node_modules/resend",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991\\node_modules\\resend",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991\\node_modules\\resend"
+    },
+    {
+      "path": "apps/webapp/node_modules/sanitize-html",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sanitize-html@2.18.2\\node_modules\\sanitize-html",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sanitize-html@2.18.2\\node_modules\\sanitize-html"
+    },
+    {
+      "path": "apps/webapp/node_modules/server-only",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\server-only@0.0.1\\node_modules\\server-only",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\server-only@0.0.1\\node_modules\\server-only"
+    },
+    {
+      "path": "apps/webapp/node_modules/shadcn",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn"
+    },
+    {
+      "path": "apps/webapp/node_modules/sharp",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sharp@0.35.5_@types+node@26.6.6\\node_modules\\sharp",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sharp@0.35.5_@types+node@26.6.6\\node_modules\\sharp"
+    },
+    {
+      "path": "apps/webapp/node_modules/sonner",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1\\node_modules\\sonner",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1\\node_modules\\sonner"
+    },
+    {
+      "path": "apps/webapp/node_modules/streamdown",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39\\node_modules\\streamdown",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39\\node_modules\\streamdown"
+    },
+    {
+      "path": "apps/webapp/node_modules/stripe",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\stripe@23.1.0_@types+node@26.6.6\\node_modules\\stripe",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\stripe@23.1.0_@types+node@26.6.6\\node_modules\\stripe"
+    },
+    {
+      "path": "apps/webapp/node_modules/suncalc",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\suncalc@2.1.4\\node_modules\\suncalc",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\suncalc@2.1.4\\node_modules\\suncalc"
+    },
+    {
+      "path": "apps/webapp/node_modules/superjson",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\superjson@2.2.6\\node_modules\\superjson",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\superjson@2.2.6\\node_modules\\superjson"
+    },
+    {
+      "path": "apps/webapp/node_modules/swr",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\swr@2.5.1_react@19.3.1\\node_modules\\swr",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\swr@2.5.1_react@19.3.1\\node_modules\\swr"
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwind-merge",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwind-merge@3.7.0\\node_modules\\tailwind-merge",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwind-merge@3.7.0\\node_modules\\tailwind-merge"
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwindcss",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwindcss@4.3.5\\node_modules\\tailwindcss",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwindcss@4.3.5\\node_modules\\tailwindcss"
+    },
+    {
+      "path": "apps/webapp/node_modules/temporal-polyfill",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\temporal-polyfill@1.0.8\\node_modules\\temporal-polyfill",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\temporal-polyfill@1.0.8\\node_modules\\temporal-polyfill"
+    },
+    {
+      "path": "apps/webapp/node_modules/timepicker-ui",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\timepicker-ui@4.7.0\\node_modules\\timepicker-ui",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\timepicker-ui@4.7.0\\node_modules\\timepicker-ui"
+    },
+    {
+      "path": "apps/webapp/node_modules/tsx",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tsx@4.23.15\\node_modules\\tsx",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tsx@4.23.15\\node_modules\\tsx"
+    },
+    {
+      "path": "apps/webapp/node_modules/tw-animate-css",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tw-animate-css@1.4.0\\node_modules\\tw-animate-css",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011304.5154,
+      "mtimeMs": 1794759011304.5154,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tw-animate-css@1.4.0\\node_modules\\tw-animate-css"
+    },
+    {
+      "path": "apps/webapp/node_modules/typescript",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript"
+    },
+    {
+      "path": "apps/webapp/node_modules/ultracite",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb\\node_modules\\ultracite",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb\\node_modules\\ultracite"
+    },
+    {
+      "path": "apps/webapp/node_modules/undici",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\undici@8.12.4\\node_modules\\undici",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\undici@8.12.4\\node_modules\\undici"
+    },
+    {
+      "path": "apps/webapp/node_modules/vaul",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908\\node_modules\\vaul",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908\\node_modules\\vaul"
+    },
+    {
+      "path": "apps/webapp/node_modules/vitest",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest"
+    },
+    {
+      "path": "apps/webapp/node_modules/web-push",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\web-push@4.0.0_supports-color@8.1.1\\node_modules\\web-push",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\web-push@4.0.0_supports-color@8.1.1\\node_modules\\web-push"
+    },
+    {
+      "path": "apps/webapp/node_modules/zod",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zod@4.6.7\\node_modules\\zod",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zod@4.6.7\\node_modules\\zod"
+    },
+    {
+      "path": "apps/webapp/node_modules/zustand",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f\\node_modules\\zustand",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f\\node_modules\\zustand"
+    }
+  ],
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "raw": "c897e353391aa3401269a259b47a5b31f7c2d5015238edd39563b0bf321836ac",
+      "lf": "c9052b9de4c70dc09a2f50f1743d58d0b21b4630638efd1e40ffb8b635687ad6",
+      "gitBlob": "a3ee0e13aec04307ad7caba8eaec1ac534fd1eae"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "raw": "a441d7b061dd28eae958da7ec446b85a133886b1141f8d74e0009e1eab96fdd5",
+      "lf": "2753124b4df7a9cb83c58ac8b5fed7d89480a1bcfffddac907f881ec0521b602",
+      "gitBlob": "3ff90a6f102cb40ca6b5cf40b585221e7e3d3186"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+      "raw": "d205ed4f0864143a186b73c91137c1041825701ef59e970340b149988d586669",
+      "lf": "0bf17a4ad9b7e6c957f9b40413f34ef68da2a9bb14b44af751714c708f4ebbb7",
+      "gitBlob": "96c5c45e195e67403040192952b909777833b28d"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-heading.tsx",
+      "raw": "f84d23b92178efae714289f8f9a5134fb012a2c45b9f055fdaf5df0697c325b0",
+      "lf": "502e9e65cc2b14fda9cec8c63142d68a816b3fc427d0398363580f4990449962",
+      "gitBlob": "d67bef8d9f89638ac3fa3551247a28cc10a033a5"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "raw": "2661241ef4abedafceb935aec3fc30ce1de83bd558cc16e1cabc98a22338eeb3",
+      "lf": "645bf1660ea0409c7bab3df7c1aca7826348581ccd0b8b13fbf8d45b45c762a7",
+      "gitBlob": "3d5e6f8554d08ed9686c215a6845cbab2f4cb26f"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+      "raw": "08826aa7372c010f070dc7f73b27c9b0d4780cb54443b672b1cb2e17c81de086",
+      "lf": "160e1f6e11bc43e94ec6298594fe63f2edf26171de835a2ccbdd0cf7385a3b42",
+      "gitBlob": "33f8e0e5b54db24bbb89d8c02034eb9f79d90b24"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "ccbddb866cc559fade83fa503c8315d50f4fcd7eafe568b6288579a6c236cc8f",
+      "lf": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6",
+      "gitBlob": "3cfa371a6d1f17170682c8e863fe4d33e3dcb908"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention.integration.test.ts",
+      "raw": "78cc9a7126c3aeadf419d86ceefdbe7e5e63bf1f5ebed7f57a50faf02b6c984c",
+      "lf": "6e55ff67a8f726ae1163a9dbcb84b11d4d304fc111bcf26b703c11ac8d8ddd40",
+      "gitBlob": "c39eec03c6e4822e8d4deb5214d8ae1aaae09959"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "raw": "5806affd7573ed901211af63b06e156066c6cd1550b4c3fc567fe12f1c15781a",
+      "lf": "cf148cf379cd0379f6bddd1a465d520bb1e0588ae526ba9378ae3faefbdf4f52",
+      "gitBlob": "da57c561f339fd39479b7cb07d1fcff0ec656110"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention-store.ts",
+      "raw": "f68227029b3d9efbab65c0aef35155aea09c1d2c387419e95c310d88272bcbde",
+      "lf": "21e2577f9f9156ce2d4fa108a221dd2f382fe5993e018db8c41a45bd6c427364",
+      "gitBlob": "c8faf87a7141d0fb06356e5fd0dbcbdfab5cd2b1"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention.ts",
+      "raw": "9c1fe69ce7f2de3007fc9a72ed05028545ec320b78fe14d022a283ee3592ae11",
+      "lf": "60b380628a5140d592a567d3d6006f655e6a7785582354416560edc5364f20cd",
+      "gitBlob": "eb2dc0e9d616179f13e392551520137e88ee4f35"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/current-access.ts",
+      "raw": "100a6dd200b71db2c30089086cecaea28c9196add2b5355cc919aff8de124792",
+      "lf": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9",
+      "gitBlob": "6c6c064f6bb02ee4f65c0885df0457c0a46333d0"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+      "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+      "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+      "gitBlob": "4a43fb54cfd7e58d04f1a1bb8056f12597f4e9b5"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/upload-ledger.ts",
+      "raw": "19d578d0da8f2bf5afaec5a7e74f002531d7f897d16946f1017d15b0217b5e49",
+      "lf": "ef76fe9ba005f9de3cc43e73433206b3f15cdc30e46358fde3cba4941929682a",
+      "gitBlob": "7cda8bde88c5054870ef4c2f3e3fb02878dcf62d"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/audit.ts",
+      "raw": "59fd4772981f1f650716202507c95f57c86d69a8469dc39fd6003f4e7ba173f8",
+      "lf": "8f932d5626aa12ae303d5fe0c14144a5f0e0a9c790db96f437bfa3b9c3649c36",
+      "gitBlob": "62d680f1c046db6e14932777bea141a2a6a440ac"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/audit-minimisation.ts",
+      "raw": "a2302e8f6b8825047416623d90eb2935390eb58ab346b55241354a4cd2fa3333",
+      "lf": "01ea6777dd22f32f1fd283e31de9f7d928c9eb5ce63a91b00cb2643208954ca3",
+      "gitBlob": "7fc62443127e8c65e21b00f994e01b4b57c1f868"
+    },
+    {
+      "path": "scripts/performance/fixture.mjs",
+      "raw": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+      "lf": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "gitBlob": "0b79ab082c1a7f49c07510b711067fd5bf987d65"
+    }
+  ],
+  "preservation": {
+    "all54VerifiedAncestors": true,
+    "prior1730EightCorrectionsAnd201Proof": "No tracked changes permitted; full index snapshot retained",
+    "groups": {
+      "1728": 163,
+      "1729": 152,
+      "1736": 266,
+      "1737": 211,
+      "1835": 203
+    }
+  },
+  "qualification": "Topology/manifests only; no exhaustive byte-pristine dependency claim.",
+  "trackedIndex": {
+    "entries": 15937,
+    "sha256": "4f3232e6ff329dd2c12383183ba202a416fb4efcdf266ddbc54636959bef3a06",
+    "qualification": "Complete index snapshot retained ignored; no private input enumeration."
+  }
+}

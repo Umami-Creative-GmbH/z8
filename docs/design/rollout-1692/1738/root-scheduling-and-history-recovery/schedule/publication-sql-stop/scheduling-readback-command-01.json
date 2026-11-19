@@ -1,0 +1,13 @@
+{
+  "args": [
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "tsx",
+    "scripts/1738-publish-independent-fixture-bridge.ts",
+    "readback",
+    "01"
+  ],
+  "exit": 0,
+  "source": "scheduling-fixture-01.ts",
+  "privateEnvironment": true
+}

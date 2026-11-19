@@ -1,0 +1,1181 @@
+{
+  "identity": "One final assertion name; repeated harness runs nonadditive",
+  "counts": {
+    "runtime": 46,
+    "database": 88,
+    "preservation": 6,
+    "total": 140,
+    "passed": 140,
+    "failed": 0
+  },
+  "assertions": [
+    {
+      "id": 1,
+      "name": "Exact fresh fixture credentials verified before UI submit",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 2,
+      "name": "Fresh canonical UI sign-in",
+      "result": "PASS",
+      "beforeSubmit": {
+        "emailMatches": true,
+        "passwordMatches": true
+      },
+      "leftSignIn": true,
+      "invalidCredentialError": false,
+      "orgSelection": false,
+      "verificationRetry": false,
+      "category": "runtime"
+    },
+    {
+      "id": 3,
+      "name": "Draft identity",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 4,
+      "name": "Draft notes",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 5,
+      "name": "Draft filename",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 6,
+      "name": "Draft originalAmount",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 7,
+      "name": "Draft calculatedAmount",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 8,
+      "name": "Draft capturedZone",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 9,
+      "name": "Draft missingDestination",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 10,
+      "name": "One claim h1 and safe shell",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 11,
+      "name": "Own draft continuation appears after canonical conversion read settles",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 12,
+      "name": "Actual Preview click opens decoded receipt in new tab",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 13,
+      "name": "Actual Download click completes with exact seeded bytes, checksum and valid PNG dimensions",
+      "result": "PASS",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+      "category": "runtime"
+    },
+    {
+      "id": 14,
+      "name": "Real missing owned receipt refuses conversion with no partial report/provenance graph",
+      "result": "PASS",
+      "sameClaim": true,
+      "receiptRefusal": true,
+      "retryOffered": true,
+      "noPartial": true,
+      "zeroReports": true,
+      "category": "runtime"
+    },
+    {
+      "id": 15,
+      "name": "Actual Continue action creates one canonical owned report/item/receipt/provenance graph",
+      "result": "PASS",
+      "provenanceCount": 1,
+      "reportCount": 1,
+      "itemCount": 1,
+      "receiptCount": 1,
+      "reportOwn": true,
+      "itemMatches": true,
+      "legacyFactsPresent": true,
+      "legacyFactsType": "object",
+      "flagsArray": true,
+      "reportRouteMatches": true,
+      "category": "runtime"
+    },
+    {
+      "id": 16,
+      "name": "Converted claim retains original evidence and opens same existing report",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 17,
+      "name": "Converted claim reload has exactly same report and no duplicate",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 18,
+      "name": "Retained submitted identity",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 19,
+      "name": "Retained submitted notes",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 20,
+      "name": "Retained submitted filename",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 21,
+      "name": "Retained submitted originalAmount",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 22,
+      "name": "Retained submitted calculatedAmount",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 23,
+      "name": "Retained submitted capturedZone",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 24,
+      "name": "Retained submitted missingDestination",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 25,
+      "name": "Retained submitted statusSubmitted",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 26,
+      "name": "Retained submitted utc",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 27,
+      "name": "Retained missing checksum disclosure",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 28,
+      "name": "UTC timeline creation then submission",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 29,
+      "name": "Synthetic non-auth claim GET 503 retains authorized record and safe heading",
+      "result": "PASS",
+      "syntheticTransport": true,
+      "failures": 1,
+      "category": "runtime"
+    },
+    {
+      "id": 30,
+      "name": "Keyboard local Retry restores fresh authorized read",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 31,
+      "name": "Large preference saved through real account UI and survives reload at 18px",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 32,
+      "name": "Phone 390 at 18px has one bounded h1 and main",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 33,
+      "name": "Phone first Escape closes sidebar and restores trigger focus",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 34,
+      "name": "Synthetic initial claim GET failure has safe heading and local Retry",
+      "result": "PASS",
+      "syntheticTransport": true,
+      "category": "runtime"
+    },
+    {
+      "id": 35,
+      "name": "Keyboard local Retry returns authorized claim after synthetic initial failure",
+      "result": "PASS",
+      "syntheticTransport": true,
+      "category": "runtime"
+    },
+    {
+      "id": 36,
+      "name": "Synthetic background claim failure retains record and local Retry",
+      "result": "PASS",
+      "syntheticTransport": true,
+      "category": "runtime"
+    },
+    {
+      "id": 37,
+      "name": "Local Retry recovers synthetic background failure",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 38,
+      "name": "Real UI dark theme and collapsed sidebar survive reload",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 39,
+      "name": "Wide 2400 dark Large layout keeps h1/main within viewport",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 40,
+      "name": "small-restricted actual fresh UI reader cannot see other owner claim",
+      "result": "PASS",
+      "actorAlias": "small-restricted",
+      "canonicalClaimStatus": 404,
+      "oneHeading": true,
+      "notesPresent": false,
+      "receiptPresent": false,
+      "appError": false,
+      "backAtSignIn": false,
+      "denied": true,
+      "category": "runtime"
+    },
+    {
+      "id": 41,
+      "name": "large-employee actual fresh UI reader cannot see other owner claim",
+      "result": "PASS",
+      "actorAlias": "large-employee",
+      "canonicalClaimStatus": 404,
+      "oneHeading": true,
+      "notesPresent": false,
+      "receiptPresent": false,
+      "appError": false,
+      "backAtSignIn": false,
+      "denied": true,
+      "category": "runtime"
+    },
+    {
+      "id": 42,
+      "name": "Actual rendered React fiber names include both target detail and conversion panel",
+      "result": "PASS",
+      "inspection": "Browser DOM fiber tree names only; no props/state/auth introspection",
+      "available": true,
+      "targetNames": [
+        "TravelExpenseClaimDetail",
+        "LegacyDraftConversionPanel"
+      ],
+      "category": "runtime"
+    },
+    {
+      "id": 43,
+      "name": "Canonical permitted local partial reimbursement records EUR 1.25 and EUR 119.25 balance",
+      "result": "PASS",
+      "historyReference": true,
+      "partialState": false,
+      "remaining": true,
+      "recordedAmount": true,
+      "externalPayment": false,
+      "category": "runtime"
+    },
+    {
+      "id": 44,
+      "name": "Actual React tree names include TravelExpenseClaimDetail on approved claim",
+      "result": "PASS",
+      "inspection": "Live browser DOM fiber names only; no props or auth state",
+      "available": true,
+      "names": [
+        "TravelExpenseClaimDetail"
+      ],
+      "category": "runtime"
+    },
+    {
+      "id": 45,
+      "name": "Approved retained evidence preserves reason/comment and ordered UTC timeline",
+      "result": "PASS",
+      "notes": true,
+      "reason": true,
+      "comment": true,
+      "utc": true,
+      "times": [
+        "2025-03-09T09:00:00.000Z",
+        "2025-03-10T16:00:00.000Z",
+        "2025-03-11T12:00:00.000Z"
+      ],
+      "oneH1": true,
+      "category": "runtime"
+    },
+    {
+      "id": 46,
+      "name": "Retained decision actor label matches original fixture actor",
+      "result": "PASS",
+      "category": "runtime"
+    },
+    {
+      "id": 47,
+      "name": "own-org time_entry preserved",
+      "result": "PASS",
+      "beforeCount": 4176,
+      "afterCount": 4176,
+      "beforeSha256": "ba2b00ced88b5398d2b1c7bb0578b5bfbb7e485f57eb01fb43642035ba05c692",
+      "afterSha256": "ba2b00ced88b5398d2b1c7bb0578b5bfbb7e485f57eb01fb43642035ba05c692",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 48,
+      "name": "own-org time_record preserved",
+      "result": "PASS",
+      "beforeCount": 2088,
+      "afterCount": 2088,
+      "beforeSha256": "6d773cede83cb7803e2ede803a6fb4600163636567eab08f2b86d4cd35ce2afe",
+      "afterSha256": "6d773cede83cb7803e2ede803a6fb4600163636567eab08f2b86d4cd35ce2afe",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 49,
+      "name": "own-org travel_expense_allowance_override preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 50,
+      "name": "own-org travel_expense_allowance_policy preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 51,
+      "name": "own-org travel_expense_allowance_policy_version preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 52,
+      "name": "own-org travel_expense_attachment preserved",
+      "result": "PASS",
+      "beforeCount": 5,
+      "afterCount": 5,
+      "beforeSha256": "dd629f554820411355736f897388d7d2e36bc8409fb3e4623810d1046a46ba98",
+      "afterSha256": "dd629f554820411355736f897388d7d2e36bc8409fb3e4623810d1046a46ba98",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 53,
+      "name": "own-org travel_expense_claim preserved",
+      "result": "PASS",
+      "beforeCount": 5,
+      "afterCount": 5,
+      "beforeSha256": "078dd3b18098519dc1dabd1b5bfdd1a799ba7f7201fcda615a561e74e6f06413",
+      "afterSha256": "078dd3b18098519dc1dabd1b5bfdd1a799ba7f7201fcda615a561e74e6f06413",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 54,
+      "name": "own-org travel_expense_decision_log preserved",
+      "result": "PASS",
+      "beforeCount": 1,
+      "afterCount": 1,
+      "beforeSha256": "daf55c5beb91910634791083a2fae04149eba0487f359fe991fff729954cdcfb",
+      "afterSha256": "daf55c5beb91910634791083a2fae04149eba0487f359fe991fff729954cdcfb",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 55,
+      "name": "own-org travel_expense_export_batch preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 56,
+      "name": "own-org travel_expense_export_batch_revision preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 57,
+      "name": "own-org travel_expense_legacy_draft_conversion expected canonical delta",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 1,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "058d2faa6acdd9c2df62e1721e503804d1be3cc5fbb2b1375f058f3d5e2e08cb",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 58,
+      "name": "own-org travel_expense_mileage_rate preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 59,
+      "name": "own-org travel_expense_payroll_run_inclusion preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 60,
+      "name": "own-org travel_expense_payroll_run_preview_control preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 61,
+      "name": "own-org travel_expense_per_diem_rate preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 62,
+      "name": "own-org travel_expense_policy preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 63,
+      "name": "own-org travel_expense_project_attribution_exception preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 64,
+      "name": "own-org travel_expense_project_history_capture preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 65,
+      "name": "own-org travel_expense_receipt_upload preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 66,
+      "name": "own-org travel_expense_reference_rate_policy preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 67,
+      "name": "own-org travel_expense_report expected canonical delta",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 1,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "3563f091a812f969460cebc532f8c87b595e1758b71f9431b97d672493279a80",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 68,
+      "name": "own-org travel_expense_report_adjustment preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 69,
+      "name": "own-org travel_expense_report_cycle_closure preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 70,
+      "name": "own-org travel_expense_report_item expected canonical delta",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 1,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "7dbb76c6240cad530c3814d7a2f3cc8b779cd6ac1cc994e46b3f5f924c7aaba3",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 71,
+      "name": "own-org travel_expense_report_item_conversion preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 72,
+      "name": "own-org travel_expense_report_per_diem preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 73,
+      "name": "own-org travel_expense_report_receipt expected canonical delta",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 1,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "3448e2933df5384dfc67a63efd7ec8883ce28ec3ed9ae5325a9706e76cd93c09",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 74,
+      "name": "own-org travel_expense_report_review_note preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 75,
+      "name": "own-org travel_expense_report_supplemental_receipt preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 76,
+      "name": "own-org travel_expense_settings preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 77,
+      "name": "own-org travel_expense_settlement_entry expected canonical delta",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 1,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "75e58921cb8cadc4f91452dc6ecda6b1a5da7d48c040ab5a024aa878a26460f4",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 78,
+      "name": "own-org work_period preserved",
+      "result": "PASS",
+      "beforeCount": 2088,
+      "afterCount": 2088,
+      "beforeSha256": "5aeb790cc8bebd01cc7a33b4bd85b1b32db8fc078a0563feb31c717345276bbd",
+      "afterSha256": "5aeb790cc8bebd01cc7a33b4bd85b1b32db8fc078a0563feb31c717345276bbd",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 79,
+      "name": "foreign-org time_entry preserved",
+      "result": "PASS",
+      "beforeCount": 104400,
+      "afterCount": 104400,
+      "beforeSha256": "497a618c2e4f09573b02a5c9f6ab96f69f8386ac9c88616efd83d7e92bd0fac8",
+      "afterSha256": "497a618c2e4f09573b02a5c9f6ab96f69f8386ac9c88616efd83d7e92bd0fac8",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 80,
+      "name": "foreign-org time_record preserved",
+      "result": "PASS",
+      "beforeCount": 52200,
+      "afterCount": 52200,
+      "beforeSha256": "d4f31728ae61658780341e3b565c86d49f49e6c7b3ea861c1bd00d86001cd3de",
+      "afterSha256": "d4f31728ae61658780341e3b565c86d49f49e6c7b3ea861c1bd00d86001cd3de",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 81,
+      "name": "foreign-org travel_expense_allowance_override preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 82,
+      "name": "foreign-org travel_expense_allowance_policy preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 83,
+      "name": "foreign-org travel_expense_allowance_policy_version preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 84,
+      "name": "foreign-org travel_expense_attachment preserved",
+      "result": "PASS",
+      "beforeCount": 1,
+      "afterCount": 1,
+      "beforeSha256": "fd217d479d0262f1c533fe050c1fbb5557606378d15acc0c8e5f194d64cbcef1",
+      "afterSha256": "fd217d479d0262f1c533fe050c1fbb5557606378d15acc0c8e5f194d64cbcef1",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 85,
+      "name": "foreign-org travel_expense_claim preserved",
+      "result": "PASS",
+      "beforeCount": 1,
+      "afterCount": 1,
+      "beforeSha256": "5ae8be97a19d0add42429f98ab88d89a517bfb46fcd5fdb8c22ef4be2b336ffc",
+      "afterSha256": "5ae8be97a19d0add42429f98ab88d89a517bfb46fcd5fdb8c22ef4be2b336ffc",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 86,
+      "name": "foreign-org travel_expense_decision_log preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 87,
+      "name": "foreign-org travel_expense_export_batch preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 88,
+      "name": "foreign-org travel_expense_export_batch_revision preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 89,
+      "name": "foreign-org travel_expense_legacy_draft_conversion preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 90,
+      "name": "foreign-org travel_expense_mileage_rate preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 91,
+      "name": "foreign-org travel_expense_payroll_run_inclusion preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 92,
+      "name": "foreign-org travel_expense_payroll_run_preview_control preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 93,
+      "name": "foreign-org travel_expense_per_diem_rate preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 94,
+      "name": "foreign-org travel_expense_policy preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 95,
+      "name": "foreign-org travel_expense_project_attribution_exception preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 96,
+      "name": "foreign-org travel_expense_project_history_capture preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 97,
+      "name": "foreign-org travel_expense_receipt_upload preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 98,
+      "name": "foreign-org travel_expense_reference_rate_policy preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 99,
+      "name": "foreign-org travel_expense_report preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 100,
+      "name": "foreign-org travel_expense_report_adjustment preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 101,
+      "name": "foreign-org travel_expense_report_cycle_closure preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 102,
+      "name": "foreign-org travel_expense_report_item preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 103,
+      "name": "foreign-org travel_expense_report_item_conversion preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 104,
+      "name": "foreign-org travel_expense_report_per_diem preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 105,
+      "name": "foreign-org travel_expense_report_receipt preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 106,
+      "name": "foreign-org travel_expense_report_review_note preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 107,
+      "name": "foreign-org travel_expense_report_supplemental_receipt preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 108,
+      "name": "foreign-org travel_expense_settings preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 109,
+      "name": "foreign-org travel_expense_settlement_entry preserved",
+      "result": "PASS",
+      "beforeCount": 0,
+      "afterCount": 0,
+      "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 110,
+      "name": "foreign-org work_period preserved",
+      "result": "PASS",
+      "beforeCount": 52200,
+      "afterCount": 52200,
+      "beforeSha256": "a7aa319fd4ad5ddd03d79656ece71ff45844fd90591e44e5d6d488790216da8b",
+      "afterSha256": "a7aa319fd4ad5ddd03d79656ece71ff45844fd90591e44e5d6d488790216da8b",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 111,
+      "name": "draft original travel_expense_claim unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 112,
+      "name": "draft original travel_expense_attachment unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 113,
+      "name": "draft original travel_expense_decision_log unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 114,
+      "name": "submitted original travel_expense_claim unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 115,
+      "name": "submitted original travel_expense_attachment unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 116,
+      "name": "submitted original travel_expense_decision_log unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 117,
+      "name": "approved original travel_expense_claim unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 118,
+      "name": "approved original travel_expense_attachment unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 119,
+      "name": "approved original travel_expense_decision_log unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 120,
+      "name": "unavailable original travel_expense_claim unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 121,
+      "name": "unavailable original travel_expense_attachment unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 122,
+      "name": "unavailable original travel_expense_decision_log unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 123,
+      "name": "same-org-sentinel original travel_expense_claim unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 124,
+      "name": "same-org-sentinel original travel_expense_attachment unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 125,
+      "name": "same-org-sentinel original travel_expense_decision_log unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 126,
+      "name": "foreign-sentinel original travel_expense_claim unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 127,
+      "name": "foreign-sentinel original travel_expense_attachment unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 128,
+      "name": "foreign-sentinel original travel_expense_decision_log unchanged",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 129,
+      "name": "One conversion provenance for valid draft",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 130,
+      "name": "Converted receipt keeps exact original storage/checksum/filename identity",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 131,
+      "name": "Converted item retains entered amount/currency and multiline notes",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 132,
+      "name": "Conversion immutable snapshot preserves original and calculated money, zone, destination and notes",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 133,
+      "name": "Only intended local partial reimbursement persisted once",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 134,
+      "name": "Missing receipt draft has no partial conversion",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    {
+      "id": 135,
+      "name": "Frozen HEAD, app tree and branch",
+      "result": "PASS",
+      "category": "source/resource preservation"
+    },
+    {
+      "id": 136,
+      "name": "All tracked file hashes unchanged",
+      "result": "PASS",
+      "category": "source/resource preservation"
+    },
+    {
+      "id": 137,
+      "name": "Git index byte hash unchanged",
+      "result": "PASS",
+      "category": "source/resource preservation"
+    },
+    {
+      "id": 138,
+      "name": "All 158 root/app dependency links unchanged",
+      "result": "PASS",
+      "category": "source/resource preservation"
+    },
+    {
+      "id": 139,
+      "name": "Lock and genuine 125-entry license unchanged",
+      "result": "PASS",
+      "category": "source/resource preservation"
+    },
+    {
+      "id": 140,
+      "name": "All owned live resources zero",
+      "result": "PASS",
+      "category": "source/resource preservation"
+    }
+  ]
+}

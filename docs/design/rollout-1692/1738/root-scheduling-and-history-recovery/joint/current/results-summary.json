@@ -1,0 +1,202 @@
+{
+  "head": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "fresh": {
+    "passed": 33,
+    "failed": 0,
+    "pending": 0,
+    "physicalFiles": 4,
+    "tests": [
+      {
+        "physicalFile": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/direct-history-public.test.tsx",
+        "passed": 2,
+        "cases": [
+          {
+            "fullName": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "successful empty and canonical refusal stay distinct without leaked refusal details",
+            "occurrence": 1,
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "physicalFile": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/directory-public.test.tsx",
+        "passed": 9,
+        "cases": [
+          {
+            "fullName": "healthy real provider admits the public team directory and its employee link",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "serializes visible context Retry through a held canonical reread before RSC refresh",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "canonical directory withholds a warmed open history on actor arrival",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "canonical directory withholds a warmed open history on organization arrival",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "canonical directory withholds a warmed open history on pending arrival",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "canonical directory removes history after a successful relationship-narrowed server arrival",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "real provider checks raw pending session on Activity hide and reveal with retained history",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "reauthorizes history when a relationship is narrowed and directory recovery retains the last loaded employee",
+            "occurrence": 1,
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "physicalFile": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/history-public.test.tsx",
+        "passed": 6,
+        "cases": [
+          {
+            "fullName": "retries a failed history read in the same open dialog and shows the recovered records",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "distinguishes an empty successful history and returns focus on Escape",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "retains the canonical access refusal without offering an ineffective read Retry",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "discards a closed opening's late result while a replacement history read is pending",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "reauthorizes a retained history after Activity hide and reveal",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "preserves employee-prefix mutation refresh for the default section and the open history",
+            "occurrence": 1,
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "physicalFile": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/supporting-public.test.tsx",
+        "passed": 16,
+        "cases": [
+          {
+            "fullName": "keeps an admitted planner on the schedule when template settings refuse access",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "still redirects an expired template transport session to sign-in",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "keeps combined coverage and template permission refusals local to the planner",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "still redirects a coverage authentication refusal to sign-in",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "healthy successful empty coverage offers the ordinary publish description",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "healthy understaffed coverage exposes the actual coverage warning",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "failed coverage stays visibly unavailable and offers local read Retry",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "does not display the previous planner's subarea coverage while the next planner loads",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "recovers coverage through one pending local Retry without writing the schedule",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "keeps the failed Retry recoverable after a rejected transport",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "retains matching coverage as last loaded when a background refresh fails",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "disables supporting-data Retry while the retained template refresh is pending",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "independent initial templates refusal Retry survives templates completing first",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "independent initial templates refusal Retry survives compliance completing first",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "independent initial compliance refusal Retry survives templates completing first",
+            "occurrence": 1,
+            "status": "passed"
+          },
+          {
+            "fullName": "independent initial compliance refusal Retry survives compliance completing first",
+            "occurrence": 1,
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "inherited": "392 unit/60 files + unchanged12 PG/3 files is mixed404/63, not rerun; fresh public cases overlap and cannot be added",
+  "newPostgresCases": 0
+}

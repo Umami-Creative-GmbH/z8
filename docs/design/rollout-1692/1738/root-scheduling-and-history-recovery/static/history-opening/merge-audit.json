@@ -1,0 +1,19 @@
+{
+  "commit": "03f1a8d0df8fcb2d8c73901fa6efe8e114310765",
+  "parents": [
+    "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+    "00614f12ab899fca05b4b3096d194d4a2fa10979"
+  ],
+  "tree": "1761c1a84f4e0c54b5ed9cc5afffc4f04abac9b1",
+  "independentTreeMatch": true,
+  "unchangedPriorPaths": 17400,
+  "anchors": 60,
+  "paths": [
+    "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+    "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+    "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+    "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+    "docs/design/rollout-1692/1739.md"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "standards": [],
+  "spec": [],
+  "confirmedP1": 0,
+  "priorDetailFinding": "Incomplete new withdrawal guarantee over inherited retention; corrected reproduction passes",
+  "priorConversionFinding": "Incoming presentation regression over inherited cache retention; corrected reproduction and pinned controls pass",
+  "liveAuthorizationBypassEstablished": false,
+  "mainTypes": "Qualified missing ignored license artifact",
+  "verifiedCommit": null
+}

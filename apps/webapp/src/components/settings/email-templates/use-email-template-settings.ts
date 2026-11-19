@@ -34,6 +34,8 @@ export interface EmailTemplateSettingsTemplate {
 	override: EmailTemplateOverride | null;
 }
 
+export type EmailTemplateAction = "save" | "sendTest" | "reset";
+
 export type EmailTemplateDraft = {
 	subject: string;
 	html: string;
@@ -78,6 +80,10 @@ export function useEmailTemplateSettings(
 	const { refresh } = useRouter();
 	const editorRef = useRef<EmailTemplateEditorHandle>(null);
 	const [isPending, startTransition] = useTransition();
+	// Which action the pending transition belongs to, for its progress indicator.
+	const [activeAction, setActiveAction] = useState<EmailTemplateAction | null>(
+		null,
+	);
 	const [selectedKey, setSelectedKey] = useState<EmailTemplateKey | null>(
 		templates[0]?.definition.key ?? null,
 	);
@@ -160,6 +166,7 @@ export function useEmailTemplateSettings(
 			return;
 		}
 
+		setActiveAction("save");
 		startTransition(async () => {
 			const result = await saveEmailTemplate(input);
 			if (result.success) {
@@ -185,6 +192,7 @@ export function useEmailTemplateSettings(
 			return;
 		}
 
+		setActiveAction("sendTest");
 		startTransition(async () => {
 			const result = await sendEmailTemplateTest(input);
 			if (result.success) {
@@ -205,43 +213,53 @@ export function useEmailTemplateSettings(
 		});
 	};
 
-	const handleReset = () => {
-		if (!selectedTemplate) {
-			return;
-		}
-
-		startTransition(async () => {
-			const result = await resetEmailTemplate(selectedTemplate.definition.key);
-			if (result.success) {
-				setOverrideKeys((current) => {
-					const next = new Set(current);
-					next.delete(selectedTemplate.definition.key);
-					return next;
-				});
-				setDrafts((current) => ({
-					...current,
-					[selectedTemplate.definition.key]: createDraft({
-						definition: selectedTemplate.definition,
-						override: null,
-					}),
-				}));
-				toast.success(
-					t(
-						"settings.emailTemplates.reset",
-						"Email template reset to system template",
-					),
-				);
-				refresh();
+	/**
+	 * Resets the selected template; resolves to the worded failure, shown inside the
+	 * reset confirmation, or null once the template uses the system copy again.
+	 */
+	const handleReset = () =>
+		new Promise<string | null>((resolve) => {
+			if (!selectedTemplate) {
+				resolve(null);
 				return;
 			}
-			toast.error(
-				actionErrorMessage(t, result, {}, [
-					"settings.emailTemplates.resetFailed",
-					"Failed to reset email template",
-				]),
-			);
+
+			setActiveAction("reset");
+			startTransition(async () => {
+				const result = await resetEmailTemplate(selectedTemplate.definition.key).catch(() => null);
+				if (result?.success) {
+					setOverrideKeys((current) => {
+						const next = new Set(current);
+						next.delete(selectedTemplate.definition.key);
+						return next;
+					});
+					setDrafts((current) => ({
+						...current,
+						[selectedTemplate.definition.key]: createDraft({
+							definition: selectedTemplate.definition,
+							override: null,
+						}),
+					}));
+					toast.success(
+						t(
+							"settings.emailTemplates.reset",
+							"Email template reset to system template",
+						),
+					);
+					refresh();
+					resolve(null);
+					return;
+				}
+				resolve(
+					result
+						? actionErrorMessage(t, result, {}, [
+								"settings.emailTemplates.resetFailed",
+								"Failed to reset email template",
+							])
+						: t("settings.emailTemplates.resetFailed", "Failed to reset email template"),
+				);
+			});
 		});
-	};
 
 	const handleInsertVariable = (name: string) => {
 		const token = `{{${name}}}`;
@@ -251,6 +269,7 @@ export function useEmailTemplateSettings(
 	return {
 		editorRef,
 		isPending,
+		pendingAction: isPending ? activeAction : null,
 		effectiveTemplates,
 		selectedTemplate,
 		draft,

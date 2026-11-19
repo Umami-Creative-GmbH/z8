@@ -1,0 +1,34 @@
+src\app\[locale]\onboarding\welcome\page-client.tsx:128:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  ! This hook specifies more dependencies than necessary: attempt.
+  
+    126 │ 	}, [failureMessage, stepFailureMessage]);
+    127 │ 
+  > 128 │ 	useEffect(() => {
+        │ 	^^^^^^^^^
+    129 │ 		const current: WelcomeLifetime = { active: true, pending: false, summary: null };
+    130 │ 		arrival.current = current;
+  
+  i This dependency can be removed from the list.
+  
+    165 │ 			current.active = false;
+    166 │ 		};
+  > 167 │ 	}, [attempt]);
+        │ 	    ^^^^^^^
+    168 │ 
+    169 │ 	const handleContinue = async () => {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    167 │ → },·[attempt]);␍
+        │       -------   
+
+Skipped 1 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 2 files in 12ms. Fixed 2 files.
+Found 1 warning.

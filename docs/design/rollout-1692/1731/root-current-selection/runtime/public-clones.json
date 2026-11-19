@@ -1,0 +1,170 @@
+{
+  "policy": "Only exact successful-state capture references in named own reports. Never reads, enumerates or hashes private fixture inputs or failure PNGs. Labeled contact-footer clones only; excluded original names/digests absent from public clones.",
+  "reports": [
+    "public-cap.json",
+    "public-actions.json",
+    "public-recovery.json",
+    "public-roles.json",
+    "public-roles-continuation.json",
+    "public-binary.json",
+    "public-binary-continuation.json"
+  ],
+  "captures": [
+    {
+      "file": "public-cap-initial-populated.png",
+      "sha256": "35b9fd0d8414ebc420d5ae153031c8c949322d16b6032f53846cf299de0f8299",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-cap-confirmation500.png",
+      "sha256": "fbfe3a2e2598ef1c61bd23f210dbc6fbd5702d3e6b226d411fccebf20cded3b9",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-cap-capacity-released-selectedOther.png",
+      "sha256": "855cfc3c5a2c596b7848753f8eaf43475822486ce7aa51492cd55ca469f36b0f",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-cap-unknown-explicit-review.png",
+      "sha256": "47832ed5b611055abfc2bc80dfcbe82c776d5958287b46fbc17bec2882bdb5a5",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-actions-frozen-two-document-review.png",
+      "sha256": "1c06186fdd68dae796831838055a3b43b7b40df06568fa29a76e270f325a3de7",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-actions-held-pending-locked.png",
+      "sha256": "9c824be70338a44f40b4176d0223449abaaeae485abba2419c52927a5abad550",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-actions-transport-refused-retained.png",
+      "sha256": "4d188aac450ff2ba410ce449ab3e095849b1cbf3753f9359408dc38154ba5e8c",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-actions-partial-result-real-readback.png",
+      "sha256": "cffcbe6325c3cc468e3b5dbdf57797cc7121fc164498c862295b7a82d939988b",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-recovery-real-read-failed.png",
+      "sha256": "6c4b521a477ef4deba13ee93fad23f14461e90c87b17ea162935190f2808d563",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-recovery-local-Retry-recovered.png",
+      "sha256": "5ad0964ec95ea3b56a646e6c9d2996b0f681ea043cc44cf7f20c9be9b8a8e7a4",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-roles-specific-Certificate-current.png",
+      "sha256": "c8e5381600ab7e729a395aa36bfff153cb819468d956e72c56f6c143090c8f29",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    },
+    {
+      "file": "public-roles-revoked-purge-refused.png",
+      "sha256": "fd0a44c1f70520a3a64b671490ae1db7153848fb13553e3927b9ab93125c4c88",
+      "categoryRedaction": {
+        "category": "Account contact footer redacted in labeled public clone; raw accepted-state capture excluded",
+        "rectangle": {
+          "x": 0,
+          "y": 934,
+          "width": 255,
+          "height": 66
+        }
+      }
+    }
+  ]
+}

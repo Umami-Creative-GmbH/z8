@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "checkedTextFiles": 63,
+  "qualification": "Exact current fixture password/secret/cookie-value variants excluded; native tree has no credential-value property. No exhaustive historical-secret or global security certification."
+}

@@ -1,0 +1,30 @@
+{
+  "phase": "journeys",
+  "notifications": "denied by isolated context permission",
+  "captures": [],
+  "errors": [],
+  "auth": {
+    "login": 200,
+    "active": 200
+  },
+  "created": [
+    {
+      "label": "New receipt",
+      "path": "/en/travel-expenses/reports/6e40552d-f77c-4d1f-8023-d72a1b1a9941",
+      "text": "Toggle Sidebar\nTravel Expenses\n09:08\nUTC+01:00\nClock In\nToggle theme\nBack to travel expenses\n\nStandalone receipt\n\nUntitled receipt\nDraft\nDelete draft\n\nAll changes saved\n\nReceipt date\nPick a date\nCategory\nChoose a category\nDescription\nAmount on the receipt\nCurrency\nEUR – Euro\n\nWho paid?\n\nI paid (reimburse me)\nThe company paid (e.g. company card)\nAccounting reference (optional)\n\nA reference finance asked you to use, such as an order number.\n\nProject (optional)\nNo project\n\nEnter the expense date to see the projects you can use on that day.\n\nReceipt\n\nTake a photo or attach a PDF or image of the receipt.\n\nTake photo\nChoose file\n\nNo receipt attached yet.\n\nStill needed\nAdd the date on the receipt.\nChoose a category.\nDescribe the expense.\nEnter the receipt amount.\nSay whether you or the company paid.\nAttach the receipt.\nTotals\nReimbursed to you\n€0.00\nPaid by the company\n€0.00\n\n1 expense is not counted yet. Totals include expenses in EUR whose amount and payer are entered.\n\nComplete everything listed under “Still needed” before submitting.\n\nReview and submit",
+      "readback": "Untitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft"
+    },
+    {
+      "label": "New mileage",
+      "path": "/en/travel-expenses/reports/c2cb65be-1629-4919-9daa-919c9726566b",
+      "text": "Toggle Sidebar\nTravel Expenses\n09:08\nUTC+01:00\nClock In\nToggle theme\nBack to travel expenses\n\nStandalone mileage\n\nUntitled mileage\nDraft\nDelete draft\n\nAll changes saved\n\nDate of the drive\nPick a date\nKilometres driven\nRoute\n\nVehicle\n\nCar\nOther motor vehicle (e.g. motorcycle)\n\nYour own vehicle. Company cars and public transport are not mileage; add their receipts instead.\n\nAccounting reference (optional)\nProject (optional)\nNo project\n\nEnter the expense date to see the projects you can use on that day.\n\nCalculated mileage\n\nEnter the date, kilometres and vehicle to see the amount.\n\nStill needed\nEnter the date of the drive.\nDescribe the route.\nEnter the kilometres driven.\nTotals\nReimbursed to you\n€0.00\nPaid by the company\n€0.00\n\n1 expense is not counted yet. Totals include expenses in EUR whose amount and payer are entered.\n\nComplete everything listed under “Still needed” before submitting.\n\nReview and submit",
+      "readback": "Untitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft"
+    },
+    {
+      "label": "New trip",
+      "path": "/en/travel-expenses/reports/e0e16df7-dc87-44ad-92f1-5b76ff8307b0",
+      "text": "Toggle Sidebar\nTravel Expenses\n09:08\nUTC+01:00\nClock In\nToggle theme\nBack to travel expenses\n\nTrip report\n\nUntitled trip\nDraft\nDelete draft\nTrip details\nEvery expense of this trip shares these details.\n\nAll changes saved\n\nPurpose of the trip\nFirst travel day\nPick a date\nLast travel day\nPick a date\nTime zone of the travel dates\nCentral European Time (Berlin)\n\nTravel dates are calendar days in Europe/Berlin. Reviewers see the same dates, wherever they are.\n\nTrip project (optional)\nNo project\n\nExpenses use the trip's project unless you choose another one for them. Each expense must be covered by your project assignment on its own date.\n\nEnter the travel dates to see the projects you can use on this trip.\n\nDestinations\n\nAdd the places you are traveling to.\n\nAdd destination\nExpenses\nNo expenses yet\nAdd each receipt of this trip as its own expense. The trip details above apply to all of them.\nAdd receipt expense\nAdd mileage\nAdd per diem\nTotals\nReimbursed to you\n€0.00\nPaid by the company\n€0.00\nStill needed for this trip\nDescribe the purpose of the trip.\nEnter the first and last travel day.\nAdd at least one destination.\nAdd an expense.\n\nComplete everything listed under “Still needed” before submitting.\n\nReview and submit",
+      "readback": "Untitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+Started label-owned PostgreSQL 16 container: z8_approval_workflow_repository_test_1794746993539355500_19319
+PostgreSQL 16 is ready: z8_approval_workflow_repository_test_1794746993539355500_19319
+Created disposable database: approval_workflow_repository_test_1794746993539355500_19319
+Verifying approval migration incident recovery, retry, and fresh chain
+Migration recovery verification: probing custom schema refusal
+Migration recovery verification: recreating incident state
+Migration recovery verification: applying recovery migration
+Migration recovery verification: checking retry idempotency
+Migration recovery verification: checking anchor-present index recovery
+Migration recovery verification: checking fresh migration chain
+Migration recovery verification: passed
+Running the PostgreSQL integration project
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+JSON report written to X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1724-root-checks/postgres.json
+Verified container ownership label: z8.agent-owned=approval-workflow-repository-test
+z8_approval_workflow_repository_test_1794746993539355500_19319
+Removed disposable PostgreSQL container: z8_approval_workflow_repository_test_1794746993539355500_19319

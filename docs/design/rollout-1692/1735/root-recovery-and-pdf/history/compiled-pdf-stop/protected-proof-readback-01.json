@@ -1,0 +1,15 @@
+{
+  "candidate": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "proofs": {
+    "1733": {
+      "allCurrentTrackedProofFiles": 385,
+      "matchesPublishedHead": 385
+    },
+    "1734": {
+      "allCurrentTrackedProofFiles": 203,
+      "matchesPublishedHead": 203
+    }
+  },
+  "comparison": "Every currently tracked proof file under both protected ticket directories matches published HEAD bytewise or expected text CRLF normalization. Candidate/tree remained unchanged throughout. Earlier 280/155 protected subsets are within these now larger 385/203 tracked directories, not new test counts.",
+  "sourceOrProofWrites": false
+}

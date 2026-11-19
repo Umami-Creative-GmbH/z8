@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "scope": "Limited archival publication only; root retains staged Git-blob audit and readiness.",
+  "newMarkdown": [
+    "README.md"
+  ],
+  "report": {
+    "path": "docs/design/rollout-1692/1747.md",
+    "prefix": {
+      "bytes": 22696,
+      "sha256": "0fe7cace1311d515ff3076a4f30772f34642fb6cd2abc5b2595d32db330d1c1a"
+    },
+    "appendixFile": "report-appendix.txt",
+    "appendixBytes": 13582,
+    "appendixSha256": "2ce5ab1bfdad6572c7e3f83e385b2dc8991ca5435dae9a83e6bee633ecc0ba03",
+    "appendixHeading": "Root bounded history and capability recovery proof",
+    "linkPrefix": "1747/root-history-and-capability-recovery/",
+    "originalPrefixPreserved": true
+  },
+  "validation": "Final default/current stable runs and exact command exits are outside this archive, avoiding result/seal self-cycles.",
+  "sourceMaterialization": "Fresh source clones use Git raw UTF8 bytes, not CRLF worktree bytes. Optional current-source canonicalizes only CRLF to LF. No HEAD equality or config-content claim.",
+  "processes": "No app test/build, archived harness, fixture, browser or persistent process launched."
+}

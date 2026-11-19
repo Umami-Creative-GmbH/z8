@@ -1,0 +1,14 @@
+file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46
+            this.#timeoutError = new TimeoutError(`Waiting failed: ${options.timeout}ms exceeded`);
+                                 ^
+
+TimeoutError: Waiting failed: 30000ms exceeded
+    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)
+    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)
+    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)
+    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)
+    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)
+    at click (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/.tmp/1728/after.mjs:15:67)
+    at file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/.tmp/1728/after.mjs:31:7
+
+Node.js v26.9.0

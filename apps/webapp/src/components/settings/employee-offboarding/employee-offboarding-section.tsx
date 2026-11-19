@@ -15,15 +15,10 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+	ConfirmActionDialog,
+	describeFailure,
+	useConfirmedAction,
+} from "@/components/settings/confirm-action-dialog";
 import { departureCutoffDate } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
@@ -59,7 +54,8 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 		employeeId: props.employeeId,
 	});
 	const [panel, setPanel] = useState<Panel>(null);
-	const [confirmCancel, setConfirmCancel] = useState(false);
+	// Canceling a departure stays open until it settles and keeps a refusal visible inline.
+	const cancellation = useConfirmedAction<"departure">();
 	const [recordingFinalPayout, setRecordingFinalPayout] = useState(false);
 	const recordFinalPayout = useRecordOvertimePayout(props.employeeId, offboarding.refetch);
 	const cancelIdentity = useRequestIdentity();
@@ -95,6 +91,8 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 	const targetEmployeeId = view.employeeId;
 	const finalPayout = view.workBalance?.finalPayout ?? null;
 
+	// Resolves once the departure is canceled and throws the worded refusal otherwise,
+	// so the confirmation stays open with the failure inline.
 	async function cancelDeparture() {
 		if (!view?.departure) return;
 		const intent = {
@@ -106,13 +104,11 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 			...intent,
 			requestId: cancelIdentity.forPayload(intent),
 		});
-		setConfirmCancel(false);
-		if (result.success) {
-			cancelIdentity.complete();
-			toast.success(t("settings.employees.offboarding.canceled", "Departure canceled"));
-		} else {
-			toast.error(actionErrorMessage(t, result, OFFBOARDING_REFUSALS));
+		if (!result.success) {
+			throw new Error(actionErrorMessage(t, result, OFFBOARDING_REFUSALS));
 		}
+		cancelIdentity.complete();
+		toast.success(t("settings.employees.offboarding.canceled", "Departure canceled"));
 	}
 
 	// A departure's follow-up, else a deactivation's (#1440): listed and resolved the same way.
@@ -155,7 +151,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				isMutating={offboarding.isMutating}
 				onSchedule={() => setPanel({ kind: "departure", mode: "scheduled" })}
 				onOffboardNow={() => setPanel({ kind: "departure", mode: "immediate" })}
-				onCancelDeparture={() => setConfirmCancel(true)}
+				onCancelDeparture={() => cancellation.request("departure")}
 				onRehire={() => setPanel({ kind: "rehire" })}
 				onRecordFinalPayout={() => setRecordingFinalPayout(true)}
 				followUpList={followUpList}
@@ -216,32 +212,27 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				</ActionPanelContent>
 			</ActionPanel>
 
-			<AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.employees.offboarding.cancelTitle", "Cancel this departure?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.employees.offboarding.cancelDescription",
-								"The employee keeps access and their seat. The canceled departure stays in the audit history.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={(event) => {
-								event.preventDefault();
-								void cancelDeparture();
-							}}
-						>
-							{t("settings.employees.offboarding.cancelDeparture", "Cancel departure")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={cancellation.open}
+				onOpenChange={cancellation.onOpenChange}
+				variant="default"
+				title={t("settings.employees.offboarding.cancelTitle", "Cancel this departure?")}
+				description={t(
+					"settings.employees.offboarding.cancelDescription",
+					"The employee keeps access and their seat. The canceled departure stays in the audit history.",
+				)}
+				confirmLabel={t("settings.employees.offboarding.cancelDeparture", "Cancel departure")}
+				isPending={cancellation.isPending}
+				error={cancellation.error}
+				onConfirm={() =>
+					void cancellation.confirm(cancelDeparture, (failure) =>
+						describeFailure(
+							failure,
+							t("common.unexpectedError", "An unexpected error occurred"),
+						),
+					)
+				}
+			/>
 		</>
 	);
 }

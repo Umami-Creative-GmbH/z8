@@ -1,0 +1,37 @@
+{
+  "checks": [
+    {
+      "name": "manager admitted, one heading",
+      "status": "passed"
+    },
+    {
+      "name": "manager limited to three managed targets",
+      "status": "passed"
+    },
+    {
+      "name": "real overlap refusal retains exact draft",
+      "status": "passed"
+    },
+    {
+      "name": "actual command transport refusal preserves input and enables retry",
+      "status": "passed"
+    },
+    {
+      "name": "real pending command blocks duplicate and Cancel",
+      "status": "passed"
+    },
+    {
+      "name": "genuine retry records and refreshes two calendar absences",
+      "status": "passed"
+    },
+    {
+      "name": "real records survive browser reload",
+      "status": "passed"
+    },
+    {
+      "name": "record panel Escape restores target trigger focus",
+      "status": "passed"
+    }
+  ],
+  "scope": "fresh small-manager; real public UI, real actions/database; only one external command network failure and one held request"
+}

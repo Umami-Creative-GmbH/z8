@@ -1,0 +1,279 @@
+{
+  "status": "MERGED_CONDITIONAL_NOT_VERIFIED_PENDING_ROOT_LIFETIME_AND_TEST_CORRECTIONS",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "02cc68035aa335505742b38178b06842bb233a3e",
+  "incoming": "28ea28fa4026d0798d218c6cf9de89317b99ed00",
+  "merge": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "parents": [
+    "02cc68035aa335505742b38178b06842bb233a3e",
+    "28ea28fa4026d0798d218c6cf9de89317b99ed00"
+  ],
+  "tree": "2a3ef74c3bf5f97aae51f8fcfa4dbc60d9085e0e",
+  "independentMergeTreeMatches": true,
+  "clean": true,
+  "exclusiveOwnership": "RELEASE",
+  "rootNext": "Root owns two cached-Activity pending completion regressions/fix and stale directory-heading test reconciliation; qualify desktop capture wording. No verifiedCommit/readiness claim by merger. Root may now mutate checkout and run package/runtime processes.",
+  "tests": {
+    "runs": [
+      {
+        "name": "exact",
+        "file": "exact-unit.json",
+        "files": 13,
+        "cases": 134,
+        "passed": 133,
+        "failed": 1,
+        "skipped": 0,
+        "overlapWithPriorRuns": 0,
+        "failures": [
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+            "fullName": "route metadata adopts payroll without adopting work-balance descendants",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected true to be false // Object.is equality"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "compatibility",
+        "file": "compatibility-unit.json",
+        "files": 106,
+        "cases": 1129,
+        "passed": 1128,
+        "failed": 1,
+        "skipped": 0,
+        "overlapWithPriorRuns": 134,
+        "failures": [
+          {
+            "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+            "fullName": "route metadata adopts payroll without adopting work-balance descendants",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected true to be false // Object.is equality"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "adversarial",
+        "file": "adversarial-unit.json",
+        "files": 1,
+        "cases": 7,
+        "passed": 5,
+        "failed": 2,
+        "skipped": 0,
+        "overlapWithPriorRuns": 0,
+        "failures": [
+          {
+            "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+            "fullName": "recovers a pending preview after its cached Activity becomes hidden then visible",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected true to be false // Object.is equality"
+            ]
+          },
+          {
+            "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+            "fullName": "recovers after a pending commit settles while its cached Activity is hidden",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected true to be false // Object.is equality"
+            ]
+          }
+        ]
+      }
+    ],
+    "unique": {
+      "files": 107,
+      "cases": 1136,
+      "passed": 1133,
+      "failed": 3,
+      "skipped": 0
+    },
+    "deduplication": "Normalized absolute test file + fullName + occurrence multiplicity within that file. Exact and expanded selections overlap; repeated setup and reruns add no cases.",
+    "failures": [
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "fullName": "route metadata adopts payroll without adopting work-balance descendants",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      },
+      {
+        "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+        "fullName": "recovers a pending preview after its cached Activity becomes hidden then visible",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      },
+      {
+        "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+        "fullName": "recovers after a pending commit settles while its cached Activity is hidden",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      }
+    ]
+  },
+  "types": {
+    "passed": true,
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "typecheck"
+    ],
+    "profiles": [
+      "next typegen",
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "log": ".tmp/merge1726-audit/types.log"
+  },
+  "quality": {
+    "commands": ".tmp/merge1726-audit/quality-commands.json",
+    "profiles": [
+      {
+        "name": "biome-default",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-crlf",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit-crlf",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-lint-import",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-explicit-lint",
+        "exitCode": 0
+      },
+      {
+        "name": "doctor",
+        "exitCode": 0
+      }
+    ],
+    "doctor": {
+      "files": 8,
+      "errors": 0,
+      "warnings": 3,
+      "triage": "Complexity warning is a maintainability limitation. preventDefault warning reflects chosen JS file-upload boundary; handler explicitly calls preventDefault and stopPropagation. Missing-preventDefault claim is false for the actual handler and its native assembled regressions. No suppressions, numeric score or supply-chain claim."
+    },
+    "defaultAndNormalCRLFFindings": "Eight formatting-only diagnostics remain in both ordinary profiles; explicit webapp CRLF, ordinary lint/import and explicit lint pass. No broad formatting pass."
+  },
+  "artifacts": {
+    "decodedPNGs": 25,
+    "parsedJSON": 26,
+    "syntaxCheckedScripts": 4,
+    "sourceSnapshots": 12,
+    "runPins": 32,
+    "captureRecords": 22,
+    "pairs": 4,
+    "phases": {
+      "comparison": {
+        "captures": 8,
+        "checks": 1
+      },
+      "actions": {
+        "captures": 6,
+        "checks": 5
+      },
+      "scope": {
+        "captures": 5,
+        "checks": 5
+      },
+      "recovery": {
+        "captures": 3,
+        "checks": 3
+      }
+    },
+    "reportLinks": 16,
+    "templateBytes": 183,
+    "readbackRows": 3
+  },
+  "preservation": {
+    "unaffectedPaths": 12282,
+    "priorRolloutPaths": 2051,
+    "incomingArtifacts": 101,
+    "verifiedAncestors": 38,
+    "ownedPaths": [
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx",
+      "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx",
+      "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+      "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts"
+    ],
+    "headingOptIns": "prior file exact plus one directory path"
+  },
+  "sourceReview": ".tmp/merge1726-audit/source-review.json",
+  "inherited": {
+    "workerUnits": {
+      "files": 13,
+      "tests": 130
+    },
+    "postgres": {
+      "files": 2,
+      "tests": 18,
+      "passed": true,
+      "rerun": false
+    },
+    "runtime": "Worker real template/atomic server upload/replacement/readback/revocation/scope/retry/native/axe/Next evidence inspected and preserved, not rerun.",
+    "archiveValidators": [
+      "node docs/design/rollout-1692/1725/root-scope-arrivals/verify-evidence.mjs --current-source",
+      "node docs/design/rollout-1692/1724/root-load-recovery/verify-evidence.mjs --current-source",
+      "node docs/design/rollout-1692/1722/root-correction-listing/verify-evidence.mjs",
+      "node docs/design/rollout-1692/1826/root-continuations/verify-evidence.mjs --current-source"
+    ],
+    "archiveValidatorsPassed": 4
+  },
+  "commands": {
+    "mergeTree": [
+      "git",
+      "merge-tree",
+      "--write-tree",
+      "02cc68035aa335505742b38178b06842bb233a3e",
+      "28ea28fa4026d0798d218c6cf9de89317b99ed00"
+    ],
+    "merge": [
+      "git",
+      "merge",
+      "--no-ff",
+      "--no-edit",
+      "-m",
+      "Merge R043 #1726 work-balances for independent integration review",
+      "28ea28fa4026d0798d218c6cf9de89317b99ed00"
+    ],
+    "exactUnit": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 'src/app/[locale]/(app)/payroll/work-balances/page.test.tsx' src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx src/lib/work-balance/adjustments/opening-balance-csv.test.ts src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/site-header.test.tsx src/components/ui/dialog.test.tsx src/lib/payroll-access src/tolgee/extracted-key-defaults.test.ts 'src/app/[locale]/(app)/organization/org-explorer-client.test.tsx' src/components/notifications/notifications-inbox.test.tsx src/components/notifications/notifications-inbox.contract.test.tsx --reporter=json --outputFile=../../.tmp/merge1726-audit/exact-unit.json",
+    "compatibility": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 <literal lines in .tmp/merge1726-audit/compatibility-selection.txt> --reporter=json --outputFile=../../.tmp/merge1726-audit/compatibility-unit.json",
+    "adversarial": "pnpm --filter webapp exec vitest run --config ../../.tmp/merge1726-audit/vitest.config.mts --project audit --maxWorkers 2 --reporter=default --reporter=json --outputFile=X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1726-audit/adversarial-unit.json",
+    "artifact": "node .tmp/merge1726-audit/verify-artifacts.mjs",
+    "quality": "powershell .tmp/merge1726-audit/run-quality.ps1"
+  },
+  "attempts": [
+    "Initial sandbox Git object database and pnpm store-lock permissions required authorized escalated calls; no auto-review rejection.",
+    "Scratch config initially doubled root path, then outside-root discovery returned zero tests, then missing shared third-party alias made Tolgee harness fail. Corrected scratch config; final seven-case result is five pass/two fail. These setup failures add no coverage.",
+    "One scratch report initially resolved its relative output outside workspace. Verified its sole test filename/five harness errors, copied to intended audit/harness-mock-failure.json and removed only that owned external file. No directories or unrelated files removed.",
+    "Initial source-pin audit used checkout raw bytes for LF snapshot archives. Corrected audit to reconstruct only LF/CRLF alternatives, then verify matching SHA256 and raw Git blob together; all32pins pass."
+  ],
+  "unchanged": "No source fixes, report/ledger/README/raw edits, tracker writes/remote/push/PR/closure/dev merge/deploy. Only authorized native merge and ignored audit files. No subagents. All package processes completed; no services/browser launched."
+}

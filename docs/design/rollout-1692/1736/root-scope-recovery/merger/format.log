@@ -1,0 +1,708 @@
+.next\dev\build\package.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {"type":·"commonjs"}
+      1 │ + {␍
+      2 │ + → "type":·"commonjs"␍
+      3 │ + }␍
+      4 │ + 
+  
+
+.next\dev\cache\_events_110544_ae38fbebec7b33a3.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":227189,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·227189,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_48056_3bd339f31ea60346.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":163075,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·163075,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_51164_83feb001c3c59285.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":35401,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·35401,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_6004_be6558364265098f.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":42897,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·42897,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_92244_c79f0cf2b6ecc53f.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":603698,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·603698,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_96084_5ff217356be32074.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":370270,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·370270,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_97268_41f955cf577fbfab.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":160204,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·160204,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\_events_99816_6b13554ae89f8dbd.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - [{"eventName":"NEXT_CLI_SESSION_STOPPED","payload":{"nextVersion":"16.4.6","nodeVersion":"v26.9.0","cliCommand":"dev","durationMilliseconds":106705,"turboFlag":true,"pagesDir":false,"appDir":true,"isRspack":false}}]
+       1 │ + [␍
+       2 │ + → {␍
+       3 │ + → → "eventName":·"NEXT_CLI_SESSION_STOPPED",␍
+       4 │ + → → "payload":·{␍
+       5 │ + → → → "nextVersion":·"16.4.6",␍
+       6 │ + → → → "nodeVersion":·"v26.9.0",␍
+       7 │ + → → → "cliCommand":·"dev",␍
+       8 │ + → → → "durationMilliseconds":·106705,␍
+       9 │ + → → → "turboFlag":·true,␍
+      10 │ + → → → "pagesDir":·false,␍
+      11 │ + → → → "appDir":·true,␍
+      12 │ + → → → "isRspack":·false␍
+      13 │ + → → }␍
+      14 │ + → }␍
+      15 │ + ]␍
+      16 │ + 
+  
+
+.next\dev\cache\next-devtools-config.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {}
+      1 │ + {}␍
+      2 │ + 
+  
+
+.next\dev\fallback-build-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - {
+     2    │ - ··"pages":·{
+     3    │ - ····"/_app":·[]
+     4    │ - ··},
+     5    │ - ··"devFiles":·[],
+     6    │ - ··"polyfillFiles":·[],
+     7    │ - ··"lowPriorityFiles":·[
+     8    │ - ····"static/development/_buildManifest.js",
+     9    │ - ····"static/development/_ssgManifest.js",
+    10    │ - ····"static/development/_clientMiddlewareManifest.js"
+    11    │ - ··],
+    12    │ - ··"rootMainFiles":·[],
+    13    │ - ··"rootMainFilesTree":·{},
+    14    │ - ··"pagesChunkGroupBootstrapParams":·{}
+    15    │ - }
+        1 │ + {␍
+        2 │ + → "pages":·{␍
+        3 │ + → → "/_app":·[]␍
+        4 │ + → },␍
+        5 │ + → "devFiles":·[],␍
+        6 │ + → "polyfillFiles":·[],␍
+        7 │ + → "lowPriorityFiles":·[␍
+        8 │ + → → "static/development/_buildManifest.js",␍
+        9 │ + → → "static/development/_ssgManifest.js",␍
+       10 │ + → → "static/development/_clientMiddlewareManifest.js"␍
+       11 │ + → ],␍
+       12 │ + → "rootMainFiles":·[],␍
+       13 │ + → "rootMainFilesTree":·{},␍
+       14 │ + → "pagesChunkGroupBootstrapParams":·{}␍
+       15 │ + }␍
+       16 │ + 
+  
+
+.next\dev\package.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {
+    2   │ - ··"type":·"commonjs"
+    3   │ - }
+      1 │ + {␍
+      2 │ + → "type":·"commonjs"␍
+      3 │ + }␍
+      4 │ + 
+  
+
+.next\dev\prerender-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1     │ - ...(?:\\/)?$","allowHeader":[]}},"notFoundRoutes":[]}
+        1 │ + {␍
+        2 │ + → "version":·4,␍
+        3 │ + → "routes":·{␍
+        4 │ + → → "/[locale]/sign-in":·{},␍
+        5 │ + → → "/en/sign-in":·{},␍
+        6 │ + → → "/de/sign-in":·{},␍
+        7 │ + → → "/fr/sign-in":·{},␍
+        8 │ + → → "/es/sign-in":·{},␍
+        9 │ + → → "/it/sign-in":·{},␍
+       10 │ + → → "/pt/sign-in":·{},␍
+       11 │ + → → "/el/sign-in":·{},␍
+       12 │ + → → "/pl/sign-in":·{},␍
+       13 │ + → → "/tr/sign-in":·{},␍
+       14 │ + → → "/gsw/sign-in":·{},␍
+       15 │ + → → "/no/sign-in":·{},␍
+       16 │ + → → "/sv/sign-in":·{},␍
+       17 │ + → → "/ro/sign-in":·{},␍
+       18 │ + → → "/hr/sign-in":·{},␍
+       19 │ + → → "/bs/sign-in":·{},␍
+       20 │ + → → "/sq/sign-in":·{},␍
+       21 │ + → → "/uk/sign-in":·{},␍
+       22 │ + → → "/ru/sign-in":·{},␍
+       23 │ + → → "/[locale]/onboarding/work-schedule":·{},␍
+       24 │ + → → "/en/onboarding/work-schedule":·{},␍
+       25 │ + → → "/de/onboarding/work-schedule":·{},␍
+       26 │ + → → "/fr/onboarding/work-schedule":·{},␍
+       27 │ + → → "/es/onboarding/work-schedule":·{},␍
+       28 │ + → → "/it/onboarding/work-schedule":·{},␍
+       29 │ + → → "/pt/onboarding/work-schedule":·{},␍
+       30 │ + → → "/el/onboarding/work-schedule":·{},␍
+       31 │ + → → "/pl/onboarding/work-schedule":·{},␍
+       32 │ + → → "/tr/onboarding/work-schedule":·{},␍
+       33 │ + → → "/gsw/onboarding/work-schedule":·{},␍
+       34 │ + → → "/no/onboarding/work-schedule":·{},␍
+       35 │ + → → "/sv/onboarding/work-schedule":·{},␍
+       36 │ + → → "/ro/onboarding/work-schedule":·{},␍
+       37 │ + → → "/hr/onboarding/work-schedule":·{},␍
+       38 │ + → → "/bs/onboarding/work-schedule":·{},␍
+       39 │ + → → "/sq/onboarding/work-schedule":·{},␍
+       40 │ + → → "/uk/onboarding/work-schedule":·{},␍
+       41 │ + → → "/ru/onboarding/work-schedule":·{},␍
+       42 │ + → → "/[locale]/onboarding/profile":·{},␍
+       43 │ + → → "/en/onboarding/profile":·{},␍
+       44 │ + → → "/de/onboarding/profile":·{},␍
+       45 │ + → → "/fr/onboarding/profile":·{},␍
+       46 │ + → → "/es/onboarding/profile":·{},␍
+       47 │ + → → "/it/onboarding/profile":·{},␍
+       48 │ + → → "/pt/onboarding/profile":·{},␍
+       49 │ + → → "/el/onboarding/profile":·{},␍
+       50 │ + → → "/pl/onboarding/profile":·{},␍
+       51 │ + → → "/tr/onboarding/profile":·{},␍
+       52 │ + → → "/gsw/onboarding/profile":·{},␍
+       53 │ + → → "/no/onboarding/profile":·{},␍
+       54 │ + → → "/sv/onboarding/profile":·{},␍
+       55 │ + → → "/ro/onboarding/profile":·{},␍
+       56 │ + → → "/hr/onboarding/profile":·{},␍
+       57 │ + → → "/bs/onboarding/profile":·{},␍
+       58 │ + → → "/sq/onboarding/profile":·{},␍
+       59 │ + → → "/uk/onboarding/profile":·{},␍
+       60 │ + → → "/ru/onboarding/profile":·{},␍
+       61 │ + → → "/[locale]/onboarding/vacation-policy":·{},␍
+       62 │ + → → "/en/onboarding/vacation-policy":·{},␍
+       63 │ + → → "/de/onboarding/vacation-policy":·{},␍
+       64 │ + → → "/fr/onboarding/vacation-policy":·{},␍
+       65 │ + → → "/es/onboarding/vacation-policy":·{},␍
+       66 │ + → → "/it/onboarding/vacation-policy":·{},␍
+       67 │ + → → "/pt/onboarding/vacation-policy":·{},␍
+       68 │ + → → "/el/onboarding/vacation-policy":·{},␍
+       69 │ + → → "/pl/onboarding/vacation-policy":·{},␍
+       70 │ + → → "/tr/onboarding/vacation-policy":·{},␍
+       71 │ + → → "/gsw/onboarding/vacation-policy":·{},␍
+       72 │ + → → "/no/onboarding/vacation-policy":·{},␍
+       73 │ + → → "/sv/onboarding/vacation-policy":·{},␍
+       74 │ + → → "/ro/onboarding/vacation-policy":·{},␍
+       75 │ + → → "/hr/onboarding/vacation-policy":·{},␍
+       76 │ + → → "/bs/onboarding/vacation-policy":·{},␍
+       77 │ + → → "/sq/onboarding/vacation-policy":·{},␍
+       78 │ + → → "/uk/onboarding/vacation-policy":·{},␍
+       79 │ + → → "/ru/onboarding/vacation-policy":·{},␍
+       80 │ + → → "/[locale]/onboarding/wellness":·{},␍
+       81 │ + → → "/en/onboarding/wellness":·{},␍
+       82 │ + → → "/de/onboarding/wellness":·{},␍
+       83 │ + → → "/fr/onboarding/wellness":·{},␍
+       84 │ + → → "/es/onboarding/wellness":·{},␍
+       85 │ + → → "/it/onboarding/wellness":·{},␍
+       86 │ + → → "/pt/onboarding/wellness":·{},␍
+       87 │ + → → "/el/onboarding/wellness":·{},␍
+       88 │ + → → "/pl/onboarding/wellness":·{},␍
+       89 │ + → → "/tr/onboarding/wellness":·{},␍
+       90 │ + → → "/gsw/onboarding/wellness":·{},␍
+       91 │ + → → "/no/onboarding/wellness":·{},␍
+       92 │ + → → "/sv/onboarding/wellness":·{},␍
+       93 │ + → → "/ro/onboarding/wellness":·{},␍
+       94 │ + → → "/hr/onboarding/wellness":·{},␍
+       95 │ + → → "/bs/onboarding/wellness":·{},␍
+       96 │ + → → "/sq/onboarding/wellness":·{},␍
+       97 │ + → → "/uk/onboarding/wellness":·{},␍
+       98 │ + → → "/ru/onboarding/wellness":·{}␍
+       99 │ + → },␍
+      100 │ + → "dynamicRoutes":·{␍
+      101 │ + → → "/[locale]/sign-in":·{␍
+      102 │ + → → → "dataRoute":·null,␍
+      103 │ + → → → "dataRouteRegex":·null,␍
+      104 │ + → → → "fallback":·"/[locale]/(auth)/sign-in/page",␍
+      105 │ + → → → "fallbackRevalidate":·false,␍
+      106 │ + → → → "fallbackRootParams":·["locale"],␍
+      107 │ + → → → "fallbackRouteParams":·[{·"paramName":·"locale",·"paramType":·"dynamic"·}],␍
+      108 │ + → → → "fallbackSourceRoute":·"/[locale]/sign-in",␍
+      109 │ + → → → "routeRegex":·"^\\/([^/]+?)\\/sign\\-in(?:\\/)?$",␍
+      110 │ + → → → "allowHeader":·[]␍
+      111 │ + → → },␍
+      112 │ + → → "/[locale]/onboarding/work-schedule":·{␍
+      113 │ + → → → "dataRoute":·null,␍
+      114 │ + → → → "dataRouteRegex":·null,␍
+      115 │ + → → → "fallback":·"/[locale]/onboarding/work-schedule/page",␍
+      116 │ + → → → "fallbackRevalidate":·false,␍
+      117 │ + → → → "fallbackRootParams":·["locale"],␍
+      118 │ + → → → "fallbackRouteParams":·[{·"paramName":·"locale",·"paramType":·"dynamic"·}],␍
+      119 │ + → → → "fallbackSourceRoute":·"/[locale]/onboarding/work-schedule",␍
+      120 │ + → → → "routeRegex":·"^\\/([^/]+?)\\/onboarding\\/work\\-schedule(?:\\/)?$",␍
+      121 │ + → → → "allowHeader":·[]␍
+      122 │ + → → },␍
+      123 │ + → → "/[locale]/onboarding/profile":·{␍
+      124 │ + → → → "dataRoute":·null,␍
+      125 │ + → → → "dataRouteRegex":·null,␍
+      126 │ + → → → "fallback":·"/[locale]/onboarding/profile/page",␍
+      127 │ + → → → "fallbackRevalidate":·false,␍
+      128 │ + → → → "fallbackRootParams":·["locale"],␍
+      129 │ + → → → "fallbackRouteParams":·[{·"paramName":·"locale",·"paramType":·"dynamic"·}],␍
+      130 │ + → → → "fallbackSourceRoute":·"/[locale]/onboarding/profile",␍
+      131 │ + → → → "routeRegex":·"^\\/([^/]+?)\\/onboarding\\/profile(?:\\/)?$",␍
+      132 │ + → → → "allowHeader":·[]␍
+      133 │ + → → },␍
+      134 │ + → → "/[locale]/onboarding/vacation-policy":·{␍
+      135 │ + → → → "dataRoute":·null,␍
+      136 │ + → → → "dataRouteRegex":·null,␍
+      137 │ + → → → "fallback":·"/[locale]/onboarding/vacation-policy/page",␍
+      138 │ + → → → "fallbackRevalidate":·false,␍
+      139 │ + → → → "fallbackRootParams":·["locale"],␍
+      140 │ + → → → "fallbackRouteParams":·[{·"paramName":·"locale",·"paramType":·"dynamic"·}],␍
+      141 │ + → → → "fallbackSourceRoute":·"/[locale]/onboarding/vacation-policy",␍
+      142 │ + → → → "routeRegex":·"^\\/([^/]+?)\\/onboarding\\/vacation\\-policy(?:\\/)?$",␍
+      143 │ + → → → "allowHeader":·[]␍
+      144 │ + → → },␍
+      145 │ + → → "/[locale]/onboarding/wellness":·{␍
+      146 │ + → → → "dataRoute":·null,␍
+      147 │ + → → → "dataRouteRegex":·null,␍
+      148 │ + → → → "fallback":·"/[locale]/onboarding/wellness/page",␍
+      149 │ + → → → "fallbackRevalidate":·false,␍
+  10 more lines truncated
+  
+
+.next\dev\routes-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1    │ - ...,"regex":"^\\/_next\\/data(?:\\/(.*))(?:\\/)?$"}]}
+       1 │ + {␍
+       2 │ + → "version":·3,␍
+       3 │ + → "caseSensitive":·false,␍
+       4 │ + → "basePath":·"",␍
+       5 │ + → "rewrites":·{␍
+       6 │ + → → "beforeFiles":·[],␍
+       7 │ + → → "afterFiles":·[␍
+       8 │ + → → → {␍
+       9 │ + → → → → "source":·"/ingest/static/:path*",␍
+      10 │ + → → → → "destination":·"https://eu.i.posthog.com/static/:path*",␍
+      11 │ + → → → → "regex":·"^\\/ingest\\/static(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))?(?:\\/)?$",␍
+      12 │ + → → → → "check":·true␍
+      13 │ + → → → },␍
+      14 │ + → → → {␍
+      15 │ + → → → → "source":·"/ingest/:path*",␍
+      16 │ + → → → → "destination":·"https://eu.i.posthog.com/:path*",␍
+      17 │ + → → → → "regex":·"^\\/ingest(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))?(?:\\/)?$",␍
+      18 │ + → → → → "check":·true␍
+      19 │ + → → → }␍
+      20 │ + → → ],␍
+      21 │ + → → "fallback":·[]␍
+      22 │ + → },␍
+      23 │ + → "redirects":·[],␍
+      24 │ + → "headers":·[],␍
+      25 │ + → "onMatchHeaders":·[␍
+      26 │ + → → {␍
+      27 │ + → → → "source":·"/:path*",␍
+      28 │ + → → → "has":·[{·"type":·"header",·"key":·"rsc",·"value":·"1"·}],␍
+      29 │ + → → → "headers":·[␍
+      30 │ + → → → → {·"key":·"x-nextjs-deployment-id",·"value":·"bd160d9af22214d473ea603870cdc161572bbcad"·}␍
+      31 │ + → → → ],␍
+      32 │ + → → → "regex":·"^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))?(?:\\/)?$"␍
+      33 │ + → → },␍
+      34 │ + → → {␍
+      35 │ + → → → "source":·"/_next/data/(.*)",␍
+      36 │ + → → → "headers":·[␍
+      37 │ + → → → → {·"key":·"x-nextjs-deployment-id",·"value":·"bd160d9af22214d473ea603870cdc161572bbcad"·}␍
+      38 │ + → → → ],␍
+      39 │ + → → → "regex":·"^\\/_next\\/data(?:\\/(.*))(?:\\/)?$"␍
+      40 │ + → → }␍
+      41 │ + → ]␍
+      42 │ + }␍
+      43 │ + 
+  
+
+.next\dev\server\app\[locale]\(app)\page\app-paths-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {
+    2   │ - ··"/[locale]/(app)/page":·"app/[locale]/(app)/page.js"
+    3   │ - }
+      1 │ + {␍
+      2 │ + → "/[locale]/(app)/page":·"app/[locale]/(app)/page.js"␍
+      3 │ + }␍
+      4 │ + 
+  
+
+.next\dev\server\app\[locale]\(app)\page\build-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - {
+     2    │ - ··"devFiles":·[],
+     3    │ - ··"ampDevFiles":·[],
+     4    │ - ··"polyfillFiles":·[
+     5    │ - ····"static/chunks/0po-_next_dist_build_polyfills_polyfill-nomodule.js"
+     6    │ - ··],
+     7    │ - ··"lowPriorityFiles":·[],
+     8    │ - ··"rootMainFiles":·[
+     9    │ - ····"static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",
+    10    │ - ····"static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",
+    11    │ - ····"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",
+    12    │ - ····"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",
+    13    │ - ····"static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",
+    14    │ - ····"static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",
+    15    │ - ····"static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",
+    16    │ - ····"static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",
+    17    │ - ····"static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",
+    18    │ - ····"static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",
+    19    │ - ····"static/chunks/apps_webapp_1anvha4rlo79g._.js",
+    20    │ - ····"static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js"
+    21    │ - ··],
+    22    │ - ··"pages":·{},
+    23    │ - ··"ampFirstPages":·[],
+    24    │ - ··"rootMainFilesTree":·{
+    25    │ - ····"/[locale]/(app)/page":·[
+    26    │ - ······"static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",
+    27    │ - ······"static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",
+    28    │ - ······"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",
+    29    │ - ······"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",
+    30    │ - ······"static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",
+    31    │ - ······"static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",
+    32    │ - ······"static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",
+    33    │ - ······"static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",
+    34    │ - ······"static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",
+    35    │ - ······"static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",
+    36    │ - ······"static/chunks/apps_webapp_1anvha4rlo79g._.js",
+    37    │ - ······"static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js",
+    38    │ - ······"static/chunks/apps_webapp_0_4ctpxj2x9cy._.js"
+    39    │ - ····]
+    40    │ - ··},
+    41    │ - ··"pagesChunkGroupBootstrapParams":·{},
+    42    │ - ··"chunkLoadingGlobal":·"TURBOPACK"
+    43    │ - }
+        1 │ + {␍
+        2 │ + → "devFiles":·[],␍
+        3 │ + → "ampDevFiles":·[],␍
+        4 │ + → "polyfillFiles":·["static/chunks/0po-_next_dist_build_polyfills_polyfill-nomodule.js"],␍
+        5 │ + → "lowPriorityFiles":·[],␍
+        6 │ + → "rootMainFiles":·[␍
+        7 │ + → → "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",␍
+        8 │ + → → "static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",␍
+        9 │ + → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",␍
+       10 │ + → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",␍
+       11 │ + → → "static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",␍
+       12 │ + → → "static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",␍
+       13 │ + → → "static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",␍
+       14 │ + → → "static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",␍
+       15 │ + → → "static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",␍
+       16 │ + → → "static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",␍
+       17 │ + → → "static/chunks/apps_webapp_1anvha4rlo79g._.js",␍
+       18 │ + → → "static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js"␍
+       19 │ + → ],␍
+       20 │ + → "pages":·{},␍
+       21 │ + → "ampFirstPages":·[],␍
+       22 │ + → "rootMainFilesTree":·{␍
+       23 │ + → → "/[locale]/(app)/page":·[␍
+       24 │ + → → → "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",␍
+       25 │ + → → → "static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",␍
+       26 │ + → → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",␍
+       27 │ + → → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",␍
+       28 │ + → → → "static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",␍
+       29 │ + → → → "static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",␍
+       30 │ + → → → "static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",␍
+       31 │ + → → → "static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",␍
+       32 │ + → → → "static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",␍
+       33 │ + → → → "static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",␍
+       34 │ + → → → "static/chunks/apps_webapp_1anvha4rlo79g._.js",␍
+       35 │ + → → → "static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js",␍
+       36 │ + → → → "static/chunks/apps_webapp_0_4ctpxj2x9cy._.js"␍
+       37 │ + → → ]␍
+       38 │ + → },␍
+       39 │ + → "pagesChunkGroupBootstrapParams":·{},␍
+       40 │ + → "chunkLoadingGlobal":·"TURBOPACK"␍
+       41 │ + }␍
+       42 │ + 
+  
+
+.next\dev\server\app\[locale]\(app)\page\next-font-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {
+    2   │ - ··"pages":·{},
+    3   │ - ··"app":·{},
+    4   │ - ··"appUsingSizeAdjust":·false,
+    5   │ - ··"pagesUsingSizeAdjust":·false
+    6   │ - }
+      1 │ + {␍
+      2 │ + → "pages":·{},␍
+      3 │ + → "app":·{},␍
+      4 │ + → "appUsingSizeAdjust":·false,␍
+      5 │ + → "pagesUsingSizeAdjust":·false␍
+      6 │ + }␍
+      7 │ + 
+  
+
+.next\dev\server\app\[locale]\(app)\page\react-loadable-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {}
+      1 │ + {}␍
+      2 │ + 
+  
+
+.next\dev\server\app\[locale]\(app)\payroll\page\app-paths-manifest.json format ━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1   │ - {
+    2   │ - ··"/[locale]/(app)/payroll/page":·"app/[locale]/(app)/payroll/page.js"
+    3   │ - }
+      1 │ + {␍
+      2 │ + → "/[locale]/(app)/payroll/page":·"app/[locale]/(app)/payroll/page.js"␍
+      3 │ + }␍
+      4 │ + 
+  
+
+.next\dev\server\app\[locale]\(app)\payroll\page\build-manifest.json format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - {
+     2    │ - ··"devFiles":·[],
+     3    │ - ··"ampDevFiles":·[],
+     4    │ - ··"polyfillFiles":·[
+     5    │ - ····"static/chunks/0po-_next_dist_build_polyfills_polyfill-nomodule.js"
+     6    │ - ··],
+     7    │ - ··"lowPriorityFiles":·[],
+     8    │ - ··"rootMainFiles":·[
+     9    │ - ····"static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",
+    10    │ - ····"static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",
+    11    │ - ····"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",
+    12    │ - ····"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",
+    13    │ - ····"static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",
+    14    │ - ····"static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",
+    15    │ - ····"static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",
+    16    │ - ····"static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",
+    17    │ - ····"static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",
+    18    │ - ····"static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",
+    19    │ - ····"static/chunks/apps_webapp_1anvha4rlo79g._.js",
+    20    │ - ····"static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js"
+    21    │ - ··],
+    22    │ - ··"pages":·{},
+    23    │ - ··"ampFirstPages":·[],
+    24    │ - ··"rootMainFilesTree":·{
+    25    │ - ····"/[locale]/(app)/payroll/page":·[
+    26    │ - ······"static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",
+    27    │ - ······"static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",
+    28    │ - ······"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",
+    29    │ - ······"static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",
+    30    │ - ······"static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",
+    31    │ - ······"static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",
+    32    │ - ······"static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",
+    33    │ - ······"static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",
+    34    │ - ······"static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",
+    35    │ - ······"static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",
+    36    │ - ······"static/chunks/apps_webapp_1anvha4rlo79g._.js",
+    37    │ - ······"static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js",
+    38    │ - ······"static/chunks/apps_webapp_1y6doprugsr3-._.js"
+    39    │ - ····]
+    40    │ - ··},
+    41    │ - ··"pagesChunkGroupBootstrapParams":·{},
+    42    │ - ··"chunkLoadingGlobal":·"TURBOPACK"
+    43    │ - }
+        1 │ + {␍
+        2 │ + → "devFiles":·[],␍
+        3 │ + → "ampDevFiles":·[],␍
+        4 │ + → "polyfillFiles":·["static/chunks/0po-_next_dist_build_polyfills_polyfill-nomodule.js"],␍
+        5 │ + → "lowPriorityFiles":·[],␍
+        6 │ + → "rootMainFiles":·[␍
+        7 │ + → → "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",␍
+        8 │ + → → "static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",␍
+        9 │ + → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",␍
+       10 │ + → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",␍
+       11 │ + → → "static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",␍
+       12 │ + → → "static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",␍
+       13 │ + → → "static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",␍
+       14 │ + → → "static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",␍
+       15 │ + → → "static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",␍
+       16 │ + → → "static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",␍
+       17 │ + → → "static/chunks/apps_webapp_1anvha4rlo79g._.js",␍
+       18 │ + → → "static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js"␍
+       19 │ + → ],␍
+       20 │ + → "pages":·{},␍
+       21 │ + → "ampFirstPages":·[],␍
+       22 │ + → "rootMainFilesTree":·{␍
+       23 │ + → → "/[locale]/(app)/payroll/page":·[␍
+       24 │ + → → → "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_0_5ga9p8m2owh._.js",␍
+       25 │ + → → → "static/chunks/0po-_next_dist_compiled_next-devtools_index_05-t0dhwgz5hy.js",␍
+       26 │ + → → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js",␍
+       27 │ + → → → "static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom_development_0ytdmjz3ogxpq.js",␍
+       28 │ + → → → "static/chunks/0po-_next_dist_compiled_react-dom_0m9p02s6rti4w._.js",␍
+       29 │ + → → → "static/chunks/0po-_next_dist_compiled_react-server-dom-turbopack_0bedfg0tdwrs3._.js",␍
+       30 │ + → → → "static/chunks/0po-_next_dist_compiled_0f45l2hf5iwc8._.js",␍
+       31 │ + → → → "static/chunks/0po-_next_dist_client_15_saaaceoo-v._.js",␍
+       32 │ + → → → "static/chunks/0po-_next_dist_02x2l4ctd96l3._.js",␍
+       33 │ + → → → "static/chunks/0zix_@swc_helpers_cjs_0hi-e474n4mns._.js",␍
+       34 │ + → → → "static/chunks/apps_webapp_1anvha4rlo79g._.js",␍
+       35 │ + → → → "static/chunks/turbopack-apps_webapp_1zo13b2lhkizh._.js",␍
+       36 │ + → → → "static/chunks/apps_webapp_1y6doprugsr3-._.js"␍
+       37 │ + → → ]␍
+       38 │ + → },␍
+       39 │ + → "pagesChunkGroupBootstrapParams":·{},␍
+       40 │ + → "chunkLoadingGlobal":·"TURBOPACK"␍
+       41 │ + }␍
+       42 │ + 
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 902606.
+Checked 12881 files in 11s. No fixes applied.
+Found 110612 errors.
+Found 299139 warnings.
+Found 492875 infos.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some warnings were emitted while running checks.
+  
+

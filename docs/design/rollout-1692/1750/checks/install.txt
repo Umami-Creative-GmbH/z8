@@ -1,0 +1,11 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+pnpm : Error: ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK
+In Zeile:2 Zeichen:108
++ ... un='false'; pnpm --config.verify-deps-before-run=false --config.verif ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Error: ERR_PNPM..._OPERATION_LOCK:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+  × lock the package-manager engine store
+  ╰─▶ Failed to open the store operation lock at "USER_HOME\
+      \AppData\\Local\\pnpm-store-operation-locks\\all-stores.lock": Zugriff
+      verweigert (os error 5)

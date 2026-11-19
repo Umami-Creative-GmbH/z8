@@ -14,9 +14,14 @@ import {
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { Link, usePathname } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import { type FeatureFlag, getResolvedSettingsVisibility } from "./settings-config";
+import {
+	canReachFeatureSwitches,
+	type FeatureFlag,
+	getResolvedSettingsVisibility,
+} from "./settings-config";
+import { SettingsFeatureOffNotice } from "./settings-feature-off-notice";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
-import { SettingsSearch, useSettingsSearch } from "./settings-search";
+import { SettingsSearch, SettingsSearchEmpty, useSettingsSearch } from "./settings-search";
 
 interface SettingsNavProps {
 	accessTier: SettingsAccessTier;
@@ -59,14 +64,12 @@ export function SettingsNav({
 	};
 
 	return (
-		<>
+		<nav aria-label={t("settings.nav.label", "Settings navigation")}>
 			<div className="p-3">
 				<SettingsSearch value={query} onChange={setQuery} />
 			</div>
 			{matchingGroups.length === 0 ? (
-				<p role="status" className="px-4 py-3 text-sm text-muted-foreground">
-					{t("settings.search.noResults", "No settings found. Try a different search.")}
-				</p>
+				<SettingsSearchEmpty onClear={() => setQuery("")} className="px-4 py-3" />
 			) : null}
 			{matchingGroups.map((group) => {
 				return (
@@ -88,25 +91,37 @@ export function SettingsNav({
 									if (isLoading) {
 										return (
 											<SidebarMenuItem key={item.id}>
-												<SidebarMenuButton disabled tooltip={title}>
-													<IconLoader2 className="size-5 animate-spin" />
+												<SidebarMenuButton disabled aria-busy="true" tooltip={title}>
+													<IconLoader2
+														className="size-5 animate-spin motion-reduce:animate-none"
+														aria-hidden="true"
+													/>
 													<span>{title}</span>
 												</SidebarMenuButton>
 											</SidebarMenuItem>
 										);
 									}
 
-									if (isDisabled) {
+									if (isDisabled && item.requiredFeature) {
 										return (
 											<SidebarMenuItem key={item.id}>
 												<SidebarMenuButton
 													disabled
-													tooltip={`${title} (Disabled)`}
+													tooltip={t("settings.nav.disabledEntry", "{title} (disabled)", {
+														title,
+													})}
 													className="cursor-not-allowed opacity-50"
 												>
-													<Icon className="size-5" />
+													<Icon className="size-5" aria-hidden="true" />
 													<span>{title}</span>
 												</SidebarMenuButton>
+												<SettingsFeatureOffNotice
+													feature={item.requiredFeature}
+													settingTitle={title}
+													canChangeFeatures={canReachFeatureSwitches(accessTier)}
+													compact
+													className="pr-2 pb-1 pl-9"
+												/>
 											</SidebarMenuItem>
 										);
 									}
@@ -114,8 +129,8 @@ export function SettingsNav({
 									return (
 										<SidebarMenuItem key={item.id}>
 											<SidebarMenuButton asChild isActive={isActive} tooltip={title}>
-												<Link href={item.href}>
-													<Icon className="size-5" />
+												<Link href={item.href} aria-current={isActive ? "page" : undefined}>
+													<Icon className="size-5" aria-hidden="true" />
 													<span>{title}</span>
 												</Link>
 											</SidebarMenuButton>
@@ -127,6 +142,6 @@ export function SettingsNav({
 					</SidebarGroup>
 				);
 			})}
-		</>
+		</nav>
 	);
 }

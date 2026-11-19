@@ -1,0 +1,86 @@
+{
+  "at": "2026-11-18T04:20:42.235Z",
+  "events": [
+    {
+      "event": "non-auth-route-POST-held-before-dispatch",
+      "at": "2026-11-18T04:20:41.003Z"
+    },
+    {
+      "event": "earliest-held-sample",
+      "at": "2026-11-18T04:20:41.106Z",
+      "view": {
+        "path": "/en/travel-expenses",
+        "h1": [
+          {
+            "text": "Travel Expenses",
+            "x": 280,
+            "y": 89,
+            "w": 1296,
+            "h": 36
+          }
+        ],
+        "statuses": [
+          "Loading your travel expenses…"
+        ],
+        "alerts": [],
+        "retry": false,
+        "empty": false,
+        "noMatch": false,
+        "rows": 0
+      }
+    },
+    {
+      "event": "committed-route-with-heading-and-loading",
+      "at": "2026-11-18T04:20:41.113Z",
+      "view": {
+        "path": "/en/travel-expenses",
+        "h1": [
+          {
+            "text": "Travel Expenses",
+            "x": 280,
+            "y": 89,
+            "w": 1296,
+            "h": 36
+          }
+        ],
+        "statuses": [
+          "Loading your travel expenses…"
+        ],
+        "alerts": [],
+        "retry": false,
+        "empty": false,
+        "noMatch": false,
+        "rows": 0
+      }
+    },
+    {
+      "event": "released-unmodified",
+      "at": "2026-11-18T04:20:41.115Z"
+    },
+    {
+      "event": "fresh-rows",
+      "at": "2026-11-18T04:20:42.235Z",
+      "view": {
+        "path": "/en/travel-expenses",
+        "h1": [
+          {
+            "text": "Travel Expenses",
+            "x": 280,
+            "y": 89,
+            "w": 1296,
+            "h": 36
+          }
+        ],
+        "statuses": [],
+        "alerts": [],
+        "retry": false,
+        "empty": false,
+        "noMatch": false,
+        "rows": 2
+      }
+    }
+  ],
+  "pass": true,
+  "earliestShellScope": "A sample preceding committed exact route and route-owned visible h1 is not a product assertion",
+  "interceptionScope": "Current-route non-auth POST; other shared reads may overlap; no headers/action IDs/bodies inspected"
+}

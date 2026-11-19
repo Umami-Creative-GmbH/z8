@@ -1,0 +1,50 @@
+{
+  "blockingFindings": [],
+  "scope": "All eight incoming TS/TSX files, shared hook/bell/popover/list/global refresh/query keys/provider errors and existing server admission/recipient/org guards; canonical shared/R031/Testing Decisions.",
+  "observations": [
+    {
+      "topic": "Selection/filter execution",
+      "evidence": "Stable ID Set, select-all only visible rows, mixed state from visible selected intersection, search localized title+message with deferred local input, All/Unread/Read unchanged, mark selected visible unread only; clear all on full bulk success, retain failed selection on partial outcomes. Existing assembled HTTP-boundary tests and exact worker suite pass."
+    },
+    {
+      "topic": "Truthful scope/count/failure",
+      "evidence": "Visible count explicitly latest100; header separate recipient/org unread query, count loading/error does not render0. Ordinary failed refresh keeps cached rows/input and Retry invalidates actual inbox; authority-class list error400/401/403/409 hides action targets. Empty/no-match/unread-empty not substituted for failed loading. Existing database service read fallback untouched and not newly certified."
+    },
+    {
+      "topic": "Identity lifetime/abort",
+      "evidence": "Presentation key includes session user/active organization, display organization and session pending. Keyed unmount sets alive false; async allSettled completion cannot revive selection/feedback across A→B→A, including a pending-session lifetime. Real list/count requests consume query AbortSignal; session mismatch disables reads and hides rows. Mutations retain dispatch scope and invalidate only that inbox."
+    },
+    {
+      "topic": "Open/navigation/pending cleanup",
+      "evidence": "Existing item activation dispatches mark-read then immediately navigates to stored actionUrl through locale router. Inbox run catches all outcomes with allSettled; busy ref prevents same-turn duplicate commands; pending finally cleans current lifetime only. Navigation unmount suppresses late UI feedback. Shared popover behavior remains with its owner and is in fresh exact tests."
+    },
+    {
+      "topic": "Server authority",
+      "evidence": "Route/count admission, actual session/user/org scoping, MFA/SSO/employee and foreign-recipient item guards unchanged. New PG test reads and refuses foreign recipient/org PATCH/DELETE with readback; inherited1/13postmergePG acceptance. Production QueryProvider redirects unauthorized401 query/mutation errors and does not retry401; it is unchanged. Held authority/account runtime401/409 evidence retained, no fabricated live two-authorized-org switch."
+    },
+    {
+      "topic": "Temporal grouping",
+      "evidence": "Only notification arrival grouping migrates legacy default-local Luxon semantics to Temporal.Instant→explicit resolved system zone→PlainDate Today/Yesterday/Earlier; NewYork DST assembled case passes. NativeDate conversion only at serialized/database boundary. No work-entry dates, captured offsets, business meaning or calendar owners changed."
+    },
+    {
+      "topic": "Composition/performance/accessibility",
+      "evidence": "Uses PageHeader and DataTableToolbar slots with existing query owners, bounded max-width and complete record text; no new duplicate request controller, waterfall, form or persistence owner. Named item/select-all controls, section/list/h1/h2 structure, text Read/Unread state and status announcements. Generic URL-saved-filter/confirmation guidance yields to explicit preserved local filter/no-confirm delete contract. Current Web Interface Guidelines fetched from official raw GitHub source. Inherited native tree and axe30/0/1incomplete stay qualified."
+    },
+    {
+      "topic": "Merge/source compatibility",
+      "evidence": "All65incoming changed paths are exact incoming blobs,8TS/TSX only. Metadata diff is exactly additive notification opt-in; all prior heading opt-ins retained. All11946unaffected prior paths,1720prior rollout paths,35verified ancestors,latest1722 three source/test files/rootproof and91originalticket artifacts preserved. Existing MFA/Calendar/equipment/docs/native archives remain unchanged."
+    }
+  ],
+  "visualReview": {
+    "images": [
+      "pair-desktop-light.png",
+      "pair-wide-dark.png",
+      "pair-phone-light.png",
+      "pair-phone-dark.png",
+      "../../docs/design/rollout-1692/1723/task-last-record-phone-dark.png"
+    ],
+    "result": "Viewed all four accepted side-by-side pairs and actual last-record PNG. Fullwidth original becomes restrained bounded timeline, four records preserved across matched pairs, desktop/light and wide/dark readable with same systemfont. Phones use saved18px, wrapping full message and reachable actions with contained list scroll; viewport does not show every record simultaneously. Last-record image visibly0unread/1visible Earlier Absence approved read. No new layout blocker observed; no live browser/device/zoom certification."
+  },
+  "guidelineSource": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+  "qualification": "No new source/report/ledger/README/raw-evidence fixes made. Root owns all remaining acceptance and any subsequent corrections."
+}

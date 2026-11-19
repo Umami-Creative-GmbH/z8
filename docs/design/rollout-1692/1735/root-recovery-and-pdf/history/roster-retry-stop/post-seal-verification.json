@@ -1,0 +1,26 @@
+{
+  "originalSealedHashesVerified": 29,
+  "driverSyntaxChecked": 5,
+  "pngs": 0,
+  "localMarkdownLinks": 0,
+  "allJsonParsed": true,
+  "diagnosticFailures": [
+    {
+      "attempt": "seal-attempt-01.json",
+      "kind": "cleanup tooling",
+      "productFailure": false,
+      "retained": true,
+      "corrected": true
+    },
+    {
+      "attempt": "post-seal shell inline verification 01",
+      "kind": "PowerShell native argument quotation stripped nested JavaScript quotes; SyntaxError before any command body ran",
+      "productFailure": false,
+      "raw": "Tool transcript; no filesystem output was created",
+      "corrected": "This file-based verification driver avoids shell inline JavaScript and checks the original seal hashes."
+    }
+  ],
+  "head": "4c397c1adb86b817a8f50cf7780920d69913c4d6",
+  "clean": true,
+  "release": "ALL checkout/index/Git/package/runtime/process ownership to root"
+}

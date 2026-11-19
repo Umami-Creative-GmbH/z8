@@ -1,0 +1,30 @@
+{
+  "base": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+  "mode": "cold four-consumer parent overlay; compatible remaining checkout",
+  "files": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "parentBlob": "5a290c08ca0255e21fa1bd95f733dec6b6adf2ff",
+      "sha256": "2599ae8f5568259350cd00987b5de30d0c298082d5473b169ed0024a358a00ee"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "parentBlob": "edf63b75e39c3c1d19500170b6c935e75fe9fadd",
+      "sha256": "4f8e6523734e6b0fcb59af33a0d311a48ec8d8100e97b5bcd2cccf7d47380844"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "parentBlob": "6dbf7efd3e97ee56663960eb56c7162d273debf1",
+      "sha256": "215e6015d7f2442b9d985c53f9cc35d0882a067f2c4ca784d4cb2a7ba549636e"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "parentBlob": "bdabe898f056ccd4b09b2f4cc81f56aa45ea1fe0",
+      "sha256": "22a3056a3a2c4e4a588fdac5ec660e6845d9c61fb33c729c30bfcde5ad093797"
+    }
+  ],
+  "restore": {
+    "allFourBackupsHashChecked": true,
+    "unexpectedChangesRefused": true
+  }
+}

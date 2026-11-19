@@ -1,0 +1,106 @@
+{
+  "source": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
+  "provisionalIntegration": "9f9df79f46f203f7aaa75d3f39ceb1f94dac7f7c",
+  "parent": "4c397c1adb86b817a8f50cf7780920d69913c4d6",
+  "lastVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/hooks/use-report-employees.ts",
+      "rawSha256": "34a7586c2fffa1e2b177e072f7f6dcfe7fd7c2dba031b7fe5f4fdb85a674c16c",
+      "lfSha256": "36494e47c29295144ea54c6ef51b4961c4b7a7697cbc47f81a867634e1e85c2b",
+      "gitBlob": "29dfa948c2219e1f5340c888dce85b99c8e93c63"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "rawSha256": "3c8cc9c589923c47485520e3a3817c5ae279343486c2333ef64a41625c6357d9",
+      "lfSha256": "cc3508f0438671b2e8e6eb630c6f08acca06c9d0ed5a58329fbc000aedec1ccc",
+      "gitBlob": "2c50f9ac76fcc7ba2ad14195d35b2dcfdd7584e4"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "rawSha256": "1fa69df2e05fe0e67c669085b8b88cc2b7fdb4e1f8cda4ebbca4c2b44f28192b",
+      "lfSha256": "e1a31f50580740fa5ad77697c8aaaf06d9cfe2bc080ea572663f9b210015c238",
+      "gitBlob": "304022ca6a44d58943340a302a34fb077cbee355"
+    }
+  ],
+  "behavior": "Only still-current admitted report-roster openings can invoke public refetch; cancelRefetch:false coalesces explicit retries. Selector shows local Retry/error and accessible pending state. Query cancellation/owner checks now precede transport as well as following it. Existing scope key/nonce/exact retirement/server action/global retry policy preserved.",
+  "publicCases": {
+    "permanentTotal": 7,
+    "priorSettings": 3,
+    "newRoster": 4,
+    "red": "roster-red-01.json",
+    "green": "roster-green-02.json",
+    "pendingAttempt": "roster-pending-01.json",
+    "guardAttempt": "roster-guards-green-01.json",
+    "finalFocused": "roster-guards-green-02.json",
+    "boundaries": "Actual context provider/settings store/QueryClient/reports/hooks, transport/auth fakes. Opening popup hit missing jsdom ResizeObserver; narrowed recovery observation to the visible real selector rather than pretending popup/runtime acceptance. Pending assertion now awaits scheduled observer notification with normal timeout. Activity red4calls vs3 exposed retired pre-dispatch transport; guard restores3 and suppresses late retired options."
+  },
+  "unit": {
+    "cases": 293,
+    "files": 51,
+    "passed": 293,
+    "failed": 0,
+    "skipped": 0,
+    "command": "validation-01/unit-command.json",
+    "report": "validation-01/unit-final.json"
+  },
+  "types": {
+    "file": "validation-01/typecheck.log",
+    "projects": 3,
+    "typegen": true,
+    "exit": 0,
+    "observedSession": 28054
+  },
+  "quality": {
+    "file": "validation-01/quality.json",
+    "files": 13,
+    "lintExit": 0,
+    "ownedThreeFile": "format-owned-01.log",
+    "ownedThreeExplicit100CrlfExit": 0,
+    "fullExplicit100Errors": 5,
+    "ordinaryErrors": 8,
+    "doctor": {
+      "file": "validation-01/doctor.log",
+      "files": 13,
+      "errors": 0,
+      "warnings": 1,
+      "exit": 0,
+      "warning": "Incoming roster-readiness layout-effect advisory"
+    }
+  },
+  "priorChecks": ".tmp/1735-root-checks/checks.json",
+  "attemptHistory": "All current follow-up outputs are unique. Prior phase overwritten intermediate history is unchanged, declared in original attempt-limitations.json.",
+  "stoppedVerifier": {
+    "directory": ".tmp/1735-independent-checks",
+    "sealFinalSha256": "cd7b19c4e03989ba2c7990166474b999709457ff2dfe0867a8a1381ce3d6878b",
+    "files": 33,
+    "verdict": "STOP_SOURCE_BLOCKER",
+    "uniqueCases": 3,
+    "occurrences": 6,
+    "eachPassed": 1,
+    "eachFailed": 2,
+    "completedDownloads": 0,
+    "unchanged": true
+  },
+  "preservation": {
+    "verifiedAnchors": 58,
+    "tree": "4ec5dd1ae5736636622e88fbf95908c036881e44",
+    "applicationTree": "f78d97e71746ac8cf0fc77d81d5b54cb7969414d",
+    "protected1734SourcePins": 15,
+    "prior1733and1734ProofsUnchanged": true,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "noProviderActionAuthorizationCalculationTimeExportOwnerChange": true
+  },
+  "pending": [
+    "Fresh independent settings+roster/retainedscope/Activity/public-controls acceptance.",
+    "Real canonical reportPG and completed/parsed current CSV/XLSX/PDF.",
+    "Actual current app/native/Next/roles/preferences/matched comparisons; completed export count remains0.",
+    "Formatter/previous overwritten intermediate raw history/fullgeneration/catalog/provider/device/truezoom/exhaustiveABA/globalroster limits remain explicit."
+  ],
+  "counts": {
+    "integrated": 58,
+    "awaiting-integration": 27,
+    "implementing": 2,
+    "pending": 70
+  }
+}

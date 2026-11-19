@@ -1,0 +1,12 @@
+{
+  "allAdmittedJSONParsed": true,
+  "jsonPayloadsBeforeVerification": 45,
+  "allFourAdmittedPNGDecoded": true,
+  "allAdmittedPNGChunkCRCVerified": true,
+  "privateFixtureValueScanPassed": true,
+  "credentialsAuthStateHeadersBodiesFailureImagesExcluded": true,
+  "explicitAllowlist": true,
+  "resourcesZero": true,
+  "leaseReleased": true,
+  "allHashesRecomputed": true
+}

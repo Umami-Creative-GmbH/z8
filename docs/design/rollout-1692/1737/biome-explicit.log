@@ -1,0 +1,720 @@
+src\app\[locale]\(app)\reports\vehicles\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    10 10 │   async function VehicleDistanceReportPageContent() {
+    11 11 │     // Auth is checked in layout; who sees whose driving is decided by the report action.
+    12    │ - → const·[t,·employee]·=·await·Promise.all([
+    13    │ - → → getTranslate(),
+    14    │ - → → getCurrentEmployee(),
+    15    │ - → ]);
+       12 │ + → const·[t,·employee]·=·await·Promise.all([getTranslate(),·getCurrentEmployee()]);
+    16 13 │   
+    17 14 │     if (!employee) {
+    18 15 │       return (
+    19 16 │         <div className="@container/main flex flex-1 flex-col gap-6 p-6">
+    20    │ - → → → → <PageHeader
+    21    │ - → → → → → title={t("reports.vehicles.title",·"Distance·per·Vehicle")}
+    22    │ - → → → → />
+       17 │ + → → → → <PageHeader·title={t("reports.vehicles.title",·"Distance·per·Vehicle")}·/>
+    23 18 │           <NoEmployeeError
+    24    │ - → → → → → feature={t(
+    25    │ - → → → → → → "reports.vehicles.page.feature",
+    26    │ - → → → → → → "view·the·distance·per·vehicle·report",
+    27    │ - → → → → → )}
+       19 │ + → → → → → feature={t("reports.vehicles.page.feature",·"view·the·distance·per·vehicle·report")}
+    28 20 │           />
+    29 21 │         </div>
+    ····· │ 
+    60 52 │       >
+    61 53 │         <div className="space-y-3 px-4 lg:px-6">
+    62    │ - → → → → <PageHeader
+    63    │ - → → → → → title={t("reports.vehicles.title",·"Distance·per·Vehicle")}
+    64    │ - → → → → />
+       54 │ + → → → → <PageHeader·title={t("reports.vehicles.title",·"Distance·per·Vehicle")}·/>
+    65 55 │           <Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
+    66 56 │         </div>
+  
+
+src\components\reports\vehicles\vehicle-distance-report-container.test.tsx format ━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */
+      2     │ - import·{
+      3     │ - → act,
+      4     │ - → cleanup,
+      5     │ - → fireEvent,
+      6     │ - → render,
+      7     │ - → screen,
+      8     │ - → waitFor,
+      9     │ - }·from·"@testing-library/react";
+          2 │ + import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";
+     10   3 │   import { Activity } from "react";
+     11   4 │   import { afterEach, beforeEach, expect, it, vi } from "vitest";
+    ······· │ 
+     45  38 │     useTranslate: () => ({
+     46  39 │       t: (_key: string, fallback: string, values?: Record<string, unknown>) =>
+     47     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key)·=>
+     48     │ - → → → → String(values?.[key]·??·match),
+     49     │ - → → → ),
+         40 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key)·=>·String(values?.[key]·??·match)),
+     50  41 │     }),
+     51  42 │   }));
+    ······· │ 
+    171 162 │       await generate();
+    172 163 │       const original = boundary.scope;
+    173     │ - → → if·(change·===·"account")
+    174     │ - → → → boundary.scope·=·{·...original,·userId:·"user-b"·};
+        164 │ + → → if·(change·===·"account")·boundary.scope·=·{·...original,·userId:·"user-b"·};
+    175 165 │       if (change === "validation") boundary.pending = true;
+    176 166 │       if (change === "role") boundary.scope = { ...original, role: "employee" };
+    ······· │ 
+    219 209 │       </Activity>,
+    220 210 │     );
+    221     │ - → await·act(async·()·=>
+    222     │ - → → held.resolve({·success:·true,·data:·{·...report,·totalKm:·999·}·}),
+    223     │ - → );
+        211 │ + → await·act(async·()·=>·held.resolve({·success:·true,·data:·{·...report,·totalKm:·999·}·}));
+    224 212 │     expect(screen.queryByText("Archived van")).toBeNull();
+    225 213 │     fireEvent.click(screen.getByRole("button", { name: "Generate report" }));
+    ······· │ 
+    283 271 │       await waitFor(() => expect(boundary.read).toHaveBeenCalledTimes(1));
+    284 272 │       await act(async () => read.resolve({ success: true, data: report }));
+    285     │ - → → const·click·=·vi
+    286     │ - → → → .spyOn(HTMLAnchorElement.prototype,·"click")
+    287     │ - → → → .mockImplementation(()·=>·{});
+        273 │ + → → const·click·=·vi.spyOn(HTMLAnchorElement.prototype,·"click").mockImplementation(()·=>·{});
+    288 274 │       const createURL = vi.fn(() => "blob:vehicle-report");
+    289 275 │       vi.stubGlobal(
+    ······· │ 
+    297 283 │       await waitFor(() => expect(boundary.pdf).toHaveBeenCalled());
+    298 284 │       const original = boundary.scope;
+    299     │ - → → if·(change·===·"organization")
+    300     │ - → → → boundary.scope·=·{·...original,·activeOrganizationId:·"org-b"·};
+    301     │ - → → if·(change·===·"account")
+    302     │ - → → → boundary.scope·=·{·...original,·userId:·"user-b"·};
+        285 │ + → → if·(change·===·"organization")·boundary.scope·=·{·...original,·activeOrganizationId:·"org-b"·};
+        286 │ + → → if·(change·===·"account")·boundary.scope·=·{·...original,·userId:·"user-b"·};
+    303 287 │       if (change === "validation") boundary.pending = true;
+    304 288 │       if (change === "replacement") {
+    ······· │ 
+    334 318 │     fireEvent.click(await screen.findByRole("option", { name: "Last Month" }));
+    335 319 │     expect(
+    336     │ - → → screen.getByText(
+    337     │ - → → → "Period·changed.·Generate·report·to·update·the·results·and·downloads.",
+    338     │ - → → ),
+        320 │ + → → screen.getByText("Period·changed.·Generate·report·to·update·the·results·and·downloads."),
+    339 321 │     ).toBeTruthy();
+    340 322 │     expect(boundary.read).toHaveBeenCalledTimes(1);
+  
+
+src\components\reports\vehicles\vehicle-distance-report-container.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     62  62 │       return (
+     63  63 │         <p role="status" className="px-4 lg:px-6">
+     64     │ - → → → → {t(
+     65     │ - → → → → → "reports.vehicles.scopeLoading",
+     66     │ - → → → → → "Confirming·the·current·organization·and·employee…",
+     67     │ - → → → → )}
+         64 │ + → → → → {t("reports.vehicles.scopeLoading",·"Confirming·the·current·organization·and·employee…")}
+     68  65 │         </p>
+     69  66 │       );
+    ······· │ 
+     71  68 │     return (
+     72  69 │       <VehicleReportArrival
+     73     │ - → → → key={JSON.stringify([
+     74     │ - → → → → scope.userId,
+     75     │ - → → → → scope.activeOrganizationId,
+     76     │ - → → → → scope.employeeId,
+     77     │ - → → → → scope.role,
+     78     │ - → → → ])}
+         70 │ + → → → key={JSON.stringify([scope.userId,·scope.activeOrganizationId,·scope.employeeId,·scope.role])}
+     79  71 │       />
+     80  72 │     );
+    ······· │ 
+    155 147 │     });
+    156 148 │   
+    157     │ - → async·function·generate(
+    158     │ - → → range:·ReportDateRange,
+    159     │ - → → arrival:·{·active:·boolean·},
+    160     │ - → )·{
+        149 │ + → async·function·generate(range:·ReportDateRange,·arrival:·{·active:·boolean·})·{
+    161 150 │       if (!arrival.active || pending.current) return;
+    162 151 │       const request = {};
+    ······· │ 
+    168 157 │       setError(null);
+    169 158 │       try {
+    170     │ - → → → const·result·=·await·getVehicleDistanceReport(
+    171     │ - → → → → range.startDate,
+    172     │ - → → → → range.endDate,
+    173     │ - → → → );
+        159 │ + → → → const·result·=·await·getVehicleDistanceReport(range.startDate,·range.endDate);
+    174 160 │         if (!arrival.active || pending.current !== request) return;
+    175 161 │         if (!result.success) {
+    176     │ - → → → → if·(
+    177     │ - → → → → → result.code·===·"AuthorizationError"·||
+    178     │ - → → → → → result.code·===·"AuthenticationError"
+    179     │ - → → → → )
+        162 │ + → → → → if·(result.code·===·"AuthorizationError"·||·result.code·===·"AuthenticationError")
+    180 163 │             setReport(null);
+    181 164 │           throw new Error(result.error);
+    182 165 │         }
+    183 166 │         generatedRange.current = range;
+    184     │ - → → → setGeneratedAt(
+    185     │ - → → → → formatInstant(systemClock.nowInstant(),·display,·"dateTimeMedium"),
+    186     │ - → → → );
+        167 │ + → → → setGeneratedAt(formatInstant(systemClock.nowInstant(),·display,·"dateTimeMedium"));
+    187 168 │         setReport(result.data);
+    188 169 │       } catch (cause) {
+    ······· │ 
+    221 202 │       !!report &&
+    222 203 │       !!dateRange &&
+    223     │ - → → (dateRange.startDate·!==·report.period.fromDay·||
+    224     │ - → → → dateRange.endDate·!==·report.period.toDay);
+        204 │ + → → (dateRange.startDate·!==·report.period.fromDay·||·dateRange.endDate·!==·report.period.toDay);
+    225 205 │   
+    226 206 │     return (
+    ······· │ 
+    302 282 │         )}
+    303 283 │   
+    304     │ - → → → {isLoading·&&·(
+    305     │ - → → → → <p·role="status">
+    306     │ - → → → → → {t("reports.vehicles.generating",·"Generating·report…")}
+    307     │ - → → → → </p>
+    308     │ - → → → )}
+        284 │ + → → → {isLoading·&&·<p·role="status">{t("reports.vehicles.generating",·"Generating·report…")}</p>}
+    309 285 │         {report && (
+    310 286 │           <div className="flex flex-wrap items-end justify-between gap-4 rounded-lg border bg-card p-4 sm:p-6">
+    ······· │ 
+    313 289 │                 {t("reports.vehicles.table.total", "Total")}
+    314 290 │               </p>
+    315     │ - → → → → → → <p·className="text-3xl·font-semibold·tabular-nums">
+    316     │ - → → → → → → → {kilometres(report.totalKm)}
+    317     │ - → → → → → → </p>
+        291 │ + → → → → → → <p·className="text-3xl·font-semibold·tabular-nums">{kilometres(report.totalKm)}</p>
+    318 292 │               <p className="text-sm">{periodLabel}</p>
+    319 293 │             </div>
+    320 294 │             <div className="space-y-2 text-sm">
+    321     │ - → → → → → → <p>
+    322     │ - → → → → → → → {t(
+    323     │ - → → → → → → → → "reports.vehicles.scope",
+    324     │ - → → → → → → → → "Employees·available·to·you·in·this·organization",
+    325     │ - → → → → → → → )}
+    326     │ - → → → → → → </p>
+        295 │ + → → → → → → <p>{t("reports.vehicles.scope",·"Employees·available·to·you·in·this·organization")}</p>
+    327 296 │               <p className="text-muted-foreground">
+    328 297 │                 {t("reports.vehicles.generated", "Generated on {time}", {
+    ······· │ 
+    333 302 │                 <VehicleReportExports
+    334 303 │                   key={generation}
+    335     │ - → → → → → → → → isCurrent={()·=>
+    336     │ - → → → → → → → → → lifetime.active·&&·revision.current·===·generation
+    337     │ - → → → → → → → → }
+        304 │ + → → → → → → → → isCurrent={()·=>·lifetime.active·&&·revision.current·===·generation}
+    338 305 │                   buildDocument={() =>
+    339 306 │                     buildVehicleDistanceReportDocument(report, {
+    ······· │ 
+    362 329 │             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+    363 330 │               <CardTitle>
+    364     │ - → → → → → → → {t(
+    365     │ - → → → → → → → → "reports.vehicles.comparison",
+    366     │ - → → → → → → → → "Monthly·distance·by·vehicle·and·employee",
+    367     │ - → → → → → → → )}
+        331 │ + → → → → → → → {t("reports.vehicles.comparison",·"Monthly·distance·by·vehicle·and·employee")}
+    368 332 │               </CardTitle>
+    369 333 │             </CardHeader>
+    ······· │ 
+    378 342 │                   <TableRow>
+    379 343 │                     <TableHead>
+    380     │ - → → → → → → → → → → {t(
+    381     │ - → → → → → → → → → → → "reports.vehicles.table.vehicleAndEmployee",
+    382     │ - → → → → → → → → → → → "Vehicle·/·employee",
+    383     │ - → → → → → → → → → → )}
+        344 │ + → → → → → → → → → → {t("reports.vehicles.table.vehicleAndEmployee",·"Vehicle·/·employee")}
+    384 345 │                     </TableHead>
+    385 346 │                     {report.months.map((month) => (
+    386     │ - → → → → → → → → → → <TableHead
+    387     │ - → → → → → → → → → → → key={month}
+    388     │ - → → → → → → → → → → → className="text-right·whitespace-nowrap"
+    389     │ - → → → → → → → → → → >
+        347 │ + → → → → → → → → → → <TableHead·key={month}·className="text-right·whitespace-nowrap">
+    390 348 │                         {monthLabel(month)}
+    391 349 │                       </TableHead>
+    ······· │ 
+    399 357 │                   {report.vehicles.map((group) => (
+    400 358 │                     <Fragment
+    401     │ - → → → → → → → → → → key={
+    402     │ - → → → → → → → → → → → group.vehicle.kind·===·"own"
+    403     │ - → → → → → → → → → → → → ?·"own"
+    404     │ - → → → → → → → → → → → → :·`organization:${group.vehicle.id}`
+    405     │ - → → → → → → → → → → }
+        359 │ + → → → → → → → → → → key={group.vehicle.kind·===·"own"·?·"own"·:·`organization:${group.vehicle.id}`}
+    406 360 │                     >
+    407 361 │                       <TableRow className="bg-muted/50 font-medium">
+    408 362 │                         <TableCell>
+    409 363 │                           <div className="flex flex-wrap items-center gap-2">
+    410     │ - → → → → → → → → → → → → → <IconCar
+    411     │ - → → → → → → → → → → → → → → className="size-4·text-muted-foreground"
+    412     │ - → → → → → → → → → → → → → → aria-hidden="true"
+    413     │ - → → → → → → → → → → → → → />
+        364 │ + → → → → → → → → → → → → → <IconCar·className="size-4·text-muted-foreground"·aria-hidden="true"·/>
+    414 365 │                             {group.vehicle.kind === "own" ? (
+    415 366 │                               exportLabels.ownVehicle
+    ······· │ 
+    422 373 │                                 {group.vehicle.archived && (
+    423 374 │                                   <Badge variant="secondary">
+    424     │ - → → → → → → → → → → → → → → → → → {t(
+    425     │ - → → → → → → → → → → → → → → → → → → "reports.vehicles.archivedBadge",
+    426     │ - → → → → → → → → → → → → → → → → → → "Archived",
+    427     │ - → → → → → → → → → → → → → → → → → )}
+        375 │ + → → → → → → → → → → → → → → → → → {t("reports.vehicles.archivedBadge",·"Archived")}
+    428 376 │                                   </Badge>
+    429 377 │                                 )}
+    ······· │ 
+    433 381 │                         </TableCell>
+  59 more lines truncated
+  
+
+src\components\reports\vehicles\vehicle-report-exports.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";
+      2   2 │   
+      3     │ - import·{
+      4     │ - → IconDownload,
+      5     │ - → IconFileSpreadsheet,
+      6     │ - → IconFileText,
+      7     │ - }·from·"@tabler/icons-react";
+          3 │ + import·{·IconDownload,·IconFileSpreadsheet,·IconFileText·}·from·"@tabler/icons-react";
+      8   4 │   import { useTranslate } from "@tolgee/react";
+      9   5 │   import { useEffect, useRef, useState } from "react";
+     10   6 │   import { toast } from "sonner";
+     11   7 │   import { Button } from "@/components/ui/button";
+     12     │ - import·{
+     13     │ - → type·ReportDocument,
+     14     │ - → reportFileName,
+     15     │ - }·from·"@/lib/reports/exporters/report-document";
+          8 │ + import·{·type·ReportDocument,·reportFileName·}·from·"@/lib/reports/exporters/report-document";
+     16   9 │   
+     17  10 │   type Format = "pdf" | "xlsx" | "csv";
+    ······· │ 
+     61  54 │                   await import("@/lib/reports/exporters/report-document-csv")
+     62  55 │                 ).exportReportDocumentToCSV(document);
+     63     │ - → → → if·(!arrival.active·||·!isCurrent()·||·pending.current·!==·request)
+     64     │ - → → → → return;
+         56 │ + → → → if·(!arrival.active·||·!isCurrent()·||·pending.current·!==·request)·return;
+     65  57 │         const type =
+     66  58 │           format === "pdf"
+    ······· │ 
+     91  83 │             cause instanceof Error
+     92  84 │               ? cause.message
+     93     │ - → → → → → → :·t(
+     94     │ - → → → → → → → → "reports.export.errorDescription",
+     95     │ - → → → → → → → → "An·error·occurred·while·exporting·the·report",
+     96     │ - → → → → → → → ),
+         85 │ + → → → → → → :·t("reports.export.errorDescription",·"An·error·occurred·while·exporting·the·report"),
+     97  86 │           );
+     98  87 │       } finally {
+  
+
+src\components\reports\vehicles\vehicle-report-period-picker.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      7   7 │   import { Button } from "@/components/ui/button";
+      8   8 │   import { Calendar } from "@/components/ui/calendar";
+      9     │ - import·{
+     10     │ - → Popover,
+     11     │ - → PopoverContent,
+     12     │ - → PopoverTrigger,
+     13     │ - }·from·"@/components/ui/popover";
+          9 │ + import·{·Popover,·PopoverContent,·PopoverTrigger·}·from·"@/components/ui/popover";
+     14  10 │   import {
+     15  11 │     Select,
+    ······· │ 
+     35  31 │   }
+     36  32 │   
+     37     │ - export·function·VehicleReportPeriodPicker({
+     38     │ - → value,
+     39     │ - → onChange,
+     40     │ - }:·VehicleReportPeriodPickerProps)·{
+         33 │ + export·function·VehicleReportPeriodPicker({·value,·onChange·}:·VehicleReportPeriodPickerProps)·{
+     41  34 │     const { t } = useTranslate();
+     42  35 │     const { locale } = useDisplayContext();
+    ······· │ 
+     76  69 │     };
+     77  70 │   
+     78     │ - → const·currentYear·=·systemClock
+     79     │ - → → .nowInstant()
+     80     │ - → → .toZonedDateTimeISO(timezone).year;
+         71 │ + → const·currentYear·=·systemClock.nowInstant().toZonedDateTimeISO(timezone).year;
+     81  72 │     const { startDate, endDate } = value;
+     82  73 │     const start = parsePlainDate(startDate);
+    ······· │ 
+     96  87 │             className="w-full sm:w-[200px]"
+     97  88 │           >
+     98     │ - → → → → → <SelectValue
+     99     │ - → → → → → → placeholder={t("reports.filter.selectPeriod",·"Select·period")}
+    100     │ - → → → → → />
+         89 │ + → → → → → <SelectValue·placeholder={t("reports.filter.selectPeriod",·"Select·period")}·/>
+    101  90 │           </SelectTrigger>
+    102  91 │           <SelectContent>
+    103     │ - → → → → → <SelectItem·value="last_month">
+    104     │ - → → → → → → {t("reports.period.lastMonth",·"Last·Month")}
+    105     │ - → → → → → </SelectItem>
+         92 │ + → → → → → <SelectItem·value="last_month">{t("reports.period.lastMonth",·"Last·Month")}</SelectItem>
+    106  93 │             <SelectItem value="current_month">
+    107  94 │               {t("reports.period.currentMonth", "Current Month")}
+    108  95 │             </SelectItem>
+    109     │ - → → → → → <SelectItem·value="last_year">
+    110     │ - → → → → → → {t("reports.period.lastYear",·"Last·Year")}
+    111     │ - → → → → → </SelectItem>
+         96 │ + → → → → → <SelectItem·value="last_year">{t("reports.period.lastYear",·"Last·Year")}</SelectItem>
+    112  97 │             <SelectItem value="current_year">
+    113  98 │               {t("reports.period.currentYear", "Current Year")}
+    114  99 │             </SelectItem>
+    115     │ - → → → → → <SelectItem·value="ytd">
+    116     │ - → → → → → → {t("reports.period.yearToDate",·"Year·to·Date")}
+    117     │ - → → → → → </SelectItem>
+        100 │ + → → → → → <SelectItem·value="ytd">{t("reports.period.yearToDate",·"Year·to·Date")}</SelectItem>
+    118 101 │             <SelectItem value="q1">Q1 {currentYear}</SelectItem>
+    119 102 │             <SelectItem value="q2">Q2 {currentYear}</SelectItem>
+    120 103 │             <SelectItem value="q3">Q3 {currentYear}</SelectItem>
+    121 104 │             <SelectItem value="q4">Q4 {currentYear}</SelectItem>
+    122     │ - → → → → → <SelectItem·value="custom">
+    123     │ - → → → → → → {t("reports.period.customRange",·"Custom·Range")}
+    124     │ - → → → → → </SelectItem>
+        105 │ + → → → → → <SelectItem·value="custom">{t("reports.period.customRange",·"Custom·Range")}</SelectItem>
+    125 106 │           </SelectContent>
+    126 107 │         </Select>
+    ······· │ 
+    154 135 │                   )
+    155 136 │                 ) : (
+    156     │ - → → → → → → → → <span>
+    157     │ - → → → → → → → → → {t("reports.period.pickDateRange",·"Pick·a·date·range")}
+    158     │ - → → → → → → → → </span>
+        137 │ + → → → → → → → → <span>{t("reports.period.pickDateRange",·"Pick·a·date·range")}</span>
+    159 138 │                 )}
+    160 139 │               </Button>
+  
+
+src\components\site-header.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     66  66 │         </>,
+     67  67 │       );
+     68     │ - → → expect(
+     69     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((n)·=>·n.textContent),
+     70     │ - → → ).toEqual(["My·equipment"]);
+         68 │ + → → expect(screen.getAllByRole("heading",·{·level:·1·}).map((n)·=>·n.textContent)).toEqual([
+         69 │ + → → → "My·equipment",
+         70 │ + → → ]);
+     71  71 │       page.unmount();
+     72  72 │       pathname = "/en/my-equipment/other";
+     73  73 │       render(<SiteHeader />);
+     74     │ - → → expect(
+     75     │ - → → → screen.getByRole("heading",·{·level:·1,·name:·"My·equipment"·}),
+     76     │ - → → ).toBeTruthy();
+         74 │ + → → expect(screen.getByRole("heading",·{·level:·1,·name:·"My·equipment"·})).toBeTruthy();
+     77  75 │     });
+     78  76 │     it("hands the suspended recovery title to the page without opting descendants into heading ownership", () => {
+    ······· │ 
+     85  83 │       );
+     86  84 │       expect(
+     87     │ - → → → screen
+     88     │ - → → → → .getAllByRole("heading",·{·level:·1·})
+     89     │ - → → → → .map((heading)·=>·heading.textContent),
+         85 │ + → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),
+     90  86 │       ).toEqual(["Organization suspended"]);
+     91  87 │       page.unmount();
+     92  88 │       pathname = "/en/billing/suspended/unconverted";
+     93  89 │       render(<SiteHeader />);
+     94     │ - → → expect(
+     95     │ - → → → screen.getByRole("heading",·{·level:·1,·name:·"Billing·&·Subscription"·}),
+     96     │ - → → ).toBeTruthy();
+         90 │ + → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Billing·&·Subscription"·})).toBeTruthy();
+     97  91 │     });
+     98  92 │     it("hands the main title to converted pages while retaining unknown descendant titles", () => {
+    ······· │ 
+    105  99 │       );
+    106 100 │       expect(
+    107     │ - → → → screen
+    108     │ - → → → → .getAllByRole("heading",·{·level:·1·})
+    109     │ - → → → → .map((heading)·=>·heading.textContent),
+        101 │ + → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),
+    110 102 │       ).toEqual(["Employee Reports"]);
+    111 103 │       page.unmount();
+    ······· │ 
+    118 110 │       );
+    119 111 │       expect(
+    120     │ - → → → screen
+    121     │ - → → → → .getAllByRole("heading",·{·level:·1·})
+    122     │ - → → → → .map((heading)·=>·heading.textContent),
+        112 │ + → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),
+    123 113 │       ).toEqual(["Calendar"]);
+    124 114 │       calendar.unmount();
+    125 115 │       pathname = "/en/calendar/employee-1/detail";
+    126 116 │       render(<SiteHeader />);
+    127     │ - → → expect(
+    128     │ - → → → screen.getByRole("heading",·{·level:·1,·name:·"Calendar"·}),
+    129     │ - → → ).toBeTruthy();
+        117 │ + → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Calendar"·})).toBeTruthy();
+    130 118 │     });
+    131 119 │   
+    ······· │ 
+    142 130 │       pathname = "/en/reports/vehicles/detail";
+    143 131 │       render(<SiteHeader />);
+    144     │ - → → expect(
+    145     │ - → → → screen.getByRole("heading",·{·level:·1,·name:·"Distance·per·Vehicle"·}),
+    146     │ - → → ).toBeTruthy();
+        132 │ + → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Distance·per·Vehicle"·})).toBeTruthy();
+    147 133 │     });
+    148 134 │     it("shows header actions in the requested order on the dashboard route", () => {
+    ······· │ 
+    151 137 │       render(<SiteHeader />);
+    152 138 │   
+    153     │ - → → const·buttons·=·screen
+    154     │ - → → → .getAllByRole("button")
+    155     │ - → → → .map((button)·=>·button.textContent);
+        139 │ + → → const·buttons·=·screen.getAllByRole("button").map((button)·=>·button.textContent);
+    156 140 │       expect(buttons).toEqual([
+    157 141 │         "Toggle sidebar",
+    ······· │ 
+    171 155 │       fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    172 156 │       const panel = await screen.findByRole("dialog", { name: "More actions" });
+    173     │ - → → expect(
+    174     │ - → → → within(panel).getByRole("button",·{·name:·"Customize·dashboard"·}),
+    175     │ - → → ).toBeTruthy();
+    176     │ - → → expect(
+    177     │ - → → → within(panel).getByRole("button",·{·name:·"Saved·timezone"·}),
+    178     │ - → → ).toBeTruthy();
+    179     │ - → → expect(
+    180     │ - → → → within(panel).getByRole("button",·{·name:·"Refresh·data"·}),
+    181     │ - → → ).toBeTruthy();
+    182     │ - → → expect(
+    183     │ - → → → within(panel).getByRole("button",·{·name:·"Toggle·theme"·}),
+    184     │ - → → ).toBeTruthy();
+    185     │ - → → expect(
+    186     │ - → → → within(panel).queryByRole("button",·{·name:·"Clock·In"·}),
+    187     │ - → → ).toBeNull();
+    188     │ - → → expect(
+    189     │ - → → → within(panel).queryByRole("button",·{·name:·"Notifications"·}),
+    190     │ - → → ).toBeNull();
+        157 │ + → → expect(within(panel).getByRole("button",·{·name:·"Customize·dashboard"·})).toBeTruthy();
+        158 │ + → → expect(within(panel).getByRole("button",·{·name:·"Saved·timezone"·})).toBeTruthy();
+        159 │ + → → expect(within(panel).getByRole("button",·{·name:·"Refresh·data"·})).toBeTruthy();
+        160 │ + → → expect(within(panel).getByRole("button",·{·name:·"Toggle·theme"·})).toBeTruthy();
+        161 │ + → → expect(within(panel).queryByRole("button",·{·name:·"Clock·In"·})).toBeNull();
+        162 │ + → → expect(within(panel).queryByRole("button",·{·name:·"Notifications"·})).toBeNull();
+    191 163 │     });
+    192 164 │   
+    ······· │ 
+    196 168 │       fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    197 169 │       const panel = await screen.findByRole("dialog", { name: "More actions" });
+    198     │ - → → expect(
+    199     │ - → → → within(panel).queryByRole("button",·{·name:·"Customize·dashboard"·}),
+    200     │ - → → ).toBeNull();
+    201     │ - → → expect(
+    202     │ - → → → within(panel).getByRole("button",·{·name:·"Saved·timezone"·}),
+    203     │ - → → ).toBeTruthy();
+    204     │ - → → expect(
+    205     │ - → → → within(panel).getByRole("button",·{·name:·"Refresh·data"·}),
+    206     │ - → → ).toBeTruthy();
+        170 │ + → → expect(within(panel).queryByRole("button",·{·name:·"Customize·dashboard"·})).toBeNull();
+        171 │ + → → expect(within(panel).getByRole("button",·{·name:·"Saved·timezone"·})).toBeTruthy();
+        172 │ + → → expect(within(panel).getByRole("button",·{·name:·"Refresh·data"·})).toBeTruthy();
+    207 173 │     });
+    208 174 │   
+    ······· │ 
+    212 178 │       render(<SiteHeader />);
+    213 179 │   
+    214     │ - → → expect(
+    215     │ - → → → screen.queryByRole("button",·{·name:·"Customize·dashboard"·}),
+    216     │ - → → ).toBeNull();
+        180 │ + → → expect(screen.queryByRole("button",·{·name:·"Customize·dashboard"·})).toBeNull();
+    217 181 │       expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
+    218 182 │       expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";
+      2     │ - import·{
+      3     │ - → appPageOwnsHeading,
+      4     │ - → normalizeAppPath,
+      5     │ - → resolveAppRouteMetadata,
+      6     │ - }·from·"./route-metadata";
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";
+      7   3 │   
+      8   4 │   describe("route metadata", () => {
+    ······· │ 
+     10   6 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+     11   7 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
+     12     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
+     13     │ - → → → true,
+     14     │ - → → );
+     15     │ - → → expect(
+     16     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),
+     17     │ - → → ).toBe(false);
+          8 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);
+          9 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);
+     18  10 │     });
+     19  11 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {
+    ······· │ 
+     34  26 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);
+     35  27 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);
+     36     │ - → → expect(
+     37     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),
+     38     │ - → → ).toBe(true);
+         28 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);
+     39  29 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);
+     40     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(
+     41     │ - → → → false,
+     42     │ - → → );
+         30 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);
+     43  31 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);
+     44  32 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
+    ······· │ 
+     50  38 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {
+     51  39 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
+     52     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+     53     │ - → → → true,
+     54     │ - → → );
+     55     │ - → → expect(
+     56     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
+     57     │ - → → ).toBe(false);
+         40 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);
+         41 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);
+     58  42 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
+     59  43 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
+    ······· │ 
+     62  46 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+     63  47 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
+     64     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
+     65     │ - → → → true,
+     66     │ - → → );
+         48 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);
+     67  49 │     });
+     68  50 │     it("adopts only the deputy history record, preserving other approval headings", () => {
+     69     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(
+     70     │ - → → → true,
+     71     │ - → → );
+     72     │ - → → expect(
+     73     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),
+     74     │ - → → ).toBe(false);
+         51 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);
+         52 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);
+     75  53 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);
+     76  54 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
+    ······· │ 
+     79  57 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);
+     80  58 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);
+     81     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(
+     82     │ - → → → true,
+     83     │ - → → );
+         59 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);
+     84  60 │     });
+     85  61 │     it("adopts only the complete review arrival route", () => {
+     86     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(
+     87     │ - → → → true,
+     88     │ - → → );
+     89     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(
+     90     │ - → → → false,
+     91     │ - → → );
+     92     │ - → → expect(
+     93     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),
+     94     │ - → → ).toBe(false);
+         62 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);
+         63 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);
+         64 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);
+     95  65 │     });
+     96  66 │     it("adopts the exact vacation route while retaining staged descendants", () => {
+     97  67 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
+     98     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
+     99     │ - → → → false,
+    100     │ - → → );
+         68 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);
+    101  69 │     });
+    102  70 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {
+    103  71 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
+    104     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(
+    105     │ - → → → false,
+    106     │ - → → );
+         72 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);
+    107  73 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);
+    108     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(
+    109     │ - → → → false,
+    110     │ - → → );
+         74 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);
+    111  75 │     });
+    112  76 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {
+    ······· │ 
+    155 119 │   
+    156 120 │     it("normalizes locale and trailing slash segments", () => {
+    157     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(
+    158     │ - → → → "/settings/security",
+    159     │ - → → );
+        121 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");
+    160 122 │     });
+    161 123 │   });
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(
+    171     │ - → → (entry)·=>·({
+    172     │ - → → → id:·`settings-${entry.id}`,
+    173     │ - → → → href:·entry.href,
+    174     │ - → → → titleKey:·entry.titleKey,
+    175     │ - → → → titleDefault:·entry.titleDefault,
+    176     │ - → → }),
+    177     │ - → ),
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({
+        171 │ + → → id:·`settings-${entry.id}`,
+        172 │ + → → href:·entry.href,
+        173 │ + → → titleKey:·entry.titleKey,
+        174 │ + → → titleDefault:·entry.titleDefault,
+        175 │ + → })),
+    178 176 │     {
+    179 177 │       id: "settings",
+    ······· │ 
+    192 190 │   
+    193 191 │   export function normalizeAppPath(pathname: string): string {
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname
+    195     │ - → → .split("/")
+    196     │ - → → .filter(Boolean);
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],
+    199     │ - → )
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])
+    200 194 │       ? remainingSegments
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);
+    ······· │ 
+    254 248 │       [...APP_ROUTE_METADATA]
+    255 249 │         .sort((left, right) => right.href.length - left.href.length)
+    256     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??
+    257     │ - → → UNKNOWN_ROUTE_METADATA
+        250 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA
+    258 251 │     );
+    259 252 │   }
+  
+
+Checked 8 files in 7ms. No fixes applied.
+Found 8 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

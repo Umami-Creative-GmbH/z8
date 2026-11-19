@@ -1,0 +1,1060 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "scope": "Document publication validation only. No product acceptance rerun, tests, browser, historical harness execution, build, type generation, Doctor, package install, dependency copy or runtime resources.",
+  "frozenHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "frozenAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "contractSha256": "2e38a63847ac02cbb506d2c8316fbc4e5e4fd8510f274250b1ce9c4e8390c05e",
+  "payloads": {
+    "count": 172,
+    "bytes": 2297645,
+    "groups": {
+      "detail-stop": 11,
+      "conversion-stop": 21,
+      "independent": 61,
+      "runtime": 34,
+      "focused": 36,
+      "intake-audits": 6,
+      "root-checks": 3
+    },
+    "allRawBytesExact": true,
+    "allVerifiedBeforeCopy": true,
+    "originalPublicRootReceiptsExact": true
+  },
+  "inputIndexes": [
+    {
+      "id": "detail-stop",
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\SAFE-index.json",
+      "sha256": "649fd83ba7378d7c087466887f7f67159f09d52988e16161825c644b788cc197",
+      "payloadCount": 11,
+      "bytes": 3086
+    },
+    {
+      "id": "conversion-stop",
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\.tmp\\review1748-independent\\SAFE-index.json",
+      "sha256": "864b3a5a1ab722fcc3fb63352c507c0dc6a4ed642b9df517b27178c78ff5e04a",
+      "payloadCount": 21,
+      "bytes": 5643
+    },
+    {
+      "id": "independent",
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\SAFE-index.json",
+      "sha256": "12fddeaa72049e4f604d723f6a3287068199808c90d123c5327f4ce3fa677118",
+      "payloadCount": 61,
+      "bytes": 15597
+    },
+    {
+      "id": "runtime",
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1748-current-runtime-20261118a\\SAFE-index.json",
+      "sha256": "04c3ffe1c4070bba2db8265019d7a986589bf189125acb8951002b3058b3b1e6",
+      "payloadCount": 34,
+      "bytes": 5771
+    },
+    {
+      "id": "focused",
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1748-focused-runtime-20261118b\\SAFE-index.json",
+      "sha256": "0da458c14db90728040ff22bb3e34cae96e22716a169d439b94dd44a94d2a534",
+      "payloadCount": 36,
+      "bytes": 6148
+    }
+  ],
+  "sourceSnapshots": {
+    "count": 14,
+    "frozenGitShowExact": true,
+    "sha256SizeAndComputedGitBlobVerified": true,
+    "currentCanonicalMatches": 14,
+    "normalization": "CRLF to LF for current materialized TS/TSX only; no payload or frozen clone normalization",
+    "noCurrentHeadEqualityCheck": true
+  },
+  "report": {
+    "prefix": {
+      "bytes": 28273,
+      "sha256": "45195fecf57d160a27984699ffdc0fdf2f88c2ecd574f30152236804f08d9438"
+    },
+    "appendix": {
+      "bytes": 7666,
+      "sha256": "c1235f538de8720b0edc01d165c223af33cdb70358b0478f3faa50c9d375a8b7"
+    },
+    "fullReport": {
+      "bytes": 35939,
+      "sha256": "a249d72c8c406ca183545da0f6248e56ecfec21b9702fa1305cad2598de9c35c"
+    },
+    "verifiedCommit": null
+  },
+  "index": {
+    "initial": {
+      "bytes": 2480092,
+      "sha256": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac"
+    },
+    "notMutatedByPublication": true,
+    "finalCheckLocation": "Private HANDOFF-publication.json after post-seal repetitions"
+  },
+  "verifierReview": {
+    "reviewedBeforeFirstExecution": true,
+    "file": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+    "review": [
+      "Only require node:fs and node:crypto. All fs calls are readFileSync, lstatSync, statSync or readdirSync; no filesystem mutation.",
+      "No child process, network, eval, dynamic code, package imports or archived code imports.",
+      "Contract SHA-256 is anchored to the supplied manifest. Raw payload hashes and clone Git blob IDs use unchanged bytes.",
+      "Archive paths reject traversal, absolute paths and symbolic links. Exact file inventory rejects unindexed entries.",
+      "Current mode is optional and reads only fourteen anchored repository source paths, normalizing CRLF to LF only for current TS/TSX comparison.",
+      "No current HEAD equality requirement; archive mode needs neither Git nor repository source.",
+      "Separate declared runtime records, narrowed/unsupported old claims, unpassed focused predicates and inherited test identities. No combined coverage or verified integration commit.",
+      "Seal and file index omit a self-hash cycle. Integrity inventory is not an independent signature."
+    ],
+    "approvedForReadOnlyExecution": true,
+    "verifiedCommit": null,
+    "verifierIdentity": {
+      "bytes": 9925,
+      "sha256": "f8102e9628e7ed227a0cab70d38933bcbb678adc6f0446ce330cbd119abf5316"
+    },
+    "followupReview": "The final extension only adds archive-local appendix/disposition links and contract/report receipt consistency checks; fs/crypto-only read permissions and import boundaries remain unchanged."
+  },
+  "commands": [
+    {
+      "label": "archive-corrected-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"archive\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":0,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":20,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "archive-initial-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 1,
+      "output": [
+        "FAIL: Generation A category mismatch"
+      ]
+    },
+    {
+      "label": "archive-preseal-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"archive\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":0,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":20,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "archive-preseal-2",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"archive\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":0,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":20,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "archive-reviewed-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"archive\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":0,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":24,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "archive-reviewed-2",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"archive\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":0,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":24,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "current-preseal-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+        "--current-source"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"current-source\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":14,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":20,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "current-preseal-2",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+        "--current-source"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"current-source\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":14,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":20,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "current-reviewed-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+        "--current-source"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"current-source\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":14,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":24,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "current-reviewed-2",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+        "--current-source"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"status\":\"PASS\",\"mode\":\"current-source\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":14,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":24,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+      ]
+    },
+    {
+      "label": "historical-cjs-finalize-syntax",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/finalize.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "historical-cjs-independent-syntax",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/syntax.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "historical-cjs-predict-syntax",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/detail-stop/predict.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "syntax-initial-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "syntax-preseal-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "syntax-preseal-2",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "syntax-reviewed-1",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "syntax-reviewed-2",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        "--check",
+        "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+      ],
+      "exit": 0,
+      "output": []
+    },
+    {
+      "label": "typescript-static",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+      "versionExit": 0,
+      "versionOutput": [
+        "12.16.1"
+      ],
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "node",
+        ".tmp/1748-publication-20261118/static-parse.cjs"
+      ],
+      "exit": 0,
+      "output": [
+        "{\"parser\":\"TypeScript 5.9.3\",\"mode\":\"syntax only; no resolution, emit or archived execution\",\"files\":33,\"diagnostics\":0,\"results\":[{\"path\":\"detail-stop/refusal-review.test.tsx\",\"diagnostics\":[]},{\"path\":\"detail-stop/baseline-control.test.tsx\",\"diagnostics\":[]},{\"path\":\"conversion-stop/baseline-legacy-draft-conversion.tsx.txt\",\"diagnostics\":[]},{\"path\":\"conversion-stop/baseline-travel-expense-claim-detail.tsx.txt\",\"diagnostics\":[]},{\"path\":\"conversion-stop/candidate-legacy-draft-conversion.tsx.txt\",\"diagnostics\":[]},{\"path\":\"conversion-stop/candidate-travel-expense-claim-detail.tsx.txt\",\"diagnostics\":[]},{\"path\":\"conversion-stop/conversion-review.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/baseline-legacy-draft-conversion.tsx.txt\",\"diagnostics\":[]},{\"path\":\"independent/baseline-travel-expense-claim-detail.tsx.txt\",\"diagnostics\":[]},{\"path\":\"independent/conversion-review.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/objections-attempt1.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/objections-attempt2.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-actual-consumers.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-assembled-objections.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-independent-baseline-conversion.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-independent-baseline-detail.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-original-conversion.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-original-detail.test.tsx\",\"diagnostics\":[]},{\"path\":\"independent/review1748-real-refresh.test.tsx\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/site-header.test.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/lib/navigation/route-metadata.test.ts.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/lib/navigation/route-metadata.ts.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts.txt\",\"diagnostics\":[]},{\"path\":\"source/apps/webapp/src/lib/travel-expenses/current-owner.ts.txt\",\"diagnostics\":[]}]}"
+      ]
+    }
+  ],
+  "initialFailuresAndFixes": [
+    {
+      "kind": "Initial pinned package-manager probe",
+      "command": "$env:pnpm_config_verify_deps_before_run = 'false'\npnpm --config.verify-deps-before-run=false --version",
+      "exit": 0,
+      "output": "[WARN] Cannot use the pnpm version this project pins: ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK: lock the package-manager engine store: Failed to open the store operation lock at C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm-store-operation-locks\\all-stores.lock: Zugriff verweigert (os error 5). Probe reported 12.21.0.",
+      "validationUnderFallback": false,
+      "resolution": "Explicitly authorized narrow engine-store lock escalation returned 12.16.1. Every subsequent package call used both guards and verified 12.16.1 before validation."
+    },
+    {
+      "kind": "Initial archive verifier failure",
+      "receipt": {
+        "label": "archive-initial-1",
+        "environment": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+        "versionExit": 0,
+        "versionOutput": [
+          "12.16.1"
+        ],
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "exec",
+          "node",
+          "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+        ],
+        "exit": 1,
+        "output": [
+          "FAIL: Generation A category mismatch"
+        ]
+      },
+      "cause": "Category values were correct but JSON object-key insertion order differed from the verifier expectation.",
+      "fix": "Compare sorted category entries. The failed receipt remains preserved; no payload changed.",
+      "correctedReceipt": {
+        "label": "archive-corrected-1",
+        "environment": {
+          "pnpm_config_verify_deps_before_run": "false"
+        },
+        "versionCommand": "pnpm --config.verify-deps-before-run=false --version",
+        "versionExit": 0,
+        "versionOutput": [
+          "12.16.1"
+        ],
+        "argv": [
+          "pnpm",
+          "--config.verify-deps-before-run=false",
+          "exec",
+          "node",
+          "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs"
+        ],
+        "exit": 0,
+        "output": [
+          "{\"status\":\"PASS\",\"mode\":\"archive\",\"payloads\":172,\"payloadBytes\":2297645,\"sourceClones\":14,\"currentSources\":0,\"archiveFiles\":202,\"jsonParsed\":127,\"newMarkdownLinks\":20,\"generationADeclared\":140,\"generationARootDispositions\":{\"unsupported\":[42],\"narrowed\":[16]},\"focused\":{\"passed\":29,\"total\":32,\"unpassed\":[13,14,28]},\"unitIdentities\":545,\"unitFiles\":48,\"pgCases\":51,\"pgFiles\":4,\"verifiedCommit\":null}"
+        ]
+      }
+    }
+  ],
+  "reviewedPreSealRepeats": [
+    {
+      "mode": "syntax",
+      "exitCodes": [
+        0,
+        0
+      ],
+      "stdoutStable": true,
+      "receipts": [
+        "syntax-reviewed-1",
+        "syntax-reviewed-2"
+      ]
+    },
+    {
+      "mode": "archive",
+      "exitCodes": [
+        0,
+        0
+      ],
+      "stdoutStable": true,
+      "receipts": [
+        "archive-reviewed-1",
+        "archive-reviewed-2"
+      ]
+    },
+    {
+      "mode": "current",
+      "exitCodes": [
+        0,
+        0
+      ],
+      "stdoutStable": true,
+      "receipts": [
+        "current-reviewed-1",
+        "current-reviewed-2"
+      ]
+    }
+  ],
+  "reviewedArchiveStability": {
+    "beforeInventorySha256": "bebe42dea204eaa5bd3a5f39a30dab07526e96f4158fc4a5ff0d07b2e598a625",
+    "afterInventorySha256": "bebe42dea204eaa5bd3a5f39a30dab07526e96f4158fc4a5ff0d07b2e598a625",
+    "fileCount": 202,
+    "unchanged": true,
+    "qualification": "This comparison covers the reviewed verifier and preliminary verification-results bytes; final public results and seal are subsequently written once. Post-seal read-only repetitions are recorded privately, without rewriting the archive."
+  },
+  "staticAudit": {
+    "jsonParsed": 127,
+    "pythonParsed": [
+      "conversion-stop/prepare.py",
+      "conversion-stop/preserve.py",
+      "conversion-stop/seal.py",
+      "independent/account.py",
+      "independent/audit.py",
+      "independent/checks.py",
+      "independent/prepare_broader.py",
+      "independent/prepare_objections.py",
+      "independent/prepare_refresh.py",
+      "independent/release_bridges.py",
+      "independent/review.py",
+      "independent/seal.py"
+    ],
+    "pngDecoded": [
+      {
+        "path": "focused/draft-panel-current.png",
+        "width": 1184,
+        "height": 1300,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4617600,
+        "decodedSha256": "d2a5df7514556852cc97fd451bcb4381cf07f5a26bdee5b9c4cd563bffb6e5fa",
+        "filterRows": {
+          "4": 291,
+          "2": 882,
+          "1": 117,
+          "3": 10
+        },
+        "chunkCount": 27,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "focused/report-editor-open-current.png",
+        "width": 1184,
+        "height": 1300,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4617600,
+        "decodedSha256": "cba7ffe34a37b4eb598de543ffd936c61a0c14528f50c19bdba4bac9e12224e6",
+        "filterRows": {
+          "4": 444,
+          "2": 747,
+          "1": 90,
+          "3": 19
+        },
+        "chunkCount": 33,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "focused/report-editor-reload-current.png",
+        "width": 1184,
+        "height": 1300,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4617600,
+        "decodedSha256": "cf6776f760d10e755438532d79d55c1b5149bd5c305c91f1ef51b244ce2161a4",
+        "filterRows": {
+          "4": 379,
+          "2": 832,
+          "1": 81,
+          "3": 8
+        },
+        "chunkCount": 32,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "focused/retirement-settled-current.png",
+        "width": 1184,
+        "height": 1300,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4617600,
+        "decodedSha256": "6dffd44351c1763f8b41d27f9c536bbb958d7b7cedc605c80d4de1cd0d7f42e4",
+        "filterRows": {
+          "4": 212,
+          "2": 1004,
+          "1": 74,
+          "3": 10
+        },
+        "chunkCount": 22,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/converted-desktop.png",
+        "width": 1344,
+        "height": 1000,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4032000,
+        "decodedSha256": "61350fe92a40220eeba632fb2484f49f89d4e2a0bf23ceadb314fce55bbbc516",
+        "filterRows": {
+          "4": 234,
+          "2": 672,
+          "1": 85,
+          "3": 9
+        },
+        "chunkCount": 23,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/draft-desktop-1600-settled.png",
+        "width": 1344,
+        "height": 1000,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4032000,
+        "decodedSha256": "05153b78523f02732e736679d47c7f96c640212a75cf4fcac2ae5df024451935",
+        "filterRows": {
+          "4": 209,
+          "2": 704,
+          "1": 79,
+          "3": 8
+        },
+        "chunkCount": 21,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/real-receipt-refusal-desktop.png",
+        "width": 1344,
+        "height": 1000,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4032000,
+        "decodedSha256": "826e9cc720943629e64836131f15d370a66f4f7fb19cb502839634ebcfd8a8f6",
+        "filterRows": {
+          "4": 248,
+          "2": 664,
+          "1": 81,
+          "3": 7
+        },
+        "chunkCount": 27,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/submitted-desktop-1600.png",
+        "width": 1344,
+        "height": 1000,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 4032000,
+        "decodedSha256": "5b6e5cf7ac19bd8658d15972d60c2f48a9a969c1c7df348a608df6ec1f6ce184",
+        "filterRows": {
+          "4": 210,
+          "2": 712,
+          "1": 75,
+          "3": 3
+        },
+        "chunkCount": 21,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/submitted-local-retry.png",
+        "width": 1312,
+        "height": 1000,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 3936000,
+        "decodedSha256": "abcf6b0cb3f8227574f6f8e2ccc4412ed8866436dbed4fc64557544d9af3008a",
+        "filterRows": {
+          "4": 237,
+          "2": 688,
+          "1": 74,
+          "3": 1
+        },
+        "chunkCount": 23,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/submitted-phone-390-large.png",
+        "width": 390,
+        "height": 844,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 987480,
+        "decodedSha256": "a8f157ffa01e8ea61c7be63c43a639ee42b5c5cc049c093ed4e38fcd3ccf1a05",
+        "filterRows": {
+          "4": 176,
+          "2": 599,
+          "1": 65,
+          "3": 4
+        },
+        "chunkCount": 14,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      },
+      {
+        "path": "runtime/submitted-wide-2400-dark-large.png",
+        "width": 2337,
+        "height": 1200,
+        "colorType": 2,
+        "bitDepth": 8,
+        "decodedBytes": 8413200,
+        "decodedSha256": "2236bb149244892073c1263a2a902403b4a3a1c251c95fdb4854884241cfab8d",
+        "filterRows": {
+          "4": 258,
+          "2": 833,
+          "1": 67,
+          "3": 42
+        },
+        "chunkCount": 27,
+        "fullCRCZlibAndScanlineDecode": true,
+        "visualReview": false
+      }
+    ],
+    "newMarkdownLinks": [
+      {
+        "from": "README.md",
+        "target": "claim-dispositions.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "detail-stop/HANDOFF.md",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "conversion-stop/REPORT.md",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "root-checks/detail-correction.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "root-checks/conversion-correction.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "independent/REPORT.md",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "intake-audits/independent.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "root-checks/independent-recheck.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "runtime/HANDOFF.md",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "intake-audits/runtime.md",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "focused/HANDOFF.md",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "intake-audits/focused.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "payload-index.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "source-pins.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "file-index.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "publication-seal.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "verification-results.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "report-appendix.txt",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "claim-dispositions.json",
+        "resolved": true
+      },
+      {
+        "from": "README.md",
+        "target": "input-contract.json",
+        "resolved": true
+      },
+      {
+        "from": "docs/design/rollout-1692/1748.md appended section only",
+        "target": "1748/root-withdrawal-and-continuation/README.md",
+        "resolved": true
+      },
+      {
+        "from": "docs/design/rollout-1692/1748.md appended section only",
+        "target": "1748/root-withdrawal-and-continuation/claim-dispositions.json",
+        "resolved": true
+      },
+      {
+        "from": "docs/design/rollout-1692/1748.md appended section only",
+        "target": "1748/root-withdrawal-and-continuation/verification-results.json",
+        "resolved": true
+      },
+      {
+        "from": "docs/design/rollout-1692/1748.md appended section only",
+        "target": "1748/root-withdrawal-and-continuation/publication-seal.json",
+        "resolved": true
+      }
+    ],
+    "historicalMarkdownLinks": {
+      "resolved": 0,
+      "unresolved": [],
+      "externalOrAnchor": 1
+    },
+    "secretScan": {
+      "files": 191,
+      "patterns": 5,
+      "findings": [],
+      "valuesPrinted": false
+    },
+    "excludedTargetsRead": 0,
+    "archivedCodeExecuted": 0
+  },
+  "staticTypeScriptParser": {
+    "compiler": "Existing root TypeScript 5.9.3",
+    "files": 33,
+    "parseDiagnostics": 0,
+    "resolutionOrTypecheck": false,
+    "archivedExecution": false,
+    "receipt": "typescript-static command in commands"
+  },
+  "commonJSSyntaxOnly": {
+    "copiedModules": 3,
+    "allExits": 0,
+    "executed": false
+  },
+  "publicationPythonCommands": [
+    {
+      "command": "python .tmp/1748-publication-20261118/preflight.py",
+      "exit": 0,
+      "outputSummary": "PASS: 172 payloads / 2297645 bytes, 14 source pins, 5 exact input indexes, report prefixes and frozen identity"
+    },
+    {
+      "command": "python .tmp/1748-publication-20261118/copy-contract.py",
+      "exit": 0,
+      "outputSummary": "PASS: 172 payloads / 2297645 bytes, 14 frozen clones, 5 indexes; 195 initial archive files created",
+      "readOnly": false,
+      "qualification": "This is the authorized publication copy operation, not historical code execution"
+    },
+    {
+      "command": "python .tmp/1748-publication-20261118/append-report.py",
+      "exit": 0,
+      "output": {
+        "prefix": {
+          "bytes": 28273,
+          "sha256": "45195fecf57d160a27984699ffdc0fdf2f88c2ecd574f30152236804f08d9438"
+        },
+        "appendix": {
+          "bytes": 7666,
+          "sha256": "c1235f538de8720b0edc01d165c223af33cdb70358b0478f3faa50c9d375a8b7"
+        },
+        "fullReport": {
+          "bytes": 35939,
+          "sha256": "a249d72c8c406ca183545da0f6248e56ecfec21b9702fa1305cad2598de9c35c"
+        },
+        "verifiedCommit": null
+      },
+      "readOnly": false,
+      "qualification": "Authorized append and exact archived suffix copy"
+    },
+    {
+      "command": "python .tmp/1748-publication-20261118/static-audit.py",
+      "exit": 0,
+      "outputSummary": {
+        "jsonParsed": 127,
+        "pythonParsed": 12,
+        "pngDecoded": 11,
+        "newMarkdownLinks": 24,
+        "historicalUnresolvedLinks": 0,
+        "secretFiles": 191,
+        "secretFindings": 0,
+        "archivedCodeExecuted": 0
+      }
+    }
+  ],
+  "retainedLimits": [
+    "Generation A 140 is a producer-declared ledger, not all accepted independent passes; ID42 unsupported, ID16 narrowed.",
+    "Focused 29/32, IDs13/14/28 unpassed. End-state evidence does not prove successful retired completion or pre-release ordering. Native CLI React extension remains unproved.",
+    "New CDP component-name and actual report-link/reload observations do not rewrite old rows, and do not prove editor save/submit.",
+    "Downloaded 68-byte receipt and original18 worker PNGs excluded; only11 allowlisted current PNGs decoded here without fresh visual review.",
+    "All29 focused foreign travel tables are empty unchanged controls, not populated foreign preservation. Producer digests and cleanup remain historical receipts qualified by intakes.",
+    "Initial raw seed exception overwritten; bounded classification only; bytes not reconstructed.",
+    "Ordinary/shared formatting findings, isolated ignored-license main-TS qualification, historical capture mismatch/duplicate/crop/overlay limits remain. No blanket archive whitespace/lint pass.",
+    "No source, config, dependencies, runtime, fixtures, Git/index, tracker, PR, push or readiness mutation. No excluded private targets traversed.",
+    "Full production generation, Tolgee/catalogs, providers, devices, true zoom, exhaustive live authority, global157 node review and final user review remain unpassed.",
+    "Root owns staged Git blob audit, commit, bounded handoff/readiness and subsequent fresh1747 merger. Issue OPEN, PR draft, verifiedCommit null."
+  ],
+  "finalPostSealReceipts": "Private .tmp/1748-publication-20261118/HANDOFF-publication.json records final command outputs, repetitions, complete hashes, index identity and released publication ownership. No forward pass is asserted here."
+}

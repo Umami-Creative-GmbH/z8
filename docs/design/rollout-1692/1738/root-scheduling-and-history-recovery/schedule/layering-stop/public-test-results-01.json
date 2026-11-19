@@ -1,0 +1,126 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "boundary": "Actual ShiftScheduler/providers/QueryClient/Schedule-X/form; only action transport and admitted caller identity synthetic; no internal hook/query state replacement; jsdom, no server authorization claim",
+  "uniqueCases": 8,
+  "passed": 8,
+  "physicalExecutionFile": "apps/webapp/src/test/1738-independent-bridge.test.tsx (removed by exact hash guard)",
+  "retainedSource": "public-assembly-06.test.tsx",
+  "retainedSourceSha256": "8ea7c3ebfd74a67bf7c65ca2132be809bf9589cf8cd49ee2cc891b420d9df243",
+  "cases": [
+    {
+      "fullName": "independent: hiding failed coverage cannot advertise healthy empty publishing",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: first held coverage is loading until its own successful result",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: retained failed coverage Retry coalesces both observers and rejects then recovers",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: late actor A coverage cannot replace actor B or employee view",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: org A to B to A uses matching fresh coverage after retired result",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: supporting Retry remains pending until templates and compliance both settle",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: Activity return preserves one held Publish command and disabled duplicate control",
+      "status": "passed"
+    },
+    {
+      "fullName": "independent: actual edit form retains notes and pending reservation through Activity then refusal",
+      "status": "passed"
+    }
+  ],
+  "allExecutedAttempts": [
+    {
+      "attempt": 5,
+      "cases": 6,
+      "passed": 5,
+      "failed": 1,
+      "logicalNames": [
+        "independent: hiding failed coverage cannot advertise healthy empty publishing",
+        "independent: first held coverage is loading until its own successful result",
+        "independent: retained failed coverage Retry coalesces both observers and rejects then recovers",
+        "independent: late actor A coverage cannot replace actor B or employee view",
+        "independent: org A to B to A uses matching fresh coverage after retired result",
+        "independent: supporting Retry remains pending until templates and compliance both settle"
+      ],
+      "failures": [
+        {
+          "name": "independent: late actor A coverage cannot replace actor B or employee view",
+          "cause": "AssertionError: expected <button …(4)>…(1)</button> to be null"
+        }
+      ]
+    },
+    {
+      "attempt": 6,
+      "cases": 8,
+      "passed": 7,
+      "failed": 1,
+      "logicalNames": [
+        "independent: hiding failed coverage cannot advertise healthy empty publishing",
+        "independent: first held coverage is loading until its own successful result",
+        "independent: retained failed coverage Retry coalesces both observers and rejects then recovers",
+        "independent: late actor A coverage cannot replace actor B or employee view",
+        "independent: org A to B to A uses matching fresh coverage after retired result",
+        "independent: supporting Retry remains pending until templates and compliance both settle",
+        "independent: Activity return preserves one held Publish command and disabled duplicate control",
+        "independent: actual edit form retains notes and pending reservation through Activity then refusal"
+      ],
+      "failures": [
+        {
+          "name": "independent: actual edit form retains notes and pending reservation through Activity then refusal",
+          "cause": "TestingLibraryElementError: Unable to find an accessible element with the role \"button\" and name \"Save Changes\""
+        }
+      ]
+    },
+    {
+      "attempt": 7,
+      "cases": 8,
+      "passed": 8,
+      "failed": 0,
+      "logicalNames": [
+        "independent: hiding failed coverage cannot advertise healthy empty publishing",
+        "independent: first held coverage is loading until its own successful result",
+        "independent: retained failed coverage Retry coalesces both observers and rejects then recovers",
+        "independent: late actor A coverage cannot replace actor B or employee view",
+        "independent: org A to B to A uses matching fresh coverage after retired result",
+        "independent: supporting Retry remains pending until templates and compliance both settle",
+        "independent: Activity return preserves one held Publish command and disabled duplicate control",
+        "independent: actual edit form retains notes and pending reservation through Activity then refusal"
+      ],
+      "failures": []
+    }
+  ],
+  "allAttemptInstances": 22,
+  "allAttemptPassed": 20,
+  "allAttemptFailed": 2,
+  "failedCaseClassification": "attempt05 ignored role argument in harness; attempt06 used wrong actual submit label; neither is a product regression",
+  "zeroCaseAttempts": [
+    {
+      "attempt": 1,
+      "cause": "pnpm engine lock denied; preparatory path error, zero cases"
+    },
+    {
+      "attempt": 2,
+      "cause": "outside-root include discovered zero cases"
+    },
+    {
+      "attempt": 3,
+      "cause": "outside-app package resolution failed before cases"
+    },
+    {
+      "attempt": 4,
+      "cause": "outside-app JSX runtime resolution failed before cases"
+    }
+  ]
+}

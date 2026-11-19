@@ -12,8 +12,19 @@ const AUTOSAVE_DELAY_MS = 800;
 /** Holds the latest value for callbacks that outlive the render that created them. */
 function createLatestBox<T>(initial: T) {
 	let current = initial;
+	let arrival: object | null = null;
 	return {
 		get: () => current,
+		activate: () => {
+			arrival = {};
+		},
+		retire: () => {
+			arrival = null;
+		},
+		capture: () => {
+			const captured = arrival;
+			return () => captured !== null && captured === arrival;
+		},
 		set: (next: T) => {
 			current = next;
 		},
@@ -27,7 +38,11 @@ function createLatestBox<T>(initial: T) {
  */
 export function useDraftSaver<Values, Item>(options: {
 	version: number;
-	save: (values: Values, expectedVersion: number) => Promise<DraftSaveOutcome<Item>>;
+	save: (
+		values: Values,
+		expectedVersion: number,
+		isCurrent: () => boolean,
+	) => Promise<DraftSaveOutcome<Item>>;
 	/** Extra work that must finish before leaving, e.g. a receipt upload. */
 	isBusy?: boolean;
 	/** Reports edits that could not be saved after the editor was closed. */
@@ -39,11 +54,15 @@ export function useDraftSaver<Values, Item>(options: {
 	useLayoutEffect(() => {
 		latest.set(options);
 	});
+	useLayoutEffect(() => {
+		latest.activate();
+		return () => latest.retire();
+	}, [latest]);
 	const [saver] = useState<DraftSaver<Values, Item>>(() =>
 		createDraftSaver<Values, Item>({
 			version: options.version,
 			delayMs: AUTOSAVE_DELAY_MS,
-			save: (values, version) => latest.get().save(values, version),
+			save: (values, version) => latest.get().save(values, version, latest.capture()),
 		}),
 	);
 	const state = useSyncExternalStore(saver.subscribe, saver.getState, saver.getState);

@@ -1,0 +1,26 @@
+{
+  "at": "2026-11-18T04:24:39.570Z",
+  "view": {
+    "path": "/en/travel-expenses",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 280,
+        "y": 89,
+        "w": 1296,
+        "h": 36
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": true,
+    "noMatch": false,
+    "rows": 0
+  },
+  "destinations": [
+    "/en/approvals/inbox"
+  ],
+  "pass": true,
+  "qualification": "Separate actual employee scope without expenses; healthy empty is distinct from first-read failure. Manager approval destination control retained; no grant inference."
+}

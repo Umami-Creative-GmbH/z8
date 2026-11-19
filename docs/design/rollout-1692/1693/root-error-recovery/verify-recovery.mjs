@@ -1,0 +1,41 @@
+// Verify the actual historical R010 consumer through its shared error boundary.
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {join,resolve} from 'node:path';
+const [sourceInput,fixtureInput,phase='after',outputInput] = process.argv.slice(2);
+assert.ok(['before','after'].includes(phase));
+const source=resolve(sourceInput),dir=resolve(fixtureInput),out=resolve(outputInput);
+const json=async name=>JSON.parse(await readFile(join(dir,name),'utf8'));
+const runtime=await json('runtime-private.json'),fixture=await json('fixture-private.json'),services=await json('services.json'),auth=await json('dev-auth-private.json'),history=await json('history-private.json');
+assert.equal(fixture.kind,'disposable');assert.equal(new URL(runtime.origin).hostname,'localhost');assert.equal(runtime.env.POSTGRES_HOST,'127.0.0.1');assert.match(runtime.env.POSTGRES_DB,/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/);
+for(const container of services.containers)assert.equal(execFileSync('docker',['inspect','--format','{{ index .Config.Labels "z8.agent-owned" }}',container],{encoding:'utf8',windowsHide:true}).trim(),services.label);
+const {Client}=createRequire(join(source,'apps/webapp/package.json'))('pg');
+const puppeteer=createRequire(join(source,'package.json'))('puppeteer-core');
+const database=new Client({connectionString:runtime.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL});await database.connect();assert.equal((await database.query('select current_database() name')).rows[0].name,runtime.env.POSTGRES_DB);await database.query('set statement_timeout=15000');
+const actor=fixture.actors['small-employee'];assert.equal((await database.query('select 1 from absence_entry where id=$1 and organization_id=$2 and employee_id=$3',[history.history,actor.organizationId,actor.employeeId])).rowCount,1);
+const count=async()=>Number((await database.query('select count(*) from approval_deputy_decision where absence_id=$1 and organization_id=$2',[history.history,actor.organizationId])).rows[0].count);assert.equal(await count(),3);
+const paths=['src/app/[locale]/error.tsx','src/app/[locale]/(admin)/error.tsx','src/app/[locale]/(app)/error.tsx','src/app/[locale]/(app)/settings/error.tsx'];
+const handlerHashes=Object.fromEntries(await Promise.all(paths.map(async file=>[file,createHash('sha256').update(await readFile(join(source,'apps/webapp',file))).digest('hex')])));
+await mkdir(out,{recursive:true});
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});let renamed=false,page;
+try{
+ const context=await browser.createBrowserContext();await context.setPermission(runtime.origin,{permission:{name:'notifications'},state:'denied'});await context.setCookie(...auth['small-employee'].cookies);page=await context.newPage();page.setDefaultTimeout(45000);await page.setViewport({width:1600,height:1000});await page.emulateTimezone('Europe/Berlin');await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
+ const route='/en/approvals/deputy-decisions/'+history.history;
+ await page.goto(runtime.origin+route,{waitUntil:'domcontentloaded',timeout:120000});await page.waitForFunction(()=>document.querySelectorAll('table tbody tr').length===3);
+ await database.query('alter table approval_deputy_decision rename to approval_deputy_decision_root_outage');renamed=true;
+ await page.reload({waitUntil:'domcontentloaded',timeout:120000});await page.waitForFunction(()=>[...document.querySelectorAll('h1,h2')].some(h=>h.textContent.trim()==='Something went wrong'));
+ await page.screenshot({path:join(out,phase+'-error.png'),fullPage:true});
+ const fallback=await page.evaluate(()=>({headings:[...document.querySelectorAll('h1,h2')].map(h=>h.textContent.trim()),workspaceShell:!!document.querySelector('[data-slot="sidebar"]'),privateSqlInMain:document.querySelector('main')?.innerText.includes('approval_deputy_decision')??false}));assert.equal(fallback.privateSqlInMain,false);
+ await database.query('alter table approval_deputy_decision_root_outage rename to approval_deputy_decision');renamed=false;assert.equal(await count(),3);
+ const requests=[];page.on('request',request=>{const url=new URL(request.url());if(url.pathname===route&&(request.headers().rsc==='1'||url.searchParams.has('_rsc')))requests.push({method:request.method(),rsc:true});});
+ const button=await page.waitForFunction(()=>[...document.querySelectorAll('button')].find(button=>button.getClientRects().length&&button.textContent.trim()==='Retry'));await button.asElement().focus();await page.keyboard.press('Enter');await button.dispose();
+ if(phase==='after')await page.waitForFunction(()=>document.querySelectorAll('table tbody tr').length===3);
+ else await new Promise(resolve=>setTimeout(resolve,2500));
+ const result=await page.evaluate(()=>({rows:document.querySelectorAll('table tbody tr').length,errorVisible:[...document.querySelectorAll('h1,h2')].some(h=>h.textContent.trim()==='Something went wrong')}));
+ await page.screenshot({path:join(out,phase+'-retry.png'),fullPage:true});
+ await writeFile(join(out,phase+'-recovery.json'),JSON.stringify({phase,sourceCommit:'78d8c4af9764d159ca8dc12e772af3c835b77b3c',patch:phase==='after'?'Only four shared error wrappers overlaid from the root correction':'Historical integration source unchanged',preparedDeploymentIdentifier:runtime.env.NEXT_DEPLOYMENT_ID,frameworkVersion:createRequire(join(source,'apps/webapp/package.json'))('next/package.json').version,actor:'small-employee',organization:'Performance small',historyRecords:3,fallback,restoredRecords:await count(),requestsAfterRetry:requests,afterRetry:result,handlerHashes,boundary:'Actual original authorized R010 reader and Next shared boundary. A fixture-only table rename causes the real failure; restoration precedes native Retry. No fabricated read/action response, no new route, no local R010 boundary removal. The archived consumer predates R010 refresh and is not final-current-route acceptance.'},null,2)+'\n');
+ console.log(JSON.stringify({phase,rscRequests:requests.length,rows:result.rows,errorVisible:result.errorVisible}));assert.equal(result.rows,3,'Retry must refetch the restored server data');assert.ok(requests.length>0);assert.equal(result.errorVisible,false);
+}finally{if(renamed)await database.query('alter table approval_deputy_decision_root_outage rename to approval_deputy_decision');await browser.close();await database.end();}

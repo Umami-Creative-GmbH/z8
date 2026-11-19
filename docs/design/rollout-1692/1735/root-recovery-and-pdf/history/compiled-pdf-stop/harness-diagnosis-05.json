@@ -1,0 +1,12 @@
+{
+  "previousAttempts": [
+    "02",
+    "03",
+    "04"
+  ],
+  "diagnosis": "Pending flag changed only a plain mock object; React reused the identical Probe element and no useSession subscription notified the hook. The stored current callback correctly coalesced the current pending transport and the probe awaited it indefinitely. Explicit scope callbacks did retire: six dispatches before and after old retired callback. Replace only the fake auth hook boundary with a useSyncExternalStore subscription; product source unchanged.",
+  "otherHarnessCorrections": [
+    "UTF-8 pending label matcher",
+    "wait for actual dialog exit"
+  ]
+}

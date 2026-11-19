@@ -1,0 +1,168 @@
+{
+  "mode": "readback",
+  "gate": "canonical verifySuiteDatabase/integrationAdminPool UTC sessions",
+  "authMemberGrantMutations": false,
+  "domainOnly": true,
+  "summaries": [
+    {
+      "recordedDigests": {
+        "time_entry": "e87712e57c593708e1ae36987b4dd8b7",
+        "work_period": "6ddc33698b93b00590563a54d87080b6"
+      },
+      "scope": "small",
+      "timezone": "Europe/Berlin",
+      "shifts": [
+        {
+          "status": "draft",
+          "date": "2026-11-14T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent before-range draft",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "2cfe86228a48bcc50e9b46c0f88c96d2"
+        },
+        {
+          "status": "published",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent employee published",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "66ffb0367429894250f6d961117e8e96"
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-16T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent open overnight draft",
+          "own_employee": null,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "e86b7e37b9bed056bfbcf2cb35999c03"
+        },
+        {
+          "status": "published",
+          "date": "2026-11-17T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent open published",
+          "own_employee": null,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "c4d19bb1f5c1773a611bf5f6bd1adc61"
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-18T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent assigned publish draft",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "dd7db14fbdf3486c0f168b1c729eb318"
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-22T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent end-exclusive draft",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "4261f7407442d46dbd4a5e431719b57b"
+        }
+      ],
+      "counts": {
+        "time_entries": 4176,
+        "work_periods": 2088
+      }
+    },
+    {
+      "recordedDigests": {
+        "time_entry": "fcc261f4d5f73d90ecbfcdd376b9a2ea",
+        "work_period": "e83ce2efae9d3cef59a631b9e69de701"
+      },
+      "scope": "large",
+      "timezone": "Europe/Berlin",
+      "shifts": [
+        {
+          "status": "draft",
+          "date": "2026-11-14T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent before-range draft",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "8b6044344cb4a07d5b1efc423392a33a"
+        },
+        {
+          "status": "published",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent employee published",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "31c0ab58a42a1c5bdf65da49e2f77834"
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-16T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent open overnight draft",
+          "own_employee": null,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "fe7518186504b79aee7c70cebac4b766"
+        },
+        {
+          "status": "published",
+          "date": "2026-11-17T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent open published",
+          "own_employee": null,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "ce35889e537544fd46dd061be1162e9f"
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-18T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent assigned publish draft",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "b90ebc65ac37c5d24b88e448ba5071fd"
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-22T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent end-exclusive draft",
+          "own_employee": true,
+          "published_at": null,
+          "published_by_admin": null,
+          "row_digest": "da910ba716a729bde51ad145704774d3"
+        }
+      ],
+      "counts": {
+        "time_entries": 104400,
+        "work_periods": 52200
+      }
+    }
+  ]
+}

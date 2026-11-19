@@ -1,0 +1,20 @@
+{
+  "checks": [
+    {
+      "name": "actual request read observed waiting on fixture DB lock",
+      "value": true
+    },
+    {
+      "name": "actual organization-switch owner accepts approved membership",
+      "value": true
+    },
+    {
+      "name": "late old-org read cannot restore shared documents in feature-off org",
+      "value": true
+    },
+    {
+      "name": "new organization session refuses original organization document",
+      "value": true
+    }
+  ]
+}

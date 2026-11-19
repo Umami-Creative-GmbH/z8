@@ -1,0 +1,328 @@
+{
+  "classification": "real application actions and read-back; aborted transport and SQL prerequisite/revocation explicitly identified",
+  "checks": [
+    {
+      "name": "small-admin sees account preferences with denied browser context",
+      "passed": true
+    },
+    {
+      "name": "held real action suppresses repeat save/skip/push and preserves draft",
+      "passed": true
+    },
+    {
+      "name": "aborted real transport gives inline retry without resetting preferences",
+      "passed": true
+    },
+    {
+      "name": "small-admin saves all fifteen actual preference rows",
+      "passed": true
+    },
+    {
+      "name": "small-admin save does not change browser permission",
+      "passed": true
+    },
+    {
+      "name": "small-admin save does not enroll a push device",
+      "passed": true
+    },
+    {
+      "name": "small-admin skip reaches same destination and retains stored preferences",
+      "passed": true
+    },
+    {
+      "name": "actual default browser permission is shown without claiming delivery",
+      "passed": true
+    },
+    {
+      "name": "actual permission request never fabricates a grant or push enrollment",
+      "passed": true
+    },
+    {
+      "name": "actual server refusal after fixture session revocation retains input and stored preferences",
+      "passed": true
+    },
+    {
+      "name": "small-employee sees account preferences with denied browser context",
+      "passed": true
+    },
+    {
+      "name": "small-employee saves all fifteen actual preference rows",
+      "passed": true
+    },
+    {
+      "name": "small-employee save does not change browser permission",
+      "passed": true
+    },
+    {
+      "name": "small-employee save does not enroll a push device",
+      "passed": true
+    },
+    {
+      "name": "small-employee skip reaches same destination and retains stored preferences",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "filename": "state-save-pending.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "pageSha256": "f5ef2c5360b3f33ec84ad8679527e0c6ed12e16e02464b8f538143c6b4813cf4"
+      },
+      "dimensions": {
+        "width": 1600,
+        "height": 1432
+      },
+      "cssWidth": 1600,
+      "cssHeight": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "filename": "state-save-transport-refused.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "pageSha256": "f5ef2c5360b3f33ec84ad8679527e0c6ed12e16e02464b8f538143c6b4813cf4"
+      },
+      "dimensions": {
+        "width": 1600,
+        "height": 1432
+      },
+      "cssWidth": 1600,
+      "cssHeight": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "filename": "state-default-browser-permission.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "pageSha256": "f5ef2c5360b3f33ec84ad8679527e0c6ed12e16e02464b8f538143c6b4813cf4"
+      },
+      "dimensions": {
+        "width": 1600,
+        "height": 1340
+      },
+      "cssWidth": 1600,
+      "cssHeight": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "filename": "state-actual-browser-permission-result.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "pageSha256": "f5ef2c5360b3f33ec84ad8679527e0c6ed12e16e02464b8f538143c6b4813cf4"
+      },
+      "dimensions": {
+        "width": 1600,
+        "height": 1372
+      },
+      "cssWidth": 1600,
+      "cssHeight": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "filename": "state-session-refused.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "pageSha256": "f5ef2c5360b3f33ec84ad8679527e0c6ed12e16e02464b8f538143c6b4813cf4"
+      },
+      "dimensions": {
+        "width": 1600,
+        "height": 1432
+      },
+      "cssWidth": 1600,
+      "cssHeight": 1000,
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "theme": "light bprogress-busy"
+    }
+  ],
+  "roles": [
+    {
+      "role": "small-admin",
+      "storedPreferences": [
+        {
+          "notification_type": "approval_request_approved",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_approved",
+          "channel": "in_app",
+          "enabled": true
+        },
+        {
+          "notification_type": "approval_request_approved",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_rejected",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_rejected",
+          "channel": "in_app",
+          "enabled": true
+        },
+        {
+          "notification_type": "approval_request_rejected",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_submitted",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_submitted",
+          "channel": "in_app",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_submitted",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_added",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_added",
+          "channel": "in_app",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_added",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_removed",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_removed",
+          "channel": "in_app",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_removed",
+          "channel": "push",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "role": "small-employee",
+      "storedPreferences": [
+        {
+          "notification_type": "approval_request_approved",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_approved",
+          "channel": "in_app",
+          "enabled": true
+        },
+        {
+          "notification_type": "approval_request_approved",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_rejected",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_rejected",
+          "channel": "in_app",
+          "enabled": true
+        },
+        {
+          "notification_type": "approval_request_rejected",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_submitted",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_submitted",
+          "channel": "in_app",
+          "enabled": false
+        },
+        {
+          "notification_type": "approval_request_submitted",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_added",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_added",
+          "channel": "in_app",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_added",
+          "channel": "push",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_removed",
+          "channel": "email",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_removed",
+          "channel": "in_app",
+          "enabled": false
+        },
+        {
+          "notification_type": "team_member_removed",
+          "channel": "push",
+          "enabled": false
+        }
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "actualPermissionRequest": {
+    "permission": "default",
+    "feedback": [
+      "Permission not granted",
+      "No permission was granted. You can request again or continue with your preferences."
+    ],
+    "pushPreference": "false"
+  }
+}

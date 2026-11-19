@@ -1,0 +1,1 @@
+{"checks":4,"refusedActions":[{"name":"createVacationPolicyOnboarding","http":200,"success":false,"code":"AuthorizationError"},{"name":"skipVacationPolicySetup","http":200,"success":false,"code":"AuthorizationError"}],"browserErrors":0}

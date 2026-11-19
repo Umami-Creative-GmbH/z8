@@ -1,0 +1,30 @@
+// @vitest-environment jsdom
+import {act,fireEvent,screen,waitFor} from "@testing-library/react";
+import {beforeEach,expect,it,vi} from "vitest";
+import {toast} from "sonner";
+import {render} from "@/test/render-with-translations";
+import {DocumentRequestOfficerActions} from "./document-request-officer-actions";
+import {DocumentRequestDecisionActions} from "./document-request-decision";
+import {cancelDocumentRequestAction,returnDocumentRequestAction} from "@/app/[locale]/(app)/personnel-files/document-request-actions";
+vi.mock("sonner",()=>({toast:{error:vi.fn(),success:vi.fn()}}));
+vi.mock("@/navigation",()=>({useRouter:()=>({refresh:vi.fn()})}));
+vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",()=>({cancelDocumentRequestAction:vi.fn(),returnDocumentRequestAction:vi.fn(),acceptDocumentRequestAction:vi.fn(),editDocumentRequestAction:vi.fn()}));
+const request={id:"request",employeeId:"employee",category:"certificate",title:"First aid",note:"",deadline:"2026-11-01",status:"submitted",overdue:false,version:3,renewedDocument:null,createdByName:"Officer",createdAt:"2026-10-01T10:00:00Z",history:[],submissions:[],pendingDocuments:[]} as const;
+beforeEach(()=>vi.clearAllMocks());
+it.each(["return","cancel"] as const)("MERGE1730 shared %s keeps actual dialog open while public action is held",async(kind)=>{
+ let finish!: (value:any)=>void;
+ const action=kind==="return"?returnDocumentRequestAction:cancelDocumentRequestAction;
+ vi.mocked(action).mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+ const changed=vi.fn();
+ if(kind==="return")render(<DocumentRequestDecisionActions request={request as any} onDecided={changed}/>);
+ else render(<DocumentRequestOfficerActions request={request as any} today="2026-11-15" onChanged={changed}/>);
+ fireEvent.click(screen.getByRole("button",{name:kind==="return"?"Return First aid":"Cancel First aid"}));
+ fireEvent.change(screen.getByRole("textbox",{name:/Reason/}),{target:{value:"Please replace the evidence"}});
+ fireEvent.click(screen.getByRole("button",{name:kind==="return"?"Return to employee":"Cancel request"}));
+ await waitFor(()=>expect(action).toHaveBeenCalledTimes(1));
+ fireEvent.click(screen.getByRole("button",{name:kind==="return"?"Cancel":"Keep request"}));
+ const remainedOpen=screen.queryByRole("alertdialog")!==null;
+ await act(async()=>finish({success:true,data:undefined}));
+ console.log("MERGE1730 shared held action",JSON.stringify({kind,remainedOpen,completionCallbacks:changed.mock.calls.length,successToasts:vi.mocked(toast.success).mock.calls.length}));
+ expect(remainedOpen).toBe(true);
+});

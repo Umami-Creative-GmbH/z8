@@ -1,0 +1,46 @@
+[
+  {
+    "name": "desktop-light",
+    "before": {
+      "width": 3200,
+      "height": 2000
+    },
+    "after": {
+      "width": 3200,
+      "height": 2000
+    }
+  },
+  {
+    "name": "phone-light",
+    "before": {
+      "width": 780,
+      "height": 1688
+    },
+    "after": {
+      "width": 780,
+      "height": 1688
+    }
+  },
+  {
+    "name": "wide-dark",
+    "before": {
+      "width": 4800,
+      "height": 2400
+    },
+    "after": {
+      "width": 4800,
+      "height": 2400
+    }
+  },
+  {
+    "name": "phone-large-dark",
+    "before": {
+      "width": 780,
+      "height": 1688
+    },
+    "after": {
+      "width": 780,
+      "height": 1688
+    }
+  }
+]

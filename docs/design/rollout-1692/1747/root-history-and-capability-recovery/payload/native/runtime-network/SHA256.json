@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "path": "audit.json",
+      "bytes": 32738,
+      "sha256": "c8e56f4be96b2d988cfa694f89450e388523b49d64e48b367cb0a8bd061db5a5"
+    },
+    {
+      "path": "note.txt",
+      "bytes": 1723,
+      "sha256": "c312679e950161bb91e2f6031de192f030d30f264229159593ec84b18a50774f"
+    }
+  ]
+}

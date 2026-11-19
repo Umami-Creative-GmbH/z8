@@ -1,0 +1,10 @@
+{
+  "normalWidgetFormLogins": true,
+  "grantsChanged": false,
+  "authSavedCopiedRestored": false,
+  "roles": [],
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting for selector `[aria-label=\"Account: Person 2\"]` failed"
+  }
+}

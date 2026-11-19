@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "acceptedCaptureCount": 15,
+  "fullyDecodedPngCount": 79,
+  "sourceHead": "13470da28d28597c0e9ef9d4ebd7c8989eefc55b",
+  "captureSourceHead": "59c974ce06966119fb20cd4036982f5a60f8f186",
+  "sourceFiles": 4,
+  "checks": [
+    "All restored normalized source blobs equal current HEAD",
+    "All before raw source blobs equal exact base repository blobs",
+    "All after normalized source blobs equal their recorded capture Git HEAD blobs",
+    "All three payroll consumer files still match current HEAD",
+    "Measured CSS and fully decoded PNG dimensions agree",
+    "No document overflow in accepted captures",
+    "Loaded font, 16px desktop or saved 18px elsewhere",
+    "One after heading versus two before",
+    "Zero page exceptions in matched comparison"
+  ],
+  "latestMetadataDelta": "diff --git a/apps/webapp/src/lib/navigation/route-metadata.ts b/apps/webapp/src/lib/navigation/route-metadata.ts\nindex d8ab8b24b..4ec692a4b 100644\n--- a/apps/webapp/src/lib/navigation/route-metadata.ts\n+++ b/apps/webapp/src/lib/navigation/route-metadata.ts\n@@ -217,6 +217,7 @@ export function appPageOwnsHeading(pathname: string): boolean {\n \t\tpath === \"/my-documents\" ||\n \t\tpath === \"/equipment\" ||\n \t\tpath === \"/my-equipment\" ||\n+\t\tpath === \"/organization\" ||\n \t\tpath === \"/compliance\" ||\n \t\tpath === \"/driving-licence\" ||\n \t\tpath === \"/calendar\" ||\n",
+  "limits": [
+    "Later organization-explorer merge adds its independent heading opt-in and formatting to shared metadata; matrix is source-pinned to its recorded pre-organization-merge HEAD. Payroll consumers remain byte-equivalent after Git normalization.",
+    "Failure captures keep null computed CSS/font/theme where not measured; they are not accepted final layout",
+    "Dimensions and DOM checks do not certify true browser zoom, physical devices, shell transitions, provider delivery or continuous cached organization lifecycle"
+  ]
+}

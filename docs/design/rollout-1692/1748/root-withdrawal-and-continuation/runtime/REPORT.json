@@ -1,0 +1,160 @@
+{
+  "issue": 1748,
+  "route": "R166 /travel-expenses/[claimId]",
+  "status": "Bounded fresh runtime evidence sealed with explicit gaps",
+  "verifiedCommit": null,
+  "source": {
+    "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "branch": "ai/1692-app-wide-ui-refresh"
+  },
+  "counts": {
+    "runtime": 46,
+    "database": 88,
+    "preservation": 6,
+    "total": 140,
+    "passed": 140,
+    "failed": 0
+  },
+  "newUnitCases": 0,
+  "newPostgresqlSuiteCases": 0,
+  "confirmedP1": 0,
+  "results": {
+    "normalUiLogin": true,
+    "publicOrganizationSelection": true,
+    "retainedOriginalAndCalculatedAmounts": true,
+    "notesZoneDestinationChecksumDisclosure": true,
+    "orderedUtcHistoryActorReasonComment": true,
+    "receiptPreview": true,
+    "actualCompletedDownload": {
+      "completed": true,
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+      "exactBytes": true,
+      "filenameExpected": true,
+      "pngSignature": true,
+      "width": 1,
+      "height": 1,
+      "eventBytes": 68
+    },
+    "canonicalMissingObjectRefusal": true,
+    "canonicalConversionGraph": true,
+    "repeatSameReportNoDuplicate": true,
+    "actualOtherEmployeeAndForeignOrg404": [
+      {
+        "actorAlias": "small-restricted",
+        "canonicalClaimStatus": 404,
+        "oneHeading": true,
+        "notesPresent": false,
+        "receiptPresent": false,
+        "appError": false,
+        "backAtSignIn": false,
+        "denied": true
+      },
+      {
+        "actorAlias": "large-employee",
+        "canonicalClaimStatus": 404,
+        "oneHeading": true,
+        "notesPresent": false,
+        "receiptPresent": false,
+        "appError": false,
+        "backAtSignIn": false,
+        "denied": true
+      }
+    ],
+    "permittedLocalPartialReimbursement": {
+      "amount": "1.25",
+      "currency": "EUR",
+      "remaining": "119.25",
+      "externalPayment": false
+    },
+    "synthetic503Recovery": true,
+    "largePreferenceReload": true,
+    "phoneFirstEscapeFocus": true,
+    "darkCollapsedSidebarReload": true,
+    "nextConnected": {
+      "get_compilation_issues": {
+        "rpcError": false,
+        "toolError": false,
+        "browserUnconnected": false,
+        "targetNamed": false,
+        "containsClaimRoute": false,
+        "textLengths": [
+          13
+        ],
+        "issueCount": 0,
+        "issueTypes": []
+      },
+      "get_errors": {
+        "rpcError": false,
+        "toolError": false,
+        "browserUnconnected": false,
+        "targetNamed": false,
+        "containsClaimRoute": false,
+        "textLengths": [
+          38
+        ],
+        "topKeys": [
+          "configErrors",
+          "sessionErrors"
+        ],
+        "arrayCounts": {
+          "configErrors": 0,
+          "sessionErrors": 0
+        }
+      },
+      "get_page_metadata": {
+        "rpcError": false,
+        "toolError": false,
+        "browserUnconnected": false,
+        "targetNamed": false,
+        "containsClaimRoute": true,
+        "textLengths": [
+          2196
+        ]
+      }
+    }
+  },
+  "preservation": {
+    "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "indexHash": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac",
+    "status": "",
+    "trackedCount": 18587,
+    "changedTracked": [],
+    "internalLinksAll": 222,
+    "rootAppInternalLinks": 158,
+    "changedInternalLinks": [],
+    "indexUnchanged": true,
+    "sourcePinsUnchanged": true,
+    "lockUnchanged": true,
+    "licenseUnchanged": true,
+    "licenseEntries": 125,
+    "rootDepsPhysical": true,
+    "appDepsPhysical": true,
+    "verifiedCommit": null
+  },
+  "resources": {
+    "profilesLive": 0,
+    "canonicalCleanupExit": 0,
+    "controllerLive": 0,
+    "servicesLive": 0,
+    "nextLive": 0,
+    "browserLive": 0,
+    "ownedLiveResources": 0,
+    "verifiedExactServicesRemoved": 3,
+    "controllerListeners": 0
+  },
+  "limits": [
+    "No full route-readiness verdict; verifiedCommit remains null.",
+    "Original withdrawal sequences retain independently reviewed public-test evidence; these browser 503s are synthetic transport only, not live authorization revocation.",
+    "Late held-request retirement attempt did not reach required primary-tab content; no live retirement assertion.",
+    "Actual browser DOM fiber names identified TravelExpenseClaimDetail on approved claim; LegacyDraftConversionPanel tree name not obtained. Native agent-browser was not retried after prior policy block.",
+    "No axe-core package available; no installation; main axe acceptance unpassed.",
+    "Pending partial-approval/intermediate-only terminal fallback, held duplicate conversion, exhaustive account/org/Activity/revocation combinations and converted report editor reload are not newly proved here.",
+    "Legacy draft creation was business fixture seeding, not actual UI creation. Missing-object draft remained refused; a separate valid draft supplied the positive conversion.",
+    "No full production build/generation, catalogs, providers, devices or true zoom acceptance.",
+    "Early arrival and tooling failures are qualified in attempts; no unrelated symptom was silently fixed or labeled route P1."
+  ]
+}

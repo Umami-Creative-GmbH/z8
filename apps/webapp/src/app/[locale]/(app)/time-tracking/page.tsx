@@ -16,7 +16,7 @@ interface TimeTrackingPageProps {
 
 function TimeTrackingPageLoading() {
 	return (
-		<div data-testid="time-tracking-shell" className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div data-testid="time-tracking-shell" className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<ClockLoading />
 			<SummaryLoading />
 			<TimelineLoading />

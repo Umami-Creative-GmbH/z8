@@ -1,0 +1,30 @@
+{
+  "sourceHead": "3d5d0bc242b38eb5c14d3c736b2d0ba65b9da111",
+  "nativeVersion": "0.39.1",
+  "components": [
+    {
+      "name": "EquipmentAssignmentDetail",
+      "present": true
+    },
+    {
+      "name": "PageHeader",
+      "present": true
+    },
+    {
+      "name": "EquipmentHistory",
+      "present": true
+    },
+    {
+      "name": "EquipmentRetention",
+      "present": true
+    }
+  ],
+  "inspectionSuccess": true,
+  "renderRecording": "No renders captured; not a performance benchmark",
+  "limits": [
+    "First tree was taken before hydration",
+    "First inspect used a name instead of observed numeric ID and failed",
+    "First state expiry was string -1 instead of number and failed",
+    "Synthetic fixture sessions; no provider/login acceptance"
+  ]
+}

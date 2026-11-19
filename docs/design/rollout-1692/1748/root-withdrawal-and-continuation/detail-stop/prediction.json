@@ -1,0 +1,1319 @@
+{
+  "root": "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+  "incoming": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+  "base": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+  "rootTree": "a3cfb71a7724b40c3c7dd7fbf360b4e580399f85",
+  "predictedTree": "9482b7c7b76665c1c303c4cb9a73cd52d745cf00",
+  "predictedApp": "860abb81d474927d8b49ddc521dc33d008a1d8ef",
+  "rootPaths": 18506,
+  "incomingPaths": 83,
+  "sourceTestPaths": 8,
+  "overlaps": [
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "recipe": "Root map plus incoming base delta, except metadata = root with incoming z import and exact UUID predicate; metadata tests = root plus incoming additive suffix. Full root tree algorithm control passed before merge.",
+  "changes": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5a290c08ca0255e21fa1bd95f733dec6b6adf2ff"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5a290c08ca0255e21fa1bd95f733dec6b6adf2ff"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "ae39cee22049ee4c83bd37e90a3e25811969385c"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "ae39cee22049ee4c83bd37e90a3e25811969385c"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "598c4e821d8ef26439f244dc4ce45ed14a72e523"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "598c4e821d8ef26439f244dc4ce45ed14a72e523"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "8e423d7b73f5570a45ea56134581825562d99ce1"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "8e423d7b73f5570a45ea56134581825562d99ce1"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "ba19e9037e3e304b877091993f968a101f684b94"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "ba19e9037e3e304b877091993f968a101f684b94"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "6dbf7efd3e97ee56663960eb56c7162d273debf1"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "6dbf7efd3e97ee56663960eb56c7162d273debf1"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d498332ae4ea7e8dc260b7d997fd4fda140faf06"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d498332ae4ea7e8dc260b7d997fd4fda140faf06"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "af0cfae1d0015ba9c079429ddfc7274cfaec9edb"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "af0cfae1d0015ba9c079429ddfc7274cfaec9edb"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927"
+      }
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "edf63b75e39c3c1d19500170b6c935e75fe9fadd"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "edf63b75e39c3c1d19500170b6c935e75fe9fadd"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d95fbbd62031741a61c3f73668f7837c9bb1e7ce"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d95fbbd62031741a61c3f73668f7837c9bb1e7ce"
+      }
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "fb0042b7ed918a252a8074c652bd7aa81d913013"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "6632741824b4b3ec0df309f0d30ccf8fe1aedfd6"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4983ac1fcd277636670988a3617b7e94199403c6"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5f6f75f256c6899338b436d76248c26923ec8702"
+      }
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "base": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "bdabe898f056ccd4b09b2f4cc81f56aa45ea1fe0"
+      },
+      "root": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a50c26af375d931662823d2f4e70cd4ff39dfc01"
+      },
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f8ffaaa2729560fc0017e8c03a4206c63e98f204"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "225e32211910e6e2a89504996134d7673e5d1ca4"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748.md",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3616df33867d812fd8831280e0ff126bd6589361"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3616df33867d812fd8831280e0ff126bd6589361"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/desktop-collapsed.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "9022d4f8e680041cabecbdc894d6acdec9a1159b"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "9022d4f8e680041cabecbdc894d6acdec9a1159b"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/desktop.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "75fad486c965b4550b8aa4172dc7cfeb8387ace9"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "75fad486c965b4550b8aa4172dc7cfeb8387ace9"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/keyboard-focus.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "16c3c039dbd9446b806e4ab3431929aa932eb681"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "16c3c039dbd9446b806e4ab3431929aa932eb681"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/next-active-browser.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "dc88f99cdd1f53d2b19fed72f78aa97bd3ce2791"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "dc88f99cdd1f53d2b19fed72f78aa97bd3ce2791"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/observations.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5421285e837fa599b9f8c02ed45f21173fd022bb"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5421285e837fa599b9f8c02ed45f21173fd022bb"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/phone-menu-saved18.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a161fd06fe49625e3f06d5b22731742592f4a21e"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a161fd06fe49625e3f06d5b22731742592f4a21e"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/phone-saved18-reload.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a161fd06fe49625e3f06d5b22731742592f4a21e"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a161fd06fe49625e3f06d5b22731742592f4a21e"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/phone.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "2f5f0e73019e0f4be835ad119ed5dd2fa998ba8f"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "2f5f0e73019e0f4be835ad119ed5dd2fa998ba8f"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/source.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3bd471f3088cc1f89c6c8c28a71c4a1fdfb0c239"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3bd471f3088cc1f89c6c8c28a71c4a1fdfb0c239"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/wide-dark.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f32674f7afca5ea510fc2a9610ec23ac93fabb76"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f32674f7afca5ea510fc2a9610ec23ac93fabb76"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/desktop-collapsed.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "64003f1cd8d2e6acf788caa0adff048ba36d5baf"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "64003f1cd8d2e6acf788caa0adff048ba36d5baf"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/desktop.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d43bcc37817f13bf1705a49e94ead0966d2f33cf"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d43bcc37817f13bf1705a49e94ead0966d2f33cf"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/observations.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "829006c2b01868a9a7cdc1a55b0e93f5459664f2"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "829006c2b01868a9a7cdc1a55b0e93f5459664f2"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/phone-saved18-reload.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "feadaed0d1f9145adc29b7b676443904e85a3e35"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "feadaed0d1f9145adc29b7b676443904e85a3e35"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/phone.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "73e3b654ef50a787cadbebc17f4477e5036e0770"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "73e3b654ef50a787cadbebc17f4477e5036e0770"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/source.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "db8542374eac21d75f08de39e9694be0ed161ba1"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "db8542374eac21d75f08de39e9694be0ed161ba1"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/wide-dark.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4520ebcbb7812f5002429dc9e6ad40c5e55af7f4"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4520ebcbb7812f5002429dc9e6ad40c5e55af7f4"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/browser-parent-before.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4d615b830ba72b34210a0b13a321ca55870e58d2"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4d615b830ba72b34210a0b13a321ca55870e58d2"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/browser-source-final.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a1a05d801197c04131bd33fdc423b289fe032255"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a1a05d801197c04131bd33fdc423b289fe032255"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/cleanup-next.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "963f95e24347419d76dbd3ef135caf5f3074e17a"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "963f95e24347419d76dbd3ef135caf5f3074e17a"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/cleanup-services.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5b91192d2b83de29ec8c8ad342bf88c7e8646d0b"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5b91192d2b83de29ec8c8ad342bf88c7e8646d0b"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/commands.txt",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "98051b8b03e425e5019c50d7527424042bcbcb34"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "98051b8b03e425e5019c50d7527424042bcbcb34"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/conversion-action-excerpt.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "1a84522f6ac6f221309b54d950f0414d0dfe3038"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "1a84522f6ac6f221309b54d950f0414d0dfe3038"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/doctor-coordinated-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "64bd722b2b3b2d1f56eb904b267d6dd1fcf51429"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "64bd722b2b3b2d1f56eb904b267d6dd1fcf51429"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/doctor-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "1e6d3e7c3837f35850dc1b98a9553ab710d277ed"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "1e6d3e7c3837f35850dc1b98a9553ab710d277ed"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/doctor.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "de0facd195d9c4233a4570b52d14cd8293fcee53"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "de0facd195d9c4233a4570b52d14cd8293fcee53"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-arrival.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5f8f6f2ec4e326e1e22feb8d2a10008b28c798e7"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5f8f6f2ec4e326e1e22feb8d2a10008b28c798e7"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-conversion-lifetime.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5df009c120d3071c0d3adff4f0190e3c8c875e60"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5df009c120d3071c0d3adff4f0190e3c8c875e60"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-conversion-refused.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "8fbbf5d58acf984527227059e304a72190940ba8"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "8fbbf5d58acf984527227059e304a72190940ba8"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-conversion-retention.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "c73af473e76b6bef702e06efd502d03787eea3a2"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "c73af473e76b6bef702e06efd502d03787eea3a2"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-heading.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "cdf42412ca46c8c19227a3d1236dc99fe18ecf80"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "cdf42412ca46c8c19227a3d1236dc99fe18ecf80"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-r165-consumer.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3bc2c7f9f3d7106a0df8b01630e9229d87d1d3f5"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3bc2c7f9f3d7106a0df8b01630e9229d87d1d3f5"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-refusal.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "1418088717a1cd2fe86da6b584a1ce4bb7903f96"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "1418088717a1cd2fe86da6b584a1ce4bb7903f96"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-terminal.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "00ea7814c0230b95f664cad6c826006bc9b3884c"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "00ea7814c0230b95f664cad6c826006bc9b3884c"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/install-escalated.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "471cb9f69c9d18097d5c6721d2f786d590385adc"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "471cb9f69c9d18097d5c6721d2f786d590385adc"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/install.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "efc7f2a9d2b3ee8859b2324db2ba5677adc3f2a1"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "efc7f2a9d2b3ee8859b2324db2ba5677adc3f2a1"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/integration-settlement-rerun.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "dc429b86bdb23a987070be21547859c7e7548e17"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "dc429b86bdb23a987070be21547859c7e7548e17"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/integration.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "7ec986396549332ccf35f5db78b68ac80019bbf9"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "7ec986396549332ccf35f5db78b68ac80019bbf9"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/journeys.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "c52029a4ca3afbdd9bd87025615dbfdedc76b8b5"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "c52029a4ca3afbdd9bd87025615dbfdedc76b8b5"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/native-corrected-run.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3a1d7af24618a3e084461a03a52d420a73b538ca"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3a1d7af24618a3e084461a03a52d420a73b538ca"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/native-corrected.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "c187aa95b40bc1b2c394aa1066ca8b5a24d38d2f"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "c187aa95b40bc1b2c394aa1066ca8b5a24d38d2f"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/native.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "b30fb5de272b8b470cb12019e9a7df32b66bb85c"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "b30fb5de272b8b470cb12019e9a7df32b66bb85c"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/ordinary-final.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "848021aa5a2d72e4fe34f6bb05043d9cf8bf7a87"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "848021aa5a2d72e4fe34f6bb05043d9cf8bf7a87"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/outcomes.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d550a9842c920e5eee9bcc553b09905eb97e7ba5"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d550a9842c920e5eee9bcc553b09905eb97e7ba5"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-arrival-confirming.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e516ff3575cd9605083e4c96bb4b73c5c979dd45"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e516ff3575cd9605083e4c96bb4b73c5c979dd45"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-arrival.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "74a86ad9cca595cec5d621401559e3f676c1d836"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "74a86ad9cca595cec5d621401559e3f676c1d836"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-conversion-refused.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "75b491b301a3aaf93c5b3ef4e616f8d71fc903ff"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "75b491b301a3aaf93c5b3ef4e616f8d71fc903ff"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-conversion-retention.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4c2d3f4d94875ef3c939186e00e2ce872a55acf5"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "4c2d3f4d94875ef3c939186e00e2ce872a55acf5"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-heading.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "ac6be08bb904048f581745bbe20a706002ddd7ea"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "ac6be08bb904048f581745bbe20a706002ddd7ea"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-late-conversion.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "6d1b09afcae8a93b514604904947eea519834e67"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "6d1b09afcae8a93b514604904947eea519834e67"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-r165-consumer.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "17431a95de2ca1ab5109d6343726608df2310212"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "17431a95de2ca1ab5109d6343726608df2310212"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-refusal.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "92e9b111dff044e1febb36bd09cfd770414d3f39"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "92e9b111dff044e1febb36bd09cfd770414d3f39"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-retired-refusal-settled.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "80aef08a7065a356241255d082f9772ee49d1f25"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "80aef08a7065a356241255d082f9772ee49d1f25"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-retired-refusal.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "92e80dc03f7a1c9da4abb25838a08e8da572b438"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "92e80dc03f7a1c9da4abb25838a08e8da572b438"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-terminal.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "634d5cf214c2a882678e1573ee4e38479cdda4f4"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "634d5cf214c2a882678e1573ee4e38479cdda4f4"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/scoped-check.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "32f250af8a59e82abe1941c25bf4160871a546f7"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "32f250af8a59e82abe1941c25bf4160871a546f7"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/scoped-owned-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e32d179067758f375b135dd15284af0b6fe70ebc"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e32d179067758f375b135dd15284af0b6fe70ebc"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/settlement.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d381b97605432d6dae4e7c6da23c2db97d592311"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "d381b97605432d6dae4e7c6da23c2db97d592311"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/shared-lint-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "047856b6bfbab285dfc223dcfd3126910ba9d2e4"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "047856b6bfbab285dfc223dcfd3126910ba9d2e4"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/type-app-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/type-smoke-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/type-workflow-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/typegen.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "7bab5fceadb39ca7d44c9f1a13fba79599520d0b"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "7bab5fceadb39ca7d44c9f1a13fba79599520d0b"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/unit-final.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "0cb31f00a8b909cc70d02470a8854d215fe013c0"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "0cb31f00a8b909cc70d02470a8854d215fe013c0"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/unit-handoff.log",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3a15b47af11b8605ad615bb3285fcacf874b40b9"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "3a15b47af11b8605ad615bb3285fcacf874b40b9"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/approved-admin-recorded.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f1dcc5c1fa8caa51ebc0133294f88e97786681ca"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f1dcc5c1fa8caa51ebc0133294f88e97786681ca"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/approved-admin-settlement.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "b009312e7786a210cfb01875d8fd81f13c6293dc"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "b009312e7786a210cfb01875d8fd81f13c6293dc"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/approved-owner-readback.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "8369892f6c81849dda52b7b5ca42937a9a0fc61f"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "8369892f6c81849dda52b7b5ca42937a9a0fc61f"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/draft-before.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "dd7a5a731e15b6d3f27301356175584c24862ff1"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "dd7a5a731e15b6d3f27301356175584c24862ff1"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/draft-converted-readback.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "bcb7262449ab866301696ed0abd5f2762e8067e2"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "bcb7262449ab866301696ed0abd5f2762e8067e2"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/observations.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a88b03de1028268ed78192de581a8f3aafa87aec"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "a88b03de1028268ed78192de581a8f3aafa87aec"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/retained-transient-error.png",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "b64c68a352172bd710d1f4b0c8d9ef66b59659bb"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "b64c68a352172bd710d1f4b0c8d9ef66b59659bb"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/settlement-observations.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5f9a9772537ad8865088904637884aab80d23883"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "5f9a9772537ad8865088904637884aab80d23883"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/manifest.json",
+      "base": null,
+      "root": null,
+      "incoming": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f738010ee6218bdb0e828b2f7935f944cba34372"
+      },
+      "expected": {
+        "mode": "100644",
+        "type": "blob",
+        "oid": "f738010ee6218bdb0e828b2f7935f944cba34372"
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "format-valid",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "biome",
+    "check",
+    "--error-on-warnings",
+    "--config-path=./biome.jsonc",
+    "--line-ending=crlf",
+    "--line-width=100",
+    "src/components/reports/projects/customer-billable-view.tsx",
+    "src/components/reports/projects/project-filters.tsx",
+    "src/components/reports/projects/project-reports-container.tsx",
+    "src/components/reports/projects/project-reports-workflow.test.tsx",
+    "src/components/reports/projects/project-summary-cards.tsx",
+    "src/components/reports/projects/report-share-dialog.test.tsx",
+    "src/components/reports/projects/report-share-dialog.tsx",
+    "src/components/reports/projects/report-share-link-list.test.tsx",
+    "src/components/reports/projects/report-share-link-list.tsx",
+    "src/components/reports/projects/shared-report-view.tsx",
+    "src/components/reports/report-document-export-buttons.test.tsx",
+    "src/components/reports/report-document-export-buttons.tsx",
+    "src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+    "src/lib/reports/exporters/report-document-pdf.tsx"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T02:15:58.9252684+01:00",
+  "finishedAt": "2026-11-16T02:15:59.7365124+01:00",
+  "exitCode": 1
+}

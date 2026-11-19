@@ -1,0 +1,1049 @@
+src\app\[locale]\(app)\organization\org-explorer-client.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */
+      2   2 │   
+      3     │ - import·{
+      4     │ - → act,
+      5     │ - → fireEvent,
+      6     │ - → screen,
+      7     │ - → waitFor,
+      8     │ - → within,
+      9     │ - }·from·"@testing-library/react";
+          3 │ + import·{·act,·fireEvent,·screen,·waitFor,·within·}·from·"@testing-library/react";
+     10   4 │   import { type ReactNode, useMemo, useSyncExternalStore } from "react";
+     11     │ - import·{
+     12     │ - → afterEach,
+     13     │ - → beforeAll,
+     14     │ - → beforeEach,
+     15     │ - → describe,
+     16     │ - → expect,
+     17     │ - → it,
+     18     │ - → vi,
+     19     │ - }·from·"vitest";
+          5 │ + import·{·afterEach,·beforeAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";
+     20   6 │   import { render } from "@/test/render-with-translations";
+     21     │ - import·type·{
+     22     │ - → OrgExplorerData,
+     23     │ - → OrgExplorerPerson,
+     24     │ - → OrgExplorerTeam,
+     25     │ - }·from·"./org-explorer-types";
+          7 │ + import·type·{·OrgExplorerData,·OrgExplorerPerson,·OrgExplorerTeam·}·from·"./org-explorer-types";
+     26   8 │   
+     27   9 │   const mocks = vi.hoisted(() => ({
+    ······· │ 
+     51  33 │   
+     52  34 │   vi.mock("@/navigation", () => ({
+     53     │ - → Link:·({
+     54     │ - → → href,
+     55     │ - → → children,
+     56     │ - → → ...props
+     57     │ - → }:·{
+     58     │ - → → href:·string;
+     59     │ - → → children:·ReactNode;
+     60     │ - → })·=>·(
+         35 │ + → Link:·({·href,·children,·...props·}:·{·href:·string;·children:·ReactNode·})·=>·(
+     61  36 │       <a href={href} {...props}>
+     62  37 │         {children}
+    ······· │ 
+     82  57 │   vi.mock("next/navigation", () => ({
+     83  58 │     useSearchParams: () => {
+     84     │ - → → const·search·=·useSyncExternalStore(
+     85     │ - → → → subscribeToLocation,
+     86     │ - → → → ()·=>·window.location.search,
+     87     │ - → → );
+         59 │ + → → const·search·=·useSyncExternalStore(subscribeToLocation,·()·=>·window.location.search);
+     88  60 │       return useMemo(() => new URLSearchParams(search), [search]);
+     89  61 │     },
+    ······· │ 
+    144 116 │   });
+    145 117 │   
+    146     │ - function·person(
+    147     │ - → employeeId:·string,
+    148     │ - → overrides:·Partial<OrgExplorerPerson>·=·{},
+    149     │ - ):·OrgExplorerPerson·{
+        118 │ + function·person(employeeId:·string,·overrides:·Partial<OrgExplorerPerson>·=·{}):·OrgExplorerPerson·{
+    150 119 │     return {
+    151 120 │       employeeId,
+    ······· │ 
+    257 226 │   
+    258 227 │   function edges() {
+    259     │ - → return·JSON.parse(
+    260     │ - → → screen.getByTestId("flow-edges").textContent·??·"[]",
+    261     │ - → )·as·string[][];
+        228 │ + → return·JSON.parse(screen.getByTestId("flow-edges").textContent·??·"[]")·as·string[][];
+    262 229 │   }
+    263 230 │   
+    ······· │ 
+    267 234 │   
+    268 235 │   beforeEach(() => {
+    269     │ - → for·(const·mock·of·[
+    270     │ - → → mocks.search,
+    271     │ - → → mocks.people,
+    272     │ - → → mocks.teamMembers,
+    273     │ - → → mocks.group,
+    274     │ - → → mocks.data,
+    275     │ - → ])·{
+        236 │ + → for·(const·mock·of·[mocks.search,·mocks.people,·mocks.teamMembers,·mocks.group,·mocks.data])·{
+    276 237 │       mock.mockReset();
+    277 238 │     }
+    ······· │ 
+    299 260 │   
+    300 261 │         expect(
+    301     │ - → → → → screen
+    302     │ - → → → → → .getByRole("radio",·{·name:·"Reporting·lines"·})
+    303     │ - → → → → → .getAttribute("aria-checked"),
+        262 │ + → → → → screen.getByRole("radio",·{·name:·"Reporting·lines"·}).getAttribute("aria-checked"),
+    304 263 │         ).toBe("true");
+    305 264 │         expect(screen.getByTestId("react-flow")).toBeTruthy();
+    ······· │ 
+    315 274 │         await renderExplorer({ search: "?view=teams" });
+    316 275 │   
+    317     │ - → → → expect(
+    318     │ - → → → → screen
+    319     │ - → → → → → .getByRole("radio",·{·name:·"Teams"·})
+    320     │ - → → → → → .getAttribute("aria-checked"),
+    321     │ - → → → ).toBe("true");
+        276 │ + → → → expect(screen.getByRole("radio",·{·name:·"Teams"·}).getAttribute("aria-checked")).toBe(
+        277 │ + → → → → "true",
+        278 │ + → → → );
+    322 279 │   
+    323 280 │         act(() => {
+    ······· │ 
+    346 303 │         expect(within(card("ada")).getByText("+1 manager")).toBeTruthy();
+    347 304 │         expect(within(card("bob")).queryByText(/manager/)).toBeNull();
+    348     │ - → → → const·y·=·(id:·string)·=>
+    349     │ - → → → → Number(card(id).parentElement?.getAttribute("data-node-y"));
+        305 │ + → → → const·y·=·(id:·string)·=>·Number(card(id).parentElement?.getAttribute("data-node-y"));
+    350 306 │         expect(y("ceo")).toBeLessThan(y("vp"));
+    351 307 │         expect(y("vp")).toBeLessThan(y("ada"));
+    ······· │ 
+    380 336 │         expect(adaReports.getAttribute("aria-expanded")).toBe("true");
+    381 337 │   
+    382     │ - → → → fireEvent.click(
+    383     │ - → → → → within(card("vp")).getByRole("button",·{·name:·"2·direct·reports"·}),
+    384     │ - → → → );
+        338 │ + → → → fireEvent.click(within(card("vp")).getByRole("button",·{·name:·"2·direct·reports"·}));
+    385 339 │         expect(screen.queryByTestId("org-person-ada")).toBeNull();
+    386 340 │         expect(screen.queryByTestId("org-person-deb")).toBeNull();
+    ······· │ 
+    391 345 │         const group = screen.getByRole("region", { name: "No reporting line" });
+    392 346 │   
+    393     │ - → → → expect(
+    394     │ - → → → → within(group).getByRole("button",·{·name:·/Lou·Loner/·}),
+    395     │ - → → → ).toBeTruthy();
+        347 │ + → → → expect(within(group).getByRole("button",·{·name:·/Lou·Loner/·})).toBeTruthy();
+    396 348 │         expect(screen.queryByTestId("org-person-lou")).toBeNull();
+    397 349 │       });
+    ······· │ 
+    429 381 │   
+    430 382 │         expect(
+    431     │ - → → → → screen
+    432     │ - → → → → → .getAllByTestId(/^team-card-/)
+    433     │ - → → → → → .map((entry)·=>·entry.getAttribute("data-team")),
+        383 │ + → → → → screen.getAllByTestId(/^team-card-/).map((entry)·=>·entry.getAttribute("data-team")),
+    434 384 │         ).toEqual(["hr"]);
+    435 385 │         expect(screen.queryByRole("heading", { name: "No team" })).toBeNull();
+    ······· │ 
+    444 394 │   
+    445 395 │         expect(within(ops).getByText("Keeps things running")).toBeTruthy();
+    446     │ - → → → expect(
+    447     │ - → → → → within(within(ops).getByTestId("team-lead")).getByText("Cora·Ceo"),
+    448     │ - → → → ).toBeTruthy();
+        396 │ + → → → expect(within(within(ops).getByTestId("team-lead")).getByText("Cora·Ceo")).toBeTruthy();
+    449 397 │         expect(within(ops).getByText("3 members")).toBeTruthy();
+    450 398 │         expect(
+    ······· │ 
+    452 400 │             .getAllByRole("listitem")
+    453 401 │             .map((item) => item.textContent),
+    454     │ - → → → ).toEqual([
+    455     │ - → → → → "Ada·AnalystAnalyst",
+    456     │ - → → → → "Bob·BuilderPrimary·team",
+    457     │ - → → → → "Vic·VpPrimary·team",
+    458     │ - → → → ]);
+        402 │ + → → → ).toEqual(["Ada·AnalystAnalyst",·"Bob·BuilderPrimary·team",·"Vic·VpPrimary·team"]);
+    459 403 │         expect(
+    460 404 │           within(sales).getByText("Ada Analyst", {
+  237 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\org-explorer-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     22  22 │   import type { OrgExplorerUrlState } from "./org-explorer-url";
+     23  23 │   import { useOrgExplorerLines } from "./use-org-explorer-lines";
+     24     │ - import·{
+     25     │ - → type·OrgExplorerPeopleLoader,
+     26     │ - → useOrgExplorerPeople,
+     27     │ - }·from·"./use-org-explorer-people";
+         24 │ + import·{·type·OrgExplorerPeopleLoader,·useOrgExplorerPeople·}·from·"./use-org-explorer-people";
+     28  25 │   import { useOrgExplorerUrlState } from "./use-org-explorer-url-state";
+     29  26 │   
+    ······· │ 
+     51  48 │     const people = [...peopleById.values()];
+     52  49 │     const tree = buildReportingTree(people);
+     53     │ - → const·teamNamesById·=·new·Map(
+     54     │ - → → summary.teams.map((entry)·=>·[entry.teamId,·entry.name]),
+     55     │ - → );
+     56     │ - → const·{·pathIds,·highlightOf·}·=·teamFilterHighlights(
+     57     │ - → → people,
+     58     │ - → → tree,
+     59     │ - → → url.teamIds,
+     60     │ - → );
+         50 │ + → const·teamNamesById·=·new·Map(summary.teams.map((entry)·=>·[entry.teamId,·entry.name]));
+         51 │ + → const·{·pathIds,·highlightOf·}·=·teamFilterHighlights(people,·tree,·url.teamIds);
+     61  52 │   
+     62  53 │     function select(employeeId: string) {
+    ······· │ 
+    106  97 │             filterControls={
+    107  98 │               <>
+    108     │ - → → → → → → → <ViewSwitch
+    109     │ - → → → → → → → → onChange={(view)·=>·setUrl({·view·})}
+    110     │ - → → → → → → → → view={url.view}
+    111     │ - → → → → → → → />
+         99 │ + → → → → → → → <ViewSwitch·onChange={(view)·=>·setUrl({·view·})}·view={url.view}·/>
+    112 100 │                 <TeamFilter
+    113 101 │                   onChange={(teamIds) => setUrl({ teamIds })}
+    ······· │ 
+    126 114 │                   )}
+    127 115 │                 </p>
+    128     │ - → → → → → → → <EmployeeSearch
+    129     │ - → → → → → → → → onSelect={(employeeId)·=>·void·reveal(employeeId)}
+    130     │ - → → → → → → → />
+        116 │ + → → → → → → → <EmployeeSearch·onSelect={(employeeId)·=>·void·reveal(employeeId)}·/>
+    131 117 │               </>
+    132 118 │             }
+    133 119 │           />
+    134 120 │         </div>
+    135     │ - → → → {loader.hasFailedLoads·&&
+    136     │ - → → → (!url.employeeId·||·peopleById.has(url.employeeId))·?·(
+    137     │ - → → → → <OrgExplorerLoadError
+    138     │ - → → → → → retry={loader.retryFailed}
+    139     │ - → → → → → pending={loader.isRetrying}
+    140     │ - → → → → />
+        121 │ + → → → {loader.hasFailedLoads·&&·(!url.employeeId·||·peopleById.has(url.employeeId))·?·(
+        122 │ + → → → → <OrgExplorerLoadError·retry={loader.retryFailed}·pending={loader.isRetrying}·/>
+    141 123 │         ) : null}
+    142 124 │   
+    ······· │ 
+    165 147 │           />
+    166 148 │         ) : (
+    167     │ - → → → → <ReportingLinesView
+    168     │ - → → → → → isMobile={isMobile}
+    169     │ - → → → → → lines={lineProps}
+    170     │ - → → → → → loader={loader}
+    171     │ - → → → → />
+        149 │ + → → → → <ReportingLinesView·isMobile={isMobile}·lines={lineProps}·loader={loader}·/>
+    172 150 │         )}
+    173 151 │   
+    ······· │ 
+    191 169 │   
+    192 170 │   /** The team filter highlights members and keeps their paths to the top open. */
+    193     │ - function·teamFilterHighlights(
+    194     │ - → people:·OrgExplorerPerson[],
+    195     │ - → tree:·ReportingTree,
+    196     │ - → teamIds:·string[],
+    197     │ - )·{
+        171 │ + function·teamFilterHighlights(people:·OrgExplorerPerson[],·tree:·ReportingTree,·teamIds:·string[])·{
+    198 172 │     const filter = new Set(teamIds);
+    199 173 │     const matches = new Set(
+    ······· │ 
+    204 178 │             .map((entry) => entry.employeeId),
+    205 179 │     );
+    206     │ - → const·pathIds·=·new·Set(
+    207     │ - → → [...matches].flatMap((id)·=>·tree.pathTo(id).slice(0,·-1)),
+    208     │ - → );
+        180 │ + → const·pathIds·=·new·Set([...matches].flatMap((id)·=>·tree.pathTo(id).slice(0,·-1)));
+    209 181 │     const highlightOf = (employeeId: string): Highlight => {
+    210 182 │       if (filter.size === 0) return "none";
+    ······· │ 
+    219 191 │    * and the filtered teams' members when the URL names them, also after the back button.
+    220 192 │    */
+    221     │ - function·useOrgExplorerUrlLoads(
+    222     │ - → url:·OrgExplorerUrlState,
+    223     │ - → loader:·OrgExplorerPeopleLoader,
+    224     │ - )·{
+    225     │ - → const·selected·=·url.employeeId
+    226     │ - → → ?·loader.peopleById.get(url.employeeId)
+    227     │ - → → :·undefined;
+        193 │ + function·useOrgExplorerUrlLoads(url:·OrgExplorerUrlState,·loader:·OrgExplorerPeopleLoader)·{
+        194 │ + → const·selected·=·url.employeeId·?·loader.peopleById.get(url.employeeId)·:·undefined;
+    228 195 │     const loadSelected = useEffectEvent(
+    229 196 │       (employeeId: string | null, person: OrgExplorerPerson | undefined) => {
+    230 197 │         if (!employeeId) return;
+    231     │ - → → → void·loader.loadPeople(
+    232     │ - → → → → person·?·[...person.managerIds,·...person.reportIds]·:·[employeeId],
+    233     │ - → → → → {
+    234     │ - → → → → → withPaths:·true,
+    235     │ - → → → → },
+    236     │ - → → → );
+        198 │ + → → → void·loader.loadPeople(person·?·[...person.managerIds,·...person.reportIds]·:·[employeeId],·{
+        199 │ + → → → → withPaths:·true,
+        200 │ + → → → });
+    237 201 │       },
+    238 202 │     );
+    239     │ - → useEffect(
+    240     │ - → → ()·=>·loadSelected(url.employeeId,·selected),
+    241     │ - → → [url.employeeId,·selected],
+    242     │ - → );
+        203 │ + → useEffect(()·=>·loadSelected(url.employeeId,·selected),·[url.employeeId,·selected]);
+    243 204 │   
+    244 205 │     const filterKey = url.teamIds.join(",");
+    ······· │ 
+    274 235 │     const { tree, peopleById } = lines;
+    275 236 │     const { summary } = loader;
+    276     │ - → const·noReportingLine·=·tree.noReportingLine.flatMap(
+    277     │ - → → (id)·=>·peopleById.get(id)·??·[],
+    278     │ - → );
+        237 │ + → const·noReportingLine·=·tree.noReportingLine.flatMap((id)·=>·peopleById.get(id)·??·[]);
+    279 238 │   
+    280 239 │     return (
+    ······· │ 
+    282 241 │         {tree.roots.length === 0 ? (
+    283 242 │           <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+    284     │ - → → → → → {t(
+    285     │ - → → → → → → "organization.explorer.noReportingLines",
+    286     │ - → → → → → → "Nobody·has·a·reporting·line·yet.",
+    287     │ - → → → → → )}
+        243 │ + → → → → → {t("organization.explorer.noReportingLines",·"Nobody·has·a·reporting·line·yet.")}
+    288 244 │           </p>
+    289 245 │         ) : isMobile ? (
+  
+
+src\app\[locale]\(app)\organization\org-explorer-load-error.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    16 16 │       <Alert>
+    17 17 │         <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+    18    │ - → → → → <span>
+    19    │ - → → → → → {t("organization.explorer.loadFailed",·"Could·not·load·people.")}
+    20    │ - → → → → </span>
+       18 │ + → → → → <span>{t("organization.explorer.loadFailed",·"Could·not·load·people.")}</span>
+    21 19 │           <Button
+    22 20 │             type="button"
+  
+
+src\app\[locale]\(app)\organization\org-explorer-person-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      4   4 │   import { useTranslate } from "@tolgee/react";
+      5   5 │   import { useId } from "react";
+      6     │ - import·{
+      7     │ - → ActionPanelBody,
+      8     │ - → ActionPanelHeader,
+      9     │ - }·from·"@/components/ui/action-panel";
+          6 │ + import·{·ActionPanelBody,·ActionPanelHeader·}·from·"@/components/ui/action-panel";
+     10   7 │   import { Badge } from "@/components/ui/badge";
+     11   8 │   import { buttonVariants } from "@/components/ui/button-variants";
+    ······· │ 
+     44  41 │   export function PersonPanel(props: PersonPanelProps) {
+     45  42 │     const { t } = useTranslate();
+     46     │ - → const·person·=·props.employeeId
+     47     │ - → → ?·props.peopleById.get(props.employeeId)
+     48     │ - → → :·undefined;
+         43 │ + → const·person·=·props.employeeId·?·props.peopleById.get(props.employeeId)·:·undefined;
+     49  44 │   
+     50  45 │     return (
+    ······· │ 
+     58  53 │           className={cn(
+     59  54 │             "overflow-y-auto",
+     60     │ - → → → → → props.side·===·"bottom"
+     61     │ - → → → → → → ?·"max-h-[85dvh]·rounded-t-xl"
+     62     │ - → → → → → → :·"w-full·sm:max-w-md",
+         55 │ + → → → → → props.side·===·"bottom"·?·"max-h-[85dvh]·rounded-t-xl"·:·"w-full·sm:max-w-md",
+     63  56 │           )}
+     64  57 │           side={props.side}
+    ······· │ 
+     70  63 │               <SheetTitle>
+     71  64 │                 {props.loadError
+     72     │ - → → → → → → → → ?·t(
+     73     │ - → → → → → → → → → → "organization.explorer.panel.description",
+     74     │ - → → → → → → → → → → "Reporting·lines·and·teams",
+     75     │ - → → → → → → → → → )
+         65 │ + → → → → → → → → ?·t("organization.explorer.panel.description",·"Reporting·lines·and·teams")
+     76  66 │                   : t("organization.explorer.panel.loading", "Loading person…")}
+     77  67 │               </SheetTitle>
+     78  68 │               <SheetDescription className="sr-only">
+     79     │ - → → → → → → → {t(
+     80     │ - → → → → → → → → "organization.explorer.panel.description",
+     81     │ - → → → → → → → → "Reporting·lines·and·teams",
+     82     │ - → → → → → → → )}
+         69 │ + → → → → → → → {t("organization.explorer.panel.description",·"Reporting·lines·and·teams")}
+     83  70 │               </SheetDescription>
+     84  71 │               {props.loadError ? (
+    ······· │ 
+    109  96 │             <PersonAvatar person={person} size="md" />
+    110  97 │             <div className="min-w-0">
+    111     │ - → → → → → → <SheetTitle·className="break-words·text-lg">
+    112     │ - → → → → → → → {personDisplayName(person)}
+    113     │ - → → → → → → </SheetTitle>
+         98 │ + → → → → → → <SheetTitle·className="break-words·text-lg">{personDisplayName(person)}</SheetTitle>
+    114  99 │               <SheetDescription>
+    115 100 │                 {person.position ??
+    116     │ - → → → → → → → → t(
+    117     │ - → → → → → → → → → "organization.explorer.panel.description",
+    118     │ - → → → → → → → → → "Reporting·lines·and·teams",
+    119     │ - → → → → → → → → )}
+        101 │ + → → → → → → → → t("organization.explorer.panel.description",·"Reporting·lines·and·teams")}
+    120 102 │               </SheetDescription>
+    121 103 │             </div>
+    ······· │ 
+    123 105 │         </ActionPanelHeader>
+    124 106 │         <ActionPanelBody className="flex flex-col gap-5">
+    125     │ - → → → → <PanelSection
+    126     │ - → → → → → title={t("organization.explorer.panel.managers",·"Managers")}
+    127     │ - → → → → >
+        107 │ + → → → → <PanelSection·title={t("organization.explorer.panel.managers",·"Managers")}>
+    128 108 │             <PeopleList
+    129 109 │               empty={t("organization.explorer.panel.noManager", "No manager")}
+    ······· │ 
+    134 114 │                 managerId === person.primaryManagerId ? (
+    135 115 │                   <Badge className="shrink-0" variant="secondary">
+    136     │ - → → → → → → → → → {t(
+    137     │ - → → → → → → → → → → "organization.explorer.panel.primaryManager",
+    138     │ - → → → → → → → → → → "Primary·manager",
+    139     │ - → → → → → → → → → )}
+        116 │ + → → → → → → → → → {t("organization.explorer.panel.primaryManager",·"Primary·manager")}
+    140 117 │                   </Badge>
+    141 118 │                 ) : null
+    ······· │ 
+    143 120 │             />
+    144 121 │           </PanelSection>
+    145     │ - → → → → <PanelSection
+    146     │ - → → → → → title={t(
+    147     │ - → → → → → → "organization.explorer.panel.directReports",
+    148     │ - → → → → → → "Direct·reports",
+    149     │ - → → → → → )}
+    150     │ - → → → → >
+        122 │ + → → → → <PanelSection·title={t("organization.explorer.panel.directReports",·"Direct·reports")}>
+    151 123 │             <PeopleList
+    152     │ - → → → → → → empty={t(
+    153     │ - → → → → → → → "organization.explorer.panel.noDirectReports",
+    154     │ - → → → → → → → "No·direct·reports",
+    155     │ - → → → → → → )}
+        124 │ + → → → → → → empty={t("organization.explorer.panel.noDirectReports",·"No·direct·reports")}
+    156 125 │               ids={person.reportIds}
+    157 126 │               onSelect={onSelect}
+    ······· │ 
+    159 128 │             />
+    160 129 │           </PanelSection>
+    161     │ - → → → → <PanelSection
+    162     │ - → → → → → title={t(
+    163     │ - → → → → → → "organization.explorer.panel.teamMemberships",
+    164     │ - → → → → → → "Team·memberships",
+    165     │ - → → → → → )}
+    166     │ - → → → → >
+        130 │ + → → → → <PanelSection·title={t("organization.explorer.panel.teamMemberships",·"Team·memberships")}>
+    167 131 │             {person.teamIds.length > 0 ? (
+    168 132 │               <ul className="flex flex-col gap-1">
+    ······· │ 
+    170 134 │                   const name = teamNamesById.get(teamId) ?? teamId;
+    171 135 │                   return (
+    172     │ - → → → → → → → → → <li
+    173     │ - → → → → → → → → → → className="flex·items-center·gap-2·px-2·py-1·text-sm"
+    174     │ - → → → → → → → → → → key={teamId}
+    175     │ - → → → → → → → → → >
+    176     │ - → → → → → → → → → → <IconUsersGroup
+    177     │ - → → → → → → → → → → → aria-hidden="true"
+    178     │ - → → → → → → → → → → → className="size-4·text-muted-foreground"
+    179     │ - → → → → → → → → → → />
+        136 │ + → → → → → → → → → <li·className="flex·items-center·gap-2·px-2·py-1·text-sm"·key={teamId}>
+        137 │ + → → → → → → → → → → <IconUsersGroup·aria-hidden="true"·className="size-4·text-muted-foreground"·/>
+    180 138 │                       {canManage ? (
+    181 139 │                         <Link
+    ······· │ 
+    199 157 │             ) : (
+    200 158 │               <p className="px-2 text-sm text-muted-foreground">
+    201     │ - → → → → → → → {t(
+    202     │ - → → → → → → → → "organization.explorer.panel.noTeamMemberships",
+    203     │ - → → → → → → → → "No·team·memberships",
+    204     │ - → → → → → → → )}
+        159 │ + → → → → → → → {t("organization.explorer.panel.noTeamMemberships",·"No·team·memberships")}
+    205 160 │               </p>
+    206 161 │             )}
+    ······· │ 
+    241 196 │   }
+    242 197 │   
+    243     │ - function·PanelSection({
+    244     │ - → title,
+    245     │ - → children,
+    246     │ - }:·{
+    247     │ - → title:·string;
+    248     │ - → children:·React.ReactNode;
+    249     │ - })·{
+        198 │ + function·PanelSection({·title,·children·}:·{·title:·string;·children:·React.ReactNode·})·{
+    250 199 │     const headingId = useId();
+    251 200 │   
+    ······· │ 
+    276 225 │     renderMark?: (employeeId: string) => React.ReactNode;
+    277 226 │   }) {
+    278     │ - → if·(ids.length·===·0)
+    279     │ - → → return·<p·className="px-2·text-sm·text-muted-foreground">{empty}</p>;
+        227 │ + → if·(ids.length·===·0)·return·<p·className="px-2·text-sm·text-muted-foreground">{empty}</p>;
+    280 228 │   
+    281 229 │     return (
+  
+
+src\app\[locale]\(app)\organization\org-explorer-reporting-lines.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";
+      2   2 │   
+      3     │ - import·{
+      4     │ - → IconChevronDown,
+      5     │ - → IconChevronRight,
+      6     │ - → IconUsers,
+      7     │ - }·from·"@tabler/icons-react";
+          3 │ + import·{·IconChevronDown,·IconChevronRight,·IconUsers·}·from·"@tabler/icons-react";
+      8   4 │   import { useTranslate } from "@tolgee/react";
+      9   5 │   import {
+    ······· │ 
+     22  18 │   import { Button } from "@/components/ui/button";
+     23  19 │   import { cn } from "@/lib/utils";
+     24     │ - import·{
+     25     │ - → layoutReportingTree,
+     26     │ - → PERSON_CARD_HEIGHT,
+     27     │ - → PERSON_CARD_WIDTH,
+     28     │ - }·from·"./org-explorer-layout";
+         20 │ + import·{·layoutReportingTree,·PERSON_CARD_HEIGHT,·PERSON_CARD_WIDTH·}·from·"./org-explorer-layout";
+     29  21 │   import { PersonAvatar, PersonButton, TeamChips } from "./org-explorer-person";
+     30  22 │   import { personDisplayName } from "./org-explorer-person-name";
+    ······· │ 
+    117 109 │   
+    118 110 │     const centerRequest = props.centerRequest;
+    119     │ - → const·centerPosition·=·centerRequest
+    120     │ - → → ?·layout.positions.get(centerRequest.employeeId)
+    121     │ - → → :·undefined;
+        111 │ + → const·centerPosition·=·centerRequest·?·layout.positions.get(centerRequest.employeeId)·:·undefined;
+    122 112 │     const centerX = centerPosition?.x;
+    123 113 │     const centerY = centerPosition?.y;
+    124 114 │     const centeredNonce = useRef<number | null>(null);
+    125 115 │     useEffect(() => {
+    126     │ - → → if·(!centerRequest·||·centerX·===·undefined·||·centerY·===·undefined)
+    127     │ - → → → return;
+        116 │ + → → if·(!centerRequest·||·centerX·===·undefined·||·centerY·===·undefined)·return;
+    128 117 │       if (centeredNonce.current === centerRequest.nonce) return;
+    129 118 │       const frame = window.requestAnimationFrame(() => {
+    130 119 │         centeredNonce.current = centerRequest.nonce;
+    131     │ - → → → reactFlow.setCenter(
+    132     │ - → → → → centerX·+·PERSON_CARD_WIDTH·/·2,
+    133     │ - → → → → centerY·+·PERSON_CARD_HEIGHT·/·2,
+    134     │ - → → → → {
+    135     │ - → → → → → zoom:·FLOW_CENTER_ZOOM,
+    136     │ - → → → → → duration:·window.matchMedia?.("(prefers-reduced-motion:·reduce)")
+    137     │ - → → → → → → ?.matches
+    138     │ - → → → → → → ?·0
+    139     │ - → → → → → → :·240,
+    140     │ - → → → → },
+    141     │ - → → → );
+        120 │ + → → → reactFlow.setCenter(centerX·+·PERSON_CARD_WIDTH·/·2,·centerY·+·PERSON_CARD_HEIGHT·/·2,·{
+        121 │ + → → → → zoom:·FLOW_CENTER_ZOOM,
+        122 │ + → → → → duration:·window.matchMedia?.("(prefers-reduced-motion:·reduce)")?.matches·?·0·:·240,
+        123 │ + → → → });
+    142 124 │       });
+    143 125 │       return () => window.cancelAnimationFrame(frame);
+    ······· │ 
+    147 129 │       <div className="h-[clamp(28rem,62dvh,48rem)] overflow-hidden rounded-lg border bg-card">
+    148 130 │         <ReactFlow
+    149     │ - → → → → aria-label={t(
+    150     │ - → → → → → "organization.explorer.reportingLines",
+    151     │ - → → → → → "Reporting·lines",
+    152     │ - → → → → )}
+        131 │ + → → → → aria-label={t("organization.explorer.reportingLines",·"Reporting·lines")}
+    153 132 │           edges={edges}
+    154 133 │           elementsSelectable={false}
+    ······· │ 
+    191 170 │         style={{ width: PERSON_CARD_WIDTH, height: PERSON_CARD_HEIGHT }}
+    192 171 │       >
+    193     │ - → → → <Handle
+    194     │ - → → → → className="opacity-0"
+    195     │ - → → → → isConnectable={false}
+    196     │ - → → → → position={Position.Top}
+    197     │ - → → → → type="target"
+    198     │ - → → → />
+        172 │ + → → → <Handle·className="opacity-0"·isConnectable={false}·position={Position.Top}·type="target"·/>
+    199 173 │         <button
+    200 174 │           className="-m-1 flex min-w-0 items-center gap-3 rounded-md p-1 text-left outline-none transition hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
+    ······· │ 
+    204 178 │           <PersonAvatar person={person} size="md" />
+    205 179 │           <span className="flex min-w-0 flex-1 flex-col">
+    206     │ - → → → → → <span·className="truncate·text-sm·font-semibold">
+    207     │ - → → → → → → {personDisplayName(person)}
+    208     │ - → → → → → </span>
+        180 │ + → → → → → <span·className="truncate·text-sm·font-semibold">{personDisplayName(person)}</span>
+    209 181 │             {person.position ? (
+    210     │ - → → → → → → <span·className="truncate·text-xs·text-muted-foreground">
+    211     │ - → → → → → → → {person.position}
+    212     │ - → → → → → → </span>
+        182 │ + → → → → → → <span·className="truncate·text-xs·text-muted-foreground">{person.position}</span>
+    213 183 │             ) : null}
+    214 184 │           </span>
+    ······· │ 
+    325 295 │           style={{ paddingLeft: `${Math.min(depth, 4) * 0.75}rem` }}
+    326 296 │         >
+    327     │ - → → → → <PersonButton
+    328     │ - → → → → → className="flex-1"
+    329     │ - → → → → → onSelect={props.onSelect}
+    330     │ - → → → → → person={person}
+    331     │ - → → → → >
+        297 │ + → → → → <PersonButton·className="flex-1"·onSelect={props.onSelect}·person={person}>
+    332 298 │             {otherManagers > 0 ? (
+    333 299 │               <span className="shrink-0 text-xs text-muted-foreground">
+    ······· │ 
+    350 316 │           <ul className="mt-1 space-y-1">
+    351 317 │             {children.map((childId) => (
+    352     │ - → → → → → → <OutlineItem
+    353     │ - → → → → → → → {...props}
+    354     │ - → → → → → → → depth={depth·+·1}
+    355     │ - → → → → → → → employeeId={childId}
+    356     │ - → → → → → → → key={childId}
+    357     │ - → → → → → → />
+        318 │ + → → → → → → <OutlineItem·{...props}·depth={depth·+·1}·employeeId={childId}·key={childId}·/>
+    358 319 │             ))}
+    359 320 │           </ul>
+    ······· │ 
+    406 367 │           </div>
+    407 368 │           {canLoad ? (
+    408     │ - → → → → → <Button
+    409     │ - → → → → → → disabled={isLoading}
+    410     │ - → → → → → → onClick={onLoad}
+    411     │ - → → → → → → size="sm"
+    412     │ - → → → → → → type="button"
+    413     │ - → → → → → → variant="outline"
+    414     │ - → → → → → >
+        369 │ + → → → → → <Button·disabled={isLoading}·onClick={onLoad}·size="sm"·type="button"·variant="outline">
+    415 370 │               {t(
+    416 371 │                 "organization.explorer.showPeople",
+    ······· │ 
+    425 380 │             {people.map((person) => (
+    426 381 │               <li
+    427     │ - → → → → → → → className={cn(
+    428     │ - → → → → → → → → highlightOf(person.employeeId)·===·"dimmed"·&&·"opacity-40",
+    429     │ - → → → → → → → )}
+        382 │ + → → → → → → → className={cn(highlightOf(person.employeeId)·===·"dimmed"·&&·"opacity-40")}
+    430 383 │                 key={person.employeeId}
+    431 384 │               >
+  
+
+src\app\[locale]\(app)\organization\org-explorer-teams-view.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     42  42 │       );
+     43  43 │     }
+     44     │ - → const·noTeamTotal·=·props.complete
+     45     │ - → → ?·noTeam.length
+     46     │ - → → :·Math.max(props.noTeamCount,·noTeam.length);
+         44 │ + → const·noTeamTotal·=·props.complete·?·noTeam.length·:·Math.max(props.noTeamCount,·noTeam.length);
+     47  45 │   
+     48  46 │     return (
+    ······· │ 
+     51  49 │           <TeamCardView
+     52  50 │             card={card}
+     53     │ - → → → → → canLoad={
+     54     │ - → → → → → → !card.allMembersLoaded·&&·props.canLoadTeam(card.team.teamId)
+     55     │ - → → → → → }
+         51 │ + → → → → → canLoad={!card.allMembersLoaded·&&·props.canLoadTeam(card.team.teamId)}
+     56  52 │             isLoading={props.loadingTeamIds.has(card.team.teamId)}
+     57  53 │             key={card.team.teamId}
+    ······· │ 
+    104 100 │         description={card.team.description}
+    105 101 │         header={
+    106     │ - → → → → <div
+    107     │ - → → → → → className="mt-3·rounded-md·bg-muted/50·p-2"
+    108     │ - → → → → → data-testid="team-lead"
+    109     │ - → → → → >
+        102 │ + → → → → <div·className="mt-3·rounded-md·bg-muted/50·p-2"·data-testid="team-lead">
+    110 103 │             <p className="px-2 text-xs font-medium text-muted-foreground">
+    111 104 │               {t("organization.explorer.teamLead", "Team lead")}
+    ······· │ 
+    166 159 │             </h3>
+    167 160 │             {description ? (
+    168     │ - → → → → → → <p·className="mt-1·line-clamp-2·text-sm·text-muted-foreground">
+    169     │ - → → → → → → → {description}
+    170     │ - → → → → → → </p>
+        161 │ + → → → → → → <p·className="mt-1·line-clamp-2·text-sm·text-muted-foreground">{description}</p>
+    171 162 │             ) : null}
+    172 163 │           </div>
+  
+
+src\app\[locale]\(app)\organization\org-explorer-toolbar.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     15  15 │     CommandList,
+     16  16 │   } from "@/components/ui/command";
+     17     │ - import·{
+     18     │ - → Popover,
+     19     │ - → PopoverContent,
+     20     │ - → PopoverTrigger,
+     21     │ - }·from·"@/components/ui/popover";
+         17 │ + import·{·Popover,·PopoverContent,·PopoverTrigger·}·from·"@/components/ui/popover";
+     22  18 │   import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+     23  19 │   import { UserAvatar } from "@/components/user-avatar";
+    ······· │ 
+     25  21 │   import { searchOrgEmployees } from "./actions";
+     26  22 │   import { personDisplayName } from "./org-explorer-person-name";
+     27     │ - import·type·{
+     28     │ - → OrgExplorerSearchResult,
+     29     │ - → OrgExplorerTeam,
+     30     │ - }·from·"./org-explorer-types";
+         23 │ + import·type·{·OrgExplorerSearchResult,·OrgExplorerTeam·}·from·"./org-explorer-types";
+     31  24 │   import type { OrgExplorerView } from "./org-explorer-url";
+     32  25 │   
+    ······· │ 
+     53  46 │           {t("organization.explorer.reportingLines", "Reporting lines")}
+     54  47 │         </ToggleGroupItem>
+     55     │ - → → → <ToggleGroupItem·value="teams">
+     56     │ - → → → → {t("organization.explorer.teams",·"Teams")}
+     57     │ - → → → </ToggleGroupItem>
+         48 │ + → → → <ToggleGroupItem·value="teams">{t("organization.explorer.teams",·"Teams")}</ToggleGroupItem>
+     58  49 │       </ToggleGroup>
+     59  50 │     );
+    ······· │ 
+     81  72 │               {t("organization.explorer.filterByTeam", "Filter by team")}
+     82  73 │               {selected.size > 0 ? (
+     83     │ - → → → → → → → <Badge
+     84     │ - → → → → → → → → className="h-5·min-w-5·justify-center·px-1.5"
+     85     │ - → → → → → → → → variant="secondary"
+     86     │ - → → → → → → → >
+         74 │ + → → → → → → → <Badge·className="h-5·min-w-5·justify-center·px-1.5"·variant="secondary">
+     87  75 │                   {selected.size}
+     88  76 │                 </Badge>
+    ······· │ 
+     92  80 │           <PopoverContent align="start" className="w-72 p-0">
+     93  81 │             <Command>
+     94     │ - → → → → → → <CommandInput
+     95     │ - → → → → → → → placeholder={t(
+     96     │ - → → → → → → → → "organization.explorer.searchTeams",
+     97     │ - → → → → → → → → "Search·teams…",
+     98     │ - → → → → → → → )}
+     99     │ - → → → → → → />
+         82 │ + → → → → → → <CommandInput·placeholder={t("organization.explorer.searchTeams",·"Search·teams…")}·/>
+    100  83 │               <CommandList>
+    101  84 │                 <CommandEmpty>
+    ······· │ 
+    120 103 │                         <IconCheck
+    121 104 │                           aria-hidden="true"
+    122     │ - → → → → → → → → → → → → className={cn(
+    123     │ - → → → → → → → → → → → → → "size-4",
+    124     │ - → → → → → → → → → → → → → isSelected·?·"opacity-100"·:·"opacity-0",
+    125     │ - → → → → → → → → → → → → )}
+        105 │ + → → → → → → → → → → → → className={cn("size-4",·isSelected·?·"opacity-100"·:·"opacity-0")}
+    126 106 │                         />
+    127 107 │                         <span className="truncate">{team.name}</span>
+    ······· │ 
+    150 130 │   
+    151 131 │   /** Searches the current roster by name, email or position. */
+    152     │ - export·function·EmployeeSearch({
+    153     │ - → onSelect,
+    154     │ - }:·{
+    155     │ - → onSelect:·(employeeId:·string)·=>·void;
+    156     │ - })·{
+        132 │ + export·function·EmployeeSearch({·onSelect·}:·{·onSelect:·(employeeId:·string)·=>·void·})·{
+    157 133 │     const { t } = useTranslate();
+    158 134 │     const [query, setQuery] = useState("");
+    ······· │ 
+    192 168 │         setFailed(true);
+    193 169 │         toast.error(
+    194     │ - → → → → result.error·||
+    195     │ - → → → → → t(
+    196     │ - → → → → → → "organization.orgChart.searchFailed",
+    197     │ - → → → → → → "Could·not·search·employees.",
+    198     │ - → → → → → ),
+        170 │ + → → → → result.error·||·t("organization.orgChart.searchFailed",·"Could·not·search·employees."),
+    199 171 │         );
+    200 172 │         setResults([]);
+    ······· │ 
+    239 211 │             void handleChange(event.target.value);
+    240 212 │           }}
+    241     │ - → → → → placeholder={t(
+    242     │ - → → → → → "organization.orgChart.searchPlaceholder",
+    243     │ - → → → → → "Search·employees…",
+    244     │ - → → → → )}
+        213 │ + → → → → placeholder={t("organization.orgChart.searchPlaceholder",·"Search·employees…")}
+    245 214 │           value={query}
+    246 215 │         />
+    ······· │ 
+    248 217 │           <div className="absolute right-0 left-0 z-20 mt-2 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg">
+    249 218 │             {isSearching ? (
+    250     │ - → → → → → → <p
+    251     │ - → → → → → → → className="px-3·py-2·text-sm·text-muted-foreground"
+    252     │ - → → → → → → → role="status"
+    253     │ - → → → → → → >
+        219 │ + → → → → → → <p·className="px-3·py-2·text-sm·text-muted-foreground"·role="status">
+    254 220 │                 {t("organization.orgChart.searching", "Searching…")}
+    255 221 │               </p>
+    ······· │ 
+    275 241 │                   <span className="flex min-w-0 flex-1 flex-col">
+    276 242 │                     <span className="truncate font-medium">{displayName}</span>
+    277     │ - → → → → → → → → → <span·className="truncate·text-muted-foreground">
+    278     │ - → → → → → → → → → → {result.email}
+    279     │ - → → → → → → → → → </span>
+        243 │ + → → → → → → → → → <span·className="truncate·text-muted-foreground">{result.email}</span>
+    280 244 │                   </span>
+    281 245 │                 </button>
+    ······· │ 
+    284 248 │             {failed ? (
+    285 249 │               <p role="alert" className="px-3 py-2 text-sm">
+    286     │ - → → → → → → → {t(
+    287     │ - → → → → → → → → "organization.orgChart.searchFailed",
+    288     │ - → → → → → → → → "Could·not·search·employees.",
+    289     │ - → → → → → → → )}
+        250 │ + → → → → → → → {t("organization.orgChart.searchFailed",·"Could·not·search·employees.")}
+    290 251 │               </p>
+    291 252 │             ) : null}
+  
+
+src\app\[locale]\(app)\organization\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    20 20 │     if (!result.success) {
+    21 21 │       if (result.code === "NotFoundError") {
+    22    │ - → → → return·(
+    23    │ - → → → → <NoEmployeeError
+    24    │ - → → → → → feature={t("organization.feature",·"explore·your·organization")}
+    25    │ - → → → → />
+    26    │ - → → → );
+       22 │ + → → → return·<NoEmployeeError·feature={t("organization.feature",·"explore·your·organization")}·/>;
+    27 23 │       }
+    28 24 │       return (
+    29 25 │         <Alert variant="destructive" className="max-w-xl">
+    30    │ - → → → → <AlertTitle>
+    31    │ - → → → → → {t("organization.error.title",·"Unable·to·load·organization")}
+    32    │ - → → → → </AlertTitle>
+       26 │ + → → → → <AlertTitle>{t("organization.error.title",·"Unable·to·load·organization")}</AlertTitle>
+    33 27 │           <AlertDescription className="space-y-3">
+    34 28 │             <p>
+  
+
+src\app\[locale]\(app)\organization\use-org-explorer-people.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     39  39 │     const { t } = useTranslate();
+     40  40 │     const generation = useRef(0);
+     41     │ - → const·[failedLoads,·setFailedLoads]·=·useState<
+     42     │ - → → ReadonlyMap<string,·()·=>·Promise<void>>
+     43     │ - → >(()·=>·new·Map());
+         41 │ + → const·[failedLoads,·setFailedLoads]·=·useState<ReadonlyMap<string,·()·=>·Promise<void>>>(
+         42 │ + → → ()·=>·new·Map(),
+         43 │ + → );
+     44  44 │     const [isRetrying, setIsRetrying] = useState(false);
+     45     │ - → const·[summary,·setSummary]·=·useState<OrgExplorerSummary>(()·=>
+     46     │ - → → summaryOf(initialData),
+     47     │ - → );
+     48     │ - → const·[peopleById,·setPeopleById]·=·useState(()·=>
+     49     │ - → → toPeopleMap(initialData.people),
+     50     │ - → );
+         45 │ + → const·[summary,·setSummary]·=·useState<OrgExplorerSummary>(()·=>·summaryOf(initialData));
+         46 │ + → const·[peopleById,·setPeopleById]·=·useState(()·=>·toPeopleMap(initialData.people));
+     51  47 │     // The latest people between renders, so loads that finish one after another all merge.
+     52  48 │     const peopleRef = useRef(peopleById);
+    ······· │ 
+     63  59 │       [],
+     64  60 │     );
+     65     │ - → const·[unknownIds,·setUnknownIds]·=·useState<ReadonlySet<string>>(
+     66     │ - → → ()·=>·new·Set(),
+     67     │ - → );
+     68     │ - → const·[loadingIds,·setLoadingIds]·=·useState<ReadonlySet<string>>(
+     69     │ - → → ()·=>·new·Set(),
+     70     │ - → );
+     71     │ - → const·[loadingTeamIds,·setLoadingTeamIds]·=·useState<ReadonlySet<string>>(
+     72     │ - → → ()·=>·new·Set(),
+     73     │ - → );
+     74     │ - → const·[loadingGroups,·setLoadingGroups]·=·useState<
+     75     │ - → → ReadonlySet<OrgExplorerGroup>
+     76     │ - → >(()·=>·new·Set());
+     77     │ - → const·[teamOffsets,·setTeamOffsets]·=·useState<NextOffsets<string>>(
+     78     │ - → → ()·=>·new·Map(),
+     79     │ - → );
+     80     │ - → const·[groupOffsets,·setGroupOffsets]·=·useState<
+     81     │ - → → NextOffsets<OrgExplorerGroup>
+     82     │ - → >(()·=>·new·Map());
+         61 │ + → const·[unknownIds,·setUnknownIds]·=·useState<ReadonlySet<string>>(()·=>·new·Set());
+         62 │ + → const·[loadingIds,·setLoadingIds]·=·useState<ReadonlySet<string>>(()·=>·new·Set());
+         63 │ + → const·[loadingTeamIds,·setLoadingTeamIds]·=·useState<ReadonlySet<string>>(()·=>·new·Set());
+         64 │ + → const·[loadingGroups,·setLoadingGroups]·=·useState<ReadonlySet<OrgExplorerGroup>>(
+         65 │ + → → ()·=>·new·Set(),
+         66 │ + → );
+         67 │ + → const·[teamOffsets,·setTeamOffsets]·=·useState<NextOffsets<string>>(()·=>·new·Map());
+         68 │ + → const·[groupOffsets,·setGroupOffsets]·=·useState<NextOffsets<OrgExplorerGroup>>(()·=>·new·Map());
+     83  69 │   
+     84  70 │     function showFailure(message: string | undefined) {
+     85     │ - → → toast.error(
+     86     │ - → → → message·||
+     87     │ - → → → → t("organization.explorer.loadFailed",·"Could·not·load·people."),
+     88     │ - → → );
+         71 │ + → → toast.error(message·||·t("organization.explorer.loadFailed",·"Could·not·load·people."));
+     89  72 │     }
+     90  73 │   
+    ······· │ 
+    132 115 │       if (isRetrying) return;
+    133 116 │       setIsRetrying(true);
+    134     │ - → → await·Promise.all(
+    135     │ - → → → [...failedLoads].map(([key,·read])·=>·settleRead(key,·read)),
+    136     │ - → → ).finally(()·=>·setIsRetrying(false));
+        117 │ + → → await·Promise.all([...failedLoads].map(([key,·read])·=>·settleRead(key,·read))).finally(()·=>
+        118 │ + → → → setIsRetrying(false),
+        119 │ + → → );
+    137 120 │     }
+    138 121 │   
+    ······· │ 
+    141 124 │      * A complete organization has everyone already.
+    142 125 │      */
+    143     │ - → async·function·loadPeople(
+    144     │ - → → employeeIds:·string[],
+    145     │ - → → options?:·{·withPaths:·true·},
+    146     │ - → )·{
+        126 │ + → async·function·loadPeople(employeeIds:·string[],·options?:·{·withPaths:·true·})·{
+    147 127 │       if (summary.complete) return;
+    148 128 │       const unique = [...new Set(employeeIds)];
+    149 129 │       const waiting = unique.flatMap((id) => pendingLoads.current.get(id) ?? []);
+    150 130 │       const missing = unique.filter(
+    151     │ - → → → (id)·=>
+    152     │ - → → → → !peopleRef.current.has(id)·&&
+    153     │ - → → → → !pendingLoads.current.has(id)·&&
+    154     │ - → → → → !unknownIds.has(id),
+        131 │ + → → → (id)·=>·!peopleRef.current.has(id)·&&·!pendingLoads.current.has(id)·&&·!unknownIds.has(id),
+    155 132 │       );
+    156 133 │       if (missing.length > 0) {
+    ······· │ 
+    166 143 │       const load = fetchPeopleBatches(missing, options).finally(() => {
+    167 144 │         for (const id of missing) {
+    168     │ - → → → → if·(pendingLoads.current.get(id)·===·load)
+    169     │ - → → → → → pendingLoads.current.delete(id);
+        145 │ + → → → → if·(pendingLoads.current.get(id)·===·load)·pendingLoads.current.delete(id);
+    170 146 │         }
+    171 147 │       });
+    ······· │ 
+    173 149 │     }
+    174 150 │   
+    175     │ - → async·function·fetchPeopleBatches(
+    176     │ - → → missing:·string[],
+    177     │ - → → options?:·{·withPaths:·true·},
+    178     │ - → )·{
+        151 │ + → async·function·fetchPeopleBatches(missing:·string[],·options?:·{·withPaths:·true·})·{
+    179 152 │       const version = generation.current;
+    180 153 │       const chunks: string[][] = [];
+    181     │ - → → for·(
+    182     │ - → → → let·start·=·0;
+    183     │ - → → → start·<·missing.length;
+    184     │ - → → → start·+=·ORG_EXPLORER_BATCH_LIMIT
+    185     │ - → → )·{
+        154 │ + → → for·(let·start·=·0;·start·<·missing.length;·start·+=·ORG_EXPLORER_BATCH_LIMIT)·{
+    186 155 │         chunks.push(missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT));
+    187 156 │       }
+    ······· │ 
+    191 160 │         await readPeople(
+    192 161 │           `people:${chunk.join(",")}`,
+    193     │ - → → → → ()·=>
+    194     │ - → → → → → options
+    195     │ - → → → → → → ?·getOrgExplorerPeople(chunk,·options)
+    196     │ - → → → → → → :·getOrgExplorerPeople(chunk),
+        162 │ + → → → → ()·=>·(options·?·getOrgExplorerPeople(chunk,·options)·:·getOrgExplorerPeople(chunk)),
+    197 163 │           (incoming) => {
+    198 164 │             mergePeople(incoming);
+    199 165 │             // Nobody comes back for an id that is not on the current roster.
+    200 166 │             const notFound = chunk.filter((id) => !peopleRef.current.has(id));
+    201     │ - → → → → → if·(notFound.length·>·0)
+    202     │ - → → → → → → setUnknownIds((current)·=>·withIds(current,·notFound));
+        167 │ + → → → → → if·(notFound.length·>·0)·setUnknownIds((current)·=>·withIds(current,·notFound));
+    203 168 │           },
+    204 169 │         );
+    ······· │ 
+    209 174 │     function loadLineReports(employeeId: string) {
+    210 175 │       const missing =
+    211     │ - → → → peopleRef.current
+    212     │ - → → → → .get(employeeId)
+    213     │ - → → → → ?.lineReportIds.filter((id)·=>·!peopleRef.current.has(id))·??·[];
+        176 │ + → → → peopleRef.current.get(employeeId)?.lineReportIds.filter((id)·=>·!peopleRef.current.has(id))·??
+        177 │ + → → → [];
+    214 178 │       if (summary.complete || missing.length === 0) return;
+    215 179 │       setLoadingIds((current) => withIds(current, [employeeId]));
+    ······· │ 
+    223 187 │       const offset = teamOffsets.get(teamId);
+    224 188 │       const key = `team:${teamId}`;
+    225     │ - → → if·(summary.complete·||·offset·===·null·||·pendingPages.current.has(key))
+    226     │ - → → → return;
+        189 │ + → → if·(summary.complete·||·offset·===·null·||·pendingPages.current.has(key))·return;
+    227 190 │       pendingPages.current.add(key);
+    228 191 │       setLoadingTeamIds((current) => withIds(current, [teamId]));
+    ······· │ 
+    232 195 │         (data) => {
+    233 196 │           mergePeople(data.people);
+    234     │ - → → → → setTeamOffsets((current)·=>
+    235     │ - → → → → → new·Map(current).set(teamId,·data.nextOffset),
+    236     │ - → → → → );
+        197 │ + → → → → setTeamOffsets((current)·=>·new·Map(current).set(teamId,·data.nextOffset));
+    237 198 │         },
+    238 199 │       );
+    ······· │ 
+    252 213 │       const offset = groupOffsets.get(group);
+    253 214 │       const key = `group:${group}`;
+  70 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(
+    171     │ - → → (entry)·=>·({
+    172     │ - → → → id:·`settings-${entry.id}`,
+    173     │ - → → → href:·entry.href,
+    174     │ - → → → titleKey:·entry.titleKey,
+    175     │ - → → → titleDefault:·entry.titleDefault,
+    176     │ - → → }),
+    177     │ - → ),
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({
+        171 │ + → → id:·`settings-${entry.id}`,
+        172 │ + → → href:·entry.href,
+        173 │ + → → titleKey:·entry.titleKey,
+        174 │ + → → titleDefault:·entry.titleDefault,
+        175 │ + → })),
+    178 176 │     {
+    179 177 │       id: "settings",
+    ······· │ 
+    192 190 │   
+    193 191 │   export function normalizeAppPath(pathname: string): string {
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname
+    195     │ - → → .split("/")
+    196     │ - → → .filter(Boolean);
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],
+    199     │ - → )
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])
+    200 194 │       ? remainingSegments
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);
+    ······· │ 
+    249 243 │       [...APP_ROUTE_METADATA]
+    250 244 │         .sort((left, right) => right.href.length - left.href.length)
+    251     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??
+    252     │ - → → UNKNOWN_ROUTE_METADATA
+        245 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA
+    253 246 │     );
+    254 247 │   }
+  
+
+Checked 11 files in 15ms. No fixes applied.
+Found 10 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-4d4f372e-
+  │ 9d60ee3defb0542c\apps\webapp
+

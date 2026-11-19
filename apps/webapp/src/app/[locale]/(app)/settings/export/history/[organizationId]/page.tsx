@@ -44,6 +44,7 @@ async function OrganizationExportHistoryContent({ params }: OrganizationExportHi
 function OrganizationExportHistoryLoading() {
 	return (
 		<SettingsPageSkeleton
+			measure
 			label={{
 				labelKey: "common.loadingRegions.dataExportSettings",
 				labelDefault: "Loading data export settings",

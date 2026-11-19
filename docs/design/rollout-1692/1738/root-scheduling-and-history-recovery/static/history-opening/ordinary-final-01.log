@@ -1,0 +1,797 @@
+src\app\[locale]\(app)\team\team-directory-context.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·NextIntlClientProvider·}·from·"next-intl";␍
+      6     │ - import·{·Activity,·type·ComponentProps·}·from·"react";␍
+      7     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      8     │ - import·{·TeamDirectory·}·from·"@/app/[locale]/(app)/team/team-directory";␍
+      9     │ - import·{·OrganizationContextProvider·}·from·"@/components/providers/organization-context-provider";␍
+     10     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+     11     │ - ␍
+     12     │ - const·boundary·=·vi.hoisted(()·=>·({␍
+     13     │ - → fetch:·vi.fn(),␍
+     14     │ - → current:·vi.fn(),␍
+     15     │ - → managed:·vi.fn(),␍
+     16     │ - → presence:·vi.fn(),␍
+     17     │ - → refresh:·vi.fn(),␍
+     18     │ - → replace:·vi.fn(),␍
+     19     │ - → section:·vi.fn(),␍
+     20     │ - → session:·{␍
+     21     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     22     │ - → → isPending:·false,␍
+     23     │ - → },␍
+     24     │ - }));␍
+     25     │ - vi.mock("@/lib/auth-client",·async·()·=>·{␍
+     26     │ - → const·{·useSyncExternalStore·}·=·await·import("react");␍
+     27     │ - → return·{␍
+     28     │ - → → useSession:·()·=>·{␍
+     29     │ - → → → useSyncExternalStore(␍
+     30     │ - → → → → ()·=>·()·=>·{},␍
+     31     │ - → → → → ()·=>·JSON.stringify(boundary.session),␍
+     32     │ - → → → );␍
+     33     │ - → → → return·boundary.session;␍
+     34     │ - → → },␍
+     35     │ - → → authClient:·{·$store:·{·atoms:·{·session:·{·subscribe:·()·=>·()·=>·{}·}·}·}·},␍
+     36     │ - → };␍
+     37     │ - });␍
+     38     │ - vi.mock("@/app/[locale]/(app)/team/actions",·()·=>·({␍
+     39     │ - → getCurrentEmployee:·boundary.current,␍
+     40     │ - → getManagedEmployees:·boundary.managed,␍
+     41     │ - }));␍
+     42     │ - vi.mock("@/app/[locale]/(app)/settings/employees/employee-clock-status.actions",·()·=>·({␍
+     43     │ - → getEmployeeClockStatuses:·boundary.presence,␍
+     44     │ - }));␍
+     45     │ - vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({␍
+     46     │ - → getEmployeeWorkBalanceSectionAction:·boundary.section,␍
+     47     │ - → cancelBalanceAdjustmentAction:·vi.fn(),␍
+     48     │ - → recordOvertimePayoutAction:·vi.fn(),␍
+     49     │ - → setOpeningBalanceAction:·vi.fn(),␍
+     50     │ - }));␍
+     51     │ - vi.mock("@/app/[locale]/(app)/time-tracking/actions",·()·=>·({␍
+     52     │ - → addBreakToActiveSession:·vi.fn(),␍
+     53     │ - → resumeBreakInProgress:·vi.fn(),␍
+     54     │ - → startBreakInProgress:·vi.fn(),␍
+     55     │ - → updateTimeEntryNotes:·vi.fn(),␍
+     56     │ - }));␍
+     57     │ - vi.mock("@/navigation",·()·=>·({␍
+     58     │ - → useRouter:·()·=>·({·refresh:·boundary.refresh,·replace:·boundary.replace·}),␍
+     59     │ - → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+     60     │ - }));␍
+     61     │ - vi.mock("@/tolgee/server",·()·=>·({␍
+     62     │ - → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,␍
+     63     │ - }));␍
+     64     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     65     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     66     │ - }));␍
+     67     │ - vi.mock("@/lib/navigation/locale-redirect",·()·=>·({·redirectWithLocale:·vi.fn()·}));␍
+     68     │ - ␍
+     69     │ - function·response()·{␍
+     70     │ - → return·new·Response(␍
+     71     │ - → → JSON.stringify({␍
+     72     │ - → → → user:·{·id:·"actor-a"·},␍
+     73     │ - → → → session:·{·activeOrganizationId:·"org-a"·},␍
+     74     │ - → → → employee:·{·employeeId:·"manager-a",·organizationId:·"org-a",·role:·"manager"·},␍
+     75     │ - → → → organizationSettings:·null,␍
+     76     │ - → → }),␍
+     77     │ - → );␍
+     78     │ - }␍
+     79     │ - const·clients:·QueryClient[]·=·[];␍
+     80     │ - beforeEach(()·=>·{␍
+     81     │ - → vi.clearAllMocks();␍
+     82     │ - → boundary.session·=·{␍
+     83     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     84     │ - → → isPending:·false,␍
+     85     │ - → };␍
+     86     │ - → boundary.fetch.mockReset().mockImplementation(async·()·=>·response());␍
+     87     │ - → vi.stubGlobal("fetch",·boundary.fetch);␍
+     88     │ - → boundary.current.mockResolvedValue({␍
+     89     │ - → → id:·"manager-a",␍
+     90     │ - → → userId:·"actor-a",␍
+     91     │ - → → organizationId:·"org-a",␍
+     92     │ - → → role:·"manager",␍
+     93     │ - → });␍
+     94     │ - → boundary.managed.mockImplementation(async·()·=>·({␍
+     95     │ - → → success:·true,␍
+     96     │ - → → data:·[␍
+     97     │ - → → → {␍
+     98     │ - → → → → id:·"report-a",␍
+     99     │ - → → → → role:·"employee",␍
+    100     │ - → → → → isFormer:·false,␍
+    101     │ - → → → → user:·{␍
+    102     │ - → → → → → id:·"person-a",␍
+    103     │ - → → → → → name:·"Admitted·Synthetic·Employee",␍
+    104     │ - → → → → → email:·"synthetic@example.test",␍
+    105     │ - → → → → → image:·null,␍
+    106     │ - → → → → },␍
+    107     │ - → → → → timeBalance:·null,␍
+    108     │ - → → → → team:·null,␍
+    109     │ - → → → },␍
+    110     │ - → → ],␍
+    111     │ - → }));␍
+    112     │ - → boundary.presence.mockResolvedValue({·success:·true,·data:·{}·});␍
+    113     │ - });␍
+    114     │ - afterEach(()·=>·{␍
+    115     │ - → cleanup();␍
+    116     │ - → for·(const·client·of·clients)·client.clear();␍
+    117     │ - → clients.length·=·0;␍
+    118     │ - → vi.unstubAllGlobals();␍
+    119     │ - → vi.restoreAllMocks();␍
+    120     │ - });␍
+    121     │ - async·function·mount()·{␍
+    122     │ - → const·client·=·new·QueryClient({␍
+    123     │ - → → defaultOptions:·{␍
+    124     │ - → → → queries:·{·retry:·false,·staleTime:·60_000,·refetchOnWindowFocus:·false,·retryDelay:·0·},␍
+    125     │ - → → },␍
+    126     │ - → });␍
+    127     │ - → clients.push(client);␍
+    128     │ - → const·tree·=·async·()·=>·(␍
+    129     │ - → → <QueryClientProvider·client={client}>␍
+    130     │ - → → → <NextIntlClientProvider·locale="en"·messages={{}}·timeZone="Europe/Berlin">␍
+    131     │ - → → → → <UserPreferencesProvider·timezone="Europe/Berlin">␍
+    132     │ - → → → → → <OrganizationContextProvider·initialContext={null}>␍
+    133     │ - → → → → → → {await·TeamDirectory({·searchParams:·Promise.resolve({})·})}␍
+    134     │ - → → → → → </OrganizationContextProvider>␍
+    135     │ - → → → → </UserPreferencesProvider>␍
+    136     │ - → → → </NextIntlClientProvider>␍
+    137     │ - → → </QueryClientProvider>␍
+    138     │ - → );␍
+    139     │ - → const·view·=·render(await·tree());␍
+    140     │ - → //·Model·a·successful·RSC·refresh·while·preserving·the·actual·shared·provider·and·QueryClient.␍
+    141     │ - → boundary.refresh.mockImplementation(async·()·=>·view.rerender(await·tree()));␍
+    142     │ - → return·{·client,·view,·tree·};␍
+    143     │ - }␍
+    144     │ - it("healthy·real·provider·admits·the·public·team·directory·and·its·employee·link",·async·()·=>·{␍
+    145     │ - → const·errors·=·vi.spyOn(console,·"error");␍
+    146     │ - → await·mount();␍
+    147     │ - → expect(await·screen.findByRole("link",·{·name:·"Admitted·Synthetic·Employee"·})).toBeTruthy();␍
+    148     │ - → expect(boundary.fetch).toHaveBeenCalledTimes(1);␍
+    149     │ - → expect(boundary.fetch.mock.calls[0][0]).toBe("/api/auth/context");␍
+    150     │ - → expect(␍
+  562 more lines truncated
+  
+
+src\app\[locale]\(app)\team\team-members-list.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ReactNode·}·from·"react";␍
+      5     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·type·{·ManagedEmployee·}·from·"./team-members-data";␍
+      7     │ - import·{·TeamMembersList·}·from·"./team-members-list";␍
+      8     │ - ␍
+      9     │ - const·{·getActivityMock,·replaceMock,·useBalanceAdjustmentSectionMock·}·=·vi.hoisted(()·=>·({␍
+     10     │ - → getActivityMock:·vi.fn(),␍
+     11     │ - → replaceMock:·vi.fn(),␍
+     12     │ - → useBalanceAdjustmentSectionMock:·vi.fn(),␍
+     13     │ - }));␍
+     14     │ - ␍
+     15     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     16     │ - → useTolgee:·()·=>·({·getLanguage:·()·=>·"en-GB"·}),␍
+     17     │ - → useTranslate:·()·=>·({␍
+     18     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·string·|·number>)·=>␍
+     19     │ - → → → Object.entries(params·??·{}).reduce(␍
+     20     │ - → → → → (label,·[key,·value])·=>·label.replace(`{${key}}`,·String(value)),␍
+     21     │ - → → → → fallback,␍
+     22     │ - → → → ),␍
+     23     │ - → }),␍
+     24     │ - }));␍
+     25     │ - vi.mock("@/components/employee-activity-text",·()·=>·({␍
+     26     │ - → EmployeeActivityText:·({␍
+     27     │ - → → lastActivityAt,␍
+     28     │ - → → lastActivityUtcOffsetMinutes,␍
+     29     │ - → }:·{␍
+     30     │ - → → lastActivityAt:·string·|·null;␍
+     31     │ - → → lastActivityUtcOffsetMinutes:·number·|·null;␍
+     32     │ - → })·=>␍
+     33     │ - → → lastActivityAt·===·null·||·lastActivityUtcOffsetMinutes·===·null·?·null·:·(␍
+     34     │ - → → → <span>␍
+     35     │ - → → → → activity:{lastActivityAt}:{lastActivityUtcOffsetMinutes}␍
+     36     │ - → → → </span>␍
+     37     │ - → → ),␍
+     38     │ - }));␍
+     39     │ - vi.mock("@/lib/query",·()·=>·({␍
+     40     │ - → useEmployeeClockStatuses:·()·=>·({␍
+     41     │ - → → getStatus:·()·=>·"unknown",␍
+     42     │ - → → getActivity:·getActivityMock,␍
+     43     │ - → → getBreak:·()·=>·null,␍
+     44     │ - → }),␍
+     45     │ - }));␍
+     46     │ - vi.mock("@/components/settings/work-balance/use-employee-work-balance",·()·=>·({␍
+     47     │ - → useBalanceAdjustmentSection:·useBalanceAdjustmentSectionMock,␍
+     48     │ - → isRefusal:·()·=>·false,␍
+     49     │ - }));␍
+     50     │ - vi.mock("@/hooks/use-display-context",·()·=>·({␍
+     51     │ - → useDisplayContext:·()·=>·({·locale:·"en-GB",·timezone:·"UTC",·timeFormat:·"24h"·}),␍
+     52     │ - }));␍
+     53     │ - vi.mock("@/navigation",·()·=>·({␍
+     54     │ - → useRouter:·()·=>·({·replace:·replaceMock·}),␍
+     55     │ - → Link:·({·href,·children,·...props·}:·{·href:·string;·children:·ReactNode·})·=>·(␍
+     56     │ - → → <a·href={href}·{...props}>␍
+     57     │ - → → → {children}␍
+     58     │ - → → </a>␍
+     59     │ - → ),␍
+     60     │ - }));␍
+     61     │ - ␍
+     62     │ - const·employee·=·(overrides:·Partial<ManagedEmployee>):·ManagedEmployee·=>·({␍
+     63     │ - → id:·"employee-1",␍
+     64     │ - → userId:·"user-1",␍
+     65     │ - → firstName:·"Ada",␍
+     66     │ - → lastName:·"Lovelace",␍
+     67     │ - → pronouns:·null,␍
+     68     │ - → position:·"Manager",␍
+     69     │ - → role:·"manager",␍
+     70     │ - → isActive:·true,␍
+     71     │ - → isFormer:·false,␍
+     72     │ - → isPrimaryManager:·false,␍
+     73     │ - → isCurrentUser:·false,␍
+     74     │ - → timeBalance:·null,␍
+     75     │ - → user:·{␍
+     76     │ - → → id:·"user-1",␍
+     77     │ - → → firstName:·"Ada",␍
+     78     │ - → → lastName:·"Lovelace",␍
+     79     │ - → → name:·"Ada·Lovelace",␍
+     80     │ - → → email:·"ada@example.com",␍
+     81     │ - → → image:·null,␍
+     82     │ - → },␍
+     83     │ - → team:·null,␍
+     84     │ - → ...overrides,␍
+     85     │ - });␍
+     86     │ - ␍
+     87     │ - const·timeBalance·=·(employeeId:·string,·actualMinutes:·number,·requiredMinutes:·number)·=>·({␍
+     88     │ - → employeeId,␍
+     89     │ - → organizationId:·"org-1",␍
+     90     │ - → actualMinutes,␍
+     91     │ - → requiredMinutes,␍
+     92     │ - → balanceMinutes:·actualMinutes·-·requiredMinutes,␍
+     93     │ - → computedFromDate:·"2026-01-01",␍
+     94     │ - → computedThroughDate:·"2026-05-17",␍
+     95     │ - → computedAt:·new·Date("2026-05-18T00:00:00.000Z"),␍
+     96     │ - });␍
+     97     │ - ␍
+     98     │ - describe("TeamMembersList",·()·=>·{␍
+     99     │ - → beforeEach(()·=>·{␍
+    100     │ - → → getActivityMock.mockReset().mockReturnValue(null);␍
+    101     │ - → → replaceMock.mockReset();␍
+    102     │ - → → useBalanceAdjustmentSectionMock.mockReset().mockReturnValue({␍
+    103     │ - → → → isLoading:·false,␍
+    104     │ - → → → isError:·false,␍
+    105     │ - → → → error:·null,␍
+    106     │ - → → → data:·{␍
+    107     │ - → → → → canManage:·false,␍
+    108     │ - → → → → adjustments:·[␍
+    109     │ - → → → → → {␍
+    110     │ - → → → → → → id:·"adjustment-1",␍
+    111     │ - → → → → → → kind:·"overtime_payout",␍
+    112     │ - → → → → → → day:·"2026-10-08",␍
+    113     │ - → → → → → → minutes:·-300,␍
+    114     │ - → → → → → → reason:·"Paid·with·the·October·payroll",␍
+    115     │ - → → → → → → recordedAt:·"2026-10-09T08:00:00.000Z",␍
+    116     │ - → → → → → → recordedBy:·{·userId:·"user-admin",·name:·"Owner"·},␍
+    117     │ - → → → → → → cancellation:·null,␍
+    118     │ - → → → → → },␍
+    119     │ - → → → → ],␍
+    120     │ - → → → },␍
+    121     │ - → → });␍
+    122     │ - → });␍
+    123     │ - ␍
+    124     │ - → it("keeps·scope·controls·available·when·the·managed·scope·is·empty",·()·=>·{␍
+    125     │ - → → render(<TeamMembersList·employees={[]}·showFormer·/>);␍
+    126     │ - → → expect(screen.getByRole("textbox",·{·name:·"Search·team·members"·})).toBeTruthy();␍
+    127     │ - → → fireEvent.click(screen.getByRole("switch",·{·name:·"Show·former·employees"·}));␍
+    128     │ - → → expect(replaceMock).toHaveBeenCalledWith("/team",·{·scroll:·false·});␍
+    129     │ - → → expect(screen.getByRole("link",·{·name:·"Go·to·Employee·Settings"·}).getAttribute("href")).toBe(␍
+    130     │ - → → → "/settings/employees",␍
+    131     │ - → → );␍
+    132     │ - → → expect(screen.getByText("No·team·members·yet")).toBeTruthy();␍
+    133     │ - → → expect(screen.queryByText("No·results·found")).toBeNull();␍
+    134     │ - → });␍
+    135     │ - ␍
+    136     │ - → it.each([␍
+    137     │ - → → ["card",·false],␍
+    138     │ - → → ["table",·true],␍
+    139     │ - → ])(␍
+    140     │ - → → "opens·the·employee's·balance·adjustment·history·from·the·balance·badge·in·%s·view",␍
+    141     │ - → → (_view,·tableView)·=>·{␍
+    142     │ - → → → render(␍
+    143     │ - → → → → <TeamMembersList␍
+    144     │ - → → → → → employees={[employee({·timeBalance:·timeBalance("employee-1",·600,·480)·})]}␍
+    145     │ - → → → → />,␍
+    146     │ - → → → );␍
+    147     │ - → → → if·(tableView)·fireEvent.click(screen.getByRole("radio",·{·name:·"Table·view"·}));␍
+    148     │ - ␍
+    149     │ - → → → const·badge·=·screen.getByRole("button",·{·name:·"All-time·balance:·+2:00h"·});␍
+    150     │ - → → → //·Its·own·control,·not·part·of·the·link·to·the·employee·page.␍
+  694 more lines truncated
+  
+
+src\components\settings\work-balance\use-employee-work-balance.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·CancelledError,·useMutation,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+      4     │ - import·{␍
+      5     │ - → type·CancelBalanceAdjustmentInput,␍
+      6     │ - → cancelBalanceAdjustmentAction,␍
+      7     │ - → getEmployeeWorkBalanceSectionAction,␍
+      8     │ - → type·RecordOvertimePayoutInput,␍
+      9     │ - → recordOvertimePayoutAction,␍
+     10     │ - → type·SetOpeningBalanceInput,␍
+     11     │ - → setOpeningBalanceAction,␍
+     12     │ - }·from·"@/app/[locale]/(app)/settings/employees/work-balance-actions";␍
+     13     │ - import·{␍
+     14     │ - → type·BalanceAdjustmentActionResult,␍
+     15     │ - → type·BalanceAdjustmentErrorCode,␍
+     16     │ - → type·BalanceAdjustmentRefusalDetails,␍
+     17     │ - → balanceAdjustmentFailureOf,␍
+     18     │ - → type·ConflictingPayout,␍
+     19     │ - }·from·"@/lib/work-balance/adjustments/types";␍
+     20     │ - ␍
+     21     │ - export·const·EMPLOYEE_WORK_BALANCE_QUERY_KEY·=·["employeeWorkBalanceSection"]·as·const;␍
+     22     │ - ␍
+     23     │ - export·class·BalanceAdjustmentActionError·extends·Error·{␍
+     24     │ - → /**·With·`conflicting_payouts`·(#997):·the·payouts·that·keep·the·opening·balance·out.·*/␍
+     25     │ - → readonly·conflictingPayouts:·ConflictingPayout[];␍
+     26     │ - → /**·With·`month_closed`·(#762):·the·closed·month·(`YYYY-MM`)·the·day·lies·in.·*/␍
+     27     │ - → readonly·closedMonth:·string·|·null;␍
+     28     │ - ␍
+     29     │ - → constructor(␍
+     30     │ - → → readonly·code:·BalanceAdjustmentErrorCode·|·null,␍
+     31     │ - → → details:·BalanceAdjustmentRefusalDetails·=·{},␍
+     32     │ - → )·{␍
+     33     │ - → → super(code·??·"failed");␍
+     34     │ - → → this.conflictingPayouts·=·details.conflictingPayouts·??·[];␍
+     35     │ - → → this.closedMonth·=·details.closedMonth·??·null;␍
+     36     │ - → }␍
+     37     │ - }␍
+     38     │ - ␍
+     39     │ - /**·A·refusal·the·user·cannot·change·by·retrying,·as·opposed·to·an·unexpected·failure.·*/␍
+     40     │ - export·function·isRefusal(error:·unknown):·error·is·BalanceAdjustmentActionError·{␍
+     41     │ - → return·(␍
+     42     │ - → → error·instanceof·BalanceAdjustmentActionError·&&·error.code·!==·null·&&·error.code·!==·"failed"␍
+     43     │ - → );␍
+     44     │ - }␍
+     45     │ - ␍
+     46     │ - async·function·unwrap<T>(action:·Promise<BalanceAdjustmentActionResult<T>>):·Promise<T>·{␍
+     47     │ - → const·result·=·await·action.catch(()·=>·null);␍
+     48     │ - → if·(!result)·throw·new·BalanceAdjustmentActionError(null);␍
+     49     │ - → if·(!result.success)·{␍
+     50     │ - → → const·failure·=·balanceAdjustmentFailureOf(result);␍
+     51     │ - → → throw·new·BalanceAdjustmentActionError(failure.code,·failure.details);␍
+     52     │ - → }␍
+     53     │ - → return·result.data;␍
+     54     │ - }␍
+     55     │ - ␍
+     56     │ - /**␍
+     57     │ - ·*·The·employee's·balance·and·balance·adjustment·history,·as·the·employee,·their␍
+     58     │ - ·*·managers·or·an·owner/admin·may·see·it·(#996).·The·default·read·shares·the␍
+     59     │ - ·*·Work·balance·section's·cache.·Dialogs·supply·their·own·opening·identity·so␍
+     60     │ - ·*·reopening·reauthorizes;·employee-prefix·invalidation·still·refreshes·all·views.␍
+     61     │ - ·*/␍
+     62     │ - export·function·useBalanceAdjustmentSection(employeeId:·string,·openingId?:·string)·{␍
+     63     │ - → return·useQuery({␍
+     64     │ - → → queryKey:·[␍
+     65     │ - → → → ...EMPLOYEE_WORK_BALANCE_QUERY_KEY,␍
+     66     │ - → → → employeeId,␍
+     67     │ - → → → ...(openingId·?·["history-opening",·openingId]·:·[]),␍
+     68     │ - → → ],␍
+     69     │ - → → queryFn:·async·({·signal·})·=>·{␍
+     70     │ - → → → const·data·=·await·unwrap(getEmployeeWorkBalanceSectionAction({·employeeId·}));␍
+     71     │ - → → → if·(signal.aborted)·throw·new·CancelledError();␍
+     72     │ - → → → return·data;␍
+     73     │ - → → },␍
+     74     │ - → → //·Every·dialog·opening·reauthorizes.·Employee-prefix·invalidation·still␍
+     75     │ - → → //·refreshes·its·history·after·a·balance·write·in·any·other·view.␍
+     76     │ - → → ...(openingId·?·{·gcTime:·0,·refetchOnMount:·"always"·as·const·}·:·{}),␍
+     77     │ - → → //·A·refusal·(not·permitted,·not·found)·does·not·change·on·retry.␍
+     78     │ - → → retry:·(failureCount,·error)·=>·!isRefusal(error)·&&·failureCount·<·3,␍
+     79     │ - → });␍
+     80     │ - }␍
+     81     │ - ␍
+     82     │ - /**·The·employee's·Work·balance·section·data·and·its·writes·(#993,·#997).·*/␍
+     83     │ - export·function·useEmployeeWorkBalance(employeeId:·string)·{␍
+     84     │ - → const·queryClient·=·useQueryClient();␍
+     85     │ - → const·queryKey·=·[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,·employeeId];␍
+     86     │ - → const·section·=·useBalanceAdjustmentSection(employeeId);␍
+     87     │ - → const·onSettled·=·()·=>·queryClient.invalidateQueries({·queryKey·});␍
+     88     │ - ␍
+     89     │ - → const·recordPayout·=·useMutation({␍
+     90     │ - → → mutationFn:·(input:·Omit<RecordOvertimePayoutInput,·"employeeId">)·=>␍
+     91     │ - → → → unwrap(recordOvertimePayoutAction({·...input,·employeeId·})),␍
+     92     │ - → → onSettled,␍
+     93     │ - → });␍
+     94     │ - → const·setOpeningBalance·=·useMutation({␍
+     95     │ - → → mutationFn:·(input:·Omit<SetOpeningBalanceInput,·"employeeId">)·=>␍
+     96     │ - → → → unwrap(setOpeningBalanceAction({·...input,·employeeId·})),␍
+     97     │ - → → onSettled,␍
+     98     │ - → });␍
+     99     │ - → const·cancelAdjustment·=·useMutation({␍
+    100     │ - → → mutationFn:·(input:·Omit<CancelBalanceAdjustmentInput,·"employeeId">)·=>␍
+    101     │ - → → → unwrap(cancelBalanceAdjustmentAction({·...input,·employeeId·})),␍
+    102     │ - → → onSettled,␍
+    103     │ - → });␍
+    104     │ - ␍
+    105     │ - → return·{·section,·recordPayout,·setOpeningBalance,·cancelAdjustment·};␍
+    106     │ - }␍
+    107     │ - ␍
+    108     │ - /**␍
+    109     │ - ·*·Records·an·overtime·payout·from·outside·the·Work·balance·section,·such·as␍
+    110     │ - ·*·the·final·payout·in·the·offboarding·review·(#1002).·The·section·refreshes␍
+    111     │ - ·*·too;·`onSettled`·refreshes·the·caller's·own·view.␍
+    112     │ - ·*/␍
+    113     │ - export·function·useRecordOvertimePayout(employeeId:·string,·onSettled?:·()·=>·Promise<unknown>)·{␍
+    114     │ - → const·queryClient·=·useQueryClient();␍
+    115     │ - → return·useMutation({␍
+    116     │ - → → mutationFn:·(input:·Omit<RecordOvertimePayoutInput,·"employeeId">)·=>␍
+    117     │ - → → → unwrap(recordOvertimePayoutAction({·...input,·employeeId·})),␍
+    118     │ - → → onSettled:·()·=>␍
+    119     │ - → → → Promise.all([␍
+    120     │ - → → → → queryClient.invalidateQueries({␍
+    121     │ - → → → → → queryKey:·[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,·employeeId],␍
+    122     │ - → → → → }),␍
+    123     │ - → → → → onSettled?.(),␍
+    124     │ - → → → ]),␍
+    125     │ - → });␍
+    126     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{
+          4 │ + → CancelledError,
+          5 │ + → useMutation,
+          6 │ + → useQuery,
+          7 │ + → useQueryClient,
+          8 │ + }·from·"@tanstack/react-query";
+          9 │ + import·{
+         10 │ + → type·CancelBalanceAdjustmentInput,
+         11 │ + → cancelBalanceAdjustmentAction,
+         12 │ + → getEmployeeWorkBalanceSectionAction,
+         13 │ + → type·RecordOvertimePayoutInput,
+         14 │ + → recordOvertimePayoutAction,
+         15 │ + → type·SetOpeningBalanceInput,
+         16 │ + → setOpeningBalanceAction,
+         17 │ + }·from·"@/app/[locale]/(app)/settings/employees/work-balance-actions";
+         18 │ + import·{
+         19 │ + → type·BalanceAdjustmentActionResult,
+         20 │ + → type·BalanceAdjustmentErrorCode,
+         21 │ + → type·BalanceAdjustmentRefusalDetails,
+         22 │ + → balanceAdjustmentFailureOf,
+         23 │ + → type·ConflictingPayout,
+         24 │ + }·from·"@/lib/work-balance/adjustments/types";
+  124 more lines truncated
+  
+
+src\components\work-balance\balance-adjustment-history-button.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·TolgeeProvider·}·from·"@tolgee/react";␍
+      6     │ - import·{·NextIntlClientProvider·}·from·"next-intl";␍
+      7     │ - import·{·Activity,·type·ReactNode·}·from·"react";␍
+      8     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      9     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+     10     │ - import·{·useEmployeeWorkBalance·}·from·"@/components/settings/work-balance/use-employee-work-balance";␍
+     11     │ - import·{·createTestTolgee·}·from·"@/test/render-with-translations";␍
+     12     │ - import·{·BalanceAdjustmentHistoryButton·}·from·"./balance-adjustment-history-button";␍
+     13     │ - ␍
+     14     │ - const·transport·=·vi.hoisted(()·=>·({·read:·vi.fn(),·record:·vi.fn()·}));␍
+     15     │ - vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({␍
+     16     │ - → getEmployeeWorkBalanceSectionAction:·transport.read,␍
+     17     │ - → cancelBalanceAdjustmentAction:·vi.fn(),␍
+     18     │ - → recordOvertimePayoutAction:·transport.record,␍
+     19     │ - → setOpeningBalanceAction:·vi.fn(),␍
+     20     │ - }));␍
+     21     │ - ␍
+     22     │ - const·clients:·QueryClient[]·=·[];␍
+     23     │ - const·emptySection·=·{␍
+     24     │ - → success:·true,␍
+     25     │ - → data:·{␍
+     26     │ - → → balance:·null,␍
+     27     │ - → → adjustments:·[],␍
+     28     │ - → → today:·"2026-11-17",␍
+     29     │ - → → timezone:·"Europe/Berlin",␍
+     30     │ - → → canManage:·false,␍
+     31     │ - → },␍
+     32     │ - };␍
+     33     │ - ␍
+     34     │ - beforeEach(()·=>·{␍
+     35     │ - → transport.read.mockReset();␍
+     36     │ - → transport.record.mockReset();␍
+     37     │ - });␍
+     38     │ - afterEach(()·=>·{␍
+     39     │ - → cleanup();␍
+     40     │ - → for·(const·client·of·clients.splice(0))·client.clear();␍
+     41     │ - });␍
+     42     │ - ␍
+     43     │ - function·mountHistory(extra?:·ReactNode)·{␍
+     44     │ - → const·client·=·new·QueryClient({␍
+     45     │ - → → defaultOptions:·{␍
+     46     │ - → → → queries:·{·gcTime:·0,·staleTime:·60_000,·refetchOnWindowFocus:·false,·retryDelay:·0·},␍
+     47     │ - → → },␍
+     48     │ - → });␍
+     49     │ - → clients.push(client);␍
+     50     │ - → const·tolgee·=·createTestTolgee();␍
+     51     │ - → const·tree·=·(mode:·"visible"·|·"hidden"·=·"visible")·=>·(␍
+     52     │ - → → <NextIntlClientProvider·locale="en"·messages={{}}·timeZone="Europe/Berlin">␍
+     53     │ - → → → <TolgeeProvider·tolgee={tolgee}>␍
+     54     │ - → → → → <UserPreferencesProvider·timezone="Europe/Berlin">␍
+     55     │ - → → → → → <QueryClientProvider·client={client}>␍
+     56     │ - → → → → → → {extra}␍
+     57     │ - → → → → → → <Activity·mode={mode}>␍
+     58     │ - → → → → → → → <BalanceAdjustmentHistoryButton·employeeId="employee-a"·/>␍
+     59     │ - → → → → → → </Activity>␍
+     60     │ - → → → → → </QueryClientProvider>␍
+     61     │ - → → → → </UserPreferencesProvider>␍
+     62     │ - → → → </TolgeeProvider>␍
+     63     │ - → → </NextIntlClientProvider>␍
+     64     │ - → );␍
+     65     │ - → const·view·=·render(tree());␍
+     66     │ - → return·{·client,·view,·tree·};␍
+     67     │ - }␍
+     68     │ - async·function·openHistory()·{␍
+     69     │ - → const·mounted·=·mountHistory();␍
+     70     │ - → await·userEvent.setup().click(screen.getByRole("button",·{·name:·"Balance·adjustments"·}));␍
+     71     │ - → return·mounted;␍
+     72     │ - }␍
+     73     │ - function·records(reason:·string)·{␍
+     74     │ - → return·{␍
+     75     │ - → → ...emptySection,␍
+     76     │ - → → data:·{␍
+     77     │ - → → → ...emptySection.data,␍
+     78     │ - → → → adjustments:·[␍
+     79     │ - → → → → {␍
+     80     │ - → → → → → id:·reason,␍
+     81     │ - → → → → → kind:·"opening_balance",␍
+     82     │ - → → → → → day:·"2026-11-01",␍
+     83     │ - → → → → → minutes:·120,␍
+     84     │ - → → → → → reason,␍
+     85     │ - → → → → → recordedAt:·"2026-11-01T08:00:00Z",␍
+     86     │ - → → → → → recordedBy:·{·userId:·"actor-a",·name:·"Synthetic·Administrator"·},␍
+     87     │ - → → → → → cancellation:·null,␍
+     88     │ - → → → → },␍
+     89     │ - → → → ],␍
+     90     │ - → → },␍
+     91     │ - → };␍
+     92     │ - }␍
+     93     │ - ␍
+     94     │ - it("retries·a·failed·history·read·in·the·same·open·dialog·and·shows·the·recovered·records",·async·()·=>·{␍
+     95     │ - → transport.read.mockRejectedValue(new·Error("Synthetic·transport·failure"));␍
+     96     │ - → await·openHistory();␍
+     97     │ - → expect(await·screen.findByRole("alert")).toBeTruthy();␍
+     98     │ - → expect(screen.queryByText("No·balance·adjustments·yet.")).toBeNull();␍
+     99     │ - → const·retry·=·screen.getByRole("button",·{·name:·"Retry"·});␍
+    100     │ - → const·previousCalls·=·transport.read.mock.calls.length;␍
+    101     │ - → let·finish:·(value:·unknown)·=>·void·=·()·=>·{};␍
+    102     │ - → transport.read.mockImplementation(()·=>·new·Promise((resolve)·=>·(finish·=·resolve)));␍
+    103     │ - → await·userEvent.setup().click(retry);␍
+    104     │ - → try·{␍
+    105     │ - → → await·waitFor(()·=>·expect(transport.read).toHaveBeenCalledTimes(previousCalls·+·1));␍
+    106     │ - → → expect(screen.getByLabelText("Loading·balance·adjustments")).toBeTruthy();␍
+    107     │ - → → expect(screen.getByRole("dialog")).toBeTruthy();␍
+    108     │ - → }·finally·{␍
+    109     │ - → → await·act(async·()·=>␍
+    110     │ - → → → finish({␍
+    111     │ - → → → → ...emptySection,␍
+    112     │ - → → → → data:·{␍
+    113     │ - → → → → → ...emptySection.data,␍
+    114     │ - → → → → → adjustments:·[␍
+    115     │ - → → → → → → {␍
+    116     │ - → → → → → → → id:·"adjustment-a",␍
+    117     │ - → → → → → → → kind:·"opening_balance",␍
+    118     │ - → → → → → → → day:·"2026-11-01",␍
+    119     │ - → → → → → → → minutes:·120,␍
+    120     │ - → → → → → → → reason:·"Carried·balance·correction",␍
+    121     │ - → → → → → → → recordedAt:·"2026-11-01T08:00:00Z",␍
+    122     │ - → → → → → → → recordedBy:·{·userId:·"actor-a",·name:·"Synthetic·Administrator"·},␍
+    123     │ - → → → → → → → cancellation:·null,␍
+    124     │ - → → → → → → },␍
+    125     │ - → → → → → ],␍
+    126     │ - → → → → },␍
+    127     │ - → → → }),␍
+    128     │ - → → );␍
+    129     │ - → }␍
+    130     │ - → expect(await·screen.findByText("Carried·balance·correction")).toBeTruthy();␍
+    131     │ - → expect(screen.queryByRole("alert")).toBeNull();␍
+    132     │ - → expect(screen.getByRole("dialog")).toBeTruthy();␍
+    133     │ - });␍
+    134     │ - ␍
+    135     │ - it("distinguishes·an·empty·successful·history·and·returns·focus·on·Escape",·async·()·=>·{␍
+    136     │ - → transport.read.mockResolvedValue(emptySection);␍
+    137     │ - → await·openHistory();␍
+    138     │ - → expect(await·screen.findByText("No·balance·adjustments·yet.")).toBeTruthy();␍
+    139     │ - → expect(screen.queryByRole("alert")).toBeNull();␍
+    140     │ - → expect(screen.queryByRole("button",·{·name:·"Retry"·})).toBeNull();␍
+    141     │ - → await·userEvent.setup().keyboard("{Escape}");␍
+    142     │ - → await·waitFor(()·=>·expect(screen.queryByRole("dialog")).toBeNull());␍
+    143     │ - → expect(document.activeElement).toBe(screen.getByRole("button",·{·name:·"Balance·adjustments"·}));␍
+    144     │ - });␍
+    145     │ - ␍
+    146     │ - it("retains·the·canonical·access·refusal·without·offering·an·ineffective·read·Retry",·async·()·=>·{␍
+    147     │ - → transport.read.mockResolvedValue({␍
+    148     │ - → → success:·false,␍
+    149     │ - → → code:·"AuthorizationError",␍
+    150     │ - → → error:·"Private·refusal·detail",␍
+  445 more lines truncated
+  
+
+src\components\work-balance\balance-adjustment-history-button.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconHistory,·IconLoader2·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·type·ReactNode,·useId,·useState·}·from·"react";␍
+      6     │ - import·{␍
+      7     │ - → isRefusal,␍
+      8     │ - → useBalanceAdjustmentSection,␍
+      9     │ - }·from·"@/components/settings/work-balance/use-employee-work-balance";␍
+     10     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     11     │ - import·{␍
+     12     │ - → Dialog,␍
+     13     │ - → DialogContent,␍
+     14     │ - → DialogDescription,␍
+     15     │ - → DialogHeader,␍
+     16     │ - → DialogTitle,␍
+     17     │ - → DialogTrigger,␍
+     18     │ - }·from·"@/components/ui/dialog";␍
+     19     │ - import·{·BalanceAdjustmentHistory·}·from·"./balance-adjustment-history";␍
+     20     │ - ␍
+     21     │ - /**␍
+     22     │ - ·*·Opens·the·history·of·an·employee's·balance·adjustments·from·a·work·balance␍
+     23     │ - ·*·card·(#996):·the·employee's·own,·or·one·they·manage.·Loads·it·only·when␍
+     24     │ - ·*·opened;·the·server·decides·who·may·see·it.␍
+     25     │ - ·*/␍
+     26     │ - export·function·BalanceAdjustmentHistoryButton({·employeeId·}:·{·employeeId:·string·})·{␍
+     27     │ - → const·{·t·}·=·useTranslate();␍
+     28     │ - → return·(␍
+     29     │ - → → <BalanceAdjustmentHistoryDialog␍
+     30     │ - → → → employeeId={employeeId}␍
+     31     │ - → → → trigger={␍
+     32     │ - → → → → <Button·type="button"·variant="link"·size="sm"·className="h-auto·self-start·px-0">␍
+     33     │ - → → → → → <IconHistory·className="size-4"·aria-hidden="true"·/>␍
+     34     │ - → → → → → {t("workBalance.adjustments.open",·"Balance·adjustments")}␍
+     35     │ - → → → → </Button>␍
+     36     │ - → → → }␍
+     37     │ - → → />␍
+     38     │ - → );␍
+     39     │ - }␍
+     40     │ - ␍
+     41     │ - /**␍
+     42     │ - ·*·The·read-only·history·dialog·behind·any·trigger,·such·as·the·/team·list's␍
+     43     │ - ·*·balance·badge·(#996).·`trigger`·must·be·a·single·focusable·element.␍
+     44     │ - ·*/␍
+     45     │ - export·function·BalanceAdjustmentHistoryDialog({␍
+     46     │ - → employeeId,␍
+     47     │ - → trigger,␍
+     48     │ - }:·{␍
+     49     │ - → employeeId:·string;␍
+     50     │ - → trigger:·ReactNode;␍
+     51     │ - })·{␍
+     52     │ - → const·{·t·}·=·useTranslate();␍
+     53     │ - → const·[open,·setOpen]·=·useState(false);␍
+     54     │ - ␍
+     55     │ - → return·(␍
+     56     │ - → → <Dialog·open={open}·onOpenChange={setOpen}>␍
+     57     │ - → → → <DialogTrigger·asChild>{trigger}</DialogTrigger>␍
+     58     │ - → → → <DialogContent·className="max-h-[85vh]·overflow-y-auto·sm:max-w-xl">␍
+     59     │ - → → → → <DialogHeader>␍
+     60     │ - → → → → → <DialogTitle>{t("workBalance.adjustments.title",·"Balance·adjustments")}</DialogTitle>␍
+     61     │ - → → → → → <DialogDescription>␍
+     62     │ - → → → → → → {t(␍
+     63     │ - → → → → → → → "workBalance.adjustments.description",␍
+     64     │ - → → → → → → → "Overtime·payouts·and·opening·balances·on·this·work·balance.·A·mistaken·one·is·cancelled,·never·deleted,·so·cancelled·ones·stay·listed.",␍
+     65     │ - → → → → → → )}␍
+     66     │ - → → → → → </DialogDescription>␍
+     67     │ - → → → → </DialogHeader>␍
+     68     │ - → → → → {open·?·<HistoryBody·employeeId={employeeId}·/>·:·null}␍
+     69     │ - → → → </DialogContent>␍
+     70     │ - → → </Dialog>␍
+     71     │ - → );␍
+     72     │ - }␍
+     73     │ - ␍
+     74     │ - function·HistoryBody({·employeeId·}:·{·employeeId:·string·})·{␍
+     75     │ - → const·{·t·}·=·useTranslate();␍
+     76     │ - → const·openingId·=·useId();␍
+     77     │ - → const·section·=·useBalanceAdjustmentSection(employeeId,·openingId);␍
+     78     │ - ␍
+     79     │ - → if·(section.isLoading·||·section.isFetching)·{␍
+     80     │ - → → return·(␍
+     81     │ - → → → <output␍
+     82     │ - → → → → className="flex·items-center·justify-center·p-6"␍
+     83     │ - → → → → aria-label={t("workBalance.adjustments.loading",·"Loading·balance·adjustments")}␍
+     84     │ - → → → >␍
+     85     │ - → → → → <IconLoader2·className="size-6·animate-spin·text-muted-foreground"·aria-hidden="true"·/>␍
+     86     │ - → → → </output>␍
+     87     │ - → → );␍
+     88     │ - → }␍
+     89     │ - → if·(section.isError·||·!section.data)·{␍
+     90     │ - → → return·(␍
+     91     │ - → → → <div·className="space-y-3">␍
+     92     │ - → → → → <p·role="alert"·className="text-destructive·text-sm">␍
+     93     │ - → → → → → {isRefusal(section.error)·&&·section.error.code·===·"not_permitted"␍
+     94     │ - → → → → → → ?·t(␍
+     95     │ - → → → → → → → → "workBalance.adjustments.notPermitted",␍
+     96     │ - → → → → → → → → "You·can·see·the·balance·adjustments·of·yourself·and·of·employees·you·manage.",␍
+     97     │ - → → → → → → → )␍
+     98     │ - → → → → → → :·t(␍
+     99     │ - → → → → → → → → "workBalance.adjustments.loadFailed",␍
+    100     │ - → → → → → → → → "The·balance·adjustments·could·not·be·loaded.",␍
+    101     │ - → → → → → → → )}␍
+    102     │ - → → → → </p>␍
+    103     │ - → → → → {!isRefusal(section.error)·&&·(␍
+    104     │ - → → → → → <Button␍
+    105     │ - → → → → → → variant="outline"␍
+    106     │ - → → → → → → disabled={section.isFetching}␍
+    107     │ - → → → → → → onClick={()·=>·void·section.refetch({·cancelRefetch:·false·})}␍
+    108     │ - → → → → → >␍
+    109     │ - → → → → → → {section.isFetching·?·t("common.retrying",·"Retrying…")·:·t("common.retry",·"Retry")}␍
+    110     │ - → → → → → </Button>␍
+    111     │ - → → → → )}␍
+    112     │ - → → → </div>␍
+    113     │ - → → );␍
+    114     │ - → }␍
+    115     │ - → return·<BalanceAdjustmentHistory·adjustments={section.data.adjustments}·/>;␍
+    116     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconHistory,·IconLoader2·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·type·ReactNode,·useId,·useState·}·from·"react";
+          6 │ + import·{
+          7 │ + → isRefusal,
+          8 │ + → useBalanceAdjustmentSection,
+          9 │ + }·from·"@/components/settings/work-balance/use-employee-work-balance";
+         10 │ + import·{·Button·}·from·"@/components/ui/button";
+         11 │ + import·{
+         12 │ + → Dialog,
+         13 │ + → DialogContent,
+         14 │ + → DialogDescription,
+         15 │ + → DialogHeader,
+         16 │ + → DialogTitle,
+         17 │ + → DialogTrigger,
+         18 │ + }·from·"@/components/ui/dialog";
+         19 │ + import·{·BalanceAdjustmentHistory·}·from·"./balance-adjustment-history";
+         20 │ + 
+         21 │ + /**
+         22 │ + ·*·Opens·the·history·of·an·employee's·balance·adjustments·from·a·work·balance
+         23 │ + ·*·card·(#996):·the·employee's·own,·or·one·they·manage.·Loads·it·only·when
+         24 │ + ·*·opened;·the·server·decides·who·may·see·it.
+         25 │ + ·*/
+         26 │ + export·function·BalanceAdjustmentHistoryButton({
+         27 │ + → employeeId,
+         28 │ + }:·{
+         29 │ + → employeeId:·string;
+         30 │ + })·{
+         31 │ + → const·{·t·}·=·useTranslate();
+         32 │ + → return·(
+         33 │ + → → <BalanceAdjustmentHistoryDialog
+         34 │ + → → → employeeId={employeeId}
+  102 more lines truncated
+  
+
+Checked 5 files in 8ms. No fixes applied.
+Found 5 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

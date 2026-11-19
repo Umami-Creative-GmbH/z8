@@ -1,0 +1,30 @@
+{
+  "actualOriginalDraftLinkClicked": true,
+  "actualOpenReportLinkClicked": true,
+  "correctLink": true,
+  "opened": {
+    "correctReport": true,
+    "provenance": true,
+    "originalDraftLink": true,
+    "notes": true,
+    "receipt": true,
+    "amount": true,
+    "date": true,
+    "saveControl": false,
+    "sensitiveInputs": 0
+  },
+  "reloaded": {
+    "correctReport": true,
+    "provenance": true,
+    "originalDraftLink": true,
+    "notes": true,
+    "receipt": true,
+    "amount": true,
+    "date": true,
+    "saveControl": false,
+    "sensitiveInputs": 0
+  },
+  "actualReportPageReload": true,
+  "primaryStable": true,
+  "pageCount": 1
+}

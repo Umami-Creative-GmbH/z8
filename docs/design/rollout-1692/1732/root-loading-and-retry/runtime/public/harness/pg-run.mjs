@@ -1,0 +1,14 @@
+import {readFile,writeFile,open} from 'node:fs/promises';
+import {spawn} from 'node:child_process';
+import {resolve,join} from 'node:path';
+const out=resolve('.tmp/1732-root-checks/runtime'),directory=(await readFile(join(out,'pg-pointer-private.txt'),'utf8')).trim();
+const runtime=JSON.parse(await readFile(join(directory,'runtime-private.json'),'utf8'));
+const env={...process.env,...runtime.env,pnpm_config_verify_deps_before_run:'false'};
+const log=await open(join(directory,'pg-suite-private.log'),'w');
+const pnpm=process.env.npm_execpath;
+if(!pnpm)throw Error('Run through pnpm');
+const args=['--config.verify-deps-before-run=false','exec','vitest','run','--project','integration','--maxWorkers','1','src/lib/personnel-file/payslip-batch.integration.test.ts','--reporter=json','--outputFile='+join(out,'pg20-raw-private.json')];
+const child=spawn(pnpm,args,{cwd:resolve('apps/webapp'),env,windowsHide:true,stdio:['ignore',log.fd,log.fd]});
+const code=await new Promise((done,reject)=>{child.once('error',reject);child.once('exit',done);});await log.close();
+await writeFile(join(out,'pg-command.json'),JSON.stringify({command:['pnpm',...args],exit:code,physicalFiles:1,standardIntegrationHarness:true,separateDisposableFixture:true},null,2)+'\n');
+console.log(JSON.stringify({stage:'pg20',exit:code}));process.exitCode=code;

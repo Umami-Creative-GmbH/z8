@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/app/[locale]/onboarding/vacation-policy/actions.integration.test.ts",
+    "-t",
+    "refuses an A draft",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1831-root-checks\\postgres-scope-red.json"
+  ],
+  "exitCode": 1,
+  "environment": "Own label-verified generated loopback database; standard integration gate and sentinel. No credentials are recorded."
+}

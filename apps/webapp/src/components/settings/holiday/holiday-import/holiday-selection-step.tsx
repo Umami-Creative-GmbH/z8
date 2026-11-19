@@ -31,11 +31,20 @@ export function HolidaySelectionStep({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	// The holiday source's type values, translated; an unknown type is shown as delivered.
+	const holidayTypeLabels: Record<string, string> = {
+		public: t("settings.holidays.import.types.public", "Public"),
+		bank: t("settings.holidays.import.types.bank", "Bank"),
+		school: t("settings.holidays.import.types.school", "School"),
+		optional: t("settings.holidays.import.types.optional", "Optional"),
+		observance: t("settings.holidays.import.types.observance", "Observance"),
+	};
+	const holidayTypeLabel = (type: string) => holidayTypeLabels[type] ?? type;
 	const country = state.countries.find((item) => item.code === state.selectedCountry)?.name || "";
 	const selectedState = state.states.find((item) => item.code === state.selectedState)?.name || "";
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-2">
 				<h3 className="font-medium">
 					{t("settings.holidays.import.step2.title", "Select Holidays")}
 				</h3>
@@ -91,19 +100,17 @@ export function HolidaySelectionStep({
 								<TableCell className="font-medium">{holiday.name}</TableCell>
 								<TableCell>{formatHolidayPreviewDate(holiday.date, locale)}</TableCell>
 								<TableCell>
-									<Badge variant="outline" className="capitalize">
-										{holiday.type}
-									</Badge>
+									<Badge variant="outline">{holidayTypeLabel(holiday.type)}</Badge>
 								</TableCell>
 								<TableCell>
 									{holiday.isDuplicate ? (
-										<span className="flex items-center gap-1 text-amber-600">
-											<IconAlertTriangle className="size-4" />
+										<span className="flex items-center gap-1 text-warning">
+											<IconAlertTriangle aria-hidden="true" className="size-4" />
 											{t("settings.holidays.import.duplicate", "Exists")}
 										</span>
 									) : (
-										<span className="flex items-center gap-1 text-green-600">
-											<IconCheck className="size-4" />
+										<span className="flex items-center gap-1 text-success">
+											<IconCheck aria-hidden="true" className="size-4" />
 											{t("settings.holidays.import.new", "New")}
 										</span>
 									)}

@@ -1,0 +1,9 @@
+{
+  "rawSha256": "915ba312a855f26f343137879edb9a3d4e3bfa0ac2ad7a17291fe047b6eb3989",
+  "sanitizer": "controller fixture actor redaction plus all UUID record values",
+  "ok": true,
+  "data": {
+    "closed": true,
+    "authStateSaved": false
+  }
+}

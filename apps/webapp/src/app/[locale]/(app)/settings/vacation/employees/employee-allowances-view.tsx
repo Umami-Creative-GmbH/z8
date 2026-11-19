@@ -22,6 +22,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { PageHeader } from "@/components/ui/page-header";
 import { UserAvatar } from "@/components/user-avatar";
 import type {
 	VacationBalance,
@@ -100,20 +101,14 @@ export function EmployeeAllowancesView({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.vacation.employees.title", "Employee Allowances")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.vacation.employees.description",
-							"Configure custom vacation allowances for individual employees",
-						)}
-					</p>
-				</div>
-			</div>
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("settings.vacation.employees.title", "Employee Allowances")}
+				description={t(
+					"settings.vacation.employees.description",
+					"Configure custom vacation allowances for individual employees",
+				)}
+			/>
 
 			{notice}
 
@@ -149,8 +144,8 @@ function EmployeeAllowancesCard({
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<div className="min-w-0">
 						<CardTitle>
 							{t(
 								"settings.vacation.employees.allowancesForYear",
@@ -202,8 +197,8 @@ function EmployeeAllowancesCard({
 function EmployeeAllowancesEmptyState({ t }: { t: Translate }) {
 	return (
 		<div className="rounded-lg border border-dashed p-8 text-center">
-			<IconUser className="mx-auto size-10 text-muted-foreground" />
-			<h3 className="mt-4 text-lg font-semibold">
+			<IconUser aria-hidden="true" className="mx-auto size-8 text-muted-foreground" />
+			<h3 className="mt-3 text-base font-semibold">
 				{t("settings.vacation.employees.emptyTitle", "No employees found")}
 			</h3>
 			<p className="mt-2 text-sm text-muted-foreground">
@@ -317,7 +312,7 @@ function EmployeeAllowanceRow({
 	return (
 		<TableRow>
 			<TableCell>
-				<div className="flex items-center gap-3">
+				<div className="flex min-w-0 items-center gap-3">
 					<UserAvatar
 						image={employee.user.image}
 						seed={employee.id}
@@ -325,9 +320,14 @@ function EmployeeAllowanceRow({
 						size="sm"
 						clockStatus="unknown"
 					/>
-					<div>
-						<div className="font-medium">{employee.user.name}</div>
-						<div className="text-xs text-muted-foreground">
+					<div className="min-w-0 max-w-56">
+						<div className="truncate font-medium" title={employee.user.name}>
+							{employee.user.name}
+						</div>
+						<div
+							className="truncate text-xs text-muted-foreground"
+							title={employee.user.email}
+						>
 							{employee.user.email}
 						</div>
 					</div>
@@ -375,7 +375,7 @@ function EmployeeAllowanceRow({
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
 				{balance?.carryoverDays ? (
-					<span className="text-green-600">+{balance.carryoverDays}</span>
+					<span className={POSITIVE_DAYS_CLASS}>+{balance.carryoverDays}</span>
 				) : (
 					<EmptyCell />
 				)}
@@ -399,8 +399,11 @@ function EmployeeAllowanceRow({
 			</TableCell>
 			<TableCell className="text-right">
 				<Button variant="ghost" size="sm" asChild>
-					<Link href={`/settings/vacation/employees/${employee.id}`}>
-						<IconEdit className="mr-1 size-4" />
+					<Link
+						href={`/settings/vacation/employees/${employee.id}`}
+						aria-label={`${t("settings.vacation.employees.actions.edit", "Edit")}: ${employee.user.name}`}
+					>
+						<IconEdit aria-hidden="true" className="mr-1 size-4" />
 						{t("settings.vacation.employees.actions.edit", "Edit")}
 					</Link>
 				</Button>
@@ -440,11 +443,17 @@ function EmptyCell() {
 	return <span className="text-muted-foreground">—</span>;
 }
 
-/** Days added (green, with a plus) or taken away (red); a dash for none. */
+/**
+ * Added days. There is no success token in the theme, so the green pairs a light and a dark
+ * shade; the sign carries the meaning on its own.
+ */
+const POSITIVE_DAYS_CLASS = "text-success";
+
+/** Days added (green, with a plus) or taken away (destructive); a dash for none. */
 function SignedDays({ days }: { days: number }) {
 	if (days === 0) return <EmptyCell />;
 	return (
-		<span className={days > 0 ? "text-green-600" : "text-red-600"}>
+		<span className={days > 0 ? POSITIVE_DAYS_CLASS : "text-destructive"}>
 			{days > 0 ? "+" : ""}
 			{days}
 		</span>

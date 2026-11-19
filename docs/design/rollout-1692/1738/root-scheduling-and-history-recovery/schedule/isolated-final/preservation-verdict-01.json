@@ -1,0 +1,94 @@
+{
+  "seedCount": [
+    6,
+    6
+  ],
+  "finalCount": [
+    6,
+    6
+  ],
+  "recordedWork": [
+    {
+      "scope": "small",
+      "countsUnchanged": true,
+      "fullDigestsUnchanged": true
+    },
+    {
+      "scope": "large",
+      "countsUnchanged": true,
+      "fullDigestsUnchanged": true
+    }
+  ],
+  "protectedRows": [
+    {
+      "scope": "small",
+      "note": "Independent before-range draft",
+      "unchanged": true
+    },
+    {
+      "scope": "small",
+      "note": "Independent employee published",
+      "unchanged": true
+    },
+    {
+      "scope": "small",
+      "note": "Independent open published",
+      "unchanged": true
+    },
+    {
+      "scope": "small",
+      "note": "Independent end-exclusive draft",
+      "unchanged": true
+    },
+    {
+      "scope": "large",
+      "note": "Independent before-range draft",
+      "unchanged": true
+    },
+    {
+      "scope": "large",
+      "note": "Independent employee published",
+      "unchanged": true
+    },
+    {
+      "scope": "large",
+      "note": "Independent open overnight draft",
+      "unchanged": true
+    },
+    {
+      "scope": "large",
+      "note": "Independent open published",
+      "unchanged": true
+    },
+    {
+      "scope": "large",
+      "note": "Independent assigned publish draft",
+      "unchanged": true
+    },
+    {
+      "scope": "large",
+      "note": "Independent end-exclusive draft",
+      "unchanged": true
+    }
+  ],
+  "intentionalPublication": [
+    {
+      "note": "Independent open overnight draft",
+      "from": "draft",
+      "to": "published",
+      "publishedByAdmin": true,
+      "publishedAt": "2026-11-17T05:18:51.581Z"
+    },
+    {
+      "note": "Independent assigned publish draft",
+      "from": "draft",
+      "to": "published",
+      "publishedByAdmin": true,
+      "publishedAt": "2026-11-17T05:18:51.581Z"
+    }
+  ],
+  "abortedWritePreservedSeed": true,
+  "cleanupRestoredSeed": true,
+  "staleAckPreservedSeed": true,
+  "historicalAndFinalReadOnly": true
+}

@@ -1,0 +1,571 @@
+{
+  "phase": "after",
+  "status": "accepted-recovery",
+  "checks": [
+    "Default Save refused and all draft fields retained",
+    "Pointer retry committed exactly one non-default graph, wellness progress and notifications navigation"
+  ],
+  "captures": [
+    {
+      "filename": "after-default-refused-desktop.png",
+      "state": "default-refused",
+      "sha256": "478d28fa4bf41ed454fa1d7fb0caf3b3ad64be190db6f91258258c3168e159b8",
+      "measurement": {
+        "path": "/en/onboarding/work-templates",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "documentWidth": 1600,
+        "headings": [
+          {
+            "text": "Create work schedule template",
+            "rect": {
+              "x": 385,
+              "y": 252,
+              "width": 830,
+              "height": 36,
+              "top": 252,
+              "right": 1215,
+              "bottom": 288,
+              "left": 385
+            }
+          }
+        ],
+        "alerts": [
+          "An organization default already exists. Create a non-default template or manage work policies in settings."
+        ],
+        "text": "Welcome\nOrganization\nProfile\nSchedule\nVacation\n6\nTemplates\n7\nWellness\n8\nNotifications\n9\nComplete\nCreate work schedule template\nSet up a work schedule template for your organization. This defines working hours for your team.\nWork Schedule Template\nCreate a default work schedule. You can add more templates later in settings.\nTemplate Name\n\nA name to identify this work schedule.\n\nHours per Week\n\nTotal working hours per week. Typical full-time is 40 hours.\n\nWorking Days\nMon\nTue\nWed\nThu\nFri\nSat\nSun\n\nSelect which days are working days. Hours will be distributed evenly.\n\nSet as Organization Default\n\nApply this schedule to all employees.\n\nSchedule Preview\n\n5 working days, 7.5 hours per day\n\nThis template configures working hours for your organization. It does not record time or change your personal display week.\n\nAn organization default already exists. Create a non-default template or manage work policies in settings.\n\nSkip for now\nSave and continue"
+      },
+      "sourceDigest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d"
+    },
+    {
+      "filename": "after-default-refused-phone.png",
+      "state": "default-refused",
+      "sha256": "7252ab9a3e8a301839ee8bb6ac53061c392835f293c95c5b63da01306abd1ba6",
+      "measurement": {
+        "path": "/en/onboarding/work-templates",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "headings": [
+          {
+            "text": "Create work schedule template",
+            "rect": {
+              "x": 41,
+              "y": 252,
+              "width": 308,
+              "height": 64,
+              "top": 252,
+              "right": 349,
+              "bottom": 316,
+              "left": 41
+            }
+          }
+        ],
+        "alerts": [
+          "An organization default already exists. Create a non-default template or manage work policies in settings."
+        ],
+        "text": "Welcome\nOrganization\nProfile\nSchedule\nVacation\n6\nTemplates\n7\nWellness\n8\nNotifications\n9\nComplete\n\nStep 6 of 9 Templates\n\nCreate work schedule template\nSet up a work schedule template for your organization. This defines working hours for your team.\nWork Schedule Template\nCreate a default work schedule. You can add more templates later in settings.\nTemplate Name\n\nA name to identify this work schedule.\n\nHours per Week\n\nTotal working hours per week. Typical full-time is 40 hours.\n\nWorking Days\nMon\nTue\nWed\nThu\nFri\nSat\nSun\n\nSelect which days are working days. Hours will be distributed evenly.\n\nSet as Organization Default\n\nApply this schedule to all employees.\n\nSchedule Preview\n\n5 working days, 7.5 hours per day\n\nThis template configures working hours for your organization. It does not record time or change your personal display week.\n\nAn organization default already exists. Create a non-default template or manage work policies in settings.\n\nSkip for now\nSave and continue"
+      },
+      "sourceDigest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d"
+    },
+    {
+      "filename": "after-accepted-recovery-desktop.png",
+      "state": "accepted-recovery",
+      "sha256": "46eb0ea35842b950bf57a5668a2f1c7300a75535e8b23107d2e63b8edddf708a",
+      "measurement": {
+        "path": "/en/onboarding/notifications",
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "documentWidth": 1600,
+        "headings": [
+          {
+            "text": "Set up notifications",
+            "rect": {
+              "x": 497,
+              "y": 287,
+              "width": 606,
+              "height": 36,
+              "top": 287,
+              "right": 1103,
+              "bottom": 323,
+              "left": 497
+            }
+          }
+        ],
+        "alerts": [],
+        "text": "Welcome\nOrganization\nProfile\nWellness\n5\nNotifications\n6\nComplete\nSet up notifications\nChoose how you want to receive updates about approvals, status changes, and team activities.\nBrowser push permission\n\nPermission applies to this browser. Notification preferences and device enrollment are separate.\n\nPermission blocked\n\nAllow notifications in this site's browser settings to change this permission. You can still save your preferences or skip.\n\nRequest permission\nNotifications\n\nThese choices apply to your account. Saving or skipping does not change browser permission or organization access.\n\nNotification channels\nPush notifications\n\nChoose push updates for your account. Delivery also requires permission and a registered device.\n\nEmail Notifications\n\nReceive important updates via email.\n\nNotify me about:\nApproval requests\n\nWhen someone needs your approval.\n\nStatus updates\n\nWhen your requests are approved or rejected.\n\nTeam changes\n\nWhen team members are added or removed.\n\nSave preferences and continue\nSkip for now"
+      },
+      "sourceDigest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d"
+    },
+    {
+      "filename": "after-accepted-recovery-phone.png",
+      "state": "accepted-recovery",
+      "sha256": "116fb64a4d9c033f5b2973239b04b92a3d78e6f0a2abde90ed332881db55b909",
+      "measurement": {
+        "path": "/en/onboarding/notifications",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "headings": [
+          {
+            "text": "Set up notifications",
+            "rect": {
+              "x": 41,
+              "y": 287,
+              "width": 308,
+              "height": 32,
+              "top": 287,
+              "right": 349,
+              "bottom": 319,
+              "left": 41
+            }
+          }
+        ],
+        "alerts": [],
+        "text": "Welcome\nOrganization\nProfile\nWellness\n5\nNotifications\n6\nComplete\n\nStep 5 of 6 Notifications\n\nSet up notifications\nChoose how you want to receive updates about approvals, status changes, and team activities.\nBrowser push permission\n\nPermission applies to this browser. Notification preferences and device enrollment are separate.\n\nPermission blocked\n\nAllow notifications in this site's browser settings to change this permission. You can still save your preferences or skip.\n\nRequest permission\nNotifications\n\nThese choices apply to your account. Saving or skipping does not change browser permission or organization access.\n\nNotification channels\nPush notifications\n\nChoose push updates for your account. Delivery also requires permission and a registered device.\n\nEmail Notifications\n\nReceive important updates via email.\n\nNotify me about:\nApproval requests\n\nWhen someone needs your approval.\n\nStatus updates\n\nWhen your requests are approved or rejected.\n\nTeam changes\n\nWhen team members are added or removed.\n\nSave preferences and continue\nSkip for now"
+      },
+      "sourceDigest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d"
+    }
+  ],
+  "browserErrors": [],
+  "dialogs": [],
+  "cleanup": {
+    "context": "Own ephemeral context closed",
+    "browser": "Own Chromium closed"
+  },
+  "qualification": "Actual retained TanStack draft and pointer Save in one own transient Chromium session. No saved/copied/minted state, response stubs, identity/grant changes, default replacement or graph cleanup. Race, Activity and authority evidence belongs to separately assembled public proof.",
+  "source": {
+    "source": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "bytesSha256": "05444c0709c1f32675b4ab1da4b31c0522bc7f950e6a7e6f8c73355cf4bdf7e2",
+        "canonicalSha256": "0bbf6dabdda5df4ce12d822dd62729b678f676ac40f3cc99fced6dd936a68955"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "bytesSha256": "e8f8b4f8785bcbe696014f2c55d6ffcb6f1da5bbc6c905b8a7a19aac889c6a0c",
+        "canonicalSha256": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+        "bytesSha256": "18853d5893bd1c6b6fde844d77aa5eebad30907ac6855744b6fd22b3a047ee68",
+        "canonicalSha256": "382aa71824fdaecab2bf6b5afadda5f01bae53caf1bd84060443f61ba4f70437"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx",
+        "bytesSha256": "cd48faabb8ae85ab48287e713ae8145aa96e29b014aa18f29e781c9ff7a0c0ca",
+        "canonicalSha256": "8a17b22c399da68bf95c03a6b7fce16d4d719636c046aabc77452b031ec62d07"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+        "bytesSha256": "39c517a55dfc07bcd4d96c5d3d57736290050fc7e98601c8c56b2062d4a40a5c",
+        "canonicalSha256": "15a3bb27a4d5ba7ab63b13b2c06c5705e06560e19b3df422876f8da582d8450f"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "bytesSha256": "54b999fa8be38051573e32827691cc251ef744eec9334ff08102e6df1f4c209d",
+        "canonicalSha256": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9"
+      },
+      {
+        "path": "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts",
+        "bytesSha256": "b8aad0cb0066a3e2fbf0c3bac635e5ed51877e964ca9c82b241f5d35dd87e4c2",
+        "canonicalSha256": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5"
+      },
+      {
+        "path": "apps/webapp/src/lib/onboarding/work-template-mutation.ts",
+        "bytesSha256": "ac360eaebd54189a7b94dc235fc8bf68425903b597b4564f4ae77a21fda6c34b",
+        "canonicalSha256": "e63df58118269453859e5975ac20d7ad20a3701e5437cbbaf890f6be58720e5c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/work-policy.ts",
+        "bytesSha256": "ac8533962f57a46a49e108d71137a09b17571484f4f51305a0ad662b587e6c2c",
+        "canonicalSha256": "56fb115e3b957111ccb34e99745ba612bd298b274b7adfda3a102148da1ff54c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/user-settings.ts",
+        "bytesSha256": "712d0c9bfc3882dad3e9f933c5f5306fc51fe19ff466ce35546898fad796faeb",
+        "canonicalSha256": "141b42b6aaaaa097832fde7a609e4c94c6101d16cc7f95459ae9a0e0a3756e87"
+      },
+      {
+        "path": "apps/webapp/src/db/auth-schema.ts",
+        "bytesSha256": "ecd9db0893eeef056ac8450f1c93c41b4e095d38607f28cd15190293fa2de3dd",
+        "canonicalSha256": "72404cd241eb9588426d54449742b4292f296daa960069c45f699c4ab7ed5814"
+      },
+      {
+        "path": "apps/webapp/src/lib/validations/onboarding.ts",
+        "bytesSha256": "807541711c0dddc8322aee2ae81925003ff8973a782240921eda196e94c86a19",
+        "canonicalSha256": "94656a41622221f5737469b86979b2a0fb0f2a9b84d718ee065ef64395c82ec3"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access.ts",
+        "bytesSha256": "148429c2552d9bca9aa71d12330e6b6e15682d30ef63fadbc4181573f1d178ee",
+        "canonicalSha256": "4da7941cfc3d6575ceb661428a98f37cdbe840cb7ccbc8b5a963d1979209783e"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access-level.ts",
+        "bytesSha256": "eb3d28b458f6c01739db20c071f206203ac65efbcd85cb8d51eb68cebef3056b",
+        "canonicalSha256": "7cbdae627f562b8c4e7dc49eda46ba507f7ede251a5492349ea350a51644e462"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/organization-role.ts",
+        "bytesSha256": "fe162989e3818d774aea83b938cca0809b437573fd71b93db89b82c5b4fd5f0c",
+        "canonicalSha256": "d6a44f99bce3ba3150e3a44daa4e2e4e010dd63fc0a37006459ca2bb70a95877"
+      },
+      {
+        "path": "apps/webapp/src/lib/employee-lifecycle/current-roster.ts",
+        "bytesSha256": "eee7c6a34a325c271697aa0dfdf835d5542b0fc599c5daf9ff4fa1e2b30829c3",
+        "canonicalSha256": "ec657c3bcd473ec462f286621fde20cd89789925faba3e7506264f70f60cc759"
+      },
+      {
+        "path": "apps/webapp/src/lib/time-tracking/work-transaction/index.ts",
+        "bytesSha256": "9fde4231169e4b4cd95865a36c471258ae36ce564004ce24f8aa746c993772cd",
+        "canonicalSha256": "b0a5f2be115bb6c55dac9c2c0d297d7eeca362421ca3ac44528d5e65dbbe2a8d"
+      }
+    ],
+    "digest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d",
+    "historicalCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+    "head": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+    "qualification": "Explicit dirty source bytes are pinned; HEAD alone is not source evidence."
+  },
+  "actor": "small-admin",
+  "name": "R1835 after 36f8fdce-e86",
+  "actionRequests": [
+    {
+      "stage": "setup",
+      "method": "POST",
+      "actionHash": "694fb05cc40dec7c62e75ee03674720a5c3bbdede0d3d8f5449d6e0875b7ab21"
+    },
+    {
+      "stage": "setup",
+      "method": "POST",
+      "actionHash": "694fb05cc40dec7c62e75ee03674720a5c3bbdede0d3d8f5449d6e0875b7ab21"
+    },
+    {
+      "stage": "default",
+      "method": "POST",
+      "actionHash": "a9821e02480603dd726f57f5e4a3100d56363119a8d1ba9c0364141324002355"
+    },
+    {
+      "stage": "retry",
+      "method": "POST",
+      "actionHash": "a9821e02480603dd726f57f5e4a3100d56363119a8d1ba9c0364141324002355"
+    }
+  ],
+  "actionResponses": [
+    {
+      "stage": "setup",
+      "status": 200,
+      "actionHash": "694fb05cc40dec7c62e75ee03674720a5c3bbdede0d3d8f5449d6e0875b7ab21",
+      "bodyBytes": 69
+    },
+    {
+      "stage": "setup",
+      "status": 200,
+      "actionHash": "694fb05cc40dec7c62e75ee03674720a5c3bbdede0d3d8f5449d6e0875b7ab21",
+      "bodyBytes": 69
+    },
+    {
+      "stage": "default",
+      "status": 200,
+      "actionHash": "a9821e02480603dd726f57f5e4a3100d56363119a8d1ba9c0364141324002355",
+      "bodyBytes": 241
+    },
+    {
+      "stage": "retry",
+      "status": 200,
+      "actionHash": "a9821e02480603dd726f57f5e4a3100d56363119a8d1ba9c0364141324002355",
+      "bodyBytes": 77
+    }
+  ],
+  "auth": {
+    "signIn": 200,
+    "active": 200
+  },
+  "initial": {
+    "stage": "initial",
+    "name": "R1835 after 36f8fdce-e86",
+    "graph": {
+      "counts": {
+        "policy": 2,
+        "schedule": 2,
+        "day": 7,
+        "assignment": 1
+      },
+      "rowHash": "37859fcd8e3fe26616d2beb0f040de373fdde50e302dcde9f9854c77d3052188"
+    },
+    "defaultGraphHash": "57b781eb8a831428ba4a37bc3efd67d694a015371c760b8b0b96892ade895833",
+    "recordedTimeHash": "1d9e261b945e44646c61ecc167f4fca9f9bb6d141a3670b75c7ba9c92e8fd2b4",
+    "userSettingsHash": "ac876ad7e6c1a2d7e4bcc3a12e65b833995568c82b34475856a396fc1cfcccd6",
+    "preferencesWithoutProgressHash": "bdc91bc507f52e7db3964c30d00ccdbee08b3cfea1938ece7337440917f1fe68",
+    "onboardingStep": null,
+    "named": {
+      "policyIds": [],
+      "scheduleIds": [],
+      "dayIds": [],
+      "isDefault": null,
+      "hoursPerCycle": null,
+      "days": []
+    }
+  },
+  "refused": {
+    "stage": "default-refused",
+    "name": "R1835 after 36f8fdce-e86",
+    "graph": {
+      "counts": {
+        "policy": 2,
+        "schedule": 2,
+        "day": 7,
+        "assignment": 1
+      },
+      "rowHash": "37859fcd8e3fe26616d2beb0f040de373fdde50e302dcde9f9854c77d3052188"
+    },
+    "defaultGraphHash": "57b781eb8a831428ba4a37bc3efd67d694a015371c760b8b0b96892ade895833",
+    "recordedTimeHash": "1d9e261b945e44646c61ecc167f4fca9f9bb6d141a3670b75c7ba9c92e8fd2b4",
+    "userSettingsHash": "ac876ad7e6c1a2d7e4bcc3a12e65b833995568c82b34475856a396fc1cfcccd6",
+    "preferencesWithoutProgressHash": "bdc91bc507f52e7db3964c30d00ccdbee08b3cfea1938ece7337440917f1fe68",
+    "onboardingStep": null,
+    "named": {
+      "policyIds": [],
+      "scheduleIds": [],
+      "dayIds": [],
+      "isDefault": null,
+      "hoursPerCycle": null,
+      "days": []
+    }
+  },
+  "accepted": {
+    "stage": "accepted-recovery",
+    "name": "R1835 after 36f8fdce-e86",
+    "graph": {
+      "counts": {
+        "policy": 3,
+        "schedule": 3,
+        "day": 14,
+        "assignment": 1
+      },
+      "rowHash": "e8effe52cb63d2e5ad8a191763617911cdb1e73939f66754e03f054e6df6b488"
+    },
+    "defaultGraphHash": "57b781eb8a831428ba4a37bc3efd67d694a015371c760b8b0b96892ade895833",
+    "recordedTimeHash": "1d9e261b945e44646c61ecc167f4fca9f9bb6d141a3670b75c7ba9c92e8fd2b4",
+    "userSettingsHash": "294acc3f1dacc07e58647ea6d5036675922239b06afd949da398da700eb993ed",
+    "preferencesWithoutProgressHash": "bdc91bc507f52e7db3964c30d00ccdbee08b3cfea1938ece7337440917f1fe68",
+    "onboardingStep": "wellness",
+    "named": {
+      "policyIds": [
+        "17746922-dba8-4bf2-b7b5-787212de5bbf"
+      ],
+      "scheduleIds": [
+        "2ef687fd-eb47-4bc7-adfa-7e7b1a3a33aa"
+      ],
+      "dayIds": [
+        "8c1c9147-7a7c-445d-87a7-f77721db4978",
+        "aebc6394-fe3c-43f5-9a82-57744fd4b378",
+        "a939d7a7-3eb5-4aa6-835c-ce415f4cba01",
+        "f4797bd3-92d5-4c92-8161-ccdfc40c66e4",
+        "257a6f12-666f-4c67-9e32-cde762f4c863",
+        "83e876ea-47d8-487b-be37-c7d1b6d09684",
+        "9ed03de7-e71a-4f8f-8b9b-d628d1dd3eb9"
+      ],
+      "isDefault": false,
+      "hoursPerCycle": "37.5",
+      "days": [
+        {
+          "day": "monday",
+          "isWorkDay": true,
+          "hoursPerDay": "7.5"
+        },
+        {
+          "day": "tuesday",
+          "isWorkDay": true,
+          "hoursPerDay": "7.5"
+        },
+        {
+          "day": "wednesday",
+          "isWorkDay": true,
+          "hoursPerDay": "7.5"
+        },
+        {
+          "day": "thursday",
+          "isWorkDay": true,
+          "hoursPerDay": "7.5"
+        },
+        {
+          "day": "friday",
+          "isWorkDay": true,
+          "hoursPerDay": "7.5"
+        },
+        {
+          "day": "saturday",
+          "isWorkDay": false,
+          "hoursPerDay": "0.0"
+        },
+        {
+          "day": "sunday",
+          "isWorkDay": false,
+          "hoursPerDay": "0.0"
+        }
+      ]
+    }
+  },
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/onboarding/notifications\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/onboarding/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/onboarding/notifications/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "sourceAtEnd": {
+    "source": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "bytesSha256": "05444c0709c1f32675b4ab1da4b31c0522bc7f950e6a7e6f8c73355cf4bdf7e2",
+        "canonicalSha256": "0bbf6dabdda5df4ce12d822dd62729b678f676ac40f3cc99fced6dd936a68955"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "bytesSha256": "e8f8b4f8785bcbe696014f2c55d6ffcb6f1da5bbc6c905b8a7a19aac889c6a0c",
+        "canonicalSha256": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+        "bytesSha256": "18853d5893bd1c6b6fde844d77aa5eebad30907ac6855744b6fd22b3a047ee68",
+        "canonicalSha256": "382aa71824fdaecab2bf6b5afadda5f01bae53caf1bd84060443f61ba4f70437"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx",
+        "bytesSha256": "cd48faabb8ae85ab48287e713ae8145aa96e29b014aa18f29e781c9ff7a0c0ca",
+        "canonicalSha256": "8a17b22c399da68bf95c03a6b7fce16d4d719636c046aabc77452b031ec62d07"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+        "bytesSha256": "39c517a55dfc07bcd4d96c5d3d57736290050fc7e98601c8c56b2062d4a40a5c",
+        "canonicalSha256": "15a3bb27a4d5ba7ab63b13b2c06c5705e06560e19b3df422876f8da582d8450f"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "bytesSha256": "54b999fa8be38051573e32827691cc251ef744eec9334ff08102e6df1f4c209d",
+        "canonicalSha256": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9"
+      },
+      {
+        "path": "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts",
+        "bytesSha256": "b8aad0cb0066a3e2fbf0c3bac635e5ed51877e964ca9c82b241f5d35dd87e4c2",
+        "canonicalSha256": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5"
+      },
+      {
+        "path": "apps/webapp/src/lib/onboarding/work-template-mutation.ts",
+        "bytesSha256": "ac360eaebd54189a7b94dc235fc8bf68425903b597b4564f4ae77a21fda6c34b",
+        "canonicalSha256": "e63df58118269453859e5975ac20d7ad20a3701e5437cbbaf890f6be58720e5c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/work-policy.ts",
+        "bytesSha256": "ac8533962f57a46a49e108d71137a09b17571484f4f51305a0ad662b587e6c2c",
+        "canonicalSha256": "56fb115e3b957111ccb34e99745ba612bd298b274b7adfda3a102148da1ff54c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/user-settings.ts",
+        "bytesSha256": "712d0c9bfc3882dad3e9f933c5f5306fc51fe19ff466ce35546898fad796faeb",
+        "canonicalSha256": "141b42b6aaaaa097832fde7a609e4c94c6101d16cc7f95459ae9a0e0a3756e87"
+      },
+      {
+        "path": "apps/webapp/src/db/auth-schema.ts",
+        "bytesSha256": "ecd9db0893eeef056ac8450f1c93c41b4e095d38607f28cd15190293fa2de3dd",
+        "canonicalSha256": "72404cd241eb9588426d54449742b4292f296daa960069c45f699c4ab7ed5814"
+      },
+      {
+        "path": "apps/webapp/src/lib/validations/onboarding.ts",
+        "bytesSha256": "807541711c0dddc8322aee2ae81925003ff8973a782240921eda196e94c86a19",
+        "canonicalSha256": "94656a41622221f5737469b86979b2a0fb0f2a9b84d718ee065ef64395c82ec3"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access.ts",
+        "bytesSha256": "148429c2552d9bca9aa71d12330e6b6e15682d30ef63fadbc4181573f1d178ee",
+        "canonicalSha256": "4da7941cfc3d6575ceb661428a98f37cdbe840cb7ccbc8b5a963d1979209783e"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access-level.ts",
+        "bytesSha256": "eb3d28b458f6c01739db20c071f206203ac65efbcd85cb8d51eb68cebef3056b",
+        "canonicalSha256": "7cbdae627f562b8c4e7dc49eda46ba507f7ede251a5492349ea350a51644e462"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/organization-role.ts",
+        "bytesSha256": "fe162989e3818d774aea83b938cca0809b437573fd71b93db89b82c5b4fd5f0c",
+        "canonicalSha256": "d6a44f99bce3ba3150e3a44daa4e2e4e010dd63fc0a37006459ca2bb70a95877"
+      },
+      {
+        "path": "apps/webapp/src/lib/employee-lifecycle/current-roster.ts",
+        "bytesSha256": "eee7c6a34a325c271697aa0dfdf835d5542b0fc599c5daf9ff4fa1e2b30829c3",
+        "canonicalSha256": "ec657c3bcd473ec462f286621fde20cd89789925faba3e7506264f70f60cc759"
+      },
+      {
+        "path": "apps/webapp/src/lib/time-tracking/work-transaction/index.ts",
+        "bytesSha256": "9fde4231169e4b4cd95865a36c471258ae36ce564004ce24f8aa746c993772cd",
+        "canonicalSha256": "b0a5f2be115bb6c55dac9c2c0d297d7eeca362421ca3ac44528d5e65dbbe2a8d"
+      }
+    ],
+    "digest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d",
+    "historicalCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+    "head": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+    "qualification": "Explicit dirty source bytes are pinned; HEAD alone is not source evidence."
+  }
+}

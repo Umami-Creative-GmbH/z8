@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":11729442066964177753},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"origin\":\"http://localhost:58616/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89\",\"result\":{\"headings\":[\"Who is in: Berlin workshop\"],\"links\":[\"/en/settings/employees/e29faab2-5e61-4ef3-8888-27b16de81db3\",\"/en/settings/employees/9a7b03f1-9a10-48df-ad22-acfa62e85814\"],\"permission\":\"unavailable\",\"rows\":[\"Fixture Person 2\\n\\t\\nClocked in\\n\\t\\n06:54\",\"Fixture Person 3\\n\\t\\nOn break\\n\\t\\n06:54\"]}},\"error\":null}\n",
+  "err": ""
+}

@@ -1,0 +1,224 @@
+{
+  "candidate": "08c266493f3a3cba07de3fe81e8d054a7377fd4d",
+  "correction": "8491e46aaac7e4e4b4b26d4dacd19d963580610a",
+  "sourceEdited": false,
+  "normalDevelopmentPublicLogin": true,
+  "notificationsDenied": true,
+  "authStateCopiedSavedRestored": false,
+  "images": [
+    {
+      "path": "current-publish-expanded-1600-03.png",
+      "bytes": 86953,
+      "sha256": "55a41620bb7084c78b52381d58f648136d8104e7e51bcbd1696e3d72fa00faee",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-collapsed-1600-03.png",
+      "bytes": 87439,
+      "sha256": "64172d8efab058b1ce29ed0877a6407496cd64477886cc791c0353a0999ce30f",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-expanded-390-03.png",
+      "bytes": 44526,
+      "sha256": "2edf409fc2d939b888408393c0eccd06c2792a1d32fcf0236482f0eaefda0cd1",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-publish-expanded-2400-03.png",
+      "bytes": 90879,
+      "sha256": "73623f46ab47d39850fbf9d9a3d73fd37e2e258170fedd70a8a7013136d40abd",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    },
+    {
+      "path": "current-dialog-above-publish-1600-03.png",
+      "bytes": 126572,
+      "sha256": "57c55d34d7f7063ddc4b153ebb40e1ae7f7b314d2fe06a7d1325ceb747ea885f",
+      "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+    }
+  ],
+  "expanded": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "collapsed": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": false,
+    "documentWidth": 1600
+  },
+  "expandedAgain": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "phone": {
+    "viewport": [
+      390,
+      844
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 230.78125,
+        "y": 764,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 390
+  },
+  "wide": {
+    "viewport": [
+      2400,
+      1400
+    ],
+    "fontSize": "16px",
+    "dark": true,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 2240.78125,
+        "y": 1320,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 2400
+  },
+  "dialog": {
+    "title": "Create Shift",
+    "cancelEnabled": true,
+    "cancelHit": true,
+    "dialogZ": "50",
+    "publishZ": "30"
+  },
+  "beforeClick": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "fontSize": "16px",
+    "dark": false,
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "30"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": true,
+    "documentWidth": 1600
+  },
+  "actualPointer": {
+    "trusted": [
+      true
+    ],
+    "publishRequests": 2,
+    "dialogTitle": null,
+    "publishedTwo": false,
+    "failure": true,
+    "remainingPublish": [
+      {
+        "text": "Publish (2)",
+        "disabled": false
+      }
+    ]
+  },
+  "verdict": "ATTEMPT_FAILED",
+  "failure": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n\n2 !== 1\n"
+  },
+  "publishCalls": 2
+}

@@ -1,0 +1,40 @@
+{
+  "canonicalGate": {
+    "path": "apps/webapp/scripts/run-postgres-integration-suites.sh",
+    "sha256": "5dcdd919b20f4a228f7febfdc1db50cefe4215390c7c831dbc484e1e7d700e22",
+    "copySha256": "58009ff072bf3b1a967d2c74254a50ab8d7dac25de071ca1df8fd50359aacc3f",
+    "changes": [
+      "absolute own app cwd",
+      "pnpm verification flag"
+    ]
+  },
+  "canonicalOwner": {
+    "path": "apps/webapp/scripts/run-approval-workflow-repository-integration.sh",
+    "sha256": "f49261eb57e86db2bc06bc6945edb9541b1628d37992768c59a3e7ff5b56663f",
+    "copySha256": "221d5c1abdfa2ac0be022981f383309c269f23fb839e49120cb539efc34f6416",
+    "changes": [
+      "absolute own app cwd",
+      "own copy of unchanged canonical gate"
+    ]
+  },
+  "fixture": {
+    "source": "scripts/performance/fixture.mjs",
+    "canonicalSha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+    "priorCopy": ".tmp/1735-pdf-independent-checks/fixture-helper-01.mjs",
+    "priorSha256": "52440c01b1783be9c92d4a503b0ce1a105ef8de6f56193998f02f46017bab38a",
+    "copySha256": "e2f98f9acbd25ab07a724b89ca05897a5e007cd9943154145ac8517ce5f6671d",
+    "changes": [
+      "fresh unique ownership label",
+      "command allowlist prepare/cleanup only"
+    ],
+    "bootstrap": "unchanged apps/webapp/scripts/performance-fixture.ts; initial standard auth/member/roles sanctioned; no later auth/member/grant SQL allowed"
+  },
+  "development": {
+    "source": ".tmp/1735-pdf-independent-checks/dev-01-private.mjs",
+    "copySha256": "21553cc5de1103a0a589fa6dfc95a1ae06bcb98cb611a5db54195262264c027c",
+    "changes": [
+      "fresh own service label"
+    ],
+    "mode": "normal development only; no env file load; unchanged env validation/Turnstile"
+  }
+}

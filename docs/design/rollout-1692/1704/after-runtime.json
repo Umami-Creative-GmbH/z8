@@ -1,0 +1,34 @@
+{
+  "mode": "after",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Team Performance"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n02:09\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nTeam Performance\nTotal work hours by team for the selected period\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nTeam Comparison\nTotal work hours by team for the selected period\nFixture team 1\nFixture team 0\n0\n2500\n5000\n7500\n10000\nTeam Performance Details\nBreakdown of work hours by team and employee\nTeam\tTotal Hours\tAvg per Employee\tEmployee Count\tStatus\nFixture team 1\t8,352.0h\t2,088.0h\t4\tOn Track\nFixture team 0\t8,352.0h\t2,088.0h\t4\tOn Track\nOvertime & Undertime\nHours variance from expected work hours\nPerson 1\nPerson 5\nPerson 7\nPerson 3\nPerson 2\nPerson 4\nPerson 6\nPerson 0\n0\n1\n2\n3\n4"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Team Performance"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\nMore actions\nAnalytics\nTeam Performance\nTotal work hours by team for the selected period\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nTeam Comparison\nTotal work hours by team for the selected period\nFixture team 1\nFixture team 0\n0\n2500\n5000\n7500\n10000\nTeam Performance Details\nBreakdown of work hours by team and employee\nTeam\tTotal Hours\tAvg per Employee\tEmployee Count\tStatus\nFixture team 1\t8,352.0h\t2,088.0h\t4\tOn Track\nFixture team 0\t8,352.0h\t2,088.0h\t4\tOn Track\nOvertime & Undertime\nHours variance from expected work hours\nPerson 5\nPerson 3\nPerson 4\nPerson 0\n0\n1\n2\n3\n4"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Team Performance"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n02:09\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nTeam Performance\nTotal work hours by team for the selected period\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nTeam Comparison\nTotal work hours by team for the selected period\nFixture team 1\nFixture team 0\n0\n2500\n5000\n7500\n10000\nTeam Performance Details\nBreakdown of work hours by team and employee\nTeam\tTotal Hours\tAvg per Employee\tEmployee Count\tStatus\nFixture team 1\t8,352.0h\t2,088.0h\t4\tOn Track\nFixture team 0\t8,352.0h\t2,088.0h\t4\tOn Track\nOvertime & Undertime\nHours variance from expected work hours\nPerson 1\nPerson 5\nPerson 7\nPerson 3\nPerson 2\nPerson 4\nPerson 6\nPerson 0\n0\n1\n2\n3\n4"
+    }
+  ],
+  "errors": []
+}

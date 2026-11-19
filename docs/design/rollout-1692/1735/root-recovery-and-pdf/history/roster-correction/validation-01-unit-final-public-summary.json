@@ -1,0 +1,1495 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-roster-checks/validation-01/unit-final.json",
+    "bytes": 105341,
+    "sha256": "30aba2b678f821989731bb1ca66a766b07739a0df793d37050cbdb3dbfe66529"
+  },
+  "reported": {
+    "total": 293,
+    "passed": 293,
+    "failed": 0,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "SiteHeader hands the personal equipment title to its page without adopting other destinations",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader hands the suspended recovery title to the page without opting descendants into heading ownership",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader hands the main title to converted pages while retaining unknown descendant titles",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader hands the exact vehicle report its heading and retains descendant shell titles",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader shows header actions in the requested order on the dashboard route",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader keeps secondary dashboard controls available as labeled actions in the mobile overflow",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader keeps mobile overflow actions available outside the dashboard without customization",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader does not show the dashboard customize trigger outside the dashboard route",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader shows the most specific route title instead of falling back to Dashboard",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader truncates a long title so the header actions stay on a phone screen (#846)",
+          "status": "passed"
+        },
+        {
+          "fullName": "SiteHeader clears the status bar when the app is drawn edge to edge (#846)",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/tolgee/catalog-placeholders.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "catalog placeholders contains no JavaScript template placeholders",
+          "status": "passed"
+        },
+        {
+          "fullName": "catalog placeholders uses ICU {name} arguments instead of i18next {{name}}",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "extracted translation keys all have a default English value",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-migrated.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "migrated view refresh owners refreshes server groups once and only activated client regions while retaining employee drafts through a partial failure",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "View refresh starts server refresh while independent custom data is still pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh shares an active client read instead of cancelling it and starting the same dataset again",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh accepts newer server props after a local retry and cancels the older pending GET without losing drafts",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh refreshes server, active query, SWR and manual data without resetting view state or drafts",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh stays busy until manual data finishes and prevents duplicate refresh clicks",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh reports failures while keeping existing content and permitting a retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh does not refresh a different route opened while data is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "View refresh accepts fresh saved data without replacing an open draft",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/date-range-picker.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "DateRangePicker disables and explains preset selection until organization settings are hydrated",
+          "status": "passed"
+        },
+        {
+          "fullName": "DateRangePicker keeps picker selections as local calendar strings",
+          "status": "passed"
+        },
+        {
+          "fullName": "DateRangePicker formats calendar labels without converting through the host timezone",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/export-buttons.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ExportButtons mounts without evaluating the Excel module",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons exports CSV content and cleans up without evaluating Excel",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons exports PDF content and cleans up without evaluating Excel",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons loads Excel on click, holds all controls, and cleans up repeated downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons restores controls after a rejected Excel import and permits retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons disables all controls while the Excel module is still loading",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons restores controls after workbook generation rejects and permits retry without leaking URLs",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-custom-fields.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ReportCustomFieldsCard lists the report's custom fields in order with readable values",
+          "status": "passed"
+        },
+        {
+          "fullName": "ReportCustomFieldsCard renders nothing without fields",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "keeps anonymous frozen-report export controls available and renders their trimmed report scope",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a pending anonymous export on unmount and allows a fresh deliberate download",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a pending anonymous export on Activity and allows a fresh deliberate download",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a pending anonymous export on replacement and allows a fresh deliberate download",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-summary-cards.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ReportSummaryCards shows earnings for an employee who is fixed now but worked under hourly terms",
+          "status": "passed"
+        },
+        {
+          "fullName": "ReportSummaryCards shows no earnings when no hourly terms were in force",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/reports-i18n.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "reports i18n does not leave known report UI copy as raw literals",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "keeps one start pending through Activity until its result settles",
+          "status": "passed"
+        },
+        {
+          "fullName": "drops validation-queued work across an account switch and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "drops validation-queued work across an organization switch and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across account scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across error scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps invalid input, focuses its error, and never submits it",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps the draft through a same-scope refresh of calendar defaults",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not start a queued submission after Activity hides it during validation",
+          "status": "passed"
+        },
+        {
+          "fullName": "ignores late success effects after an Activity hide/show lifetime",
+          "status": "passed"
+        },
+        {
+          "fullName": "ignores late failure effects after an Activity hide/show lifetime",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the pay period after a transport failure and allows an explicit retry",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "keeps an admitted matching session usable while its session refresh is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers the batch through local organization Retry after the real provider read fails",
+          "status": "passed"
+        },
+        {
+          "fullName": "preserves the start-page control through the same provider failure and Retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "holds one confirmation through Activity until success settles and readback finishes",
+          "status": "passed"
+        },
+        {
+          "fullName": "holds one confirmation through Activity until refusal settles and readback finishes",
+          "status": "passed"
+        },
+        {
+          "fullName": "holds one confirmation through Activity until rejection settles and readback finishes",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps an edit reserved through Activity and recovers a failed readback without overlapping confirmation",
+          "status": "passed"
+        },
+        {
+          "fullName": "releases a confirmation that settles while hidden before restoring the workspace",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-loading.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "keeps one safe main heading during the actual route admission fallback",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps a safe title and hides stale records while loading prevents scope confirmation",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps a safe title and hides stale records while error prevents scope confirmation",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps a safe title and hides stale records while organization prevents scope confirmation",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps a safe title and hides stale records while account prevents scope confirmation",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "refreshes real marker, employee-count and document observers after an accepted shared unlink retires",
+          "status": "passed"
+        },
+        {
+          "fullName": "refreshes real marker, employee-count and document observers after an accepted personnel-file unlink retires",
+          "status": "passed"
+        },
+        {
+          "fullName": "shares the pending document unlink when navigating from the overview to its personnel file",
+          "status": "passed"
+        },
+        {
+          "fullName": "reserves an unlink across organization A-B-A and releases it after refusal",
+          "status": "passed"
+        },
+        {
+          "fullName": "reserves an unlink across organization A-B-A and releases it after rejection",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps an unrelated actor unlink independent",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps an unrelated organization unlink independent",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps an unrelated document unlink independent",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "route metadata adopts the due-for-deletion review without adopting deeper or invalid personnel routes",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the request queue without adopting its independent descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the payslip batch start and detail headings",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only the sick-leave overview heading, preserving independent personnel routes",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only the personal requests page heading",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the personal documents heading without officer descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the personnel file directory and sick-leave overview while preserving descendant boundaries",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the employee equipment record heading without adopting its collection",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata retains independent approvals page headings",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only the deputy history record, preserving other approval headings",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only the complete review arrival route",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts the exact vacation route while retaining staged descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata adopts exact report titles and preserves descendant shell headings",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /de/my-requests",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/organization",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/payroll",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/scheduling",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/approvals/inbox",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/compliance",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/works-council",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/team/absences",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/team/driving",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/driving-licence",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/driving-licence/checks/employee-1",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/reports/projects",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/reports/vehicles",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/settings/employees/employee-1",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/settings/locations/location-1",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/equipment",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/equipment/employees/employee-1",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/equipment/assignments/assignment-1",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /de/my-equipment",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata resolves /en/settings/equipment",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata matches route prefixes only at path-segment boundaries",
+          "status": "passed"
+        },
+        {
+          "fullName": "route metadata normalizes locale and trailing slash segments",
+          "status": "passed"
+        },
+        {
+          "fullName": "adopts only the exact payslip batch detail heading",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "QueryProvider server action version skew asks the user to reload once when queries and mutations hit an old deployment",
+          "status": "passed"
+        },
+        {
+          "fullName": "QueryProvider server action version skew asks the user to reload when a direct server action call rejects unhandled",
+          "status": "passed"
+        },
+        {
+          "fullName": "QueryProvider server action version skew does not retry mutations that failed because of version skew",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/date-ranges.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "getDateRangeForPreset resolves the current month from the organization-local current instant",
+          "status": "passed"
+        },
+        {
+          "fullName": "getDateRangeForPreset resolves last month using PlainDate arithmetic",
+          "status": "passed"
+        },
+        {
+          "fullName": "formatDateRangeLabel formats calendar dates in the requested locale",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "calculateHourlyEarningsFromTerms pays a Berlin 22:00 to 02:00 shift 2 h at each wage when the wage changes that night",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms pays work up to the 14th when the employee switched from hourly to fixed on the 15th",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms reports no earnings when no hourly terms are in force during the range",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms reports zero earnings for hourly terms without work",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms earns nothing for work no confirmed terms cover",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms uses the recorded duration, net of breaks",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms counts only the part of a shift inside the report range",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms rejects hourly work under terms that carry no wage",
+          "status": "passed"
+        },
+        {
+          "fullName": "calculateHourlyEarningsFromTerms rejects currencies mixed across worked terms",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/permissions.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "getReportAccessibleEmployeeIds returns only self for employees",
+          "status": "passed"
+        },
+        {
+          "fullName": "getReportAccessibleEmployeeIds returns self and direct reports for managers",
+          "status": "passed"
+        },
+        {
+          "fullName": "getReportAccessibleEmployeeIds returns null for admins because the organization filter is sufficient",
+          "status": "passed"
+        },
+        {
+          "fullName": "getManagerReportAccessibleEmployees deduplicates duplicate direct reports while preserving the first occurrence",
+          "status": "passed"
+        },
+        {
+          "fullName": "getManagerReportAccessibleEmployees filters direct reports from other organizations",
+          "status": "passed"
+        },
+        {
+          "fullName": "getManagerReportAccessibleEmployees maps first and last names from auth user fields",
+          "status": "passed"
+        },
+        {
+          "fullName": "canReadReportEmployee uses CASL Employee object-subject visibility for report targets",
+          "status": "passed"
+        },
+        {
+          "fullName": "canReadReportEmployee preserves admin all-in-org and employee self report visibility",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/project-health.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "buildProjectHealthFields sets budget alerts at 70, 90, and 100 percent thresholds",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields sets deadline alerts for 14 days, 7 days, 1 day, today, and overdue",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields counts the calendar days from today to the deadline day",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields takes today's date in the organization's timezone, not the server's or the viewer's",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields spreads range hours over every report day, both ends included",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields forecasts selected-range burn rate budget exhaustion before deadline",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields uses cumulative hours for remaining budget and selected-range hours for forecast burn rate",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectHealthFields does not forecast without average daily hours, budget, or deadline",
+          "status": "passed"
+        },
+        {
+          "fullName": "project health totals and alerts counts budget health totals",
+          "status": "passed"
+        },
+        {
+          "fullName": "project health totals and alerts sorts alerts by severity and risk",
+          "status": "passed"
+        },
+        {
+          "fullName": "project health totals and alerts sorts an earlier forecast risk before a later deadline-only warning",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/project-report-access.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "project report access gives owners and admins of the organization every project with cost and margin",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report access gives project managers their projects with revenue only",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report access keeps team managers at hours: every project, no Billable Time figures",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report access gives employees role admin without an admin membership no money",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report access keeps employees who manage no project out of project reports",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/project-report-export.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "project report export exports invoiced and un-invoiced hours and revenue when the figures carry them",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export exports a project manager's report without any cost or margin column",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export exports cost and margin for owners, and an unknown cost as such",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export exports hours only when the report has no Billable Time figures",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export writes money as two-decimal numbers in Excel",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export renders the same document as a PDF",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export exports the project's and the customer's custom fields as a table, in order",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export exports the customer view with its totals row",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report export exports projects without a customer as their own group, with their hours without customer",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "buildProjectTaskBreakdown adds up to the project total with a No task row for untasked time",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectTaskBreakdown leaves out the No task row when every period has a task",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectTaskBreakdown counts the No task row's bookings that are missing a task (#884)",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectTaskBreakdown gives the No task row no count when none of its bookings is missing a task",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectTaskBreakdown is empty when nothing was booked",
+          "status": "passed"
+        },
+        {
+          "fullName": "buildProjectTaskBreakdown reports estimate progress from all hours booked to the task, not only the period",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/report-date-range.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "resolveReportDateRange uses the organization timezone for inclusive calendar dates",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange preserves local-day boundaries across New York daylight saving time",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange preserves Berlin local-day boundaries across daylight saving time",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange counts a DST fallback date as one inclusive calendar day",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange supports non-hour organization offsets",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange rejects invalid and reversed dates",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange clips a period crossing the May boundary in Berlin to the selected local date",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange splits a project period at the May-to-June boundary in Berlin",
+          "status": "passed"
+        },
+        {
+          "fullName": "resolveReportDateRange preserves the clipped minute total when a one-minute period crosses Berlin midnight",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/report-generator.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "report generator scopes home office category lookup to all home office categories in the report organization",
+          "status": "passed"
+        },
+        {
+          "fullName": "report generator aggregates home office days across active and inactive home office categories",
+          "status": "passed"
+        },
+        {
+          "fullName": "report generator clips absence days to the report calendar strings",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/vehicle-distance-report.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "distance per vehicle report lists every month of the period, also months without driving",
+          "status": "passed"
+        },
+        {
+          "fullName": "distance per vehicle report sums kilometres per vehicle, employee and month",
+          "status": "passed"
+        },
+        {
+          "fullName": "distance per vehicle report groups every own vehicle into one row, whoever drove it",
+          "status": "passed"
+        },
+        {
+          "fullName": "distance per vehicle report exports one row per vehicle and employee with kilometres per month",
+          "status": "passed"
+        },
+        {
+          "fullName": "distance per vehicle report ignores work outside the period's months",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "retires an in-flight organization A read across A to B to A",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires reads across a account arrival and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires reads across a validation arrival and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires reads across a role arrival and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "refuses a form validation continuation after its requesting arrival retires",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires an Activity-hidden read and unlocks a fresh generation on return",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps successful rows after failed refresh, disables downloads and retries the generated range",
+          "status": "passed"
+        },
+        {
+          "fullName": "distinguishes ungenerated, generating and an empty completed report",
+          "status": "passed"
+        },
+        {
+          "fullName": "prevents duplicate Generate and retired organization exports",
+          "status": "passed"
+        },
+        {
+          "fullName": "prevents duplicate Generate and retired account exports",
+          "status": "passed"
+        },
+        {
+          "fullName": "prevents duplicate Generate and retired validation exports",
+          "status": "passed"
+        },
+        {
+          "fullName": "prevents duplicate Generate and retired Activity exports",
+          "status": "passed"
+        },
+        {
+          "fullName": "prevents duplicate Generate and retired replacement exports",
+          "status": "passed"
+        },
+        {
+          "fullName": "stages a new period without relabeling the generated report or changing global Refresh scope",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "offers local Retry after the real organization context query fails before an initial vehicle snapshot",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "BillableFiguresCard shows a project manager hours and revenue, and no cost or margin",
+          "status": "passed"
+        },
+        {
+          "fullName": "BillableFiguresCard shows an unknown margin as cost unknown, never as 100%",
+          "status": "passed"
+        },
+        {
+          "fullName": "BillableFiguresCard formats hours with the viewer's decimal separator and a spaced unit",
+          "status": "passed"
+        },
+        {
+          "fullName": "BillableFiguresCard links owners and admins from the changed-after-invoicing count to the marked work",
+          "status": "passed"
+        },
+        {
+          "fullName": "BillableFiguresCard gives project managers the count without a link to the admin-only hand-off area",
+          "status": "passed"
+        },
+        {
+          "fullName": "BillableFiguresCard flags billable work on projects without a customer, which cannot be handed off",
+          "status": "passed"
+        },
+        {
+          "fullName": "BillableEmployeeTable lists each employee's hours in the viewer's locale",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/customer-billable-view.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "CustomerBillableView lists projects without a customer in a group of their own",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-budget-progress.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectBudgetProgress shows used and remaining hours in the viewer's locale",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectBudgetProgress shows hours over budget in the viewer's locale",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-health-alerts.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectHealthAlerts renders an empty state when projects have no alerts",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectHealthAlerts renders budget and forecast alert details with a details action",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-portfolio-table.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectPortfolioTable keeps every local result reachable and opens the correct project after filtering and paging",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectPortfolioTable shows each project's hours and budget in the viewer's locale",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-report-details.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectReportDetails shows the customer and the project's and customer's custom fields",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectReportDetails says when the project has no customer",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-report-scope-recovery.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "offers local recovery when the current report scope read fails instead of announcing perpetual loading",
+          "status": "passed"
+        },
+        {
+          "fullName": "offers local recovery when the current share-link scope read fails in the settings consumer",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not start a second revoke when Refresh updates the same link while its first revoke is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "refuses an open revoke confirmation after refreshed metadata withdraws revoke rights",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-reports-container.contract.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectReportsContainer report action boundary sends the report range's calendar days to the server actions as ISO day strings",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "discards a late generation across organization A→B→A and permits a fresh generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "discards a late generation across account A→B→A and permits a fresh generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "discards a late generation across Activity A→B→A and permits a fresh generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "preserves the last generated result after a failed generation and a failed background refresh",
+          "status": "passed"
+        },
+        {
+          "fullName": "requires generation, retries a failed read with the same calendar scope and prevents pending duplicates",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-summary-cards.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectSummaryCards shows total hours across projects in the viewer's locale",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectSummaryCards shows a single project's hours, budget and daily average in the viewer's locale",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectSummaryCards keeps English hours with a decimal point",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectTaskBreakdown lists hours and share per task with a No task row",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectTaskBreakdown marks done tasks as done",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectTaskBreakdown shows estimate progress only for a task with an estimate",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectTaskBreakdown shows how many bookings of the No task row are missing a task (#884)",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectTaskBreakdown shows no missing-task count when none is missing a task",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectTaskBreakdown says so when no time was booked",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-team-breakdown.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ProjectTeamBreakdown lists each employee's hours in the viewer's locale",
+          "status": "passed"
+        },
+        {
+          "fullName": "ProjectTeamBreakdown renders frozen report inputs without mutating them",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "retires the TanStack submit continuation across organization before invoking the action",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires the TanStack submit continuation across account before invoking the action",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires the TanStack submit continuation across Activity before invoking the action",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains failed share options and uses the report's calendar days, then reveals the successful secret only until dismissal",
+          "status": "passed"
+        },
+        {
+          "fullName": "forgets a dismissed creation instead of revealing its secret in a reopened dialog",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "keeps cached project share links in their requesting organization arrival and leaves peer queries intact",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps cached settings share links in their requesting organization arrival and leaves peer queries intact",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps cached project share links in their requesting account arrival and leaves peer queries intact",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps cached settings share links in their requesting account arrival and leaves peer queries intact",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not fetch or expose cached links while organization scope is unresolved",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "does not reuse retired actor/organization options on A → B → A while the current roster read is held",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster success on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster refusal on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster rejection on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains current roster during same-arrival refetch and rerenders, but hides it while session is disabled",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster refusal through local Retry without generating a report",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster rejection through local Retry without generating a report",
+          "status": "passed"
+        },
+        {
+          "fullName": "shows pending roster recovery and keeps a rejected retry recoverable without duplicate transport",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not let a roster Retry retired by Activity replace the new opening's options",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps failed settings recoverable and prevents duplicate transport while Retry is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the selected period across a failed settings refresh without permitting generation until Retry succeeds",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "employee report workspace cancels an export on Activity retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace cancels an export on replacement retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace cancels an export on unmount retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace cancels an export on batched account retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace stages a period edit without replacing the applied preview or export scope",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace drops retained data on an authoritative refusal and offers Retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace prevents duplicate form commands and ignores a rejection after unmount",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace observes batched identity signals before React renders A again",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace keeps the generated report visible while retrying a failed replacement",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace discards a held read across organization A → B → A",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace discards a held read across account A → B → A",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace invalidates a held read on Activity hide and reconnects usable controls",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace suppresses held downloads after scope loss and does not replay them on return",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace retains the exact employee, project and vehicle headings without adopting deeper descendants",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/employee-report-custom-fields.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "employee report custom fields in exports writes a Custom Fields section to the CSV, in order, with dates as ISO dates",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report custom fields in exports adds the custom fields to the Excel summary sheet",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report custom fields in exports adds the custom fields to the PDF",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/excel-exporter.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "Excel report characterization retains the filename and all fictional report worksheet cells",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "renders report facts, table rows, unknown values and notes after React Compiler optimization",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "project report portfolio scope allows assigned project managers and scopes them to managed projects",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report portfolio scope uses selected-range hours for report totals and cumulative hours for budget health",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report portfolio scope scopes project and work-period queries to the active organization",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report portfolio scope uses the active-organization employee supplied by requireAuth",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report portfolio scope scopes the page-gate employee lookup to the active organization",
+          "status": "passed"
+        },
+        {
+          "fullName": "project report portfolio scope serializes detailed report period boundaries as ISO strings",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.scope.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "project reports page access gate allows admins, managers, and employees assigned as project managers",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,333 @@
+{
+  "schema": 1,
+  "derived": true,
+  "scope": "Copied scripts, TS/TSX/MTS and TS fragment; syntax only, no module resolution, typecheck, emit or archived code execution.",
+  "parser": {
+    "module": "next/dist/compiled/babel/core",
+    "sha256": "de2a10d906aa0421d3e4da824d97d376961b5330ae895563281dab1fb5dafae0",
+    "version": "7.26.10",
+    "noInstallOrFetch": true
+  },
+  "entries": [
+    {
+      "path": "archive/runtime-current/prepare.cjs",
+      "sha256": "fb2e28e793ea6082b0cb5284718883e882939c3214c2ba1b11334f361b372d06",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/bridge.cjs",
+      "sha256": "872d27deba75aa7d27839805c8cc7199b6c84baf8c628dbb810795edd774a431",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/browser-upload.config.mts",
+      "sha256": "c407d808ec61ac1ad75059d6699e957c5fb05532a53bec6a01925da6f6266bd0",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/workspace-recovery.test.tsx",
+      "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/upload-expanded.test.tsx",
+      "sha256": "6492ee2e200ce61a253f73135e24f357430430d71f2ce440a57a1e1605fb357f",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/public-surrounding.test.tsx",
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/late-commands.test.tsx",
+      "sha256": "633cfa492c96f1cfe5244935ee71de52c15030a0dd41df8da5ec03058c56745b",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/partial-cleanup.test.tsx",
+      "sha256": "608d37cffff0b03bce809b0f9671737c74fe8477187c8f159e9e2fde0d7ac2d2",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/results.cjs",
+      "sha256": "5210f2ea259d3808055381e00e02c289cd13fee5711d2559feb89b8a263dbcfa",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/audit.cjs",
+      "sha256": "e8f6598b36b38fcc635150cdfbb95b7befd57bab08602652d6a05e2161bc43e3",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/final-audit.cjs",
+      "sha256": "08779e0fdd61fc47f6ef61f782b70dae9f17b96b4e3871c98497c3dacc8efa07",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/runtime-current/seal.cjs",
+      "sha256": "aaad2fdbce958e6f16759935884aaf6506ccb2a6c4563c9b4e8d7e0d5ccf814f",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/audit.cjs",
+      "sha256": "8c6246037af3f1088ccfe924bd6842f1297bfe2e865c38ed26a05eece03534ee",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/premerge-control.test.tsx",
+      "sha256": "47b8949d3842d612e15f742146e3b36a4183c21b9f2d1531b79aceba5f565b57",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/prepare-merge.cjs",
+      "sha256": "a5e591023a90468ff78e859163cd1afbec152d761bc3156e1a20754d4ca57203",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/public-acceptance.test.tsx",
+      "sha256": "0462a48413c7cc7ae4644088fbbc0c0928a344dd962f1023c59d4a741f95f8d2",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/resolved-route-metadata.test.ts",
+      "sha256": "7e44742b7c000f1347a1def9b4bf776f655667fd7c5a3334648ef6ebfeedc3c3",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/resolved-route-metadata.ts",
+      "sha256": "ee14541d8cc9ce4dfad7329eed2f2bee09f4d61ec4221f5ab7f53112ee4c0e32",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-queued-activation/vitest.config.mts",
+      "sha256": "7f2ad220b088adec0eaca1e88acac1b72252705176ee86e2909e57160db9da70",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/audit.cjs",
+      "sha256": "7b9a5de16c891938595afabca59acfc08dde61db48d13003c8a50bfa308d381a",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/bridge.cjs",
+      "sha256": "8b271b80bd819d8eb635bece067d6fc5de7071342a767edf5f5d390d47c8e1d9",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/browser-upload.config.mts",
+      "sha256": "982c7fc84f493b41428677ba9a1fda16b3caf9cf498c1a43fae8ff1d0bb95017",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/minimize.cjs",
+      "sha256": "3896681921fda846d1a785773283b476607d31e77d0114b2a01da2e72679d333",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/seal.cjs",
+      "sha256": "b36f10fb2afa11cccabd879baca81820815692968282fe7330a26d1c58738b33",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/upload-cases.fragment",
+      "sha256": "7b6f351c3aa921218f56b6be32f7151021e2695d5e423cf504205883ccb08fa0",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/upload-recovery.test.tsx",
+      "sha256": "17e36d9f082741c567eb2a19e7c10f6d649ed02ca28a4722d42e01aabb84511f",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/public-acceptance.test.tsx",
+      "sha256": "9399cbaeb98ca5a9676519eccb76f01b7865cf95c0ae831e0756b9e63045f628",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-activity-upload/public-passing-13.test.tsx",
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/audit.cjs",
+      "sha256": "629becf06c25ac3bf068cd3b7d68f3178c217a2658efd7ee3e3babd397488743",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/bridge.cjs",
+      "sha256": "020826539255ebf84652f7ce85468afc80e193614a1a44092fabf859d213a3c5",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/browser-upload.config.mts",
+      "sha256": "c407d808ec61ac1ad75059d6699e957c5fb05532a53bec6a01925da6f6266bd0",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/cold-cache.cjs",
+      "sha256": "efdc48bb6f93f6a1601965cac01bd01fb2171e0e48548e4107d6b7119e17ae59",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/minimize.cjs",
+      "sha256": "271fe166a75c44cad3f8423b61c4784387cd2c58b58d399e1a7f735dc9d67e07",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/results.cjs",
+      "sha256": "9e24b80c5f71fa7e32c5868a6f61c9cf1a85ca183e44771e29cf41ca772fc286",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/summarize.cjs",
+      "sha256": "9764d67625158633124dc691fe3078f92f5a5b1bdee18c39b1f0e4a417ecee5a",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/seal.cjs",
+      "sha256": "c1fffc37c193e12ca233814328bec4065c2e56b83722cebe1156143e91a887ca",
+      "method": "node --check stdin",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/public-surrounding.test.tsx",
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/upload-review.test.tsx",
+      "sha256": "72dcb4bbd84bced60dee521bba77b33fdbe4d948357a6455563e27727ef7f8c4",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/workspace-recovery-v1.test.tsx",
+      "sha256": "96438f2716937931c581c87f0ff242482637d32ce0c18e13ea563f705b10eaae",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    },
+    {
+      "path": "archive/stop-availability-upload/workspace-recovery.test.tsx",
+      "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+      "method": "existing Next bundled Babel parseSync; typescript+jsx; no config loading",
+      "exit": 0,
+      "executed": false,
+      "diagnostics": 0
+    }
+  ]
+}

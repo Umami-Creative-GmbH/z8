@@ -1,0 +1,942 @@
+{
+  "source": {
+    "head": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+        "raw": "39b787df3156a2b2c2eafb53821f51648fbf3cde234768a8a81270cb15a1124e",
+        "lf": "28d24d94a53fbbc7de0894518c82ec86eb5bad507aac002c5c3b1440efb37282"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+        "raw": "f22f136ea4ac3816d2b73a12333707ffc09ce3c6d68779fb0e61058d5017d319",
+        "lf": "a714bf0abf2eedc8cfb7a3b678bb989fddb14909f5f8e3f4dd4f641aceea17ce"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+        "raw": "3698658a57622bf0c5886c700ceb278401d30587a64c921bb1e72f4a262ae542",
+        "lf": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+        "raw": "df85062b4cb3632daa0cbc7e77fd07e4ad175e339d51fb4d19a195ba3dce4662",
+        "lf": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+        "raw": "561bc1bb1b19a8991b019cf8fd11b50265c231ee98616f1f55972d5ce577c469",
+        "lf": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+        "raw": "6fb33d5f71126079245c64b42672b62c72739c59debc9398e707f1393e1f6509",
+        "lf": "b6240274c74cd80cd6cfaa92af891ecca0b9ea23555d58e14a9cc74d01beb598"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+        "raw": "a568df7142da6da735423057140cb634685e5fcbb919a5bef842570bc2d4074d",
+        "lf": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+        "raw": "e917fa953a8f73d512b2b1550537355e688db3a353650351925c94a2a0c48247",
+        "lf": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "3cb6f35d35f23a4d59af8276dabd1b58124aee1c94c79ba9533b3aace9d040df",
+        "lf": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "00582764e922b06f2f237b23822bed88ef5073ffbe3801d9238e8a9548c03c59"
+  },
+  "checks": [
+    "Current selected route phone drawer closes with first Escape.",
+    "small-admin actual Large preference persisted after reload, long title and all observed document actions fit phone horizontal bounds.",
+    "small-employee actual Large preference persisted after reload, long title and all observed document actions fit phone horizontal bounds."
+  ],
+  "captures": [
+    {
+      "file": "phone-small-admin-saved18-light.png",
+      "sha256": "344ef756567b8e0a5cc2bfd341d1e9533d97c55eb0429adca72f5daaa1f39170",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 18,
+          "y": 125.75,
+          "width": 354,
+          "height": 35.984375,
+          "top": 125.75,
+          "right": 372,
+          "bottom": 161.734375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 18,
+          "y": 125.75,
+          "width": 354,
+          "height": 35.984375,
+          "top": 125.75,
+          "right": 372,
+          "bottom": 161.734375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "phone-small-admin-saved18-dark.png",
+      "sha256": "ab1ac02ab381b5f0a300a1e3635ed439542fd640c32e5f1b9980b3b23c992ef5",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 18,
+          "y": 125.75,
+          "width": 354,
+          "height": 35.984375,
+          "top": 125.75,
+          "right": 372,
+          "bottom": 161.734375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 18,
+          "y": 125.75,
+          "width": 354,
+          "height": 35.984375,
+          "top": 125.75,
+          "right": 372,
+          "bottom": 161.734375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy dark",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "desktop-collapsed-saved18.png",
+      "sha256": "381508d92f7566fe9acfe8c22713d232cbc46dfcc94f00b0fa89065c4c3779e5",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 90,
+          "y": 134.75,
+          "width": 1483,
+          "height": 40.5,
+          "top": 134.75,
+          "right": 1573,
+          "bottom": 175.25,
+          "left": 90
+        },
+        "main": {
+          "x": 63,
+          "y": 0,
+          "width": 1537,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 63
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 63,
+          "height": 1000,
+          "top": 0,
+          "right": 63,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 90,
+          "y": 134.75,
+          "width": 1483,
+          "height": 40.5,
+          "top": 134.75,
+          "right": 1573,
+          "bottom": 175.25,
+          "left": 90
+        },
+        "main": {
+          "x": 63,
+          "y": 0,
+          "width": 1537,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 63
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 63,
+          "height": 1000,
+          "top": 0,
+          "right": 63,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "desktop-expanded-saved18.png",
+      "sha256": "ef7d8d1638d93e39e3082cd3138a08acba679936115f5bf5c06441330c3d5443",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 315,
+          "y": 134.75,
+          "width": 1258,
+          "height": 40.5,
+          "top": 134.75,
+          "right": 1573,
+          "bottom": 175.25,
+          "left": 315
+        },
+        "main": {
+          "x": 288,
+          "y": 0,
+          "width": 1312,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 288
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 1000,
+          "top": 0,
+          "right": 288,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 315,
+          "y": 134.75,
+          "width": 1258,
+          "height": 40.5,
+          "top": 134.75,
+          "right": 1573,
+          "bottom": 175.25,
+          "left": 315
+        },
+        "main": {
+          "x": 288,
+          "y": 0,
+          "width": 1312,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 288
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 1000,
+          "top": 0,
+          "right": 288,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "phone-small-employee-saved18-light.png",
+      "sha256": "2ededa558c4a2ce186926225f1cb444cb74b6ae0c8f5345ea47c920afdb730e2",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 18,
+          "y": 91,
+          "width": 354,
+          "height": 35.984375,
+          "top": 91,
+          "right": 372,
+          "bottom": 126.984375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 18,
+          "y": 91,
+          "width": 354,
+          "height": 35.984375,
+          "top": 91,
+          "right": 372,
+          "bottom": 126.984375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/my-documents",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "My Documents"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "phone-small-employee-saved18-dark.png",
+      "sha256": "a1911412e800cff9fd91576bd47739b39abe499c5d6958f3759d8deb5460dc5b",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 18,
+          "y": 91,
+          "width": 354,
+          "height": 35.984375,
+          "top": 91,
+          "right": 372,
+          "bottom": 126.984375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 18,
+          "y": 91,
+          "width": 354,
+          "height": 35.984375,
+          "top": 91,
+          "right": 372,
+          "bottom": 126.984375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/my-documents",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "My Documents"
+      ],
+      "theme": "light bprogress-busy dark",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    }
+  ],
+  "geometry": [
+    {
+      "actor": "small-admin",
+      "dark": false,
+      "width": 390,
+      "rows": [
+        {
+          "textWidth": 257.5,
+          "text": "Medical note\nSick note\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Medical note",
+              "x": 137,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 177.5,
+              "bottom": 639.46875,
+              "left": 137
+            },
+            {
+              "name": "Download Medical note",
+              "x": 182,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 222.5,
+              "bottom": 639.46875,
+              "left": 182
+            },
+            {
+              "name": "Link Medical note to sick leave",
+              "x": 227,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 267.5,
+              "bottom": 639.46875,
+              "left": 227
+            },
+            {
+              "name": "Edit Medical note",
+              "x": 272,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 312.5,
+              "bottom": 639.46875,
+              "left": 272
+            },
+            {
+              "name": "Delete Medical note",
+              "x": 317,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 357.5,
+              "bottom": 639.46875,
+              "left": 317
+            }
+          ]
+        },
+        {
+          "textWidth": 257.5,
+          "text": "Employment record\nOther\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Employment record",
+              "x": 182,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 222.5,
+              "bottom": 808.953125,
+              "left": 182
+            },
+            {
+              "name": "Download Employment record",
+              "x": 227,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 267.5,
+              "bottom": 808.953125,
+              "left": 227
+            },
+            {
+              "name": "Edit Employment record",
+              "x": 272,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 312.5,
+              "bottom": 808.953125,
+              "left": 272
+            },
+            {
+              "name": "Delete Employment record",
+              "x": 317,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 357.5,
+              "bottom": 808.953125,
+              "left": 317
+            }
+          ]
+        },
+        {
+          "textWidth": 257.5,
+          "text": "Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization\nCertificate\nShared\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 137,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 177.5,
+              "bottom": 1113.4375,
+              "left": 137
+            },
+            {
+              "name": "Download Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 182,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 222.5,
+              "bottom": 1113.4375,
+              "left": 182
+            },
+            {
+              "name": "Choose the skill Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization proves",
+              "x": 227,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 267.5,
+              "bottom": 1113.4375,
+              "left": 227
+            },
+            {
+              "name": "Edit Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 272,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 312.5,
+              "bottom": 1113.4375,
+              "left": 272
+            },
+            {
+              "name": "Delete Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 317,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 357.5,
+              "bottom": 1113.4375,
+              "left": 317
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "actor": "small-admin",
+      "dark": true,
+      "width": 390,
+      "rows": [
+        {
+          "textWidth": 257.5,
+          "text": "Medical note\nSick note\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Medical note",
+              "x": 137,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 177.5,
+              "bottom": 639.46875,
+              "left": 137
+            },
+            {
+              "name": "Download Medical note",
+              "x": 182,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 222.5,
+              "bottom": 639.46875,
+              "left": 182
+            },
+            {
+              "name": "Link Medical note to sick leave",
+              "x": 227,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 267.5,
+              "bottom": 639.46875,
+              "left": 227
+            },
+            {
+              "name": "Edit Medical note",
+              "x": 272,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 312.5,
+              "bottom": 639.46875,
+              "left": 272
+            },
+            {
+              "name": "Delete Medical note",
+              "x": 317,
+              "y": 598.96875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 598.96875,
+              "right": 357.5,
+              "bottom": 639.46875,
+              "left": 317
+            }
+          ]
+        },
+        {
+          "textWidth": 257.5,
+          "text": "Employment record\nOther\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Employment record",
+              "x": 182,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 222.5,
+              "bottom": 808.953125,
+              "left": 182
+            },
+            {
+              "name": "Download Employment record",
+              "x": 227,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 267.5,
+              "bottom": 808.953125,
+              "left": 227
+            },
+            {
+              "name": "Edit Employment record",
+              "x": 272,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 312.5,
+              "bottom": 808.953125,
+              "left": 272
+            },
+            {
+              "name": "Delete Employment record",
+              "x": 317,
+              "y": 768.453125,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 768.453125,
+              "right": 357.5,
+              "bottom": 808.953125,
+              "left": 317
+            }
+          ]
+        },
+        {
+          "textWidth": 257.5,
+          "text": "Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization\nCertificate\nShared\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 137,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 177.5,
+              "bottom": 1113.4375,
+              "left": 137
+            },
+            {
+              "name": "Download Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 182,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 222.5,
+              "bottom": 1113.4375,
+              "left": 182
+            },
+            {
+              "name": "Choose the skill Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization proves",
+              "x": 227,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 267.5,
+              "bottom": 1113.4375,
+              "left": 227
+            },
+            {
+              "name": "Edit Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 272,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 312.5,
+              "bottom": 1113.4375,
+              "left": 272
+            },
+            {
+              "name": "Delete Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 317,
+              "y": 1072.9375,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 1072.9375,
+              "right": 357.5,
+              "bottom": 1113.4375,
+              "left": 317
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "actor": "small-employee",
+      "dark": false,
+      "width": 390,
+      "rows": [
+        {
+          "textWidth": 257.5,
+          "text": "Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization\nCertificate\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 272,
+              "y": 638.46875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 638.46875,
+              "right": 312.5,
+              "bottom": 678.96875,
+              "left": 272
+            },
+            {
+              "name": "Download Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 317,
+              "y": 638.46875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 638.46875,
+              "right": 357.5,
+              "bottom": 678.96875,
+              "left": 317
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "actor": "small-employee",
+      "dark": true,
+      "width": 390,
+      "rows": [
+        {
+          "textWidth": 257.5,
+          "text": "Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization\nCertificate\n\nJan 15, 2026 · fixture.pdf (10 B)",
+          "actions": [
+            {
+              "name": "Open Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 272,
+              "y": 638.46875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 638.46875,
+              "right": 312.5,
+              "bottom": 678.96875,
+              "left": 272
+            },
+            {
+              "name": "Download Safety qualification for equipment handling and annual workplace inspection with detailed authorization notes valid across the organization",
+              "x": 317,
+              "y": 638.46875,
+              "width": 40.5,
+              "height": 40.5,
+              "top": 638.46875,
+              "right": 357.5,
+              "bottom": 678.96875,
+              "left": 317
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "focusAfterEscape": {
+    "tag": "BUTTON",
+    "label": null
+  },
+  "restoredTitle": true,
+  "status": "passed"
+}

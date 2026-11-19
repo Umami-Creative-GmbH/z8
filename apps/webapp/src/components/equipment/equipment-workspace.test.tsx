@@ -92,6 +92,48 @@ async function openHistorical(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("Equipment overview", () => {
+	it("names the authorized summary scope and keeps partial outstanding returns distinct from overdue", async () => {
+		const user = userEvent.setup();
+		overview(
+			{
+				...view,
+				assignments: [
+					heldAssignment,
+					{
+						...partialAssignment,
+						id: "partial",
+						overdue: false,
+						effectiveDeadline: null,
+					},
+				],
+			},
+			{ ...query, holderId: ids.alex, typeId: ids.laptopType, former: "hide" },
+		);
+		expect(screen.getByText("Your authorized equipment records")).toBeTruthy();
+		expect(screen.getByText(/Nov 5, 2026.*Europe\/Berlin/)).toBeTruthy();
+		const summary = within(
+			screen.getByRole("region", {
+				name: "Returns and readiness in your scope",
+			}),
+		);
+		expect(
+			summary.getByRole("button", { name: "Show outstanding returns" })
+				.textContent,
+		).toContain("2");
+		expect(
+			summary.getByRole("button", { name: "Show overdue returns" }).textContent,
+		).toContain("1");
+		await user.click(
+			summary.getByRole("button", { name: "Show overdue returns" }),
+		);
+		expect(api.replace).toHaveBeenCalledWith(
+			`/equipment?holderId=${ids.alex}&typeId=${ids.laptopType}&overdue=true&former=false`,
+			{ scroll: false },
+		);
+		expect(
+			screen.getByRole("link", { name: "L-02" }).getAttribute("href"),
+		).toContain("back=");
+	});
 	it("shows the header, key figures and the outstanding assignments table", () => {
 		overview({
 			...view,
@@ -410,12 +452,13 @@ describe("Issuing equipment", () => {
 		);
 		await user.selectOptions(panel.getByLabelText("Condition"), "worn");
 		await user.type(panel.getByLabelText("Notes (optional)"), "With charger");
+		const retainedNotes = panel.getByLabelText("Notes (optional)");
 		await user.click(panel.getByRole("button", { name: "Record issuance" }));
-		await waitFor(() =>
-			expect(api.toast.error).toHaveBeenCalledWith(
-				"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
-			),
+		expect((await panel.findByRole("alert")).textContent).toBe(
+			"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
 		);
+		expect(api.toast.error).not.toHaveBeenCalled();
+		expect(panel.getByLabelText("Notes (optional)")).toBe(retainedNotes);
 		// An uncertain outcome keeps the panel open for an identical retry.
 		await user.click(panel.getByRole("button", { name: "Record issuance" }));
 		await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
@@ -430,6 +473,10 @@ describe("Issuing equipment", () => {
 			explicitDeadline: null,
 		});
 		expect(api.refresh).not.toHaveBeenCalled();
+		await user.click(panel.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		const reopened = await openPanel(user, "Issue equipment");
+		expect(reopened.queryByRole("alert")).toBeNull();
 	});
 
 	it("issues a positive whole quantity without requiring an artificial individual identity", async () => {
@@ -706,6 +753,54 @@ describe("Employee equipment", () => {
 		);
 	}
 
+	it("keeps the employee totals independent of record filters and follows overdue work by keyboard", async () => {
+		const user = userEvent.setup();
+		employee(
+			{
+				...view,
+				assignments: [
+					heldAssignment,
+					{
+						...partialAssignment,
+						id: "partial-r021",
+						employeeId: ids.alex,
+						holderName: "Alex Current",
+						overdue: false,
+						effectiveDeadline: null,
+					},
+				],
+			},
+			ids.alex,
+		);
+		expect(
+			screen.getByText("Authorized equipment for this employee"),
+		).toBeTruthy();
+		expect(screen.getByText(/Nov 5, 2026.*Europe\/Berlin/)).toBeTruthy();
+		const summary = within(
+			screen.getByRole("region", { name: "Employee returns" }),
+		);
+		expect(
+			summary.getByRole("button", { name: "Show outstanding returns" })
+				.textContent,
+		).toContain("2");
+		const overdue = summary.getByRole("button", {
+			name: "Show overdue returns",
+		});
+		overdue.focus();
+		await user.keyboard("{Enter}");
+		expect(screen.queryByText("Shirt size M")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "L-02" }).getAttribute("href"),
+		).toContain(encodeURIComponent(`/equipment/employees/${ids.alex}`));
+		expect(
+			summary.getByRole("button", { name: "Show outstanding returns" })
+				.textContent,
+		).toContain("2");
+		await user.click(screen.getByRole("button", { name: "Clear filters" }));
+		expect(screen.getByText("Shirt size M")).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+	});
+
 	it("heads the page with the holder and a summary, without a holder column", () => {
 		employee(
 			{
@@ -745,6 +840,41 @@ describe("Employee equipment", () => {
 		) as HTMLSelectElement;
 		expect(holder.value).toBe(ids.alex);
 		expect(holder.disabled).toBe(true);
+	});
+
+	it("retains a self holder's read-only records without staff actions or an overview back link", async () => {
+		const user = userEvent.setup();
+		employee(
+			{
+				...view,
+				canManage: false,
+				canAdminister: false,
+				assignments: [
+					{
+						...heldAssignment,
+						canReceive: false,
+						canCloseException: false,
+						transfer: undefined,
+					},
+				],
+			},
+			ids.alex,
+		);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Alex Current" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Issue equipment" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("link", { name: "Back to equipment" }),
+		).toBeNull();
+		await user.click(screen.getByRole("button", { name: "Actions for L-02" }));
+		expect(
+			within(await screen.findByRole("menu"))
+				.getAllByRole("menuitem")
+				.map((item) => item.textContent),
+		).toEqual(["View details"]);
 	});
 
 	it("keeps former employees usable for receipt and history without offering issuance", async () => {

@@ -1,0 +1,189 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional-awaiting-new-independent-recheck",
+  "verifiedCommit": null,
+  "previousPublishedCheckpoint": "541da1923c9108d36c2b3676689a05d06702a2ca",
+  "correctionCommit": "775712ef048019b88222c4f43686a9fed4c38845",
+  "correctionIntegrationCommit": "53a0c49900e530be124e940f9f3c4aca7172dbeb",
+  "tree": "2e459a680f40c9e332e81f410e19dbcdfcecc13d",
+  "appTree": "3bee7157f8e818528c548ec08b0a677a07a962e5",
+  "orderedParents": [
+    "541da1923c9108d36c2b3676689a05d06702a2ca",
+    "775712ef048019b88222c4f43686a9fed4c38845"
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx",
+      "gitBlob": "c32a3e92a0939ab0001dff2d24a3ecc4741ad0d2"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.tsx",
+      "gitBlob": "4f883ad8b2afa87a048b106d225805ffbbcc0166"
+    }
+  ],
+  "finding": {
+    "spec": 1,
+    "severity": "P1",
+    "standards": "0 recorded before STOP; incomplete, not approval",
+    "overlap": "0 confirmed; full review incomplete",
+    "classification": "Inherited in the partial pinned fcd64a753 queue with current shared dependencies; not a whole historical application run.",
+    "trigger": "After a failed reimbursement acknowledgement, an authorized successful queue refresh returns accounts:[] and canSettle:true. No same-source disqualification is observed.",
+    "before": "Dialog rendered only inside the nonempty list branch unmounts; returned rows remount blank values and a retry of the identical normalized payment gets a different key.",
+    "after": "The same captured dialog is rendered independently of the list body, retaining draft and retry-key state through empty/nonempty reads. Explicit refusal, provider retirement, settle-capability loss and latched eligibility retirement remain effective.",
+    "limits": "Synthetic public transport proof only; no persisted write, duplicate financial entry, live authorization exploit or runtime claim."
+  },
+  "independent": {
+    "head": "541da1923c9108d36c2b3676689a05d06702a2ca",
+    "safeIndexSha256": "8fe37f8135dc097d50cbce80280c00c00abb008ed0ec5a66c2e4d2e13694f4d6",
+    "payloads": 37,
+    "bytes": 13437903,
+    "priority": {
+      "passed": 8,
+      "failed": 1
+    },
+    "currentOccurrences": 11,
+    "currentDistinctIdentities": 10,
+    "currentPassOccurrences": 8,
+    "currentFailureOccurrences": 3,
+    "accounting": "Initial9cases8P1F; one priority repeat1F and focused retry-key consequence1F. One finding. Baseline2P1F remains separate; root369 and worker210unit/84PG are inherited and nonadditive.",
+    "auditSha256": "33123dfcac5d7509969b536ae9a3f153e0f1dd62ceee01570f70b7635c83d5ad",
+    "audit": "37 payload hashes match;20JSON parse;6Python files parse syntax-only. Four commit pins,21source/947configuration pins,66anchor occurrences/62SHAs,327/202archive maps and158targeted internal links match. Denied-CIM empty output is invalid absence proof; the later successful bounded receipt is authoritative. Early setup errors remain transcript-only; archive maps are not a fresh rehash of every archived Git payload.",
+    "broaderChecks": "No broad compatibility, PostgreSQL, types, lint, formats, Doctor or runtime after STOP."
+  },
+  "root": {
+    "unchangedReproduction": {
+      "before": {
+        "passed": 8,
+        "failed": 1
+      },
+      "after": {
+        "passed": 9,
+        "failed": 0
+      },
+      "probeSha256": "26a34f820ecdd1991faa64786fb47e29b3b909e81c8928b9614c8c4cc24559a2",
+      "assertionAdaptation": "None: exact allowlisted priority probe copied and run unchanged."
+    },
+    "units": {
+      "passed": 374,
+      "failed": 0,
+      "instances": 374,
+      "distinct": 374,
+      "physicalFiles": 30,
+      "prior369Preserved": true,
+      "permanentFileCases": 22,
+      "newCases": 5,
+      "newCasesDetails": "One unchanged independent priority body retained with response helper renamed to existing reply; four root cases cover lost acknowledgement/direct empty-page retry key, unsettled-command lock and retry key through empty/nonempty transitions, latched retirement across empty/restored rows, and explicit empty-page capability refusal/regrant. No old test name/assertion changed; the original test Git prefix is byte-exact.",
+      "caseMultisetSha256": "f00a660d02e96bc82a6c2193c78c53a2e8e8022fcfb14da457038b8e6226828c",
+      "selection": [
+        "src/components/site-header.test.tsx",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/travel-expenses/finance-queue-paging.test.ts",
+        "src/lib/travel-expenses/finance-queue-params.test.ts",
+        "src/lib/travel-expenses/officer-scope.test.ts",
+        "src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+        "src/components/travel-expenses/finance/finance-exports.test.tsx",
+        "src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+        "src/components/travel-expenses/finance/finance-queue.test.tsx",
+        "src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+        "src/components/travel-expenses/finance/settlement-status.test.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+        "src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+        "src/lib/travel-expenses/__tests__/settlement.test.ts",
+        "src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+        "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "src/components/travel-expenses/travel-expenses-heading.test.ts",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel-provider.test.tsx",
+        "src/components/travel-expenses/finance/finance-reader-provider.test.tsx",
+        "src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx"
+      ]
+    },
+    "types": {
+      "nextTypegen": 0,
+      "application": 0,
+      "workflowContracts": 0,
+      "smoke": 0,
+      "license": "Existing genuine125-entry artifact unchanged; no copying or generation."
+    },
+    "quality": {
+      "ownedFiles": 2,
+      "explicit100ColumnCRLF": 0,
+      "lintImports": 0,
+      "ordinaryProfile": 1,
+      "ordinaryFindings": 2,
+      "sourceWhitespace": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "541da1923c9108d36c2b3676689a05d06702a2ca",
+      "complete": true,
+      "files": 2,
+      "errors": 0,
+      "warnings": 1,
+      "score": null,
+      "warning": "Existing FinanceQueueContent complexity34/cognitive47/depth6. This correction-only scan does not clear prior bulk-dialog/FastRefresh/TanStack findings or whole-rollout diagnostics.",
+      "noNewSuppressionsOrToolConfigChanges": true
+    },
+    "newPostgresCases": 0,
+    "newRuntimeAssertions": 0,
+    "failedRootHarnessAttempts": 0,
+    "retainedWarnings": "Vite native-config and timeout-overflow log warnings are retained."
+  },
+  "preservation": {
+    "unaffectedRootPaths": 19246,
+    "anchors": {
+      "occurrences": 66,
+      "unique": 62,
+      "preserved": true
+    },
+    "archives": [
+      {
+        "path": "1747/root-history-and-capability-recovery/",
+        "entries": 327
+      },
+      {
+        "path": "1748/root-withdrawal-and-continuation/",
+        "entries": 202
+      }
+    ],
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "ownedTemporaryBridgesRemoved": 1,
+    "servicesOrBrowsersStarted": 0,
+    "canonicalOwners": "Authorization/actions/security, settlement/payroll/export writers, dates/math, expected-balance/idempotency contracts, shared command reservations and query-key factories unchanged."
+  },
+  "commands": {
+    "guard": "$env:pnpm_config_verify_deps_before_run='false'; all pnpm commands also pass --config.verify-deps-before-run=false",
+    "exactReproduction": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/review1749-empty-refresh.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-empty-refresh-root-checks/<red-or-green>.json",
+    "units": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit <selection paths as separate arguments> --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-empty-refresh-root-checks/unit-complete.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "explicit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --formatter-enabled=true --line-width=100 --line-ending=crlf <sourcePins paths relative to apps/webapp> --config-path=biome.jsonc",
+    "lint": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --formatter-enabled=false <sourcePins paths relative to apps/webapp> --config-path=biome.jsonc",
+    "ordinary": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check <sourcePins paths relative to apps/webapp> --config-path=biome.jsonc",
+    "doctor": "REACT_DOCTOR_PARALLEL=1 pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 541da1923c9108d36c2b3676689a05d06702a2ca --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1749-empty-refresh-root-checks/doctor.json"
+  },
+  "remaining": [
+    "New isolated independent review of empty/nonempty dialog lifetime and all preserved eligibility/provider/refusal/command controls.",
+    "Fresh canonical PostgreSQL and live finance acceptance; previous worker210unit/84PG and blank readback PNGs remain historical.",
+    "Live authority/session/organization transitions, real payroll confirmation/removal, exports/download/providers, native/axe, full generation/catalog, devices and true zoom."
+  ],
+  "frontier": {
+    "integrated": 65,
+    "awaitingIntegration": 39,
+    "pending": 53,
+    "total": 157
+  },
+  "issueState": "OPEN",
+  "pullRequest": "draft",
+  "privateEvidenceDirectory": ".tmp/1749-empty-refresh-root-checks"
+}

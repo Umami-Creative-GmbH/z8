@@ -1,0 +1,12 @@
+{
+  "requests": 28,
+  "statuses": [
+    "open",
+    "submitted",
+    "accepted",
+    "cancelled"
+  ],
+  "formerHistoryRecords": 1,
+  "priorReturnContext": 1,
+  "qualification": "Initial synthetic domain prerequisites only; no public creation, upload, offboarding, auth, membership, or grant mutation proof."
+}

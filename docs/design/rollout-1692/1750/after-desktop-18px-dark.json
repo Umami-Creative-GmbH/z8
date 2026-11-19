@@ -1,0 +1,52 @@
+{
+  "active": {
+    "label": null,
+    "tag": "BUTTON"
+  },
+  "dialogs": 0,
+  "fields": [
+    {
+      "name": "",
+      "value": "transport"
+    },
+    {
+      "name": "description",
+      "value": "Customer workshop train ticket"
+    },
+    {
+      "name": "amount",
+      "value": "89.90"
+    },
+    {
+      "name": "",
+      "value": "employee"
+    },
+    {
+      "name": "",
+      "value": "company"
+    },
+    {
+      "name": "accountingReference",
+      "value": ""
+    },
+    {
+      "name": "",
+      "value": "none"
+    }
+  ],
+  "fixtureNotificationPolicy": "native --disable-notifications; permission grant not asserted",
+  "fontSize": "18px",
+  "h1": [
+    "Customer workshop train ticket"
+  ],
+  "overflow": false,
+  "path": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f",
+  "privacyClone": "Published clone with contact area masked in the matching PNG and focus metadata limited to tag/label.",
+  "theme": "dark bprogress-busy",
+  "viewport": [
+    1600,
+    1000
+  ],
+  "source": "7abdd84e8adc22ae113697621eb0d60742c7a8e8",
+  "partialExistingConsumerOverlay": false
+}

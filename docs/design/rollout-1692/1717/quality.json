@@ -1,0 +1,152 @@
+{
+  "implementation": "66c2e2652",
+  "integrationAncestor": "6bce36400e094702e650d6c24c38fc79a49623b6",
+  "ticketMerge": "3060450caa9153793269f5546f7b55a0ee35e657",
+  "commands": [
+    {
+      "command": "gh issue view 1717 --json number,title,body,assignees,state,comments",
+      "result": "OPEN; KaiSoellch; start comment 6889390408 verified"
+    },
+    {
+      "command": "pnpm install --offline --frozen-lockfile --ignore-scripts",
+      "result": "passed; 1823 cached packages, no manifest/lockfile changes"
+    },
+    {
+      "command": "pnpm node scripts/performance/fixture.mjs prepare .tmp/1717-fixture-v2",
+      "result": "passed; own generated services/migrated synthetic fixture"
+    },
+    {
+      "command": "pnpm --filter webapp generate-licenses; pnpm --filter webapp i18n:metadata",
+      "result": "passed; ignored local metadata only"
+    },
+    {
+      "command": "pnpm --filter webapp exec vitest run --project unit src/components/equipment/equipment-workspace.test.tsx -t 'names the authorized summary'",
+      "result": "red missing scope; green 1 passed / 26 skipped"
+    },
+    {
+      "command": "pnpm --filter webapp exec vitest run --project unit src/components/equipment/equipment-routes.test.tsx -t 'unavailable overview'",
+      "result": "red missing retry; green 1 passed / 9 skipped"
+    },
+    {
+      "command": "pnpm --filter webapp test:integration src/lib/organization/equipment/quantities.integration.test.ts src/lib/organization/equipment/readiness.integration.test.ts src/lib/organization/equipment/historical.integration.test.ts src/lib/organization/equipment/officers.integration.test.ts src/lib/organization/equipment/feature-switch.integration.test.ts src/lib/organization/equipment/assignment-read.integration.test.ts",
+      "result": "launcher unavailable: WSL /bin/bash missing"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1717/postgres.mjs .tmp/1717-fixture-v2",
+      "result": "6 suites / 47 tests passed via same integration project/gate, before shared shell/docs merge"
+    },
+    {
+      "command": "pnpm --filter webapp exec vitest run --project unit src/components/equipment src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/sidebar.test.tsx",
+      "result": "final merged tree: 15 suites / 148 tests passed"
+    },
+    {
+      "command": "pnpm --filter webapp typecheck",
+      "result": "passed before and after integration; next typegen + application + workflow contracts + smoke"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check src/components/equipment/equipment-overview.tsx src/components/equipment/equipment-overview-header.tsx src/components/equipment/equipment-header-actions.tsx src/components/equipment/equipment-loading.tsx src/components/equipment/equipment-assignments-card.tsx src/components/equipment/equipment-workspace.test.tsx src/components/equipment/equipment-routes.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts 'src/app/[locale]/(app)/equipment/page.tsx'",
+      "result": "10 files passed, no fixes"
+    },
+    {
+      "command": "pnpm exec react-doctor apps/webapp --scope changed --base 273320a9376b4deb60b57ba3882fc17b37ae308a --include-untracked --verbose --no-score --no-supply-chain --no-parallel",
+      "result": "10 files, zero diagnostics"
+    },
+    {
+      "command": "pnpm exec react-doctor apps/webapp/src/components/equipment/equipment-overview.tsx apps/webapp/src/components/equipment/equipment-overview-header.tsx apps/webapp/src/components/equipment/equipment-assignments-card.tsx apps/webapp/src/components/equipment/equipment-header-actions.tsx apps/webapp/src/components/equipment/equipment-loading.tsx 'apps/webapp/src/app/[locale]/(app)/equipment/page.tsx' --verbose --no-score --no-supply-chain --no-parallel",
+      "result": "merged tree: 6 files, zero diagnostics; score disabled"
+    },
+    {
+      "command": "pnpm node .tmp/1717/runtime-helper.mjs dev . .tmp/1717-fixture-v2",
+      "result": "Next 16.4.6 Turbopack; owned localhost:54503; generated fixture config only; Node26 log-open fix applied privately"
+    },
+    {
+      "command": "pnpm node .tmp/1717/runtime-helper.mjs auth . .tmp/1717-fixture-v2 small-admin small-manager small-employee small-restricted large-admin",
+      "result": "real Better Auth fixture login/set-active; later small-admin-only runs reset its organization for subsequent checks"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1717/fixture.mjs .tmp/1717-fixture-v2 seed",
+      "result": "synthetic baseline only; assignments/partial holding/ready/damaged/retired"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1717/runtime.mjs .tmp/1717-fixture-v2; pnpm node docs/design/rollout-1692/1717/runtime.mjs .tmp/1717-fixture-v2 continue; pnpm node docs/design/rollout-1692/1717/runtime.mjs .tmp/1717-fixture-v2 preferences",
+      "result": "24 successful assertions across continuation runs; earlier final transition wait timed out, two unclassified textContent browser messages retained in runtime.json"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1717/variants.mjs .tmp/1717-fixture-v2",
+      "result": "final run 11 assertions, zero browser exceptions, including in-flight org switch and inherited first-Escape correction on current route"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1717/compare.mjs .tmp/1717-fixture-v2",
+      "result": "3 matched before/after viewport pairs plus phone record captures; 6 owned sources restored byte-for-byte; same post-action data/current shared shell"
+    },
+    {
+      "command": "agent-browser.cmd --version; agent-browser.cmd skills get core; agent-browser.cmd session id --scope worktree --prefix next-dev-loop",
+      "result": "0.39.1; guide read; checkout-scoped next-dev-loop-c007a93b2e9d"
+    },
+    {
+      "command": "agent-browser.cmd --session next-dev-loop-c007a93b2e9d --restore --state .tmp/1717/agent-state-private.json --executable-path 'C:/Program Files/Google/Chrome/Application/chrome.exe' --enable react-devtools open http://localhost:54503/en/equipment; agent-browser.cmd --session next-dev-loop-c007a93b2e9d --restore react tree --json",
+      "result": "actual authorized native React tree captured privately; five consumer component names published; no accepted numeric render benchmark"
+    },
+    {
+      "command": "pnpm node .tmp/1717/runtime-helper.mjs mcp . .tmp/1717-fixture-v2",
+      "result": "final connected-browser compilation issues [], configErrors [], sessionErrors []"
+    },
+    {
+      "command": "git merge --no-edit ai/1692-app-wide-ui-refresh",
+      "result": "23c3fcc90ab3a1138601f28f96befa751224608d includes latest local 8224968accfe22981f15c5ddefe3c179f67b8dc7 and root mobile correction"
+    },
+    {
+      "command": "git merge --no-edit ai/1692-app-wide-ui-refresh; git add -- apps/webapp/src/lib/navigation/route-metadata.test.ts; git commit --no-edit",
+      "result": "3060450caa9153793269f5546f7b55a0ee35e657; additive adjacent test conflict resolved preserving both tests/opt-ins"
+    },
+    {
+      "command": "pnpm --filter webapp exec vitest run --project unit src/components/equipment src/components/driving-licence src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/sidebar.test.tsx",
+      "result": "FINAL latest integration tree: 34 suites / 267 tests passed"
+    },
+    {
+      "command": "pnpm --filter webapp typecheck",
+      "result": "FINAL latest integration tree: all application/workflow-contract/smoke projects passed"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check src/components/equipment/equipment-overview.tsx src/components/equipment/equipment-overview-header.tsx src/components/equipment/equipment-header-actions.tsx src/components/equipment/equipment-loading.tsx src/components/equipment/equipment-assignments-card.tsx src/components/equipment/equipment-workspace.test.tsx src/components/equipment/equipment-routes.test.tsx src/app/[locale]/(app)/equipment/page.tsx; pnpm --filter webapp exec biome check --line-ending=crlf src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "result": "8 LF + 2 CRLF files passed; raw default earlier check reported only two merged metadata line-ending differences"
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1717/verify-evidence.mjs",
+      "result": "matched role/scope/rows/width/headings/source hashes, native tree, diagnostics and retained historical errors verified"
+    },
+    {
+      "command": "agent-browser.cmd --session next-dev-loop-c007a93b2e9d --restore close; taskkill /PID 89200 /T /F; pnpm node scripts/performance/fixture.mjs cleanup .tmp/1717-fixture-v2",
+      "result": "closed browser; verified owned Next tree stopped; 3 label-owned containers removed; absence read back"
+    }
+  ],
+  "reviews": {
+    "skills": [
+      "implement-spec",
+      "tdd (Pocock)",
+      "frontend-design",
+      "vercel-react-best-practices",
+      "vercel-composition-patterns",
+      "web-design-guidelines",
+      "next-dev-loop",
+      "react-doctor"
+    ],
+    "webGuidelinesSource": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "performance": "No added reader, waterfall, event listener, dependency, duplicate form/table controller or business calculation; current content-visibility/stacked table retained. Native tree verified; no benchmark/full-build claim.",
+    "composition": "Presentation-only PageHeader, caller-owned toolbar slot, existing panel/confirmation and query/action owners. No new context/state framework.",
+    "accessibility": "Native named summary buttons with aria-pressed, locale/tabular numbers, explicit scoped region, single heading, named visible retry; retained search/select labels and keyboard sort/row links. Inspected actual phone/wide/light/dark captures.",
+    "limits": [
+      "Existing toast can obstruct pointer retry; keyboard retry succeeded",
+      "Earlier transition messages retained/unclassified",
+      "Root owns full static generation/catalog/shared shell acceptance",
+      "No true device/native zoom/all-locales/external providers",
+      "No live browser claim for every historical/rehire/retention variant"
+    ]
+  },
+  "cleanup": {
+    "agentBrowserSession": "next-dev-loop-c007a93b2e9d closed",
+    "next": "Command verified against this worktree and next dev; exact PID 89200 tree stopped",
+    "services": "3 verified owned containers removed; absence independently read back",
+    "privateArtifacts": "Remain ignored; not committed"
+  }
+}

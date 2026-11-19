@@ -46,11 +46,29 @@ vi.mock("@/db", () => ({
 }));
 
 const actions = await import("./actions");
+const { getCurrentEmployee } = await import("../absences/actions");
 
 describe("approvals actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
+	it.each([
+		null,
+		{ userId: "viewer", organizationId: "another-org", role: "manager" },
+		{ userId: "another-viewer", organizationId: "org-a", role: "manager" },
+		{ userId: "viewer", organizationId: "org-a", role: "employee" },
+	])(
+		"refuses a stale scoped queue read before returning records",
+		async (employee) => {
+			vi.mocked(getCurrentEmployee).mockResolvedValue(employee as never);
+			await expect(
+				actions.getPendingApprovals("en", {
+					userId: "viewer",
+					organizationId: "org-a",
+				}),
+			).rejects.toThrow("Approval scope changed");
+		},
+	);
 
 	it("no longer exports a separate canonical work sync of time corrections (#1227)", () => {
 		expect(actions).not.toHaveProperty("syncCanonicalWorkCorrection");
@@ -90,8 +108,8 @@ describe("approvals actions", () => {
 			"utf8",
 		);
 
-		expect(source).toContain(
-			"getEffectiveTimezone(currentEmployee.userId, currentEmployee.organizationId)",
+		expect(source).toMatch(
+			/getEffectiveTimezone\(\s*currentEmployee.userId,\s*currentEmployee.organizationId,?\s*\)/,
 		);
 		expect(source).toContain("getUserTimeFormat(currentEmployee.userId)");
 	});

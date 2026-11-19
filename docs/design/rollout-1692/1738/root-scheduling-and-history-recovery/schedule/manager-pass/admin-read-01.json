@@ -1,0 +1,19 @@
+{
+  "actor": "canonical admin",
+  "authorityUnchanged": true,
+  "steps": [
+    {
+      "name": "healthy empty coverage actual tooltip",
+      "ordinaryNotifyCopy": true
+    },
+    {
+      "name": "failed background coverage",
+      "lastLoadedLabel": true,
+      "retainsShiftCount": "Shift list (4)"
+    }
+  ],
+  "failure": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n\nfalse !== true\n"
+  }
+}

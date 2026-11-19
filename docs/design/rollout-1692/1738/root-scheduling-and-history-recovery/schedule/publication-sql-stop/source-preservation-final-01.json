@@ -1,0 +1,77 @@
+{
+  "head": "08c266493f3a3cba07de3fe81e8d054a7377fd4d",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "tree": "38d6d1c76ef45c5dcc61ebe701ae14ee72d85168",
+  "applicationTree": "eeda0764e71f3d4a71d3ed16040df04be37d8e35",
+  "verifiedCommit": null,
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "sourcePinsChecked": 72,
+  "configPinsChecked": 113,
+  "protectedPinsChecked": 790,
+  "pdfProofsChecked": 202,
+  "priorPathsPreservedAtIntegration": 17281,
+  "all59AnchorsAndBaselinePreserved": true,
+  "routeInventory": {
+    "persistentPages": 153,
+    "redirectAliases": 19,
+    "sourcePageTemplates": 172,
+    "aliasTemplatesUnchangedFromInitialDev": 19
+  },
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "physical": true
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true
+    }
+  ],
+  "dependencyLeaves": 158,
+  "dependencyInventorySha256": "051acf4f47910176a18bcf5fe0fc2e452beb068c74a0da938470e426b5e9141b",
+  "lock": {
+    "path": "pnpm-lock.yaml",
+    "bytes": 771361,
+    "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "license": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "bytes": 28382,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "count": 125
+  },
+  "oldStop": {
+    "files": 28,
+    "seal": "a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9",
+    "unchanged": true
+  },
+  "publicationOwners": [
+    {
+      "path": "apps/webapp/src/lib/effect/services/shift.service.ts",
+      "bytes": 27194,
+      "sha256": "49a1c93e4b387428b9c9e72194f41881138e40c7a46cf12e1ac79e01f84161ab",
+      "headBlob": "d225de026604e22673aebff7e27148edbc53583d",
+      "preLayerBlob": "d225de026604e22673aebff7e27148edbc53583d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "bytes": 12975,
+      "sha256": "a4f6fad6a04f775436224dfff3a0ac8e2e629a5ef484323a0d7a07dfec9250d1",
+      "headBlob": "8b7895278fe181ad5c7f115b99d58e2747ef0d6f",
+      "preLayerBlob": "8b7895278fe181ad5c7f115b99d58e2747ef0d6f"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.tsx",
+      "bytes": 3073,
+      "sha256": "c3f18cd100050998a9d82fa8a7cd61abe5f8b60265f9e505d76abef2c795894b",
+      "headBlob": "e4fbe7dcde80b9423aef7ac67edb43f352da5239",
+      "preLayerBlob": "e4fbe7dcde80b9423aef7ac67edb43f352da5239"
+    }
+  ],
+  "exactRestoredCandidate": true
+}

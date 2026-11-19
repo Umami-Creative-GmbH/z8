@@ -1,0 +1,10 @@
+{
+    "incomingFirstParentDiffExit":  0,
+    "incomingAll108PathsWhitespaceClean":  true,
+    "secondParentDiffExit":  2,
+    "priorRootVsIncomingDiffExit":  2,
+    "secondParentDiagnosticsIdenticalToPriorRoot":  true,
+    "onlyNativeMerge":  true,
+    "sourceFixes":  0,
+    "trackedEdits":  0
+}

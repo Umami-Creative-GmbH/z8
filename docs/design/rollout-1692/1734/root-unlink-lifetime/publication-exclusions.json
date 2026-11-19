@@ -1,0 +1,21 @@
+{
+  "policy": "No blanket directory copy. Exactly36 released runtime public payloads and30 original STOP payloads plus explicitly selected static/source/config files. No original is rewritten.",
+  "runtimeSealSha256": "b0203948d11ace5ce086e2646b1d160c772234242727b881c761c6a5edb0d69b",
+  "runtimeAllowlistSha256": "0ff9b6d0d029d9a9abf5e72ebced6be4e008ac741609e1169077f94e1b47b44a",
+  "stopSealSha256": "d7aa836a9cd8e66a3ef1778784bb67dfd0bb05f509ec02fcb64a8b1b54103917",
+  "excluded": [
+    "Private runtime/**, baseline-private, fixture manifests, generated credentials and contacts",
+    "Auth/session/cookie/storage exports, native session connection metadata",
+    "Raw full viewport and failed/private images, raw absolute private diagnostic files",
+    "Original static logs/JSON with private paths; only named sanitized clones are published",
+    "Original STOP independent-index (Git index)",
+    "Unavailable intermediate root source history and historical page source bytes",
+    "Executing any archived harness; tests, installs, services, browsers, fixtures, native, Next or PostgreSQL during publication"
+  ],
+  "originalFilesUntouched": true,
+  "privateInputsRead": false,
+  "imagesEdited": false,
+  "unlabelledNormalization": false,
+  "ownIndexExclusions": "evidence-index.json indexes archive/** payloads only. publication-seal.json indexes every publication file except itself. Its external digest is in ignored HANDOFF-publication.json; no circular self-hash.",
+  "localMarkdownLinkExclusions": []
+}

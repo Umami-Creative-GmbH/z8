@@ -1,0 +1,65 @@
+{
+  "mode": "before",
+  "batchId": "12dce2f5-170b-4243-9b9f-4d3d1db3d71d",
+  "scope": "own small-admin / Performance small / same three staged PDFs",
+  "sourceHashes": {
+    "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx": "a163347a6d913c1dba5c86d7b6803347fee515fdd24ffc91b6634912dab72a81",
+    "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts": "dcecf427fbbacca34b13482f3c5be09261e2735a0e3628f613e49c66a0c570aa",
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx": "75308c61c79b24e8f7dc3c061437440312663c54b41438871d18b997640a742a",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "44b3f3f82719e29c62715d62aa65e8bbf87565634c8188017e46f6cfcfe97ffd"
+  },
+  "layouts": [
+    {
+      "name": "desktop",
+      "width": 1600,
+      "height": 1000,
+      "theme": "light",
+      "text": 16,
+      "scrollWidth": 1600,
+      "headings": [
+        "Z8",
+        "Payslip batch"
+      ],
+      "files": 3
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "text": 16,
+      "scrollWidth": 390,
+      "headings": [
+        "Z8",
+        "Payslip batch"
+      ],
+      "files": 3
+    },
+    {
+      "name": "wide-dark",
+      "width": 2200,
+      "height": 1100,
+      "theme": "dark",
+      "text": 16,
+      "scrollWidth": 2200,
+      "headings": [
+        "Z8",
+        "Payslip batch"
+      ],
+      "files": 3
+    },
+    {
+      "name": "large-text",
+      "width": 1600,
+      "height": 1000,
+      "theme": "light",
+      "text": 20,
+      "scrollWidth": 1600,
+      "headings": [
+        "Z8",
+        "Payslip batch"
+      ],
+      "files": 3
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../apps/webapp/vitest.config" without a file extension (../../.tmp/1740-isolated-merger-checks/vitest.config.mts:1:18). Add the file extension
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+JSON report written to X:/t3-code/worktrees/z8/t3-41aa9e05-0348e7c30589d86c/.tmp/1740-isolated-merger-checks/public-results.json

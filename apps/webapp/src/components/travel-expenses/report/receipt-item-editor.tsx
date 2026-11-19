@@ -156,7 +156,11 @@ function requirementLabel(
 }
 
 /** Autosaving editor of one receipt expense and its receipt files. */
-export function ReceiptItemEditor({
+export function ReceiptItemEditor(props: Parameters<typeof ReceiptItemEditorTask>[0]) {
+	return <ReceiptItemEditorTask key={`${props.reportId}:${props.item.id}`} {...props} />;
+}
+
+function ReceiptItemEditorTask({
 	reportId,
 	item,
 	receipts,
@@ -212,7 +216,7 @@ export function ReceiptItemEditor({
 					"Your latest changes to an expense could not be saved. Open it again to check it.",
 				),
 			),
-		save: async (values, expectedVersion): Promise<DraftSaveOutcome<ReportItemView>> => {
+		save: async (values, expectedVersion, isCurrent): Promise<DraftSaveOutcome<ReportItemView>> => {
 			// Malformed values are flagged right away; the well-formed rest is
 			// still saved so no valid edit is lost while a field is being fixed.
 			const parsed = parseReceiptItemDraft(values);
@@ -229,7 +233,7 @@ export function ReceiptItemEditor({
 			switch (result.data.status) {
 				case "saved":
 					lastSaved.current = toDraftInput(toFormValues(result.data.item, locale));
-					onSaved?.(result.data.item);
+					if (isCurrent()) onSaved?.(result.data.item);
 					return errors
 						? { status: "invalid", errors, version: result.data.item.version }
 						: { status: "saved", version: result.data.item.version };

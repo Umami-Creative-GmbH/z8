@@ -1,0 +1,265 @@
+{
+  "candidate": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "streamedFallback": {
+    "blockedOwnSelectCount": 1,
+    "observed": {
+      "h1": [
+        {
+          "text": "Payslip batches",
+          "outer": "<h1 class=\"text-balance text-2xl font-semibold tracking-tight sm:text-3xl\">Payslip batches</h1>"
+        }
+      ],
+      "status": [
+        "Loading payslip batches"
+      ],
+      "start": 0,
+      "history": 0,
+      "main": "Toggle Sidebar\n\nZ8\n\n15:29\nUTC+01:00\nClock In\nToggle theme\nPayslip batches"
+    }
+  },
+  "contextRecovery": {
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/auth/context",
+        "displayUserMatches": true,
+        "displayOrgMatches": true,
+        "failedByControlled503": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/context",
+        "displayUserMatches": true,
+        "displayOrgMatches": true,
+        "failedByControlled503": false
+      }
+    ],
+    "mechanism": "One actual GET controlled503 after public HeaderRefresh; local Retry refetches actual endpoint",
+    "recoveredH1": [
+      "Payslip batches"
+    ],
+    "priorFailure": "First header expectation used absent synthetic manifest userId property; actual scoped employee user_id corrects harness only",
+    "draftBoundary": "No draft retention claimed across uncertain-scope gate unmount"
+  },
+  "startOperation": {
+    "actualStartPosts": 2,
+    "firstKnownPreDispatchAbort": true,
+    "heldRetryPosts": 1,
+    "batch": {
+      "id": "c957202b-9d36-481f-a217-1e8420400206",
+      "organization_id": "perf-small-e7ec83e78717",
+      "created_by": "perf-small-0-e7ec83e78717",
+      "pay_period_year": 2025,
+      "pay_period_month": 3,
+      "visibility": "hr_only",
+      "status": "open",
+      "confirmed_at": null
+    },
+    "delta": {
+      "batches": 1,
+      "files": 0,
+      "documents": 0,
+      "notifications": 0
+    },
+    "qualification": "Pending duplicate protection at this lifetime; no lost-response-after-commit or server idempotency claim"
+  },
+  "historyRecovery": {
+    "mechanism": "Own ACCESS EXCLUSIVE payslip_batch_file lock; only SELECT PIDs blocked by own pg_backend_pid cancelled; transaction rollback in finally",
+    "cancelledOwnSelects": 1,
+    "draft": {
+      "year": "2023",
+      "combos": [
+        "07",
+        "HR-only"
+      ]
+    },
+    "history": {
+      "rows": [
+        {
+          "id": "80c0113f-60d9-42de-a6f7-c8beef1ede8c",
+          "pay_period_year": 2024,
+          "pay_period_month": 9,
+          "status": "open",
+          "file_count": 0
+        },
+        {
+          "id": "c957202b-9d36-481f-a217-1e8420400206",
+          "pay_period_year": 2025,
+          "pay_period_month": 3,
+          "status": "open",
+          "file_count": 0
+        }
+      ],
+      "links": [
+        {
+          "href": "/en/personnel-files/payslip-batches/80c0113f-60d9-42de-a6f7-c8beef1ede8c",
+          "text": "September 2024\n0 files\nNot confirmed"
+        },
+        {
+          "href": "/en/personnel-files/payslip-batches/c957202b-9d36-481f-a217-1e8420400206",
+          "text": "March 2025\n0 files\nNot confirmed"
+        }
+      ]
+    },
+    "delta": {
+      "batches": 0,
+      "files": 0,
+      "documents": 0,
+      "notifications": 0
+    }
+  },
+  "roleBoundary": {
+    "independentManagerDenied": true,
+    "independentRestrictedDenied": true,
+    "grantAndHeldRevokeAccepted": false,
+    "qualification": "Bounded public editor attempt did not establish exact saved grant; no officer or revocation acceptance is claimed. No SQL grant/member/auth changes.",
+    "actualSavedGrantFacts": []
+  },
+  "phoneReachability": {
+    "lastWithinViewport": true,
+    "rect": {
+      "x": 19,
+      "y": 707.734375,
+      "width": 342,
+      "height": 117,
+      "top": 707.734375,
+      "right": 361,
+      "bottom": 824.734375,
+      "left": 19
+    },
+    "localScroll": [
+      {
+        "tag": "DIV",
+        "slot": null,
+        "scrollTop": 250,
+        "height": 771,
+        "scrollHeight": 1021
+      }
+    ],
+    "documentWidth": 390,
+    "viewportWidth": 390
+  },
+  "native": {
+    "input": {
+      "target": "actual mounted native year input",
+      "connected": true,
+      "names": [
+        "input",
+        "Input",
+        "Slot",
+        "TFormControl",
+        "div",
+        "TFormItem",
+        "Field",
+        "APIField",
+        "div",
+        "form",
+        "div",
+        "CardContent",
+        "div",
+        "Card",
+        "PayslipBatchStart",
+        "div",
+        "PayslipBatchesScope",
+        "SegmentViewNode",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary",
+        "HTTPAccessFallbackBoundary",
+        "LoadingBoundary",
+        "ErrorBoundary",
+        "InnerScrollHandler",
+        "ScrollHandler",
+        "RenderFromTemplateContext",
+        "TemplateContext",
+        "SegmentStateProvider",
+        "OuterLayoutRouter",
+        "NavigationPromisesContext",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary"
+      ]
+    },
+    "header": {
+      "target": "actual mounted shell Refresh data button",
+      "connected": true,
+      "names": [
+        "button",
+        "Button",
+        "TooltipTrigger",
+        "TooltipTrigger",
+        "TooltipRootContext",
+        "TooltipRoot",
+        "Tooltip",
+        "HeaderRefreshButton",
+        "div",
+        "div",
+        "div",
+        "header",
+        "SiteHeader",
+        "main",
+        "SidebarInset",
+        "div",
+        "FloatingDelayGroupContext",
+        "FloatingDelayGroup",
+        "TooltipProviderContext",
+        "TooltipProvider",
+        "TooltipProvider",
+        "SidebarProvider",
+        "OrganizationSettingsStoreProvider",
+        "OrganizationContextProvider",
+        "OrganizationSettingsProvider",
+        "UserPreferencesProvider",
+        "PushPermissionProvider",
+        "PostHogProvider",
+        "SegmentViewNode",
+        "NavigationPromisesContext",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary"
+      ]
+    },
+    "qualification": "Actual native DOM React fiber ancestry, not a complete React DevTools UI or performance profile."
+  },
+  "preferenceIntermediate": {
+    "collapsedAfterReloadSettled": true,
+    "earlierImmediateAfterReloadFailed": true
+  },
+  "completedObservations": [
+    "personnel feature enabled through public organization settings",
+    "settled actual Page Suspense fallback one safe h1 no protected controls",
+    "fresh admitted history is genuine empty",
+    "real mounted context GET failure gates old form and history with safe heading and Retry",
+    "real context error gates old form and retains one safe heading",
+    "new local Retry makes second actual GET with matching actor and org then recovers",
+    "invalid year returns focus with associated error and no start POST",
+    "one actual pre-dispatch aborted start retains exact period and cautious inline recovery",
+    "one held real start disables submit and blocks second native Enter",
+    "explicit retry creates exact one open HR-only batch for actor org and period",
+    "real empty start changes zero resulting files documents and notifications",
+    "second public empty shared start adds one distinguishable open batch",
+    "complete own history order href period status filecount agree with scoped database",
+    "actual own history SELECT failure distinguishes error and retains exact same-scope form draft",
+    "public local history Retry restores exact links order with exact draft and no mutation",
+    "actual input React fiber ancestry reaches PayslipBatchStart and PayslipBatchesScope",
+    "independent fresh manager without payslip grant is denied direct list route",
+    "independent fresh restricted actor is denied direct list route",
+    "phone drawer closes on first Escape and returns trigger focus",
+    "settled single native Escape closes month with focus return and hidden retained options",
+    "reduced motion actually active",
+    "desktop collapse retains actual draft",
+    "normal shell refresh retains actual same-scope draft",
+    "settled sidebar collapse persisted through actual reload",
+    "real Large18 and dark preferences persist through normal reload",
+    "phone Large18 final complete history row reachable through actual local scroller",
+    "historical existing-consumer overlay retains exact same actor organization and batch state",
+    "byte-restored candidate actual route again has exactly one safe h1",
+    "actual existing history destination reaches correct authorized pay-period detail",
+    "normal browser Back returns exact own history",
+    "restored actual native targets reach PayslipBatchStart Scope and SiteHeader"
+  ],
+  "qualification": "These browser observations overlap each other and automated suites; they are not added to unit or PG case totals. Optional grant/revocation is unaccepted."
+}

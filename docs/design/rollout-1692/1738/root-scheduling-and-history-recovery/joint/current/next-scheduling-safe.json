@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "sessions": [
+      {
+        "url": "/en/scheduling?date=2026-11-16",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/scheduling/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/scheduling/loading.tsx",
+            "type": "boundary:loading",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/scheduling/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ]
+  },
+  "compilation": {
+    "issues": []
+  },
+  "errorSummary": {
+    "configErrors": 0,
+    "sessionErrors": []
+  }
+}

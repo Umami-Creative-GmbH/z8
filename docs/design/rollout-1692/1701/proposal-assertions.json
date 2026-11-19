@@ -1,0 +1,13 @@
+{
+  "scope": "employee own approved October 2026 sick absence; actual cancellation proposal and withdrawal, no approver decision",
+  "results": [
+    {
+      "name": "pending cancellation proposal keeps original approved absence effective",
+      "passed": true
+    },
+    {
+      "name": "withdrawal retains proposal history and original absence",
+      "passed": true
+    }
+  ]
+}

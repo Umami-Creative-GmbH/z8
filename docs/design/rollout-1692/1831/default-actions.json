@@ -1,0 +1,50 @@
+{
+  "setup": "default committed config, workspace-local copy deps, second owned fixture; large-admin/Performance large",
+  "checks": [
+    {
+      "name": "new default-config organization has no policies",
+      "actual": 0
+    },
+    {
+      "name": "actual refusal retains defaults",
+      "actual": "Standard"
+    },
+    {
+      "name": "refusal writes nothing",
+      "actual": 0
+    },
+    {
+      "name": "refusal does not navigate",
+      "actual": "/en/onboarding/vacation-policy"
+    },
+    {
+      "name": "pending disables all fields",
+      "actual": true
+    },
+    {
+      "name": "one real save transport despite duplicates",
+      "actual": 1
+    },
+    {
+      "name": "exactly one policy persisted",
+      "actual": 1
+    },
+    {
+      "name": "default-config saved defaults",
+      "actual": {
+        "name": "Standard",
+        "default_annual_days": "25",
+        "accrual_type": "annual",
+        "allow_carryover": true,
+        "max_carryover_days": "5",
+        "carryover_expiry_months": 3,
+        "is_company_default": true
+      }
+    },
+    {
+      "name": "skip succeeds without another policy",
+      "actual": 1
+    }
+  ],
+  "sourceSha256": "71f6e705bbfe9fa09113475565ebd9aa26f2d738defdd7f012b981ab076ef262"
+}

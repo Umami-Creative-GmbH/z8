@@ -1,0 +1,26 @@
+{
+    "name":  "translation-retry",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "env":  {
+                "pnpm_config_verify_deps_before_run":  "false"
+            },
+    "argv":  [
+                 "pnpm",
+                 "--config.verify-deps-before-run=false",
+                 "--filter",
+                 "webapp",
+                 "exec",
+                 "vitest",
+                 "run",
+                 "--project",
+                 "unit",
+                 "--maxWorkers",
+                 "1",
+                 "src/tolgee/extracted-key-defaults.test.ts",
+                 "--reporter=json",
+                 "--outputFile",
+                 "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1829-audit\\translation-retry.json"
+             ],
+    "started":  "2026-11-15T18:07:14.7985878Z",
+    "exitCode":  0
+}

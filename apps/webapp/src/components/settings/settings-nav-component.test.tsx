@@ -12,7 +12,7 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: (props: ComponentProps<"a">) => <a {...props} />,
+	Link: ({ children, ...props }: ComponentProps<"a">) => <a {...props}>{children}</a>,
 	usePathname: () => "/settings/profile",
 }));
 
@@ -43,6 +43,8 @@ describe("SettingsNav", () => {
 			</SidebarProvider>,
 		);
 		expect(screen.getByRole("link", { name: "Profile" }).getAttribute("data-active")).toBe("true");
+		expect(screen.getByRole("link", { name: "Profile" }).getAttribute("aria-current")).toBe("page");
+		expect(screen.getByRole("navigation", { name: "Settings navigation" })).toBeTruthy();
 
 		const search = screen.getByRole("searchbox", { name: "Search settings" });
 		await user.type(search, "/settings/security");
@@ -75,6 +77,23 @@ describe("SettingsNav", () => {
 		expect(screen.getByText("Driving licence control").closest("a")?.getAttribute("href")).toBe(
 			"/settings/driving-licence",
 		);
+	});
+
+	it("explains a switched-off feature entry and links admins to its switch", () => {
+		// The mocked store has no flags: Demo Data is listed but its feature is off.
+		render(
+			<SidebarProvider>
+				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+			</SidebarProvider>,
+		);
+
+		expect(screen.queryByRole("link", { name: "Demo Data" })).toBeNull();
+		expect(screen.getByText("Turned off for this organization")).toBeTruthy();
+		expect(
+			screen
+				.getByRole("link", { name: "Turn on in Organization settings (Demo Data)" })
+				.getAttribute("href"),
+		).toBe("/settings/organization#demo-data-toggle");
 	});
 
 	it("renders group labels as sticky scroll headers", () => {

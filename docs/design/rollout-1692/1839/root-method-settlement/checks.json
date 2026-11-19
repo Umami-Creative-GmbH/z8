@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "issue": 1839,
+  "verifiedCommit": null,
+  "readiness": null,
+  "implementation": "e6f46f0517e8a42603c1e6a9c6a57c77aeb49d4d",
+  "reviewCandidate": "4e9d64542b5a50218df684ebf3186d32a4ff6bda",
+  "rootBefore": "3c8a3cc80134b9f9a7b56deaa9f5a8ffa81dc9d9",
+  "provisionalImport": "9f2454324d6dc4651ab84713dc7c5d99e61c99ea",
+  "correctionCommit": "d30948fac5e82838715f131e05cf69ea63a5e98e",
+  "integrationCommit": "4e9e48b6fdd3e98df20bd73c22b0e0a8e13a32df",
+  "tree": "1f16a0306e623d6429158fd60d091d6dc34ba3b9",
+  "appTree": "cc074ac6aefea15c77236bd39bc47681cbf1eff1",
+  "finding": {
+    "classification": "R155 concurrency lifetime acceptance failure; no proved CAPTCHA/server-auth bypass or baseline security regression.",
+    "independent": {
+      "cases": 33,
+      "files": 3,
+      "passed": 32,
+      "failed": 1,
+      "skipped": 0
+    },
+    "rootRed": {
+      "cases": 4,
+      "passed": 3,
+      "failed": 1,
+      "reproSHA256": "f73593a747fdfe94b629f1e82ebca2612db3c4f5492c61066684f6d6cb1931ae"
+    },
+    "symptom": "Activity hide/resume reset a still-dispatched passkey reservation, permitting two external requests before the first settled."
+  },
+  "correction": [
+    "Keep one pending epoch through Activity effect disposal/reconnect and preserve its method-specific pending display.",
+    "Retire UI continuation separately from transport reservation; only matching real settlement releases the reservation, including old success/refusal/rejection.",
+    "Form promises own email/2FA validation and settlement cleanup; method promises own passkey/SSO/social cleanup. Canonical transport payloads and auth/CAPTCHA/server owners are unchanged.",
+    "The existing email Activity test now expects its preserved Logging in label while retaining disabled and post-settlement retry assertions."
+  ],
+  "fresh": {
+    "unit": {
+      "cases": 283,
+      "files": 30,
+      "passed": 283,
+      "failed": 0,
+      "skipped": 0
+    },
+    "postgres": {
+      "cases": 43,
+      "files": 4,
+      "passed": 43,
+      "failed": 0,
+      "skipped": 0,
+      "migrationVerifier": "passed"
+    },
+    "combinedDistinctOccurrences": 326,
+    "combinedPhysicalFiles": 34,
+    "publicSubset": {
+      "cases": 37,
+      "files": 3,
+      "additive": false,
+      "newMethodCases": 8
+    },
+    "caseMultisetSHA256": "31db0d8a51ee3ab8ab1e9934868fe7e92b50759ee6e2f3fc9f9c4399eefc881c",
+    "typegen": "passed",
+    "typescriptProjects": 3,
+    "explicit100CRLF": {
+      "files": 3,
+      "result": "passed"
+    },
+    "lintImport": {
+      "files": 3,
+      "result": "passed"
+    },
+    "ordinaryProfile": "unpassed",
+    "doctor": {
+      "version": "0.9.22",
+      "base": "9f2454324d6dc4651ab84713dc7c5d99e61c99ea",
+      "files": 3,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null
+    },
+    "liveBrowser": false,
+    "liveNext": false,
+    "liveNative": false,
+    "compileOnly": "worker receipt inherited; no fresh root compile/full generation"
+  },
+  "preservation": {
+    "expectedImportTree": "2606d24d6e11b18f9442c96f748bef77e5dcd673",
+    "expectedImportAppTree": "37210d9cc94b27bbbad4f1798bee08980539dd5f",
+    "incomingPaths": 52,
+    "incomingLoginPaths": 14,
+    "incomingPublicPaths": 38,
+    "overlap": [],
+    "unaffectedRootEntries": 18200,
+    "unexpectedRootChanges": 0,
+    "verifiedTicketAnchors": 63,
+    "baseline": true,
+    "originalReportGitLfSHA256": "bdb776a8444c355ec644954f37c6b4fb130730066eefec7ac9bcc63da7ad3e63",
+    "originalReportAndEvidenceBytesUnchanged": true,
+    "canonicalAuthSecurityWidgetAndNativeTransportChanged": false
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/login/use-login-auth.ts",
+      "gitBlob": "7309f69486f09bef5915ea9e383ea002433c927a",
+      "sha256": "4d2f8b183a8ed7992b9dc0a72ad6b7c0520b88f944197b5b62fd133f7b7703e7"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "gitBlob": "01a9b26b679b5c031c4db032c7bb6eb05aaf93a4",
+      "sha256": "11b0d0c0a9361c46104a216052b39a54907f50238fe277623ec6c5c5d2b63c25"
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-method-lifetime.test.tsx",
+      "gitBlob": "88af4343d37ed090f0db16ee2b0778019d4a545f",
+      "sha256": "ed29fa5b53cecb4581348811bc748caba86837ebcf060a575f8ccc25aae7d96f"
+    }
+  ],
+  "historicalProof": {
+    "verifier": "inspected read-only verifier default mode passed",
+    "files": 36,
+    "pngs": 18,
+    "cases": 318,
+    "source": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f",
+    "currentSourceMode": "Not run; the root deliberately supersedes two original source pins and adds one public test.",
+    "workerCountsInheritedAndUnadded": true,
+    "normalSyntheticSmallAdminAdmission": "Worker sign-in200 and intended destination/session/org readback inherited; not repeated against root correction.",
+    "emptyTokenCause": "Unproved; accepted historical baseline also completed the real widget."
+  },
+  "failedAttempts": [
+    "First guarded string transform stopped before any source write; its following check repeated unchanged red and is nonadditive.",
+    "Preserved pending email method changed its busy label; one old assertion was updated to Logging in without removing disabled/retry checks.",
+    "Initial try/finally cleanup passed behavior/types but triggered four React Compiler TODO errors; replaced by promise finalizers, then full283units/types/Doctor rerun passed."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/login src/lib/auth/callback-url.test.ts src/lib/auth/app-redirect.test.ts src/lib/auth/load-auth-page-client.test.ts src/lib/auth/store-app-session.test.ts src/lib/turnstile src/lib/store-app src/lib/enterprise-identity/sso-enforcement-plugin.test.ts src/lib/enterprise-identity/sso-reauthentication.test.ts src/lib/enterprise-identity/session-sso.test.ts src/lib/enterprise-identity/session-sso-store.test.ts src/lib/auth-domain-config.test.ts src/lib/hooks/use-enabled-providers.test.tsx src/components/auth-form-wrapper.test.tsx 'src/app/[locale]/(auth)/layout-turnstile.test.tsx' src/app/api/auth/verify-turnstile/route.test.ts src/tolgee/extracted-key-defaults.test.ts --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1839-method-root-checks/unit-compiler-final.json",
+    "postgres": "pnpm --config.verify-deps-before-run=false --filter webapp test:integration src/lib/auth/app-auth-code.integration.test.ts src/lib/store-app/sign-in-origin.integration.test.ts src/lib/auth/sso-organization-provisioning.integration.test.ts src/lib/organization-mfa/authentication.integration.test.ts --maxWorkers=1 --reporter=json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 9f2454324d6dc4651ab84713dc7c5d99e61c99ea --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json",
+    "environment": "pnpm_config_verify_deps_before_run=false every call; pinned12.16.1; maxWorkers1; NODE_ENV=test and own BASH_ENV pnpm guard for canonical PG."
+  },
+  "cleanup": {
+    "canonicalPostgresName": "z8_approval_workflow_repository_test_1794928921630885800_30922",
+    "label": "z8.agent-owned=approval-workflow-repository-test",
+    "runnerTrapRemoved": true,
+    "independentExactNameAbsenceConfirmed": true,
+    "foregroundChecksCompleted": true,
+    "noRootNextBrowserNativeOrProviderResources": true
+  },
+  "limits": [
+    "Fresh independent correction review and current-source browser acceptance pending; verifiedCommit remains null.",
+    "No physical authenticator, external OAuth/SSO/provider, live two-factor/trusted-device persistence or native handoff proof.",
+    "No server command/cookie cancellation, simultaneous authorization or cross-instance idempotency guarantee follows from UI retirement.",
+    "Ordinary formatting, full production generation, remote catalogs, native React, physical devices/true zoom and exhaustive races remain unpassed."
+  ]
+}

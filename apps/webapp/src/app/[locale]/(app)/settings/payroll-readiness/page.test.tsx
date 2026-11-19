@@ -27,6 +27,25 @@ vi.mock("next/server", () => ({
 	connection: mockState.connection,
 }));
 
+vi.mock("next-intl/server", () => ({
+	getLocale: async () => "en",
+}));
+
+vi.mock("@/navigation", () => ({
+	Link: ({
+		href,
+		children,
+		...props
+	}: {
+		href: string;
+		children: React.ReactNode;
+	}) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
+
 vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: mockState.requireOrgAdminSettingsAccess,
 }));
@@ -109,7 +128,7 @@ describe("PayrollReadinessPage", () => {
 		const contentFrame = pageContent.type(pageContent.props);
 		const headerElement = contentFrame.props.children[0].props.children;
 
-		render(await headerElement.type());
+		render(await headerElement.type(headerElement.props));
 
 		expect(
 			screen.getByRole("heading", { name: "Abrechnungsbereitschaft" }),
@@ -120,6 +139,30 @@ describe("PayrollReadinessPage", () => {
 			),
 		).toBeTruthy();
 		expect(screen.queryByText("Payroll Readiness")).toBeNull();
+	});
+
+	it("shows the requested month in the header and steps a whole month at a time", async () => {
+		const page = PayrollReadinessPage({
+			searchParams: Promise.resolve({ start: "2026-07-01", end: "2026-07-31" }),
+		});
+		const pageContent = page.props.children;
+		const contentFrame = pageContent.type(pageContent.props);
+		const headerElement = contentFrame.props.children[0].props.children;
+
+		render(await headerElement.type(headerElement.props));
+
+		expect(screen.getByText("Payroll period: {period} (UTC)")).toBeTruthy();
+		const nav = screen.getByRole("navigation", { name: "Payroll period" });
+		expect(nav.textContent).toContain("July 2026");
+		const [previous, next] = screen.getAllByRole("link", { name: "Show {month}" });
+		expect(previous.getAttribute("href")).toBe(
+			"/settings/payroll-readiness?start=2026-06-01&end=2026-06-30",
+		);
+		expect(next.getAttribute("href")).toBe(
+			"/settings/payroll-readiness?start=2026-08-01&end=2026-08-31",
+		);
+		expect(screen.getByRole("link", { name: "Previous month" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Current month" })).toBeTruthy();
 	});
 
 	it("preserves the authorized organization and requested UTC period", async () => {
@@ -144,5 +187,6 @@ describe("PayrollReadinessPage", () => {
 		expect(period.end.toISODate()).toBe("2026-07-31");
 		expect(dashboard.props.data).toEqual({ status: "ready" });
 		expect(dashboard.props.t).toBe(mockState.translate);
+		expect(dashboard.props.periodLabel).toBe("July 2026");
 	});
 });

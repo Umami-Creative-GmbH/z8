@@ -1,0 +1,134 @@
+{
+  "source": {
+    "head": "87b431bd6116ab90aed9d822db835dc78107bffb",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+        "raw": "c897e353391aa3401269a259b47a5b31f7c2d5015238edd39563b0bf321836ac",
+        "lf": "c9052b9de4c70dc09a2f50f1743d58d0b21b4630638efd1e40ffb8b635687ad6"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+        "raw": "a441d7b061dd28eae958da7ec446b85a133886b1141f8d74e0009e1eab96fdd5",
+        "lf": "2753124b4df7a9cb83c58ac8b5fed7d89480a1bcfffddac907f881ec0521b602"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+        "raw": "d205ed4f0864143a186b73c91137c1041825701ef59e970340b149988d586669",
+        "lf": "0bf17a4ad9b7e6c957f9b40413f34ef68da2a9bb14b44af751714c708f4ebbb7"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/due-for-deletion-heading.tsx",
+        "raw": "f84d23b92178efae714289f8f9a5134fb012a2c45b9f055fdaf5df0697c325b0",
+        "lf": "502e9e65cc2b14fda9cec8c63142d68a816b3fc427d0398363580f4990449962"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+        "raw": "2661241ef4abedafceb935aec3fc30ce1de83bd558cc16e1cabc98a22338eeb3",
+        "lf": "645bf1660ea0409c7bab3df7c1aca7826348581ccd0b8b13fbf8d45b45c762a7"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+        "raw": "08826aa7372c010f070dc7f73b27c9b0d4780cb54443b672b1cb2e17c81de086",
+        "lf": "160e1f6e11bc43e94ec6298594fe63f2edf26171de835a2ccbdd0cf7385a3b42"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "ccbddb866cc559fade83fa503c8315d50f4fcd7eafe568b6288579a6c236cc8f",
+        "lf": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/retention.integration.test.ts",
+        "raw": "78cc9a7126c3aeadf419d86ceefdbe7e5e63bf1f5ebed7f57a50faf02b6c984c",
+        "lf": "6e55ff67a8f726ae1163a9dbcb84b11d4d304fc111bcf26b703c11ac8d8ddd40"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "5806affd7573ed901211af63b06e156066c6cd1550b4c3fc567fe12f1c15781a",
+        "lf": "cf148cf379cd0379f6bddd1a465d520bb1e0588ae526ba9378ae3faefbdf4f52"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/retention-store.ts",
+        "raw": "f68227029b3d9efbab65c0aef35155aea09c1d2c387419e95c310d88272bcbde",
+        "lf": "21e2577f9f9156ce2d4fa108a221dd2f382fe5993e018db8c41a45bd6c427364"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/retention.ts",
+        "raw": "9c1fe69ce7f2de3007fc9a72ed05028545ec320b78fe14d022a283ee3592ae11",
+        "lf": "60b380628a5140d592a567d3d6006f655e6a7785582354416560edc5364f20cd"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/current-access.ts",
+        "raw": "100a6dd200b71db2c30089086cecaea28c9196add2b5355cc919aff8de124792",
+        "lf": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+        "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+        "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/upload-ledger.ts",
+        "raw": "19d578d0da8f2bf5afaec5a7e74f002531d7f897d16946f1017d15b0217b5e49",
+        "lf": "ef76fe9ba005f9de3cc43e73433206b3f15cdc30e46358fde3cba4941929682a"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/audit.ts",
+        "raw": "59fd4772981f1f650716202507c95f57c86d69a8469dc39fd6003f4e7ba173f8",
+        "lf": "8f932d5626aa12ae303d5fe0c14144a5f0e0a9c790db96f437bfa3b9c3649c36"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/audit-minimisation.ts",
+        "raw": "a2302e8f6b8825047416623d90eb2935390eb58ab346b55241354a4cd2fa3333",
+        "lf": "01ea6777dd22f32f1fd283e31de9f7d928c9eb5ce63a91b00cb2643208954ca3"
+      },
+      {
+        "path": "scripts/performance/fixture.mjs",
+        "raw": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+        "lf": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "5c1844595472257084451f84fe6d63542f1edf4254ea7e6a7ac8e0b36340b490"
+  },
+  "kind": "Public policy restoration after successful cap assertions; not an additional cap run",
+  "before": [
+    "",
+    "",
+    "6",
+    "",
+    "100"
+  ],
+  "persisted": [
+    {
+      "category": "certificate",
+      "retention_years": 6
+    },
+    {
+      "category": "other",
+      "retention_years": 6
+    }
+  ],
+  "afterReload": [
+    "",
+    "",
+    "6",
+    "",
+    "6"
+  ],
+  "status": "passed"
+}

@@ -85,4 +85,17 @@ describe("updateProfileOnboarding", () => {
 		expect(result.success).toBe(false);
 		expect(updateProfileMock).not.toHaveBeenCalled();
 	});
+
+	it.each(["1899-12-31", "2999-01-01", "2025-02-29", "2025-01-01T00:00:00Z"])(
+		"refuses an out-of-range or non-calendar birthday %s",
+		async (birthday) => {
+			const result = await updateProfileOnboarding({
+				firstName: "Ada",
+				lastName: "Lovelace",
+				birthday,
+			});
+			expect(result.success).toBe(false);
+			expect(updateProfileMock).not.toHaveBeenCalled();
+		},
+	);
 });

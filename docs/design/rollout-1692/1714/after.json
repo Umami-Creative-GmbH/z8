@@ -1,0 +1,66 @@
+{
+  "headings": [
+    {
+      "level": "H1",
+      "text": "Compliance"
+    },
+    {
+      "level": "H2",
+      "text": "Critical compliance risks need attention"
+    },
+    {
+      "level": "H2",
+      "text": "Compliance sections"
+    },
+    {
+      "level": "H3",
+      "text": "Workforce compliance"
+    },
+    {
+      "level": "H3",
+      "text": "Access controls"
+    },
+    {
+      "level": "H3",
+      "text": "Audit evidence"
+    },
+    {
+      "level": "H2",
+      "text": "Recent Critical Events"
+    },
+    {
+      "level": "H2",
+      "text": "Coverage"
+    }
+  ],
+  "links": [
+    {
+      "text": "Open Compliance Settings",
+      "href": "/en/settings/compliance"
+    },
+    {
+      "text": "Open Audit Log",
+      "href": "/en/settings/enterprise/audit-log"
+    },
+    {
+      "text": "Open Audit Export",
+      "href": "/en/settings/audit-export"
+    },
+    {
+      "text": "Inspect compliance",
+      "href": "/en/settings/compliance"
+    },
+    {
+      "text": "Inspect in Audit Log",
+      "href": "/en/settings/enterprise/audit-log"
+    }
+  ],
+  "text": "Toggle Sidebar\n\nCompliance\n\n04:45\nUTC+01:00\nClock In\nToggle theme\nActive organization\nCompliance\n\nCompliance overview\n\nCritical compliance risks need attention\ncritical\nCompliance sections\nWorkforce compliance\ncritical\n\nWorkforce policy violations need review\n\nOpen Compliance Settings\nRest-period violations: 1\nOther policy violations: 0\nOvertime violations: 0\nPending exceptions: 0\nAccess controls\ncritical\n\nSensitive control changes need review\n\nOpen Audit Log\nRecent sensitive events: 1\nLatest sensitive action: permission.revoked\nAudit evidence\nwarning\n\nAudit evidence is only partially ready\n\nOpen Audit Export\nSigning keys are not configured yet.\nRecent failed audit-pack jobs: 0\nRecent invalid verification attempts: 0\nNo successful audit pack has been recorded yet.\nRecent Critical Events\n\nRecent workforce policy findings\n\nRest: 1, Other policy: 0, Overtime: 0\n\nInspect compliance\n\nSensitive action: permission.revoked\n\npermission.revoked on employee\n\nInspect in Audit Log\nCoverage\n\nLast refreshed: 2026-11-15 03:45 UTC\n\n2026-11-15 03:45 UTC\n\nRefresh reloads recorded signals; it does not reevaluate findings under a new policy.\n\nAudit evidence uses live audit-export configuration, audit-pack requests, and recent verification results.\nWorkforce compliance uses the last 7 days of work-policy violations and pending exception requests.\nAccess controls only summarize sensitive audit-log events that are already captured today.",
+  "width": 1600,
+  "viewport": 1600,
+  "phone": {
+    "width": 390,
+    "viewport": 390
+  },
+  "errors": []
+}

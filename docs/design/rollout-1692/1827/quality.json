@@ -1,0 +1,41 @@
+{
+  "implementationCommit": "233df870a3728bccc0536a1d1a38cf34e45640e4",
+  "latestLocalAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+  "unit": {
+    "suites": 4,
+    "tests": 36,
+    "completionCases": 14
+  },
+  "postgres": {
+    "suites": 3,
+    "tests": 17
+  },
+  "types": "all application/workflow-contract/smoke + next typegen passed",
+  "biome": {
+    "files": 3,
+    "config": "apps/webapp/biome.jsonc",
+    "lineEnding": "crlf",
+    "errorOnWarnings": true
+  },
+  "doctor": {
+    "files": 3,
+    "errors": 0,
+    "reviewedWarnings": 3,
+    "score": "disabled"
+  },
+  "runtime": {
+    "checks": 18,
+    "failed": [],
+    "actualFontAction": true
+  },
+  "limits": [
+    "full static generation",
+    "remote Tolgee sync and exhaustive long locales",
+    "providers/device/store wrapper/true zoom",
+    "live held account/org A-B-A and Activity",
+    "live membership removal rejected by auto-review",
+    "whole-app transitions"
+  ],
+  "fresh": "ticket-specific tests/action readback/Next/native/captures/contrast",
+  "inherited": "exhaustive F1 shell/navigation/overlay and prior build limits"
+}

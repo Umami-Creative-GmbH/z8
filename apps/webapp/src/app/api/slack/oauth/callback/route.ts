@@ -28,18 +28,22 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 	const error = searchParams.get("error");
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
-	const settingsUrl = `${appUrl}/settings/integrations`;
+	// Back to the Slack tab of Chat Integrations, where the install was started.
+	const settingsRedirect = (result: { slack_error: string } | { slack_success: "true" }) => {
+		const url = new URL("/settings/notification-channels", appUrl);
+		url.searchParams.set("tab", "slack");
+		for (const [key, value] of Object.entries(result)) url.searchParams.set(key, value);
+		return NextResponse.redirect(url.toString());
+	};
 
 	// Handle user cancellation
 	if (error) {
 		logger.info({ error }, "Slack OAuth flow cancelled by user");
-		return NextResponse.redirect(
-			`${settingsUrl}?slack_error=${encodeURIComponent(error)}`,
-		);
+		return settingsRedirect({ slack_error: error });
 	}
 
 	if (!code || !state) {
-		return NextResponse.redirect(`${settingsUrl}?slack_error=missing_params`);
+		return settingsRedirect({ slack_error: "missing_params" });
 	}
 
 	try {
@@ -53,7 +57,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 
 		if (!stateRecord) {
 			logger.warn({ state }, "Invalid or expired OAuth state");
-			return NextResponse.redirect(`${settingsUrl}?slack_error=invalid_state`);
+			return settingsRedirect({ slack_error: "invalid_state" });
 		}
 
 		if (stateRecord.expiresAt < new Date()) {
@@ -66,7 +70,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 						eq(slackOAuthState.organizationId, stateRecord.organizationId),
 					),
 				);
-			return NextResponse.redirect(`${settingsUrl}?slack_error=expired_state`);
+			return settingsRedirect({ slack_error: "expired_state" });
 		}
 		try {
 			await requireActiveOrganizationActionActor({
@@ -78,7 +82,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 				action: "create",
 			});
 		} catch {
-			return NextResponse.redirect(`${settingsUrl}?slack_error=forbidden`);
+			return settingsRedirect({ slack_error: "forbidden" });
 		}
 
 		// Mark state as used
@@ -97,9 +101,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 		const tokenResult = await exchangeOAuthCode(code, redirectUri);
 
 		if (!tokenResult) {
-			return NextResponse.redirect(
-				`${settingsUrl}?slack_error=token_exchange_failed`,
-			);
+			return settingsRedirect({ slack_error: "token_exchange_failed" });
 		}
 
 		// Store bot access token in Vault
@@ -159,10 +161,10 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 			"Slack workspace connected via OAuth",
 		);
 
-		return NextResponse.redirect(`${settingsUrl}?slack_success=true`);
+		return settingsRedirect({ slack_success: "true" });
 	} catch (error) {
 		logger.error({ error }, "Slack OAuth callback failed");
-		return NextResponse.redirect(`${settingsUrl}?slack_error=internal_error`);
+		return settingsRedirect({ slack_error: "internal_error" });
 	}
 }
 

@@ -1,0 +1,24 @@
+{
+  "rootReceipt": ".tmp/1738-template-refusal-checks/checks-final-01.json",
+  "rootReceiptSha256": "5b17e615c2ff9949e2c32c5289cb4dd596bfb24979a6367e842149705ccb1478",
+  "sourcePinsMatch": true,
+  "freshHere": {
+    "unitCases": 0,
+    "pgCases": 0
+  },
+  "inherited": {
+    "currentRootUnits": 311,
+    "unitFiles": 48,
+    "unchangedEarlierPgCases": 6,
+    "pgFiles": 2,
+    "mixedSnapshotCaseInstances": 317,
+    "mixedSnapshotPhysicalFiles": 50,
+    "allThreeTypesAndTypegen": "inherited pass",
+    "lint": "inherited2paths pass",
+    "doctor": "inherited2files0diagnostics",
+    "format": "inherited explicit100CRLF2pass; ordinary2findings retained"
+  },
+  "older45Pg": "inherited nonadditive older snapshot; no rerun",
+  "overlap": "Focused27/4 and strengthened template Retry/401 controls overlap root311/48. Previous runtime publication/employee/Retry proof29safe is inherited, not fresh here.",
+  "verifiedCommit": null
+}

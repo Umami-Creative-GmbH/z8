@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-18T03:50:01.449Z",
+  "method": "CDP Fetch Request stage, exact non-auth /en/travel-expenses POST only; synthetic transport outage, not authority refusal",
+  "failed": 6,
+  "delayed": 1,
+  "rowsWhileDelayed": 6,
+  "headingWhileDelayed": "Travel Expenses",
+  "rowsOnFailure": 6,
+  "h1OnFailure": "Travel Expenses",
+  "warning": true,
+  "recoveredRows": 6
+}

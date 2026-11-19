@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { CalendarPageHeader } from "@/components/calendar/calendar-page-header";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +45,7 @@ export async function CalendarPageContent({
 			organizationId={authContext.employee.organizationId}
 			currentEmployeeId={authContext.employee.id}
 			initialSelectedEmployeeId={calendarEmployeeContext.employeeId}
+			initialEmployeeName={calendarEmployeeContext.employeeName}
 			initialDateKey={resolveCalendarInitialDate(
 				requestedDate,
 				calendarEmployeeContext.initialDateKey,
@@ -55,7 +57,7 @@ export async function CalendarPageContent({
 
 function CalendarPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col p-4">
+		<div className="flex flex-1 flex-col">
 			<div className="space-y-4">
 				<Skeleton className="h-8 w-52" />
 				<Skeleton className="h-5 w-80" />
@@ -67,8 +69,11 @@ function CalendarPageLoading() {
 
 export default function CalendarPage() {
 	return (
-		<Suspense fallback={<CalendarPageLoading />}>
-			<CalendarPageContent />
-		</Suspense>
+		<div className="page-frame-full flex min-h-0 flex-1 flex-col gap-4">
+			<CalendarPageHeader />
+			<Suspense fallback={<CalendarPageLoading />}>
+				<CalendarPageContent />
+			</Suspense>
+		</div>
 	);
 }

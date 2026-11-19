@@ -1,0 +1,15 @@
+{
+  "sourceHead": "e8eebd1077dc1743e78e30885965a7eea05a4b9c",
+  "acceptance": "failed supplemental capture repeat; not a pass",
+  "initialization": "Seed before runtime initialization failed NoSuchBucket; after runtime/auth initialization the same untouched document fixture seeded successfully.",
+  "failures": [
+    "read-retry: Navigation timeout of 30000 ms exceeded",
+    "scope: Navigation timeout of 30000 ms exceeded",
+    "locale: Navigation timeout of 30000 ms exceeded",
+    "read-retry with larger navigation allowance: Navigation timeout of 60000 ms exceeded",
+    "read-retry with DOM readiness: Page.captureScreenshot timed out",
+    "scope with DOM readiness: Execution context was destroyed, most likely because of a navigation"
+  ],
+  "observations": "The local server logged successful document GET responses; a private diagnostic observed a still-loading document without a body. Fixture DB wait-state probe showed idle client connections and no ungranted relation locks. This does not establish the cause of the browser/tooling failure.",
+  "preservation": "Earlier successful read-retry.json and scope.json were restored byte-for-byte from implementation commit 793b8344c42bca18cc2296baf3c44a58331a1b72. Their initial runtime source was report-attested, not machine-pinned. Main final captures/actions/variants retain independent exact source pins. No application source changed in this repeat."
+}

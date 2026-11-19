@@ -393,11 +393,11 @@ describe("ApprovalInboxPage", () => {
 		const { container } = render(<ApprovalInboxPage />);
 
 		expect(container.firstElementChild?.className).toContain(
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		);
 		expect(
 			container.querySelectorAll(":scope > div > .px-4.lg\\:px-6"),
-		).toHaveLength(2);
+		).toHaveLength(0);
 	});
 
 	it("keeps the first hydrated render consistent when client query data is already cached", async () => {

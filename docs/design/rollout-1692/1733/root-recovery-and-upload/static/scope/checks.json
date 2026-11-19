@@ -1,0 +1,92 @@
+{
+  "status": "source checks complete; fresh independent PostgreSQL and runtime acceptance pending",
+  "source": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+  "provisionalIntegration": "0c96db4ed2ecc072688bba0a02d9661b3846d7a8",
+  "priorCandidate": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
+  "nativeMerge": "5f46459f553b8c4a0d5fb112de46aabe1b1cda71",
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "behavior": "A failed organization context read shows a generic alert and local Retry through the existing provider refetch owner; protected batch content remains gated until matching scope recovers. Reuses the existing translation key/default. No action, permission, batch, upload, notification, date or storage policy changed.",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "rawSha256": "d87cb8f6c0c7cc52d1587a4bb6bf5d4e84ab5a8428c2def97df299d07cb7b35e",
+      "lfSha256": "d291b3cf3326d9ea5b66384ea2e8cb8c171218c17eb0b4b83d5e4f5a948794f6",
+      "gitBlob": "ae890b2bac31111c4033c447e16ce5a3a49f6c01"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+      "rawSha256": "ce6117a6f1660f0eb6b1174e4671edbaada10de7db039b8cc67c84dc1ecb7060",
+      "lfSha256": "d0e838049f5ef1bd40d713f8181f0b6c8528cd604e9d3f2d4a20808230579f3d",
+      "gitBlob": "2e698580b0c01e6222b964a3569d9d4859208d22"
+    }
+  ],
+  "redGreen": {
+    "red": {
+      "file": "scope-red.json",
+      "passed": 2,
+      "failed": 1
+    },
+    "green": {
+      "file": "scope-green.json",
+      "passed": 11,
+      "failed": 0,
+      "boundary": "Three real-provider controls plus eight existing workspace cases; overlaps final selection."
+    }
+  },
+  "finalUnit": {
+    "file": "unit-final.json",
+    "caseInstances": 452,
+    "physicalFiles": 64,
+    "passed": 452,
+    "failed": 0,
+    "command": "unit-command.json",
+    "defaultTimeoutMs": 5000
+  },
+  "types": {
+    "file": "typecheck-final.log",
+    "typegen": true,
+    "projects": 3,
+    "exit": 0,
+    "attestation": "Root observed final completed shell session97409 exit0 at narrowed source; the earlier formatter-intermediate type run is separately retained."
+  },
+  "quality": {
+    "file": "quality.json",
+    "files": 8,
+    "lintExit": 0,
+    "newTestFormat100Exit": 0,
+    "workspacePreservedFormat80Exit": 0,
+    "fullFormat100Exit": 1,
+    "fullFormat100BoundaryFiles": 5,
+    "ordinaryExit": 1,
+    "ordinaryFormatBoundaryFiles": 2,
+    "doctor": {
+      "file": "doctor.log",
+      "files": 8,
+      "errors": 0,
+      "warnings": 4,
+      "exit": 0,
+      "boundary": "Retained BatchArrival complexity, two lifecycle/unpacking state-reset compiler warnings and parent upload-busy callback effect; no suppressions. No warning in the corrected scope guard. Independent pending/Activity command behavior still requires explicit probing."
+    },
+    "whitespaceExit": 0
+  },
+  "formatting": {
+    "file": "format-restoration.json",
+    "boundary": "An owned formatter invocation rewrapped the existing workspace. Unrelated wrapping was removed by guarded reconstruction from the exact pre-correction blob, parser-tree comparison and final full unit/type reruns. New production diff is 18 additions/1 deletion wholly within the scope guard. Initial direct Babel resolution failed before writes; existing Next-owned parser was used without dependency changes.",
+    "intermediate": "unit-format-intermediate.json",
+    "initialFailure": "format-restore-initial.json"
+  },
+  "runtime": {
+    "freshPG": false,
+    "freshBrowser": false,
+    "freshNative": false,
+    "freshNext": false,
+    "matchedCaptures": false,
+    "boundary": "Merger stopped at the independently confirmed provider-error blocker; root made source correction only. Incoming19PG/browser/native evidence is historical and its fault-injected batch-read Retry remains unpassed."
+  },
+  "limits": [
+    "Fresh canonical PostgreSQL20 and actual context/batch read recovery, intake/confirm/readback, native/Next and matched layouts are pending.",
+    "Existing duplicate/uncertain command and Activity semantics require independent tests; no new cancellation or idempotency guarantee.",
+    "Whole-branch four-path roster guard, exhaustive roles/account/org ABA, production generation, catalogs, providers, physical devices and true zoom remain unpassed."
+  ],
+  "provenance": "Intermediate uncommitted red/green/format stages were not given invented commit pins; final source/test bytes are the committed source above."
+}

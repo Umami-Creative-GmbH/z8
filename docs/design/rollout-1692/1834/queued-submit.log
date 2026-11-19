@@ -1,0 +1,46 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx (29 tests | 1 failed) 1372ms
+   ❯ WorkSchedulePage load effect (29)
+     × does not start a queued submit from before an Activity reconnection 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx > WorkSchedulePage load effect > does not start a queued submit from before an Activity reconnection
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "effectiveFrom": 2026-11-15T17:20:56.288Z,
+        "hoursPerWeek": 40,
+        "workClassification": "weekly",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/work-schedule/page.test.tsx:544:47
+    542|   view.rerender(<Activity mode="visible"><WorkSchedulePage /></Activit…
+    543|   await act(async () => undefined);
+    544|   expect(mocks.setWorkScheduleOnboarding).not.toHaveBeenCalled();
+       |                                               ^
+    545|   expect(mocks.push).not.toHaveBeenCalled();
+    546|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+   Start at  17:20:54
+   Duration  2.17s (tests 66%, environment 16%, import 14%, transform 2%, setup 1%)
+

@@ -1,0 +1,62 @@
+{
+  "state": "SEALED_PUBLICATION_CANDIDATE",
+  "candidate": "166975f3c981d7f1f8d9e51bbce09fbe63b32568",
+  "source": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+  "tree": "02a53818fa6160423339a36e371c52630ca569cc",
+  "applicationTree": "e47b421aaa5617f6c270e11b8859938204fde16b",
+  "verifiedCommit": null,
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "publicationOnly": true,
+  "sourceChecks": {
+    "cases": 460,
+    "files": 65,
+    "allPassed": true,
+    "defaultTimeoutMs": 5000,
+    "explicitBrowserCasesTimeoutMs": 15000,
+    "types": {
+      "typegen": true,
+      "projects": 3,
+      "exit": 0,
+      "observedSession": 24481
+    },
+    "scopedLint2Exit": 0,
+    "newTestFormat100CrlfExit": 0,
+    "hookPreservedFormat80CrlfExit": 0,
+    "full1733Format100AndOrdinaryAccepted": false,
+    "doctor": {
+      "base": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "files": 9,
+      "errors": 0,
+      "warnings": 3,
+      "suppressions": 0,
+      "scoreDisabled": true
+    }
+  },
+  "freshIndependent": {
+    "cases": 62,
+    "files": 6,
+    "public39": 39,
+    "pg20": 20,
+    "browser3": 3,
+    "allPassed": true,
+    "additiveToRoot": false
+  },
+  "primarySelectionUnion": {
+    "cases": 480,
+    "files": 66,
+    "wholeSuite": false
+  },
+  "runtimeAllowlistedFiles": 112,
+  "oldCommandStopFiles": 24,
+  "oldUploadStopFiles": 71,
+  "pngs": 30,
+  "qualifications": [
+    "Historical scope452/64, command457/64 and upload459/65 are distinct source snapshots and nonadditive.",
+    "Current real-browser transport3 overlaps root460; public39 reuses controls.",
+    "Live partial retry/expiry/Activity/allABA/unmount/server cancellation and exhaustive authority remain bounded by the explicit public/PG seams.",
+    "Full error contrast, assistive technology, long translations, reduced motion, devices, true zoom, whole historical app/global transitions, production generation, remote Tolgee/catalogs/providers/global four-path roster guard and formatter boundaries remain unpassed.",
+    "No external email/delivery or universal auth, idempotency, cancellation or performance acceptance.",
+    "Original worker19 PNGs and historical235 restrictions remain inherited; old manifests are not rewritten."
+  ],
+  "ownership": "Publisher owns only this new proof directory and the named append section. No readiness, Git, ledger, root README, application, runtime, dependency, tracker, push, PR, merge or deploy ownership."
+}

@@ -3,7 +3,6 @@
 import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import type { SelectableEmployee } from "@/components/employee-select/types";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,
@@ -17,15 +16,10 @@ import { BalanceAdjustmentHistoryButton } from "@/components/work-balance/balanc
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
-import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
-import { CalendarLegend } from "./calendar-legend";
 
 interface CalendarControlsProps {
 	currentEmployeeId?: string;
-	selectedEmployeeId: string | null;
-	onEmployeeChange: (employeeId: string | null, employee?: SelectableEmployee) => void;
-	isManagerOrAbove: boolean;
 	workBalance: EmployeeWorkBalancePayload | null;
 	filters: CalendarFilters;
 	onFiltersChange: (filters: CalendarFilters) => void;
@@ -33,57 +27,63 @@ interface CalendarControlsProps {
 
 export function CalendarControls({
 	currentEmployeeId,
-	selectedEmployeeId,
-	onEmployeeChange,
-	isManagerOrAbove,
 	workBalance,
 	filters,
 	onFiltersChange,
 }: CalendarControlsProps) {
 	const { t } = useTranslate();
 	const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
-	const mobileControlsTitle = t("calendar.mobileControls.title", "Filters & Legend");
+	const mobileControlsTitle = t(
+		"calendar.mobileControls.title",
+		"Filters & Legend",
+	);
 	const mobileControlsDescription = t(
 		"calendar.mobileControls.description",
 		"Choose which calendar entries are visible.",
 	);
 
 	return (
-		<div className="space-y-2 order-2 md:order-1 md:space-y-4">
-			<CalendarEmployeeSelector
-				currentEmployeeId={currentEmployeeId}
-				selectedEmployeeId={selectedEmployeeId}
-				onEmployeeChange={onEmployeeChange}
-				isManagerOrAbove={isManagerOrAbove}
-			/>
-			<div data-testid="calendar-desktop-work-balance" className="hidden md:block">
+		<div className="min-w-0 space-y-4 xl:overflow-y-auto">
+			<div data-testid="calendar-work-balance">
 				<WorkBalanceCard
 					balance={workBalance}
 					compact
 					action={
 						workBalance ? (
-							<BalanceAdjustmentHistoryButton employeeId={workBalance.employeeId} />
+							<BalanceAdjustmentHistoryButton
+								employeeId={workBalance.employeeId}
+							/>
 						) : null
 					}
 				/>
 			</div>
-			<div data-testid="calendar-mobile-work-balance" className="md:hidden">
-				<WorkBalanceCard balance={workBalance} compact mobileCompact />
-			</div>
-			<div data-testid="calendar-desktop-controls" className="hidden space-y-4 md:block">
+			<div
+				data-testid="calendar-desktop-controls"
+				className="hidden space-y-4 md:block"
+			>
 				<CalendarFiltersComponent
 					filters={filters}
 					onFiltersChange={onFiltersChange}
 					currentEmployeeId={currentEmployeeId}
 					idPrefix="calendar-desktop"
 				/>
-				<CalendarLegend />
 			</div>
-			<div data-testid="calendar-mobile-controls" className="space-y-2 md:hidden">
+			<div
+				data-testid="calendar-mobile-controls"
+				className="space-y-2 md:hidden"
+			>
 				<Sheet open={mobileControlsOpen} onOpenChange={setMobileControlsOpen}>
 					<SheetTrigger asChild>
-						<Button type="button" variant="outline" size="sm" className="h-8 w-full gap-2 px-3">
-							<IconAdjustmentsHorizontal className="size-4" />
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="h-8 w-full gap-2 px-3"
+						>
+							<IconAdjustmentsHorizontal
+								className="size-4"
+								aria-hidden="true"
+							/>
 							{mobileControlsTitle}
 						</Button>
 					</SheetTrigger>
@@ -99,7 +99,6 @@ export function CalendarControls({
 								currentEmployeeId={currentEmployeeId}
 								idPrefix="calendar-mobile"
 							/>
-							<CalendarLegend />
 						</div>
 					</SheetContent>
 				</Sheet>

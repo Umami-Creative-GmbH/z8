@@ -1,0 +1,200 @@
+{
+  "candidate": "2404a1e0404e5079c56e51c290629455f798f9f5",
+  "tree": "2b6082e0e967cabdbc9fadc3ff4b574b508903be",
+  "appTree": "21de4ad559b7cfac4e8c168f8f7144f30e6780e5",
+  "config": [
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "bytes": 1950,
+      "sha256": "f869813593c3b53b46f79536e48874f69696b4293b9895d0c9ab997eec069c0c",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "unchangedSinceBefore": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "unchangedSinceBefore": true
+    }
+  ],
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "bytes": 1916,
+      "sha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c",
+      "unchangedSinceBefore": true,
+      "gitBlob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "gitBytes": 1861,
+      "gitSha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "bytes": 8147,
+      "sha256": "8981c9d05baf38381bd60d69d686fc7fe57e6f5920df4c8a0eb17a35b3cd133e",
+      "unchangedSinceBefore": true,
+      "gitBlob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "gitBytes": 7918,
+      "gitSha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "bytes": 7091,
+      "sha256": "4a1b813675e75ef5a1da183c5a6c25e2e40de31434f6d459da5ee85294f121e7",
+      "unchangedSinceBefore": true,
+      "gitBlob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "gitBytes": 6874,
+      "gitSha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "bytes": 13688,
+      "sha256": "4a02f550438ead82b3703011f1acb3979710ea2414688ae3243f695a36f1dcb3",
+      "unchangedSinceBefore": true,
+      "gitBlob": "d498332ae4ea7e8dc260b7d997fd4fda140faf06",
+      "gitBytes": 13289,
+      "gitSha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "bytes": 19359,
+      "sha256": "c7a2206c22d9ef5be6d4d1917224effd422811fbf6cd2f2980663ac899107400",
+      "unchangedSinceBefore": true,
+      "gitBlob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "gitBytes": 18784,
+      "gitSha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "bytes": 14041,
+      "sha256": "b8b7ba4943baacc39961108276d6874dfb8fac80cf426d3c9484f60f7f62475b",
+      "unchangedSinceBefore": true,
+      "gitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "gitBytes": 13627,
+      "gitSha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "bytes": 9303,
+      "sha256": "e35daf7803d9321aa214303d8211ae16f741f3d84ff5bc8274ccde6ed552d949",
+      "unchangedSinceBefore": true,
+      "gitBlob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "gitBytes": 9090,
+      "gitSha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "bytes": 12999,
+      "sha256": "04df26d1cf70f5ae1a040e74e98d561d9f98a221b1015b7d3b60e33dc68f8e6d",
+      "unchangedSinceBefore": true,
+      "gitBlob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "gitBytes": 12722,
+      "gitSha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "bytes": 7923,
+      "sha256": "5d3ad953a24f6cf4da62cda25433675bfc53b922cc6ab4f28de4ce14b899293d",
+      "unchangedSinceBefore": true,
+      "gitBlob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "gitBytes": 7641,
+      "gitSha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39",
+      "worktreeEqualsPinnedBlobAfterCRLFNormalization": true,
+      "matchesProducerGitBlob": true
+    }
+  ],
+  "dependencyTopology": [
+    {
+      "path": "node_modules",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\node_modules",
+      "insideOwnWorktree": true,
+      "isReparsePoint": false
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\apps\\webapp\\node_modules",
+      "insideOwnWorktree": true,
+      "isReparsePoint": false
+    },
+    {
+      "path": "apps/webapp/node_modules/react",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react",
+      "insideOwnWorktree": true,
+      "isReparsePoint": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-dom",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom",
+      "insideOwnWorktree": true,
+      "isReparsePoint": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query",
+      "insideOwnWorktree": true,
+      "isReparsePoint": true
+    },
+    {
+      "path": "apps/webapp/node_modules/vitest",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest",
+      "insideOwnWorktree": true,
+      "isReparsePoint": true
+    },
+    {
+      "path": "node_modules/react-doctor",
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor",
+      "insideOwnWorktree": true,
+      "isReparsePoint": true
+    }
+  ]
+}

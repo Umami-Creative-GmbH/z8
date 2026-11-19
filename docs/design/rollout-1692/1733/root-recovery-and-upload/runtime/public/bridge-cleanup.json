@@ -1,0 +1,17 @@
+{
+  "removed": [
+    {
+      "publicName": "command-probe.test.tsx",
+      "path": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+      "sha256": "79ebb6279040fc9f2a2b3729fda582b97bda08c5865ffc96535835a900fc264c",
+      "exactOwnedByteEqual": true
+    },
+    {
+      "publicName": "heading-probe.test.tsx",
+      "path": "apps/webapp/src/components/personnel-file/independent1733final-heading-probe.test.tsx",
+      "sha256": "98bb8eb174f01c33e07b55882b3c7e3755bbaa7b9da59a2c5e7094c5409b3b8b",
+      "exactOwnedByteEqual": true
+    }
+  ],
+  "count": 2
+}

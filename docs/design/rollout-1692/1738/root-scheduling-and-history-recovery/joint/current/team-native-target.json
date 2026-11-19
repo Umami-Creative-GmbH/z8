@@ -1,0 +1,16 @@
+{
+  "route": "/en/team",
+  "method": "passive live React DOM fiber ancestry; names only; no props/state or mocks",
+  "targets": [
+    "TeamDirectoryRecords",
+    "TeamMembersList",
+    "TeamMembersToolbar",
+    "TeamMemberCards"
+  ],
+  "required": [
+    "TeamDirectoryRecords",
+    "TeamMembersList"
+  ],
+  "matched": true,
+  "qualification": "TeamDirectory is a server component; actual client records/list target observed. Not a native DevTools extension-session claim."
+}

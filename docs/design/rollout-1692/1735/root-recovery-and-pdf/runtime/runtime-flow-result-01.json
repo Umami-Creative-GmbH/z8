@@ -1,0 +1,23 @@
+{
+  "verdict": "PASS",
+  "normalGeneratedLogin": true,
+  "permission": "denied",
+  "generateFailure": {
+    "actualTransportAbort": true,
+    "retainedReport": true,
+    "localRetryUsesCaptured2025CommandDespiteCurrentMonthDraft": true
+  },
+  "rosterFailure": {
+    "actualTransportAborts": true,
+    "boundedRearms": 80,
+    "safeHeading": true,
+    "localRetry": true,
+    "singleAbortAutoRecovered": true
+  },
+  "keyboard": {
+    "actualKeyboard": true,
+    "firstEscapeClosesPeriodPopup": true,
+    "routeAndFocusRetained": true
+  },
+  "sourceChanged": false
+}

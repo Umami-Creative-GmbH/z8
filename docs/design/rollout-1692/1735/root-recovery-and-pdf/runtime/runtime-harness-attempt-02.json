@@ -1,0 +1,5 @@
+{
+  "exit": 1,
+  "stage": "roster local Retry wait",
+  "cause": "Single native roster transport abort automatically retried by current query policy; settled selector recovered without persistent alert. Not a source failure. Next attempt retains transport refusal through bounded query retries, then releases."
+}

@@ -1,0 +1,974 @@
+src\app\[locale]\(app)\team\presence\[locationId]\all-locations-link.tsx format ━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·IconArrowLeft·}·from·"@tabler/icons-react";␍
+     4    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     5    │ - import·{·Link·}·from·"@/navigation";␍
+     6    │ - ␍
+     7    │ - export·function·AllLocationsLink()·{␍
+     8    │ - → const·{·t·}·=·useTranslate();␍
+     9    │ - → return·(␍
+    10    │ - → → <Link␍
+    11    │ - → → → href="/team/presence"␍
+    12    │ - → → → className="inline-flex·min-h-9·items-center·gap-1·rounded-sm·text-sm·text-muted-foreground·hover:text-foreground·focus-visible:outline-2·focus-visible:outline-offset-4·focus-visible:outline-ring"␍
+    13    │ - → → >␍
+    14    │ - → → → <IconArrowLeft·className="size-4·shrink-0"·aria-hidden="true"·/>␍
+    15    │ - → → → {t("team.presence.allLocations",·"All·locations")}␍
+    16    │ - → → </Link>␍
+    17    │ - → );␍
+    18    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·IconArrowLeft·}·from·"@tabler/icons-react";
+        4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        5 │ + import·{·Link·}·from·"@/navigation";
+        6 │ + 
+        7 │ + export·function·AllLocationsLink()·{
+        8 │ + → const·{·t·}·=·useTranslate();
+        9 │ + → return·(
+       10 │ + → → <Link
+       11 │ + → → → href="/team/presence"
+       12 │ + → → → className="inline-flex·min-h-9·items-center·gap-1·rounded-sm·text-sm·text-muted-foreground·hover:text-foreground·focus-visible:outline-2·focus-visible:outline-offset-4·focus-visible:outline-ring"
+       13 │ + → → >
+       14 │ + → → → <IconArrowLeft·className="size-4·shrink-0"·aria-hidden="true"·/>
+       15 │ + → → → {t("team.presence.allLocations",·"All·locations")}
+       16 │ + → → </Link>
+       17 │ + → );
+       18 │ + }
+    19 19 │   
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\error.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·AppErrorState·}·from·"@/components/errors/app-error-state";␍
+     4    │ - import·{·AllLocationsLink·}·from·"./all-locations-link";␍
+     5    │ - ␍
+     6    │ - export·default·function·LocationPresenceError({␍
+     7    │ - → retry,␍
+     8    │ - }:·{␍
+     9    │ - → error:·Error·&·{·digest?:·string·};␍
+    10    │ - → retry:·()·=>·void;␍
+    11    │ - })·{␍
+    12    │ - → return·(␍
+    13    │ - → → <AppErrorState␍
+    14    │ - → → → variant="error"␍
+    15    │ - → → → recovery="workspace"␍
+    16    │ - → → → titleKey="team.presence.unavailable"␍
+    17    │ - → → → titleDefault="Presence·unavailable"␍
+    18    │ - → → → descriptionKey="team.presence.loadFailed"␍
+    19    │ - → → → descriptionDefault="We·couldn't·load·this·location's·presence.·Retry·or·choose·a·location·again."␍
+    20    │ - → → → onRetry={retry}␍
+    21    │ - → → → actions={<AllLocationsLink·/>}␍
+    22    │ - → → />␍
+    23    │ - → );␍
+    24    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·AppErrorState·}·from·"@/components/errors/app-error-state";
+        4 │ + import·{·AllLocationsLink·}·from·"./all-locations-link";
+        5 │ + 
+        6 │ + export·default·function·LocationPresenceError({
+        7 │ + → retry,
+        8 │ + }:·{
+        9 │ + → error:·Error·&·{·digest?:·string·};
+       10 │ + → retry:·()·=>·void;
+       11 │ + })·{
+       12 │ + → return·(
+       13 │ + → → <AppErrorState
+       14 │ + → → → variant="error"
+       15 │ + → → → recovery="workspace"
+       16 │ + → → → titleKey="team.presence.unavailable"
+       17 │ + → → → titleDefault="Presence·unavailable"
+       18 │ + → → → descriptionKey="team.presence.loadFailed"
+       19 │ + → → → descriptionDefault="We·couldn't·load·this·location's·presence.·Retry·or·choose·a·location·again."
+       20 │ + → → → onRetry={retry}
+       21 │ + → → → actions={<AllLocationsLink·/>}
+       22 │ + → → />
+       23 │ + → );
+       24 │ + }
+    25 25 │   
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\heading.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·expect,·it·}·from·"vitest";␍
+     2    │ - import·{·appPageOwnsHeading·}·from·"@/lib/navigation/route-metadata";␍
+     3    │ - ␍
+     4    │ - it("owns·exactly·the·selected-location·heading·without·adopting·the·selector·or·descendants",·()·=>·{␍
+     5    │ - → expect(appPageOwnsHeading("/en/team/presence/location-1")).toBe(true);␍
+     6    │ - → expect(appPageOwnsHeading("/team/presence")).toBe(false);␍
+     7    │ - → expect(appPageOwnsHeading("/en/team/presence/location-1/history")).toBe(false);␍
+     8    │ - → expect(appPageOwnsHeading("/team")).toBe(false);␍
+     9    │ - });␍
+        1 │ + import·{·expect,·it·}·from·"vitest";
+        2 │ + import·{·appPageOwnsHeading·}·from·"@/lib/navigation/route-metadata";
+        3 │ + 
+        4 │ + it("owns·exactly·the·selected-location·heading·without·adopting·the·selector·or·descendants",·()·=>·{
+        5 │ + → expect(appPageOwnsHeading("/en/team/presence/location-1")).toBe(true);
+        6 │ + → expect(appPageOwnsHeading("/team/presence")).toBe(false);
+        7 │ + → expect(appPageOwnsHeading("/en/team/presence/location-1/history")).toBe(
+        8 │ + → → false,
+        9 │ + → );
+       10 │ + → expect(appPageOwnsHeading("/team")).toBe(false);
+       11 │ + });
+    10 12 │   
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\location-presence-loading.tsx format ━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     5    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     6    │ - import·{·AllLocationsLink·}·from·"./all-locations-link";␍
+     7    │ - ␍
+     8    │ - export·function·LocationPresenceLoading()·{␍
+     9    │ - → const·{·t·}·=·useTranslate();␍
+    10    │ - → return·(␍
+    11    │ - → → <div·className="mx-auto·flex·w-full·min-w-0·max-w-6xl·flex-1·flex-col·gap-6·px-4·py-6·lg:px-6">␍
+    12    │ - → → → <PageHeader·title={t("team.presence.title",·"Who·is·in")}·scope={<AllLocationsLink·/>}·/>␍
+    13    │ - → → → <div␍
+    14    │ - → → → → role="status"␍
+    15    │ - → → → → aria-label={t("team.presence.loading",·"Loading·location·presence…")}␍
+    16    │ - → → → → aria-busy="true"␍
+    17    │ - → → → >␍
+    18    │ - → → → → <Skeleton·className="h-64·w-full"·/>␍
+    19    │ - → → → → <span·className="sr-only">{t("team.presence.loading",·"Loading·location·presence…")}</span>␍
+    20    │ - → → → </div>␍
+    21    │ - → → </div>␍
+    22    │ - → );␍
+    23    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        5 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        6 │ + import·{·AllLocationsLink·}·from·"./all-locations-link";
+        7 │ + 
+        8 │ + export·function·LocationPresenceLoading()·{
+        9 │ + → const·{·t·}·=·useTranslate();
+       10 │ + → return·(
+       11 │ + → → <div·className="mx-auto·flex·w-full·min-w-0·max-w-6xl·flex-1·flex-col·gap-6·px-4·py-6·lg:px-6">
+       12 │ + → → → <PageHeader
+       13 │ + → → → → title={t("team.presence.title",·"Who·is·in")}
+       14 │ + → → → → scope={<AllLocationsLink·/>}
+       15 │ + → → → />
+       16 │ + → → → <div
+       17 │ + → → → → role="status"
+       18 │ + → → → → aria-label={t("team.presence.loading",·"Loading·location·presence…")}
+       19 │ + → → → → aria-busy="true"
+       20 │ + → → → >
+       21 │ + → → → → <Skeleton·className="h-64·w-full"·/>
+       22 │ + → → → → <span·className="sr-only">
+       23 │ + → → → → → {t("team.presence.loading",·"Loading·location·presence…")}
+       24 │ + → → → → </span>
+       25 │ + → → → </div>
+       26 │ + → → </div>
+       27 │ + → );
+       28 │ + }
+    24 29 │   
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\not-found.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·AppErrorState·}·from·"@/components/errors/app-error-state";␍
+     4    │ - import·{·AllLocationsLink·}·from·"./all-locations-link";␍
+     5    │ - ␍
+     6    │ - export·default·function·LocationPresenceNotFound()·{␍
+     7    │ - → return·(␍
+     8    │ - → → <AppErrorState␍
+     9    │ - → → → variant="not-found"␍
+    10    │ - → → → recovery="workspace"␍
+    11    │ - → → → titleKey="team.presence.locationUnavailable"␍
+    12    │ - → → → titleDefault="Location·unavailable"␍
+    13    │ - → → → descriptionKey="team.presence.locationUnavailableDescription"␍
+    14    │ - → → → descriptionDefault="This·location·isn't·available·in·your·current·organization.·Choose·an·active·location·to·view·presence."␍
+    15    │ - → → → actions={<AllLocationsLink·/>}␍
+    16    │ - → → />␍
+    17    │ - → );␍
+    18    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·AppErrorState·}·from·"@/components/errors/app-error-state";
+        4 │ + import·{·AllLocationsLink·}·from·"./all-locations-link";
+        5 │ + 
+        6 │ + export·default·function·LocationPresenceNotFound()·{
+        7 │ + → return·(
+        8 │ + → → <AppErrorState
+        9 │ + → → → variant="not-found"
+       10 │ + → → → recovery="workspace"
+       11 │ + → → → titleKey="team.presence.locationUnavailable"
+       12 │ + → → → titleDefault="Location·unavailable"
+       13 │ + → → → descriptionKey="team.presence.locationUnavailableDescription"
+       14 │ + → → → descriptionDefault="This·location·isn't·available·in·your·current·organization.·Choose·an·active·location·to·view·presence."
+       15 │ + → → → actions={<AllLocationsLink·/>}
+       16 │ + → → />
+       17 │ + → );
+       18 │ + }
+    19 19 │   
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·notFound·}·from·"next/navigation";␍
+     2    │ - import·{·Suspense·}·from·"react";␍
+     3    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     4    │ - import·{·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+     5    │ - import·{·redirectWithLocale·}·from·"@/lib/navigation/locale-redirect";␍
+     6    │ - import·{·formatPresenceSince·}·from·"@/lib/time-tracking/who-is-in/format";␍
+     7    │ - import·{·getRenderUserPreferences·}·from·"@/lib/user-preferences/render-snapshot";␍
+     8    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+     9    │ - import·{·LocationPresenceList,·type·LocationPresenceRow·}·from·"../location-presence-list";␍
+    10    │ - import·{·getLocationPresence·}·from·"../presence-data";␍
+    11    │ - import·{·AllLocationsLink·}·from·"./all-locations-link";␍
+    12    │ - import·{·LocationPresenceLoading·}·from·"./location-presence-loading";␍
+    13    │ - ␍
+    14    │ - interface·LocationPresencePageProps·{␍
+    15    │ - → params:·Promise<{·locale:·string;·locationId:·string·}>;␍
+    16    │ - }␍
+    17    │ - ␍
+    18    │ - async·function·LocationPresencePageContent({·params·}:·LocationPresencePageProps)·{␍
+    19    │ - → const·[{·locale,·locationId·},·t]·=·await·Promise.all([params,·getTranslate()]);␍
+    20    │ - → const·result·=·await·getLocationPresence(locationId);␍
+    21    │ - ␍
+    22    │ - → if·(result.status·===·"forbidden")·{␍
+    23    │ - → → return·redirectWithLocale("/");␍
+    24    │ - → }␍
+    25    │ - → if·(result.status·===·"not_found")·{␍
+    26    │ - → → notFound();␍
+    27    │ - → }␍
+    28    │ - ␍
+    29    │ - → const·{·timeFormat·}·=·await·getRenderUserPreferences(result.viewer.userId);␍
+    30    │ - → const·now·=·systemClock.nowInstant();␍
+    31    │ - → const·rows:·LocationPresenceRow[]·=·result.entries.map((entry)·=>·({␍
+    32    │ - → → employeeId:·entry.employeeId,␍
+    33    │ - → → name:·entry.name,␍
+    34    │ - → → state:·entry.state,␍
+    35    │ - → → sinceText:·formatPresenceSince(entry.since,·entry.sinceZone,·{·locale,·timeFormat,·now·}),␍
+    36    │ - → }));␍
+    37    │ - ␍
+    38    │ - → return·(␍
+    39    │ - → → <div·className="@container/main·mx-auto·flex·w-full·min-w-0·max-w-6xl·flex-1·flex-col·gap-6·px-4·py-6·lg:px-6">␍
+    40    │ - → → → <PageHeader␍
+    41    │ - → → → → scope={<AllLocationsLink·/>}␍
+    42    │ - → → → → title={t("team.presence.locationTitle",·"Who·is·in:·{location}",·{␍
+    43    │ - → → → → → location:·result.location.name,␍
+    44    │ - → → → → })}␍
+    45    │ - → → → → description={␍
+    46    │ - → → → → → result.viewer.scope.kind·===·"all"␍
+    47    │ - → → → → → → ?·t(␍
+    48    │ - → → → → → → → → "team.presence.descriptionAll",␍
+    49    │ - → → → → → → → → "Employees·assigned·to·this·location·who·are·clocked·in·or·on·a·break.",␍
+    50    │ - → → → → → → → )␍
+    51    │ - → → → → → → :·t(␍
+    52    │ - → → → → → → → → "team.presence.descriptionManaged",␍
+    53    │ - → → → → → → → → "Employees·you·manage·who·are·assigned·to·this·location·and·clocked·in·or·on·a·break.",␍
+    54    │ - → → → → → → → )␍
+    55    │ - → → → → }␍
+    56    │ - → → → />␍
+    57    │ - → → → <section·aria-label={t("team.presence.title",·"Who·is·in")}·className="min-w-0·space-y-3">␍
+    58    │ - → → → → <LocationPresenceList·rows={rows}·/>␍
+    59    │ - → → → → <p·className="max-w-3xl·text-pretty·text-sm·text-muted-foreground">␍
+    60    │ - → → → → → {t(␍
+    61    │ - → → → → → → "team.presence.assignmentContext",␍
+    62    │ - → → → → → → "Location·assignment·is·not·evidence·of·device·position.·Times·use·the·zone·captured·when·work·or·the·break·began.·Presence·refreshes·every·minute.",␍
+    63    │ - → → → → → )}␍
+    64    │ - → → → → </p>␍
+    65    │ - → → → </section>␍
+    66    │ - → → </div>␍
+    67    │ - → );␍
+    68    │ - }␍
+    69    │ - ␍
+    70    │ - export·default·function·LocationPresencePage({·params·}:·LocationPresencePageProps)·{␍
+    71    │ - → return·(␍
+    72    │ - → → <Suspense·fallback={<LocationPresenceLoading·/>}>␍
+    73    │ - → → → <LocationPresencePageContent·params={params}·/>␍
+    74    │ - → → </Suspense>␍
+    75    │ - → );␍
+    76    │ - }␍
+        1 │ + import·{·notFound·}·from·"next/navigation";
+        2 │ + import·{·Suspense·}·from·"react";
+        3 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        4 │ + import·{·systemClock·}·from·"@/lib/datetime/temporal-core";
+        5 │ + import·{·redirectWithLocale·}·from·"@/lib/navigation/locale-redirect";
+        6 │ + import·{·formatPresenceSince·}·from·"@/lib/time-tracking/who-is-in/format";
+        7 │ + import·{·getRenderUserPreferences·}·from·"@/lib/user-preferences/render-snapshot";
+        8 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+        9 │ + import·{
+       10 │ + → LocationPresenceList,
+       11 │ + → type·LocationPresenceRow,
+       12 │ + }·from·"../location-presence-list";
+       13 │ + import·{·getLocationPresence·}·from·"../presence-data";
+       14 │ + import·{·AllLocationsLink·}·from·"./all-locations-link";
+       15 │ + import·{·LocationPresenceLoading·}·from·"./location-presence-loading";
+       16 │ + 
+       17 │ + interface·LocationPresencePageProps·{
+       18 │ + → params:·Promise<{·locale:·string;·locationId:·string·}>;
+       19 │ + }
+       20 │ + 
+       21 │ + async·function·LocationPresencePageContent({
+       22 │ + → params,
+       23 │ + }:·LocationPresencePageProps)·{
+       24 │ + → const·[{·locale,·locationId·},·t]·=·await·Promise.all([
+       25 │ + → → params,
+       26 │ + → → getTranslate(),
+       27 │ + → ]);
+       28 │ + → const·result·=·await·getLocationPresence(locationId);
+       29 │ + 
+       30 │ + → if·(result.status·===·"forbidden")·{
+       31 │ + → → return·redirectWithLocale("/");
+       32 │ + → }
+       33 │ + → if·(result.status·===·"not_found")·{
+       34 │ + → → notFound();
+       35 │ + → }
+       36 │ + 
+       37 │ + → const·{·timeFormat·}·=·await·getRenderUserPreferences(result.viewer.userId);
+       38 │ + → const·now·=·systemClock.nowInstant();
+       39 │ + → const·rows:·LocationPresenceRow[]·=·result.entries.map((entry)·=>·({
+       40 │ + → → employeeId:·entry.employeeId,
+       41 │ + → → name:·entry.name,
+       42 │ + → → state:·entry.state,
+       43 │ + → → sinceText:·formatPresenceSince(entry.since,·entry.sinceZone,·{
+       44 │ + → → → locale,
+       45 │ + → → → timeFormat,
+       46 │ + → → → now,
+       47 │ + → → }),
+       48 │ + → }));
+       49 │ + 
+       50 │ + → return·(
+       51 │ + → → <div·className="@container/main·mx-auto·flex·w-full·min-w-0·max-w-6xl·flex-1·flex-col·gap-6·px-4·py-6·lg:px-6">
+       52 │ + → → → <PageHeader
+       53 │ + → → → → scope={<AllLocationsLink·/>}
+       54 │ + → → → → title={t("team.presence.locationTitle",·"Who·is·in:·{location}",·{
+       55 │ + → → → → → location:·result.location.name,
+       56 │ + → → → → })}
+       57 │ + → → → → description={
+       58 │ + → → → → → result.viewer.scope.kind·===·"all"
+       59 │ + → → → → → → ?·t(
+       60 │ + → → → → → → → → "team.presence.descriptionAll",
+       61 │ + → → → → → → → → "Employees·assigned·to·this·location·who·are·clocked·in·or·on·a·break.",
+       62 │ + → → → → → → → )
+       63 │ + → → → → → → :·t(
+       64 │ + → → → → → → → → "team.presence.descriptionManaged",
+       65 │ + → → → → → → → → "Employees·you·manage·who·are·assigned·to·this·location·and·clocked·in·or·on·a·break.",
+       66 │ + → → → → → → → )
+       67 │ + → → → → }
+       68 │ + → → → />
+       69 │ + → → → <section
+       70 │ + → → → → aria-label={t("team.presence.title",·"Who·is·in")}
+       71 │ + → → → → className="min-w-0·space-y-3"
+       72 │ + → → → >
+       73 │ + → → → → <LocationPresenceList·rows={rows}·/>
+       74 │ + → → → → <p·className="max-w-3xl·text-pretty·text-sm·text-muted-foreground">
+  20 more lines truncated
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\states.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - //·@vitest-environment·jsdom␍
+     2    │ - ␍
+     3    │ - import·{·cleanup,·fireEvent,·render,·screen·}·from·"@testing-library/react";␍
+     4    │ - import·type·{·ComponentProps·}·from·"react";␍
+     5    │ - import·{·afterEach,·expect,·it,·vi·}·from·"vitest";␍
+     6    │ - import·LocationPresenceError·from·"./error";␍
+     7    │ - import·{·LocationPresenceLoading·}·from·"./location-presence-loading";␍
+     8    │ - import·LocationPresenceNotFound·from·"./not-found";␍
+     9    │ - ␍
+    10    │ - vi.mock("@tolgee/react",·()·=>·({␍
+    11    │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+    12    │ - }));␍
+    13    │ - vi.mock("@/navigation",·()·=>·({␍
+    14    │ - → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+    15    │ - → useRouter:·()·=>·({·back:·vi.fn()·}),␍
+    16    │ - }));␍
+    17    │ - ␍
+    18    │ - afterEach(cleanup);␍
+    19    │ - ␍
+    20    │ - it("names·the·task·while·presence·is·pending·without·pretending·the·roster·is·empty",·()·=>·{␍
+    21    │ - → render(<LocationPresenceLoading·/>);␍
+    22    │ - → expect(screen.getAllByRole("heading",·{·level:·1·}).map((node)·=>·node.textContent)).toEqual([␍
+    23    │ - → → "Who·is·in",␍
+    24    │ - → ]);␍
+    25    │ - → expect(screen.getByRole("status",·{·name:·"Loading·location·presence…"·})).toBeTruthy();␍
+    26    │ - → expect(screen.queryByRole("table")).toBeNull();␍
+    27    │ - → expect(screen.queryByText(/Nobody·you·can·see/)).toBeNull();␍
+    28    │ - → expect(screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href")).toBe(␍
+    29    │ - → → "/team/presence",␍
+    30    │ - → );␍
+    31    │ - });␍
+    32    │ - ␍
+    33    │ - it("offers·local·Retry·and·the·location·selector·after·a·read·failure·without·exposing·error·details",·()·=>·{␍
+    34    │ - → const·retry·=·vi.fn();␍
+    35    │ - → render(<LocationPresenceError·error={new·Error("private·database·details")}·retry={retry}·/>);␍
+    36    │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe("Presence·unavailable");␍
+    37    │ - → expect(screen.queryByText("private·database·details")).toBeNull();␍
+    38    │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));␍
+    39    │ - → expect(retry).toHaveBeenCalledOnce();␍
+    40    │ - → expect(screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href")).toBe(␍
+    41    │ - → → "/team/presence",␍
+    42    │ - → );␍
+    43    │ - });␍
+    44    │ - ␍
+    45    │ - it("keeps·unavailable·locations·indistinguishable·and·returns·to·the·authorized·selector",·()·=>·{␍
+    46    │ - → render(<LocationPresenceNotFound·/>);␍
+    47    │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe("Location·unavailable");␍
+    48    │ - → expect(screen.queryByRole("table")).toBeNull();␍
+    49    │ - → expect(screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href")).toBe(␍
+    50    │ - → → "/team/presence",␍
+    51    │ - → );␍
+    52    │ - });␍
+        1 │ + //·@vitest-environment·jsdom
+        2 │ + 
+        3 │ + import·{·cleanup,·fireEvent,·render,·screen·}·from·"@testing-library/react";
+        4 │ + import·type·{·ComponentProps·}·from·"react";
+        5 │ + import·{·afterEach,·expect,·it,·vi·}·from·"vitest";
+        6 │ + import·LocationPresenceError·from·"./error";
+        7 │ + import·{·LocationPresenceLoading·}·from·"./location-presence-loading";
+        8 │ + import·LocationPresenceNotFound·from·"./not-found";
+        9 │ + 
+       10 │ + vi.mock("@tolgee/react",·()·=>·({
+       11 │ + → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),
+       12 │ + }));
+       13 │ + vi.mock("@/navigation",·()·=>·({
+       14 │ + → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,
+       15 │ + → useRouter:·()·=>·({·back:·vi.fn()·}),
+       16 │ + }));
+       17 │ + 
+       18 │ + afterEach(cleanup);
+       19 │ + 
+       20 │ + it("names·the·task·while·presence·is·pending·without·pretending·the·roster·is·empty",·()·=>·{
+       21 │ + → render(<LocationPresenceLoading·/>);
+       22 │ + → expect(
+       23 │ + → → screen
+       24 │ + → → → .getAllByRole("heading",·{·level:·1·})
+       25 │ + → → → .map((node)·=>·node.textContent),
+       26 │ + → ).toEqual(["Who·is·in"]);
+       27 │ + → expect(
+       28 │ + → → screen.getByRole("status",·{·name:·"Loading·location·presence…"·}),
+       29 │ + → ).toBeTruthy();
+       30 │ + → expect(screen.queryByRole("table")).toBeNull();
+       31 │ + → expect(screen.queryByText(/Nobody·you·can·see/)).toBeNull();
+       32 │ + → expect(
+       33 │ + → → screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href"),
+       34 │ + → ).toBe("/team/presence");
+       35 │ + });
+       36 │ + 
+       37 │ + it("offers·local·Retry·and·the·location·selector·after·a·read·failure·without·exposing·error·details",·()·=>·{
+       38 │ + → const·retry·=·vi.fn();
+       39 │ + → render(
+       40 │ + → → <LocationPresenceError
+       41 │ + → → → error={new·Error("private·database·details")}
+       42 │ + → → → retry={retry}
+       43 │ + → → />,
+       44 │ + → );
+       45 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(
+       46 │ + → → "Presence·unavailable",
+       47 │ + → );
+       48 │ + → expect(screen.queryByText("private·database·details")).toBeNull();
+       49 │ + → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));
+       50 │ + → expect(retry).toHaveBeenCalledOnce();
+       51 │ + → expect(
+       52 │ + → → screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href"),
+       53 │ + → ).toBe("/team/presence");
+       54 │ + });
+       55 │ + 
+       56 │ + it("keeps·unavailable·locations·indistinguishable·and·returns·to·the·authorized·selector",·()·=>·{
+       57 │ + → render(<LocationPresenceNotFound·/>);
+       58 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(
+       59 │ + → → "Location·unavailable",
+       60 │ + → );
+       61 │ + → expect(screen.queryByRole("table")).toBeNull();
+       62 │ + → expect(
+       63 │ + → → screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href"),
+       64 │ + → ).toBe("/team/presence");
+       65 │ + });
+    53 66 │   
+  
+
+src\app\[locale]\(app)\team\presence\location-presence-list.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - //·@vitest-environment·jsdom␍
+     2    │ - ␍
+     3    │ - import·{·act,·cleanup,·render,·screen,·within·}·from·"@testing-library/react";␍
+     4    │ - import·type·{·ComponentProps·}·from·"react";␍
+     5    │ - import·{·afterEach,·expect,·it,·vi·}·from·"vitest";␍
+     6    │ - import·{·LocationPresenceList·}·from·"./location-presence-list";␍
+     7    │ - ␍
+     8    │ - vi.mock("@tolgee/react",·()·=>·({␍
+     9    │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+    10    │ - }));␍
+    11    │ - const·refresh·=·vi.hoisted(()·=>·vi.fn());␍
+    12    │ - vi.mock("@/navigation",·()·=>·({␍
+    13    │ - → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+    14    │ - → useRouter:·()·=>·({·refresh·}),␍
+    15    │ - }));␍
+    16    │ - ␍
+    17    │ - afterEach(()·=>·{␍
+    18    │ - → cleanup();␍
+    19    │ - → vi.useRealTimers();␍
+    20    │ - → refresh.mockReset();␍
+    21    │ - });␍
+    22    │ - ␍
+    23    │ - it("lets·readers·open·an·employee·from·their·current·presence·record·without·losing·state·or·since",·()·=>·{␍
+    24    │ - → render(␍
+    25    │ - → → <LocationPresenceList␍
+    26    │ - → → → rows={[␍
+    27    │ - → → → → {·employeeId:·"anna",·name:·"Anna·Berger",·state:·"clocked_in",·sinceText:·"08:30"·},␍
+    28    │ - → → → → {·employeeId:·"ben",·name:·"Ben·West",·state:·"on_break",·sinceText:·"11:45"·},␍
+    29    │ - → → → ]}␍
+    30    │ - → → />,␍
+    31    │ - → );␍
+    32    │ - → const·anna·=·screen.getByRole("link",·{·name:·"Anna·Berger"·});␍
+    33    │ - → expect(anna.getAttribute("href")).toBe("/settings/employees/anna");␍
+    34    │ - → const·row·=·anna.closest("tr");␍
+    35    │ - → expect(row).not.toBeNull();␍
+    36    │ - → if·(!row)·throw·new·Error("Missing·employee·record");␍
+    37    │ - → expect(within(row).getByText("Clocked·in")).toBeTruthy();␍
+    38    │ - → expect(within(row).getByText("08:30")).toBeTruthy();␍
+    39    │ - → expect(screen.getByText("On·break")).toBeTruthy();␍
+    40    │ - → expect(screen.getByText("11:45")).toBeTruthy();␍
+    41    │ - });␍
+    42    │ - ␍
+    43    │ - it("refreshes·live·presence·every·minute,·removes·ended·work·on·the·next·read,·and·stops·on·departure",·()·=>·{␍
+    44    │ - → vi.useFakeTimers();␍
+    45    │ - → const·view·=·render(␍
+    46    │ - → → <LocationPresenceList␍
+    47    │ - → → → rows={[{·employeeId:·"anna",·name:·"Anna·Berger",·state:·"clocked_in",·sinceText:·"08:30"·}]}␍
+    48    │ - → → />,␍
+    49    │ - → );␍
+    50    │ - → act(()·=>·vi.advanceTimersByTime(60_000));␍
+    51    │ - → expect(refresh).toHaveBeenCalledTimes(1);␍
+    52    │ - → view.rerender(<LocationPresenceList·rows={[]}·/>);␍
+    53    │ - → expect(screen.queryByRole("link",·{·name:·"Anna·Berger"·})).toBeNull();␍
+    54    │ - → expect(␍
+    55    │ - → → screen.getByText("Nobody·you·can·see·is·clocked·in·at·this·location·right·now."),␍
+    56    │ - → ).toBeTruthy();␍
+    57    │ - → view.unmount();␍
+    58    │ - → act(()·=>·vi.advanceTimersByTime(60_000));␍
+    59    │ - → expect(refresh).toHaveBeenCalledTimes(1);␍
+    60    │ - });␍
+        1 │ + //·@vitest-environment·jsdom
+        2 │ + 
+        3 │ + import·{·act,·cleanup,·render,·screen,·within·}·from·"@testing-library/react";
+        4 │ + import·type·{·ComponentProps·}·from·"react";
+        5 │ + import·{·afterEach,·expect,·it,·vi·}·from·"vitest";
+        6 │ + import·{·LocationPresenceList·}·from·"./location-presence-list";
+        7 │ + 
+        8 │ + vi.mock("@tolgee/react",·()·=>·({
+        9 │ + → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),
+       10 │ + }));
+       11 │ + const·refresh·=·vi.hoisted(()·=>·vi.fn());
+       12 │ + vi.mock("@/navigation",·()·=>·({
+       13 │ + → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,
+       14 │ + → useRouter:·()·=>·({·refresh·}),
+       15 │ + }));
+       16 │ + 
+       17 │ + afterEach(()·=>·{
+       18 │ + → cleanup();
+       19 │ + → vi.useRealTimers();
+       20 │ + → refresh.mockReset();
+       21 │ + });
+       22 │ + 
+       23 │ + it("lets·readers·open·an·employee·from·their·current·presence·record·without·losing·state·or·since",·()·=>·{
+       24 │ + → render(
+       25 │ + → → <LocationPresenceList
+       26 │ + → → → rows={[
+       27 │ + → → → → {
+       28 │ + → → → → → employeeId:·"anna",
+       29 │ + → → → → → name:·"Anna·Berger",
+       30 │ + → → → → → state:·"clocked_in",
+       31 │ + → → → → → sinceText:·"08:30",
+       32 │ + → → → → },
+       33 │ + → → → → {
+       34 │ + → → → → → employeeId:·"ben",
+       35 │ + → → → → → name:·"Ben·West",
+       36 │ + → → → → → state:·"on_break",
+       37 │ + → → → → → sinceText:·"11:45",
+       38 │ + → → → → },
+       39 │ + → → → ]}
+       40 │ + → → />,
+       41 │ + → );
+       42 │ + → const·anna·=·screen.getByRole("link",·{·name:·"Anna·Berger"·});
+       43 │ + → expect(anna.getAttribute("href")).toBe("/settings/employees/anna");
+       44 │ + → const·row·=·anna.closest("tr");
+       45 │ + → expect(row).not.toBeNull();
+       46 │ + → if·(!row)·throw·new·Error("Missing·employee·record");
+       47 │ + → expect(within(row).getByText("Clocked·in")).toBeTruthy();
+       48 │ + → expect(within(row).getByText("08:30")).toBeTruthy();
+       49 │ + → expect(screen.getByText("On·break")).toBeTruthy();
+       50 │ + → expect(screen.getByText("11:45")).toBeTruthy();
+       51 │ + });
+       52 │ + 
+       53 │ + it("refreshes·live·presence·every·minute,·removes·ended·work·on·the·next·read,·and·stops·on·departure",·()·=>·{
+       54 │ + → vi.useFakeTimers();
+       55 │ + → const·view·=·render(
+       56 │ + → → <LocationPresenceList
+       57 │ + → → → rows={[
+       58 │ + → → → → {
+       59 │ + → → → → → employeeId:·"anna",
+       60 │ + → → → → → name:·"Anna·Berger",
+       61 │ + → → → → → state:·"clocked_in",
+       62 │ + → → → → → sinceText:·"08:30",
+       63 │ + → → → → },
+       64 │ + → → → ]}
+       65 │ + → → />,
+       66 │ + → );
+       67 │ + → act(()·=>·vi.advanceTimersByTime(60_000));
+       68 │ + → expect(refresh).toHaveBeenCalledTimes(1);
+       69 │ + → view.rerender(<LocationPresenceList·rows={[]}·/>);
+       70 │ + → expect(screen.queryByRole("link",·{·name:·"Anna·Berger"·})).toBeNull();
+       71 │ + → expect(
+       72 │ + → → screen.getByText(
+       73 │ + → → → "Nobody·you·can·see·is·clocked·in·at·this·location·right·now.",
+       74 │ + → → ),
+       75 │ + → ).toBeTruthy();
+       76 │ + → view.unmount();
+       77 │ + → act(()·=>·vi.advanceTimersByTime(60_000));
+       78 │ + → expect(refresh).toHaveBeenCalledTimes(1);
+       79 │ + });
+    61 80 │   
+  
+
+src\app\[locale]\(app)\team\presence\location-presence-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconClockPause,·IconUserCheck·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useEffect·}·from·"react";␍
+      6     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+      7     │ - import·{␍
+      8     │ - → Table,␍
+      9     │ - → TableBody,␍
+     10     │ - → TableCell,␍
+     11     │ - → TableHead,␍
+     12     │ - → TableHeader,␍
+     13     │ - → TableRow,␍
+     14     │ - }·from·"@/components/ui/table";␍
+     15     │ - import·{·Link,·useRouter·}·from·"@/navigation";␍
+     16     │ - ␍
+     17     │ - /**·How·often·the·manager·view·reloads·its·server·data.·*/␍
+     18     │ - const·PRESENCE_REFRESH_MS·=·60_000;␍
+     19     │ - ␍
+     20     │ - export·type·LocationPresenceRow·=·{␍
+     21     │ - → employeeId:·string;␍
+     22     │ - → name:·string;␍
+     23     │ - → state:·"clocked_in"·|·"on_break";␍
+     24     │ - → /**·"Since",·formatted·on·the·server·in·the·zone·captured·at·that·moment.·*/␍
+     25     │ - → sinceText:·string;␍
+     26     │ - };␍
+     27     │ - ␍
+     28     │ - /**·The·manager·view's·list·of·who·is·in·at·one·location·(#863),·refreshed·every·minute.·*/␍
+     29     │ - export·function·LocationPresenceList({·rows·}:·{·rows:·LocationPresenceRow[]·})·{␍
+     30     │ - → const·{·t·}·=·useTranslate();␍
+     31     │ - → const·router·=·useRouter();␍
+     32     │ - ␍
+     33     │ - → useEffect(()·=>·{␍
+     34     │ - → → const·timer·=·window.setInterval(()·=>·router.refresh(),·PRESENCE_REFRESH_MS);␍
+     35     │ - → → return·()·=>·window.clearInterval(timer);␍
+     36     │ - → },·[router]);␍
+     37     │ - ␍
+     38     │ - → if·(rows.length·===·0)·{␍
+     39     │ - → → return·(␍
+     40     │ - → → → <div·className="rounded-lg·border·bg-card·px-6·py-12·text-center·text-muted-foreground·text-sm">␍
+     41     │ - → → → → {t("team.presence.empty",·"Nobody·you·can·see·is·clocked·in·at·this·location·right·now.")}␍
+     42     │ - → → → </div>␍
+     43     │ - → → );␍
+     44     │ - → }␍
+     45     │ - ␍
+     46     │ - → return·(␍
+     47     │ - → → <div·className="min-w-0·rounded-lg·border·bg-card">␍
+     48     │ - → → → <Table·mobileLayout="stacked"·aria-label={t("team.presence.title",·"Who·is·in")}>␍
+     49     │ - → → → → <TableHeader·className="bg-muted/40">␍
+     50     │ - → → → → → <TableRow>␍
+     51     │ - → → → → → → <TableHead·scope="col"·className="px-4·text-muted-foreground">␍
+     52     │ - → → → → → → → {t("team.presence.columns.name",·"Name")}␍
+     53     │ - → → → → → → </TableHead>␍
+     54     │ - → → → → → → <TableHead·scope="col"·className="px-4·text-muted-foreground">␍
+     55     │ - → → → → → → → {t("team.presence.columns.state",·"State")}␍
+     56     │ - → → → → → → </TableHead>␍
+     57     │ - → → → → → → <TableHead·scope="col"·className="px-4·text-muted-foreground">␍
+     58     │ - → → → → → → → {t("team.presence.columns.since",·"Since")}␍
+     59     │ - → → → → → → </TableHead>␍
+     60     │ - → → → → → </TableRow>␍
+     61     │ - → → → → </TableHeader>␍
+     62     │ - → → → → <TableBody>␍
+     63     │ - → → → → → {rows.map((row)·=>·(␍
+     64     │ - → → → → → → <TableRow·key={row.employeeId}>␍
+     65     │ - → → → → → → → <TableCell·className="whitespace-normal·break-words·px-4·py-3·font-medium">␍
+     66     │ - → → → → → → → → <Link␍
+     67     │ - → → → → → → → → → href={`/settings/employees/${row.employeeId}`}␍
+     68     │ - → → → → → → → → → className="inline-flex·min-h-9·items-center·rounded-sm·text-primary·underline-offset-4·hover:underline·focus-visible:outline-2·focus-visible:outline-offset-4·focus-visible:outline-ring"␍
+     69     │ - → → → → → → → → >␍
+     70     │ - → → → → → → → → → {row.name}␍
+     71     │ - → → → → → → → → </Link>␍
+     72     │ - → → → → → → → </TableCell>␍
+     73     │ - → → → → → → → <TableCell·className="px-4·py-3·max-sm:col-span-full">␍
+     74     │ - → → → → → → → → {row.state·===·"on_break"·?·(␍
+     75     │ - → → → → → → → → → <Badge␍
+     76     │ - → → → → → → → → → → variant="outline"␍
+     77     │ - → → → → → → → → → → className="gap-1·border-amber-500/40·text-amber-700·dark:text-amber-300"␍
+     78     │ - → → → → → → → → → >␍
+     79     │ - → → → → → → → → → → <IconClockPause·className="size-3.5"·aria-hidden="true"·/>␍
+     80     │ - → → → → → → → → → → {t("presence.onBreak",·"On·break")}␍
+     81     │ - → → → → → → → → → </Badge>␍
+     82     │ - → → → → → → → → )·:·(␍
+     83     │ - → → → → → → → → → <Badge␍
+     84     │ - → → → → → → → → → → variant="outline"␍
+     85     │ - → → → → → → → → → → className="gap-1·border-emerald-500/40·text-emerald-700·dark:text-emerald-300"␍
+     86     │ - → → → → → → → → → >␍
+     87     │ - → → → → → → → → → → <IconUserCheck·className="size-3.5"·aria-hidden="true"·/>␍
+     88     │ - → → → → → → → → → → {t("presence.clockedIn",·"Clocked·in")}␍
+     89     │ - → → → → → → → → → </Badge>␍
+     90     │ - → → → → → → → → )}␍
+     91     │ - → → → → → → → </TableCell>␍
+     92     │ - → → → → → → → <TableCell·className="whitespace-normal·px-4·py-3·tabular-nums">␍
+     93     │ - → → → → → → → → {row.sinceText}␍
+     94     │ - → → → → → → → </TableCell>␍
+     95     │ - → → → → → → </TableRow>␍
+     96     │ - → → → → → ))}␍
+     97     │ - → → → → </TableBody>␍
+     98     │ - → → → </Table>␍
+     99     │ - → → </div>␍
+    100     │ - → );␍
+    101     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconClockPause,·IconUserCheck·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·useEffect·}·from·"react";
+          6 │ + import·{·Badge·}·from·"@/components/ui/badge";
+          7 │ + import·{
+          8 │ + → Table,
+          9 │ + → TableBody,
+         10 │ + → TableCell,
+         11 │ + → TableHead,
+         12 │ + → TableHeader,
+         13 │ + → TableRow,
+         14 │ + }·from·"@/components/ui/table";
+         15 │ + import·{·Link,·useRouter·}·from·"@/navigation";
+         16 │ + 
+         17 │ + /**·How·often·the·manager·view·reloads·its·server·data.·*/
+         18 │ + const·PRESENCE_REFRESH_MS·=·60_000;
+         19 │ + 
+         20 │ + export·type·LocationPresenceRow·=·{
+         21 │ + → employeeId:·string;
+         22 │ + → name:·string;
+         23 │ + → state:·"clocked_in"·|·"on_break";
+         24 │ + → /**·"Since",·formatted·on·the·server·in·the·zone·captured·at·that·moment.·*/
+         25 │ + → sinceText:·string;
+         26 │ + };
+         27 │ + 
+         28 │ + /**·The·manager·view's·list·of·who·is·in·at·one·location·(#863),·refreshed·every·minute.·*/
+         29 │ + export·function·LocationPresenceList({
+         30 │ + → rows,
+         31 │ + }:·{
+         32 │ + → rows:·LocationPresenceRow[];
+         33 │ + })·{
+         34 │ + → const·{·t·}·=·useTranslate();
+         35 │ + → const·router·=·useRouter();
+         36 │ + 
+         37 │ + → useEffect(()·=>·{
+         38 │ + → → const·timer·=·window.setInterval(
+         39 │ + → → → ()·=>·router.refresh(),
+         40 │ + → → → PRESENCE_REFRESH_MS,
+         41 │ + → → );
+         42 │ + → → return·()·=>·window.clearInterval(timer);
+         43 │ + → },·[router]);
+         44 │ + 
+         45 │ + → if·(rows.length·===·0)·{
+         46 │ + → → return·(
+         47 │ + → → → <div·className="rounded-lg·border·bg-card·px-6·py-12·text-center·text-muted-foreground·text-sm">
+         48 │ + → → → → {t(
+         49 │ + → → → → → "team.presence.empty",
+  66 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  366 more lines truncated
+  
+
+Checked 10 files in 6ms. No fixes applied.
+Found 10 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

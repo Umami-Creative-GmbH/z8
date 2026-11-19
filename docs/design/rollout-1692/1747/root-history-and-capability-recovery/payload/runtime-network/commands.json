@@ -1,0 +1,227 @@
+{
+  "primaryCommands": [
+    {
+      "id": "C01",
+      "command": "$env:GIT_OPTIONAL_LOCKS='0'; node .tmp/1747-current-runtime-20261118b/preflight.mjs",
+      "exit": 0
+    },
+    {
+      "id": "C02",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version",
+      "exit": 0
+    },
+    {
+      "id": "C03",
+      "command": "agent-browser skills get core",
+      "exit": 1
+    },
+    {
+      "id": "C04",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs prepare .tmp/1747-current-runtime-20261118b/fixture-private *> .tmp/1747-current-runtime-20261118b/prepare-attempt1-private.log; $resultCode=$LASTEXITCODE; Write-Output \"FIXTURE_PREPARE_EXIT=$resultCode\"; exit $resultCode",
+      "exit": 0
+    },
+    {
+      "id": "C05",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1747-current-runtime-20261118b/runtime.mjs",
+      "exit": "terminated after exact ownership verification; process exit not independently collected"
+    },
+    {
+      "id": "C06",
+      "command": "node .tmp/1747-current-runtime-20261118b/controller2.mjs",
+      "exit": "terminated after exact ownership verification; process exit not independently collected"
+    },
+    {
+      "id": "C07",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsx ../../.tmp/1747-current-runtime-20261118b/seed.ts *> .tmp/1747-current-runtime-20261118b/seed-attempt1-private.log; $resultCode=$LASTEXITCODE; Write-Output \"BUSINESS_SEED_EXIT=$resultCode\"; exit $resultCode",
+      "exit": 0
+    },
+    {
+      "id": "C08",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs cleanup .tmp/1747-current-runtime-20261118b/fixture-private *> .tmp/1747-current-runtime-20261118b/cleanup-attempt1-private.log; $resultCode=$LASTEXITCODE; Write-Output \"FIXTURE_CLEANUP_EXIT=$resultCode\"; exit $resultCode",
+      "exit": 0
+    },
+    {
+      "id": "C09",
+      "command": "$env:GIT_OPTIONAL_LOCKS='0'; node .tmp/1747-current-runtime-20261118b/preservation-final.mjs",
+      "exit": 0
+    },
+    {
+      "id": "C10",
+      "command": "node .tmp/1747-current-runtime-20261118b/seal.mjs",
+      "exit": "current seal; see final verification"
+    }
+  ],
+  "browserAndReadbackCommands": [
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs arrival-v2.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-arrival-v2.js-1794974159309.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs arrival.js",
+      "exit": 1,
+      "harnessOk": false,
+      "receipt": "attempt-arrival.js-1794974129086.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs close-all.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-close-all.js-1794974276000.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs create.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-create.js-1794973705856.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs database-before.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-database-before.js-1794973620070.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs database-before2.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-database-before2.js-1794973649964.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs delete.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-delete.js-1794973896458.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call-quiet.mjs diagnostics-v2.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-diagnostics-v2.js-1794974268949.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs filters.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-filters.js-1794973773805.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs final-listing.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-final-listing.js-1794974199507.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs hold-create.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-hold-create.js-1794973838600.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs keyboard-captures.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-keyboard-captures.js-1794974076705.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs layout.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-layout.js-1794973929899.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs listing.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-listing.js-1794973720474.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs login-exact.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-login-exact.js-1794973655406.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs manager-destination.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-manager-destination.js-1794974097322.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs manager.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-manager.js-1794974034088.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs mcp-list.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-mcp-list.js-1794974129448.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs originals-before.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-originals-before.js-1794973646684.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences-error.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-preferences-error.js-1794973960022.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences-v2.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-preferences-v2.js-1794974003251.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences.js",
+      "exit": 1,
+      "harnessOk": false,
+      "receipt": "attempt-preferences.js-1794973945845.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs readback.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-readback.js-1794974203777.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs refresh.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-refresh.js-1794973801454.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs release-create.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-release-create.js-1794973847120.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs select-org.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-select-org.js-1794973678253.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs start-browser.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-start-browser.js-1794973639429.json"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs status.js",
+      "exit": 0,
+      "harnessOk": true,
+      "receipt": "attempt-status.js-1794973678557.json"
+    }
+  ],
+  "nativeOwnershipCommands": "Literal native ownership inventory/cleanup/final-resource command text is in native-commands.json. No transcript-only placeholder.",
+  "pnpm": "12.16.1; env and CLI verify-deps-before-run guards on every call, including nested canonical fixture and Next launcher.",
+  "authorization": "Approved server launch was ordinary canonical siteverify transport after EACCES; no auth bypass. HEAD405 is transport only. Public unchanged form/widget still required and used."
+}

@@ -1,0 +1,2 @@
+# Preserve raw command output, including original line endings and whitespace.
+*.log -text

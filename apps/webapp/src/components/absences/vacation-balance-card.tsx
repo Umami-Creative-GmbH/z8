@@ -1,12 +1,13 @@
 "use client";
-import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 
-import { IconAlertTriangle, IconBeach, IconCalendarCheck, IconClock } from "@tabler/icons-react";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import type { VacationBalance } from "@/lib/absences/types";
 import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { cn } from "@/lib/utils";
 import { VacationAllowanceExplanation } from "./vacation-allowance-explanation";
 
 interface VacationBalanceCardProps {
@@ -15,118 +16,175 @@ interface VacationBalanceCardProps {
 	timezone: string;
 }
 
-export function VacationBalanceCard({ balance, now, timezone }: VacationBalanceCardProps) {
+/** Shares of the allowance for the bar; display only, the balance itself is authoritative. */
+function allowanceShares(balance: VacationBalance) {
+	if (balance.totalDays <= 0) return null;
+	const used = Math.min(Math.max(balance.usedDays, 0), balance.totalDays);
+	const pending = Math.min(
+		Math.max(balance.pendingDays, 0),
+		balance.totalDays - used,
+	);
+	return {
+		used: (used / balance.totalDays) * 100,
+		pending: (pending / balance.totalDays) * 100,
+	};
+}
+
+/** The employee's vacation balance for the year: what is left first, then what is used or pending. */
+export function VacationBalanceCard({
+	balance,
+	now,
+	timezone,
+}: VacationBalanceCardProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
-	const hasCarryover = balance.carryoverDays && balance.carryoverDays > 0;
+	const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+	const hasCarryover = Boolean(balance.carryoverDays && balance.carryoverDays > 0);
 	const nowInstant = parseInstant(now);
 	const carryoverExpiryInstant = balance.carryoverExpiryDate
 		? instantFromDate(balance.carryoverExpiryDate)
 		: null;
-	const carryoverExpiringSoon =
+	const carryoverExpiringSoon = Boolean(
 		hasCarryover &&
-		carryoverExpiryInstant &&
-		carryoverExpiryInstant.epochNanoseconds < nowInstant.add({ hours: 30 * 24 }).epochNanoseconds;
+			carryoverExpiryInstant &&
+			carryoverExpiryInstant.epochNanoseconds <
+				nowInstant.add({ hours: 30 * 24 }).epochNanoseconds,
+	);
+	const carryoverExpiry = carryoverExpiryInstant
+		? formatPlainDate(
+				carryoverExpiryInstant.toZonedDateTimeISO(timezone).toPlainDate(),
+				locale,
+				"dateMedium",
+			)
+		: null;
+	const shares = allowanceShares(balance);
+	const daysUnit = t("common.days.label", "days");
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					{t("absences.balance.title", "Vacation Balance {year}", {
-						year: balance.year,
-					})}
-				</CardTitle>
-				<CardDescription>
-					{t("absences.balance.description", "Your vacation days for the current year")}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<div className="@container/card grid grid-cols-1 gap-4 sm:grid-cols-2 @xl/card:grid-cols-4">
-					{/* Remaining Days - Most Important */}
-					<div className="sm:col-span-2 @xl/card:col-span-2 rounded-lg border bg-card p-6">
-						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<IconBeach className="size-4" aria-hidden="true" />
-							{t("absences.balance.daysRemaining", "Days Remaining")}
-						</div>
-						<div className="mt-2">
-							<div className="text-4xl font-bold tabular-nums">{balance.remainingDays}</div>
-							<div className="mt-1 text-sm text-muted-foreground">
-								{t("absences.balance.outOfTotalDays", "out of {totalDays} total days", {
-									totalDays: balance.totalDays,
-								})}
-							</div>
-							<VacationAllowanceExplanation
-								allowance={balance.allowance}
-								year={balance.year}
-								className="mt-2"
-							/>
-						</div>
-					</div>
+		<section
+			aria-labelledby="vacation-balance-title"
+			className="rounded-xl border bg-card p-5"
+		>
+			<h2 id="vacation-balance-title" className="font-semibold">
+				{t("absences.balance.title", "Vacation Balance {year}", {
+					year: balance.year,
+				})}
+			</h2>
 
-					{/* Used Days */}
-					<div className="rounded-lg border bg-card p-4">
-						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<IconCalendarCheck className="size-4" aria-hidden="true" />
-							{t("absences.balance.used", "Used")}
-						</div>
-						<div className="mt-2">
-							<div className="text-2xl font-bold tabular-nums">{balance.usedDays}</div>
-							<PreviouslyTakenVacationExplanation days={balance.previouslyTakenDays} />
-							<div className="text-xs text-muted-foreground">{t("common.days.label", "days")}</div>
-						</div>
+			<div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5 @3xl/main:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+				<div className="col-span-2 min-w-0 @3xl/main:col-span-1">
+					<div className="font-medium text-muted-foreground text-sm">
+						{t("absences.balance.daysRemaining", "Days Remaining")}
 					</div>
-
-					{/* Pending Days */}
-					<div className="rounded-lg border bg-card p-4">
-						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<IconClock className="size-4" aria-hidden="true" />
-							{t("absences.balance.pending", "Pending")}
-						</div>
-						<div className="mt-2">
-							<div className="text-2xl font-bold tabular-nums">{balance.pendingDays}</div>
-							<div className="text-xs text-muted-foreground">{t("common.days.label", "days")}</div>
-						</div>
+					<div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+						<span className="font-semibold text-3xl tabular-nums">
+							{numberFormat.format(balance.remainingDays)}
+						</span>
+						<span className="text-muted-foreground text-sm">{daysUnit}</span>
 					</div>
-
-					{/* Carryover Warning (if applicable) */}
-					{hasCarryover && (
-						<div className="sm:col-span-2 @xl/card:col-span-4 rounded-lg border bg-muted/50 p-4">
-							<div className="flex items-start gap-3">
-								<IconAlertTriangle
-									className={`size-5 mt-0.5 ${carryoverExpiringSoon ? "text-destructive" : "text-muted-foreground"}`}
-									aria-hidden="true"
-								/>
-								<div className="flex-1">
-									<div className="text-sm font-medium">
-										{t("absences.balance.carryoverFrom", "Carryover from {year}", {
-											year: balance.year - 1,
-										})}
-									</div>
-									<div className="mt-1 text-sm text-muted-foreground">
-										{t("absences.balance.carryoverDays", "You have {count} days carried over", {
-											count: balance.carryoverDays,
-										})}
-										{carryoverExpiryInstant && (
-											<>
-												{" "}
-												{t("absences.balance.carryoverExpiry", "that will expire on")}{" "}
-												<span className={carryoverExpiringSoon ? "text-destructive" : ""}>
-													{formatPlainDate(
-														carryoverExpiryInstant.toZonedDateTimeISO(timezone).toPlainDate(),
-														locale,
-														"dateMedium",
-													)}
-												</span>
-											</>
-										)}
-									</div>
-								</div>
-							</div>
-						</div>
-					)}
+					<div className="mt-1 text-muted-foreground text-sm">
+						{t(
+							"absences.balance.outOfTotalDays",
+							"out of {totalDays} total days",
+							{ totalDays: numberFormat.format(balance.totalDays) },
+						)}
+					</div>
+					<VacationAllowanceExplanation
+						allowance={balance.allowance}
+						year={balance.year}
+						className="mt-1"
+					/>
 				</div>
-			</CardContent>
-		</Card>
+
+				<div className="min-w-0 @3xl/main:border-l @3xl/main:pl-6">
+					<div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+						<span aria-hidden="true" className="size-2.5 rounded-sm bg-primary" />
+						{t("absences.balance.used", "Used")}
+					</div>
+					<div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+						<span className="font-semibold text-2xl tabular-nums">
+							{numberFormat.format(balance.usedDays)}
+						</span>
+						<span className="text-muted-foreground text-sm">{daysUnit}</span>
+					</div>
+					<PreviouslyTakenVacationExplanation
+						days={balance.previouslyTakenDays}
+						className="mt-1 text-muted-foreground text-xs"
+					/>
+				</div>
+
+				<div className="min-w-0 border-l pl-6">
+					<div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+						<span
+							aria-hidden="true"
+							className="size-2.5 rounded-sm bg-amber-500/70"
+						/>
+						{t("absences.balance.pending", "Pending")}
+					</div>
+					<div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+						<span className="font-semibold text-2xl tabular-nums">
+							{numberFormat.format(balance.pendingDays)}
+						</span>
+						<span className="text-muted-foreground text-sm">{daysUnit}</span>
+					</div>
+				</div>
+			</div>
+
+			{shares ? (
+				// The figures above carry the meaning; the bar only shows their proportions.
+				<div
+					aria-hidden="true"
+					className="mt-5 flex h-2 w-full overflow-hidden rounded-full bg-muted"
+				>
+					<div className="h-full bg-primary" style={{ width: `${shares.used}%` }} />
+					<div
+						className="h-full bg-amber-500/70"
+						style={{ width: `${shares.pending}%` }}
+					/>
+				</div>
+			) : null}
+
+			{hasCarryover ? (
+				<div className="mt-5 flex items-start gap-3 border-t pt-4">
+					{carryoverExpiringSoon ? (
+						<IconAlertTriangle
+							className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+							aria-hidden="true"
+						/>
+					) : null}
+					<div className="min-w-0 text-sm">
+						<div className="font-medium">
+							{t("absences.balance.carryoverFrom", "Carryover from {year}", {
+								year: balance.year - 1,
+							})}
+						</div>
+						<div
+							className={cn(
+								"mt-0.5",
+								carryoverExpiringSoon
+									? "text-amber-700 dark:text-amber-400"
+									: "text-muted-foreground",
+							)}
+						>
+							{carryoverExpiry
+								? t(
+										"absences.balance.carryoverDaysExpiring",
+										"You have {count} days carried over. They expire on {date}.",
+										{
+											count: numberFormat.format(balance.carryoverDays ?? 0),
+											date: carryoverExpiry,
+										},
+									)
+								: t(
+										"absences.balance.carryoverDays",
+										"You have {count} days carried over",
+										{ count: balance.carryoverDays },
+									)}
+						</div>
+					</div>
+				</div>
+			) : null}
+		</section>
 	);
 }

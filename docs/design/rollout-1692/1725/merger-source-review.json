@@ -1,0 +1,93 @@
+{
+  "sourceRevision": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+  "scope": "Fresh independent Standards and Spec reviews by the native merger, performed directly without subagents as instructed. Four ignored assembled assertions reproduce two related scope-arrival gaps; no tracked source/report/ledger/raw evidence changes by merger.",
+  "fixedPoint": "e64f66f144b59917d9fc975710df5ff98093cce6",
+  "diffCommand": "git diff e64f66f144b59917d9fc975710df5ff98093cce6...HEAD",
+  "standardsSources": [
+    "AGENTS.md",
+    "docs/refs/agent-workflow.md",
+    "docs/refs/project-conventions.md",
+    "docs/refs/timekeeping.md",
+    "docs/refs/dates.md",
+    "docs/refs/design-context.md",
+    "docs/refs/ux-language.md",
+    "apps/webapp/src/lib/payroll-export/GLOSSARY.md",
+    "apps/webapp/src/lib/payroll-export/docs/adr/0001-comparison-evidence-preserves-exported-output.md",
+    "apps/webapp/src/lib/payroll-export/docs/adr/0002-connectors-ship-on-documented-apis-or-are-withdrawn.md",
+    "apps/webapp/src/lib/payroll-export/docs/adr/0003-personio-delivers-through-v2-and-tracks-delivered-records.md",
+    ".agents/skills/vercel-react-best-practices/SKILL.md",
+    ".agents/skills/vercel-composition-patterns/SKILL.md",
+    ".agents/skills/web-design-guidelines/SKILL.md",
+    "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md"
+  ],
+  "standards": [
+    {
+      "priority": "P2",
+      "file": "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+      "line": 629,
+      "finding": "The workspace retains reducer state initialized from a previous authorized server snapshot and never invalidates its summary generation or export/PDF lifetime when a different incoming scope arrives on the same component. A new scope can leave A's header/rows current and receive A's late summary, completion feedback or PDF download.",
+      "standard": "AGENTS.md and project-conventions.md require organization-scoped data; docs/refs/ux-language.md requires active organization/affected person scope to remain apparent and real recovery without stale state becoming current.",
+      "evidence": ".tmp/merge1725-audit/source-contract.json: four failed observable assertions; source-contract.test.tsx copied existing assembled public seam and adds the cases.",
+      "qualification": "Fresh assembled same-instance RSC prop arrival proof; not a fresh live session/organization switch or proven server authorization bypass. The normal organization-switcher performs a full reload. Legacy reducer snapshot behavior predates this ticket; the new lifetime guards fix unmount/Activity but leave the spec's scope boundary uncovered."
+    }
+  ],
+  "spec": [
+    {
+      "priority": "P2",
+      "file": "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+      "line": 629,
+      "finding": "A new authorized initialSummary on the mounted route does not replace A's organization header/rows. A held A period summary subsequently overwrites the visible workspace despite the B arrival.",
+      "requirement": "Canonical spec Testing Decisions, runtime acceptance item2: stale records/action targets must not appear current when organization/authority changes in flight; R042 selected organization/period/scope remains authoritative.",
+      "reproductions": [
+        "root audit adopts a newly authorized server snapshot without showing the old scope",
+        "root audit refuses an older held summary after a new server scope arrives"
+      ]
+    },
+    {
+      "priority": "P2",
+      "file": "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+      "line": 480,
+      "finding": "The [] lifetime cleanup guards only disconnects. A held export result still emits Payroll export completed and a held PDF still creates a download after new authorized server props arrive without unmount/Activity cleanup.",
+      "requirement": "Canonical spec records/exports retain existing scoped datasets and failure/retry lifecycles; runtime item2 requires safe in-flight scope arrival. R042 preserves separate PDF and configured export for the selected organization period and employee/team scope.",
+      "reproductions": [
+        "root audit suppresses an old export result after a new server scope arrives",
+        "root audit suppresses an old PDF download after a new server scope arrives"
+      ]
+    }
+  ],
+  "positiveFreshAuditCases": [
+    "A held summary is discarded across Activity hide/return.",
+    "A held PDF is discarded across Activity hide/return.",
+    "PDF transport rejection gives recoverable feedback and leaves PDF retry enabled without a configured target."
+  ],
+  "preservedBehaviorReview": [
+    "Explicit custom Apply, month/week/current UTC period owner, date drafts and global refresh preserveDraft retained; date helpers remain legacy unmigrated, no new date business logic.",
+    "Configured targets and PDF remain separate; zero configured formats disable export while PDF remains available. Existing pending transitions prevent duplicate UI dispatch; actual live PDF/file-job evidence remains inherited.",
+    "Team/employee sheets retain independently committed drafts, Apply/Cancel, no-match intersection semantics, failure retention and shared overlay focus behavior.",
+    "All blocker identities, destinations, captured date/time context, per-row dismissal queue/focus and post-dismissal authoritative refresh owners remain. Only the summary/export/PDF lifetime additions change client behavior.",
+    "Closed-month status/actions stay independent; run confirm/discard, expense eligibility/exclusion and uncarried overtime-payout warnings remain with their existing public owners.",
+    "Run history, retained baselines with unavailable states, source contributions/rows/pagination, comparison evidence/details/CSV stay mounted after employee totals. Comparison public actions and unchanged services remain read-only and cannot deliver/pay.",
+    "Server actions, calculation/allocation/collection owners, employee-local UTC bounds/per-entry capture, payroll grants/current-roster/former fallback and independent expense officer grants are byte-unchanged. Server-side active organization and requested employee-scope validation remains intact.",
+    "Exactly one page heading in admitted/loading/refused/former-only states, exact payroll opt-in, unchanged work-balance descendant ownership, existing organization and notifications opt-ins preserved.",
+    "Tabler icons, existing tokens/typography, native comparison table and named keyboard local scroll region, real organization scope and semantic headings retained. No business-controller abstraction or new CRUD form added."
+  ],
+  "artifactVisualReview": [
+    "All79 PNGs fully decoded with exact SHA256/dimensions/decoded bytes;28 JSON records parsed,9 scripts syntax-checked,27 report links resolved.15 accepted capture records are not15 before/after pairs.",
+    "Desktop light and wide dark before/after show the same meaningful8-person March scope; refreshed period/scope/summary ordering is visible. Developer Rendering badges and some shared clock loading remain visible and do not certify global settled layout/performance.",
+    "Actual phone before-phone-dark-saved18-totals.png shows the page/period controls, whereas after-phone-dark-saved18-totals.png shows Employee totals. Therefore the report's Complete employee comparison row is not a matched visual before/after comparison. Whole-body runtime text includes all8 employee rows on both sides; that is DOM/reader evidence, not viewport visibility.",
+    "The phone-light top comparison has different vertical scroll positions: before starts at Payroll heading and after starts partway through period controls. Phone captures retain measured CSS/PNG/font/scope data but are not matched top-of-page framing. The validator checks no document overflow and DOM headings, not scroll position or visible table field completeness.",
+    "Driver runtime.mjs scrolls the first [role=region][aria-label=Employee totals],table match. Historical UI has earlier supporting tables, so this selector does not establish that Employee totals is visibly captured before. Do not relabel these pixels or broaden the waiver.",
+    "Four exact consumer overlays at base05c66b101 on current shared infrastructure are pinned, not a full historical app. Three payroll source consumers match current HEAD after CRLF-to-LF only; shared metadata's later organization addition and retained notifications opt-in are checked separately.",
+    "Matrix59c974ce0 predates final format-only13470da28 and final evidence165681372. Final worker unit/types/native/Next timing is distinct. Five PostgreSQL suites50pass1intentional skip predate later integration merges. Fresh merger runs no browser/services/PG.",
+    "The corrected held-action archive names startScopedPayrollExportAction, refuses with current B cookies without a job, settles B at sign-in and requires real A reauthentication. Earlier getMonthCloseContext interception and larger partial/failed drivers remain separate; no continuous cached A-B-A, late produced read/download or exhaustive supporting action pass.",
+    "Native React tree/PayrollWorkspace inspection is usable and separate from DOM. Overlay-only axe was discarded; scoped axe21/38 then19/40 records zero violations/incomplete, not exhaustive accessibility certification."
+  ],
+  "nonBlockingQualityProfiles": {
+    "explicitWebappCRLF": "Six-file Biome passes using the explicit webapp config and CRLF override.",
+    "ordinaryDiscovery": "Default and CRLF-only profiles fail formatting and two useSemanticElements diagnostics; formatter-disabled ordinary profile still fails the two diagnostics for named region/group divs. Do not claim ordinary lint passes. Explicit webapp config turns useSemanticElements off; no source change/suppression introduced by merger.",
+    "doctor": "Installed0.9.22, six changed files, complete, zero diagnostics; remote score and supply-chain analysis disabled.",
+    "initialTestFailure": "Initial exact run268pass1failed dismissal-focus case. Isolated case, compatibility94/1016 and complete exact rerun24/269 pass. Intermittent initial failure retained, not an uninterrupted green history."
+  },
+  "correctionOwner": "root",
+  "acceptance": "BLOCKED_PENDING_ROOT_SCOPE_ARRIVAL_CORRECTION_AND_EVIDENCE_QUALIFICATION"
+}
