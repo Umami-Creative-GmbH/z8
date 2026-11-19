@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, getTableName, gt, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import {
@@ -39,11 +39,16 @@ import {
 	lockEquipmentContext,
 } from "./access";
 import { effectiveEquipmentDeadline } from "./deadlines";
-import { assignmentSettlement, outstandingQuantity } from "./settlement";
+import { assignmentSettlement, outstandingQuantity, outstandingSql } from "./settlement";
 import type { EquipmentTransaction } from "./setup";
 
 type Delivery = typeof equipmentReminderDelivery.$inferSelect;
 type Subject = { id: string; userId: string };
+
+const assignmentEmployee = and(
+	eq(employee.id, equipmentAssignment.employeeId),
+	eq(employee.organizationId, equipmentAssignment.organizationId),
+);
 
 async function readOccasion(
 	tx: EquipmentTransaction,
@@ -68,13 +73,7 @@ async function readOccasion(
 			organization,
 			eq(organization.id, equipmentAssignment.organizationId),
 		)
-		.innerJoin(
-			employee,
-			and(
-				eq(employee.id, equipmentAssignment.employeeId),
-				eq(employee.organizationId, equipmentAssignment.organizationId),
-			),
-		)
+		.innerJoin(employee, assignmentEmployee)
 		.innerJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
@@ -341,32 +340,32 @@ async function prepare(
 	return reminderParams(current, delivery.recipientUserId);
 }
 
-/** Public scheduled-worker seam. No cached reminder decision can authorize dispatch. */
-export async function runEquipmentReminders(clock: Clock) {
-	const assignments = await db
+const enabledOrganization = and(
+	eq(organization.id, equipmentAssignment.organizationId),
+	eq(organization.equipmentEnabled, true),
+);
+
+export function listEquipmentReminderCandidates() {
+	return db
 		.select({
 			id: equipmentAssignment.id,
 			organizationId: equipmentAssignment.organizationId,
 			subject: { id: employee.id, userId: employee.userId },
 		})
 		.from(equipmentAssignment)
-		.innerJoin(
-			employee,
+		.innerJoin(employee, assignmentEmployee)
+		.innerJoin(organization, enabledOrganization)
+		.where(
 			and(
-				eq(employee.id, equipmentAssignment.employeeId),
-				eq(employee.organizationId, equipmentAssignment.organizationId),
+				eq(equipmentAssignment.returnRequired, true),
+				gt(outstandingSql(getTableName(equipmentAssignment)), 0),
 			),
-		)
-		// Equipment tracking switched off (#1572): no reminders go out. Recipients are
-		// checked again through `equipmentWorkerAccess`, which also refuses.
-		.innerJoin(
-			organization,
-			and(
-				eq(organization.id, equipmentAssignment.organizationId),
-				eq(organization.equipmentEnabled, true),
-			),
-		)
-		.where(eq(equipmentAssignment.returnRequired, true));
+		);
+}
+
+/** Public scheduled-worker seam. No cached reminder decision can authorize dispatch. */
+export async function runEquipmentReminders(clock: Clock) {
+	const assignments = await listEquipmentReminderCandidates();
 	const result = { inAppCreated: 0, externalSent: 0, externalFailed: 0 };
 	for (const assignment of assignments) {
 		const { organizationId, subject } = assignment;
@@ -416,83 +415,97 @@ export async function runEquipmentReminders(clock: Clock) {
 						})
 						.onConflictDoNothing();
 			});
-		const pending = await db
-			.select()
-			.from(equipmentReminderDelivery)
-			.where(
-				and(
-					eq(equipmentReminderDelivery.organizationId, organizationId),
-					eq(equipmentReminderDelivery.assignmentId, assignment.id),
-					eq(equipmentReminderDelivery.state, "pending"),
-				),
+	}
+
+	// Pending deliveries still need a locked recheck after their assignment settles.
+	const pending = await db
+		.select({
+			delivery: equipmentReminderDelivery,
+			subject: { id: employee.id, userId: employee.userId },
+		})
+		.from(equipmentReminderDelivery)
+		.innerJoin(
+			equipmentAssignment,
+			and(
+				eq(equipmentAssignment.id, equipmentReminderDelivery.assignmentId),
+				eq(equipmentAssignment.organizationId, equipmentReminderDelivery.organizationId),
+			),
+		)
+		.innerJoin(employee, assignmentEmployee)
+		.innerJoin(organization, enabledOrganization)
+		.where(
+			and(
+				eq(equipmentReminderDelivery.state, "pending"),
+				eq(equipmentAssignment.returnRequired, true),
+			),
+		);
+	for (const { delivery, subject } of pending) {
+		const { organizationId } = delivery;
+		const claimed = await db.transaction(async (tx) => {
+			await lockContext(
+				tx,
+				organizationId,
+				delivery.recipientUserId,
+				subject,
 			);
-		for (const delivery of pending) {
-			const claimed = await db.transaction(async (tx) => {
-				await lockContext(
-					tx,
-					organizationId,
-					delivery.recipientUserId,
-					subject,
-				);
-				const [live] = await tx
-					.select()
-					.from(equipmentReminderDelivery)
-					.where(deliveryWhere(delivery));
-				if (live?.state !== "pending") return false;
-				const now = clock.nowInstant();
-				const params = await prepare(tx, live, now);
-				if (!params) return false;
-				if (delivery.channel === "in_app") {
-					const inserted = await insertInAppNotification(params, tx);
-					await tx
-						.update(equipmentReminderDelivery)
-						.set({ state: "sent", sentAt: dateFromInstant(now) })
-						.where(deliveryWhere(delivery));
-					if (inserted.kind === "created") result.inAppCreated++;
-					return false;
-				}
-				// Commit before transport: like driving-licence reminders, ambiguous sends are never retried.
+			const [live] = await tx
+				.select()
+				.from(equipmentReminderDelivery)
+				.where(deliveryWhere(delivery));
+			if (live?.state !== "pending") return false;
+			const now = clock.nowInstant();
+			const params = await prepare(tx, live, now);
+			if (!params) return false;
+			if (delivery.channel === "in_app") {
+				const inserted = await insertInAppNotification(params, tx);
 				await tx
 					.update(equipmentReminderDelivery)
-					.set({ state: "attempted" })
+					.set({ state: "sent", sentAt: dateFromInstant(now) })
 					.where(deliveryWhere(delivery));
-				return true;
-			});
-			if (!claimed || delivery.channel === "in_app") continue;
-			const channel = delivery.channel;
-			await db.transaction(async (tx) => {
-				await lockContext(
-					tx,
+				if (inserted.kind === "created") result.inAppCreated++;
+				return false;
+			}
+			// Commit before transport: like driving-licence reminders, ambiguous sends are never retried.
+			await tx
+				.update(equipmentReminderDelivery)
+				.set({ state: "attempted" })
+				.where(deliveryWhere(delivery));
+			return true;
+		});
+		if (!claimed || delivery.channel === "in_app") continue;
+		const channel = delivery.channel;
+		await db.transaction(async (tx) => {
+			await lockContext(
+				tx,
+				organizationId,
+				delivery.recipientUserId,
+				subject,
+			);
+			const now = clock.nowInstant();
+			const params = await prepare(tx, delivery, now);
+			if (!params) return;
+			try {
+				const available = await loadNotificationChannelAvailability(
 					organizationId,
-					delivery.recipientUserId,
-					subject,
+					{ durable: true },
 				);
-				const now = clock.nowInstant();
-				const params = await prepare(tx, delivery, now);
-				if (!params) return;
-				try {
-					const available = await loadNotificationChannelAvailability(
-						organizationId,
-						{ durable: true },
-					);
-					const state = available[channel]
-						? await deliverNotificationToChannel(channel, params, null, {
-								durable: true,
-							})
-						: "unavailable";
-					await tx
-						.update(equipmentReminderDelivery)
-						.set({
-							state,
-							sentAt: state === "sent" ? dateFromInstant(now) : null,
+				const state = available[channel]
+					? await deliverNotificationToChannel(channel, params, null, {
+							durable: true,
 						})
-						.where(deliveryWhere(delivery));
-					if (state === "sent") result.externalSent++;
-				} catch {
-					result.externalFailed++;
-				}
-			});
-		}
+					: "unavailable";
+				await tx
+					.update(equipmentReminderDelivery)
+					.set({
+						state,
+						sentAt: state === "sent" ? dateFromInstant(now) : null,
+					})
+					.where(deliveryWhere(delivery));
+				if (state === "sent") result.externalSent++;
+			} catch {
+				result.externalFailed++;
+			}
+		});
 	}
 	return result;
 }
