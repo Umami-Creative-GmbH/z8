@@ -49,6 +49,19 @@ interface AbsenceEntryActionsProps {
 	onCancel: () => void;
 }
 
+/** A pending change request holds back further change requests on its absence. */
+export function hasPendingChangeRequest(
+	changeRequests: AbsenceEntryActionsProps["changeRequests"],
+	absenceId: string,
+): boolean {
+	return (
+		changeRequests?.some(
+			(request) =>
+				request.absenceId === absenceId && request.status === "pending",
+		) ?? false
+	);
+}
+
 function canShowCancelAction(absence: AbsenceWithDays): boolean {
 	return absence.status === "pending";
 }
@@ -78,10 +91,7 @@ export function AbsenceEntryActions({
 	const { t } = useTranslate();
 	const canCancel = canShowCancelAction(absence);
 	const canRequestChange = absence.status === "approved";
-	const pendingChange = changeRequests?.some(
-		(request) =>
-			request.absenceId === absence.id && request.status === "pending",
-	);
+	const pendingChange = hasPendingChangeRequest(changeRequests, absence.id);
 	const canChange = canChangeDeputy(absence, currentDate);
 	if (!canCancel && !canAttachSickNote && !canChange && !canRequestChange)
 		return null;
@@ -135,26 +145,36 @@ export function AbsenceEntryActions({
 				</>
 			) : null}
 			{canChange ? (
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={onChangeDeputy}
-					aria-label={changeDeputyLabel}
-				>
-					<IconUserShare aria-hidden="true" className="size-4" />
-					<span className="sm:sr-only">{changeDeputyLabel}</span>
-				</Button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onChangeDeputy}
+							aria-label={changeDeputyLabel}
+						>
+							<IconUserShare aria-hidden="true" className="size-4" />
+							<span className="sm:sr-only">{changeDeputyLabel}</span>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{changeDeputyLabel}</TooltipContent>
+				</Tooltip>
 			) : null}
 			{canAttachSickNote ? (
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={onAttachSickNote}
-					aria-label={attachLabel}
-				>
-					<IconPaperclip aria-hidden="true" className="size-4" />
-					<span className="sm:sr-only">{attachLabel}</span>
-				</Button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onAttachSickNote}
+							aria-label={attachLabel}
+						>
+							<IconPaperclip aria-hidden="true" className="size-4" />
+							<span className="sm:sr-only">{attachLabel}</span>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{attachLabel}</TooltipContent>
+				</Tooltip>
 			) : null}
 			{canCancel ? (
 				<Tooltip>
@@ -167,7 +187,7 @@ export function AbsenceEntryActions({
 									disabled={isCanceling}
 									aria-label={cancelLabel}
 								>
-									<IconX className="size-4" />
+									<IconX aria-hidden="true" className="size-4" />
 									{/* Touch screens cannot show the tooltip (#846). */}
 									<span className="sm:sr-only">{cancelLabel}</span>
 								</Button>

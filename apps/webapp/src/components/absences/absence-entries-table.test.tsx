@@ -1,11 +1,24 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsenceWithDays } from "@/lib/absences/types";
-import { AbsenceEntriesTable } from "./absence-entries-table";
+import { AbsenceEntriesTable as Table } from "./absence-entries-table";
+import { OwnAbsenceActionsProvider } from "./own-absence-actions";
+
+/** The table inside the controller that owns its row actions and dialogs (#1863). */
+function AbsenceEntriesTable({
+	onUpdate,
+	...props
+}: ComponentProps<typeof Table> & { onUpdate?: () => void }) {
+	return (
+		<OwnAbsenceActionsProvider absences={props.absences} onUpdate={onUpdate}>
+			<Table {...props} />
+		</OwnAbsenceActionsProvider>
+	);
+}
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -49,8 +62,18 @@ vi.mock("./change-deputy-dialog", () => ({
 	),
 }));
 
+const ownChanges = vi.hoisted(() => ({
+	data: [] as Array<{ id: string; absenceId: string; status: string }>,
+}));
 vi.mock("./use-own-absence-changes", () => ({
-	useOwnAbsenceChanges: () => ({ data: [], isSuccess: true, refetch: vi.fn() }),
+	useOwnAbsenceChanges: () => ({
+		data: ownChanges.data,
+		isSuccess: true,
+		refetch: vi.fn(),
+	}),
+}));
+vi.mock("./absence-change-history", () => ({
+	AbsenceChangeHistory: () => <div>change history</div>,
 }));
 vi.mock("./absence-change-dialog", () => ({
 	AbsenceChangeDialog: ({ kind }: { kind: string }) => (
@@ -102,6 +125,50 @@ function buildAbsence(overrides: Partial<AbsenceWithDays>): AbsenceWithDays {
 }
 
 describe("AbsenceEntriesTable", () => {
+	afterEach(() => {
+		ownChanges.data = [];
+	});
+
+	it("explains why change actions are unavailable while a change request is pending", () => {
+		ownChanges.data = [
+			{ id: "change-1", absenceId: "absence-1", status: "pending" },
+		];
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ status: "approved" })]}
+			/>,
+		);
+		expect(screen.getByText("Change request pending")).toBeTruthy();
+		// The request list itself shows above the views, not repeated here (#1862).
+		expect(screen.queryByText("change history")).toBeNull();
+		expect(
+			(
+				screen.getByRole("button", {
+					name: "Request change",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+	});
+
+	it("finds absences by the status label the person reads", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({ id: "a", status: "approved", notes: "Approved one" }),
+					buildAbsence({ id: "p", status: "pending", notes: "Pending one" }),
+				]}
+			/>,
+		);
+		fireEvent.change(
+			screen.getByPlaceholderText("Search by type, status, or notes…"),
+			{ target: { value: "approv" } },
+		);
+		expect(screen.getByText("Approved one")).toBeTruthy();
+		expect(screen.queryByText("Pending one")).toBeNull();
+	});
+
 	it("makes the complete fetched history reachable beyond ten records", () => {
 		render(
 			<AbsenceEntriesTable

@@ -1,19 +1,56 @@
 "use client";
 
-import { IconCalendar, IconPlus, IconTable } from "@tabler/icons-react";
+import {
+	IconCalendar,
+	IconChevronLeft,
+	IconChevronRight,
+	IconPlus,
+	IconTable,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Temporal } from "temporal-polyfill";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toLocalDateString } from "@/lib/absences/date-utils";
+import {
+	ABSENCES_MAX_YEAR,
+	ABSENCES_MIN_YEAR,
+	type AbsencesUrlState,
+	type AbsencesView,
+	absencesSearch,
+	parseAbsencesUrlState,
+	parseAbsencesView,
+} from "@/lib/absences/absences-url";
 import type { AbsenceWithDays, Holiday } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 import { AbsenceYearCalendar } from "./absence-year-calendar";
+import { OwnAbsenceActionsProvider } from "./own-absence-actions";
+import { OwnAbsenceChangeRequests } from "./own-absence-change-requests";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
 
-type ViewType = "calendar" | "table";
+/**
+ * Replaces the view or year in the URL without a navigation or a history entry, so a reload or
+ * a shared link returns to them. Next keeps its router state in step with `replaceState`.
+ */
+function replaceAbsencesUrl(change: Partial<AbsencesUrlState>, todayYear: number) {
+	const url = new URL(window.location.href);
+	const current = parseAbsencesUrlState(
+		{
+			view: url.searchParams.get("view"),
+			year: url.searchParams.get("year"),
+		},
+		todayYear,
+	);
+	const search = absencesSearch(
+		{ ...current, ...change },
+		todayYear,
+		url.searchParams,
+	);
+	if (search === url.search) return;
+	window.history.replaceState(null, "", url.pathname + search + url.hash);
+}
 
 interface AbsencesViewContainerProps {
 	absences: AbsenceWithDays[];
@@ -28,7 +65,10 @@ interface AbsencesViewContainerProps {
 		deputyRequired?: boolean;
 	}>;
 	organizationId: string;
-	currentYear: number;
+	/** The calendar year `absences` and `holidays` cover; the year the URL asked for. */
+	year: number;
+	initialView?: AbsencesView;
+	/** Today in the organization's timezone (YYYY-MM-DD). */
 	currentDate: string;
 }
 
@@ -37,134 +77,200 @@ export function AbsencesViewContainer({
 	holidays,
 	categories,
 	organizationId,
-	currentYear,
+	year,
+	initialView = "calendar",
 	currentDate,
 }: AbsencesViewContainerProps) {
 	const { t } = useTranslate();
-	const [activeView, setActiveView] = useState<ViewType>("calendar");
-	const [requestDialogOpen, setRequestDialogOpen] = useState(false);
-	const [prefilledDate, setPrefilledDate] = useState<string | undefined>(
-		undefined,
-	);
+	// The day a request starts from (YYYY-MM-DD), when one was chosen in the calendar.
+	const [absenceRequest, setAbsenceRequest] = useState<{
+		open: boolean;
+		initialDate?: string;
+	}>({ open: false });
+	const [activeView, setActiveView] = useState<AbsencesView>(initialView);
 	const [calendarData, setCalendarData] = useState(() => ({
+		sourceYear: year,
 		sourceAbsences: absences,
 		sourceHolidays: holidays,
 		absences,
 		holidays,
 	}));
-	const latestRequestedYearRef = useRef(currentYear);
+	const latestRequestedYearRef = useRef(year);
 	const yearRequestId = useRef(0);
-	const [selectedYear, setSelectedYear] = useState(currentYear);
+	const [selectedYear, setSelectedYear] = useState(year);
 	const [yearLoad, setYearLoad] = useState<{
 		year: number;
 		status: "pending" | "failed";
 	} | null>(null);
+	const todayYear = Temporal.PlainDate.from(currentDate).year;
+	// The URL props last seen; `navigations` counts the ones that moved to another year.
+	const [urlProps, setUrlProps] = useState({ year, initialView, navigations: 0 });
+
+	// A refresh renders the URL the client already wrote, so its year is the one on screen. Another
+	// year means a navigation (e.g. the plain route from the sidebar): show it and drop pending loads.
+	const urlPropsChanged =
+		urlProps.year !== year || urlProps.initialView !== initialView;
+	const navigatedToYear = urlPropsChanged && year !== selectedYear;
+	if (urlPropsChanged) {
+		setUrlProps({
+			year,
+			initialView,
+			navigations: urlProps.navigations + (navigatedToYear ? 1 : 0),
+		});
+		if (initialView !== urlProps.initialView) setActiveView(initialView);
+		if (navigatedToYear) {
+			setSelectedYear(year);
+			setYearLoad(null);
+		}
+	}
 
 	if (
+		navigatedToYear ||
 		calendarData.sourceAbsences !== absences ||
 		calendarData.sourceHolidays !== holidays
 	) {
+		const showsPropsYear = navigatedToYear || selectedYear === year;
 		setCalendarData({
+			sourceYear: year,
 			sourceAbsences: absences,
 			sourceHolidays: holidays,
-			absences: selectedYear === currentYear ? absences : calendarData.absences,
-			holidays: selectedYear === currentYear ? holidays : calendarData.holidays,
+			absences: showsPropsYear ? absences : calendarData.absences,
+			holidays: showsPropsYear ? holidays : calendarData.holidays,
 		});
 	}
+
+	useEffect(() => {
+		if (urlProps.navigations === 0) return;
+		// Loads started before the navigation must not replace the year it brought.
+		yearRequestId.current += 1;
+		latestRequestedYearRef.current = urlProps.year;
+	}, [urlProps.navigations, urlProps.year]);
 
 	const calendarAbsences = calendarData.absences;
 	const calendarHolidays = calendarData.holidays;
 
-	// Handle day click in year calendar - open request dialog with date prefilled
-	const handleDayClick = (date: Date) => {
-		// Use local date string to avoid timezone issues with toISOString()
-		const dateStr = toLocalDateString(date);
-		setPrefilledDate(dateStr);
-		setRequestDialogOpen(true);
-	};
-
-	// Reset prefilled date when dialog closes
-	const handleDialogOpenChange = (open: boolean) => {
-		setRequestDialogOpen(open);
-		if (!open) {
-			setPrefilledDate(undefined);
-		}
-	};
-
-	const handleAddAbsence = () => {
-		setPrefilledDate(undefined);
-		setRequestDialogOpen(true);
-	};
-
-	const reloadYearData = async (year: number, reportFailure = false) => {
+	const reloadYearData = async (requestedYear: number, reportFailure = false) => {
 		const sourceAbsences = absences;
 		const sourceHolidays = holidays;
 		const requestId = ++yearRequestId.current;
-		latestRequestedYearRef.current = year;
-		setYearLoad({ year, status: "pending" });
+		latestRequestedYearRef.current = requestedYear;
+		setYearLoad({ year: requestedYear, status: "pending" });
 		try {
-			const data = await getAbsenceCalendarYearData(year);
+			const data = await getAbsenceCalendarYearData(requestedYear);
 			const isLatestRequest =
-				latestRequestedYearRef.current === year &&
+				latestRequestedYearRef.current === requestedYear &&
 				requestId === yearRequestId.current;
 			if (!isLatestRequest) {
 				return;
 			}
 			setCalendarData((current) => {
-				// RSC refresh may already have delivered a newer current-year snapshot.
+				// RSC refresh may already have delivered a newer snapshot of this year.
 				if (
-					year === currentYear &&
+					requestedYear === current.sourceYear &&
 					(current.sourceAbsences !== sourceAbsences ||
 						current.sourceHolidays !== sourceHolidays)
 				)
 					return current;
 				return { ...current, absences: data.absences, holidays: data.holidays };
 			});
-			setSelectedYear(year);
+			setSelectedYear(requestedYear);
 			setYearLoad(null);
+			// The URL names the year on screen, so a failed load leaves it unchanged.
+			replaceAbsencesUrl({ year: requestedYear }, todayYear);
 		} catch (error) {
 			if (requestId !== yearRequestId.current) return;
-			setYearLoad({ year, status: "failed" });
+			setYearLoad({ year: requestedYear, status: "failed" });
 			if (reportFailure) throw error;
 		}
 	};
 
 	useViewRefresh(() => reloadYearData(latestRequestedYearRef.current, true));
 
-	const handleYearChange = (year: number) => {
-		void reloadYearData(year);
+	const handleYearChange = (nextYear: number) => {
+		void reloadYearData(nextYear);
+	};
+
+	const handleViewChange = (value: unknown) => {
+		const nextView = parseAbsencesView(value);
+		setActiveView(nextView);
+		replaceAbsencesUrl({ view: nextView }, todayYear);
 	};
 
 	const handleAbsencesUpdated = () => {
 		void reloadYearData(latestRequestedYearRef.current);
 	};
 
-	return (
+	// Year navigation steps from the year being loaded, so repeated clicks are not lost.
+	const navigationYear = yearLoad?.status === "pending" ? yearLoad.year : selectedYear;
+
+	const view = (
 		<div className="min-w-0 space-y-4">
-			<Tabs
-				value={activeView}
-				onValueChange={(v) => setActiveView(v as ViewType)}
-			>
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<TabsList>
-						<TabsTrigger value="calendar" className="gap-2">
-							<IconCalendar className="size-4" aria-hidden="true" />
-							{t("absences.view.calendar", "Calendar")}
-						</TabsTrigger>
-						<TabsTrigger value="table" className="gap-2">
-							<IconTable className="size-4" aria-hidden="true" />
-							{t("absences.view.table", "Table")}
-						</TabsTrigger>
-					</TabsList>
-					<Button className="w-full gap-2 sm:w-auto" onClick={handleAddAbsence}>
-						<IconPlus className="size-4" aria-hidden="true" />
-						{t("absences.addAbsence", "Add absence")}
-					</Button>
+			{/* Attention section: outside the tab panels, so both views show it. */}
+			<OwnAbsenceChangeRequests />
+			<Tabs value={activeView} onValueChange={handleViewChange}>
+				{/* One toolbar for both views: the year applies to the calendar and the table. */}
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => handleYearChange(navigationYear - 1)}
+							disabled={navigationYear <= ABSENCES_MIN_YEAR}
+							aria-label={t("absences.calendar.previousYear", "Previous year")}
+						>
+							<IconChevronLeft className="size-4" aria-hidden="true" />
+						</Button>
+						<h2
+							className="min-w-[4ch] text-center font-semibold text-lg tabular-nums"
+							aria-live="polite"
+						>
+							{selectedYear}
+						</h2>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => handleYearChange(navigationYear + 1)}
+							disabled={navigationYear >= ABSENCES_MAX_YEAR}
+							aria-label={t("absences.calendar.nextYear", "Next year")}
+						>
+							<IconChevronRight className="size-4" aria-hidden="true" />
+						</Button>
+						{selectedYear !== todayYear ? (
+							<Button
+								variant="outline"
+								size="sm"
+								className="ml-1"
+								onClick={() => handleYearChange(todayYear)}
+							>
+								{t("absences.calendar.currentYear", "This year")}
+							</Button>
+						) : null}
+					</div>
+					{/* R002: the request action sits beside the view controls. */}
+					<div className="flex flex-wrap items-center gap-2">
+						<TabsList>
+							<TabsTrigger value="calendar" className="gap-2">
+								<IconCalendar className="size-4" aria-hidden="true" />
+								{t("absences.view.calendar", "Calendar")}
+							</TabsTrigger>
+							<TabsTrigger value="table" className="gap-2">
+								<IconTable className="size-4" aria-hidden="true" />
+								{t("absences.view.table", "Table")}
+							</TabsTrigger>
+						</TabsList>
+						<Button
+							className="gap-2"
+							onClick={() => setAbsenceRequest({ open: true })}
+						>
+							<IconPlus className="size-4" aria-hidden="true" />
+							{t("absences.requestAbsence", "Request absence")}
+						</Button>
+					</div>
 				</div>
 				{yearLoad ? (
 					<div
 						role={yearLoad.status === "failed" ? "alert" : "status"}
-						className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm"
+						className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground text-sm"
 					>
 						{yearLoad.status === "failed"
 							? t(
@@ -193,44 +299,45 @@ export function AbsencesViewContainer({
 					<AbsenceYearCalendar
 						absences={calendarAbsences}
 						holidays={calendarHolidays}
-						initialYear={selectedYear}
 						year={selectedYear}
 						currentDate={currentDate}
-						onDayClick={handleDayClick}
-						onYearChange={handleYearChange}
+						onRequestDay={(date) =>
+							setAbsenceRequest({ open: true, initialDate: date })
+						}
 					/>
 				</TabsContent>
 
 				<TabsContent value="table" className="mt-4">
-					<div className="mb-4">
-						<h2 className="text-lg font-semibold">
-							{t("absences.table.title", "Your Absence Requests")} ·{" "}
-							{selectedYear}
-						</h2>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"absences.table.subtitle",
-								"Recent and upcoming absence requests",
-							)}
-						</p>
-					</div>
 					<AbsenceEntriesTable
 						absences={calendarAbsences}
 						currentDate={currentDate}
-						onUpdate={handleAbsencesUpdated}
 					/>
 				</TabsContent>
 			</Tabs>
 
-			{/* Request dialog with optional prefilled date */}
 			<RequestAbsenceDialog
-				open={requestDialogOpen}
-				onOpenChange={handleDialogOpenChange}
+				open={absenceRequest.open}
+				// Closing forgets the chosen day; the next request starts fresh.
+				onOpenChange={(open) =>
+					setAbsenceRequest((current) =>
+						open ? { ...current, open } : { open: false },
+					)
+				}
 				categories={categories}
 				organizationId={organizationId}
-				initialDate={prefilledDate}
+				initialDate={absenceRequest.initialDate}
 				onSuccess={handleAbsencesUpdated}
 			/>
 		</div>
+	);
+
+	// Both views act on an absence through one controller, so their actions and dialogs match (#1863).
+	return (
+		<OwnAbsenceActionsProvider
+			absences={calendarAbsences}
+			onUpdate={handleAbsencesUpdated}
+		>
+			{view}
+		</OwnAbsenceActionsProvider>
 	);
 }
