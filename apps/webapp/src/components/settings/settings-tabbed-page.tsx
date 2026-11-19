@@ -32,7 +32,7 @@ export function SettingsTabbedPage<Tab extends string>({
 		window.history.replaceState(null, "", url.pathname + url.search + url.hash);
 	}
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<div className="space-y-2">
 				<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
 				<p className="text-sm text-muted-foreground">

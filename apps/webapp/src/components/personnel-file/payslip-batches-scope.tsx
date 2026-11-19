@@ -28,7 +28,7 @@ export function PayslipBatchesScope({
 		current.activeOrganizationId !== organizationId
 	)
 		return (
-			<div className="@container/main mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 				<PayslipBatchesHeading />
 				{current.error ? (
 					<div role="alert" className="space-y-3 text-sm">

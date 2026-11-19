@@ -37,7 +37,7 @@ async function ScheduledExportsContent() {
 		: [];
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<ScheduledExportsTable
 				organizationId={organizationId}
 				currentUserId={authContext.user.id}
@@ -52,7 +52,7 @@ async function ScheduledExportsContent() {
 function ScheduledExportsLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.scheduledExports",

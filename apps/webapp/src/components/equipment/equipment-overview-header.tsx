@@ -18,7 +18,6 @@ export function EquipmentOverviewHeader({
 	const locale = useLocale();
 	return (
 		<PageHeader
-			className="px-4 lg:px-6"
 			title={t("settings.equipment.title", "Equipment")}
 			scope={
 				calendar ? (

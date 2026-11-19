@@ -8,7 +8,7 @@ export function CalendarPageHeader() {
 	return (
 		<PageHeader
 			title={t("calendar.title", "Calendar")}
-			className="shrink-0 px-4 pt-4"
+			className="shrink-0"
 		/>
 	);
 }

@@ -18,8 +18,8 @@ async function ApiKeyDetailPageContent({ params }: ApiKeyDetailPageProps) {
 
 function ApiKeyDetailPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
+		<div className="page-frame">
+			<div className="page-measure space-y-4">
 				<Skeleton className="h-8 w-56" />
 				<Skeleton className="h-40 w-full" />
 				<Skeleton className="h-[320px] w-full" />

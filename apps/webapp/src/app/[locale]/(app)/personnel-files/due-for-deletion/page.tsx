@@ -22,7 +22,7 @@ async function DueForDeletionContent() {
 	if (current.status !== "resolved" || !managesAnyDocuments(current.access)) notFound();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<header className="space-y-2">
 				<Button asChild variant="ghost" size="sm" className="-ml-2">
 					<Link href="/personnel-files">
@@ -50,7 +50,7 @@ function DueForDeletionLoading() {
 				labelKey: "settings.personnelFiles.due.loading",
 				labelDefault: "Loading documents due for deletion",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
 			<DueForDeletionHeading />

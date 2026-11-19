@@ -26,30 +26,32 @@ export default async function TravelExpenseClaimPage(props: {
 }) {
 	const t = await getTranslate();
 	return (
-		<div className="mx-auto w-full min-w-0 max-w-4xl space-y-6 p-4 md:p-6">
-			<PageHeader
-				scope={
-					<BackLink href="/travel-expenses">
-						{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
-					</BackLink>
-				}
-				title={t("travelExpenses.detail.title", "Travel expense claim")}
-			/>
-			<Suspense
-				fallback={
-					<LoadingRegion
-						label={{
-							labelKey: "common.loadingRegions.travelExpenses",
-							labelDefault: "Loading travel expenses",
-						}}
-						role="status"
-					>
-						<Skeleton aria-hidden="true" className="h-48 w-full" />
-					</LoadingRegion>
-				}
-			>
-				<ClaimContent {...props} />
-			</Suspense>
+		<div className="page-frame min-w-0">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					scope={
+						<BackLink href="/travel-expenses">
+							{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
+						</BackLink>
+					}
+					title={t("travelExpenses.detail.title", "Travel expense claim")}
+				/>
+				<Suspense
+					fallback={
+						<LoadingRegion
+							label={{
+								labelKey: "common.loadingRegions.travelExpenses",
+								labelDefault: "Loading travel expenses",
+							}}
+							role="status"
+						>
+							<Skeleton aria-hidden="true" className="h-48 w-full" />
+						</LoadingRegion>
+					}
+				>
+					<ClaimContent {...props} />
+				</Suspense>
+			</div>
 		</div>
 	);
 }

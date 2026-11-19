@@ -29,6 +29,7 @@ import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
 import { VacationBalanceWidget } from "@/components/dashboard/vacation-balance-widget";
 import { WhosOutTodayWidget } from "@/components/dashboard/whos-out-today-widget";
+import { WidgetCardVariantContext } from "@/components/dashboard/widget-card";
 import type { WidgetId } from "@/components/dashboard/widget-registry";
 import {
 	useVisibleWidgets,
@@ -36,6 +37,7 @@ import {
 } from "@/components/dashboard/widget-visibility-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 /**
  * Map of widget IDs to their component.
@@ -106,7 +108,7 @@ export function SectionCardsSkeleton({
 	return (
 		<div
 			aria-hidden={ariaHidden}
-			className="columns-1 @xl/main:columns-2 @5xl/main:columns-3 gap-4 px-4 lg:px-6"
+			className="columns-1 @xl/main:columns-2 @5xl/main:columns-3 @[110rem]/main:columns-4 gap-4"
 		>
 			{WIDGET_SKELETON_KEYS.map((key) => (
 				<WidgetSkeleton key={key} />
@@ -119,7 +121,7 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	const { t } = useTranslate();
 
 	return (
-		<div className="mx-4 rounded-xl border border-dashed bg-card p-8 text-center lg:mx-6">
+		<div className="rounded-xl border border-dashed bg-card p-8 text-center">
 			<h2 className="font-semibold text-card-foreground text-lg">
 				{t(
 					"dashboard.customize.empty-title",
@@ -139,6 +141,15 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	);
 }
 
+/**
+ * One bordered surface holding several widgets as flush segments. Widgets arrive through
+ * `display: contents` slot wrappers, so sibling selectors cannot draw the dividers: each
+ * segment draws a leading border and overlaps its predecessor by 1px, and the surface
+ * clips the first segment's border.
+ */
+const SHARED_SURFACE =
+	"min-w-0 overflow-hidden rounded-xl border bg-card [&_[data-widget-id]]:mb-0 [&_[data-widget-id]]:-mt-px [&_[data-widget-id]]:border-t [&_[data-slot=card]]:rounded-none [&_[data-slot=card]]:border-0 [&_[data-slot=card]]:shadow-none";
+
 function DashboardRegionLayout({
 	visibleWidgetOrder,
 	renderWidget,
@@ -149,69 +160,71 @@ function DashboardRegionLayout({
 	personalDaySlot?: ReactNode;
 }) {
 	const { t } = useTranslate();
-	const region = (name: Parameters<typeof dashboardRegionWidgets>[1]) =>
-		dashboardRegionWidgets(visibleWidgetOrder, name).map(renderWidget);
-	const hasRegion = (name: Parameters<typeof dashboardRegionWidgets>[1]) =>
-		dashboardRegionWidgets(visibleWidgetOrder, name).length > 0;
+	const summary = dashboardRegionWidgets(visibleWidgetOrder, "summary");
+	const attention = dashboardRegionWidgets(visibleWidgetOrder, "attention");
+	const records = dashboardRegionWidgets(visibleWidgetOrder, "records");
+	const personal = dashboardRegionWidgets(visibleWidgetOrder, "personal");
+	const showPersonalDay = visibleWidgetOrder.includes("quick-stats");
+	const hasWorkColumn = attention.length > 0 || records.length > 0;
+	const hasPersonalColumn = showPersonalDay || personal.length > 0;
 
 	return (
 		<>
-			{hasRegion("summary") ? (
-				<div
-					data-dashboard-region="summary"
-					className={
-						dashboardRegionWidgets(visibleWidgetOrder, "summary").length > 1
-							? "grid min-w-0 gap-4 @4xl/main:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] [&_[data-widget-id]]:mb-0"
-							: "min-w-0 [&_[data-widget-id]]:mb-0"
-					}
-				>
-					{region("summary")}
-				</div>
-			) : null}
-			<div className="grid min-w-0 items-start gap-6 @4xl/main:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
-				<div className="min-w-0 space-y-6">
-					{hasRegion("attention") ? (
-						<section
-							aria-label={t("dashboard.refresh.attention", "Today at a glance")}
-							data-dashboard-region="attention"
-							className="overflow-hidden rounded-xl border bg-card [&_[data-widget-id]]:mb-0 [&_[data-widget-id]+[data-widget-id]]:border-t [&_[data-slot=card]]:rounded-none [&_[data-slot=card]]:border-0 [&_[data-slot=card]]:shadow-none"
-						>
-							{region("attention")}
-						</section>
-					) : null}
-					<div
-						data-dashboard-region="records"
-						className="min-w-0 space-y-6 [&_[data-widget-id]]:mb-0"
-					>
-						{region("records")}
-					</div>
-				</div>
-				<div
-					data-dashboard-region="personal"
-					className="min-w-0 space-y-6 [&_[data-widget-id]]:mb-0"
-				>
-					{visibleWidgetOrder.includes("quick-stats")
-						? (personalDaySlot ?? <PersonalDay />)
-						: null}
-					{region("personal")}
-				</div>
-			</div>
-			{hasRegion("utilities") ? (
-				<details
-					className="rounded-xl border bg-card"
-					data-dashboard-region="utilities"
-				>
-					<summary className="cursor-pointer rounded-xl px-5 py-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
-						{t(
-							"dashboard.refresh.utilities",
-							"More widgets · Work location, birthdays and hydration",
+			{summary.length > 0 ? (
+				<WidgetCardVariantContext value="strip">
+					<section
+						aria-label={t("dashboard.refresh.summary", "Summary")}
+						data-dashboard-region="summary"
+						className={cn(
+							SHARED_SURFACE,
+							"grid",
+							summary.length > 1 &&
+								"@4xl/main:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] @4xl/main:[&_[data-widget-id]]:mt-0 @4xl/main:[&_[data-widget-id]]:-ml-px @4xl/main:[&_[data-widget-id]]:border-t-0 @4xl/main:[&_[data-widget-id]]:border-l",
 						)}
-					</summary>
-					<div className="grid min-w-0 items-start gap-4 border-t p-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-3 [&_[data-widget-id]]:mb-0">
-						{region("utilities")}
-					</div>
-				</details>
+					>
+						{summary.map(renderWidget)}
+					</section>
+				</WidgetCardVariantContext>
 			) : null}
+			<div className="flex min-w-0 flex-col gap-6 empty:hidden @4xl/main:flex-row @4xl/main:items-start">
+				{hasWorkColumn ? (
+					<div className="flex min-w-0 flex-col gap-6 @4xl/main:flex-[1.75] @[110rem]/main:flex-[2] @[110rem]/main:flex-row @[110rem]/main:items-start [&:not(:has([data-widget-id]))]:hidden">
+						{attention.length > 0 ? (
+							<section
+								aria-label={t("dashboard.refresh.attention", "Today at a glance")}
+								data-dashboard-region="attention"
+								className={cn(
+									SHARED_SURFACE,
+									"@[110rem]/main:min-w-0 @[110rem]/main:flex-1",
+								)}
+							>
+								{attention.map(renderWidget)}
+							</section>
+						) : null}
+						<div
+							data-dashboard-region="records"
+							className="flex min-w-0 flex-col gap-6 @[110rem]/main:flex-1 [&:not(:has([data-widget-id]))]:hidden [&_[data-widget-id]]:mb-0"
+						>
+							{records.map(renderWidget)}
+						</div>
+					</div>
+				) : null}
+				{hasPersonalColumn ? (
+					<div
+						data-dashboard-region="personal"
+						className={cn(
+							"min-w-0 gap-6 [&:not(:has([data-widget-id],[data-slot=card]))]:hidden [&_[data-widget-id]]:mb-0",
+							hasWorkColumn
+								? "flex flex-col @4xl/main:flex-1"
+								: // Without team modules the personal widgets get the full width as a grid.
+									"grid items-start @2xl/main:grid-cols-2 @6xl/main:grid-cols-3",
+						)}
+					>
+						{showPersonalDay ? (personalDaySlot ?? <PersonalDay />) : null}
+						{personal.map(renderWidget)}
+					</div>
+				) : null}
+			</div>
 		</>
 	);
 }
@@ -281,7 +294,7 @@ function DashboardWidgetLayout({
 				<SortableWidgetGrid
 					widgetOrder={visibleWidgetOrder}
 					onReorder={onReorder}
-					className={grouped ? "space-y-6 px-4 lg:px-6" : undefined}
+					className={grouped ? "space-y-6" : undefined}
 				>
 					{grouped ? (
 						<DashboardRegionLayout

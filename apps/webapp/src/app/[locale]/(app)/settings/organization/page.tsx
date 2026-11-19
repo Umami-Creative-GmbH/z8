@@ -54,21 +54,19 @@ async function OrganizationsPageContent() {
 
 	if (!organization) {
 		return (
-			<div className="flex-1 p-6">
-				<div className="mx-auto max-w-4xl">
-					<h1 className="text-2xl font-semibold">
-						{t(
-							"settings.organizations.notFound.title",
-							"Organization Not Found",
-						)}
-					</h1>
-					<p className="text-muted-foreground mt-2">
-						{t(
-							"settings.organizations.notFound.description",
-							"The organization could not be found or you don't have access to it.",
-						)}
-					</p>
-				</div>
+			<div className="page-frame flex-1">
+				<h1 className="text-2xl font-semibold">
+					{t(
+						"settings.organizations.notFound.title",
+						"Organization Not Found",
+					)}
+				</h1>
+				<p className="text-muted-foreground mt-2">
+					{t(
+						"settings.organizations.notFound.description",
+						"The organization could not be found or you don't have access to it.",
+					)}
+				</p>
 			</div>
 		);
 	}
@@ -91,12 +89,10 @@ async function OrganizationsPageContent() {
 
 function OrganizationsPageLoading() {
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-5 w-96" />
-				<Skeleton className="h-[420px] w-full" />
-			</div>
+		<div className="page-frame flex-1 space-y-4">
+			<Skeleton className="h-8 w-64" />
+			<Skeleton className="h-5 w-96" />
+			<Skeleton className="h-[420px] w-full" />
 		</div>
 	);
 }

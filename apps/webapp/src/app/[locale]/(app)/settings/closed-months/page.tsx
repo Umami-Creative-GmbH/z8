@@ -12,7 +12,7 @@ async function ClosedMonthsSettingsPageContent() {
 	const [t, overview] = await Promise.all([getTranslate(), getClosedMonthsOverview()]);
 
 	return (
-		<div className="p-4 sm:p-6">
+		<div className="page-frame">
 			<div className="min-w-0 space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
@@ -39,7 +39,7 @@ async function ClosedMonthsSettingsPageContent() {
 
 function ClosedMonthsSettingsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
+		<div className="page-frame">
 			<div className="min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />

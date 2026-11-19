@@ -22,8 +22,8 @@ async function ImportPageContent() {
 	});
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-5xl space-y-6">
+		<div className="page-frame">
+			<div className="space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
 						{t("settings.import.title", "Import Data")}
@@ -45,14 +45,14 @@ async function ImportPageContent() {
 function ImportPageLoading() {
 	return (
 		<LoadingRegion
-			className="p-6"
+			className="page-frame"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.importSettings",
 				labelDefault: "Loading import settings",
 			}}
 		>
-			<div className="mx-auto max-w-5xl space-y-6">
+			<div className="space-y-6">
 				<div className="space-y-2">
 					<Skeleton aria-hidden="true" className="h-8 w-48" />
 					<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />

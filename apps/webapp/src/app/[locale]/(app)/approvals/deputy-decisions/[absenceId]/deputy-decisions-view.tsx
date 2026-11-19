@@ -72,7 +72,7 @@ export function DeputyDecisionsView({
 		"Decided by your deputy",
 	);
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 pt-0 md:p-6 md:pt-0">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<DeputyDecisionsHeader
 				t={t}
 				scope={

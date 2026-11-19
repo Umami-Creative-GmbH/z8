@@ -32,7 +32,7 @@ async function TeamDrivingContent({ searchParams }: TeamDrivingPageProps) {
 			: null;
 	if (!scope) return redirectWithLocale("/");
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("team.driving.title", "Driving details missing")}
 				scope={
@@ -67,7 +67,7 @@ async function TeamDrivingContent({ searchParams }: TeamDrivingPageProps) {
 async function TeamDrivingLoading() {
 	const t = await getTranslate();
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader title={t("team.driving.title", "Driving details missing")} />
 			<LoadingRegion
 				label={{ labelKey: "team.driving.loading", labelDefault: "Loading driving details" }}

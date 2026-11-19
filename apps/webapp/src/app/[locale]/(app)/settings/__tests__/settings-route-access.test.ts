@@ -100,7 +100,7 @@ describe("org-admin settings route access", () => {
 		);
 
 		expect(source).toContain(
-			'className="flex flex-1 flex-col gap-6 p-4 md:p-6"',
+			'className="page-frame flex flex-1 flex-col gap-6"',
 		);
 		expect(source).toContain('className="space-y-1"');
 		expect(source).toContain('className="text-2xl font-semibold"');

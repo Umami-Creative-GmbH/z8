@@ -31,7 +31,7 @@ export function EmployeeFileWorkspace({
 	const snapshot = usePersonnelFilesSnapshot({ readId, userId, organizationId });
 	if (!snapshot.visible)
 		return (
-			<div className="flex flex-col gap-6 p-4 md:p-6">
+			<div className="page-frame flex flex-col gap-6">
 				<EmployeeFileLoadingHeading />
 				{snapshot.pending ? (
 					<LoadingRegion
@@ -52,7 +52,7 @@ export function EmployeeFileWorkspace({
 			</div>
 		);
 	return (
-		<div className="@container/main mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
 				title={employee.name}
 				scope={

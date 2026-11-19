@@ -47,7 +47,11 @@ async function ProjectSettingsPageContent() {
 	}
 
 	if (settingsRouteContext.accessTier !== "orgAdmin") {
-		return <ProjectManagement organizationId={organizationId} canManageProjectManagers={false} />;
+		return (
+			<div className="page-frame flex flex-1 flex-col">
+				<ProjectManagement organizationId={organizationId} canManageProjectManagers={false} />
+			</div>
+		);
 	}
 
 	// Only org owners and admins manage project templates (#878).
@@ -62,7 +66,7 @@ async function ProjectSettingsPageContent() {
 function ProjectSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex flex-1 flex-col gap-4"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.projectSettings",

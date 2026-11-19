@@ -190,7 +190,7 @@ function WorkHours() {
 	const employees = workHoursData?.byEmployee || [];
 
 	return (
-		<div className="min-w-0 space-y-6 px-4 lg:px-6">
+		<div className="min-w-0 space-y-6">
 			{/* Controls */}
 			<WorkHoursControls
 				dateRange={dateRange}

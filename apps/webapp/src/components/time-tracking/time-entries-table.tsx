@@ -123,11 +123,18 @@ export function TimeEntriesTable({
 			/>
 		),
 	});
+	const groupedColumns = columns.filter(
+		(column) => !("accessorKey" in column && column.accessorKey === "startTime"),
+	);
 
 	return (
-		<Card className="gap-0 overflow-hidden rounded-xl shadow-none">
-			<CardHeader className="flex min-w-0 flex-col items-start justify-between gap-3 pb-4 sm:flex-row sm:items-center">
-				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
+		<Card className="gap-0 overflow-hidden rounded-xl py-0 shadow-none">
+			<CardHeader className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+				<CardTitle>
+					<h2 className="text-base font-semibold">
+						{t("timeTracking.table.title", "Time Entries")}
+					</h2>
+				</CardTitle>
 				<div className="flex flex-wrap items-center gap-2">
 					<Button
 						variant="ghost"
@@ -153,7 +160,7 @@ export function TimeEntriesTable({
 					/>
 				</div>
 			</CardHeader>
-			<CardContent className="space-y-0 px-0">
+			<CardContent className="px-0 sm:[&_th]:align-top sm:[&_th]:py-1 sm:[&_th]:leading-4 sm:[&_th]:whitespace-normal sm:[&_td]:align-top sm:[&_:is(th,td):first-child]:pl-4 sm:[&_:is(th,td):last-child]:pr-4">
 				{grouped && groups.length > 0 ? (
 					groups.map((group) => (
 						<section
@@ -163,7 +170,7 @@ export function TimeEntriesTable({
 								{ dateStyle: "full" },
 							)}
 						>
-							<div className="flex flex-wrap items-center justify-between gap-2 border-y bg-muted/40 px-6 py-3 text-sm">
+							<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-y bg-muted/40 px-4 py-2 text-sm">
 								<h3 className="font-medium">
 									{Temporal.PlainDate.from(group.date).toLocaleString(locale, {
 										weekday: "long",
@@ -194,16 +201,10 @@ export function TimeEntriesTable({
 							</div>
 							<DataTable
 								mobileLayout="stacked"
-								columns={columns.filter(
-									(column) =>
-										!(
-											"accessorKey" in column &&
-											column.accessorKey === "startTime"
-										),
-								)}
+								columns={groupedColumns}
 								data={group.periods}
 								manualPagination
-								className="rounded-none border-0"
+								className="rounded-none border-0 sm:[&_table]:min-w-xl sm:[&_table]:table-fixed sm:[&_th:nth-child(-n+2)]:w-[22%] sm:[&_th:nth-child(3)]:w-28 sm:[&_th:last-child]:w-24 sm:[&_[data-slot=badge]]:max-w-full sm:[&_[data-slot=badge]]:whitespace-normal sm:[&_[data-slot=badge]]:wrap-anywhere"
 							/>
 						</section>
 					))
@@ -220,7 +221,7 @@ export function TimeEntriesTable({
 						)}
 					/>
 				)}
-				<p className="px-6 pt-4 text-sm text-muted-foreground">
+				<p className="px-4 py-3 text-sm text-muted-foreground">
 					{t(
 						"timeTracking.table.offsetContext",
 						"Endpoint times use each entry's captured local UTC offset. Day headings follow your calendar timezone: {timezone}.",

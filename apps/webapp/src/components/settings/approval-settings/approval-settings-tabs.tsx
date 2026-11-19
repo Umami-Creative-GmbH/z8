@@ -57,7 +57,7 @@ export function ApprovalSettingsTabs({
 	};
 
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<h1 className="text-2xl font-semibold tracking-tight">
 				{t("settings.approvalEscalation.attention.approvalType", "Approval")}
 			</h1>

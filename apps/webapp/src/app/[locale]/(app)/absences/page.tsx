@@ -29,7 +29,7 @@ async function AbsencesPageContent() {
 	]);
 	if (!employee) {
 		return (
-			<div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+			<div className="page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("absences.title", "Absences")} />
 				<NoEmployeeError
 					feature={t("absences.featureName", "manage absences")}
@@ -78,7 +78,7 @@ async function AbsencesPageContent() {
 	]);
 
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 lg:p-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("absences.title", "Absences")}
 				scope={
@@ -146,24 +146,20 @@ async function AbsencesPageLoading() {
 	const t = await getTranslate();
 	return (
 		<LoadingRegion
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.absences",
 				labelDefault: "Loading absences",
 			}}
 		>
-			<div className="px-4 lg:px-6">
-				<PageHeader title={t("absences.title", "Absences")} />
-			</div>
-			<div className="space-y-2 px-4 lg:px-6">
+			<PageHeader title={t("absences.title", "Absences")} />
+			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-44" />
 				<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />
 				<Skeleton aria-hidden="true" className="h-32 w-full" />
 			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-96 w-full" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-96 w-full" />
 		</LoadingRegion>
 	);
 }

@@ -258,17 +258,17 @@ function ApprovalInboxLoadingState() {
 		<div
 			aria-busy="true"
 			aria-label={loadingLabel}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<div className="flex items-center justify-between px-4 lg:px-6">
+			<div className="flex items-center justify-between">
 				<div className="space-y-2">
 					<Skeleton aria-hidden="true" className="h-8 w-48" />
 					<Skeleton aria-hidden="true" className="h-4 w-72 max-w-full" />
 				</div>
 				<Skeleton aria-hidden="true" className="hidden h-9 w-36 sm:block" />
 			</div>
-			<div className="grid gap-4 px-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-6">
+			<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
 				<Card>
 					<CardHeader className="space-y-2">
 						<Skeleton aria-hidden="true" className="h-6 w-36" />
@@ -340,7 +340,7 @@ function ApprovalInboxPageHeader({
 }) {
 	return (
 		// Stacks and wraps on phones so the bulk actions stay on screen (#846).
-		<div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div className="min-w-0">
 				<h1 className="break-words text-2xl font-semibold tracking-tight">
 					{t("approvals:approvals.inbox", "Approval Inbox")}
@@ -423,7 +423,7 @@ function ApprovalInboxErrorState({
 	onRefresh: () => void;
 }) {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<ApprovalInboxPageHeader
 				t={t}
 				bulkState={{
@@ -440,7 +440,7 @@ function ApprovalInboxErrorState({
 				onOpenSprint={() => undefined}
 				onRefresh={onRefresh}
 			/>
-			<div className="px-4 lg:px-6">
+			<div>
 				<Card>
 					<CardContent className="py-12">
 						<div className="flex flex-col items-center justify-center text-center">
@@ -552,7 +552,7 @@ function ApprovalInboxRequestsCard({
 	const selectableCount = ownItems.filter(isDecidableByViewer).length;
 
 	return (
-		<div className="flex flex-col gap-6 px-4 lg:px-6">
+		<div className="flex flex-col gap-6">
 			<ApprovalInboxWarnings warnings={warnings} />
 			<Card>
 				<CardHeader className="pb-0">
@@ -799,7 +799,7 @@ function ApprovalInboxPanels({
 	covering,
 }: ApprovalInboxPanelsProps) {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<ApprovalInboxPageHeader
 				t={t}
 				bulkState={{

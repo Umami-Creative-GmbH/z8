@@ -24,7 +24,7 @@ async function PayrollAccessSettingsPageContent() {
 
 	if (!result.success) {
 		return (
-			<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="page-frame flex flex-1 flex-col gap-6">
 				<Card>
 					<CardHeader>
 						<CardTitle>
@@ -49,7 +49,7 @@ async function PayrollAccessSettingsPageContent() {
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold">
 					{t("settings.payrollAccess.title", "Payroll Officers")}
@@ -73,7 +73,7 @@ async function PayrollAccessSettingsPageContent() {
 
 function PayrollAccessSettingsPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="space-y-2">
 				<Skeleton className="h-8 w-56" />
 				<Skeleton className="h-5 w-full max-w-2xl" />

@@ -159,7 +159,7 @@ export function TodayBriefing({
 
 	return (
 		<div
-			className="@container/main mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			aria-busy={isRefreshing}
 		>
 			<PageHeader

@@ -41,7 +41,7 @@ async function AvvPageContent() {
 	const missingFields = getAvvMissingFields(profile);
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold">
 					{t("settings.avv.title", "Auftragsverarbeitungsvertrag (AVV)")}
@@ -151,7 +151,7 @@ async function AvvPageContent() {
 
 function AvvPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="space-y-2">
 				<Skeleton className="h-8 w-72" />
 				<Skeleton className="h-5 w-full max-w-xl" />

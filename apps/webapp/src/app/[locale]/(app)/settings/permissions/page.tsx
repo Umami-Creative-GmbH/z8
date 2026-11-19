@@ -27,12 +27,10 @@ async function PermissionsPageContent() {
 
 function PermissionsPageLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-5 w-72" />
-				<Skeleton className="h-[420px] w-full" />
-			</div>
+		<div className="page-frame flex flex-1 flex-col gap-4">
+			<Skeleton className="h-8 w-56" />
+			<Skeleton className="h-5 w-72" />
+			<Skeleton className="h-[420px] w-full" />
 		</div>
 	);
 }

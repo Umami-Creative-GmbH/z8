@@ -53,7 +53,7 @@ async function OrganizationPageContent() {
 
 export default function OrganizationPage() {
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6">
+		<div className="@container/main page-frame-full flex min-w-0 flex-1 flex-col gap-6">
 			<OrgExplorerHeader />
 			<Suspense
 				fallback={

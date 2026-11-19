@@ -40,20 +40,18 @@ async function AnalyticsLayoutLoading() {
 	const t = await getTranslate();
 	return (
 		<LoadingRegion
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.analyticsNavigation",
 				labelDefault: "Loading analytics navigation",
 			}}
 		>
-			<div className="space-y-2 px-4 lg:px-6">
+			<div className="space-y-2">
 				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-10 w-full max-w-3xl" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-10 w-full max-w-3xl" />
 		</LoadingRegion>
 	);
 }
@@ -76,7 +74,7 @@ async function AnalyticsLayoutContent({
 
 	if (!currentEmployee) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<NoEmployeeError
 					feature={t("analytics.access.noEmployeeFeature", "view analytics")}
@@ -88,7 +86,7 @@ async function AnalyticsLayoutContent({
 	// Role-based access control: Only admins and managers can access analytics
 	if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<div className="text-center">
 					<h2 className="text-2xl font-bold">
@@ -106,9 +104,9 @@ async function AnalyticsLayoutContent({
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{/* Page Header */}
-			<div className="px-4 lg:px-6">
+			<div>
 				<AnalyticsHeading
 					title={t("analytics.layout.title", "Analytics")}
 					description={t(
@@ -119,7 +117,7 @@ async function AnalyticsLayoutContent({
 			</div>
 
 			{/* Sub-navigation Tabs */}
-			<div className="px-4 lg:px-6">
+			<div>
 				<AnalyticsTabs>
 					<TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
 						<TabsTrigger value="overview" asChild>

@@ -12,20 +12,21 @@ function EmployeesLoadingHeading() {
 	const ownsHeading = normalizeAppPath(usePathname()) === "/settings/employees";
 
 	return ownsHeading ? (
-		<PageHeader
-			title={t("settings.employees.title", "Employees")}
-			className="px-4 pt-4 lg:px-6 lg:pt-6"
-		/>
+		<PageHeader title={t("settings.employees.title", "Employees")} />
 	) : null;
 }
 
 export default function EmployeesLoading() {
 	return (
-		<div data-testid="employees-shell" className="flex min-w-0 flex-1 flex-col overflow-hidden">
+		<div
+			data-testid="employees-shell"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6 overflow-hidden"
+		>
 			<Suspense fallback={null}>
 				<EmployeesLoadingHeading />
 			</Suspense>
 			<SettingsPageSkeleton
+				framed={false}
 				variant="list"
 				label={{
 					labelKey: "common.loadingRegions.employees",

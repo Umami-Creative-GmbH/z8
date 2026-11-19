@@ -78,12 +78,10 @@ async function ApprovalPoliciesSettingsContent() {
 
 function ApprovalPoliciesSettingsLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-5 w-96" />
-				<Skeleton className="h-[420px] w-full" />
-			</div>
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-4">
+			<Skeleton className="h-8 w-64" />
+			<Skeleton className="h-5 w-96" />
+			<Skeleton className="h-[420px] w-full" />
 		</div>
 	);
 }

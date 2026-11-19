@@ -45,7 +45,7 @@ export function DrivingLicenceRoleTabs({
 	const { active, select, mounted } = useLinkedTabs(tabs, (tab) => PARAM[tab]);
 
 	return (
-		<div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 p-4 sm:p-6">
+		<div className="page-frame flex min-w-0 flex-col gap-6">
 			<PageHeader
 				title={title}
 				description={t(

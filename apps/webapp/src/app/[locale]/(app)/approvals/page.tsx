@@ -22,7 +22,7 @@ async function ApprovalsContent() {
 	)
 		return redirectWithLocale("/");
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("approvals:approvals.title", "Approvals")}
 				description={t(
@@ -75,7 +75,7 @@ async function ApprovalsContent() {
 async function ApprovalsLoading() {
 	const t = await getTranslate();
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader title={t("approvals:approvals.title", "Approvals")} />
 			<div
 				role="status"

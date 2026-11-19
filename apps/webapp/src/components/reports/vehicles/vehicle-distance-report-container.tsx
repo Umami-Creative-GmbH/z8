@@ -53,7 +53,6 @@ export function VehicleDistanceReportContainer() {
 	if (scope.error && !scope.isLoading && !session.isPending) {
 		return (
 			<ReportScopeFailure
-				className="mx-4 w-auto lg:mx-6"
 				message={t(
 					"reports.vehicles.scopeUnavailable",
 					"The current vehicle report scope could not be loaded.",
@@ -73,7 +72,7 @@ export function VehicleDistanceReportContainer() {
 		session.data?.session.activeOrganizationId !== scope.activeOrganizationId
 	) {
 		return (
-			<p role="status" className="px-4 lg:px-6">
+			<p role="status">
 				{t("reports.vehicles.scopeLoading", "Confirming the current organization and employee…")}
 			</p>
 		);
@@ -217,7 +216,7 @@ function VehicleReportArrival() {
 		(dateRange.startDate !== report.period.fromDay || dateRange.endDate !== report.period.toDay);
 
 	return (
-		<div className="space-y-6 px-4 lg:px-6">
+		<div className="space-y-6">
 			<Card>
 				<CardContent className="pt-6">
 					<form

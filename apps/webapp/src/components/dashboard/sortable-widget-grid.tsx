@@ -114,7 +114,7 @@ export function SortableWidgetGrid({
 				<div
 					className={
 						className ??
-						"columns-1 @xl/main:columns-2 @5xl/main:columns-3 gap-4 px-4 lg:px-6"
+						"columns-1 @xl/main:columns-2 @5xl/main:columns-3 @[110rem]/main:columns-4 gap-4"
 					}
 				>
 					<DashboardWidgetDraggableProvider value={false}>

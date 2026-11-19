@@ -85,6 +85,8 @@ describe("VacationBalanceWidget organization year", () => {
 		expect(await screen.findByText("2027 vacation days")).toBeTruthy();
 		expect(screen.queryByText("2026 vacation days")).toBeNull();
 		expect(screen.getAllByText("25.0").length).toBeGreaterThan(0);
+		const heading = screen.getByRole("heading", { name: "Vacation Balance" });
+		expect(heading.querySelector('[aria-hidden="true"] svg.text-amber-500')).not.toBeNull();
 	});
 	it.each(["missing", "conflict"] as const)(
 		"retains the selected year alongside %s policy status",

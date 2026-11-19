@@ -44,7 +44,7 @@ describe("dashboard region allocation", () => {
 			dashboardRegionWidgets(["quick-stats", "vacation-balance"], "summary"),
 		).toEqual(["quick-stats"]);
 		expect(
-			dashboardRegionWidgets(["quick-stats", "vacation-balance"], "utilities"),
+			dashboardRegionWidgets(["quick-stats", "vacation-balance"], "records"),
 		).toEqual([]);
 	});
 });

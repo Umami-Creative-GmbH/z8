@@ -295,13 +295,12 @@ export function EquipmentAssignmentDetail({
 	].filter(Boolean);
 	return (
 		<>
-			<div className="px-4 lg:px-6">
+			<div>
 				<BackLink href={back}>
 					{t("settings.equipment.detail.back", "Back to equipment")}
 				</BackLink>
 			</div>
 			<PageHeader
-				className="px-4 lg:px-6"
 				title={<span translate="no">{assignment.identifier}</span>}
 				scope={
 					<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -333,7 +332,7 @@ export function EquipmentAssignmentDetail({
 				}
 				actions={<EquipmentRefreshButton />}
 			/>
-			<div className="grid items-start gap-6 px-4 lg:px-6 @5xl/main:grid-cols-[minmax(0,1fr)_20rem]">
+			<div className="grid items-start gap-6 @5xl/main:grid-cols-[minmax(0,1fr)_20rem]">
 				<div className="flex min-w-0 flex-col gap-6">
 					<AssignmentFacts
 						assignment={assignment}

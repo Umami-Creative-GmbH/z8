@@ -39,7 +39,7 @@ export function TeamDetailPageClient({
 
 	if (isLoadingTeam || !team) {
 		return (
-			<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="page-frame flex flex-1 flex-col gap-4">
 				<output
 					className="flex items-center justify-center p-8"
 					aria-label={t("common.loadingRegions.team", "Loading team")}
@@ -54,7 +54,7 @@ export function TeamDetailPageClient({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<TeamPageHeader
 				canManageSettings={canManageSettings}
 				onDelete={() => dispatch({ type: "setShowDeleteDialog", value: true })}

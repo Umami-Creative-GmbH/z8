@@ -47,7 +47,7 @@ function TravelExpenseFinancePageLoading() {
 				labelDefault: "Loading travel expenses",
 			}}
 			role="status"
-			className="@container/main flex flex-1 flex-col gap-4 px-4 py-4 md:py-6 lg:px-6"
+			className="@container/main flex flex-1 flex-col gap-4"
 		>
 			<Skeleton aria-hidden="true" className="h-8 w-64" />
 			<Skeleton aria-hidden="true" className="h-96 w-full" />
@@ -57,7 +57,7 @@ function TravelExpenseFinancePageLoading() {
 
 export default function TravelExpenseFinancePage(props: TravelExpenseFinancePageProps) {
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 px-4 py-5 lg:px-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<FinanceHeading />
 			<Suspense fallback={<TravelExpenseFinancePageLoading />}>
 				<TravelExpenseFinancePageContent {...props} />

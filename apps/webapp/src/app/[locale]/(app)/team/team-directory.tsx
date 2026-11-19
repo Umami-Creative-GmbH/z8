@@ -18,7 +18,7 @@ export async function TeamDirectory({
 	const title = t("team.title", "Your Team");
 	if (!currentEmployee) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={title} />
 				<NoEmployeeError feature={t("team.feature", "view your team")} />
 			</div>

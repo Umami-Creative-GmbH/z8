@@ -29,7 +29,7 @@ function ReviewArrival({
 	children: React.ReactNode;
 }) {
 	return (
-		<section className="mx-auto w-full max-w-2xl space-y-6">
+		<section className="page-measure space-y-6">
 			<PageHeader title={title} description={description} />
 			<div className="flex flex-wrap gap-2 [&_a]:h-auto [&_a]:min-h-9 [&_a]:whitespace-normal [&_a]:break-words [&_button]:h-auto [&_button]:min-h-9 [&_button]:whitespace-normal">
 				{children}
@@ -145,7 +145,7 @@ export function ApprovalReviewOutcome({
 	}
 
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 pt-0 md:p-6 md:pt-0">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			{content}
 		</div>
 	);
@@ -156,7 +156,7 @@ export function ApprovalReviewLoading() {
 	return (
 		<div
 			aria-busy="true"
-			className="flex min-w-0 flex-1 flex-col gap-6 p-4 pt-0 md:p-6 md:pt-0"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<ReviewArrival

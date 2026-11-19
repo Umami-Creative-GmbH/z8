@@ -19,7 +19,6 @@ export function DashboardHeading({
 	const locale = useLocale();
 	return (
 		<PageHeader
-			className="px-4 lg:px-6"
 			scope={
 				<time dateTime={date}>
 					{Temporal.PlainDate.from(date).toLocaleString(locale, {

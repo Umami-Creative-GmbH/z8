@@ -67,7 +67,7 @@ export function EmployeeBalanceWorkspace(props: Props) {
 		scope.activeOrganizationId !== props.organizationId
 	)
 		return (
-			<div className="@container/main mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<EmployeeBalanceLoadingHeading />
 				<p role="status">
 					{t("payroll.workBalances.scopeChanged", "Loading the current payroll scope…")}
@@ -120,7 +120,7 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 	};
 
 	return (
-		<div className="@container/main mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
 				title={
 					<span className="flex flex-wrap items-center gap-2">

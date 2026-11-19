@@ -83,7 +83,7 @@ async function StatisticsContent() {
 
 	if (!statsResult.success) {
 		return (
-			<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="page-frame flex flex-1 flex-col gap-6">
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold">
 						{t("settings.statistics.title", "Statistics")}
@@ -126,7 +126,7 @@ async function StatisticsContent() {
 		: null;
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="flex items-start justify-between gap-4">
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold">
@@ -317,7 +317,7 @@ async function StatisticsContent() {
 
 function StatisticsLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="space-y-2">
 				<Skeleton className="h-8 w-48" />
 				<Skeleton className="h-4 w-96" />

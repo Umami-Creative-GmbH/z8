@@ -22,7 +22,7 @@ async function TravelExpenseSettingsPageContent() {
 	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<div className="flex flex-col gap-2">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					{t("settings.travelExpenses.title", "Travel Expense Policies")}
@@ -76,7 +76,7 @@ async function TravelExpenseSettingsPageContent() {
 function TravelExpenseSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex flex-1 flex-col gap-4"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.travelExpenseSettings",

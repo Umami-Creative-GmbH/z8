@@ -34,7 +34,7 @@ export function TeamOverviewWidget({
 			<WidgetCard
 				title={t("dashboard.team-overview.title", "Organization")}
 				description=""
-				icon={<IconBuilding className="size-4" aria-hidden="true" />}
+				icon={<IconBuilding className="size-4 text-teal-500" aria-hidden="true" />}
 				loading={loading}
 				refreshing={refreshing}
 				onRefresh={refetch}

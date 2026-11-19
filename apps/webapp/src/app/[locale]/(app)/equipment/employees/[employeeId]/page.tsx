@@ -24,7 +24,7 @@ async function EquipmentEmployeeContent({
 	)
 		notFound();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{result.success ? (
 				<EmployeeEquipment
 					data={result.data}
@@ -32,7 +32,7 @@ async function EquipmentEmployeeContent({
 					variant="page"
 				/>
 			) : (
-				<div className="space-y-2 px-4 lg:px-6">
+				<div className="space-y-2">
 					<EquipmentEmployeeHeader />
 					<p role="alert" className="text-sm text-destructive">
 						{t(

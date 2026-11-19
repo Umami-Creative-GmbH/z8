@@ -292,11 +292,10 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 
 	return (
 		<div
-			className="@container/main mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			aria-busy={isRefreshing}
 		>
 			<PageHeader
-				className="px-4 lg:px-6"
 				title={t("myRequests:myRequests.title", "My Requests")}
 				description={t(
 					"myRequests:myRequests.subtitle",
@@ -309,14 +308,14 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			/>
 
 			{arrivedUnavailable ? (
-				<section className="px-4 lg:px-6">
+				<section>
 					<FocusedRequestUnavailable key={focusRequest} />
 				</section>
 			) : null}
 
 			<section
 				aria-label={t("myRequests:myRequests.summary.ariaLabel", "Request summary")}
-				className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:mx-6 lg:grid-cols-4"
+				className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:grid-cols-4"
 			>
 				<SummaryCard
 					label={t("myRequests:myRequests.summary.pending", "Pending")}
@@ -335,7 +334,7 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 					value={initialResult.counts.total}
 				/>
 			</section>
-			<p className="px-4 text-sm text-muted-foreground lg:px-6">
+			<p className="text-sm text-muted-foreground">
 				{t(
 					"myRequests:myRequests.summary.loadedScope",
 					"Counts cover loaded requests before filters. Recent decisions cover the last 30 days.",
@@ -343,7 +342,7 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			</p>
 
 			{initialResult.sourceErrors.length > 0 ? (
-				<section className="px-4 lg:px-6">
+				<section>
 					<Alert variant="destructive">
 						<AlertTitle>
 							{t("myRequests:myRequests.sourceError.title", "Some requests could not be loaded.")}
@@ -374,7 +373,7 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			<RequestFilters filters={filters} />
 
 			{initialResult.items.length === 0 ? (
-				<section className="px-4 lg:px-6">
+				<section>
 					<EmptyState
 						title={
 							initialResult.sourceErrors.length
@@ -395,7 +394,7 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 					/>
 				</section>
 			) : filteredItems.length === 0 ? (
-				<section className="px-4 lg:px-6">
+				<section>
 					<EmptyState
 						title={t(
 							"myRequests:myRequests.empty.filtered.title",
@@ -462,7 +461,7 @@ function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsF
 		setSearch,
 	} = filters;
 	return (
-		<section className="px-4 lg:px-6">
+		<section>
 			<div className="space-y-4 border-y py-5">
 				<div className="space-y-1">
 					<h2 className="font-semibold">
@@ -563,7 +562,7 @@ function RequestSection({
 	}
 
 	return (
-		<section aria-labelledby={titleId} className="px-4 lg:px-6">
+		<section aria-labelledby={titleId}>
 			<div className="mb-3 space-y-1">
 				<h2 id={titleId} className="text-lg font-semibold">
 					{title}

@@ -159,7 +159,7 @@ export function ComplianceExceptionsManager({
 	const exceptions = exceptionsResult || [];
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<div className="flex flex-col gap-2">
 				<h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
 					<IconShield className="size-6" aria-hidden="true" />

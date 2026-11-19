@@ -11,9 +11,9 @@ export function EquipmentPersonalLoading() {
 				labelKey: "settings.equipment.loading",
 				labelDefault: "Loading equipment",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 		>
-			<div className="mx-auto w-full max-w-6xl space-y-6 px-4 lg:px-6">
+			<div className="space-y-6">
 				<EquipmentPersonalHeader />
 				<Skeleton aria-hidden="true" className="h-96 w-full rounded-xl" />
 			</div>

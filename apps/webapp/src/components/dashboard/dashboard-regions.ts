@@ -3,9 +3,14 @@ import { DEFAULT_WIDGET_ORDER, type WidgetId } from "./widget-registry";
 export const DASHBOARD_REGIONS = {
 	summary: ["quick-stats", "team-overview"],
 	attention: ["manager-today", "pending-approvals", "whos-out-today"],
-	records: ["managed-employees", "upcoming-shifts", "covering-for"],
-	personal: ["vacation-balance", "upcoming-time-off", "recently-approved"],
-	utilities: ["presence-status", "birthday-reminders", "hydration"],
+	records: ["managed-employees", "upcoming-shifts", "covering-for", "birthday-reminders"],
+	personal: [
+		"presence-status",
+		"vacation-balance",
+		"upcoming-time-off",
+		"recently-approved",
+		"hydration",
+	],
 } satisfies Record<string, WidgetId[]>;
 
 /** An explicit global order continues to mean exactly that, including hidden slots. */

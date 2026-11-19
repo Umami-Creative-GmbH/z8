@@ -7,7 +7,7 @@ import { CalendarPageContent } from "../page";
 function CalendarPageLoading() {
 	return (
 		<div
-			className="flex flex-1 flex-col p-4"
+			className="flex flex-1 flex-col"
 			data-testid="calendar-page-loading"
 			role="status"
 			aria-busy="true"
@@ -32,12 +32,12 @@ type CalendarEmployeePageProps = {
 
 export default function CalendarEmployeePage(props: CalendarEmployeePageProps) {
 	return (
-		<>
+		<div className="page-frame-full flex min-h-0 flex-1 flex-col gap-4">
 			<CalendarPageHeader />
 			<Suspense fallback={<CalendarPageLoading />}>
 				<CalendarEmployeeContent {...props} />
 			</Suspense>
-		</>
+		</div>
 	);
 }
 

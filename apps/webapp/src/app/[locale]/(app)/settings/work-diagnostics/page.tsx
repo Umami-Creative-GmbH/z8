@@ -37,7 +37,7 @@ type WorkDiagnosticsPageProps = {
 
 export default function WorkDiagnosticsPage(props: WorkDiagnosticsPageProps) {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<Suspense fallback={<WorkDiagnosticsHeaderLoading />}>
 				<WorkDiagnosticsHeader />
 			</Suspense>

@@ -180,7 +180,7 @@ export function LocationDetail({
 
 	if (isLoading) {
 		return (
-			<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="page-frame flex flex-1 flex-col gap-4">
 				<Skeleton className="h-8 w-48" />
 				<div className="grid gap-4 lg:grid-cols-3">
 					<Skeleton className="h-64" />
@@ -209,7 +209,7 @@ export function LocationDetail({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<LocationDetailHeader
 				canManageLocations={canManageLocations}
 				isFetching={isFetching}

@@ -169,7 +169,7 @@ export function DeferredDashboardWidget({ id }: { id: DeferredWidgetId }) {
 			ref={region}
 			tabIndex={-1}
 			aria-label={title}
-			className="break-inside-avoid outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			className="break-inside-avoid outline-none empty:hidden focus-visible:ring-2 focus-visible:ring-ring"
 			data-dashboard-deferred-id={id}
 			data-state={active ? "active" : "deferred"}
 			onFocusCapture={activate}

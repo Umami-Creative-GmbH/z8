@@ -84,7 +84,7 @@ export function PersonnelFilesWorkspace({
 	const workflowsHeading = useId();
 	if (!snapshot.visible)
 		return (
-			<div className="@container/main flex min-w-0 flex-1 flex-col gap-8 p-4 md:p-6">
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-8">
 				<PersonnelFilesHeading />
 				{snapshot.pending ? (
 					<LoadingRegion
@@ -105,7 +105,7 @@ export function PersonnelFilesWorkspace({
 			</div>
 		);
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-8 p-4 md:p-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-8">
 			<PersonnelFilesHeading />
 			{attention}
 			<section aria-labelledby={directoryHeading} className="min-w-0 space-y-4">

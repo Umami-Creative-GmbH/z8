@@ -28,7 +28,7 @@ export function TodayPageLoading() {
 				labelKey: "common.loadingRegions.todaySManagerBriefing",
 				labelDefault: "Loading today's manager briefing",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
 			<header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">

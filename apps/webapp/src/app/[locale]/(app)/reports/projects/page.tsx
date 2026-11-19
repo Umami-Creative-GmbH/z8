@@ -52,12 +52,10 @@ function ProjectReportsPageLoading() {
 				labelKey: "common.loadingRegions.projectReports",
 				labelDefault: "Loading project reports",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-96 w-full" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-96 w-full" />
 		</LoadingRegion>
 	);
 }
@@ -65,9 +63,8 @@ function ProjectReportsPageLoading() {
 export default async function ProjectReportsPage() {
 	const t = await getTranslate();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
-				className="px-4 lg:px-6"
 				title={t("reports.projects.page.title", "Project Reports")}
 				description={t(
 					"reports.projects.page.description",

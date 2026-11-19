@@ -57,7 +57,7 @@ async function DrivingLicenceSettingsContent() {
 }
 export default function DrivingLicenceSettingsPage() {
 	return (
-		<Suspense fallback={<div className="p-6" aria-busy="true" />}>
+		<Suspense fallback={<div className="page-frame" aria-busy="true" />}>
 			<DrivingLicenceSettingsContent />
 		</Suspense>
 	);

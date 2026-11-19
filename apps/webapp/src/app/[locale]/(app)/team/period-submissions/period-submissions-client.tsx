@@ -21,7 +21,7 @@ import type {
 export function PeriodSubmissionsLoading() {
 	const { t } = useTranslate();
 	return (
-		<div className="space-y-4 p-4 md:p-6" aria-busy="true">
+		<div className="page-frame space-y-4" aria-busy="true">
 			<PageHeader title={t("team.periodSubmissions.title", "Period submissions")} />
 			<p role="status" className="text-sm text-muted-foreground">
 				{t("team.periodSubmissions.loading", "Loading period submissions")}
@@ -48,7 +48,7 @@ export function PeriodSubmissionsClient({
 		return <PeriodSubmissionsLoading />;
 	if (organization.error)
 		return (
-			<div className="space-y-4 p-4 md:p-6">
+			<div className="page-frame space-y-4">
 				<PeriodSubmissionsContextError retry={organization.refetch} />
 			</div>
 		);
@@ -113,7 +113,7 @@ function Workspace({
 	const admitted = result?.status === "ok";
 	return (
 		<div
-			className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6"
 			aria-busy={pending}
 		>
 			<PageHeader

@@ -66,7 +66,7 @@ export function TeamDirectoryRecords({
 		(context.role !== "manager" && context.role !== "admin")
 	) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("team.title", "Your Team")} />
 				<p role="status" className="text-sm text-muted-foreground">
 					{t(
@@ -83,7 +83,7 @@ export function TeamDirectoryRecords({
 	return (
 		<div
 			data-testid="team-content"
-			className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 lg:p-6"
+			className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6"
 		>
 			<PageHeader
 				title={t("team.title", "Your Team")}

@@ -36,7 +36,7 @@ async function ExportOperationsPageContent() {
 	const data = await getExportOperationsCockpit(organizationId);
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold">
 					{t("settings.exportOperations.title", "Export Operations")}
@@ -56,7 +56,7 @@ async function ExportOperationsPageContent() {
 function ExportOperationsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.exportOperations",

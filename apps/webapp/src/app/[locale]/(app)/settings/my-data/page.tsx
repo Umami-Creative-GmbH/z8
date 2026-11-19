@@ -11,8 +11,8 @@ async function MyDataPageContent() {
 	const state = overview.success ? overview.data : { status: "unavailable" as const };
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">{t("settings.myData.title", "My data")}</h1>
 					<p className="text-muted-foreground">
@@ -46,8 +46,8 @@ async function MyDataPageContent() {
 
 function MyDataPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-40" />
 					<Skeleton className="h-5 w-full max-w-xl" />

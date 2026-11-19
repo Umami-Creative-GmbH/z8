@@ -54,7 +54,7 @@ type Tab = "assignments" | "items";
 function SetupEmpty({ canAdminister }: { canAdminister: boolean }) {
 	const { t } = useTranslate();
 	return (
-		<div className="px-4 lg:px-6">
+		<div>
 			<Empty className="border bg-card md:p-16">
 				<EmptyHeader>
 					<EmptyMedia variant="icon">
@@ -179,7 +179,7 @@ function OverviewKpis({
 				"Returns and readiness in your scope",
 			)}
 			className={cn(
-				"mx-4 grid grid-cols-1 overflow-hidden rounded-xl border bg-card text-card-foreground [&>button+button]:border-t lg:mx-6 @sm/main:grid-cols-2 @sm/main:[&>button+button]:border-l",
+				"grid grid-cols-1 overflow-hidden rounded-xl border bg-card text-card-foreground [&>button+button]:border-t @sm/main:grid-cols-2 @sm/main:[&>button+button]:border-l",
 				showReady ? "@5xl/main:grid-cols-4" : "@5xl/main:grid-cols-3",
 			)}
 		>
@@ -354,7 +354,7 @@ export function EquipmentOverview({
 		<>
 			<EquipmentOverviewHeader calendar={data} actions={actions} />
 			{data.canManage && !canIssue ? (
-				<p className="px-4 text-sm text-muted-foreground lg:px-6">
+				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.equipment.custody.noItems",
 						"To issue equipment, configure retention and add a quantity type or available individual item in Equipment settings.",
@@ -372,7 +372,7 @@ export function EquipmentOverview({
 					setTab("items");
 				}}
 			/>
-			<div className="px-4 lg:px-6">
+			<div>
 				{showItems ? (
 					<Tabs
 						value={tab}

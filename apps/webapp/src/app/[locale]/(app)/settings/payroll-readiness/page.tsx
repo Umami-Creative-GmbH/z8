@@ -25,7 +25,7 @@ type PayrollReadinessPageProps = {
 
 function PayrollReadinessPageContent(props: PayrollReadinessPageProps) {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<Suspense fallback={<PayrollReadinessHeaderLoading />}>
 				<PayrollReadinessHeader />
 			</Suspense>
@@ -86,7 +86,7 @@ async function PayrollReadinessContent({
 function PayrollReadinessPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.payrollReadiness",

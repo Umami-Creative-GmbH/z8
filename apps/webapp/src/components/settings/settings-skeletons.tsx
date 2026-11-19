@@ -14,25 +14,28 @@ import {
 } from "@/components/ui/table";
 
 /**
- * Shared loading state for single-card settings pages.
+ * Shared loading state for single-card settings pages. It is the page's root
+ * and carries the page frame, unless `framed` is false because the caller
+ * already renders inside one.
  */
 export function SettingsPageSkeleton({
 	variant = "form",
 	label,
+	framed = true,
 }: {
 	variant?: "form" | "list";
 	label: string | LoadingTranslation;
+	framed?: boolean;
 }) {
 	const { t } = useTranslate();
 	const isForm = variant === "form";
 	const hidden = true;
+	const layout = isForm
+		? "flex flex-1 flex-col gap-6"
+		: "flex flex-1 flex-col gap-4";
 	return (
 		<div
-			className={
-				isForm
-					? "flex flex-1 flex-col gap-6 p-4 md:p-6"
-					: "flex flex-1 flex-col gap-4 p-4"
-			}
+			className={framed ? `page-frame ${layout}` : layout}
 			role="status"
 			aria-label={
 				typeof label === "string"
@@ -75,8 +78,8 @@ export function SettingsPageSkeleton({
 /** Loading skeleton for the settings index page with cards. */
 export function SettingsIndexSkeleton() {
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-4xl">
+		<div className="page-frame flex-1">
+			<div className="page-measure">
 				<Skeleton className="h-9 w-32 mb-2" />
 				<Skeleton className="h-5 w-96 mb-8" />
 
@@ -108,8 +111,8 @@ export function SettingsIndexSkeleton() {
  */
 export function ProfileSettingsSkeleton() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-2xl">
+		<div className="page-frame">
+			<div className="page-measure">
 				<div className="mb-6">
 					<Skeleton className="h-8 w-48 mb-2" />
 					<Skeleton className="h-4 w-96" />
@@ -179,7 +182,7 @@ export function ProfileSettingsSkeleton() {
  */
 export function VacationPolicySkeleton() {
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<div className="flex items-center justify-between">
 				<div>
 					<Skeleton className="h-8 w-48 mb-2" />
@@ -229,7 +232,7 @@ export function VacationPolicySkeleton() {
  */
 export function EmployeeAllowancesSkeleton() {
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<div className="flex items-center justify-between">
 				<div>
 					<Skeleton className="h-8 w-48 mb-2" />
@@ -332,8 +335,8 @@ export function EmployeeAllowancesSkeleton() {
  */
 export function HolidaysSkeleton() {
 	return (
-		<div className="flex-1 items-center justify-center p-6">
-			<div className="mx-auto max-w-4xl">
+		<div className="page-frame flex-1">
+			<div className="page-measure">
 				<div className="mb-6">
 					<Skeleton className="h-8 w-48 mb-2" />
 					<Skeleton className="h-4 w-96" />
@@ -378,7 +381,7 @@ export function HolidaysSkeleton() {
  */
 export function AdjustmentHistorySkeleton() {
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<div className="flex items-center justify-between">
 				<div>
 					<Skeleton className="h-8 w-48 mb-2" />

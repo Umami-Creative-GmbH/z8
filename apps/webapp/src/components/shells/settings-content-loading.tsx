@@ -11,7 +11,7 @@ export function SettingsContentLoading() {
 		<div
 			aria-busy="true"
 			aria-label={t("common:loading.settings", "Loading settings")}
-			className="space-y-6 p-4 sm:p-6"
+			className="page-frame space-y-6"
 			role="status"
 		>
 			<div className="space-y-2">

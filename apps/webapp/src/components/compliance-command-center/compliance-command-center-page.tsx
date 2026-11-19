@@ -16,7 +16,7 @@ export function CompliancePageLoading() {
 	const { t } = useTranslate();
 	return (
 		<LoadingRegion
-			className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			label={{
 				labelKey: "compliance.commandCenter.loading",
 				labelDefault: "Loading compliance signals",
@@ -59,7 +59,7 @@ export function ComplianceCommandCenterPage({
 	}, [refresh]);
 
 	return (
-		<div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("nav.compliance", "Compliance")}
 				scope={t("compliance.commandCenter.scope", "Active organization")}

@@ -127,13 +127,13 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 	]);
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="px-4 lg:px-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+			<div>
 				<h1 className="text-pretty text-2xl font-semibold">{title}</h1>
 				<p className="text-muted-foreground">{description}</p>
 			</div>
 
-			<div className="space-y-6 px-4 lg:px-6">
+			<div className="space-y-6">
 				{deputyCover && (
 					<p className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
 						<span>
@@ -172,14 +172,12 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 
 function TeamAbsencesPageLoading() {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="space-y-2 px-4 lg:px-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+			<div className="space-y-2">
 				<TeamAbsencesHeading />
 				<Skeleton className="h-5 w-full max-w-2xl" />
 			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton className="h-[520px] w-full" />
-			</div>
+			<Skeleton className="h-[520px] w-full" />
 		</div>
 	);
 }

@@ -7,7 +7,7 @@ import { useSession } from "@/lib/auth-client";
 export function DrivingLicencePageLoading() {
 	const { t } = useTranslate();
 	return (
-		<div aria-busy="true" className="space-y-4 p-6">
+		<div aria-busy="true" className="page-frame space-y-4">
 			<PageHeader title={t("drivingLicence.page.title", "Driving licence")} />
 			<p role="status" className="text-sm text-muted-foreground">
 				{t(

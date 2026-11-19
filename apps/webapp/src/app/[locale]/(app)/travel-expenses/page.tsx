@@ -19,7 +19,7 @@ async function TravelExpensesPageContent() {
 
 	if (!authContext?.employee) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("travelExpenses.title", "Travel Expenses")} />
 				<NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />
 			</div>
@@ -54,10 +54,10 @@ async function TravelExpensesPageLoading() {
 				labelKey: "common.loadingRegions.travelExpenses",
 				labelDefault: "Loading travel expenses",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<div className="space-y-4 px-4 lg:px-6">
+			<div className="space-y-4">
 				<PageHeader title={t("travelExpenses.title", "Travel Expenses")} />
 				<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />
 				<Skeleton aria-hidden="true" className="h-96 w-full" />

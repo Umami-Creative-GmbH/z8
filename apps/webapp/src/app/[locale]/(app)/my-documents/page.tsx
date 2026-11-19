@@ -38,7 +38,7 @@ async function MyDocumentsContent() {
 			organizationId={current.access.organizationId}
 			employeeId={uploadCapability.employeeId}
 		>
-			<div className="@container/main flex min-w-0 flex-1 flex-col gap-8 p-4 md:p-6">
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-8">
 				<PageHeader
 					title={t("settings.personnelFiles.myDocuments.title", "My Documents")}
 					description={t(
@@ -71,7 +71,7 @@ function MyDocumentsLoading() {
 				labelKey: "settings.personnelFiles.myDocuments.loading",
 				labelDefault: "Loading your documents",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
 			<Skeleton aria-hidden="true" className="h-8 w-48" />

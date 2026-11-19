@@ -59,7 +59,7 @@ async function PayslipBatchesContent({
 	};
 	return (
 		<PayslipBatchesScope {...expectedScope}>
-			<div className="@container/main mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 				<PageHeader
 					title={t(
 						"settings.personnelFiles.batch.pageTitle",
@@ -182,7 +182,7 @@ function PayslipBatchesLoading() {
 				labelKey: "settings.personnelFiles.batch.loading",
 				labelDefault: "Loading payslip batches",
 			}}
-			className="@container/main mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<PayslipBatchesHeading />

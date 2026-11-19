@@ -65,14 +65,14 @@ async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageP
 
 function PersonnelFileLoading() {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<EmployeeFileLoadingHeading />
 			<LoadingRegion
 				label={{
 					labelKey: "settings.personnelFiles.area.loadingFile",
 					labelDefault: "Loading the personnel file",
 				}}
-				className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+				className="flex flex-1 flex-col gap-6"
 				role="status"
 			>
 				<Skeleton aria-hidden="true" className="h-8 w-48" />

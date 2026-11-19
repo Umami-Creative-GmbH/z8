@@ -35,8 +35,8 @@ export function ProjectSettingsTabs(panels: Record<ProjectSettingsTab, ReactNode
 	};
 
 	return (
-		<Tabs value={active} onValueChange={select} className="flex flex-1 flex-col gap-0">
-			<div className="max-w-full overflow-x-auto px-4 pt-4">
+		<Tabs value={active} onValueChange={select} className="page-frame flex flex-1 flex-col gap-4">
+			<div className="max-w-full overflow-x-auto">
 				<TabsList>
 					{TABS.map((tab) => (
 						<TabsTrigger key={tab} value={tab}>

@@ -79,8 +79,8 @@ async function ImportReviewRouteContent({
 			paging.page * IMPORT_REVIEW_PAGE_SIZE,
 		);
 		return (
-			<div className="p-6">
-				<div className="mx-auto max-w-6xl">
+			<div className="page-frame">
+				<div>
 					<CsvWorkReview
 						batchId={batch.id}
 						view={{ ...view, rows }}
@@ -135,8 +135,8 @@ async function ImportReviewRouteContent({
 		: undefined;
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-6xl">
+		<div className="page-frame">
+			<div>
 				{!isCustomerImport ? (
 					<HistoricalVacationImportReview batchId={batch.id} />
 				) : null}
@@ -159,14 +159,14 @@ async function ImportReviewRouteContent({
 function ImportReviewRouteLoading() {
 	return (
 		<LoadingRegion
-			className="p-6"
+			className="page-frame"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.importReview",
 				labelDefault: "Loading import review",
 			}}
 		>
-			<div className="mx-auto max-w-6xl space-y-6">
+			<div className="space-y-6">
 				<div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
 					{IMPORT_REVIEW_SUMMARY_LOADING_KEYS.map((key) => (
 						<Skeleton key={key} aria-hidden="true" className="h-24 w-full" />

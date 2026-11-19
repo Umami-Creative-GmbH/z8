@@ -48,7 +48,7 @@ export function DeveloperAccessClient(props: DeveloperAccessProps) {
 	return (
 		<>
 			{!ready ? (
-				<div className="space-y-6 p-4 md:p-6">
+				<div className="page-frame space-y-6">
 					<PageHeader title={title} />
 					{context.error ? (
 						<Alert>

@@ -52,7 +52,7 @@ export function TravelExpenseManagement({
 	}, []);
 	if (!matches)
 		return (
-			<div className="space-y-4 p-4 lg:p-6">
+			<div className="page-frame space-y-4">
 				<PageHeader title={t("travelExpenses.title", "Travel Expenses")} />
 				<p role="status">
 					{t(
@@ -87,9 +87,8 @@ function TravelExpenseWorkspace({
 	const { t } = useTranslate();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
-				className="px-4 lg:px-6"
 				title={t("travelExpenses.title", "Travel Expenses")}
 				description={t(
 					"travelExpenses.workspace.description",
@@ -98,14 +97,14 @@ function TravelExpenseWorkspace({
 			/>
 			<section
 				aria-label={t("travelExpenses.workspace.create", "Create an expense report")}
-				className="grid gap-3 px-4 sm:grid-cols-3 lg:px-6"
+				className="grid gap-3 sm:grid-cols-3"
 			>
 				<NewReceiptExpenseButton />
 				<NewMileageExpenseButton />
 				<NewTripReportButton />
 			</section>
 
-			<div className="px-4 lg:px-6">
+			<div>
 				<ExpenseHistory
 					organizationId={organizationId}
 					employeeId={employeeId}
@@ -116,7 +115,7 @@ function TravelExpenseWorkspace({
 			{banners && (
 				<aside
 					aria-label={t("travelExpenses.workspace.otherWork", "Review and finance")}
-					className="grid gap-3 px-4 lg:grid-cols-2 lg:px-6"
+					className="grid gap-3 lg:grid-cols-2"
 				>
 					{banners}
 				</aside>

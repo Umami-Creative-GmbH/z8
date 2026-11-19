@@ -687,7 +687,7 @@ function CalendarViewContent({
 		initialTimezone,
 	});
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden min-h-0">
+		<div className="flex flex-1 flex-col gap-4 overflow-hidden min-h-0">
 			{/* Error message */}
 			{error && (
 				<div

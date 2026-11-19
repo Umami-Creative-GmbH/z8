@@ -30,14 +30,14 @@ async function AssignmentContent({ params, searchParams }: Props) {
 	)
 		notFound();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{result.success ? (
 				<EquipmentAssignmentDetail
 					data={result.data}
 					back={equipmentReturnPath(query.back)}
 				/>
 			) : (
-				<div className="space-y-2 px-4 lg:px-6">
+				<div className="space-y-2">
 					<PageHeader title={t("settings.equipment.title", "Equipment")} />
 					<p role="alert" className="text-sm text-destructive">
 						{t(

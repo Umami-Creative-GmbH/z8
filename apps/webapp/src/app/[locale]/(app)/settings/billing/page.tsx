@@ -94,12 +94,10 @@ async function BillingSettingsContent() {
 
 function BillingSettingsLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-5 w-80" />
-				<Skeleton className="h-[420px] w-full" />
-			</div>
+		<div className="page-frame flex flex-1 flex-col gap-6">
+			<Skeleton className="h-8 w-56" />
+			<Skeleton className="h-5 w-80" />
+			<Skeleton className="h-[420px] w-full" />
 		</div>
 	);
 }

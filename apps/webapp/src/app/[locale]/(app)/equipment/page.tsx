@@ -28,7 +28,7 @@ async function EquipmentContent({
 	]);
 	if (!result.success && result.code === "AuthorizationError") notFound();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{result.success ? (
 				<EquipmentOverview
 					data={result.data}
@@ -37,7 +37,7 @@ async function EquipmentContent({
 			) : (
 				<>
 					<EquipmentOverviewHeader />
-					<div className="mx-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5 lg:mx-6">
+					<div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5">
 						<p role="alert" className="text-sm text-destructive">
 							{t(
 								"settings.equipment.overview.failed",

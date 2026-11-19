@@ -30,7 +30,7 @@ async function EquipmentSettingsContent() {
 		getEquipmentOfficerGrants(),
 	]);
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div className="min-w-0 space-y-1">
 					<h1 className="text-2xl font-semibold">
@@ -114,7 +114,7 @@ function SkeletonCard({ rows }: { rows: number }) {
 function EquipmentSettingsLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "settings.equipment.loading",

@@ -811,7 +811,7 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 	});
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<PayrollHeader organizationName={summary.organizationName} t={t} />
 			<PayrollPeriodCard
 				dateMode={dateMode}

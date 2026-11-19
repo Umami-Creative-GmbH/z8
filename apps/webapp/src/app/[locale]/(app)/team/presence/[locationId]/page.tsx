@@ -40,7 +40,7 @@ async function LocationPresencePageContent({ params }: LocationPresencePageProps
 		<LocationPresenceView
 			view={{ userId: result.viewer.userId, organizationId: result.viewer.organizationId }}
 		>
-			<div className="@container/main mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 				<PageHeader
 					scope={<AllLocationsLink />}
 					title={t("team.presence.locationTitle", "Who is in: {location}", {

@@ -647,7 +647,7 @@ function VacationTrends() {
 	const employees = vacationData?.byEmployee ?? [];
 
 	return (
-		<div className="space-y-6 px-4 lg:px-6">
+		<div className="space-y-6">
 			{/* Controls */}
 			<VacationToolbar
 				dateRange={dateRange}

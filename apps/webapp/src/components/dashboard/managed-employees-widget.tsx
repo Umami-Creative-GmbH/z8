@@ -105,21 +105,27 @@ function EmployeeRow({ employee }: { employee: ManagedEmployeeCard }) {
 function EmptyState() {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-col items-center justify-center py-8 text-center">
-			<div className="relative">
-				<div className="rounded-lg bg-muted p-2">
-					<IconUsersGroup className="size-5 text-muted-foreground" />
-				</div>
+		<div role="status" className="flex items-start gap-3">
+			<div className="shrink-0 rounded-lg bg-muted p-2">
+				<IconUsersGroup
+					className="size-5 text-muted-foreground"
+					aria-hidden="true"
+				/>
 			</div>
-			<p className="mt-4 text-sm font-medium">
-				{t("dashboard.managed-employees.no-reports", "No direct reports yet")}
-			</p>
-			<p className="mt-1 text-sm text-muted-foreground">
-				{t(
-					"dashboard.managed-employees.no-reports-description",
-					"You'll see your team members here once assigned",
-				)}
-			</p>
+			<div className="min-w-0">
+				<p className="text-sm font-medium">
+					{t(
+						"dashboard.managed-employees.no-reports",
+						"No direct reports yet",
+					)}
+				</p>
+				<p className="mt-1 text-sm text-muted-foreground">
+					{t(
+						"dashboard.managed-employees.no-reports-description",
+						"You'll see your team members here once assigned",
+					)}
+				</p>
+			</div>
 		</div>
 	);
 }

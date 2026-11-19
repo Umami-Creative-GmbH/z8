@@ -86,7 +86,7 @@ export function EmployeesPageClient(props: EmployeeAdministrationProps) {
 		organization.role === (props.currentEmployee?.role ?? null);
 	if (!current) {
 		return (
-			<div className="flex min-w-0 flex-col gap-6 p-4 lg:p-6">
+			<div className="page-frame flex min-w-0 flex-col gap-6">
 				<PageHeader title={t("settings.employees.title", "Employees")} />
 				{organization.isLoading ? (
 					<p role="status">{t("common.loading", "Loading...")}</p>
@@ -153,7 +153,7 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 	return (
 		<div
 			data-testid="employees-content"
-			className="mx-auto flex w-full min-w-0 max-w-(--breakpoint-2xl) flex-1 flex-col gap-6 p-4 lg:p-6"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
 		>
 			<PageHeader
 				title={t("settings.employees.title", "Employees")}

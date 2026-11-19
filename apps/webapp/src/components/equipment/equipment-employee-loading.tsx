@@ -13,17 +13,11 @@ export function EquipmentEmployeeLoading() {
 				labelDefault: "Loading equipment",
 			}}
 			role="status"
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 		>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-8 w-40" />
-			</div>
-			<div className="px-4 lg:px-6">
-				<EquipmentEmployeeHeader />
-			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-96 w-full rounded-xl" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-8 w-40" />
+			<EquipmentEmployeeHeader />
+			<Skeleton aria-hidden="true" className="h-96 w-full rounded-xl" />
 		</LoadingRegion>
 	);
 }

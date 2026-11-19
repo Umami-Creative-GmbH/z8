@@ -6,7 +6,6 @@ import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
-import { Link } from "@/navigation";
 import type {
 	DashboardWidgetData,
 	DashboardWidgetSnapshot,
@@ -41,7 +40,7 @@ function PeriodSummary({
 		[locale],
 	);
 	return (
-		<div className="min-w-0 space-y-3 p-5">
+		<div className="min-w-0 space-y-2 px-5 py-4 first:pt-0 last:pb-0 @xl/main:py-0">
 			<p className="text-sm text-muted-foreground">{title}</p>
 			<p className="text-2xl font-semibold tabular-nums">
 				{number.format(actual)}{" "}
@@ -98,7 +97,7 @@ export function QuickStatsWidget({
 					"dashboard.quick-stats.description",
 					"Your weekly and monthly progress",
 				)}
-				icon={<IconClock className="size-4" aria-hidden="true" />}
+				icon={<IconClock className="size-4 text-blue-500" aria-hidden="true" />}
 				loading={loading}
 				refreshing={refreshing}
 				onRefresh={refetch}
@@ -114,7 +113,7 @@ export function QuickStatsWidget({
 						refreshing={refreshing}
 					/>
 				) : stats ? (
-					<div className="-mx-5 grid divide-y min-[380px]:grid-cols-2 sm:grid-cols-3 min-[380px]:divide-x min-[380px]:[&>div:last-child]:col-span-2 sm:[&>div:last-child]:col-span-1 sm:divide-y-0">
+					<div className="-mx-5 grid divide-y @xl/main:grid-cols-3 @xl/main:divide-x @xl/main:divide-y-0">
 						<PeriodSummary
 							title={t("dashboard.quick-stats.this-week", "This Week")}
 							{...stats.thisWeek}
@@ -138,7 +137,7 @@ function BalanceSummary({
 }) {
 	const { t } = useTranslate();
 	return (
-		<div className="min-w-0 space-y-3 p-5">
+		<div className="min-w-0 space-y-2 px-5 py-4 first:pt-0 last:pb-0 @xl/main:py-0">
 			<p className="text-sm text-muted-foreground">
 				{t("workBalance.label", "All-time balance")}
 			</p>
@@ -162,12 +161,6 @@ function BalanceSummary({
 								"The worker will calculate this balance soon.",
 							)}
 			</p>
-			<Link
-				className="inline-flex min-h-9 items-center text-sm font-medium text-primary underline-offset-4 hover:underline dark:text-foreground dark:underline"
-				href="/time-tracking"
-			>
-				{t("dashboard.refresh.openTimeTracking", "Go to time tracking")}
-			</Link>
 		</div>
 	);
 }

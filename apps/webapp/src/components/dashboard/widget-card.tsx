@@ -1,5 +1,6 @@
 import { IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { createContext, use } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -9,6 +10,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+/**
+ * "strip" renders a widget as one segment of a shared summary surface. The segment
+ * keeps its icon, title and refresh control but drops the visible description so
+ * the summary values sit closer to the top of the page.
+ */
+export const WidgetCardVariantContext = createContext<"card" | "strip">("card");
 
 interface WidgetCardProps {
 	title: string;
@@ -32,6 +40,17 @@ export function WidgetCard({
 	action,
 }: WidgetCardProps) {
 	const { t } = useTranslate();
+	const strip = use(WidgetCardVariantContext) === "strip";
+	const heading = (
+		<CardTitle>
+			<h2 className="flex items-center gap-2 text-base font-semibold">
+				<span className="shrink-0" aria-hidden="true">
+					{icon}
+				</span>
+				{title}
+			</h2>
+		</CardTitle>
+	);
 	const RefreshButton = onRefresh ? (
 		<Button
 			variant="ghost"
@@ -49,47 +68,42 @@ export function WidgetCard({
 			/>
 		</Button>
 	) : null;
-
-	if (loading) {
-		return (
-			<Card className="gap-4 py-5 shadow-none">
-				<CardHeader className="px-5">
-					<CardTitle className="flex items-center gap-2">
-						{icon}
-						{title}
-					</CardTitle>
-					<CardDescription>{description}</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-8 animate-spin motion-reduce:animate-none text-muted-foreground" />
-					</div>
-				</CardContent>
-			</Card>
-		);
-	}
+	const descriptionNode = description ? (
+		<CardDescription className={strip ? "sr-only" : "mt-1 text-sm"}>
+			{description}
+		</CardDescription>
+	) : null;
 
 	return (
-		<Card className="gap-4 py-5 shadow-none">
+		<Card
+			className={cn(
+				"py-5 shadow-none",
+				strip ? "h-full gap-3" : "gap-4",
+			)}
+		>
 			<CardHeader className="px-5">
 				<div className="flex flex-wrap items-start justify-between gap-2">
 					<div className="min-w-0 flex-1">
-						<CardTitle>
-							<h2 className="text-base font-semibold">{title}</h2>
-						</CardTitle>
-						{description ? (
-							<CardDescription className="mt-1 text-sm">
-								{description}
-							</CardDescription>
-						) : null}
+						{heading}
+						{descriptionNode}
 					</div>
-					<div className="flex items-center gap-2">
-						{RefreshButton}
-						{action}
-					</div>
+					{loading ? null : (
+						<div className="-my-1.5 flex items-center gap-2">
+							{RefreshButton}
+							{action}
+						</div>
+					)}
 				</div>
 			</CardHeader>
-			<CardContent className="px-5">{children}</CardContent>
+			<CardContent className="px-5">
+				{loading ? (
+					<div className="flex items-center justify-center py-8">
+						<IconLoader2 className="size-8 animate-spin motion-reduce:animate-none text-muted-foreground" />
+					</div>
+				) : (
+					children
+				)}
+			</CardContent>
 		</Card>
 	);
 }

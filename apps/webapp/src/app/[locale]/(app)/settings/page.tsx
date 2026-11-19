@@ -60,8 +60,8 @@ async function SettingsPageContent() {
 	});
 
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-4xl">
+		<div className="page-frame flex-1">
+			<div className="page-measure">
 				<SettingsGrid
 					visibleSettings={visibleSettings}
 					visibleGroups={visibleGroups}

@@ -204,7 +204,7 @@ export function PersonalEquipment({ data }: { data: EquipmentView }) {
 	const locale = useLocale();
 	const groups = groupPersonalAssignments(data.assignments, locale);
 	return (
-		<div className="mx-auto w-full max-w-6xl space-y-6 px-4 lg:px-6">
+		<div className="space-y-6">
 			<EquipmentPersonalHeader calendar={data} />
 			<div className="flex flex-col gap-6">
 				{data.assignments.length ? (

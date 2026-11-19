@@ -57,7 +57,7 @@ export async function CalendarPageContent({
 
 function CalendarPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col p-4">
+		<div className="flex flex-1 flex-col">
 			<div className="space-y-4">
 				<Skeleton className="h-8 w-52" />
 				<Skeleton className="h-5 w-80" />
@@ -69,11 +69,11 @@ function CalendarPageLoading() {
 
 export default function CalendarPage() {
 	return (
-		<>
+		<div className="page-frame-full flex min-h-0 flex-1 flex-col gap-4">
 			<CalendarPageHeader />
 			<Suspense fallback={<CalendarPageLoading />}>
 				<CalendarPageContent />
 			</Suspense>
-		</>
+		</div>
 	);
 }

@@ -10,7 +10,7 @@ export default function EmployeesError({ reset }: { reset: () => void }) {
 	const { t } = useTranslate();
 	const ownsHeading = normalizeAppPath(usePathname()) === "/settings/employees";
 	return (
-		<div className="space-y-6 p-4 lg:p-6">
+		<div className="page-frame space-y-6">
 			{ownsHeading ? <PageHeader title={t("settings.employees.title", "Employees")} /> : null}
 			<div role="alert" className="space-y-3 rounded-lg border p-4">
 				<p>

@@ -9,7 +9,7 @@ async function EmailTemplatesSettingsPageContent() {
 }
 function EmailTemplatesSettingsPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<Skeleton className="h-8 w-56" />
 			<Skeleton className="h-64 w-full" />
 		</div>

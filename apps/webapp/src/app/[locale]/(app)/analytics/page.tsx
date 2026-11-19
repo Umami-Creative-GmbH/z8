@@ -320,7 +320,7 @@ function AnalyticsOverview() {
 
 	return (
 		<div
-			className="min-w-0 space-y-6 px-4 lg:px-6"
+			className="min-w-0 space-y-6"
 			aria-busy={loading || refreshing}
 		>
 			<AnalyticsControls

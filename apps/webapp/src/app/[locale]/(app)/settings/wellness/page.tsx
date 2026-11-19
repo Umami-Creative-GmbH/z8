@@ -27,8 +27,8 @@ async function WellnessPageContent() {
 			};
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-2xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
 						{t("settings.wellness.title", "Wellness Settings")}
@@ -50,14 +50,14 @@ async function WellnessPageContent() {
 function WellnessPageLoading() {
 	return (
 		<LoadingRegion
-			className="p-6"
+			className="page-frame"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.wellnessSettings",
 				labelDefault: "Loading wellness settings",
 			}}
 		>
-			<div className="mx-auto max-w-2xl space-y-6">
+			<div className="page-measure space-y-6">
 				<div className="space-y-2">
 					<Skeleton aria-hidden="true" className="h-8 w-56" />
 					<Skeleton aria-hidden="true" className="h-4 w-full max-w-lg" />

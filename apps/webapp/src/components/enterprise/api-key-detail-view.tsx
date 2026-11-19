@@ -80,8 +80,8 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 	];
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-4xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Button variant="ghost" size="sm" asChild className="-ml-2">
 						<Link href="/settings/enterprise/api-keys">

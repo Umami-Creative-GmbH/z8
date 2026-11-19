@@ -13,7 +13,7 @@ async function VehicleDistanceReportPageContent() {
 
 	if (!employee) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("reports.vehicles.title", "Distance per Vehicle")} />
 				<NoEmployeeError
 					feature={t("reports.vehicles.page.feature", "view the distance per vehicle report")}
@@ -23,16 +23,14 @@ async function VehicleDistanceReportPageContent() {
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="px-4 lg:px-6">
-				<PageHeader
-					title={t("reports.vehicles.title", "Distance per Vehicle")}
-					description={t(
-						"reports.vehicles.page.description",
-						"Kilometres driven for work per vehicle and employee, by month",
-					)}
-				/>
-			</div>
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("reports.vehicles.title", "Distance per Vehicle")}
+				description={t(
+					"reports.vehicles.page.description",
+					"Kilometres driven for work per vehicle and employee, by month",
+				)}
+			/>
 
 			<VehicleDistanceReportContainer />
 		</div>
@@ -47,16 +45,14 @@ async function VehicleDistanceReportPageLoading() {
 				labelKey: "common.loadingRegions.vehicleDistanceReport",
 				labelDefault: "Loading the distance per vehicle report",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<div className="space-y-3 px-4 lg:px-6">
+			<div className="space-y-3">
 				<PageHeader title={t("reports.vehicles.title", "Distance per Vehicle")} />
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-96 w-full" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-96 w-full" />
 		</LoadingRegion>
 	);
 }

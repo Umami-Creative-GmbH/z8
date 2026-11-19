@@ -16,6 +16,7 @@ import {
 	getTimeFormatDateTimeOptions,
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
+import { cn } from "@/lib/utils";
 import { workLocationIcons } from "./work-location-indicator";
 
 export function ActiveSessionSummary({
@@ -90,14 +91,13 @@ export function WorkLocationSelector({
 	value,
 	onChange,
 	t,
+	layout = "responsive",
 }: {
 	value: WorkLocationType | null;
 	onChange: (value: WorkLocationType) => void;
 	t: TFnType;
+	layout?: "responsive" | "two-column";
 }) {
-	// Every option always names itself. Two columns below 22rem keep German labels ("Homeoffice")
-	// whole; from 22rem the four sit in a row with the label under the icon. Options are 44 px
-	// tall on touch screens (#846).
 	return (
 		<ToggleGroup
 			type="single"
@@ -109,7 +109,10 @@ export function WorkLocationSelector({
 					onChange(nextValue as WorkLocationType);
 				}
 			}}
-			className="grid w-full grid-cols-2 items-stretch gap-1.5 data-[variant=outline]:shadow-none @[22rem]/widget:grid-cols-4"
+			className={cn(
+				"grid w-full grid-cols-2 items-stretch gap-1.5 data-[variant=outline]:shadow-none",
+				layout === "responsive" && "@[22rem]/widget:grid-cols-4",
+			)}
 		>
 			<WorkLocationOption
 				value="office"
@@ -145,7 +148,7 @@ function WorkLocationOption({
 			className="h-auto min-h-9 rounded-md px-2 py-1.5 shadow-xs data-[variant=outline]:border-l pointer-coarse:min-h-11 @[22rem]/widget:gap-2 data-pressed:border-primary data-pressed:bg-primary/10 data-pressed:text-primary data-pressed:hover:bg-primary/15 data-pressed:hover:text-primary"
 		>
 			<Icon aria-hidden="true" className="size-4" />
-			<span className="min-w-0 break-words text-sm">{label}</span>
+			<span className="min-w-0 whitespace-normal break-words text-sm">{label}</span>
 		</ToggleGroupItem>
 	);
 }

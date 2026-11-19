@@ -35,8 +35,8 @@ async function WorksCouncilSettingsPageContent() {
 	const [settings, t] = await Promise.all([settingsPromise, getTranslate()]);
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
 						{t("settings.worksCouncil.title", "Works Council Mode")}
@@ -60,8 +60,8 @@ async function WorksCouncilSettingsPageContent() {
 
 function WorksCouncilSettingsPageLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />

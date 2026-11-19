@@ -8,6 +8,44 @@
 @custom-variant motion-safe (@media (prefers-reduced-motion: no-preference));
 @custom-variant motion-reduce (@media (prefers-reduced-motion: reduce));
 
+/*
+ * App page frame. Every (app) route uses one frame so the page title, gutters and
+ * top offset stay put when people navigate. See docs/refs/ux-language.md.
+ * - page-frame: centered, bounded at 120rem (1920px). The default for every page.
+ * - page-frame-full: same gutters, no bound. Only for planning canvases that need the room.
+ * - page-measure: readable width for forms and settings, left-aligned inside the frame.
+ */
+@utility page-frame {
+	width: 100%;
+	max-width: 120rem;
+	margin-inline: auto;
+	padding-inline: --spacing(4);
+	padding-block: --spacing(4);
+	@variant md {
+		padding-block: --spacing(6);
+	}
+	@variant lg {
+		padding-inline: --spacing(6);
+	}
+}
+
+@utility page-frame-full {
+	width: 100%;
+	padding-inline: --spacing(4);
+	padding-block: --spacing(4);
+	@variant md {
+		padding-block: --spacing(6);
+	}
+	@variant lg {
+		padding-inline: --spacing(6);
+	}
+}
+
+@utility page-measure {
+	width: 100%;
+	max-width: 56rem;
+}
+
 @theme inline {
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);

@@ -14,8 +14,8 @@ async function PositionStampsPageContent() {
 	]);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
 						{t("settings.positionStamps.title", "Position stamps")}
@@ -47,8 +47,8 @@ async function PositionStampsPageContent() {
 
 function PositionStampsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />

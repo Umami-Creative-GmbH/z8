@@ -13,7 +13,7 @@ async function TodayPageContent() {
 
 	if (!currentEmployee) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
 				<NoEmployeeError feature="view today's briefing" />
 			</div>
@@ -26,7 +26,7 @@ async function TodayPageContent() {
 
 	if (!currentEmployee.organizationId) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
 				<NoEmployeeError feature="view today's briefing" />
 			</div>

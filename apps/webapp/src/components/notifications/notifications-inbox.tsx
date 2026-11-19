@@ -262,7 +262,7 @@ function ScopedNotificationsInbox({
 		run,
 	} = model;
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6">
+		<div className="space-y-6">
 			<PageHeader
 				title={t("common:notifications.title", "Notifications")}
 				description={

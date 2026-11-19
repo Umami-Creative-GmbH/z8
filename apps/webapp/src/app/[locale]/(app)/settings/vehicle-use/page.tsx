@@ -10,8 +10,8 @@ async function VehicleUseSettingsPageContent() {
 
 function VehicleUseSettingsPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="min-w-0 space-y-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
+			<div className="page-measure min-w-0 space-y-4">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />

@@ -40,8 +40,8 @@ async function CalendarSettingsPageContent() {
 			};
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
 						{t("settings.calendar.title", "Calendar Sync")}
@@ -70,8 +70,8 @@ async function CalendarSettingsPageContent() {
 
 function CalendarSettingsPageLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-48" />
 					<Skeleton className="h-5 w-full max-w-xl" />

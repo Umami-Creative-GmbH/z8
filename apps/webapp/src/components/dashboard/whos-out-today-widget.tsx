@@ -185,7 +185,18 @@ export function WhosOutTodayWidget({
 					dataWithPresence && (
 						<div className="space-y-4">
 							{isEmpty ? (
-								<EmptyState />
+								<div className="flex flex-wrap items-center justify-between gap-2">
+										<EmptyState />
+										<Button variant="ghost" size="sm" asChild>
+											<Link href="/calendar">
+												<IconCalendar className="size-4" aria-hidden="true" />
+												{t(
+													"dashboard.whos-out.view-calendar",
+													"View Full Calendar",
+												)}
+											</Link>
+										</Button>
+									</div>
 							) : (
 								<>
 									{/* Currently Out */}
@@ -255,17 +266,14 @@ export function WhosOutTodayWidget({
 								</>
 							)}
 
-							<Button
-								className="w-full group"
-								variant="outline"
-								size="sm"
-								asChild
-							>
-								<Link href="/calendar">
-									<IconCalendar className="mr-2 size-4 transition-transform group-hover:scale-110" />
-									{t("dashboard.whos-out.view-calendar", "View Full Calendar")}
-								</Link>
-							</Button>
+							{isEmpty ? null : (
+								<Button className="w-full group" variant="outline" size="sm" asChild>
+									<Link href="/calendar">
+										<IconCalendar className="mr-2 size-4 transition-transform group-hover:scale-110" />
+										{t("dashboard.whos-out.view-calendar", "View Full Calendar")}
+									</Link>
+								</Button>
+							)}
 						</div>
 					)
 				)}

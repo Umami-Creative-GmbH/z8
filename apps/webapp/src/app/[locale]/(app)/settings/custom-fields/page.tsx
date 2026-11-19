@@ -24,8 +24,8 @@ async function CustomFieldsSettingsPageContent() {
 	const fields = await listCustomFieldDefinitions(db, organizationId, entities);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">
 						{t("settings.customFields.title", "Custom fields")}
@@ -45,8 +45,8 @@ async function CustomFieldsSettingsPageContent() {
 
 function CustomFieldsSettingsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />

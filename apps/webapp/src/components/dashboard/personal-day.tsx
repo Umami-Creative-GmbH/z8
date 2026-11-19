@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowRight } from "@tabler/icons-react";
+import { IconArrowRight, IconClock } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSyncExternalStore } from "react";
 import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
@@ -17,7 +17,10 @@ import {
 	formatDuration,
 	formatDurationWithSeconds,
 } from "@/lib/time-tracking/time-utils";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+
+type Clock = ReturnType<typeof useTimeClock>;
 
 const subscribeToHydration = () => () => {};
 const getHydratedSnapshot = () => true;
@@ -38,7 +41,7 @@ function DayTotal({ timeKpis }: { timeKpis: TimeKpiRead }) {
 		? summarizeTimeKpis(timeKpis.basis, now).today
 		: timeKpis.kpis.today;
 	return (
-		<div className="space-y-1">
+		<div className="min-w-0 space-y-1">
 			<p className="text-3xl font-semibold tabular-nums">
 				{formatDuration(today.workedMinutes)}
 			</p>
@@ -65,29 +68,43 @@ export function PersonalDay({
 	const matchesClock = useTimeSummaryClockSync(timeKpis);
 	if (hydrated && !clock.isPending && !clock.isError && !clock.hasEmployee)
 		return null;
+	// The header can resolve the shared query before this streamed slot hydrates.
+	const clockReady = hydrated && !clock.isPending && !clock.isError;
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					<h2 className="text-base font-semibold">
-						{t("dashboard.refresh.personalDay", "Your working day")}
-					</h2>
-				</CardTitle>
+		<Card className="gap-4 py-5 shadow-none">
+			<CardHeader className="px-5">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<CardTitle>
+						<h2 className="flex items-center gap-2 text-base font-semibold">
+							<IconClock
+								className="size-4 shrink-0 text-blue-500"
+								aria-hidden="true"
+							/>
+							{t("dashboard.refresh.personalDay", "Your working day")}
+						</h2>
+					</CardTitle>
+					{clockReady ? <ClockStatus clock={clock} /> : null}
+				</div>
 			</CardHeader>
-			<CardContent className="space-y-4">
-				{timeKpis && (!hydrated || matchesClock) ? (
-					<DayTotal timeKpis={timeKpis} />
-				) : (
-					<p role="status" className="text-sm text-muted-foreground">
-						{timeKpis === null
-							? t(
-									"dashboard.refresh.dayUnavailable",
-									"Today's total is unavailable. Refresh to try again.",
-								)
-							: t("common.loading", "Loading…")}
-					</p>
-				)}
-				<PersonalClockState clock={clock} />
+			<CardContent className="space-y-4 px-5">
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-4">
+					{timeKpis && (!hydrated || matchesClock) ? (
+						<DayTotal timeKpis={timeKpis} />
+					) : (
+						<p role="status" className="text-sm text-muted-foreground">
+							{timeKpis === null
+								? t(
+										"dashboard.refresh.dayUnavailable",
+										"Today's total is unavailable. Refresh to try again.",
+									)
+								: t("common.loading", "Loading…")}
+						</p>
+					)}
+					{clockReady && clock.isClockedIn ? (
+						<SessionElapsed clock={clock} />
+					) : null}
+				</div>
+				<ClockFeedback clock={clock} hydrated={hydrated} />
 				{hydrated && clock.isOffline ? (
 					<p className="text-sm text-muted-foreground">
 						{t("common.offline", "Offline")}
@@ -104,64 +121,84 @@ export function PersonalDay({
 	);
 }
 
-function PersonalClockState({
-	clock,
-}: {
-	clock: ReturnType<typeof useTimeClock>;
-}) {
+function ClockStatus({ clock }: { clock: Clock }) {
 	const { t } = useTranslate();
-	// The header can resolve the shared query before this streamed slot hydrates.
-	const hydrated = useHasHydrated();
+	const onBreak = Boolean(clock.activeWorkPeriod?.breakStartedAt);
+	return (
+		<p className="flex items-center gap-2 text-sm text-muted-foreground">
+			<span
+				aria-hidden="true"
+				className={cn(
+					"size-2 rounded-full",
+					onBreak
+						? "bg-amber-500"
+						: clock.isClockedIn
+							? "bg-emerald-500"
+							: "bg-muted-foreground/50",
+				)}
+			/>
+			{onBreak
+				? t("timeTracking.onBreak", "On break")
+				: clock.isClockedIn
+					? t("timeTracking.clockedIn", "Clocked in")
+					: t("timeTracking.notClockedIn", "Not clocked in")}
+		</p>
+	);
+}
+
+function SessionElapsed({ clock }: { clock: Clock }) {
+	const { t } = useTranslate();
 	const elapsed = useElapsedTimer(clock.activeWorkPeriod?.startTime ?? null);
 	return (
-		<>
-			{!hydrated || clock.isPending ? (
-				<p role="status" className="text-sm text-muted-foreground">
-					{t("common.loading", "Loading…")}
-				</p>
-			) : clock.isError ? (
-				<div role="status" className="space-y-2 text-sm">
-					<p>
-						{t(
-							"timeTracking.statusUnavailable",
-							"Clock status is unavailable. Refresh to try again.",
-						)}
-					</p>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => void clock.refetchStatus()}
-					>
-						{t("common.retry", "Retry")}
-					</Button>
-				</div>
-			) : (
-				<>
-					<p className="text-sm text-muted-foreground">
-						{clock.activeWorkPeriod?.breakStartedAt
-							? t("timeTracking.onBreak", "On break")
-							: clock.isClockedIn
-								? t("timeTracking.clockedIn", "Clocked in")
-								: t("timeTracking.notClockedIn", "Not clocked in")}
-					</p>
-					{clock.isClockedIn ? (
-						<div>
-							<p className="text-3xl font-semibold tabular-nums">
-								{formatDurationWithSeconds(elapsed)}
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								{t("dashboard.refresh.currentSession", "Current session")}
-							</p>
-						</div>
-					) : null}
-					{clock.activeWorkPeriod?.breakStartedAt ? (
-						<BreakInProgressNotice
-							since={clock.activeWorkPeriod.breakStartedAt}
-							zone={clock.activeWorkPeriod.breakStartedZone ?? null}
-						/>
-					) : null}
-				</>
-			)}
-		</>
+		<div className="min-w-0 space-y-1">
+			<p className="text-3xl font-semibold tabular-nums">
+				{formatDurationWithSeconds(elapsed)}
+			</p>
+			<p className="text-sm text-muted-foreground">
+				{t("dashboard.refresh.currentSession", "Current session")}
+			</p>
+		</div>
 	);
+}
+
+function ClockFeedback({
+	clock,
+	hydrated,
+}: {
+	clock: Clock;
+	hydrated: boolean;
+}) {
+	const { t } = useTranslate();
+	if (!hydrated || clock.isPending) {
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				{t("common.loading", "Loading…")}
+			</p>
+		);
+	}
+	if (clock.isError) {
+		return (
+			<div role="status" className="space-y-2 text-sm">
+				<p>
+					{t(
+						"timeTracking.statusUnavailable",
+						"Clock status is unavailable. Refresh to try again.",
+					)}
+				</p>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={() => void clock.refetchStatus()}
+				>
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
+		);
+	}
+	return clock.activeWorkPeriod?.breakStartedAt ? (
+		<BreakInProgressNotice
+			since={clock.activeWorkPeriod.breakStartedAt}
+			zone={clock.activeWorkPeriod.breakStartedZone ?? null}
+		/>
+	) : null;
 }

@@ -19,7 +19,7 @@ async function MyRequestsPageContent({ searchParams }: MyRequestsPageProps) {
 
 	if (!result.success && result.error === "Employee profile not found") {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("myRequests:myRequests.title", "My Requests")} />
 				<NoEmployeeError feature={t("myRequests:myRequests.featureName", "view your requests")} />
 			</div>
@@ -28,7 +28,7 @@ async function MyRequestsPageContent({ searchParams }: MyRequestsPageProps) {
 
 	if (!result.success) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("myRequests:myRequests.title", "My Requests")} />
 				<Alert variant="destructive">
 					<AlertTitle>
@@ -56,22 +56,19 @@ async function MyRequestsPageLoading() {
 				labelKey: "common.loadingRegions.yourRequests",
 				labelDefault: "Loading your requests",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<PageHeader
-				className="px-4 lg:px-6"
-				title={t("myRequests:myRequests.title", "My Requests")}
-			/>
-			<div className="px-4 lg:px-6">
+			<PageHeader title={t("myRequests:myRequests.title", "My Requests")} />
+			<div>
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 			</div>
-			<section className="grid gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
+			<section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				{["pending", "fixes", "decisions", "total"].map((key) => (
 					<Skeleton aria-hidden="true" className="h-28 w-full" key={key} />
 				))}
 			</section>
-			<section className="px-4 lg:px-6">
+			<section>
 				<Skeleton aria-hidden="true" className="h-80 w-full" />
 			</section>
 		</LoadingRegion>

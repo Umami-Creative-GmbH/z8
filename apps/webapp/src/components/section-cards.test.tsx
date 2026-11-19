@@ -309,7 +309,7 @@ describe("SectionCards", () => {
 		},
 	);
 
-	it("streams primary slots while measured secondary slots remain discoverable without a server data read", async () => {
+	it("streams work widgets while birthdays and hydration appear inline without server reads", async () => {
 		const scope = { userId: "user-a", organizationId: "org-a" };
 		serverReads.layout.mockResolvedValue({
 			subject: {
@@ -348,9 +348,40 @@ describe("SectionCards", () => {
 		expect(markup).toContain("Work hours ready");
 		expect(markup).toContain("Load Hydration");
 		expect(markup).toContain("Load Upcoming Birthdays");
+		const dashboard = new DOMParser().parseFromString(markup, "text/html");
+		for (const [id, region] of [
+			["birthday-reminders", "records"],
+			["hydration", "personal"],
+		]) {
+			const widget = dashboard.querySelector(`[data-dashboard-deferred-id="${id}"]`);
+			expect(
+				widget?.closest("[data-dashboard-region]")?.getAttribute("data-dashboard-region"),
+			).toBe(region);
+			expect(widget?.closest("details")).toBeNull();
+		}
 		expect(serverReads.widget.mock.calls.map(([id]) => id)).toEqual([
 			"quick-stats",
 		]);
+	});
+	it("shows only the available card when hydration is the sole eligible widget", () => {
+		const { container } = render(
+			<QueryClientProvider client={new QueryClient()}>
+				<SectionCards
+					initialLayout={{
+						scope: { userId: "user-a", organizationId: "org-a" },
+						availableWidgetIds: ["hydration"],
+						settings: { dashboardWidgetOrder: null },
+						updatedAt: Date.now(),
+					}}
+				widgetSlots={{ hydration: <p data-widget-id="hydration">Hydration ready</p> }}
+				/>
+			</QueryClientProvider>,
+		);
+		const widget = screen.getByText("Hydration ready");
+		expect(widget.closest('[data-dashboard-region="personal"]')).not.toBeNull();
+		expect(widget.closest("details")).toBeNull();
+		expect(container.querySelector('[data-dashboard-region="records"]')).toBeNull();
+		expect(screen.queryByText("Personal day")).toBeNull();
 	});
 	it("keeps an omitted optional widget unchecked until enabled through customization and unmounts it when hidden", async () => {
 		class Observer {

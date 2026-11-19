@@ -10,8 +10,8 @@ async function KioskSettingsPageContent() {
 	const [t, result] = await Promise.all([getTranslate(), getKioskAdminDataAction()]);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-5xl space-y-6">
+		<div className="page-frame">
+			<div className="min-w-0 space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">{t("settings.kiosks.title", "Kiosks")}</h1>
 					<p className="text-muted-foreground">
@@ -35,8 +35,8 @@ async function KioskSettingsPageContent() {
 
 function KioskSettingsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-5xl space-y-6">
+		<div className="page-frame">
+			<div className="min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-40" />
 					<Skeleton className="h-5 w-full max-w-xl" />

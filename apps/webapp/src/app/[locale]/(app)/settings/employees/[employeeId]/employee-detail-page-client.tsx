@@ -227,7 +227,7 @@ export function EmployeeDetailPageClient({
 	);
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			{drivingLicenceWarning}
 			<EmployeeDetailHeader
 				t={t}
@@ -285,7 +285,7 @@ function EmployeeDetailLoadError({
 }) {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4" role="alert">
+		<div className="page-frame flex flex-1 flex-col gap-4" role="alert">
 			<p>
 				{data.error?.message ||
 					t(
@@ -303,7 +303,7 @@ function EmployeeDetailLoadError({
 function EmployeeDetailLoading() {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<output
 				className="flex items-center justify-center p-8"
 				aria-label={t(

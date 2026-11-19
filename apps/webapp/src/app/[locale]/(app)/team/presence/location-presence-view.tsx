@@ -49,7 +49,7 @@ export function LocationPresenceView({
 		return children;
 	}
 	return (
-		<div className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader title={t("team.presence.title", "Who is in")} />
 			<div className="space-y-3 rounded-lg border bg-card p-6 text-sm">
 				<p role="status">

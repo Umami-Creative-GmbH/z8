@@ -29,7 +29,7 @@ async function PayslipBatchContent({ params }: PayslipBatchPageProps) {
 	if (!batch) notFound();
 
 	return (
-		<div className="@container/main mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("settings.personnelFiles.batch.title", "Payslip batch")}
 				scope={
@@ -58,7 +58,7 @@ function PayslipBatchLoading() {
 				labelKey: "settings.personnelFiles.batch.loadingBatch",
 				labelDefault: "Loading the payslip batch",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<PayslipBatchLoadingHeading />

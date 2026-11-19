@@ -38,9 +38,11 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 	const cycle = requestedCycle(search.cycle);
 	if (!actor?.employee)
 		return (
-			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 lg:px-6">
-				<PageHeader title={t("travelExpenses.report.items.title", "Expenses")} />
-				<NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />
+			<div className="page-frame">
+				<div className="page-measure space-y-4">
+					<PageHeader title={t("travelExpenses.report.items.title", "Expenses")} />
+					<NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />
+				</div>
 			</div>
 		);
 	const authorized = await loadAuthorizedTravelExpenseReport(reportId);
@@ -66,21 +68,23 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 				})));
 		return (
 			<ReportWorkspaceScope key={arrival} {...scope}>
-				<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
-					{financeReader ? (
-						<BackLink href="/travel-expenses/finance">
-							{t("travelExpenses.finance.back", "Back to expense finance")}
-						</BackLink>
-					) : (
-						<BackLink href="/approvals/inbox">
-							{t("travelExpenses.report.backToApprovals", "Back to approvals")}
-						</BackLink>
-					)}
-					<SubmittedTravelExpenseReport
-						reportId={reportId}
-						cycle={cycle}
-						maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-					/>
+				<div className="page-frame">
+					<div className="page-measure space-y-4">
+						{financeReader ? (
+							<BackLink href="/travel-expenses/finance">
+								{t("travelExpenses.finance.back", "Back to expense finance")}
+							</BackLink>
+						) : (
+							<BackLink href="/approvals/inbox">
+								{t("travelExpenses.report.backToApprovals", "Back to approvals")}
+							</BackLink>
+						)}
+						<SubmittedTravelExpenseReport
+							reportId={reportId}
+							cycle={cycle}
+							maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+						/>
+					</div>
 				</div>
 			</ReportWorkspaceScope>
 		);
@@ -99,30 +103,32 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 			: arrival;
 	return (
 		<ReportWorkspaceScope key={workspaceKey} {...scope}>
-			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
-				{cycle === undefined ? (
-					<>
-						<BackLink href="/travel-expenses">
-							{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
-						</BackLink>
-						<TravelExpenseReportEditor
-							reportId={reportId}
-							maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-						/>
-					</>
-				) : (
-					<>
-						{/* An earlier submission is reached from the current report, so it leads back there. */}
-						<BackLink href={`/travel-expenses/reports/${reportId}`}>
-							{t("travelExpenses.report.backToCurrent", "Back to the current report")}
-						</BackLink>
-						<SubmittedTravelExpenseReport
-							reportId={reportId}
-							cycle={cycle}
-							maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-						/>
-					</>
-				)}
+			<div className="page-frame">
+				<div className="page-measure space-y-4">
+					{cycle === undefined ? (
+						<>
+							<BackLink href="/travel-expenses">
+								{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
+							</BackLink>
+							<TravelExpenseReportEditor
+								reportId={reportId}
+								maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+							/>
+						</>
+					) : (
+						<>
+							{/* An earlier submission is reached from the current report, so it leads back there. */}
+							<BackLink href={`/travel-expenses/reports/${reportId}`}>
+								{t("travelExpenses.report.backToCurrent", "Back to the current report")}
+							</BackLink>
+							<SubmittedTravelExpenseReport
+								reportId={reportId}
+								cycle={cycle}
+								maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+							/>
+						</>
+					)}
+				</div>
 			</div>
 		</ReportWorkspaceScope>
 	);
@@ -138,10 +144,12 @@ export default function TravelExpenseReportPage(props: ReportPageProps) {
 						labelDefault: "Loading travel expenses",
 					}}
 					role="status"
-					className="mx-auto w-full max-w-3xl px-4 py-4 md:py-6 lg:px-6"
+					className="page-frame"
 				>
-					<ReportArrivalHeading />
-					<Skeleton aria-hidden="true" className="h-96 w-full" />
+					<div className="page-measure">
+						<ReportArrivalHeading />
+						<Skeleton aria-hidden="true" className="h-96 w-full" />
+					</div>
 				</LoadingRegion>
 			}
 		>

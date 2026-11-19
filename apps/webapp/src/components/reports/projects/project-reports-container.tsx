@@ -47,14 +47,13 @@ export function ProjectReportsContainer() {
 	const { t } = useTranslate();
 	if (scope.isLoading)
 		return (
-			<p role="status" className="px-4 lg:px-6">
+			<p role="status">
 				{t("reports.projects.scopeLoading", "Loading the current report scope\u2026")}
 			</p>
 		);
 	if (scope.error || !scope.userId || !scope.activeOrganizationId)
 		return (
 			<ReportScopeFailure
-				className="mx-4 w-auto lg:mx-6"
 				message={t(
 					"reports.projects.scopeUnavailable",
 					"The current report scope could not be loaded.",
@@ -236,7 +235,7 @@ function ProjectReportWorkspace() {
 	useViewRefresh(refreshReports);
 
 	return (
-		<div className="min-w-0 space-y-6 px-4 lg:px-6">
+		<div className="min-w-0 space-y-6">
 			{/* Filters */}
 			<ProjectFilters onGenerate={handleGeneratePortfolio} isGenerating={isLoading} />
 

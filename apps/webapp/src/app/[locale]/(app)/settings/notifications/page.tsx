@@ -6,8 +6,8 @@ export default async function NotificationsSettingsPage() {
 	const [, t] = await Promise.all([requireUser(), getTranslate()]);
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-2xl">
+		<div className="page-frame">
+			<div className="page-measure">
 				<div className="mb-6">
 					<h1 className="text-2xl font-semibold">
 						{t("settings.notifications.title", "Notification Settings")}

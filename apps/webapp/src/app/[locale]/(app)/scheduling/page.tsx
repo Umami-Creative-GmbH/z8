@@ -46,8 +46,8 @@ async function SchedulingPageContent({ searchParams }: SchedulingPageProps = {})
 	});
 
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col">
-			<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame-full flex min-w-0 flex-1 flex-col">
+			<div className="flex min-w-0 flex-1 flex-col gap-6">
 				<PageHeader
 					title={
 						isManager

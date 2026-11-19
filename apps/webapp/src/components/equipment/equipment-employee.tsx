@@ -138,13 +138,13 @@ export function EmployeeEquipment({
 	return (
 		<>
 			{data.canManage ? (
-				<div className="px-4 lg:px-6">
+				<div>
 					<BackLink href="/equipment">
 						{t("settings.equipment.detail.back", "Back to equipment")}
 					</BackLink>
 				</div>
 			) : null}
-			<div className="flex items-start gap-3.5 px-4 lg:px-6">
+			<div className="flex items-start gap-3.5">
 				<div className="shrink-0 pt-1">
 					<UserAvatar
 						seed={employeeId}
@@ -167,13 +167,13 @@ export function EmployeeEquipment({
 					}
 				/>
 			</div>
-			{formerHelp ? <div className="px-4 lg:px-6">{formerHelp}</div> : null}
+			{formerHelp}
 			<section
 				aria-label={t(
 					"settings.equipment.employee.returns",
 					"Employee returns",
 				)}
-				className="mx-4 grid grid-cols-1 overflow-hidden rounded-xl border bg-card text-card-foreground lg:mx-6 @sm/main:grid-cols-2"
+				className="grid grid-cols-1 overflow-hidden rounded-xl border bg-card text-card-foreground @sm/main:grid-cols-2"
 			>
 				<button
 					type="button"
@@ -214,7 +214,7 @@ export function EmployeeEquipment({
 					</span>
 				</button>
 			</section>
-			<div className="px-4 lg:px-6">{card}</div>
+			<div>{card}</div>
 			{panel}
 		</>
 	);

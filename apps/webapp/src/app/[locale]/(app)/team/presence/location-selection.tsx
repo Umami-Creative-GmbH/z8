@@ -55,8 +55,8 @@ export function LocationSelectionLoading() {
 function SelectionLayout({ children }: { children: ReactNode }) {
 	const { t } = useTranslate();
 	return (
-		<div className="@container/main flex flex-1 flex-col px-4 py-6 lg:px-6">
-			<div className="w-full max-w-4xl space-y-6">
+		<div className="@container/main page-frame flex flex-1 flex-col">
+			<div className="page-measure space-y-6">
 				<PageHeader
 					title={t("team.presence.title", "Who is in")}
 					description={t(

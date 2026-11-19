@@ -63,7 +63,7 @@ export async function ClockRegion({
 		const t = await getTranslate();
 		return (
 			// Rendered, if without the clock: a live-work focus stops waiting for it (#1302).
-			<div id={CLOCK_REGION_ID} className="px-4 lg:px-6">
+			<div id={CLOCK_REGION_ID}>
 				<RegionLoadError label={t("timeTracking.title", "Time Tracking")} />
 			</div>
 		);
@@ -73,7 +73,7 @@ export async function ClockRegion({
 		<div
 			id={CLOCK_FOCUS_TARGET_ID}
 			tabIndex={-1}
-			className="scroll-mt-4 px-4 outline-none focus:*:ring-2 focus:*:ring-ring lg:px-6"
+			className="scroll-mt-4 outline-none focus:*:ring-2 focus:*:ring-ring"
 		>
 			<ClockInOutWidget
 				activeWorkPeriod={activeWorkPeriod}
@@ -118,7 +118,7 @@ export async function DrivingRegion({
 	}
 	if (data.work.length === 0) return null;
 	return (
-		<div className="px-4 lg:px-6">
+		<div>
 			<DrivingDetailsMissingNotice
 				work={data.work}
 				employeeId={context.employee.id}
@@ -150,14 +150,14 @@ export async function TimelineRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
+			<div id={TIMELINE_REGION_ID}>
 				<RegionLoadError label={t("timeTracking.timeline.title", "Workday timeline")} />
 			</div>
 		);
 	}
 	return (
 		// Once rendered, a period blocker focus waits only briefly for its row (#1302).
-		<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
+		<div id={TIMELINE_REGION_ID}>
 			<PersonalWorkdayTimeline
 				result={serializeWorkdayTimelineResult(result)}
 				weekStartDay={context.weekStartDay}
@@ -178,7 +178,7 @@ export async function SummaryRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			<div>
 				<RegionLoadError label={t("timeTracking.summary.thisWeek", "This Week")} />
 			</div>
 		);
@@ -198,14 +198,14 @@ export async function PeriodsRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			<div>
 				<RegionLoadError label={t("timeTracking.periodSubmissions.title", "Period submissions")} />
 			</div>
 		);
 	}
 	if (!data || data.periods.length === 0) return null;
 	return (
-		<div className="px-4 lg:px-6">
+		<div>
 			<PeriodSubmissionsCard
 				periods={data.periods}
 				organizationId={context.employee.organizationId}
@@ -234,13 +234,13 @@ export async function HistoryRegion({
 		unstable_rethrow(error);
 		const t = await getTranslate();
 		return (
-			<div className="px-4 lg:px-6">
+			<div>
 				<RegionLoadError label={t("timeTracking.table.title", "Time Entries")} />
 			</div>
 		);
 	}
 	return (
-		<div className="px-4 lg:px-6">
+		<div>
 			<TimeEntriesTable
 				workPeriods={data.workPeriods}
 				drivingDetailsMissingIds={data.drivingDetailsMissingIds}
@@ -329,9 +329,9 @@ export async function TimeTrackingPageContent({
 	return (
 		<div
 			data-testid="time-tracking-content"
-			className="@container/main mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 py-6 md:py-8"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 		>
-			<div className="flex flex-wrap items-end justify-between gap-4 px-4 lg:px-6">
+			<div className="flex flex-wrap items-end justify-between gap-4">
 				<div className="space-y-2">
 					<p className="text-sm text-muted-foreground">{context.employeeName}</p>
 					<h1 className="text-2xl font-semibold tracking-tight">
@@ -365,7 +365,7 @@ export async function TimeTrackingPageContent({
 						<PeriodsRegion context={context} />
 					</Suspense>
 				</div>
-				<aside className="min-w-0 space-y-6 px-4 lg:pr-6 @5xl/main:pl-0">
+				<aside className="min-w-0 space-y-6">
 					<Suspense fallback={null}>
 						<WorkdayContextRegion context={context} searchParams={searchParams} />
 					</Suspense>

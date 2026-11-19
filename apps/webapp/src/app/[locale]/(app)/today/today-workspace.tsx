@@ -91,7 +91,7 @@ function TodayContextError({ retry }: { retry: () => Promise<void> }) {
 	const { t } = useTranslate();
 	const [pending, startRetry] = useTransition();
 	return (
-		<div className="space-y-4 p-4 md:p-6">
+		<div className="page-frame space-y-4">
 			<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
 			<p role="alert">
 				{t("today.briefing.contextFailed", "Could not check your current access. Try again.")}
@@ -173,7 +173,7 @@ function ScopedTodayWorkspace({
 	if (!arrival && !readFailed) return <TodayPageLoading />;
 	if (arrival?.status !== "ready")
 		return (
-			<div className="space-y-4 p-4 md:p-6">
+			<div className="page-frame space-y-4">
 				<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
 				<p role="alert">
 					{arrival?.status === "unavailable"

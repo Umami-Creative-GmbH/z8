@@ -87,7 +87,7 @@ export async function WorksCouncilDashboard({
 	const t = await getTranslate();
 	if (model.state === "disabled") {
 		return (
-			<section className="space-y-2 p-6" aria-labelledby="works-council-title">
+			<section className="page-frame space-y-2" aria-labelledby="works-council-title">
 				<h1
 					id="works-council-title"
 					className="text-balance text-2xl font-semibold tracking-tight"
@@ -108,7 +108,7 @@ export async function WorksCouncilDashboard({
 	const toValue = formatDateInput(model.dateRange.end);
 
 	return (
-		<section className="space-y-6 p-6" aria-labelledby="works-council-title">
+		<section className="page-frame space-y-6" aria-labelledby="works-council-title">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div className="space-y-1">
 					<h1

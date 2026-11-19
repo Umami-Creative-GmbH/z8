@@ -19,7 +19,7 @@ async function ReportsPageContent() {
 
 	if (!employee) {
 		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<PageHeader title={t("reports.title", "Employee Reports")} />
 				<div className="flex flex-1 items-center justify-center">
 					<NoEmployeeError feature={t("reports.feature", "generate reports")} />
@@ -29,10 +29,9 @@ async function ReportsPageContent() {
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{/* Page Header */}
 			<PageHeader
-				className="px-4 lg:px-6"
 				title={t("reports.title", "Employee Reports")}
 				description={t(
 					"reports.description",
@@ -65,16 +64,14 @@ function ReportsPageLoading() {
 				labelKey: "common.loadingRegions.employeeReports",
 				labelDefault: "Loading employee reports",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<div className="space-y-3 px-4 lg:px-6">
+			<div className="space-y-3">
 				<Skeleton aria-hidden="true" className="h-9 w-64" />
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-3xl" />
 			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-96 w-full" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-96 w-full" />
 		</LoadingRegion>
 	);
 }

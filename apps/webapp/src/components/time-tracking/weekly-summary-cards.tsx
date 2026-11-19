@@ -183,7 +183,7 @@ export function WeeklySummaryCards({ kpis: data, workBalance }: Props) {
 	});
 
 	return (
-		<div className="mx-4 grid grid-cols-1 gap-y-5 rounded-xl lg:mx-6 border bg-card p-5 shadow-none min-[380px]:grid-cols-2 @5xl/main:grid-cols-4 [&>[data-slot=kpi-card]]:rounded-none [&>[data-slot=kpi-card]]:border-0 [&>[data-slot=kpi-card]]:bg-transparent [&>[data-slot=kpi-card]]:px-4 [&>[data-slot=kpi-card]]:py-0 [&>[data-slot=kpi-card]]:shadow-none min-[380px]:[&>[data-slot=kpi-card]:nth-of-type(even)]:border-l @5xl/main:[&>[data-slot=kpi-card]+[data-slot=kpi-card]]:border-l">
+		<div className="grid grid-cols-1 gap-y-5 rounded-xl border bg-card p-5 shadow-none min-[380px]:grid-cols-2 @5xl/main:grid-cols-4 [&>[data-slot=kpi-card]]:rounded-none [&>[data-slot=kpi-card]]:border-0 [&>[data-slot=kpi-card]]:bg-transparent [&>[data-slot=kpi-card]]:px-4 [&>[data-slot=kpi-card]]:py-0 [&>[data-slot=kpi-card]]:shadow-none min-[380px]:[&>[data-slot=kpi-card]:nth-of-type(even)]:border-l @5xl/main:[&>[data-slot=kpi-card]+[data-slot=kpi-card]]:border-l">
 			<h2 className="sr-only">
 				{t("timeTracking.summary.title", "Working time summary")}
 			</h2>

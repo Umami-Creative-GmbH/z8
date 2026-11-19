@@ -36,7 +36,7 @@ async function PayrollWorkBalanceContent({ params }: PayrollWorkBalancePageProps
 
 function PayrollWorkBalanceLoading() {
 	return (
-		<div className="@container/main mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<EmployeeBalanceLoadingHeading />
 			<LoadingRegion
 				label={{

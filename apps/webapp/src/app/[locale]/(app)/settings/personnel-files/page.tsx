@@ -26,7 +26,7 @@ async function PersonnelFileSettingsPageContent() {
 	const leadDays = await loadExpiryReminderLeadDays(db, organizationId);
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame flex flex-1 flex-col gap-4">
 			<div className="flex flex-col gap-2">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					{t("settings.personnelFiles.settings.title", "Personnel Files")}
@@ -50,7 +50,7 @@ async function PersonnelFileSettingsPageContent() {
 function PersonnelFileSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex flex-1 flex-col gap-4"
 			role="status"
 			label={{
 				labelKey: "settings.personnelFiles.settings.loading",

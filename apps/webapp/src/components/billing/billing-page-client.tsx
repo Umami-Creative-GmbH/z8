@@ -31,7 +31,7 @@ function BillingPageClientContent({
 	);
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<BillingAlerts
 				accessResult={accessResult}
 				canceled={canceled}

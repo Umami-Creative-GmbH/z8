@@ -38,24 +38,22 @@ export function OrganizationsPageClient({
 	);
 
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-6xl">
-				<div className="mb-8">
-					<h1 className="text-3xl font-semibold mb-2">{organizationTitle}</h1>
-					<p className="text-muted-foreground">{organizationDescription}</p>
-				</div>
-
-				<OrganizationTab
-					organizationProfile={organizationProfile}
-					organization={organization}
-					memberCount={memberCount}
-					settingsAccess={settingsAccess}
-					defaultNotificationLanguage={defaultNotificationLanguage}
-					billableCurrency={billableCurrency}
-					drivingLicence={drivingLicence}
-					equipmentOutstandingReturns={equipmentOutstandingReturns}
-				/>
+		<div className="page-frame flex-1">
+			<div className="mb-8">
+				<h1 className="text-3xl font-semibold mb-2">{organizationTitle}</h1>
+				<p className="text-muted-foreground">{organizationDescription}</p>
 			</div>
+
+			<OrganizationTab
+				organizationProfile={organizationProfile}
+				organization={organization}
+				memberCount={memberCount}
+				settingsAccess={settingsAccess}
+				defaultNotificationLanguage={defaultNotificationLanguage}
+				billableCurrency={billableCurrency}
+				drivingLicence={drivingLicence}
+				equipmentOutstandingReturns={equipmentOutstandingReturns}
+			/>
 		</div>
 	);
 }

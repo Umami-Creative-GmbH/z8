@@ -11,11 +11,11 @@ async function PersonalEquipmentContent() {
 	const [t, result] = await Promise.all([getTranslate(), getMyEquipment()]);
 	if (!result.success && result.code === "AuthorizationError") notFound();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{result.success ? (
 				<PersonalEquipment data={result.data} />
 			) : (
-				<div className="mx-auto w-full max-w-6xl space-y-4 px-4 lg:px-6">
+				<div className="space-y-4">
 					<EquipmentPersonalHeader />
 					<p role="alert" className="text-sm text-destructive">
 						{t(

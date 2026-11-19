@@ -61,7 +61,7 @@ export function ReportsContainer(props: ReportsContainerProps) {
 		session.session.activeOrganizationId !== props.organizationId
 	) {
 		return (
-			<p role="status" className="px-4 text-sm text-muted-foreground lg:px-6">
+			<p role="status" className="text-sm text-muted-foreground">
 				{t("common.loading", "Loading...")}
 			</p>
 		);
@@ -182,7 +182,7 @@ function ReportWorkspace({
 	});
 
 	return (
-		<div className="space-y-6 px-4 lg:px-6">
+		<div className="space-y-6">
 			{/* Filters */}
 			<ReportFilters
 				currentEmployeeId={currentEmployeeId}

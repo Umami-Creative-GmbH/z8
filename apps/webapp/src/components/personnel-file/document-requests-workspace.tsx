@@ -42,7 +42,7 @@ export function DocumentRequestsWorkspace({
 	const current = useRequestArrival(snapshot, matches, settled, refresh);
 
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
 				<Link href="/personnel-files">
 					<IconArrowLeft aria-hidden="true" className="size-4" />

@@ -21,8 +21,8 @@ async function ImplementationChecklistPageContent() {
 	});
 
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-4xl">
+		<div className="page-frame flex-1">
+			<div className="page-measure">
 				<GoLiveRehearsalProvider candidates={checklist.goLive.rehearsalCandidates}>
 					<ImplementationChecklistClient checklist={checklist} />
 				</GoLiveRehearsalProvider>
@@ -33,8 +33,8 @@ async function ImplementationChecklistPageContent() {
 
 function ImplementationChecklistPageLoading() {
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-4">
 				<Skeleton className="h-8 w-64" />
 				<Skeleton className="h-64 w-full" />
 			</div>
