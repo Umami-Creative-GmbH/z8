@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
@@ -6,7 +6,6 @@ import {
 	absenceEntry,
 	approvalRequest,
 	approvalWorkflow,
-	timeEntry,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 	workPeriod,
@@ -17,7 +16,7 @@ import {
 	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
-import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
+import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
 
@@ -173,17 +172,15 @@ async function loadTimeCorrections(
 			offset,
 		})) as TimeCorrectionRow[];
 		if (rows.length === 0) break;
-		const verifiedCorrectionEvidenceByPeriod = await loadVerifiedCorrectionEvidenceByPeriod(
-			db,
-			input,
-			rows,
+		const periodsById = await loadLegacyTimeCorrectionPeriods(db, input, rows);
+		const listings = await Promise.all(
+			rows.map(async (row) => ({
+				row,
+				listing: await listLegacyTimeCorrection(db, row, periodsById.get(row.entityId)),
+			})),
 		);
 
-		for (const row of rows) {
-			const listing = listLegacyTimeCorrection(
-				row,
-				verifiedCorrectionEvidenceByPeriod.get(row.entityId),
-			);
+		for (const { row, listing } of listings) {
 			if (!listing) continue;
 			if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
 			const { status, availableActions } = listing;
@@ -264,10 +261,10 @@ export async function findTimeCorrectionsListedInMyRequests(
 			inArray(approvalRequest.entityId, workPeriodIds),
 		),
 	})) as TimeCorrectionRow[];
-	const evidenceByPeriod = await loadVerifiedCorrectionEvidenceByPeriod(database, input, rows);
+	const periodsById = await loadLegacyTimeCorrectionPeriods(database, input, rows);
 	const legacyWorkflowIds = new Set<string>();
 	for (const row of rows) {
-		const listing = listLegacyTimeCorrection(row, evidenceByPeriod.get(row.entityId));
+		const listing = await listLegacyTimeCorrection(database, row, periodsById.get(row.entityId));
 		if (!listing) continue;
 		if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
 		if (listing.status === "pending") listed.add(row.entityId);
@@ -294,36 +291,37 @@ export async function findTimeCorrectionsListedInMyRequests(
 }
 
 type SelfServiceDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+type LegacyTimeCorrectionPeriod = Pick<
+	typeof workPeriod.$inferSelect,
+	"clockInId" | "clockOutId" | "pendingChanges"
+>;
 
 /**
  * How My Requests lists one legacy correction request: its status and actions, and the canonical
  * workflow it mirrors. Null when My Requests drops it (not a correction, or malformed).
  */
-function listLegacyTimeCorrection(
+async function listLegacyTimeCorrection(
+	database: SelfServiceDatabase,
 	row: TimeCorrectionRow,
-	evidence: VerifiedCorrectionEvidence | undefined,
-): {
+	period: LegacyTimeCorrectionPeriod | undefined,
+): Promise<{
 	workflowId: string | null;
 	status: SelfServiceRequestStatus;
 	availableActions: SelfServiceRequestAction[];
-} | null {
-	if (
-		classifyTimeApprovalRequest({
-			metadata: row.metadata,
-			reason: row.reason,
-			verifiedRelationalCorrectionIds: evidence?.ids ?? [],
-			verifiedRelationalCorrectionIdsByEndpoint: {
-				clockIn: evidence?.clockInIds ?? [],
-				clockOut: evidence?.clockOutIds ?? [],
-			},
-		}) !== "time_correction"
-	) {
-		return null;
-	}
+} | null> {
 	let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
 	try {
 		metadata = parseLegacyTimeCorrectionMetadata(row);
 	} catch {
+		return null;
+	}
+	if (
+		(await classifyPersistedTimeApprovalRequest(database, {
+			organizationId: row.organizationId,
+			request: row,
+			period,
+		})) !== "time_correction"
+	) {
 		return null;
 	}
 	const status: SelfServiceRequestStatus =
@@ -337,17 +335,11 @@ function listLegacyTimeCorrection(
 	return { workflowId: metadata.workflowId, status, availableActions };
 }
 
-interface VerifiedCorrectionEvidence {
-	ids: string[];
-	clockInIds: string[];
-	clockOutIds: string[];
-}
-
-async function loadVerifiedCorrectionEvidenceByPeriod(
+async function loadLegacyTimeCorrectionPeriods(
 	database: SelfServiceDatabase,
 	input: { organizationId: string; employeeId: string },
 	rows: TimeCorrectionRow[],
-): Promise<Map<string, VerifiedCorrectionEvidence>> {
+): Promise<Map<string, LegacyTimeCorrectionPeriod>> {
 	if (rows.length === 0) return new Map();
 	const periods = await database.query.workPeriod.findMany({
 		where: and(
@@ -358,66 +350,9 @@ async function loadVerifiedCorrectionEvidenceByPeriod(
 				rows.map((row) => row.entityId),
 			),
 		),
-		columns: { id: true, clockInId: true, clockOutId: true },
+		columns: { id: true, clockInId: true, clockOutId: true, pendingChanges: true },
 	});
-	const endpointToPeriod = new Map<
-		string,
-		{ periodId: string; endpoint: "clockIn" | "clockOut" }
-	>();
-	for (const period of periods) {
-		endpointToPeriod.set(period.clockInId, {
-			periodId: period.id,
-			endpoint: "clockIn",
-		});
-		if (period.clockOutId) {
-			endpointToPeriod.set(period.clockOutId, {
-				periodId: period.id,
-				endpoint: "clockOut",
-			});
-		}
-	}
-	const endpointIds = [...endpointToPeriod.keys()];
-	if (endpointIds.length === 0) return new Map();
-	const corrections = await database.query.timeEntry.findMany({
-		where: and(
-			eq(timeEntry.organizationId, input.organizationId),
-			eq(timeEntry.employeeId, input.employeeId),
-			eq(timeEntry.type, "correction"),
-			// Pending (and retained cancelled) correction entries are inactive until
-			// approval. A superseding successor distinguishes replaced history.
-			or(
-				eq(timeEntry.isSuperseded, false),
-				and(eq(timeEntry.isSuperseded, true), isNull(timeEntry.supersededById)),
-			),
-			or(
-				inArray(timeEntry.id, endpointIds),
-				inArray(timeEntry.replacesEntryId, endpointIds),
-			),
-		),
-		columns: { id: true, replacesEntryId: true },
-	});
-	const result = new Map<string, VerifiedCorrectionEvidence>();
-	for (const correction of corrections) {
-		const endpoint =
-			endpointToPeriod.get(correction.id) ??
-			(correction.replacesEntryId
-				? endpointToPeriod.get(correction.replacesEntryId)
-				: undefined);
-		if (!endpoint) continue;
-		const evidence = result.get(endpoint.periodId) ?? {
-			ids: [],
-			clockInIds: [],
-			clockOutIds: [],
-		};
-		evidence.ids.push(correction.id);
-		if (endpoint.endpoint === "clockIn") {
-			evidence.clockInIds.push(correction.id);
-		} else {
-			evidence.clockOutIds.push(correction.id);
-		}
-		result.set(endpoint.periodId, evidence);
-	}
-	return result;
+	return new Map(periods.map((period) => [period.id, period]));
 }
 
 function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {

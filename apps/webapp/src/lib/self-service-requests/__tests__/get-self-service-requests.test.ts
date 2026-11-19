@@ -1249,6 +1249,25 @@ describe("getSelfServiceRequests", () => {
 		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
 	});
 
+	it("does not list a correction that names a clock-out entry for an open period", async () => {
+		const clockInId = "10000000-0000-4000-8000-000000000001";
+		dbMocks.approvalRequests.mockResolvedValue([
+			timeCorrection({
+				metadata: { timeCorrection: { action: "edit", clockOutCorrectionId: clockInId } },
+			}),
+		]);
+		dbMocks.workPeriods.mockResolvedValue([{ id: "period-1", clockInId, clockOutId: null }]);
+		dbMocks.timeEntries.mockResolvedValue([{ id: clockInId, replacesEntryId: null }]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			filters: { sourceType: "time_correction" },
+		});
+
+		expect(result.items).toEqual([]);
+	});
+
 	it("does not expose cancellation for corrections bound to the wrong endpoint", async () => {
 		dbMocks.absenceEntries.mockResolvedValue([]);
 		dbMocks.travelExpenseClaims.mockResolvedValue([]);
