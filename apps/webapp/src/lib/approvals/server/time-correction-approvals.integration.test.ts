@@ -1521,10 +1521,10 @@ describe(
 		}
 
 		async function forceSubmissionWinner(winner: "manager" | "creation") {
-			const employeeLock = await holdTask13Rows(pool, "employee", [
-				ids.requester,
+			const periodLock = await holdTask13Rows(pool, "work_period", [
+				ids.period,
 			]);
-			let employeeReleased = false;
+			let periodReleased = false;
 			const preferred =
 				winner === "manager"
 					? () => submitAndApproveCorrectionAsManager("task13-manager-winner")
@@ -1537,18 +1537,21 @@ describe(
 			let competitorPromise: Promise<PromiseSettledResult<unknown>> | undefined;
 			try {
 				preferredPromise = settle(preferred());
-				await waitForTask13LockWait(pool, { blocker: employeeLock });
+				// The preferred submission already holds the employee lock when it reaches the period.
+				const preferredWait = await waitForTask13LockWait(pool, { blocker: periodLock });
 				competitorPromise = settle(competitor());
-				await waitForTask13LockWait(pool, { blocker: employeeLock });
-				await releaseTask13Rows(employeeLock);
-				employeeReleased = true;
+				await waitForTask13LockWait(pool, {
+					blocker: { pid: preferredWait.pid, table: "employee" },
+				});
+				await releaseTask13Rows(periodLock);
+				periodReleased = true;
 				const [winnerResult, loserResult] = await Promise.all([
 					preferredPromise,
 					competitorPromise,
 				]);
 				return { winnerResult, loserResult };
 			} finally {
-				if (!employeeReleased) await releaseTask13Rows(employeeLock);
+				if (!periodReleased) await releaseTask13Rows(periodLock);
 				await Promise.all(
 					[preferredPromise, competitorPromise].filter(
 						(value): value is Promise<PromiseSettledResult<unknown>> =>
