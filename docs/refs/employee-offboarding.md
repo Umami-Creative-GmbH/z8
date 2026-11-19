@@ -329,10 +329,10 @@ sequence and the after-commit work. It has one entry per caller:
 - `deactivate(database, command, dependencies?)` (`deactivation/command.ts`)
   for an admin's Deactivate. In its own transaction it takes the locks, replays
   a request ID it has seen, checks the owner rules (`checkLifecycleTarget`),
-  plans or refuses, records the deactivation and applies it. After the commit
+  and plans or refuses. A fresh deactivation commits its ledger row,
+  consequences and `employee.deactivated` audit entry together. After commit
   it forwards the audit, runs the consequences' after-commit steps, revokes the
-  person's sessions, writes the `employee.deactivated` audit entry, recounts
-  the seats and pauses the scheduled exports the person owned. It returns
+  person's sessions, recounts seats and pauses their scheduled exports. It returns
   `deactivated`, `replayed`, `unchanged` (already a former employee), `refused`
   (a report needs a replacement) or `rejected` (a target rule, or no such
   employee). It throws for a request conflict and passes on the database's
