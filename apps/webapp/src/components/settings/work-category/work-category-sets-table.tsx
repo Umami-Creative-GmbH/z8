@@ -135,49 +135,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 	};
 
 	if (isLoading) {
-		return (
-			<div className="space-y-4">
-				<div className="flex justify-end">
-					<Skeleton className="h-9 w-32" />
-				</div>
-				<div className="rounded-md border">
-					<Table mobileLayout="stacked">
-						<TableHeader>
-							<TableRow>
-								<TableHead>
-									<Skeleton className="h-4 w-24" />
-								</TableHead>
-								<TableHead>
-									<Skeleton className="h-4 w-32" />
-								</TableHead>
-								<TableHead>
-									<Skeleton className="h-4 w-20" />
-								</TableHead>
-								<TableHead />
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{[1, 2, 3].map((i) => (
-								<TableRow key={i}>
-									<TableCell>
-										<Skeleton className="h-4 w-32" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-4 w-48" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-6 w-12" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-8 w-20" />
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			</div>
-		);
+		return <WorkCategorySetsSkeleton />;
 	}
 
 	if (error) {
@@ -356,5 +314,51 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 				onConfirm={handleDeleteConfirm}
 			/>
 		</>
+	);
+}
+
+function WorkCategorySetsSkeleton() {
+	return (
+		<div className="space-y-4">
+			<div className="flex justify-end">
+				<Skeleton className="h-9 w-32" />
+			</div>
+			<div className="rounded-md border">
+				<Table mobileLayout="stacked">
+					<TableHeader>
+						<TableRow>
+							<TableHead>
+								<Skeleton className="h-4 w-24" />
+							</TableHead>
+							<TableHead>
+								<Skeleton className="h-4 w-32" />
+							</TableHead>
+							<TableHead>
+								<Skeleton className="h-4 w-20" />
+							</TableHead>
+							<TableHead />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{[1, 2, 3].map((i) => (
+							<TableRow key={i}>
+								<TableCell>
+									<Skeleton className="h-4 w-32" />
+								</TableCell>
+								<TableCell>
+									<Skeleton className="h-4 w-48" />
+								</TableCell>
+								<TableCell>
+									<Skeleton className="h-6 w-12" />
+								</TableCell>
+								<TableCell>
+									<Skeleton className="h-8 w-20" />
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</div>
+		</div>
 	);
 }

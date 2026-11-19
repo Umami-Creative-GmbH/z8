@@ -210,8 +210,9 @@ function AuditPackGeneratorCardForOrganization({
 
 	useEffect(() => {
 		void Promise.resolve().then(loadRequestsForEffect);
+		const operation = organizationOperationRef.current;
 		return () => {
-			organizationOperationRef.current.active = false;
+			operation.active = false;
 			requestsOperationRef.current += 1;
 		};
 	}, []);

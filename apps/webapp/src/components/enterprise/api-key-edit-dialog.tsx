@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -190,8 +191,8 @@ function ApiKeyEditDialogForm({
 	const [error, setError] = useState<string | null>(null);
 	useLayoutEffect(() => {
 		lifetime.current = open ? {} : null;
-		setPending(false);
 		return () => {
+			setPending(false);
 			lifetime.current = null;
 			operation.current = null;
 		};
@@ -249,6 +250,20 @@ function ApiKeyEditDialogForm({
 	const preventPendingDismiss = (event: Event) => {
 		if (operation.current) event.preventDefault();
 	};
+	function submitForm() {
+		if (operation.current || !lifetime.current) return;
+		const command = {};
+		operation.current = command;
+		setPending(true);
+		setError(null);
+		void form.handleSubmit({ lifetime: lifetime.current, command }).finally(() => {
+			if (operation.current === command) {
+				operation.current = null;
+				setPending(false);
+			}
+		});
+	}
+
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent
@@ -257,23 +272,9 @@ function ApiKeyEditDialogForm({
 				onPointerDownOutside={preventPendingDismiss}
 				showCloseButton={!updateMutation.isPending}
 			>
-				<form
+				<ClientForm
 					className="flex min-h-0 flex-1 flex-col"
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
-						if (operation.current || !lifetime.current) return;
-						const command = {};
-						operation.current = command;
-						setPending(true);
-						setError(null);
-						void form.handleSubmit({ lifetime: lifetime.current, command }).finally(() => {
-							if (operation.current === command) {
-								operation.current = null;
-								setPending(false);
-							}
-						});
-					}}
+					stopPropagation onSubmit={submitForm}
 				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>{t("settings.apiKeys.editTitle", "Edit API Key")}</ActionPanelTitle>
@@ -476,7 +477,7 @@ function ApiKeyEditDialogForm({
 							)}
 						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

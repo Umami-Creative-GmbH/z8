@@ -17,6 +17,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import {
@@ -136,10 +137,9 @@ export function RateHistoryCard({
 	);
 
 	const changeForm = mode !== null && (
-		<form
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
+		<ClientForm
+			stopPropagation
+			onSubmit={() => {
 				// Enter in a field must not start a second change while one is saving.
 				if (form.state.isSubmitting) return;
 				void form.handleSubmit();
@@ -276,10 +276,60 @@ export function RateHistoryCard({
 					</div>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 
-	const history = loadError ? (
+	const history = (
+		<RateHistory
+			periods={periods}
+			loadError={loadError}
+			onRetry={onRetry}
+			isRetrying={isRetrying}
+			isLoading={isLoading}
+			emptyText={emptyText}
+			inEffectToday={inEffectToday}
+			locale={locale}
+			currency={currency}
+		/>
+	);
+
+	if (bare) {
+		return (
+			<div className="space-y-4">
+				{header}
+				{changeForm}
+				{history}
+			</div>
+		);
+	}
+
+	return (
+		<Card>
+			<CardHeader>{header}</CardHeader>
+			<CardContent className="space-y-4">
+				{changeForm}
+				{history}
+			</CardContent>
+		</Card>
+	);
+}
+
+function RateHistory({
+	periods,
+	loadError,
+	onRetry,
+	isRetrying,
+	isLoading,
+	emptyText,
+	inEffectToday,
+	locale,
+	currency,
+}: Pick<
+	RateHistoryCardProps,
+	"periods" | "loadError" | "onRetry" | "isRetrying" | "isLoading" | "emptyText" | "currency"
+> & { inEffectToday: BillableRatePeriodView | null; locale: string }) {
+	const { t } = useTranslate();
+	return loadError ? (
 		<div className="flex flex-wrap items-center justify-between gap-3">
 			<p className="text-sm text-destructive" role="alert">
 				{loadError}
@@ -295,7 +345,10 @@ export function RateHistoryCard({
 		</div>
 	) : isLoading ? (
 		<div className="flex items-center justify-center p-4" role="status">
-			<IconLoader2 aria-hidden="true" className="size-6 motion-safe:animate-spin text-muted-foreground" />
+			<IconLoader2
+				aria-hidden="true"
+				className="size-6 motion-safe:animate-spin text-muted-foreground"
+			/>
 			<span className="sr-only">{t("common.loading", "Loading")}</span>
 		</div>
 	) : periods.length === 0 ? (
@@ -352,25 +405,5 @@ export function RateHistoryCard({
 				})}
 			</ol>
 		</div>
-	);
-
-	if (bare) {
-		return (
-			<div className="space-y-4">
-				{header}
-				{changeForm}
-				{history}
-			</div>
-		);
-	}
-
-	return (
-		<Card>
-			<CardHeader>{header}</CardHeader>
-			<CardContent className="space-y-4">
-				{changeForm}
-				{history}
-			</CardContent>
-		</Card>
 	);
 }

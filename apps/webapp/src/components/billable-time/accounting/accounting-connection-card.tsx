@@ -12,11 +12,8 @@ import {
 	removeAccountingTool,
 	updateAccountingDefaults,
 } from "@/app/[locale]/(app)/settings/billable-time/accounting/actions";
-import {
-	ConfirmActionDialog,
-	describeFailure,
-	useConfirmedAction,
-} from "@/components/settings/confirm-action-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";

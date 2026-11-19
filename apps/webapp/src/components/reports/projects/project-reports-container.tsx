@@ -84,8 +84,8 @@ function ProjectReportWorkspace() {
 	useLayoutEffect(() => {
 		lifetime.current = {};
 		pending.current = null;
-		setIsLoading(false);
 		return () => {
+			if (pending.current) setIsLoading(false);
 			lifetime.current = null;
 			pending.current = null;
 		};

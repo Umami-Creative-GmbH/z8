@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
@@ -89,10 +90,9 @@ export function SubmitDocumentRequestDialog({
 			}}
 		>
 			<AlertDialogContent>
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+				<ClientForm
+					stopPropagation
+					onSubmit={() => {
 						if (pending.current || submitting.current) return;
 						submitting.current = true;
 						void form.handleSubmit().finally(() => {
@@ -155,7 +155,7 @@ export function SubmitDocumentRequestDialog({
 							)}
 						</form.Subscribe>
 					</AlertDialogFooter>
-				</form>
+				</ClientForm>
 			</AlertDialogContent>
 		</AlertDialog>
 	);

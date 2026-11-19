@@ -1,5 +1,6 @@
 "use client";
 
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -360,38 +361,34 @@ export function SubmitReportPanel({
 		if (!activation) return;
 		setProblem(null);
 		setLoading(true);
-		// No `finally` here or in submit: the React Compiler cannot compile try
-		// statements with one.
-		try {
-			const saved = await loadSavedReport();
-			if (!task.isCurrent(activation)) {
+		await runWithCleanup(
+			async () => {
+				try {
+					const saved = await loadSavedReport();
+					if (!task.isCurrent(activation)) return;
+					if (saved) {
+						setReport(saved);
+						setOpen(true);
+					} else {
+						toast.error(
+							t(
+								"travelExpenses.report.submit.notSaved",
+								"Some changes are not saved yet. Wait for them to save, then review the report again.",
+							),
+						);
+					}
+				} catch {
+					if (!task.isCurrent(activation)) return;
+					toast.error(
+						t("travelExpenses.report.errors.load", "Unable to load this expense. Please retry."),
+					);
+				}
+			},
+			() => {
 				setLoading(false);
 				task.release(activation);
-				return;
-			}
-			if (saved) {
-				setReport(saved);
-				setOpen(true);
-			} else {
-				toast.error(
-					t(
-						"travelExpenses.report.submit.notSaved",
-						"Some changes are not saved yet. Wait for them to save, then review the report again.",
-					),
-				);
-			}
-		} catch {
-			if (!task.isCurrent(activation)) {
-				setLoading(false);
-				task.release(activation);
-				return;
-			}
-			toast.error(
-				t("travelExpenses.report.errors.load", "Unable to load this expense. Please retry."),
-			);
-		}
-		setLoading(false);
-		task.release(activation);
+			},
+		);
 	}
 
 	async function submit() {

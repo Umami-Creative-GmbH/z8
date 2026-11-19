@@ -42,7 +42,7 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { PageHeader } from "@/components/ui/page-header";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsListSkeleton } from "./settings-list-skeleton";
 import {
 	Table,
 	TableBody,
@@ -249,17 +249,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 			) : null}
 
 			{isLoading ? (
-				<Card aria-busy="true">
-					<CardHeader className="space-y-2">
-						<Skeleton className="h-6 w-40" />
-						<Skeleton className="h-4 w-28" />
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-					</CardContent>
-				</Card>
+				<SettingsListSkeleton />
 			) : isError ? (
 				<Card>
 					<CardContent className="flex flex-col items-start gap-3">
@@ -276,40 +266,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 					</CardContent>
 				</Card>
 			) : customers.length === 0 ? (
-				<Card>
-					<CardContent>
-						<Empty>
-							<EmptyHeader>
-								<EmptyMedia variant="icon">
-									<IconAddressBook aria-hidden="true" />
-								</EmptyMedia>
-								<EmptyTitle role="heading" aria-level={2}>
-									{t("settings.customers.empty.title", "No customers yet")}
-								</EmptyTitle>
-								<EmptyDescription>
-									{t(
-										"settings.customers.empty.description",
-										"Add your first customer to assign them to projects.",
-									)}
-								</EmptyDescription>
-							</EmptyHeader>
-							<EmptyContent>
-								<Button onClick={handleCreate} disabled={!canCreateCustomer}>
-									<IconPlus aria-hidden="true" className="mr-2 size-4" />
-									{t("settings.customers.create", "Add Customer")}
-								</Button>
-								{!canCreateCustomer ? (
-									<p className="text-center text-sm text-muted-foreground">
-										{t(
-											"settings.customers.managerNoProjects",
-											"No managed projects available. Create or manage a project before adding customers.",
-										)}
-									</p>
-								) : null}
-							</EmptyContent>
-						</Empty>
-					</CardContent>
-				</Card>
+				<CustomersEmptyState canCreateCustomer={canCreateCustomer} handleCreate={handleCreate} />
 			) : (
 				<CustomerTableCard
 					t={t}
@@ -323,20 +280,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 			)}
 
 			{canSetBillableRates && (
-				<BillableRateActionPanel
-					open={ratesCustomer !== null}
-					onOpenChange={(open) => {
-						if (!open) setRatesCustomer(null);
-					}}
-					target={ratesCustomer ? { level: "customer", customerId: ratesCustomer.id } : null}
-					title={t("settings.billableTime.rates.customerRateTitle", "Billable rate for {name}", {
-						name: ratesCustomer?.name ?? "",
-					})}
-					description={t(
-						"settings.billableTime.rates.level.customerDescription",
-						"Applies to work on the customer's projects without a project rate.",
-					)}
-				/>
+				<CustomerRatePanel ratesCustomer={ratesCustomer} setRatesCustomer={setRatesCustomer} />
 			)}
 
 			{canSetBillableRates && (
@@ -359,42 +303,12 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 				onSuccess={handleSuccess}
 			/>
 
-			<AlertDialog
-				open={!!deletingCustomer}
-				onOpenChange={(open) => {
-					// Stay open while the delete runs, so its outcome belongs to this customer.
-					if (!open && !isDeleting) setDeletingCustomer(null);
-				}}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.customers.delete.title", "Delete Customer")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.customers.delete.description",
-								'Are you sure you want to delete "{name}"? Projects assigned to this customer will keep working but the customer reference will be removed.',
-								{ name: deletingCustomer?.name ?? "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isDeleting}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						{/* A plain button keeps the dialog open, showing progress until the delete settles. */}
-						<Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-							{isDeleting && (
-								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-							)}
-							{t("settings.customers.delete.confirm", "Delete {name}", {
-								name: deletingCustomer?.name ?? "",
-							})}
-						</Button>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteCustomerDialog
+				deletingCustomer={deletingCustomer}
+				isDeleting={isDeleting}
+				setDeletingCustomer={setDeletingCustomer}
+				handleDelete={handleDelete}
+			/>
 		</div>
 	);
 }
@@ -538,5 +452,129 @@ function CustomerTableCard({
 				</Table>
 			</CardContent>
 		</Card>
+	);
+}
+
+function CustomersEmptyState({
+	canCreateCustomer,
+	handleCreate,
+}: {
+	canCreateCustomer: boolean;
+	handleCreate: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardContent>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<IconAddressBook aria-hidden="true" />
+						</EmptyMedia>
+						<EmptyTitle role="heading" aria-level={2}>
+							{t("settings.customers.empty.title", "No customers yet")}
+						</EmptyTitle>
+						<EmptyDescription>
+							{t(
+								"settings.customers.empty.description",
+								"Add your first customer to assign them to projects.",
+							)}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button onClick={handleCreate} disabled={!canCreateCustomer}>
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
+							{t("settings.customers.create", "Add Customer")}
+						</Button>
+						{!canCreateCustomer ? (
+							<p className="text-center text-sm text-muted-foreground">
+								{t(
+									"settings.customers.managerNoProjects",
+									"No managed projects available. Create or manage a project before adding customers.",
+								)}
+							</p>
+						) : null}
+					</EmptyContent>
+				</Empty>
+			</CardContent>
+		</Card>
+	);
+}
+
+function DeleteCustomerDialog({
+	deletingCustomer,
+	isDeleting,
+	setDeletingCustomer,
+	handleDelete,
+}: {
+	deletingCustomer: CustomerData | null;
+	isDeleting: boolean;
+	setDeletingCustomer: (value: null) => void;
+	handleDelete: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<AlertDialog
+			open={!!deletingCustomer}
+			onOpenChange={(open) => {
+				// Stay open while the delete runs, so its outcome belongs to this customer.
+				if (!open && !isDeleting) setDeletingCustomer(null);
+			}}
+		>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t("settings.customers.delete.title", "Delete Customer")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t(
+							"settings.customers.delete.description",
+							'Are you sure you want to delete "{name}"? Projects assigned to this customer will keep working but the customer reference will be removed.',
+							{
+								name: deletingCustomer?.name ?? "",
+							},
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isDeleting}>
+						{t("common.cancel", "Cancel")}
+					</AlertDialogCancel>
+					{/* A plain button keeps the dialog open, showing progress until the delete settles. */}
+					<Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+						{isDeleting && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
+						{t("settings.customers.delete.confirm", "Delete {name}", {
+							name: deletingCustomer?.name ?? "",
+						})}
+					</Button>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+}
+
+function CustomerRatePanel({
+	ratesCustomer,
+	setRatesCustomer,
+}: {
+	ratesCustomer: CustomerData | null;
+	setRatesCustomer: (value: null) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<BillableRateActionPanel
+			open={ratesCustomer !== null}
+			onOpenChange={(open) => {
+				if (!open) setRatesCustomer(null);
+			}}
+			target={ratesCustomer ? { level: "customer", customerId: ratesCustomer.id } : null}
+			title={t("settings.billableTime.rates.customerRateTitle", "Billable rate for {name}", {
+				name: ratesCustomer?.name ?? "",
+			})}
+			description={t(
+				"settings.billableTime.rates.level.customerDescription",
+				"Applies to work on the customer's projects without a project rate.",
+			)}
+		/>
 	);
 }

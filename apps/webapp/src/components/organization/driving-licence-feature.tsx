@@ -5,11 +5,8 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import {
-	ConfirmActionDialog,
-	describeFailure,
-	useConfirmedAction,
-} from "@/components/settings/confirm-action-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Button } from "@/components/ui/button";
 import {

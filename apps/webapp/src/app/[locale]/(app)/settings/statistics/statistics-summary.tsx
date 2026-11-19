@@ -1,4 +1,4 @@
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { numberFormatter } from "@/lib/intl-number-format";
 import { cn } from "@/lib/utils";
 
 export interface StatisticsMetric {
@@ -34,7 +34,7 @@ export function StatisticsSection({
 	metrics: StatisticsMetric[];
 	locale: string;
 }) {
-	const numberFormat = new Intl.NumberFormat(locale);
+	const numberFormat = numberFormatter(locale);
 	const headingId = `statistics-${id}`;
 
 	return (
@@ -67,32 +67,4 @@ export function StatisticsSection({
 			</dl>
 		</section>
 	);
-}
-
-/** A change between two counts, signed except at zero, in the reader's locale. */
-export function formatSignedCount(value: number, locale: string) {
-	return new Intl.NumberFormat(locale, { signDisplay: "exceptZero" }).format(value);
-}
-
-/**
- * When the statistics were read: the instant in the organization's time zone,
- * with the zone named, in the reader's locale.
- */
-export function formatStatisticsFetchedAt(fetchedAt: string, locale: string, timeZone: string) {
-	const options: Intl.DateTimeFormatOptions = {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-		timeZone,
-		timeZoneName: "short",
-	};
-	let formatter: Intl.DateTimeFormat;
-	try {
-		formatter = new Intl.DateTimeFormat(locale, options);
-	} catch {
-		formatter = new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" });
-	}
-	return formatter.format(parseInstant(fetchedAt).epochMilliseconds);
 }

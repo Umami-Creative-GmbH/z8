@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import {
 	IconDropletFilled,
 	IconLoader2,
@@ -54,9 +55,7 @@ interface WellnessSettingsFormProps {
 	initialSettings: WaterReminderSettings;
 }
 
-export function WellnessSettingsForm({
-	initialSettings,
-}: WellnessSettingsFormProps) {
+function useWellnessForm({ initialSettings }: WellnessSettingsFormProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
 
@@ -112,14 +111,14 @@ export function WellnessSettingsForm({
 			subscription.unsubscribe();
 		};
 	}, [form.store]);
+	return { t, loading, form, isEnabled, isDirty };
+}
+
+export function WellnessSettingsForm(props: WellnessSettingsFormProps) {
+	const { t, loading, form, isEnabled, isDirty } = useWellnessForm(props);
 
 	return (
-		<form
-			onSubmit={(e) => {
-				e.preventDefault();
-				form.handleSubmit();
-			}}
-		>
+		<ClientForm onSubmit={() => form.handleSubmit()}>
 			<Card>
 				<CardHeader className="pb-4">
 					<div className="flex items-center justify-between gap-4">
@@ -160,179 +159,142 @@ export function WellnessSettingsForm({
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					<div
-						className={`space-y-6 transition-opacity ${!isEnabled ? "opacity-40" : ""}`}
-					>
-					{/* Frequency */}
-					<form.Field name="intervalMinutes">
-						{(field) => {
-							const value = field.state.value;
-							const isRecommended = value === 45;
+					<div className={`space-y-6 transition-opacity ${!isEnabled ? "opacity-40" : ""}`}>
+						{/* Frequency */}
+						<form.Field name="intervalMinutes">
+							{(field) => {
+								const value = field.state.value;
+								const isRecommended = value === 45;
 
-							return (
-								<div className="space-y-3">
-									<div className="flex flex-wrap items-center justify-between gap-2">
-										<Label
-											id="wellness-reminder-frequency-label"
-											className="text-sm font-medium"
-										>
-											{t(
-												"settings.wellness.reminderFrequency",
-												"Reminder Frequency",
-											)}
-										</Label>
-										<div className="flex items-center gap-2">
-											<span className="text-sm tabular-nums">
-												{t("common.durationMinutes", "{count} min", {
-													count: value,
-												})}
-											</span>
-											<span
-												className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-													isRecommended
-														? "bg-primary/10 text-primary"
-														: "bg-muted text-muted-foreground"
-												}`}
+								return (
+									<div className="space-y-3">
+										<div className="flex flex-wrap items-center justify-between gap-2">
+											<Label id="wellness-reminder-frequency-label" className="text-sm font-medium">
+												{t("settings.wellness.reminderFrequency", "Reminder Frequency")}
+											</Label>
+											<div className="flex items-center gap-2">
+												<span className="text-sm tabular-nums">
+													{t("common.durationMinutes", "{count} min", {
+														count: value,
+													})}
+												</span>
+												<span
+													className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+														isRecommended
+															? "bg-primary/10 text-primary"
+															: "bg-muted text-muted-foreground"
+													}`}
+												>
+													<IntervalPresetLabel minutes={value} />
+												</span>
+											</div>
+										</div>
+										<div className="relative pt-1 pb-6">
+											<Slider
+												aria-labelledby="wellness-reminder-frequency-label"
+												value={[value]}
+												onValueChange={(v) => {
+													field.handleChange(v[0]);
+													const newPreset =
+														v[0] === 30
+															? "active"
+															: v[0] === 45
+																? "moderate"
+																: v[0] === 60
+																	? "light"
+																	: "custom";
+													form.setFieldValue("preset", newPreset);
+												}}
+												min={CUSTOM_INTERVAL_RANGE.min}
+												max={CUSTOM_INTERVAL_RANGE.max}
+												step={5}
+												disabled={loading || !isEnabled}
+											/>
+											{/* Markers */}
+											<div
+												aria-hidden="true"
+												className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] tabular-nums text-muted-foreground"
 											>
-												<IntervalPresetLabel minutes={value} />
-											</span>
+												<span>{CUSTOM_INTERVAL_RANGE.min}m</span>
+												{[30, 45, 60].map((val) => {
+													const percent =
+														((val - CUSTOM_INTERVAL_RANGE.min) /
+															(CUSTOM_INTERVAL_RANGE.max - CUSTOM_INTERVAL_RANGE.min)) *
+														100;
+													return (
+														<span
+															key={val}
+															className="absolute -translate-x-1/2"
+															style={{ left: `${percent}%` }}
+														>
+															{val}m
+														</span>
+													);
+												})}
+												<span>{CUSTOM_INTERVAL_RANGE.max}m</span>
+											</div>
 										</div>
 									</div>
-									<div className="relative pt-1 pb-6">
-										<Slider
-											aria-labelledby="wellness-reminder-frequency-label"
-											value={[value]}
-											onValueChange={(v) => {
-												field.handleChange(v[0]);
-												const newPreset =
-													v[0] === 30
-														? "active"
-														: v[0] === 45
-															? "moderate"
-															: v[0] === 60
-																? "light"
-																: "custom";
-												form.setFieldValue("preset", newPreset);
-											}}
-											min={CUSTOM_INTERVAL_RANGE.min}
-											max={CUSTOM_INTERVAL_RANGE.max}
-											step={5}
-											disabled={loading || !isEnabled}
-										/>
-										{/* Markers */}
+								);
+							}}
+						</form.Field>
+
+						<div className="h-px bg-border" />
+
+						{/* Daily Goal */}
+						<form.Field name="dailyGoal">
+							{(field) => (
+								<div role="group" aria-labelledby="wellness-daily-goal-label" className="space-y-3">
+									<div className="flex items-center justify-between gap-2">
+										<Label id="wellness-daily-goal-label" className="text-sm font-medium">
+											{t("settings.wellness.dailyGoal", "Daily Goal")}
+										</Label>
+										<span className="text-sm tabular-nums" aria-live="polite">
+											{field.state.value} {t("settings.wellness.glasses", "glasses")}
+										</span>
+									</div>
+									<div className="flex items-center gap-3">
+										<Button
+											type="button"
+											aria-label={t("settings.wellness.decreaseDailyGoal", "Decrease daily goal")}
+											variant="outline"
+											size="icon"
+											className="size-9 shrink-0 rounded-full"
+											onClick={() =>
+												field.handleChange(Math.max(DAILY_GOAL_RANGE.min, field.state.value - 1))
+											}
+											disabled={loading || !isEnabled || field.state.value <= DAILY_GOAL_RANGE.min}
+										>
+											<IconMinus className="size-4" aria-hidden="true" />
+										</Button>
 										<div
 											aria-hidden="true"
-											className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] tabular-nums text-muted-foreground"
+											className="flex min-w-0 flex-1 flex-wrap justify-center gap-1"
 										>
-											<span>{CUSTOM_INTERVAL_RANGE.min}m</span>
-											{[30, 45, 60].map((val) => {
-												const percent =
-													((val - CUSTOM_INTERVAL_RANGE.min) /
-														(CUSTOM_INTERVAL_RANGE.max -
-															CUSTOM_INTERVAL_RANGE.min)) *
-													100;
-												return (
-													<span
-														key={val}
-														className="absolute -translate-x-1/2"
-														style={{ left: `${percent}%` }}
-													>
-														{val}m
-													</span>
-												);
-											})}
-											<span>{CUSTOM_INTERVAL_RANGE.max}m</span>
-										</div>
-									</div>
-								</div>
-							);
-						}}
-					</form.Field>
-
-					<div className="h-px bg-border" />
-
-					{/* Daily Goal */}
-					<form.Field name="dailyGoal">
-						{(field) => (
-							<div
-								role="group"
-								aria-labelledby="wellness-daily-goal-label"
-								className="space-y-3"
-							>
-								<div className="flex items-center justify-between gap-2">
-									<Label
-										id="wellness-daily-goal-label"
-										className="text-sm font-medium"
-									>
-										{t("settings.wellness.dailyGoal", "Daily Goal")}
-									</Label>
-									<span className="text-sm tabular-nums" aria-live="polite">
-										{field.state.value}{" "}
-										{t("settings.wellness.glasses", "glasses")}
-									</span>
-								</div>
-								<div className="flex items-center gap-3">
-									<Button
-										type="button"
-										aria-label={t(
-											"settings.wellness.decreaseDailyGoal",
-											"Decrease daily goal",
-										)}
-										variant="outline"
-										size="icon"
-										className="size-9 shrink-0 rounded-full"
-										onClick={() =>
-											field.handleChange(
-												Math.max(DAILY_GOAL_RANGE.min, field.state.value - 1),
-											)
-										}
-										disabled={
-											loading ||
-											!isEnabled ||
-											field.state.value <= DAILY_GOAL_RANGE.min
-										}
-									>
-										<IconMinus className="size-4" aria-hidden="true" />
-									</Button>
-									<div
-										aria-hidden="true"
-										className="flex min-w-0 flex-1 flex-wrap justify-center gap-1"
-									>
-										{DAILY_GOAL_DROPLET_KEYS.slice(0, field.state.value).map(
-											(key) => (
+											{DAILY_GOAL_DROPLET_KEYS.slice(0, field.state.value).map((key) => (
 												<IconDropletFilled
 													key={key}
 													className="size-5 text-primary"
 												/>
-											),
-										)}
+											))}
+										</div>
+										<Button
+											type="button"
+											aria-label={t("settings.wellness.increaseDailyGoal", "Increase daily goal")}
+											variant="outline"
+											size="icon"
+											className="size-9 shrink-0 rounded-full"
+											onClick={() =>
+												field.handleChange(Math.min(DAILY_GOAL_RANGE.max, field.state.value + 1))
+											}
+											disabled={loading || !isEnabled || field.state.value >= DAILY_GOAL_RANGE.max}
+										>
+											<IconPlus className="size-4" aria-hidden="true" />
+										</Button>
 									</div>
-									<Button
-										type="button"
-										aria-label={t(
-											"settings.wellness.increaseDailyGoal",
-											"Increase daily goal",
-										)}
-										variant="outline"
-										size="icon"
-										className="size-9 shrink-0 rounded-full"
-										onClick={() =>
-											field.handleChange(
-												Math.min(DAILY_GOAL_RANGE.max, field.state.value + 1),
-											)
-										}
-										disabled={
-											loading ||
-											!isEnabled ||
-											field.state.value >= DAILY_GOAL_RANGE.max
-										}
-									>
-										<IconPlus className="size-4" aria-hidden="true" />
-									</Button>
 								</div>
-							</div>
-						)}
-					</form.Field>
+							)}
+						</form.Field>
 					</div>
 
 					<div className="h-px bg-border" />
@@ -353,6 +315,6 @@ export function WellnessSettingsForm({
 					</Button>
 				</CardContent>
 			</Card>
-		</form>
+		</ClientForm>
 	);
 }

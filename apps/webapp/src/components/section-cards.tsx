@@ -2,12 +2,7 @@
 
 import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import {
-	type ReactNode,
-	useEffect,
-	useState,
-	useSyncExternalStore,
-} from "react";
+import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { CoveringForWidget } from "@/components/dashboard/covering-for-widget";
 import {
 	dashboardRegionWidgets,
@@ -29,7 +24,7 @@ import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
 import { VacationBalanceWidget } from "@/components/dashboard/vacation-balance-widget";
 import { WhosOutTodayWidget } from "@/components/dashboard/whos-out-today-widget";
-import { WidgetCardVariantContext } from "@/components/dashboard/widget-card";
+import { WidgetCardVariantContext } from "@/components/dashboard/widget-card-variant";
 import type { WidgetId } from "@/components/dashboard/widget-registry";
 import {
 	useVisibleWidgets,
@@ -67,10 +62,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"presence-status": PresenceStatusWidget,
 };
 
-const WIDGET_SKELETON_KEYS = Array.from(
-	{ length: 8 },
-	(_, index) => `widget-skeleton-${index}`,
-);
+const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-skeleton-${index}`);
 
 const subscribeToHydration = () => () => {};
 const getHydratedSnapshot = () => true;
@@ -123,10 +115,7 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	return (
 		<div className="rounded-xl border border-dashed bg-card p-8 text-center">
 			<h2 className="font-semibold text-card-foreground text-lg">
-				{t(
-					"dashboard.customize.empty-title",
-					"All dashboard widgets are hidden",
-				)}
+				{t("dashboard.customize.empty-title", "All dashboard widgets are hidden")}
 			</h2>
 			<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 				{t(
@@ -237,9 +226,7 @@ function DashboardWidgetLayout({
 	const renderedWidgets = useVisibleWidgets();
 	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
 	const visibleWidgetKey = visibleWidgetOrder.join("|");
-	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(
-		!visibleWidgetKey,
-	);
+	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(!visibleWidgetKey);
 	const [checkedWidgetKey, setCheckedWidgetKey] = useState(visibleWidgetKey);
 
 	if (checkedWidgetKey !== visibleWidgetKey) {
@@ -250,9 +237,7 @@ function DashboardWidgetLayout({
 	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
 	const shouldShowEmptyState =
 		!hasConfiguredWidgets ||
-		(hasCheckedRenderedWidgets &&
-			fetchingDashboardWidgets === 0 &&
-			renderedWidgets.length === 0);
+		(hasCheckedRenderedWidgets && fetchingDashboardWidgets === 0 && renderedWidgets.length === 0);
 
 	useEffect(() => {
 		if (!visibleWidgetKey) {
@@ -299,9 +284,7 @@ function DashboardWidgetLayout({
 					)}
 				</SortableWidgetGrid>
 			) : null}
-			{shouldShowEmptyState ? (
-				<HiddenWidgetsEmptyState onReset={resetOrder} />
-			) : null}
+			{shouldShowEmptyState ? <HiddenWidgetsEmptyState onReset={resetOrder} /> : null}
 		</>
 	);
 }
@@ -315,8 +298,7 @@ export function SectionCards({
 	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
 	personalDaySlot?: ReactNode;
 } = {}) {
-	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } =
-		useWidgetOrder(initialLayout);
+	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder(initialLayout);
 	const hasHydrated = useHasHydrated();
 
 	if ((!initialLayout && !hasHydrated) || isLoading) {

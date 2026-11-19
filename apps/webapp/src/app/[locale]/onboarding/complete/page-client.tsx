@@ -61,7 +61,22 @@ function useCompletionAttempt(actor: string, completions: CompletionCache, onRet
 	useLayoutEffect(() => {
 		let current = true;
 		busy.current = true;
-		setOutcome({ status: "finalizing" });
+		async function loadSummary() {
+			setOutcome({ status: "summary-loading" });
+			try {
+				const result = await getOnboardingSummary();
+				if (current) {
+					setOutcome(
+						result.success
+							? { status: "ready", summary: result.data }
+							: { status: "summary-error" },
+					);
+				}
+			} catch {
+				if (current) setOutcome({ status: "summary-error" });
+			}
+		}
+
 		async function finish() {
 			try {
 				let completion = completions.get(actor);
@@ -70,24 +85,12 @@ function useCompletionAttempt(actor: string, completions: CompletionCache, onRet
 					completions.set(actor, completion);
 				}
 				const result = await completion;
-				if (!current) return;
-				if (!result.success) {
-					setOutcome({ status: "completion-error" });
-					return;
+				if (current) {
+					if (result.success) await loadSummary();
+					else setOutcome({ status: "completion-error" });
 				}
 			} catch {
 				if (current) setOutcome({ status: "completion-error" });
-				return;
-			}
-			setOutcome({ status: "summary-loading" });
-			try {
-				const result = await getOnboardingSummary();
-				if (!current) return;
-				setOutcome(
-					result.success ? { status: "ready", summary: result.data } : { status: "summary-error" },
-				);
-			} catch {
-				if (current) setOutcome({ status: "summary-error" });
 			}
 		}
 		void finish().finally(() => {
@@ -95,6 +98,7 @@ function useCompletionAttempt(actor: string, completions: CompletionCache, onRet
 		});
 		return () => {
 			current = false;
+			setOutcome({ status: "finalizing" });
 			busy.current = true;
 		};
 	}, [actor, completions]);

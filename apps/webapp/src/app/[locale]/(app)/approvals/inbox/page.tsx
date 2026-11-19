@@ -986,104 +986,51 @@ function ApprovalInboxContent({
 		dispatch({ type: "selectionChanged", itemIdsKey, ids: newSelection });
 	};
 
-	const handleBulkApprove = async () => {
-		if (selectedBulkApproveIds.length === 0 || bulkActionInFlightRef.current)
-			return;
-
+	async function runBulkDecision(
+		decision: BulkDecision,
+		mutate: () => Promise<ApprovalInboxBulkDecisionResult>,
+		closeRejectPanel = false,
+	) {
+		if (bulkActionInFlightRef.current) return;
 		bulkActionInFlightRef.current = true;
 		try {
-			const result = await bulkApproveMutation.mutateAsync(
-				selectedBulkApproveIds,
-			);
-			handleBulkDecisionToasts(t, result, "approve");
-
+			const result = await mutate();
+			handleBulkDecisionToasts(t, result, decision);
+			if (closeRejectPanel) dispatch({ type: "bulkRejectOpenChanged", open: false });
 			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
 		} catch (error) {
 			bulkActionInFlightRef.current = false;
-			toast.error(
-				getErrorMessage(
-					error,
-					t(
-						"approvals:approvals.bulkApproveRequestFailed",
-						"Bulk approve failed",
-					),
-				),
-			);
+			const fallback =
+				decision === "approve"
+					? t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed")
+					: t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed");
+			toast.error(getErrorMessage(error, fallback));
 			return;
 		}
-
 		bulkActionInFlightRef.current = false;
+	}
+
+	const handleBulkApprove = async () => {
+		if (selectedBulkApproveIds.length === 0) return;
+		await runBulkDecision("approve", () => bulkApproveMutation.mutateAsync(selectedBulkApproveIds));
 	};
 
 	const handleBulkReject = async () => {
 		const reason = uiState.bulkRejectReason.trim();
-		if (
-			selectedBulkRejectIds.length === 0 ||
-			!reason ||
-			bulkActionInFlightRef.current
-		)
-			return;
-
-		bulkActionInFlightRef.current = true;
-		try {
-			const result = await bulkRejectMutation.mutateAsync({
-				approvalIds: selectedBulkRejectIds,
-				reason,
-			});
-			handleBulkDecisionToasts(t, result, "reject");
-
-			dispatch({ type: "bulkRejectOpenChanged", open: false });
-			dispatch({ type: "selectionCleared", itemIdsKey });
-			refetch();
-		} catch (error) {
-			bulkActionInFlightRef.current = false;
-			toast.error(
-				getErrorMessage(
-					error,
-					t(
-						"approvals:approvals.bulkRejectRequestFailed",
-						"Bulk reject failed",
-					),
-				),
-			);
-			return;
-		}
-
-		bulkActionInFlightRef.current = false;
+		if (!selectedBulkRejectIds.length || !reason) return;
+		await runBulkDecision(
+			"reject",
+			() => bulkRejectMutation.mutateAsync({ approvalIds: selectedBulkRejectIds, reason }),
+			true,
+		);
 	};
 
-	const handleFastLaneApprove = async (
-		approvalIds: string[],
-		fastLane: ApprovalFastLaneReview,
-	) => {
-		if (approvalIds.length === 0 || bulkActionInFlightRef.current) return;
-
-		bulkActionInFlightRef.current = true;
-		try {
-			const result = await bulkApproveMutation.mutateAsync({
-				approvalIds,
-				fastLane,
-			});
-			handleBulkDecisionToasts(t, result, "approve");
-
-			dispatch({ type: "selectionCleared", itemIdsKey });
-			refetch();
-		} catch (error) {
-			bulkActionInFlightRef.current = false;
-			toast.error(
-				getErrorMessage(
-					error,
-					t(
-						"approvals:approvals.bulkApproveRequestFailed",
-						"Bulk approve failed",
-					),
-				),
-			);
-			return;
-		}
-
-		bulkActionInFlightRef.current = false;
+	const handleFastLaneApprove = async (approvalIds: string[], fastLane: ApprovalFastLaneReview) => {
+		if (!approvalIds.length) return;
+		await runBulkDecision("approve", () =>
+			bulkApproveMutation.mutateAsync({ approvalIds, fastLane }),
+		);
 	};
 
 	const handleFastLaneReject = async (
@@ -1092,39 +1039,10 @@ function ApprovalInboxContent({
 		fastLane: ApprovalFastLaneReview,
 	) => {
 		const trimmedReason = reason.trim();
-		if (
-			approvalIds.length === 0 ||
-			!trimmedReason ||
-			bulkActionInFlightRef.current
-		)
-			return;
-
-		bulkActionInFlightRef.current = true;
-		try {
-			const result = await bulkRejectMutation.mutateAsync({
-				approvalIds,
-				reason: trimmedReason,
-				fastLane,
-			});
-			handleBulkDecisionToasts(t, result, "reject");
-
-			dispatch({ type: "selectionCleared", itemIdsKey });
-			refetch();
-		} catch (error) {
-			bulkActionInFlightRef.current = false;
-			toast.error(
-				getErrorMessage(
-					error,
-					t(
-						"approvals:approvals.bulkRejectRequestFailed",
-						"Bulk reject failed",
-					),
-				),
-			);
-			return;
-		}
-
-		bulkActionInFlightRef.current = false;
+		if (!approvalIds.length || !trimmedReason) return;
+		await runBulkDecision("reject", () =>
+			bulkRejectMutation.mutateAsync({ approvalIds, reason: trimmedReason, fastLane }),
+		);
 	};
 
 	const isBulkActionPending =

@@ -136,7 +136,7 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "current-calendar",
 		reason:
 			"The employee's current local calendar year must be resolved per request.",
-		operation: "const now = DateTime.now().setZone(timezone);",
+		operation: "const now = systemClock.nowInstant();",
 	},
 	{
 		file: "src/app/[locale]/(app)/works-council/page.tsx",
@@ -257,7 +257,7 @@ const SHELL_WORK_QUEUE = [
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/locations/[locationId]/page.tsx",
-		fallbackComponent: "LocationDetailPageLoading",
+		fallbackComponent: "LocationDetailSkeleton",
 		contentComponent: "LocationDetailPageContent",
 	},
 	{

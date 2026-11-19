@@ -71,10 +71,10 @@ export function VehicleReportExports({
 	useEffect(() => {
 		const arrival = { active: true };
 		active.current = arrival;
-		pending.current = null;
-		setLoading(null);
 		return () => {
 			arrival.active = false;
+			pending.current = null;
+			setLoading(null);
 		};
 	}, []);
 	async function download(format: Format) {

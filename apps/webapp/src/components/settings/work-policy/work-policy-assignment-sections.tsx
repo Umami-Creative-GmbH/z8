@@ -1,3 +1,4 @@
+import { workPolicyAssignmentTargetLabel } from "./work-policy-assignment-target";
 import {
 	IconBuilding,
 	IconFileText,
@@ -13,7 +14,6 @@ import { AssignmentLevelCardHeader } from "@/components/settings/assignment-leve
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { cn } from "@/lib/utils";
 
 type AssignmentType = "organization" | "team" | "employee";
@@ -35,36 +35,6 @@ interface WorkPolicyAssignmentSectionsProps {
 	};
 	onAssignClick: (type: AssignmentType) => void;
 	onDeleteClick: (assignment: WorkPolicyAssignmentWithDetails) => void;
-}
-
-function formatAssignmentEmployeeName(
-	employeeRecord: { firstName?: string | null; lastName?: string | null } | null | undefined,
-	fallback: string,
-) {
-	return employeeRecord ? buildAuthUserDisplayName(employeeRecord) || fallback : fallback;
-}
-
-type Translate = ReturnType<typeof useTranslate>["t"];
-
-/** Who an assignment applies to, as shown in its row and its removal confirmation. */
-export function workPolicyAssignmentTargetLabel(
-	assignment: WorkPolicyAssignmentWithDetails,
-	t: Translate,
-	// A section already knows which level it lists; it passes that level so the label
-	// never depends on the row carrying its own type.
-	kind: AssignmentType = assignment.assignmentType,
-) {
-	switch (kind) {
-		case "organization":
-			return t("settings.workPolicies.orgLevel", "Organization Default");
-		case "team":
-			return assignment.team?.name || t("common.unknownTeam", "Unknown Team");
-		default:
-			return formatAssignmentEmployeeName(
-				assignment.employee,
-				t("common.unknownEmployee", "Unknown Employee"),
-			);
-	}
 }
 
 function RemoveAssignmentButton({

@@ -5,10 +5,7 @@ import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import {
-	redeemInviteCode,
-	validateInviteCode,
-} from "@/app/[locale]/(auth)/invite-code-actions";
+import { redeemInviteCode, validateInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -20,10 +17,15 @@ import {
 import { useAuthPageSession } from "@/lib/auth/use-auth-page-session";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
-import {
-	JoinOrganizationFormBody,
-	type JoinState,
-} from "./join-organization-form-body";
+import { JoinOrganizationFormBody, type JoinState } from "./join-organization-form-body";
+
+async function readInviteCode(code: string) {
+	try {
+		return await validateInviteCode(code.toUpperCase());
+	} catch {
+		return null;
+	}
+}
 
 export function JoinOrganizationForm({ code }: { code?: string }) {
 	const { data: session, isPending } = useAuthPageSession({
@@ -58,14 +60,10 @@ function JoinOrganizationFormContent({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const router = useRouter();
-	const [state, setState] = useState<JoinState>(
-		initialCode ? "loading" : "valid",
-	);
+	const [state, setState] = useState<JoinState>(initialCode ? "loading" : "valid");
 	const [error, setError] = useState<string | null>(null);
 	const [organizationName, setOrganizationName] = useState<string | null>(null);
-	const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(
-		null,
-	);
+	const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(null);
 	const validationOperationRef = useRef(0);
 	const joiningRef = useRef(false);
 	const mountedRef = useRef(true);
@@ -94,11 +92,7 @@ function JoinOrganizationFormContent({
 						const result = await redeemInviteCode(value.code);
 						if (!mountedRef.current) return;
 						if (!result.success) {
-							setState(
-								result.error?.includes("already a member")
-									? "already-member"
-									: "error",
-							);
+							setState(result.error?.includes("already a member") ? "already-member" : "error");
 							setError(result.error || t("common.error", "An error occurred"));
 							return;
 						}
@@ -126,36 +120,35 @@ function JoinOrganizationFormContent({
 	const callback = `/${locale}/join/${encodeURIComponent(code)}`;
 	const signInHref = `/sign-in?callbackUrl=${encodeURIComponent(callback)}`;
 
-	async function validateCode(codeToValidate: string) {
-		const operation = ++validationOperationRef.current;
-		if (!codeToValidate.trim()) return;
-		try {
-			const result = await validateInviteCode(codeToValidate.toUpperCase());
-			if (!mountedRef.current || validationOperationRef.current !== operation)
-				return;
-			if (!result.success || !result.data.valid) {
-				setState("invalid");
-				setError(
-					(!result.success ? result.error : result.data.error) ||
-						t("settings.inviteCodes.invalidCode", "Invalid invite code"),
-				);
-				inputRef.current?.focus();
-				return;
-			}
-			setState("valid");
-			setOrganizationName(result.data.inviteCode?.organization?.name || null);
-		} catch {
-			if (!mountedRef.current || validationOperationRef.current !== operation)
-				return;
+	function applyValidation(operation: number, result: Awaited<ReturnType<typeof readInviteCode>>) {
+		if (!mountedRef.current || validationOperationRef.current !== operation) return;
+		if (!result?.success || !result.data.valid) {
 			setState("invalid");
-			setError(t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+			setError(
+				(result?.success ? result.data.error : result?.error) ||
+					t("settings.inviteCodes.invalidCode", "Invalid invite code"),
+			);
 			inputRef.current?.focus();
+			return;
+		}
+		setState("valid");
+		setOrganizationName(result.data.inviteCode?.organization?.name || null);
+	}
+	const completeInitialValidation = useEffectEvent(applyValidation);
+	function validateCode(codeToValidate: string) {
+		const operation = ++validationOperationRef.current;
+		if (codeToValidate.trim()) {
+			void readInviteCode(codeToValidate).then((result) => applyValidation(operation, result));
 		}
 	}
-	const validateInitialCode = useEffectEvent(validateCode);
 	useEffect(() => {
 		mountedRef.current = true;
-		if (initialCode) void validateInitialCode(initialCode);
+		if (initialCode?.trim()) {
+			const operation = ++validationOperationRef.current;
+			void readInviteCode(initialCode).then((result) =>
+				completeInitialValidation(operation, result),
+			);
+		}
 		return () => {
 			mountedRef.current = false;
 			validationOperationRef.current += 1;
@@ -181,10 +174,7 @@ function JoinOrganizationFormContent({
 									spellCheck={false}
 									autoCapitalize="characters"
 									translate="no"
-									placeholder={t(
-										"settings.inviteCodes.codePlaceholder",
-										"TEAM-ABC123",
-									)}
+									placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
 									value={field.state.value}
 									onBlur={field.handleBlur}
 									disabled={state === "joining"}
@@ -199,10 +189,7 @@ function JoinOrganizationFormContent({
 								/>
 							</TFormControl>
 							<TFormDescription>
-								{t(
-									"auth.join.codeHint",
-									"Check the organization below before joining.",
-								)}
+								{t("auth.join.codeHint", "Check the organization below before joining.")}
 							</TFormDescription>
 							<TFormMessage>{state === "invalid" ? error : null}</TFormMessage>
 						</TFormItem>

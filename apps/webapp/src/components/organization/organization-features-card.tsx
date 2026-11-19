@@ -18,11 +18,8 @@ import { toast } from "sonner";
 import { switchBillableTime } from "@/app/[locale]/(app)/settings/billable-time/actions";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organization/actions";
 import { BillableCurrencyForm } from "@/components/billable-time/billable-currency-form";
-import {
-	ConfirmActionDialog,
-	describeFailure,
-	useConfirmedAction,
-} from "@/components/settings/confirm-action-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {

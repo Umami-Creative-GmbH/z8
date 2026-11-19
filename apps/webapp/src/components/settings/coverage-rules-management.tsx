@@ -124,14 +124,8 @@ export function CoverageRulesManagement({
 		},
 	});
 
-	const rules = rulesResult || [];
 	const settings = settingsResult;
-	const manageableSubareaIdSet = manageableSubareaIds
-		? new Set(manageableSubareaIds)
-		: null;
-	const visibleRules = manageableSubareaIdSet
-		? rules.filter((rule) => manageableSubareaIdSet.has(rule.subareaId))
-		: rules;
+	const visibleRules = filterManageableRules(rulesResult ?? [], manageableSubareaIds);
 
 	// Delete mutation
 	const deleteRuleMutation = useMutation({
@@ -235,10 +229,6 @@ export function CoverageRulesManagement({
 		>,
 	);
 
-	const ruleToDelete = deleteRuleId
-		? visibleRules.find((rule) => rule.id === deleteRuleId)
-		: undefined;
-
 	if (isLoading) {
 		return (
 			<LoadingRegion
@@ -321,91 +311,13 @@ export function CoverageRulesManagement({
 					</CardContent>
 				</Card>
 			) : (
-				<div className="space-y-4">
-					{Object.values(rulesBySubarea).map((group) => (
-						<Card key={group.subareaId}>
-							<CardHeader>
-								<CardTitle className="text-lg break-words">
-									<h2>{group.subareaName}</h2>
-								</CardTitle>
-								<CardDescription className="break-words">
-									{group.locationName}
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>
-												{t("settings.coverageRules.day", "Day")}
-											</TableHead>
-											<TableHead>
-												{t("settings.coverageRules.timeRange", "Time Range")}
-											</TableHead>
-											<TableHead className="text-center">
-												{t("settings.coverageRules.minStaff", "Min Staff")}
-											</TableHead>
-											<TableHead className="w-[100px]">
-												<span className="sr-only">
-													{t("common.actions", "Actions")}
-												</span>
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{group.rules.map((rule) => {
-											const ruleLabel = `${group.subareaName}, ${dayLabel(rule.dayOfWeek)} ${rule.startTime}–${rule.endTime}`;
-											return (
-												<TableRow key={rule.id}>
-													<TableCell>
-														<Badge variant="outline">{dayLabel(rule.dayOfWeek)}</Badge>
-													</TableCell>
-													<TableCell className="tabular-nums">
-														{rule.startTime}–{rule.endTime}
-													</TableCell>
-													<TableCell className="text-center font-medium tabular-nums">
-														{rule.minimumStaffCount}
-													</TableCell>
-													<TableCell>
-														<div className="flex items-center justify-end gap-1">
-															<Button
-																variant="ghost"
-																size="icon"
-																className="size-8"
-																onClick={() => handleEditRule(rule)}
-																aria-label={`${t(
-																	"settings.coverageRules.editRule",
-																	"Edit Coverage Rule",
-																)}: ${ruleLabel}`}
-															>
-																<IconPencil aria-hidden="true" className="size-4" />
-															</Button>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="size-8 text-destructive hover:text-destructive"
-																onClick={() => {
-																	setDeleteRuleError(null);
-																	setDeleteRuleId(rule.id);
-																}}
-																aria-label={`${t(
-																	"settings.coverageRules.deleteRule",
-																	"Delete Coverage Rule",
-																)}: ${ruleLabel}`}
-															>
-																<IconTrash aria-hidden="true" className="size-4" />
-															</Button>
-														</div>
-													</TableCell>
-												</TableRow>
-											);
-										})}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</Card>
-					))}
-				</div>
+				<CoverageRuleGroups
+					rulesBySubarea={rulesBySubarea}
+					dayLabel={dayLabel}
+					handleEditRule={handleEditRule}
+					setDeleteRuleId={setDeleteRuleId}
+					setDeleteRuleError={setDeleteRuleError}
+				/>
 			)}
 
 			{/* Create/Edit Dialog */}
@@ -413,7 +325,7 @@ export function CoverageRulesManagement({
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
 				locations={locations}
-				requireScopedSubareaSelection={manageableSubareaIdSet !== null}
+				requireScopedSubareaSelection={manageableSubareaIds !== null}
 				editingRule={editingRule}
 				onSuccess={handleDialogSuccess}
 			/>
@@ -421,11 +333,11 @@ export function CoverageRulesManagement({
 			{/* Delete Confirmation */}
 			<CoverageRuleDeleteDialog
 				ruleId={deleteRuleId}
-				ruleLabel={
-					ruleToDelete
-						? `${ruleToDelete.subarea?.name || unknownLabel}, ${dayLabel(ruleToDelete.dayOfWeek)} ${ruleToDelete.startTime}–${ruleToDelete.endTime}`
-						: null
-				}
+				ruleLabel={getCoverageRuleLabel(
+					visibleRules.find((rule) => rule.id === deleteRuleId),
+					unknownLabel,
+					dayLabel,
+				)}
 				isDeleting={deleteRuleMutation.isPending}
 				error={deleteRuleError}
 				onClose={() => {
@@ -469,9 +381,7 @@ function CoverageRuleDeleteDialog({
 			description={
 				<>
 					{ruleLabel ? (
-						<span className="mb-2 block font-medium text-foreground tabular-nums">
-							{ruleLabel}
-						</span>
+						<span className="mb-2 block font-medium text-foreground tabular-nums">{ruleLabel}</span>
 					) : null}
 					{t(
 						"settings.coverageRules.deleteRuleDescription",
@@ -538,4 +448,122 @@ function CoveragePublishingSettingsCard({
 			</CardContent>
 		</Card>
 	);
+}
+
+function CoverageRuleGroups({
+	rulesBySubarea,
+	dayLabel,
+	handleEditRule,
+	setDeleteRuleId,
+	setDeleteRuleError,
+}: {
+	rulesBySubarea: Record<
+		string,
+		{
+			subareaId: string;
+			subareaName: string;
+			locationName: string;
+			rules: CoverageRuleWithRelations[];
+		}
+	>;
+	dayLabel: (day: string) => string;
+	handleEditRule: (rule: CoverageRuleWithRelations) => void;
+	setDeleteRuleId: (id: string) => void;
+	setDeleteRuleError: (error: null) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-4">
+			{Object.values(rulesBySubarea).map((group) => (
+				<Card key={group.subareaId}>
+					<CardHeader>
+						<CardTitle className="text-lg break-words">
+							<h2>{group.subareaName}</h2>
+						</CardTitle>
+						<CardDescription className="break-words">{group.locationName}</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>{t("settings.coverageRules.day", "Day")}</TableHead>
+									<TableHead>{t("settings.coverageRules.timeRange", "Time Range")}</TableHead>
+									<TableHead className="text-center">
+										{t("settings.coverageRules.minStaff", "Min Staff")}
+									</TableHead>
+									<TableHead className="w-[100px]">
+										<span className="sr-only">{t("common.actions", "Actions")}</span>
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{group.rules.map((rule) => {
+									const ruleLabel = `${group.subareaName}, ${dayLabel(rule.dayOfWeek)} ${rule.startTime}–${rule.endTime}`;
+									return (
+										<TableRow key={rule.id}>
+											<TableCell>
+												<Badge variant="outline">{dayLabel(rule.dayOfWeek)}</Badge>
+											</TableCell>
+											<TableCell className="tabular-nums">
+												{rule.startTime}–{rule.endTime}
+											</TableCell>
+											<TableCell className="text-center font-medium tabular-nums">
+												{rule.minimumStaffCount}
+											</TableCell>
+											<TableCell>
+												<div className="flex items-center justify-end gap-1">
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8"
+														onClick={() => handleEditRule(rule)}
+														aria-label={`${t(
+															"settings.coverageRules.editRule",
+															"Edit Coverage Rule",
+														)}: ${ruleLabel}`}
+													>
+														<IconPencil aria-hidden="true" className="size-4" />
+													</Button>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-8 text-destructive hover:text-destructive"
+														onClick={() => {
+															setDeleteRuleError(null);
+															setDeleteRuleId(rule.id);
+														}}
+														aria-label={`${t(
+															"settings.coverageRules.deleteRule",
+															"Delete Coverage Rule",
+														)}: ${ruleLabel}`}
+													>
+														<IconTrash aria-hidden="true" className="size-4" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									);
+								})}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+			))}
+		</div>
+	);
+}
+
+function filterManageableRules(rules: CoverageRuleWithRelations[], subareaIds: string[] | null) {
+	if (!subareaIds) return rules;
+	const allowed = new Set(subareaIds);
+	return rules.filter((rule) => allowed.has(rule.subareaId));
+}
+
+function getCoverageRuleLabel(
+	rule: CoverageRuleWithRelations | undefined,
+	unknownLabel: string,
+	dayLabel: (day: string) => string,
+) {
+	if (!rule) return null;
+	return `${rule.subarea?.name || unknownLabel}, ${dayLabel(rule.dayOfWeek)} ${rule.startTime}–${rule.endTime}`;
 }

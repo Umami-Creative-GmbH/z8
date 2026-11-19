@@ -28,11 +28,9 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import type {
-	DocumentVisibility,
-	PayPeriod,
-} from "@/lib/personnel-file/document.types";
+import type { DocumentVisibility, PayPeriod } from "@/lib/personnel-file/document.types";
 import { useRouter } from "@/navigation";
 import { usePersonnelFileLabels } from "./document-labels";
 
@@ -138,10 +136,9 @@ export function PayslipBatchStart({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form
+				<ClientForm
 					className="grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
-					onSubmit={async (event) => {
-						event.preventDefault();
+					onSubmit={async () => {
 						if (!lifetime.current || form.state.isSubmitting) return;
 						intent.current = lifetime.current;
 						const started = lifetime.current;
@@ -288,7 +285,7 @@ export function PayslipBatchStart({
 							)}
 						</form.Subscribe>
 					</div>
-				</form>
+				</ClientForm>
 			</CardContent>
 		</Card>
 	);

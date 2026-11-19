@@ -26,10 +26,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
-import {
-	WorkPolicyAssignmentSections,
-	workPolicyAssignmentTargetLabel,
-} from "./work-policy-assignment-sections";
+import { WorkPolicyAssignmentSections } from "./work-policy-assignment-sections";
+import { workPolicyAssignmentTargetLabel } from "./work-policy-assignment-target";
 
 interface WorkPolicyAssignmentManagerProps {
 	organizationId: string;

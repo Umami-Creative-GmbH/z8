@@ -3,7 +3,8 @@
 import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { ConfirmActionDialog, describeFailure, useConfirmedAction } from "./confirm-action-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "./confirm-action-dialog";
+import { describeFailure } from "./confirm-action-utils";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 
 vi.mock("@tolgee/react", () => ({

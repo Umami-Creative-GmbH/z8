@@ -132,7 +132,7 @@ type ProfileFormApi = ReactFormExtendedApi<
 
 type TranslationFunction = ReturnType<typeof useTranslate>["t"];
 
-export function ProfileForm({ user }: ProfileFormProps) {
+function useProfileEditor({ user }: ProfileFormProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
@@ -392,15 +392,63 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			);
 		},
 	});
+	return {
+		t,
+		isInitialLoading,
+		currentEmployeeId,
+		today,
+		presence,
+		form,
+		validateFirstName,
+		validateLastName,
+		avatarImage,
+		selectedGender,
+		selectedBirthday,
+		isSubmitting,
+		displayName,
+		uploadProgress,
+		isUploadingAvatar,
+		previewUrl,
+		initialLoadFailed,
+		retryInitialLoad,
+		inputRef,
+		handleFileInputChange,
+		removeAvatarMutation,
+	};
+}
+
+export function ProfileForm(props: ProfileFormProps) {
+	const { user } = props;
+	const {
+		t,
+		isInitialLoading,
+		currentEmployeeId,
+		today,
+		presence,
+		form,
+		validateFirstName,
+		validateLastName,
+		avatarImage,
+		selectedGender,
+		selectedBirthday,
+		isSubmitting,
+		displayName,
+		uploadProgress,
+		isUploadingAvatar,
+		previewUrl,
+		initialLoadFailed,
+		retryInitialLoad,
+		inputRef,
+		handleFileInputChange,
+		removeAvatarMutation,
+	} = useProfileEditor(props);
 
 	return (
 		<div className="space-y-6">
 			{/* Profile Information Section */}
 			<Card>
 				<CardHeader>
-					<CardTitle>
-						{t("settings.profile.information", "Profile Information")}
-					</CardTitle>
+					<CardTitle>{t("settings.profile.information", "Profile Information")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.profile.informationDescription",
@@ -859,9 +907,7 @@ function ProfileGenderField({
 	return (
 		<div className="space-y-2">
 			<div className="flex min-h-8 items-center justify-between gap-3">
-				<Label id="gender-label">
-					{t("settings.profile.gender.label", "Gender")}
-				</Label>
+				<Label id="gender-label">{t("settings.profile.gender.label", "Gender")}</Label>
 				{selectedGender ? (
 					<Button
 						type="button"
@@ -983,9 +1029,7 @@ function ProfilePronounsField({
 								<SelectItem value="she/her">she/her</SelectItem>
 								<SelectItem value="he/him">he/him</SelectItem>
 								<SelectItem value="they/them">they/them</SelectItem>
-								<SelectItem value={CUSTOM_PRONOUN_VALUE}>
-									{customLabel}
-								</SelectItem>
+								<SelectItem value={CUSTOM_PRONOUN_VALUE}>{customLabel}</SelectItem>
 							</SelectContent>
 						</Select>
 						<div className="space-y-2">
@@ -1030,9 +1074,7 @@ function ProfileBirthdayField({
 }) {
 	return (
 		<div className="space-y-2">
-			<Label htmlFor="birthday">
-				{t("settings.profile.birthday.label", "Birthday")}
-			</Label>
+			<Label htmlFor="birthday">{t("settings.profile.birthday.label", "Birthday")}</Label>
 			<Popover>
 				<PopoverTrigger asChild>
 					<Button
@@ -1047,12 +1089,7 @@ function ProfileBirthdayField({
 						{selectedBirthday ? (
 							formatBirthdayDate(selectedBirthday)
 						) : (
-							<span>
-								{t(
-									"settings.profile.birthday.placeholder",
-									"Pick your birthday",
-								)}
-							</span>
+							<span>{t("settings.profile.birthday.placeholder", "Pick your birthday")}</span>
 						)}
 					</Button>
 				</PopoverTrigger>

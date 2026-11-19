@@ -115,9 +115,9 @@ function ReportShareArrival({
 	}, [createdUrl]);
 	useLayoutEffect(() => {
 		lifetime.current = open ? {} : null;
-		setCreatedUrl(null);
-		setCopied(false);
 		return () => {
+			setCreatedUrl(null);
+			setCopied(false);
 			lifetime.current = null;
 			pending.current = null;
 		};

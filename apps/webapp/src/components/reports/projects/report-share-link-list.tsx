@@ -192,8 +192,8 @@ function ReportShareLinkRow({
 	useLayoutEffect(() => {
 		lifetime.current = { linkId: link.id };
 		pending.current = null;
-		setRevoking(false);
 		return () => {
+			if (pending.current) setRevoking(false);
 			lifetime.current = null;
 			pending.current = null;
 		};
@@ -206,29 +206,6 @@ function ReportShareLinkRow({
 		display.locale,
 		"dateMedium",
 	);
-
-	function statusLine(): string {
-		if (link.status === "active") {
-			return t("reports.share.list.expires", "Expires {date}", {
-				date: at(link.expiresAt),
-			});
-		}
-		const date = at(link.revokedAt ?? link.expiresAt);
-		if (link.status === "expired") {
-			return t("reports.share.list.expired", "Expired {date}", { date });
-		}
-		if (link.revokeReason === "creator_lost_access") {
-			return t(
-				"reports.share.list.revokedAutomatically",
-				"Revoked automatically on {date}: the creator no longer sees every project in it",
-				{ date },
-			);
-		}
-		return t("reports.share.list.revokedBy", "Revoked by {name} on {date}", {
-			name: link.revokedByName ?? t("reports.share.list.someone", "someone"),
-			date,
-		});
-	}
 
 	async function revoke() {
 		const generation = lifetime.current;
@@ -267,38 +244,7 @@ function ReportShareLinkRow({
 
 	return (
 		<li className="space-y-2 p-3 text-sm">
-			<div className="flex flex-wrap items-center gap-2">
-				<StatusBadge status={link.status} />
-				{showReport && (
-					<span className="font-medium">
-						{link.reportName ?? t("reports.share.list.deletedReport", "Deleted")}
-						{" · "}
-						{link.kind === "project"
-							? t("reports.share.kind.project", "Project report")
-							: t("reports.share.kind.customer", "Customer report")}
-					</span>
-				)}
-				<span className="text-muted-foreground">{period}</span>
-			</div>
-			<p className="text-muted-foreground">
-				{link.figures === "revenue"
-					? t("reports.share.figures.revenue", "Hours + revenue")
-					: t("reports.share.figures.hours", "Hours only")}
-				{link.kind === "project" &&
-					` · ${
-						link.includeEmployees
-							? t("reports.share.list.withEmployees", "With employee breakdown")
-							: t("reports.share.list.withoutEmployees", "Without employee breakdown")
-					}`}
-			</p>
-			<p className="text-muted-foreground">
-				{t("reports.share.list.createdBy", "Created by {name} on {date}", {
-					name: link.createdBy.name,
-					date: at(link.createdAt),
-				})}
-				{" · "}
-				{statusLine()}
-			</p>
+			<ReportShareSummary link={link} showReport={showReport} period={period} />
 			<div className="flex flex-wrap items-center gap-2">
 				<Button
 					variant="ghost"
@@ -361,9 +307,7 @@ function ReportShareLinkRow({
 					{revokeError && (
 						<div role="alert" className="space-y-1 text-sm text-destructive">
 							<p>{t("reports.share.revoke.failed", "The link could not be revoked")}</p>
-							{revokeError.detail && (
-								<p className="text-muted-foreground">{revokeError.detail}</p>
-							)}
+							{revokeError.detail && <p className="text-muted-foreground">{revokeError.detail}</p>}
 						</div>
 					)}
 					<AlertDialogFooter>
@@ -376,7 +320,9 @@ function ReportShareLinkRow({
 							onClick={(event) => {
 								// Keep the dialog open so the pending state and any failure stay visible.
 								event.preventDefault();
-								(event as unknown as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
+								(
+									event as unknown as { preventBaseUIHandler?: () => void }
+								).preventBaseUIHandler?.();
 								void revoke();
 							}}
 						>
@@ -441,5 +387,80 @@ function ReportShareLinkViews({ linkId, scope }: { linkId: string; scope: ShareR
 				</li>
 			))}
 		</ul>
+	);
+}
+
+function ReportShareSummary({
+	link,
+	showReport,
+	period,
+}: {
+	link: ShareLinkSummary;
+	showReport: boolean;
+	period: string;
+}) {
+	const { t } = useTranslate();
+	const display = useDisplayContext();
+	const at = (instant: string) =>
+		formatInstant(Temporal.Instant.from(instant), display, "dateTimeMedium");
+
+	function statusLine(): string {
+		if (link.status === "active") {
+			return t("reports.share.list.expires", "Expires {date}", {
+				date: at(link.expiresAt),
+			});
+		}
+		const date = at(link.revokedAt ?? link.expiresAt);
+		if (link.status === "expired") {
+			return t("reports.share.list.expired", "Expired {date}", { date });
+		}
+		if (link.revokeReason === "creator_lost_access") {
+			return t(
+				"reports.share.list.revokedAutomatically",
+				"Revoked automatically on {date}: the creator no longer sees every project in it",
+				{ date },
+			);
+		}
+		return t("reports.share.list.revokedBy", "Revoked by {name} on {date}", {
+			name: link.revokedByName ?? t("reports.share.list.someone", "someone"),
+			date,
+		});
+	}
+
+	return (
+		<>
+			<div className="flex flex-wrap items-center gap-2">
+				<StatusBadge status={link.status} />
+				{showReport && (
+					<span className="font-medium">
+						{link.reportName ?? t("reports.share.list.deletedReport", "Deleted")}
+						{" · "}
+						{link.kind === "project"
+							? t("reports.share.kind.project", "Project report")
+							: t("reports.share.kind.customer", "Customer report")}
+					</span>
+				)}
+				<span className="text-muted-foreground">{period}</span>
+			</div>
+			<p className="text-muted-foreground">
+				{link.figures === "revenue"
+					? t("reports.share.figures.revenue", "Hours + revenue")
+					: t("reports.share.figures.hours", "Hours only")}
+				{link.kind === "project" &&
+					` · ${
+						link.includeEmployees
+							? t("reports.share.list.withEmployees", "With employee breakdown")
+							: t("reports.share.list.withoutEmployees", "Without employee breakdown")
+					}`}
+			</p>
+			<p className="text-muted-foreground">
+				{t("reports.share.list.createdBy", "Created by {name} on {date}", {
+					name: link.createdBy.name,
+					date: at(link.createdAt),
+				})}
+				{" · "}
+				{statusLine()}
+			</p>
+		</>
 	);
 }

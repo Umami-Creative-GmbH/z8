@@ -26,11 +26,18 @@ import type { PeriodPreset, ReportDateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface DateRangePickerProps {
+	initialPreset?: PeriodPreset;
+	loadingDescription?: string;
 	value: ReportDateRange;
 	onChange: (range: ReportDateRange) => void;
 }
 
-export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
+export function DateRangePicker({
+	value,
+	onChange,
+	initialPreset = "current_month",
+	loadingDescription,
+}: DateRangePickerProps) {
 	const { t } = useTranslate();
 	const { locale } = useDisplayContext();
 	const { isHydrated, timezone } = useOrganizationSettings(
@@ -40,7 +47,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		})),
 	);
 	const loadingDescriptionId = useId();
-	const [preset, setPreset] = useState<PeriodPreset>("current_month");
+	const [preset, setPreset] = useState<PeriodPreset>(initialPreset);
 	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
 	const handlePresetChange = (newPreset: PeriodPreset) => {
@@ -74,7 +81,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 	const end = parsePlainDate(endDate);
 
 	return (
-		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+		<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
 			{/* Preset Selector */}
 			<Select
 				value={preset}
@@ -107,10 +114,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			</Select>
 			{!isHydrated && (
 				<p id={loadingDescriptionId} className="text-sm text-muted-foreground">
-					{t(
-						"reports.filter.settingsRequired",
-						"Organization settings are required to use presets.",
-					)}
+					{loadingDescription ??
+						t(
+							"reports.filter.settingsRequired",
+							"Organization settings are required to use presets.",
+						)}
 				</p>
 			)}
 
@@ -123,7 +131,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 							className="w-full justify-start text-left sm:w-[280px]"
 							data-placeholder={startDate ? undefined : ""}
 						>
-							<IconCalendar className="mr-2 size-4" />
+							<IconCalendar aria-hidden="true" className="mr-2 size-4" />
 							{startDate ? (
 								endDate ? (
 									<>
@@ -157,7 +165,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{/* Display current range for non-custom presets */}
 			{preset !== "custom" && (
 				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
-					<IconCalendar className="mr-2 size-4" />
+					<IconCalendar aria-hidden="true" className="mr-2 size-4" />
 					{formatDateRangeLabel(startDate, endDate, locale)}
 				</div>
 			)}

@@ -1,5 +1,6 @@
 "use client";
 
+import { linkCodeMinutesRemaining } from "./telegram-link-code";
 import {
 	IconBrandTelegram,
 	IconCheck,
@@ -31,9 +32,9 @@ import {
 } from "@/app/[locale]/(app)/settings/telegram/actions";
 import {
 	ConfirmActionDialog,
-	describeFailure,
 	useConfirmedAction,
 } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -301,7 +302,7 @@ function BotConnectionCard({
 // FEATURE SETTINGS CARD
 // ============================================
 
-function FeatureSettingsCard({
+function useTelegramFeatureForm({
 	config,
 	organizationId,
 }: {
@@ -339,6 +340,11 @@ function FeatureSettingsCard({
 	const isDirty = useStore(form.store, (state) => state.isDirty);
 	// The form clears `isSubmitting` when `onSubmit` settles, a thrown action included.
 	const loading = useStore(form.store, (state) => state.isSubmitting);
+	return { t, form, isDirty, loading };
+}
+
+function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]) {
+	const { t, form, isDirty, loading } = useTelegramFeatureForm(props);
 
 	return (
 		<Card>
@@ -619,17 +625,6 @@ function FeatureSettingsCard({
 
 const LINK_CODE_EXPIRY_TICK_MS = 30_000;
 
-/** Whole minutes until the link code expires, rounded up; 0 once it has expired. */
-export function linkCodeMinutesRemaining(
-	expiresAt: string,
-	now: Temporal.Instant,
-): number {
-	const remaining = Temporal.Instant.from(expiresAt)
-		.since(now)
-		.total({ unit: "minutes" });
-	return remaining > 0 ? Math.ceil(remaining) : 0;
-}
-
 export function TelegramLinkCodeExpiry({
 	expiresAt,
 	isRegenerating,
@@ -705,12 +700,7 @@ export function TelegramLinkCodeExpiry({
 // ACCOUNT LINKING CARD
 // ============================================
 
-function AccountLinkingCard({
-	userLink,
-	config,
-	organizationId,
-	userId,
-}: {
+function useTelegramAccountLink({ organizationId, userId }: {
 	userLink: TelegramUserLink | null;
 	config: TelegramConfig | null;
 	organizationId: string;
@@ -782,6 +772,28 @@ function AccountLinkingCard({
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	};
+	return {
+		t,
+		linkCode,
+		copied,
+		generateCodeMutation,
+		unlinkMutation,
+		unlinking,
+		handleCopy,
+	};
+}
+
+function AccountLinkingCard(props: Parameters<typeof useTelegramAccountLink>[0]) {
+	const { userLink, config } = props;
+	const {
+		t,
+		linkCode,
+		copied,
+		generateCodeMutation,
+		unlinkMutation,
+		unlinking,
+		handleCopy,
+	} = useTelegramAccountLink(props);
 
 	return (
 		<Card>
@@ -799,59 +811,11 @@ function AccountLinkingCard({
 			</CardHeader>
 			<CardContent>
 				{userLink ? (
-					<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
-						<div className="flex min-w-0 items-center gap-3">
-							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-								<IconBrandTelegram className="size-5 text-primary" aria-hidden="true" />
-							</div>
-							<div className="min-w-0">
-								<span className="block truncate font-medium">
-									{userLink.telegramUsername
-										? `@${userLink.telegramUsername}`
-										: userLink.telegramDisplayName || t("settings.telegram.linked", "Linked")}
-								</span>
-								<p className="text-sm text-muted-foreground">
-									{t("settings.telegram.linking.linkedStatus", "Your Telegram account is linked")}
-								</p>
-							</div>
-						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={unlinking.isPending}
-							onClick={() => unlinking.request("account")}
-						>
-							{unlinking.isPending ? (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-							) : (
-								<IconUnlink className="mr-2 size-4" aria-hidden="true" />
-							)}
-							{t("settings.telegram.unlink", "Unlink")}
-						</Button>
-						<ConfirmActionDialog
-							open={unlinking.open}
-							onOpenChange={unlinking.onOpenChange}
-							variant="default"
-							title={t("settings.telegram.unlinkConfirm.title", "Unlink Telegram Account?")}
-							description={t(
-								"settings.telegram.unlinkConfirm.description",
-								"You will stop receiving Telegram notifications. You can link again later.",
-							)}
-							confirmLabel={t("settings.telegram.unlink", "Unlink")}
-							isPending={unlinking.isPending}
-							error={unlinking.error}
-							onConfirm={() =>
-								void unlinking.confirm(
-									() => unlinkMutation.mutateAsync(),
-									(failure) =>
-										describeFailure(
-											failure,
-											t("settings.telegram.unlinkError", "Failed to unlink Telegram account"),
-										),
-								)
-							}
-						/>
-					</div>
+					<LinkedTelegramAccount
+						userLink={userLink}
+						unlinking={unlinking}
+						unlinkMutation={unlinkMutation}
+					/>
 				) : (
 					<div className="space-y-4">
 						{linkCode ? (
@@ -919,5 +883,72 @@ function AccountLinkingCard({
 				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+function LinkedTelegramAccount({
+	userLink,
+	unlinking,
+	unlinkMutation,
+}: {
+	userLink: TelegramUserLink;
+	unlinking: ReturnType<typeof useTelegramAccountLink>["unlinking"];
+	unlinkMutation: ReturnType<typeof useTelegramAccountLink>["unlinkMutation"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+			<div className="flex min-w-0 items-center gap-3">
+				<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+					<IconBrandTelegram className="size-5 text-primary" aria-hidden="true" />
+				</div>
+				<div className="min-w-0">
+					<span className="block truncate font-medium">
+						{userLink.telegramUsername
+							? `@${userLink.telegramUsername}`
+							: userLink.telegramDisplayName || t("settings.telegram.linked", "Linked")}
+					</span>
+					<p className="text-sm text-muted-foreground">
+						{t("settings.telegram.linking.linkedStatus", "Your Telegram account is linked")}
+					</p>
+				</div>
+			</div>
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={unlinking.isPending}
+				onClick={() => unlinking.request("account")}
+			>
+				{unlinking.isPending ? (
+					<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+				) : (
+					<IconUnlink className="mr-2 size-4" aria-hidden="true" />
+				)}
+				{t("settings.telegram.unlink", "Unlink")}
+			</Button>
+			<ConfirmActionDialog
+				open={unlinking.open}
+				onOpenChange={unlinking.onOpenChange}
+				variant="default"
+				title={t("settings.telegram.unlinkConfirm.title", "Unlink Telegram Account?")}
+				description={t(
+					"settings.telegram.unlinkConfirm.description",
+					"You will stop receiving Telegram notifications. You can link again later.",
+				)}
+				confirmLabel={t("settings.telegram.unlink", "Unlink")}
+				isPending={unlinking.isPending}
+				error={unlinking.error}
+				onConfirm={() =>
+					void unlinking.confirm(
+						() => unlinkMutation.mutateAsync(),
+						(failure) =>
+							describeFailure(
+								failure,
+								t("settings.telegram.unlinkError", "Failed to unlink Telegram account"),
+							),
+					)
+				}
+			/>
+		</div>
 	);
 }

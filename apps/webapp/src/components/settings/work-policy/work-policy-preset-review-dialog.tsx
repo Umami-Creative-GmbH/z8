@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import {
 	type FormAsyncValidateOrFn,
@@ -218,7 +219,6 @@ export function WorkPolicyPresetReviewDialog(
 function WorkPolicyPresetReviewDialogContent({
 	open,
 	onOpenChange,
-	organizationId,
 	mode,
 	preset,
 	onSuccess,
@@ -303,12 +303,11 @@ function WorkPolicyPresetReviewDialogContent({
 					<DialogDescription>{copy.description}</DialogDescription>
 				</DialogHeader>
 
-				<form
+				<ClientForm
 					className="space-y-5"
 					noValidate
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+					stopPropagation
+					onSubmit={() => {
 						// Enter in a field submits too; never start a second save while one is running.
 						if (!isSubmitting) form.handleSubmit();
 					}}
@@ -352,7 +351,7 @@ function WorkPolicyPresetReviewDialogContent({
 							{copy.submitLabel}
 						</Button>
 					</DialogFooter>
-				</form>
+				</ClientForm>
 			</DialogContent>
 		</Dialog>
 	);
@@ -971,9 +970,7 @@ function PresetIdentityFields({ form, t }: PresetFormSectionProps) {
 					const error = field.state.meta.errors[0];
 					return (
 						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="preset-review-name">
-								{t("settings.workPolicies.name", "Name")}
-							</Label>
+							<Label htmlFor="preset-review-name">{t("settings.workPolicies.name", "Name")}</Label>
 							<Input
 								id="preset-review-name"
 								name="preset-review-name"

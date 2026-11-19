@@ -2,11 +2,8 @@
 
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import {
-	formatSignedCount,
-	formatStatisticsFetchedAt,
-	StatisticsSection,
-} from "./statistics-summary";
+import { formatSignedCount, formatStatisticsFetchedAt } from "./statistics-format";
+import { StatisticsSection } from "./statistics-summary";
 
 describe("StatisticsSection", () => {
 	it("renders every metric in one summary strip under a plain heading", () => {

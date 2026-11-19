@@ -136,10 +136,183 @@ function PlannerShiftScheduler({
 	const { hasGaps: hasCoverageGaps, readState: coverageState } = useCoverageHeatmap(
 		organizationId,
 		dateRange,
-		isManager && showCoverageOverlay,
+		showCoverageOverlay,
 		employeeId,
 	);
 
+	const createShift = (template?: ShiftTemplate) => {
+		setNewShiftDate(dateRange.startDate);
+		setNewTemplateId(template?.id ?? null);
+		setSelectedShift(null);
+		setIsShiftDialogOpen(true);
+	};
+
+	const selectShift = (shift: ShiftWithRelations) => {
+		setSelectedShift(shift);
+		setIsShiftDialogOpen(true);
+	};
+	const calendar = usePlannerCalendar({
+		shifts,
+		updateShift,
+		events,
+		onSelectShift: selectShift,
+		setDateRange,
+		organizationTimezone,
+		locale,
+		initialView,
+		weekStartDay,
+		isDark,
+	});
+
+	return (
+		<div className="flex min-w-0 flex-col gap-4">
+			<div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+				<p className="text-sm text-muted-foreground tabular-nums">
+					{formatPlainDate(parsePlainDate(dateRange.startDate), locale, "dateMedium")} –{" "}
+					{formatPlainDate(
+						parsePlainDate(dateRange.endDateExclusive).subtract({ days: 1 }),
+						locale,
+						"dateMedium",
+					)}{" "}
+					({organizationTimezone})
+				</p>
+				<Button type="button" onClick={() => createShift()}>
+					<IconPlus className="size-4" aria-hidden="true" />
+					{t("scheduling:scheduling.shiftDialog.createTitle", "Create Shift")}
+				</Button>
+			</div>
+			{shiftsFailed && (
+				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
+					{t(
+						"scheduling:scheduling.scheduler.loadFailed",
+						"Shifts could not be refreshed. Loaded shifts are retained.",
+					)}
+				</ScheduleReadFailure>
+			)}
+			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
+				<ScheduleReadFailure
+					onRetry={() => void retrySupportingData()}
+					pending={supportingDataFetching}
+				>
+					{t(
+						"scheduling:scheduling.scheduler.supportFailed",
+						"Templates or compliance information could not be refreshed. Check again before publishing.",
+					)}
+				</ScheduleReadFailure>
+			)}
+			<ScheduleComplianceBanner summary={complianceSummary} />
+
+			{/* Coverage summary bar and toggle for managers */}
+			<div className="flex flex-wrap items-center gap-4">
+				<CoverageHeatmapOverlay
+					organizationId={organizationId}
+					employeeId={employeeId}
+					dateRange={dateRange}
+					visible={showCoverageOverlay}
+					onToggle={() => setShowCoverageOverlay((v) => !v)}
+				/>
+				<ShiftRequestsReview approverId={employeeId} organizationTimezone={organizationTimezone} />
+			</div>
+
+			{employeeFilter && (
+				<EmployeeFilterNotice
+					employeeId={employeeFilter}
+					shifts={shifts}
+					onShowAll={() => setShowAllEmployees(true)}
+				/>
+			)}
+
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row">
+				{/* Template sidebar for managers */}
+				<div className="order-2 lg:order-none">
+					<TemplateSidebar templates={templates} onSelectTemplate={createShift} />
+				</div>
+
+				{/* Main calendar */}
+				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
+				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border lg:flex-1">
+					<div className="h-full min-w-[42rem]">
+						<ScheduleXCalendar calendarApp={calendar} />
+					</div>
+					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
+					{shiftsLoading && (
+						<div
+							className="absolute inset-0 flex items-center justify-center bg-background/60"
+							role="status"
+						>
+							<span className="animate-pulse text-muted-foreground motion-reduce:animate-none">
+								{t("scheduling:scheduling.scheduler.loading", "Loading schedule...")}
+							</span>
+						</div>
+					)}
+				</div>
+			</div>
+
+			{!shiftsLoading && (!shiftsFailed || hasLoadedShifts) && (
+				<ScheduleShiftList
+					shifts={filterShiftsForEmployee(shifts, employeeFilter)}
+					organizationTimezone={organizationTimezone}
+					onSelect={selectShift}
+				/>
+			)}
+
+			{/* Outside the isolated calendar so later records cannot cover this viewport action. */}
+			{draftCount > 0 && (
+				<PublishFab
+					draftCount={draftCount}
+					onPublish={publish}
+					isPublishing={isPublishing}
+					hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
+					coverageState={coverageState}
+					hasComplianceWarnings={hasComplianceWarnings}
+					complianceFindingsCount={complianceFindingsCount}
+				/>
+			)}
+
+			{/* Shift dialog */}
+			<ShiftDialog
+				open={isShiftDialogOpen}
+				onOpenChange={setIsShiftDialogOpen}
+				shift={selectedShift}
+				templates={templates}
+				isManager={isManager}
+				defaultDate={newShiftDate}
+				defaultTemplateId={newTemplateId}
+				organizationId={organizationId}
+				organizationTimezone={organizationTimezone}
+			/>
+
+			<PublishComplianceDialog
+				open={isComplianceDialogOpen}
+				onOpenChange={setIsComplianceDialogOpen}
+				summary={pendingAcknowledgment?.complianceSummary ?? null}
+				onConfirm={confirmPublish}
+				isConfirming={isPublishing}
+			/>
+		</div>
+	);
+}
+
+function usePlannerCalendar({
+	shifts,
+	updateShift,
+	events,
+	onSelectShift,
+	setDateRange,
+	organizationTimezone,
+	locale,
+	initialView,
+	weekStartDay,
+	isDark,
+}: Pick<ReturnType<typeof useShiftSchedulerData>, "shifts" | "updateShift" | "events"> & {
+	onSelectShift: (shift: ShiftWithRelations) => void;
+	setDateRange: (range: DateRange) => void;
+	organizationTimezone: string;
+	locale: string;
+	initialView: ReturnType<typeof initialSchedulerView>;
+	weekStartDay: ReturnType<typeof useWeekStartDay>;
+	isDark: boolean;
+}) {
 	// Schedule-X keeps the callbacks of its first render, so they read the latest shifts here.
 	const shiftsRef = useRef(shifts);
 	const updateShiftRef = useRef(updateShift);
@@ -152,8 +325,7 @@ function PlannerShiftScheduler({
 	const handleEventClick = (event: { id: string | number }) => {
 		const shift = shiftsRef.current.find((s) => s.id === event.id);
 		if (shift) {
-			setSelectedShift(shift);
-			setIsShiftDialogOpen(true);
+			onSelectShift(shift);
 		}
 	};
 
@@ -163,7 +335,6 @@ function PlannerShiftScheduler({
 		start: ZonedDateTime | PlainDate;
 		end: ZonedDateTime | PlainDate;
 	}) => {
-		if (!isManager) return;
 		const { start, end } = updatedEvent;
 		// Shifts are always timed; an all-day value can't be saved as wall times.
 		if (!(start instanceof Temporal.ZonedDateTime && end instanceof Temporal.ZonedDateTime)) return;
@@ -185,13 +356,6 @@ function PlannerShiftScheduler({
 
 	const handleRangeChange = (range: { start: ZonedDateTime; end: ZonedDateTime }) => {
 		setDateRange(calendarRangeToDateRange(range));
-	};
-
-	const createShift = (template?: ShiftTemplate) => {
-		setNewShiftDate(dateRange.startDate);
-		setNewTemplateId(template?.id ?? null);
-		setSelectedShift(null);
-		setIsShiftDialogOpen(true);
 	};
 
 	// Create calendar
@@ -247,7 +411,7 @@ function PlannerShiftScheduler({
 			},
 		},
 		// No event modal: a click opens the shift dialog, which the modal would only duplicate.
-		plugins: isManager ? [createScheduleXDragAndDropPlugin()] : [],
+		plugins: [createScheduleXDragAndDropPlugin()],
 		callbacks: {
 			onEventClick: handleEventClick,
 			onEventUpdate: handleEventUpdate,
@@ -270,143 +434,7 @@ function PlannerShiftScheduler({
 		}
 	}, [calendar, isDark]);
 
-	return (
-		<div className="flex min-w-0 flex-col gap-4">
-			<div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-				<p className="text-sm text-muted-foreground tabular-nums">
-					{formatPlainDate(parsePlainDate(dateRange.startDate), locale, "dateMedium")} –{" "}
-					{formatPlainDate(
-						parsePlainDate(dateRange.endDateExclusive).subtract({ days: 1 }),
-						locale,
-						"dateMedium",
-					)}{" "}
-					({organizationTimezone})
-				</p>
-				<Button type="button" onClick={() => createShift()}>
-					<IconPlus className="size-4" aria-hidden="true" />
-					{t("scheduling:scheduling.shiftDialog.createTitle", "Create Shift")}
-				</Button>
-			</div>
-			{shiftsFailed && (
-				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
-					{t(
-						"scheduling:scheduling.scheduler.loadFailed",
-						"Shifts could not be refreshed. Loaded shifts are retained.",
-					)}
-				</ScheduleReadFailure>
-			)}
-			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
-				<ScheduleReadFailure
-					onRetry={() => void retrySupportingData()}
-					pending={supportingDataFetching}
-				>
-					{t(
-						"scheduling:scheduling.scheduler.supportFailed",
-						"Templates or compliance information could not be refreshed. Check again before publishing.",
-					)}
-				</ScheduleReadFailure>
-			)}
-			{isManager && <ScheduleComplianceBanner summary={complianceSummary} />}
-
-			{/* Coverage summary bar and toggle for managers */}
-			{isManager && (
-				<div className="flex flex-wrap items-center gap-4">
-					<CoverageHeatmapOverlay
-						organizationId={organizationId}
-						employeeId={employeeId}
-						dateRange={dateRange}
-						visible={showCoverageOverlay}
-						onToggle={() => setShowCoverageOverlay((v) => !v)}
-					/>
-					<ShiftRequestsReview
-						approverId={employeeId}
-						organizationTimezone={organizationTimezone}
-					/>
-				</div>
-			)}
-
-			{employeeFilter && (
-				<EmployeeFilterNotice
-					employeeId={employeeFilter}
-					shifts={shifts}
-					onShowAll={() => setShowAllEmployees(true)}
-				/>
-			)}
-
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row">
-				{/* Template sidebar for managers */}
-				{isManager && (
-					<div className="order-2 lg:order-none">
-						<TemplateSidebar templates={templates} onSelectTemplate={createShift} />
-					</div>
-				)}
-
-				{/* Main calendar */}
-				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
-				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border lg:flex-1">
-					<div className="h-full min-w-[42rem]">
-						<ScheduleXCalendar calendarApp={calendar} />
-					</div>
-					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
-					{shiftsLoading && (
-						<div
-							className="absolute inset-0 flex items-center justify-center bg-background/60"
-							role="status"
-						>
-							<span className="animate-pulse text-muted-foreground motion-reduce:animate-none">
-								{t("scheduling:scheduling.scheduler.loading", "Loading schedule...")}
-							</span>
-						</div>
-					)}
-				</div>
-			</div>
-
-			{!shiftsLoading && (!shiftsFailed || hasLoadedShifts) && (
-				<ScheduleShiftList
-					shifts={filterShiftsForEmployee(shifts, employeeFilter)}
-					organizationTimezone={organizationTimezone}
-					onSelect={(shift) => {
-						setSelectedShift(shift);
-						setIsShiftDialogOpen(true);
-					}}
-				/>
-			)}
-
-			{/* Outside the isolated calendar so later records cannot cover this viewport action. */}
-			{isManager && draftCount > 0 && (
-				<PublishFab
-					draftCount={draftCount}
-					onPublish={publish}
-					isPublishing={isPublishing}
-					hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
-					coverageState={coverageState}
-					hasComplianceWarnings={hasComplianceWarnings}
-					complianceFindingsCount={complianceFindingsCount}
-				/>
-			)}
-
-			{/* Shift dialog */}
-			<ShiftDialog
-				open={isShiftDialogOpen}
-				onOpenChange={setIsShiftDialogOpen}
-				shift={selectedShift}
-				templates={templates}
-				isManager={isManager}
-				defaultDate={newShiftDate}
-				defaultTemplateId={newTemplateId}
-				organizationId={organizationId}
-				organizationTimezone={organizationTimezone}
-			/>
-
-			<PublishComplianceDialog
-				open={isComplianceDialogOpen}
-				onOpenChange={setIsComplianceDialogOpen}
-				summary={pendingAcknowledgment?.complianceSummary ?? null}
-				onConfirm={confirmPublish}
-				isConfirming={isPublishing}
-			/>
-		</div>
-	);
+	return calendar;
 }
 
 /** Names the employee the schedule is filtered to, with a way back to everyone. */

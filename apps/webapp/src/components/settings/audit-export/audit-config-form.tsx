@@ -37,7 +37,7 @@ interface AuditConfigFormProps {
 	initialConfig: AuditExportConfigData | null;
 }
 
-export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
+function useAuditExportConfig({ initialConfig }: AuditConfigFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -92,6 +92,11 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 		}
 		setLoading(false);
 	};
+	return { t, loading, config, handleInitialize, handleUpdate };
+}
+
+export function AuditConfigForm(props: AuditConfigFormProps) {
+	const { t, loading, config, handleInitialize, handleUpdate } = useAuditExportConfig(props);
 
 	if (!config) {
 		return (

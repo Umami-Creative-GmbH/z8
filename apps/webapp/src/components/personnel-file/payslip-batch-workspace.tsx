@@ -151,6 +151,7 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 			setConfirming(false);
 			setEditing(false);
 		}
+		// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- Revealing a retained Activity must close its stale confirmation while preserving any in-flight command reservation.
 		setConfirmOpen(false);
 		setUploading(false);
 		return () => {
@@ -521,13 +522,15 @@ function AddFilesCard({
 	const active = useRef<object | null>(null);
 	useLayoutEffect(() => {
 		active.current = {};
-		setUnpacking(false);
 		return () => {
 			active.current = null;
+			setUnpacking(false);
 		};
 	}, []);
 	useLayoutEffect(() => {
+		// react-doctor-disable-next-line react-doctor/no-prop-callback-in-effect -- Lock batch confirmation while Uppy stages files, including asynchronous progress updates.
 		onBusy(unpacking || upload.isUploading);
+		return () => onBusy(false);
 	}, [onBusy, unpacking, upload.isUploading]);
 	const { progress } = upload;
 
@@ -807,10 +810,7 @@ function usePayslipFileRow({
 			);
 		},
 	});
-	async function update(change: {
-		assignedEmployeeId?: string | null;
-		included?: boolean;
-	}) {
+	async function update(change: { assignedEmployeeId?: string | null; included?: boolean }) {
 		if (saving) return;
 		// Each immediate command starts from the latest authoritative record.
 		form.setFieldValue(
@@ -849,13 +849,7 @@ function usePayslipFileRow({
 	};
 }
 
-function FileRow({
-	file,
-	preview,
-}: {
-	file: PayslipBatchFileView;
-	preview: PayslipBatchPreview;
-}) {
+function FileRow({ file, preview }: { file: PayslipBatchFileView; preview: PayslipBatchPreview }) {
 	const {
 		editable,
 		saving,

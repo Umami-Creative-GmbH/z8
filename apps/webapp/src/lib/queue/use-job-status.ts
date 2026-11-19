@@ -8,8 +8,8 @@
  *
  */
 
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { type QueryClient, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { useSession } from "@/lib/auth-client";
 
 export interface JobStatus {
@@ -60,6 +60,25 @@ const fetcher = async (jobId: string, signal: AbortSignal): Promise<JobStatus> =
 	return res.json();
 };
 
+function jobStatusKey(userId: string | null, organizationId: string | null, jobId: string) {
+	return ["job-status", userId, organizationId, jobId] as const;
+}
+
+function subscribeToJobStatus(
+	client: QueryClient,
+	key: ReturnType<typeof jobStatusKey>,
+	notify: (status: JobStatus | undefined) => void,
+) {
+	const cache = client.getQueryCache();
+	const watchedQuery = cache.find({ queryKey: key, exact: true });
+	notify(client.getQueryData<JobStatus>(key));
+	return cache.subscribe((event) => {
+		if (event.type === "updated" && event.query.queryHash === watchedQuery?.queryHash) {
+			notify(client.getQueryData<JobStatus>(key));
+		}
+	});
+}
+
 function jobStatusQuery(
 	userId: string | null,
 	organizationId: string | null,
@@ -68,7 +87,7 @@ function jobStatusQuery(
 	refreshInterval: number,
 ) {
 	return {
-		queryKey: ["job-status", userId, organizationId, jobId] as const,
+		queryKey: jobStatusKey(userId, organizationId, jobId),
 		queryFn: ({ signal }: { signal: AbortSignal }) => fetcher(jobId, signal),
 		enabled: enabled && Boolean(userId) && Boolean(jobId),
 		staleTime: 1000,
@@ -115,41 +134,42 @@ export function useJobStatus(
 	const organizationId = session?.session.activeOrganizationId ?? null;
 	const identity = JSON.stringify([userId, organizationId, jobId]);
 
-	const onSuccessRef = useRef(onSuccess);
-	const onErrorRef = useRef(onError);
 	const terminalNotificationsRef = useRef<{
 		identity: string;
 		outcomes: Set<"success" | "failure">;
 	}>({ identity, outcomes: new Set() });
-
-	useEffect(() => {
-		onSuccessRef.current = onSuccess;
-		onErrorRef.current = onError;
-	}, [onSuccess, onError]);
 
 	const shouldFetch = enabled && Boolean(jobId) && Boolean(userId) && !isPending;
 	const query = useQuery(
 		jobStatusQuery(userId, organizationId, jobId ?? "", shouldFetch, refreshInterval),
 	);
 	const data = shouldFetch ? query.data : undefined;
+	const client = useQueryClient();
+	const notifyTerminal = useEffectEvent((sourceIdentity: string, status: JobStatus | undefined) => {
+		if (!shouldFetch || sourceIdentity !== identity) return;
+		const notifications = terminalNotificationsRef.current.outcomes;
+		if (
+			status?.state === "failed" ||
+			(status?.state === "completed" && status.result?.success === false)
+		) {
+			if (notifications.has("failure")) return;
+			notifications.add("failure");
+			onError?.("Job failed");
+		} else if (status?.state === "completed" && status.result && !notifications.has("success")) {
+			notifications.add("success");
+			onSuccess?.(status.result);
+		}
+	});
 	useEffect(() => {
 		if (terminalNotificationsRef.current.identity !== identity) {
 			terminalNotificationsRef.current = { identity, outcomes: new Set() };
 		}
-		const notifications = terminalNotificationsRef.current.outcomes;
-		if (
-			data?.state === "failed" ||
-			(data?.state === "completed" && data.result?.success === false)
-		) {
-			if (!notifications.has("failure")) {
-				notifications.add("failure");
-				onErrorRef.current?.("Job failed");
-			}
-		} else if (data?.state === "completed" && data.result && !notifications.has("success")) {
-			notifications.add("success");
-			onSuccessRef.current?.(data.result);
-		}
-	}, [data, identity]);
+		if (!shouldFetch || !jobId) return;
+
+		return subscribeToJobStatus(client, jobStatusKey(userId, organizationId, jobId), (status) =>
+			notifyTerminal(identity, status),
+		);
+	}, [client, identity, jobId, organizationId, shouldFetch, userId]);
 
 	return {
 		status: data,

@@ -51,11 +51,8 @@ import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
-import {
-	ConfirmActionDialog,
-	describeFailure,
-	useConfirmedAction,
-} from "./confirm-action-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "./confirm-action-dialog";
+import { describeFailure } from "./confirm-action-utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
 import {
@@ -542,7 +539,7 @@ function useDemoDataWizardController({
 				Object.assign(finalResult, updates);
 				updateStepStatus(stepId, "complete", result);
 				return true;
-			} catch (_err) {
+			} catch {
 				updateStepStatus(
 					stepId,
 					"error",
@@ -1046,9 +1043,7 @@ function ConfigurationFields({ controller }: PresentationProps) {
 	return (
 		<div className="grid gap-6 md:grid-cols-2">
 			<div className="space-y-2">
-				<Label htmlFor="dateRange">
-					{t("settings.demo.form.dateRange.label", "Date Range")}
-				</Label>
+				<Label htmlFor="dateRange">{t("settings.demo.form.dateRange.label", "Date Range")}</Label>
 				<Select
 					value={dateRangeType}
 					onValueChange={(v) =>
@@ -1082,9 +1077,7 @@ function ConfigurationFields({ controller }: PresentationProps) {
 			</div>
 
 			<div className="space-y-2">
-				<Label htmlFor="employees">
-					{t("settings.demo.form.employees.label", "Employees")}
-				</Label>
+				<Label htmlFor="employees">{t("settings.demo.form.employees.label", "Employees")}</Label>
 				<Select
 					value={selectedEmployees}
 					onValueChange={(v) => setSelectedEmployees(v as "all" | "selected")}
@@ -1596,9 +1589,7 @@ function ApprovalTestingOptions({ controller }: PresentationProps) {
 
 	return (
 		<div className="space-y-4">
-			<Label>
-				{t("settings.demo.form.approvalsTesting.label", "Approvals Testing")}
-			</Label>
+			<Label>{t("settings.demo.form.approvalsTesting.label", "Approvals Testing")}</Label>
 			<div className="grid gap-4 md:grid-cols-2">
 				<div
 					role="checkbox"
@@ -1852,9 +1843,7 @@ function CompleteWizardStep({ controller }: PresentationProps) {
 							<div className="flex-1">
 								<span className="font-medium">{step.label}</span>
 								{step.result && (
-									<span className="ml-2 text-sm text-muted-foreground">
-										— {step.result}
-									</span>
+									<span className="ml-2 text-sm text-muted-foreground">— {step.result}</span>
 								)}
 							</div>
 						</div>
@@ -1969,9 +1958,7 @@ function EmployeeGenerationCard({ controller }: PresentationProps) {
 						</div>
 
 						<div className="space-y-2">
-							<Label>
-								{t("settings.demo.generateEmployees.options", "Options")}
-							</Label>
+							<Label>{t("settings.demo.generateEmployees.options", "Options")}</Label>
 							<div
 								role="checkbox"
 								aria-checked={includeManagersForEmployees}
@@ -2073,12 +2060,7 @@ function AvailableDataTypesCard({ controller }: PresentationProps) {
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-3 text-sm text-muted-foreground">
-					<p>
-						{t(
-							"settings.demo.availableTypes.supported",
-							"Currently supported:",
-						)}
-					</p>
+					<p>{t("settings.demo.availableTypes.supported", "Currently supported:")}</p>
 					<ul className="list-inside list-disc space-y-1">
 						<li>
 							{t(
@@ -2086,42 +2068,12 @@ function AvailableDataTypesCard({ controller }: PresentationProps) {
 								"Time entries and work periods",
 							)}
 						</li>
-						<li>
-							{t(
-								"settings.demo.availableTypes.absences",
-								"Absences (vacation, sick leave)",
-							)}
-						</li>
-						<li>
-							{t(
-								"settings.demo.availableTypes.teamsProjects",
-								"Teams and projects",
-							)}
-						</li>
-						<li>
-							{t(
-								"settings.demo.availableTypes.locations",
-								"Locations and subareas",
-							)}
-						</li>
-						<li>
-							{t(
-								"settings.demo.availableTypes.workCategories",
-								"Work category sets",
-							)}
-						</li>
-						<li>
-							{t(
-								"settings.demo.availableTypes.changePolicies",
-								"Change policies",
-							)}
-						</li>
-						<li>
-							{t(
-								"settings.demo.availableTypes.shifts",
-								"Shift templates and shifts",
-							)}
-						</li>
+						<li>{t("settings.demo.availableTypes.absences", "Absences (vacation, sick leave)")}</li>
+						<li>{t("settings.demo.availableTypes.teamsProjects", "Teams and projects")}</li>
+						<li>{t("settings.demo.availableTypes.locations", "Locations and subareas")}</li>
+						<li>{t("settings.demo.availableTypes.workCategories", "Work category sets")}</li>
+						<li>{t("settings.demo.availableTypes.changePolicies", "Change policies")}</li>
+						<li>{t("settings.demo.availableTypes.shifts", "Shift templates and shifts")}</li>
 					</ul>
 				</div>
 			</CardContent>
@@ -2304,12 +2256,7 @@ function ClearDataSection({ controller }: PresentationProps) {
 							"All time entries and work periods",
 						)}
 					</li>
-					<li>
-						{t(
-							"settings.demo.dangerZone.clearData.items.absences",
-							"All absence entries",
-						)}
-					</li>
+					<li>{t("settings.demo.dangerZone.clearData.items.absences", "All absence entries")}</li>
 					<li>
 						{t(
 							"settings.demo.dangerZone.clearData.items.vacationAllowances",

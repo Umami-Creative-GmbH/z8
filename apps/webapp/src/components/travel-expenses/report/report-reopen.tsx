@@ -27,6 +27,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { TravelExpenseReportReopenState } from "@/lib/approvals/server/travel-expense-report-reopen";
@@ -259,11 +260,10 @@ function ReopenForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			className="space-y-4"
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
+			onSubmit={() => {
 				const activation = task.reserve();
 				if (!activation) return;
 				onPendingChange(true);
@@ -326,6 +326,6 @@ function ReopenForm({
 					</DialogFooter>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }

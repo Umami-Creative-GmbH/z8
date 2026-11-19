@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 
 const SLACK_AUTHORIZE_ORIGIN = "https://slack.com";
 
+function navigateToSlack(url: string) {
+	window.location.assign(url);
+}
+
 /** Only ever leave the app for Slack's own authorization page. */
 function slackAuthorizeUrl(value: unknown): string | null {
 	if (typeof value !== "string") return null;
@@ -26,7 +30,7 @@ function slackAuthorizeUrl(value: unknown): string | null {
  */
 export function SlackConnectButton({
 	organizationId,
-	navigate = (url) => window.location.assign(url),
+	navigate = navigateToSlack,
 }: {
 	organizationId: string;
 	/** Leaves for Slack; replaceable in tests. */
@@ -44,9 +48,9 @@ export function SlackConnectButton({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ organizationId }),
 			});
-			const body: unknown = await response.json().catch(() => null);
+			const body: unknown = response.ok ? await response.json() : null;
 			const authUrl =
-				response.ok && body && typeof body === "object" && "authUrl" in body
+				body && typeof body === "object" && "authUrl" in body
 					? slackAuthorizeUrl(body.authUrl)
 					: null;
 			if (authUrl) {

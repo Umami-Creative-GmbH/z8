@@ -278,99 +278,12 @@ export function SessionManagement() {
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="space-y-4">
-					{sessions.length === 0 ? (
-						<p className="text-center text-muted-foreground py-8">
-							{t("settings.sessions.none", "No active sessions")}
-						</p>
-					) : (
-						sessions.map((session, index) => {
-							const isCurrentSession = session.token === currentSessionToken;
-							const { browser, os, device } = parseUserAgent(session.userAgent);
-							const DeviceIcon = getDeviceIcon(session.userAgent);
-							const browserLabel =
-								browser === "Unknown Browser"
-									? t("settings.sessions.unknownBrowser", "Unknown Browser")
-									: browser;
-							const osLabel =
-								os === "Unknown OS" ? t("settings.sessions.unknownOs", "Unknown OS") : os;
-							const deviceLabel =
-								device === "Mobile"
-									? t("settings.sessions.devices.mobile", "Mobile")
-									: device === "Tablet"
-										? t("settings.sessions.devices.tablet", "Tablet")
-										: t("settings.sessions.devices.desktop", "Desktop");
-							const sessionLabel = t("settings.sessions.browserOnOs", "{browser} on {os}", {
-								browser: browserLabel,
-								os: osLabel,
-							});
-
-							return (
-								<div key={session.id}>
-									{index > 0 && <Separator className="my-4" />}
-									<div className="flex items-start justify-between gap-4">
-										<div className="flex min-w-0 flex-1 items-start gap-3">
-											<div className="shrink-0 rounded-full bg-muted p-2">
-												<DeviceIcon className="size-5 text-muted-foreground" aria-hidden="true" />
-											</div>
-											<div className="min-w-0 flex-1 space-y-1">
-												<div className="flex flex-wrap items-center gap-2">
-													<p className="font-medium">{sessionLabel}</p>
-													{isCurrentSession && (
-														<Badge variant="secondary">
-															<IconCheck aria-hidden="true" />
-															{t("settings.sessions.current", "Current Session")}
-														</Badge>
-													)}
-												</div>
-												<div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-													<span>{deviceLabel}</span>
-													{session.ipAddress && (
-														<span
-															className="flex min-w-0 max-w-full items-center gap-1"
-															title={session.ipAddress}
-														>
-															<IconMapPin className="size-3 shrink-0" aria-hidden="true" />
-															<span className="block min-w-0 truncate">{session.ipAddress}</span>
-														</span>
-													)}
-													<span>
-														{t("settings.sessions.signedIn", "Signed in")}{" "}
-														{formatDistanceToNow(new Date(session.createdAt))}
-													</span>
-												</div>
-											</div>
-										</div>
-										{!isCurrentSession && (
-											<Button
-												variant="ghost"
-												size="sm"
-												aria-label={t("settings.sessions.revokeSession", "Revoke session: {session}", {
-													session: sessionLabel,
-												})}
-												onClick={() =>
-													requestRevoke({
-														kind: "session",
-														token: session.token,
-														sessionId: session.id,
-														label: sessionLabel,
-													})
-												}
-												disabled={revokingSessionId === session.id}
-											>
-												{revokingSessionId === session.id ? (
-													<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-												) : (
-													<IconTrash className="size-4" aria-hidden="true" />
-												)}
-											</Button>
-										)}
-									</div>
-								</div>
-							);
-						})
-					)}
-				</div>
+				<ActiveSessionsList
+					sessions={sessions}
+					currentSessionToken={currentSessionToken}
+					requestRevoke={requestRevoke}
+					revokingSessionId={revokingSessionId}
+				/>
 
 				{otherSessionsCount > 0 && (
 					<div className="mt-6 rounded-lg border border-warning/40 bg-warning/10 p-4">
@@ -415,5 +328,113 @@ export function SessionManagement() {
 				onConfirm={confirmPendingRevoke}
 			/>
 		</Card>
+	);
+}
+
+function ActiveSessionsList({
+	sessions,
+	currentSessionToken,
+	requestRevoke,
+	revokingSessionId,
+}: {
+	sessions: Session[];
+	currentSessionToken: string | null | undefined;
+	requestRevoke: (record: PendingRevoke) => void;
+	revokingSessionId: string | null;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-4">
+			{sessions.length === 0 ? (
+				<p className="text-center text-muted-foreground py-8">
+					{t("settings.sessions.none", "No active sessions")}
+				</p>
+			) : (
+				sessions.map((session, index) => {
+					const isCurrentSession = session.token === currentSessionToken;
+					const { browser, os, device } = parseUserAgent(session.userAgent);
+					const DeviceIcon = getDeviceIcon(session.userAgent);
+					const browserLabel =
+						browser === "Unknown Browser"
+							? t("settings.sessions.unknownBrowser", "Unknown Browser")
+							: browser;
+					const osLabel = os === "Unknown OS" ? t("settings.sessions.unknownOs", "Unknown OS") : os;
+					const deviceLabel =
+						device === "Mobile"
+							? t("settings.sessions.devices.mobile", "Mobile")
+							: device === "Tablet"
+								? t("settings.sessions.devices.tablet", "Tablet")
+								: t("settings.sessions.devices.desktop", "Desktop");
+					const sessionLabel = t("settings.sessions.browserOnOs", "{browser} on {os}", {
+						browser: browserLabel,
+						os: osLabel,
+					});
+
+					return (
+						<div key={session.id}>
+							{index > 0 && <Separator className="my-4" />}
+							<div className="flex items-start justify-between gap-4">
+								<div className="flex min-w-0 flex-1 items-start gap-3">
+									<div className="shrink-0 rounded-full bg-muted p-2">
+										<DeviceIcon className="size-5 text-muted-foreground" aria-hidden="true" />
+									</div>
+									<div className="min-w-0 flex-1 space-y-1">
+										<div className="flex flex-wrap items-center gap-2">
+											<p className="font-medium">{sessionLabel}</p>
+											{isCurrentSession && (
+												<Badge variant="secondary">
+													<IconCheck aria-hidden="true" />
+													{t("settings.sessions.current", "Current Session")}
+												</Badge>
+											)}
+										</div>
+										<div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+											<span>{deviceLabel}</span>
+											{session.ipAddress && (
+												<span
+													className="flex min-w-0 max-w-full items-center gap-1"
+													title={session.ipAddress}
+												>
+													<IconMapPin className="size-3 shrink-0" aria-hidden="true" />
+													<span className="block min-w-0 truncate">{session.ipAddress}</span>
+												</span>
+											)}
+											<span>
+												{t("settings.sessions.signedIn", "Signed in")}{" "}
+												{formatDistanceToNow(new Date(session.createdAt))}
+											</span>
+										</div>
+									</div>
+								</div>
+								{!isCurrentSession && (
+									<Button
+										variant="ghost"
+										size="sm"
+										aria-label={t("settings.sessions.revokeSession", "Revoke session: {session}", {
+											session: sessionLabel,
+										})}
+										onClick={() =>
+											requestRevoke({
+												kind: "session",
+												token: session.token,
+												sessionId: session.id,
+												label: sessionLabel,
+											})
+										}
+										disabled={revokingSessionId === session.id}
+									>
+										{revokingSessionId === session.id ? (
+											<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+										) : (
+											<IconTrash className="size-4" aria-hidden="true" />
+										)}
+									</Button>
+								)}
+							</div>
+						</div>
+					);
+				})
+			)}
+		</div>
 	);
 }

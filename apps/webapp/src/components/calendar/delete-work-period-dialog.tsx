@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconLoader2,
-	IconTrash,
-	IconX,
-} from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2, IconTrash, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
@@ -20,24 +15,14 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import {
-	type DisplayContext,
-	formatInstant,
-} from "@/lib/datetime/temporal-format";
-import {
-	formatDuration,
-	getWorkPeriodDialogMetadata,
-} from "./work-period-dialog-utils";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
+import { formatDuration, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 
 interface DeleteWorkPeriodDialogProps {
 	event: CalendarEvent;
@@ -88,8 +73,7 @@ export function DeleteWorkPeriodDialog({
 			const trimmedReason = value.reason.trim();
 			setIsDeleting(true);
 			setSubmitError(null);
-			const submissionId =
-				submissionIdRef.current ?? globalThis.crypto.randomUUID();
+			const submissionId = submissionIdRef.current ?? globalThis.crypto.randomUUID();
 			submissionIdRef.current = submissionId;
 			const result = await requestTimeEntryDeletion({
 				workPeriodId: event.id,
@@ -98,34 +82,21 @@ export function DeleteWorkPeriodDialog({
 			}).catch(() => null);
 
 			if (!result) {
-				setSubmitError(
-					t("calendar.delete.failed", "Failed to delete work period"),
-				);
-				toast.error(
-					t("calendar.delete.failed", "Failed to delete work period"),
-				);
+				setSubmitError(t("calendar.delete.failed", "Failed to delete work period"));
+				toast.error(t("calendar.delete.failed", "Failed to delete work period"));
 			} else if (result.success) {
 				submissionIdRef.current = null;
 				toast.success(
 					result.data.status === "approved"
 						? t("calendar.delete.applied", "Time entry deletion applied")
-						: t(
-								"calendar.edit.time.submitted",
-								"Change submitted for manager approval",
-							),
+						: t("calendar.edit.time.submitted", "Change submitted for manager approval"),
 				);
 				onDeleteComplete?.();
 				form.reset();
 				onOpenChange(false);
 			} else {
-				setSubmitError(
-					result.error ||
-						t("calendar.delete.failed", "Failed to delete work period"),
-				);
-				toast.error(
-					result.error ||
-						t("calendar.delete.failed", "Failed to delete work period"),
-				);
+				setSubmitError(result.error || t("calendar.delete.failed", "Failed to delete work period"));
+				toast.error(result.error || t("calendar.delete.failed", "Failed to delete work period"));
 			}
 
 			setIsDeleting(false);
@@ -145,13 +116,12 @@ export function DeleteWorkPeriodDialog({
 			}}
 		>
 			<AlertDialogContent>
-				<form
+				<ClientForm
 					noValidate
 					aria-busy={isDeleting}
 					className="grid gap-4"
-					onSubmit={(submitEvent) => {
-						submitEvent.preventDefault();
-						submitEvent.stopPropagation();
+					stopPropagation
+					onSubmit={() => {
 						if (isDeleting) return;
 						void form.handleSubmit();
 					}}
@@ -159,9 +129,7 @@ export function DeleteWorkPeriodDialog({
 					<AlertDialogHeader>
 						<div className="flex items-center gap-2 text-destructive">
 							<IconAlertTriangle className="size-5" aria-hidden="true" />
-							<AlertDialogTitle>
-								{t("calendar.edit.deleteEntry", "Delete entry")}
-							</AlertDialogTitle>
+							<AlertDialogTitle>{t("calendar.edit.deleteEntry", "Delete entry")}</AlertDialogTitle>
 						</div>
 						<AlertDialogDescription>
 							{t(
@@ -173,25 +141,12 @@ export function DeleteWorkPeriodDialog({
 						<div className="space-y-3 text-sm">
 							<div className="rounded-lg bg-muted p-3 space-y-1">
 								<div className="font-medium">
-									{formatInstant(
-										instantFromDate(event.date),
-										displayContext,
-										"dateMedium",
-									)}
+									{formatInstant(instantFromDate(event.date), displayContext, "dateMedium")}
 								</div>
 								<div className="text-sm">
-									{formatInstant(
-										instantFromDate(event.date),
-										displayContext,
-										"time",
-									)}{" "}
-									-{" "}
+									{formatInstant(instantFromDate(event.date), displayContext, "time")} -{" "}
 									{event.endDate
-										? formatInstant(
-												instantFromDate(event.endDate),
-												displayContext,
-												"time",
-											)
+										? formatInstant(instantFromDate(event.endDate), displayContext, "time")
 										: "—"}
 									<span className="ml-2 text-muted-foreground">
 										({formatDuration(metadata.durationMinutes)})
@@ -210,10 +165,7 @@ export function DeleteWorkPeriodDialog({
 									onChange: ({ value }) =>
 										value.trim()
 											? undefined
-											: t(
-													"calendar.delete.reasonRequired",
-													"Reason is required",
-												),
+											: t("calendar.delete.reasonRequired", "Reason is required"),
 								}}
 							>
 								{(field) => (
@@ -226,14 +178,9 @@ export function DeleteWorkPeriodDialog({
 												ref={reasonRef}
 												name="deletionReason"
 												autoComplete="off"
-												aria-label={t(
-													"calendar.delete.reasonLabel",
-													"Reason for deletion",
-												)}
+												aria-label={t("calendar.delete.reasonLabel", "Reason for deletion")}
 												value={field.state.value}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
+												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
 												disabled={isDeleting}
 												required
@@ -264,17 +211,14 @@ export function DeleteWorkPeriodDialog({
 						</Button>
 						<Button type="submit" variant="destructive" disabled={isDeleting}>
 							{isDeleting ? (
-								<IconLoader2
-									className="size-4 animate-spin mr-1"
-									aria-hidden="true"
-								/>
+								<IconLoader2 className="size-4 animate-spin mr-1" aria-hidden="true" />
 							) : (
 								<IconTrash className="size-4 mr-1" aria-hidden="true" />
 							)}
 							{t("calendar.edit.deleteEntry", "Delete entry")}
 						</Button>
 					</AlertDialogFooter>
-				</form>
+				</ClientForm>
 			</AlertDialogContent>
 		</AlertDialog>
 	);

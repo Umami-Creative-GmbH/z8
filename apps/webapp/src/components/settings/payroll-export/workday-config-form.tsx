@@ -19,7 +19,8 @@ import {
 	testWorkdayConnectionAction,
 	type WorkdayConfigResult,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
-import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -306,7 +306,7 @@ describe("normalizeWorkdayTimeline", () => {
 
 	it("keeps day warning summaries out of timeline items", () => {
 		const result = normalizeWorkdayTimeline({
-			selectedDate,
+			selectedDate: { ...selectedDate, todayDateKey: "2026-05-04" },
 			timezone: "Europe/Berlin",
 			organizationTimezone: "Europe/Berlin",
 			workPeriods: [
@@ -326,7 +326,10 @@ describe("normalizeWorkdayTimeline", () => {
 			pendingRequests: [],
 		});
 
-		expect(result.dayWarnings).toHaveLength(2);
+		expect(result.dayWarnings.map((warning) => warning.id)).toEqual([
+			"warning:pending-edit:period-pending",
+			"warning:missing-clock-out:period-pending",
+		]);
 		expect(result.items.map((item) => item.type)).toEqual(["work-period"]);
 	});
 

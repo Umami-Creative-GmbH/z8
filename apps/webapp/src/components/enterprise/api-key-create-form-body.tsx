@@ -124,8 +124,8 @@ function useApiKeyCreateController({
 	const [pending, setPending] = useState(false);
 	useLayoutEffect(() => {
 		lifetime.current = open ? {} : null;
-		setPending(false);
 		return () => {
+			setPending(false);
 			lifetime.current = null;
 			operation.current = null;
 		};

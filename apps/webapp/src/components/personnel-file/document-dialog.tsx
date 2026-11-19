@@ -38,6 +38,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useTusFileUpload } from "@/hooks/use-tus-file-upload";
 import {
@@ -302,11 +303,10 @@ export function DocumentDialog(props: DocumentDialogProps) {
 	return (
 		<ActionPanel open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
 			<ActionPanelContent>
-				<form
+				<ClientForm
 					className="flex min-h-0 flex-1 flex-col"
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+					stopPropagation
+					onSubmit={() => {
 						submit();
 					}}
 				>
@@ -380,7 +380,7 @@ export function DocumentDialog(props: DocumentDialogProps) {
 							)}
 						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

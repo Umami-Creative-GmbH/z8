@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import {
 	IconCash,
 	IconDownload,
@@ -234,12 +235,10 @@ function ExportSelection({
 
 	return (
 		// Client-side TanStack Form submit (docs/refs/forms.md); the finance page needs JS.
-		// react-doctor-disable-next-line react-doctor/no-prevent-default
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
+			stopPropagation
+			onSubmit={() => {
 				const submission = command.reserve();
 				if (!submission) return;
 				void form
@@ -380,7 +379,7 @@ function ExportSelection({
 					</Button>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }
 

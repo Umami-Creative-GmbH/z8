@@ -42,8 +42,9 @@ export function usePlatformReadStatus({ userId, sessionId, readId }: PlatformRea
 	}, [ready, matches, session.isPending, readId, userId, sessionId]);
 	// Activity disconnects effects while hidden. Returning requires a new admitted read.
 	useEffect(() => {
+		const admittedReads = admitted.current;
 		return () => {
-			if (admitted.current.has(readId)) setRetired((previous) => new Set([...previous, readId]));
+			if (admittedReads.has(readId)) setRetired((previous) => new Set([...previous, readId]));
 		};
 	}, [readId]);
 	if (ready && !retired.has(readId)) return "available";

@@ -22,6 +22,7 @@ import {
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
+import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -256,27 +257,15 @@ const renderAssignmentView = ({
 			</Card>
 
 			<Card>
-				<CardHeader>
-					<div className="flex items-center gap-2">
-						<IconUsers className="size-5 text-muted-foreground" />
-						<div className="flex-1">
-							<CardTitle className="text-base">
-								{t("settings.changePolicies.teamOverrides", "Team Overrides")}
-								{teamAssignments.length > 0 && (
-									<Badge variant="secondary" className="ml-2">
-										{teamAssignments.length}
-									</Badge>
-								)}
-							</CardTitle>
-							<CardDescription>
-								{t(
+				<AssignmentLevelCardHeader
+					icon={IconUsers}
+					title={t("settings.changePolicies.teamOverrides", "Team Overrides")}
+					description={t(
 									"settings.changePolicies.teamOverridesDescription",
 									"Override the organization default for specific teams (e.g., different departments or work schedules).",
 								)}
-							</CardDescription>
-						</div>
-					</div>
-				</CardHeader>
+					count={teamAssignments.length}
+				/>
 				<CardContent>
 					{canManage ? (
 						<div className="flex justify-end mb-4">
@@ -324,27 +313,15 @@ const renderAssignmentView = ({
 			</Card>
 
 			<Card>
-				<CardHeader>
-					<div className="flex items-center gap-2">
-						<IconUser className="size-5 text-muted-foreground" />
-						<div className="flex-1">
-							<CardTitle className="text-base">
-								{t("settings.changePolicies.employeeOverrides", "Employee Overrides")}
-								{employeeAssignments.length > 0 && (
-									<Badge variant="secondary" className="ml-2">
-										{employeeAssignments.length}
-									</Badge>
-								)}
-							</CardTitle>
-							<CardDescription>
-								{t(
+				<AssignmentLevelCardHeader
+					icon={IconUser}
+					title={t("settings.changePolicies.employeeOverrides", "Employee Overrides")}
+					description={t(
 									"settings.changePolicies.employeeOverridesDescription",
 									"Override team or organization defaults for specific employees (e.g., special arrangements).",
 								)}
-							</CardDescription>
-						</div>
-					</div>
-				</CardHeader>
+					count={employeeAssignments.length}
+				/>
 				<CardContent>
 					{canManage ? (
 						<div className="flex justify-end mb-4">

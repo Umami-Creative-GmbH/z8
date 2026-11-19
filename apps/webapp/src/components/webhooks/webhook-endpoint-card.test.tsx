@@ -10,7 +10,8 @@ import {
 } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import type { PublicWebhookEndpoint } from "@/lib/webhooks/types";
 import { render } from "@/test/render-with-translations";
-import { WebhookEndpointCard, webhookEndpointLabel } from "./webhook-endpoint-card";
+import { WebhookEndpointCard } from "./webhook-endpoint-card";
+import { webhookEndpointLabel } from "./webhook-endpoint-label";
 
 vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
 	deleteWebhook: vi.fn(),

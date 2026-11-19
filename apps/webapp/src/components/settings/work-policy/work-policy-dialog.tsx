@@ -338,7 +338,7 @@ function useWorkPolicyForm({
 	const regulationEnabled = useStore(form.store, (state) => state.values.regulationEnabled);
 	const presenceEnabled = useStore(form.store, (state) => state.values.presenceEnabled);
 	const presenceMode = useStore(form.store, (state) => state.values.presence.presenceMode);
-	const _presenceFixedDays = useStore(
+	useStore(
 		form.store,
 		(state) => state.values.presence.requiredOnsiteFixedDays,
 	);
@@ -351,7 +351,7 @@ function useWorkPolicyForm({
 		form.store,
 		(state) => state.values.homeOfficeDaysPerCycle,
 	);
-	const _breakRules = useStore(form.store, (state) => state.values.breakRules);
+	useStore(form.store, (state) => state.values.breakRules);
 
 	// Calculate total hours for detailed mode
 	const totalHours = days
@@ -379,6 +379,7 @@ function useWorkPolicyForm({
 		isEditing,
 		t,
 		form,
+		noSectionsEnabled: !scheduleEnabled && !regulationEnabled && !presenceEnabled,
 		scheduleEnabled,
 		regulationEnabled,
 		presenceEnabled,
@@ -400,6 +401,7 @@ export function WorkPolicyDialog({
 	onSuccess,
 }: WorkPolicyDialogProps) {
 	const {
+		noSectionsEnabled,
 		isEditing,
 		t,
 		form,
@@ -606,7 +608,7 @@ export function WorkPolicyDialog({
 									)}
 								</form.Field>
 							</div>
-							{!scheduleEnabled && !regulationEnabled && !presenceEnabled && (
+							{noSectionsEnabled && (
 								<p role="alert" className="text-sm text-destructive">
 									{t(
 										"settings.workPolicies.atLeastOneFeature",
@@ -895,179 +897,7 @@ export function WorkPolicyDialog({
 						{regulationEnabled && (
 							<>
 								<Separator />
-								<div className="space-y-4">
-									<h3 className="text-sm font-medium">
-										{t("settings.workPolicies.regulationConfiguration", "Regulation Configuration")}
-									</h3>
-
-									{/* Working Time Limits */}
-									<div className="space-y-4">
-										<h4 className="text-sm text-muted-foreground">
-											{t("settings.timeRegulations.workingTimeLimits", "Working Time Limits")}
-										</h4>
-										<div className="grid gap-4 sm:grid-cols-3">
-											<form.Field name="maxDailyMinutes">
-												{(field) => (
-													<div className="space-y-2">
-														<Label htmlFor="work-policy-max-daily">
-															{t("settings.timeRegulations.maxDaily", "Max Daily")}
-														</Label>
-														<div className="flex items-center gap-2">
-															<Input
-																id="work-policy-max-daily"
-																name="maxDailyHours"
-																inputMode="numeric"
-																type="number"
-																min="1"
-																max="24"
-																value={field.state.value ? Math.floor(field.state.value / 60) : ""}
-																onChange={(e) => {
-																	const hours = parseInt(e.target.value, 10);
-																	field.handleChange(Number.isNaN(hours) ? null : hours * 60);
-																}}
-																onBlur={field.handleBlur}
-																placeholder="—"
-																className="w-20"
-															/>
-															<span className="text-sm text-muted-foreground">
-																{t("settings.workSchedules.hoursUnit", "hours")}
-															</span>
-														</div>
-													</div>
-												)}
-											</form.Field>
-
-											<form.Field name="maxWeeklyMinutes">
-												{(field) => (
-													<div className="space-y-2">
-														<Label htmlFor="work-policy-max-weekly">
-															{t("settings.timeRegulations.maxWeekly", "Max Weekly")}
-														</Label>
-														<div className="flex items-center gap-2">
-															<Input
-																id="work-policy-max-weekly"
-																name="maxWeeklyHours"
-																inputMode="numeric"
-																type="number"
-																min="1"
-																max="168"
-																value={field.state.value ? Math.floor(field.state.value / 60) : ""}
-																onChange={(e) => {
-																	const hours = parseInt(e.target.value, 10);
-																	field.handleChange(Number.isNaN(hours) ? null : hours * 60);
-																}}
-																onBlur={field.handleBlur}
-																placeholder="—"
-																className="w-20"
-															/>
-															<span className="text-sm text-muted-foreground">
-																{t("settings.workSchedules.hoursUnit", "hours")}
-															</span>
-														</div>
-													</div>
-												)}
-											</form.Field>
-
-											<form.Field name="maxUninterruptedMinutes">
-												{(field) => (
-													<div className="space-y-2">
-														<Label htmlFor="work-policy-max-uninterrupted">
-															{t("settings.timeRegulations.maxUninterrupted", "Max Uninterrupted")}
-														</Label>
-														<div className="flex items-center gap-2">
-															<Input
-																id="work-policy-max-uninterrupted"
-																name="maxUninterruptedHours"
-																inputMode="decimal"
-																type="number"
-																min="0.5"
-																max="12"
-																step="0.5"
-																value={field.state.value ? field.state.value / 60 : ""}
-																onChange={(e) => {
-																	const hours = parseFloat(e.target.value);
-																	field.handleChange(
-																		Number.isNaN(hours) ? null : Math.round(hours * 60),
-																	);
-																}}
-																onBlur={field.handleBlur}
-																placeholder="—"
-																className="w-20"
-															/>
-															<span className="text-sm text-muted-foreground">
-																{t("settings.workSchedules.hoursUnit", "hours")}
-															</span>
-														</div>
-													</div>
-												)}
-											</form.Field>
-										</div>
-									</div>
-
-									{/* Break Rules */}
-									<div className="space-y-4">
-										<div className="flex items-center justify-between">
-											<h4 className="text-sm text-muted-foreground">
-												{t("settings.timeRegulations.breakRules", "Break Rules")}
-											</h4>
-											<form.Field name="breakRules">
-												{(field) => (
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														onClick={() => {
-															field.pushValue({ ...defaultBreakRule });
-														}}
-													>
-														<IconPlus className="mr-2 size-4" aria-hidden="true" />
-														{t("settings.timeRegulations.addBreakRule", "Add Break Rule")}
-													</Button>
-												)}
-											</form.Field>
-										</div>
-
-										<form.Field name="breakRules" mode="array">
-											{(field) => (
-												<div className="space-y-4">
-													{field.state.value.length === 0 ? (
-														<div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg border-dashed">
-															<p className="text-sm text-muted-foreground">
-																{t(
-																	"settings.timeRegulations.noBreakRules",
-																	"No break rules defined",
-																)}
-															</p>
-															<p className="text-xs text-muted-foreground mt-1">
-																{t(
-																	"settings.timeRegulations.noBreakRulesDescription",
-																	"Add break rules to define required breaks based on working time",
-																)}
-															</p>
-														</div>
-													) : (
-														field.state.value.map((_rule, ruleIndex) => {
-															// Keyed by position: a value-based key remounted the editor on every
-															// keystroke and dropped focus from the field being typed in.
-															const ruleKey = `break-rule-${ruleIndex}`;
-															return (
-																<form.Field key={ruleKey} name={`breakRules[${ruleIndex}]`}>
-																	{() => (
-																		<BreakRuleEditor
-																			ruleIndex={ruleIndex}
-																			form={form}
-																			onRemove={() => field.removeValue(ruleIndex)}
-																		/>
-																	)}
-																</form.Field>
-															);
-														})
-													)}
-												</div>
-											)}
-										</form.Field>
-									</div>
-								</div>
+								<WorkRegulationFields form={form} />
 							</>
 						)}
 
@@ -1434,7 +1264,7 @@ export function WorkPolicyDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={isPending || (!scheduleEnabled && !regulationEnabled && !presenceEnabled)}
+							disabled={isPending || noSectionsEnabled}
 							aria-busy={isPending || undefined}
 						>
 							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
@@ -1444,5 +1274,179 @@ export function WorkPolicyDialog({
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function WorkRegulationFields({ form }: { form: ReturnType<typeof useWorkPolicyForm>["form"] }) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-4">
+			<h3 className="text-sm font-medium">
+				{t("settings.workPolicies.regulationConfiguration", "Regulation Configuration")}
+			</h3>
+
+			{/* Working Time Limits */}
+			<div className="space-y-4">
+				<h4 className="text-sm text-muted-foreground">
+					{t("settings.timeRegulations.workingTimeLimits", "Working Time Limits")}
+				</h4>
+				<div className="grid gap-4 sm:grid-cols-3">
+					<form.Field name="maxDailyMinutes">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="work-policy-max-daily">
+									{t("settings.timeRegulations.maxDaily", "Max Daily")}
+								</Label>
+								<div className="flex items-center gap-2">
+									<Input
+										id="work-policy-max-daily"
+										name="maxDailyHours"
+										inputMode="numeric"
+										type="number"
+										min="1"
+										max="24"
+										value={field.state.value ? Math.floor(field.state.value / 60) : ""}
+										onChange={(e) => {
+											const hours = parseInt(e.target.value, 10);
+											field.handleChange(Number.isNaN(hours) ? null : hours * 60);
+										}}
+										onBlur={field.handleBlur}
+										placeholder="—"
+										className="w-20"
+									/>
+									<span className="text-sm text-muted-foreground">
+										{t("settings.workSchedules.hoursUnit", "hours")}
+									</span>
+								</div>
+							</div>
+						)}
+					</form.Field>
+
+					<form.Field name="maxWeeklyMinutes">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="work-policy-max-weekly">
+									{t("settings.timeRegulations.maxWeekly", "Max Weekly")}
+								</Label>
+								<div className="flex items-center gap-2">
+									<Input
+										id="work-policy-max-weekly"
+										name="maxWeeklyHours"
+										inputMode="numeric"
+										type="number"
+										min="1"
+										max="168"
+										value={field.state.value ? Math.floor(field.state.value / 60) : ""}
+										onChange={(e) => {
+											const hours = parseInt(e.target.value, 10);
+											field.handleChange(Number.isNaN(hours) ? null : hours * 60);
+										}}
+										onBlur={field.handleBlur}
+										placeholder="—"
+										className="w-20"
+									/>
+									<span className="text-sm text-muted-foreground">
+										{t("settings.workSchedules.hoursUnit", "hours")}
+									</span>
+								</div>
+							</div>
+						)}
+					</form.Field>
+
+					<form.Field name="maxUninterruptedMinutes">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="work-policy-max-uninterrupted">
+									{t("settings.timeRegulations.maxUninterrupted", "Max Uninterrupted")}
+								</Label>
+								<div className="flex items-center gap-2">
+									<Input
+										id="work-policy-max-uninterrupted"
+										name="maxUninterruptedHours"
+										inputMode="decimal"
+										type="number"
+										min="0.5"
+										max="12"
+										step="0.5"
+										value={field.state.value ? field.state.value / 60 : ""}
+										onChange={(e) => {
+											const hours = parseFloat(e.target.value);
+											field.handleChange(Number.isNaN(hours) ? null : Math.round(hours * 60));
+										}}
+										onBlur={field.handleBlur}
+										placeholder="—"
+										className="w-20"
+									/>
+									<span className="text-sm text-muted-foreground">
+										{t("settings.workSchedules.hoursUnit", "hours")}
+									</span>
+								</div>
+							</div>
+						)}
+					</form.Field>
+				</div>
+			</div>
+
+			{/* Break Rules */}
+			<div className="space-y-4">
+				<div className="flex items-center justify-between">
+					<h4 className="text-sm text-muted-foreground">
+						{t("settings.timeRegulations.breakRules", "Break Rules")}
+					</h4>
+					<form.Field name="breakRules">
+						{(field) => (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									field.pushValue({ ...defaultBreakRule });
+								}}
+							>
+								<IconPlus className="mr-2 size-4" aria-hidden="true" />
+								{t("settings.timeRegulations.addBreakRule", "Add Break Rule")}
+							</Button>
+						)}
+					</form.Field>
+				</div>
+
+				<form.Field name="breakRules" mode="array">
+					{(field) => (
+						<div className="space-y-4">
+							{field.state.value.length === 0 ? (
+								<div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg border-dashed">
+									<p className="text-sm text-muted-foreground">
+										{t("settings.timeRegulations.noBreakRules", "No break rules defined")}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										{t(
+											"settings.timeRegulations.noBreakRulesDescription",
+											"Add break rules to define required breaks based on working time",
+										)}
+									</p>
+								</div>
+							) : (
+								field.state.value.map((_rule, ruleIndex) => {
+									// Keyed by position: a value-based key remounted the editor on every
+									// keystroke and dropped focus from the field being typed in.
+									const ruleKey = `break-rule-${ruleIndex}`;
+									return (
+										<form.Field key={ruleKey} name={`breakRules[${ruleIndex}]`}>
+											{() => (
+												<BreakRuleEditor
+													ruleIndex={ruleIndex}
+													form={form}
+													onRemove={() => field.removeValue(ruleIndex)}
+												/>
+											)}
+										</form.Field>
+									);
+								})
+							)}
+						</div>
+					)}
+				</form.Field>
+			</div>
+		</div>
 	);
 }

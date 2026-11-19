@@ -67,7 +67,7 @@ export default function TeamPerformancePage() {
 	return <TeamPerformance key={organizationId ?? "pending"} />;
 }
 
-function TeamPerformance() {
+function useTeamPerformance() {
 	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
@@ -182,6 +182,30 @@ function TeamPerformance() {
 		};
 	}, [runAnalyticsLoad]);
 
+	return {
+		dateRange,
+		handleDateRangeChange,
+		requestKey,
+		teamData,
+		loading,
+		refreshing,
+		failed,
+		runAnalyticsLoad,
+	};
+}
+
+function TeamPerformance() {
+	const { t } = useTranslate();
+	const {
+		dateRange,
+		handleDateRangeChange,
+		requestKey,
+		teamData,
+		loading,
+		refreshing,
+		failed,
+		runAnalyticsLoad,
+	} = useTeamPerformance();
 	const teams = teamData?.teams || [];
 
 	return (

@@ -47,14 +47,10 @@ function getBudgetProgressColor(percent: number | null) {
 	return "bg-green-500";
 }
 
-export function ProjectPortfolioTable({
-	projects,
-	onProjectSelect,
-}: ProjectPortfolioTableProps) {
+function usePortfolioColumns({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
 	const format = useBillableFigureFormat();
 	const hoursFormat = useProjectHoursFormat();
-	const [search, setSearch] = useState("");
 
 	const formatDeadlineStatus = (daysUntilDeadline: number | null) => {
 		if (daysUntilDeadline === null) return null;
@@ -104,94 +100,67 @@ export function ProjectPortfolioTable({
 		return statusLabels[status] || status;
 	};
 
-	// Filter projects by search
-	const filteredProjects = (() => {
-		if (!search) return projects;
-		const searchLower = search.toLowerCase();
-		return projects.filter(
-			(project) =>
-				project.name.toLowerCase().includes(searchLower) ||
-				project.description?.toLowerCase().includes(searchLower) ||
-				project.customer?.name.toLowerCase().includes(searchLower) ||
-				project.status.toLowerCase().includes(searchLower),
-		);
-	})();
-
 	// Billable Time columns, only for viewers who get the figures (#902).
 	const showBillable = projects.some((project) => project.billable);
-	const showMargin = projects.some(
-		(project) => project.billable?.access === "full",
-	);
-	const billableColumns: ColumnDef<DataTableFeatures, ProjectSummary>[] =
-		showBillable
-			? [
-					{
-						id: "billableHours",
-						header: () => (
-							<div className="text-right">
-								{t("reports.projects.billable.billableHours", "Billable hours")}
-							</div>
-						),
-						cell: ({ row }) => (
+	const showMargin = projects.some((project) => project.billable?.access === "full");
+	const billableColumns: ColumnDef<DataTableFeatures, ProjectSummary>[] = showBillable
+		? [
+				{
+					id: "billableHours",
+					header: () => (
+						<div className="text-right">
+							{t("reports.projects.billable.billableHours", "Billable hours")}
+						</div>
+					),
+					cell: ({ row }) => (
+						<div className="text-right tabular-nums">
+							{row.original.billable ? hoursFormat.hours(row.original.billable.billableHours) : "—"}
+						</div>
+					),
+				},
+				{
+					id: "revenue",
+					header: () => (
+						<div className="text-right">{t("reports.projects.billable.revenue", "Revenue")}</div>
+					),
+					cell: ({ row }) => {
+						const figures = row.original.billable;
+						if (!figures) return <div className="text-right">—</div>;
+						return (
 							<div className="text-right tabular-nums">
-								{row.original.billable
-									? hoursFormat.hours(row.original.billable.billableHours)
-									: "—"}
+								{format.money(figures.revenue, figures.currency)}
+								{figures.unpricedWorkCount > 0 && (
+									<IconAlertTriangle
+										className="ml-1 inline size-3 text-amber-600"
+										aria-label={t("reports.projects.billable.hasUnpriced", "Has unpriced work")}
+									/>
+								)}
 							</div>
-						),
+						);
 					},
-					{
-						id: "revenue",
-						header: () => (
-							<div className="text-right">
-								{t("reports.projects.billable.revenue", "Revenue")}
-							</div>
-						),
-						cell: ({ row }) => {
-							const figures = row.original.billable;
-							if (!figures) return <div className="text-right">—</div>;
-							return (
-								<div className="text-right tabular-nums">
-									{format.money(figures.revenue, figures.currency)}
-									{figures.unpricedWorkCount > 0 && (
-										<IconAlertTriangle
-											className="ml-1 inline size-3 text-amber-600"
-											aria-label={t(
-												"reports.projects.billable.hasUnpriced",
-												"Has unpriced work",
-											)}
-										/>
-									)}
-								</div>
-							);
-						},
-					},
-					...(showMargin
-						? [
-								{
-									id: "margin",
-									header: () => (
-										<div className="text-right">
-											{t("reports.projects.billable.margin", "Margin")}
+				},
+				...(showMargin
+					? [
+							{
+								id: "margin",
+								header: () => (
+									<div className="text-right">
+										{t("reports.projects.billable.margin", "Margin")}
+									</div>
+								),
+								cell: ({ row }) => {
+									const figures = row.original.billable;
+									return (
+										<div className="text-right tabular-nums">
+											{figures?.access === "full" ? <MarginValue figures={figures} /> : "—"}
 										</div>
-									),
-									cell: ({ row }) => {
-										const figures = row.original.billable;
-										return (
-											<div className="text-right tabular-nums">
-												{figures?.access === "full" ? (
-													<MarginValue figures={figures} />
-												) : (
-													"—"
-												)}
-											</div>
-										);
-									},
-								} satisfies ColumnDef<DataTableFeatures, ProjectSummary>,
-							]
-						: []),
-				]
-			: [];
+									);
+								},
+							} satisfies ColumnDef<DataTableFeatures, ProjectSummary>,
+						]
+					: []),
+			]
+		: [];
 
 	// Column definitions
 	const columns: ColumnDef<DataTableFeatures, ProjectSummary>[] = [
@@ -222,9 +191,7 @@ export function ProjectPortfolioTable({
 			header: t("reports.projects.table.customer", "Customer"),
 			cell: ({ row }) => (
 				<div className="text-sm">
-					{row.original.customer?.name ?? (
-						<span className="text-muted-foreground">—</span>
-					)}
+					{row.original.customer?.name ?? <span className="text-muted-foreground">—</span>}
 				</div>
 			),
 		},
@@ -242,11 +209,7 @@ export function ProjectPortfolioTable({
 		},
 		{
 			accessorKey: "totalHours",
-			header: () => (
-				<div className="text-right">
-					{t("reports.projects.table.hours", "Hours")}
-				</div>
-			),
+			header: () => <div className="text-right">{t("reports.projects.table.hours", "Hours")}</div>,
 			cell: ({ row }) => (
 				<div className="text-right tabular-nums">
 					{hoursFormat.hours(row.original.totalHours)}
@@ -308,11 +271,7 @@ export function ProjectPortfolioTable({
 		},
 		{
 			accessorKey: "uniqueEmployees",
-			header: () => (
-				<div className="text-right">
-					{t("reports.projects.table.team", "Team")}
-				</div>
-			),
+			header: () => <div className="text-right">{t("reports.projects.table.team", "Team")}</div>,
 			cell: ({ row }) => (
 				<div className="text-right tabular-nums">
 					{row.original.uniqueEmployees}
@@ -337,6 +296,26 @@ export function ProjectPortfolioTable({
 			),
 		},
 	];
+
+	return columns;
+}
+
+export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
+	const { t } = useTranslate();
+	const [search, setSearch] = useState("");
+	const columns = usePortfolioColumns({ projects, onProjectSelect });
+	// Filter projects by search
+	const filteredProjects = (() => {
+		if (!search) return projects;
+		const searchLower = search.toLowerCase();
+		return projects.filter(
+			(project) =>
+				project.name.toLowerCase().includes(searchLower) ||
+				project.description?.toLowerCase().includes(searchLower) ||
+				project.customer?.name.toLowerCase().includes(searchLower) ||
+				project.status.toLowerCase().includes(searchLower),
+		);
+	})();
 
 	return (
 		<Card>

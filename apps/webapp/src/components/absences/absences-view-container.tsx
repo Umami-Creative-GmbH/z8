@@ -8,7 +8,7 @@ import {
 	IconTable,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
 import { Temporal } from "temporal-polyfill";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
@@ -30,13 +30,14 @@ import { OwnAbsenceActionsProvider } from "./own-absence-actions";
 import { OwnAbsenceChangeRequests } from "./own-absence-change-requests";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
 
-/** The view and year the browser's URL names. */
-function readAbsencesUrl(todayYear: number): AbsencesUrlState {
-	const params = new URL(window.location.href).searchParams;
-	return parseAbsencesUrlState(
-		{ view: params.get("view"), year: params.get("year") },
-		todayYear,
-	);
+// Restore the URL once per mount. Later view and year changes belong to the controls or route props.
+const subscribeToInitialSearch = () => () => {};
+const clientSearch = () => window.location.search;
+const serverSearch = () => null;
+
+function parseAbsencesSearch(search: string, todayYear: number): AbsencesUrlState {
+	const params = new URLSearchParams(search);
+	return parseAbsencesUrlState({ view: params.get("view"), year: params.get("year") }, todayYear);
 }
 
 /**
@@ -45,12 +46,8 @@ function readAbsencesUrl(todayYear: number): AbsencesUrlState {
  */
 function replaceAbsencesUrl(change: Partial<AbsencesUrlState>, todayYear: number) {
 	const url = new URL(window.location.href);
-	const current = readAbsencesUrl(todayYear);
-	const search = absencesSearch(
-		{ ...current, ...change },
-		todayYear,
-		url.searchParams,
-	);
+	const current = parseAbsencesSearch(url.search, todayYear);
+	const search = absencesSearch({ ...current, ...change }, todayYear, url.searchParams);
 	if (search === url.search) return;
 	window.history.replaceState(null, "", url.pathname + search + url.hash);
 }
@@ -75,28 +72,13 @@ interface AbsencesViewContainerProps {
 	currentDate: string;
 }
 
-export function AbsencesViewContainer({
-	absences,
-	holidays,
-	categories,
-	organizationId,
-	year,
-	initialView = "calendar",
-	currentDate,
-}: AbsencesViewContainerProps) {
-	const { t } = useTranslate();
-	// The day a request starts from (YYYY-MM-DD), when one was chosen in the calendar.
-	const [absenceRequest, setAbsenceRequest] = useState<{
-		open: boolean;
-		initialDate?: string;
-	}>({ open: false });
-	const todayYear = Temporal.PlainDate.from(currentDate).year;
-	// Back/forward navigation can remount this view with a server render of the entry before
-	// `replaceState` changed it; the URL is what the user returned to. While hydrating, the URL is
-	// the one the server rendered, so this matches `initialView`.
-	const [activeView, setActiveView] = useState<AbsencesView>(() =>
-		typeof window === "undefined" ? initialView : readAbsencesUrl(todayYear).view,
-	);
+function useCalendarData(
+	absences: AbsenceWithDays[],
+	holidays: Holiday[],
+	year: number,
+	selectedYear: number,
+	navigatedToYear: boolean,
+) {
 	const [calendarData, setCalendarData] = useState(() => ({
 		sourceYear: year,
 		sourceAbsences: absences,
@@ -104,39 +86,6 @@ export function AbsencesViewContainer({
 		absences,
 		holidays,
 	}));
-	const latestRequestedYearRef = useRef(year);
-	const yearRequestId = useRef(0);
-	const [selectedYear, setSelectedYear] = useState(year);
-	const [yearLoad, setYearLoad] = useState<{
-		year: number;
-		status: "pending" | "failed";
-	} | null>(() => {
-		// The year counterpart of the view's initializer: another URL year starts out loading.
-		const urlYear =
-			typeof window === "undefined" ? year : readAbsencesUrl(todayYear).year;
-		return urlYear === year ? null : { year: urlYear, status: "pending" };
-	});
-	// The URL props last seen; `navigations` counts the ones that moved to another year.
-	const [urlProps, setUrlProps] = useState({ year, initialView, navigations: 0 });
-
-	// A refresh renders the URL the client already wrote, so its year is the one on screen. Another
-	// year means a navigation (e.g. the plain route from the sidebar): show it and drop pending loads.
-	const urlPropsChanged =
-		urlProps.year !== year || urlProps.initialView !== initialView;
-	const navigatedToYear = urlPropsChanged && year !== selectedYear;
-	if (urlPropsChanged) {
-		setUrlProps({
-			year,
-			initialView,
-			navigations: urlProps.navigations + (navigatedToYear ? 1 : 0),
-		});
-		if (initialView !== urlProps.initialView) setActiveView(initialView);
-		if (navigatedToYear) {
-			setSelectedYear(year);
-			setYearLoad(null);
-		}
-	}
-
 	if (
 		navigatedToYear ||
 		calendarData.sourceAbsences !== absences ||
@@ -151,6 +100,68 @@ export function AbsencesViewContainer({
 			holidays: showsPropsYear ? holidays : calendarData.holidays,
 		});
 	}
+
+	return [calendarData, setCalendarData] as const;
+}
+
+function useAbsenceCalendar({
+	absences,
+	holidays,
+	initialView = "calendar",
+	year,
+	currentDate,
+}: Pick<
+	AbsencesViewContainerProps,
+	"absences" | "holidays" | "initialView" | "year" | "currentDate"
+>) {
+	const todayYear = Temporal.PlainDate.from(currentDate).year;
+	const search = useSyncExternalStore<string | null>(
+		subscribeToInitialSearch,
+		clientSearch,
+		serverSearch,
+	);
+	const [activeView, setActiveView] = useState<AbsencesView>(initialView);
+	const latestRequestedYearRef = useRef(year);
+	const yearRequestId = useRef(0);
+	const [selectedYear, setSelectedYear] = useState(year);
+	const [yearLoad, setYearLoad] = useState<{
+		year: number;
+		status: "pending" | "failed";
+	} | null>(null);
+	const [restoredUrl, setRestoredUrl] = useState(false);
+	if (search !== null && !restoredUrl) {
+		const initialUrl = parseAbsencesSearch(search, todayYear);
+		setRestoredUrl(true);
+		setActiveView(initialUrl.view);
+		if (initialUrl.year !== year) setYearLoad({ year: initialUrl.year, status: "pending" });
+	}
+	// The URL props last seen; `navigations` counts the ones that moved to another year.
+	const [urlProps, setUrlProps] = useState({ year, initialView, navigations: 0 });
+
+	// A refresh renders the URL the client already wrote, so its year is the one on screen. Another
+	// year means a navigation (e.g. the plain route from the sidebar): show it and drop pending loads.
+	const urlPropsChanged = urlProps.year !== year || urlProps.initialView !== initialView;
+	const navigatedToYear = urlPropsChanged && year !== selectedYear;
+	if (urlPropsChanged) {
+		setUrlProps({
+			year,
+			initialView,
+			navigations: urlProps.navigations + (navigatedToYear ? 1 : 0),
+		});
+		if (initialView !== urlProps.initialView) setActiveView(initialView);
+		if (navigatedToYear) {
+			setSelectedYear(year);
+			setYearLoad(null);
+		}
+	}
+
+	const [calendarData, setCalendarData] = useCalendarData(
+		absences,
+		holidays,
+		year,
+		selectedYear,
+		navigatedToYear,
+	);
 
 	useEffect(() => {
 		if (urlProps.navigations === 0) return;
@@ -171,8 +182,7 @@ export function AbsencesViewContainer({
 		try {
 			const data = await getAbsenceCalendarYearData(requestedYear);
 			const isLatestRequest =
-				latestRequestedYearRef.current === requestedYear &&
-				requestId === yearRequestId.current;
+				latestRequestedYearRef.current === requestedYear && requestId === yearRequestId.current;
 			if (!isLatestRequest) {
 				return;
 			}
@@ -180,8 +190,7 @@ export function AbsencesViewContainer({
 				// RSC refresh may already have delivered a newer snapshot of this year.
 				if (
 					requestedYear === current.sourceYear &&
-					(current.sourceAbsences !== sourceAbsences ||
-						current.sourceHolidays !== sourceHolidays)
+					(current.sourceAbsences !== sourceAbsences || current.sourceHolidays !== sourceHolidays)
 				)
 					return current;
 				return { ...current, absences: data.absences, holidays: data.holidays };
@@ -211,9 +220,10 @@ export function AbsencesViewContainer({
 			void loadYearData(yearLoad.year, false);
 	});
 	useEffect(() => {
+		if (!restoredUrl) return;
 		const timeout = setTimeout(resumeYearLoad, 0);
 		return () => clearTimeout(timeout);
-	}, []);
+	}, [restoredUrl]);
 
 	const handleYearChange = (nextYear: number) => {
 		void reloadYearData(nextYear);
@@ -232,6 +242,48 @@ export function AbsencesViewContainer({
 	// Year navigation steps from the year being loaded, so repeated clicks are not lost.
 	const navigationYear = yearLoad?.status === "pending" ? yearLoad.year : selectedYear;
 
+	return {
+		activeView,
+		selectedYear,
+		yearLoad,
+		navigationYear,
+		handleViewChange,
+		handleYearChange,
+		handleAbsencesUpdated,
+		calendarAbsences,
+		calendarHolidays,
+		reloadYearData,
+	};
+}
+
+export function AbsencesViewContainer({
+	absences,
+	holidays,
+	categories,
+	organizationId,
+	year,
+	initialView = "calendar",
+	currentDate,
+}: AbsencesViewContainerProps) {
+	const { t } = useTranslate();
+	// The day a request starts from (YYYY-MM-DD), when one was chosen in the calendar.
+	const [absenceRequest, setAbsenceRequest] = useState<{
+		open: boolean;
+		initialDate?: string;
+	}>({ open: false });
+	const todayYear = Temporal.PlainDate.from(currentDate).year;
+	const {
+		activeView,
+		selectedYear,
+		yearLoad,
+		navigationYear,
+		handleViewChange,
+		handleYearChange,
+		handleAbsencesUpdated,
+		calendarAbsences,
+		calendarHolidays,
+		reloadYearData,
+	} = useAbsenceCalendar({ absences, holidays, initialView, year, currentDate });
 	const view = (
 		<div className="min-w-0 space-y-4">
 			{/* Attention section: outside the tab panels, so both views show it. */}
@@ -287,10 +339,7 @@ export function AbsencesViewContainer({
 								{t("absences.view.table", "Table")}
 							</TabsTrigger>
 						</TabsList>
-						<Button
-							className="gap-2"
-							onClick={() => setAbsenceRequest({ open: true })}
-						>
+						<Button className="gap-2" onClick={() => setAbsenceRequest({ open: true })}>
 							<IconPlus className="size-4" aria-hidden="true" />
 							{t("absences.requestAbsence", "Request absence")}
 						</Button>
@@ -307,11 +356,10 @@ export function AbsencesViewContainer({
 									"Could not load {year}. Still showing {loadedYear}.",
 									{ year: yearLoad.year, loadedYear: selectedYear },
 								)
-							: t(
-									"absences.year.loading",
-									"Loading {year}… Still showing {loadedYear}.",
-									{ year: yearLoad.year, loadedYear: selectedYear },
-								)}
+							: t("absences.year.loading", "Loading {year}… Still showing {loadedYear}.", {
+									year: yearLoad.year,
+									loadedYear: selectedYear,
+								})}
 						{yearLoad.status === "failed" ? (
 							<Button
 								variant="outline"
@@ -330,17 +378,12 @@ export function AbsencesViewContainer({
 						holidays={calendarHolidays}
 						year={selectedYear}
 						currentDate={currentDate}
-						onRequestDay={(date) =>
-							setAbsenceRequest({ open: true, initialDate: date })
-						}
+						onRequestDay={(date) => setAbsenceRequest({ open: true, initialDate: date })}
 					/>
 				</TabsContent>
 
 				<TabsContent value="table" className="mt-4">
-					<AbsenceEntriesTable
-						absences={calendarAbsences}
-						currentDate={currentDate}
-					/>
+					<AbsenceEntriesTable absences={calendarAbsences} currentDate={currentDate} />
 				</TabsContent>
 			</Tabs>
 
@@ -348,9 +391,7 @@ export function AbsencesViewContainer({
 				open={absenceRequest.open}
 				// Closing forgets the chosen day; the next request starts fresh.
 				onOpenChange={(open) =>
-					setAbsenceRequest((current) =>
-						open ? { ...current, open } : { open: false },
-					)
+					setAbsenceRequest((current) => (open ? { ...current, open } : { open: false }))
 				}
 				categories={categories}
 				organizationId={organizationId}
@@ -362,10 +403,7 @@ export function AbsencesViewContainer({
 
 	// Both views act on an absence through one controller, so their actions and dialogs match (#1863).
 	return (
-		<OwnAbsenceActionsProvider
-			absences={calendarAbsences}
-			onUpdate={handleAbsencesUpdated}
-		>
+		<OwnAbsenceActionsProvider absences={calendarAbsences} onUpdate={handleAbsencesUpdated}>
 			{view}
 		</OwnAbsenceActionsProvider>
 	);

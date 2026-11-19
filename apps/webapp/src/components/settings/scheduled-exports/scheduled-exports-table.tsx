@@ -32,7 +32,8 @@ import {
 	type ScheduledExportSummary,
 	toggleScheduledExportAction,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
-import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -284,46 +285,7 @@ export function ScheduledExportsTable({
 				),
 		);
 
-	// Format schedule description
-	const getScheduleLabel = (schedule: ScheduledExportSummary): string => {
-		switch (schedule.scheduleType) {
-			case "daily":
-				return t("settings.scheduledExports.scheduleType.daily", "Daily");
-			case "weekly":
-				return t("settings.scheduledExports.scheduleType.weekly", "Weekly");
-			case "monthly":
-				return t("settings.scheduledExports.scheduleType.monthly", "Monthly");
-			case "quarterly":
-				return t(
-					"settings.scheduledExports.scheduleType.quarterly",
-					"Quarterly",
-				);
-			case "cron":
-				return (
-					schedule.cronExpression ||
-					t("settings.scheduledExports.scheduleType.custom", "Custom")
-				);
-			default:
-				return t("settings.scheduledExports.scheduleType.unknown", "Unknown");
-		}
-	};
-
-	// Format report type
-	const getReportTypeLabel = (type: string): string => {
-		switch (type) {
-			case "payroll_export":
-				return t(
-					"settings.scheduledExports.reportType.payrollShort",
-					"Payroll",
-				);
-			case "data_export":
-				return t("settings.scheduledExports.reportType.dataShort", "Data");
-			case "audit_report":
-				return t("settings.scheduledExports.reportType.auditShort", "Audit");
-			default:
-				return type;
-		}
-	};
+	const { getScheduleLabel, getReportTypeLabel } = useScheduledExportLabels();
 
 	// Format date
 	const formatDate = (date: Date | null): string => {
@@ -563,27 +525,13 @@ function SchedulesCard({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>
-								{t("settings.scheduledExports.table.name", "Name")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.type", "Type")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.schedule", "Schedule")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.owner", "Owner")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.lastRun", "Last Run")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.nextRun", "Next Run")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.status", "Status")}
-							</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.name", "Name")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.type", "Type")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.schedule", "Schedule")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.owner", "Owner")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.lastRun", "Last Run")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.nextRun", "Next Run")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.status", "Status")}</TableHead>
 							<TableHead className="w-[80px]">
 								<span className="sr-only">
 									{t("settings.scheduledExports.table.actions", "Actions")}
@@ -635,15 +583,11 @@ function ScheduledExportRow({
 			<TableCell>
 				<div className="font-medium">{schedule.name}</div>
 				{schedule.description && (
-					<div className="text-sm text-muted-foreground">
-						{schedule.description}
-					</div>
+					<div className="text-sm text-muted-foreground">{schedule.description}</div>
 				)}
 			</TableCell>
 			<TableCell>
-				<Badge variant="secondary">
-					{getReportTypeLabel(schedule.reportType)}
-				</Badge>
+				<Badge variant="secondary">{getReportTypeLabel(schedule.reportType)}</Badge>
 			</TableCell>
 			<TableCell>
 				<div className="flex items-center gap-2">
@@ -772,39 +716,28 @@ function ScheduledExportsHelp() {
 			<CardContent className="pt-6">
 				<div className="text-sm text-muted-foreground space-y-2">
 					<p>
-						<strong>
-							{t(
-								"settings.scheduledExports.help.scheduleTypes",
-								"Schedule Types:",
-							)}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.scheduleTypes", "Schedule Types:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.scheduleTypesDesc",
 							"Daily, Weekly (Monday), Monthly (1st), Quarterly (Jan/Apr/Jul/Oct 1st), or custom cron expressions.",
 						)}
 					</p>
 					<p>
-						<strong>
-							{t("settings.scheduledExports.help.delivery", "Delivery:")}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.delivery", "Delivery:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.deliveryDesc",
 							"Exports are uploaded to S3 and email notifications with download links are sent to configured recipients.",
 						)}
 					</p>
 					<p>
-						<strong>
-							{t("settings.scheduledExports.help.owner", "Owner:")}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.owner", "Owner:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.ownerDesc",
 							"Each schedule runs on behalf of an org admin. If its owner stops being an org admin or leaves, the schedule pauses and every org admin is notified so one can take it over.",
 						)}
 					</p>
 					<p>
-						<strong>
-							{t("settings.scheduledExports.help.dateRanges", "Date Ranges:")}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.dateRanges", "Date Ranges:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.dateRangesDesc",
 							"Automatically calculated based on the schedule frequency (e.g., previous month for monthly exports).",
@@ -905,4 +838,50 @@ function ScheduledExportDialogs({
 			/>
 		</>
 	);
+}
+
+function useScheduledExportLabels() {
+	const { t } = useTranslate();
+	// Format schedule description
+	const getScheduleLabel = (schedule: ScheduledExportSummary): string => {
+		switch (schedule.scheduleType) {
+			case "daily":
+				return t("settings.scheduledExports.scheduleType.daily", "Daily");
+			case "weekly":
+				return t("settings.scheduledExports.scheduleType.weekly", "Weekly");
+			case "monthly":
+				return t("settings.scheduledExports.scheduleType.monthly", "Monthly");
+			case "quarterly":
+				return t(
+					"settings.scheduledExports.scheduleType.quarterly",
+					"Quarterly",
+				);
+			case "cron":
+				return (
+					schedule.cronExpression ||
+					t("settings.scheduledExports.scheduleType.custom", "Custom")
+				);
+			default:
+				return t("settings.scheduledExports.scheduleType.unknown", "Unknown");
+		}
+	};
+
+	// Format report type
+	const getReportTypeLabel = (type: string): string => {
+		switch (type) {
+			case "payroll_export":
+				return t(
+					"settings.scheduledExports.reportType.payrollShort",
+					"Payroll",
+				);
+			case "data_export":
+				return t("settings.scheduledExports.reportType.dataShort", "Data");
+			case "audit_report":
+				return t("settings.scheduledExports.reportType.auditShort", "Audit");
+			default:
+				return type;
+		}
+	};
+
+	return { getScheduleLabel, getReportTypeLabel };
 }

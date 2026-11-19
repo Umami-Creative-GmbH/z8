@@ -160,8 +160,8 @@ export function ReportDocumentExportButtons({
 	useLayoutEffect(() => {
 		lifetime.current = { identity };
 		pending.current = null;
-		setLoading(null);
 		return () => {
+			if (pending.current) setLoading(null);
 			lifetime.current = null;
 			pending.current = null;
 		};

@@ -1,6 +1,6 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import type { ComponentProps, ComponentType } from "react";
-import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import {
 	ActionPanel,
 	ActionPanelBody,

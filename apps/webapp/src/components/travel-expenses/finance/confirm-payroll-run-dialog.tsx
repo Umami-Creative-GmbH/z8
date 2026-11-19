@@ -24,6 +24,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { formatMoney, formatPlainDateRange } from "@/lib/travel-expenses/format";
@@ -262,11 +263,10 @@ function ConfirmForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
+			stopPropagation
+			onSubmit={() => {
 				const submission = command.reserve();
 				if (!submission) return;
 				void form
@@ -340,7 +340,7 @@ function ConfirmForm({
 					</DialogFooter>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }
 

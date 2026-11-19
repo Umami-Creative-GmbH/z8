@@ -158,6 +158,7 @@ function ScopedTodayWorkspace({
 	};
 	useEffect(() => {
 		active.current = true;
+		generation.current++;
 		if (!firstActivation.current || !hasInitial) {
 			setArrival(undefined);
 			void refresh();
@@ -165,7 +166,6 @@ function ScopedTodayWorkspace({
 		firstActivation.current = false;
 		return () => {
 			active.current = false;
-			generation.current++;
 			pending.current = false;
 		};
 	}, [hasInitial, refresh]);

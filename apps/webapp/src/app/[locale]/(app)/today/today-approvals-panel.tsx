@@ -45,9 +45,9 @@ export function TodayApprovalsPanel({
 	const generation = useRef(0);
 	useEffect(() => {
 		active.current = true;
+		generation.current++;
 		return () => {
 			active.current = false;
-			generation.current++;
 		};
 	}, []);
 	const isBusy = actingApprovalId !== null || isRefreshPending;

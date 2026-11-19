@@ -48,8 +48,6 @@ function useWorkScheduleAccess(replace: (href: string) => void) {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: attempt explicitly retries a refused automatic skip.
 	useEffect(() => {
 		let cancelled = false;
-		setIsAdmin(null);
-		setSkipError(null);
 
 		async function loadAccess() {
 			try {
@@ -104,6 +102,8 @@ function useWorkScheduleAccess(replace: (href: string) => void) {
 
 		return () => {
 			cancelled = true;
+			setIsAdmin(null);
+			setSkipError(null);
 		};
 	}, [replace, attempt, skipFallback, accessFallback, previousAttempt]);
 
@@ -158,9 +158,9 @@ function WorkScheduleForm() {
 		const identity = Symbol();
 		arrival.current = identity;
 		pending.current = null;
-		setLoading(false);
 		return () => {
 			arrival.current = null;
+			setLoading(false);
 		};
 	}, []);
 	const { isAdmin, skipError, retry } = useWorkScheduleAccess(replace);

@@ -222,131 +222,13 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 							) : null}
 						</div>
 					) : (
-						<Table mobileLayout="stacked">
-							<TableHeader>
-								<TableRow>
-									<TableHead className="w-[50px]">
-										{t("settings.workCategories.color", "Color")}
-									</TableHead>
-									<TableHead>{t("settings.workCategories.categoryName", "Name")}</TableHead>
-									<TableHead>{t("settings.workCategories.factor", "Factor")}</TableHead>
-									<TableHead>{t("settings.workCategories.usedInSets", "Used in Sets")}</TableHead>
-									{canManage ? (
-										<TableHead className="w-[100px] text-right">
-											{t("common.actions", "Actions")}
-										</TableHead>
-									) : null}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{categories.map((category) => (
-									<TableRow key={category.id}>
-										<TableCell>
-											{category.color ? (
-												<div
-													className="size-6 rounded-full border"
-													style={{ backgroundColor: category.color }}
-													aria-hidden="true"
-												/>
-											) : (
-												<div
-													className="size-6 rounded-full border border-dashed bg-muted"
-													aria-hidden="true"
-												/>
-											)}
-										</TableCell>
-										<TableCell className="max-w-xs">
-											<div className="flex min-w-0 flex-col">
-												<span className="truncate font-medium" title={category.name}>
-													{category.name}
-												</span>
-												{category.description && (
-													<span className="break-words text-xs text-muted-foreground">
-														{category.description}
-													</span>
-												)}
-											</div>
-										</TableCell>
-										<TableCell>
-											<Badge variant="outline" className="tabular-nums">
-												{formatFactorAsMultiplier(parseFloat(category.factor))}
-											</Badge>
-										</TableCell>
-										<TableCell>
-											<Badge variant="secondary" className="tabular-nums">
-												{category.usedInSetsCount}{" "}
-												{category.usedInSetsCount === 1
-													? t("common.set", "set")
-													: t("common.sets", "sets")}
-											</Badge>
-										</TableCell>
-										{canManage ? (
-											<TableCell className="text-right">
-												<div className="flex items-center justify-end gap-1">
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="size-8"
-																	onClick={() => handleEditClick(category)}
-																	aria-label={t(
-																		"settings.workCategories.editCategoryNamed",
-																		"Edit category {name}",
-																		{ name: category.name },
-																	)}
-																>
-																	<IconEdit className="size-4" aria-hidden="true" />
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="size-8 text-muted-foreground hover:text-destructive"
-																	onClick={() => handleDeleteClick(category)}
-																	disabled={
-																		deleteMutation.isPending || category.usedInSetsCount > 0
-																	}
-																	aria-label={
-																		category.usedInSetsCount > 0
-																			? t(
-																					"settings.workCategories.cannotDeleteInUse",
-																					"Remove from sets first",
-																				)
-																			: t(
-																					"settings.workCategories.deleteCategoryNamed",
-																					"Delete category {name}",
-																					{ name: category.name },
-																				)
-																	}
-																>
-																	<IconTrash className="size-4" aria-hidden="true" />
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>
-																{category.usedInSetsCount > 0
-																	? t(
-																			"settings.workCategories.cannotDeleteInUse",
-																			"Remove from sets first",
-																		)
-																	: t("common.delete", "Delete")}
-															</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-												</div>
-											</TableCell>
-										) : null}
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+						<WorkCategoriesTable
+							canManage={canManage}
+							categories={categories}
+							handleEditClick={handleEditClick}
+							handleDeleteClick={handleDeleteClick}
+							isDeleting={deleteMutation.isPending}
+						/>
 					)}
 				</CardContent>
 			</Card>
@@ -380,5 +262,137 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 				onConfirm={handleDeleteConfirm}
 			/>
 		</>
+	);
+}
+
+function WorkCategoriesTable({
+	canManage,
+	categories,
+	handleEditClick,
+	handleDeleteClick,
+	isDeleting,
+}: {
+	canManage: boolean;
+	categories: CategoryData[];
+	handleEditClick: (category: CategoryData) => void;
+	handleDeleteClick: (category: CategoryData) => void;
+	isDeleting: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Table mobileLayout="stacked">
+			<TableHeader>
+				<TableRow>
+					<TableHead className="w-[50px]">{t("settings.workCategories.color", "Color")}</TableHead>
+					<TableHead>{t("settings.workCategories.categoryName", "Name")}</TableHead>
+					<TableHead>{t("settings.workCategories.factor", "Factor")}</TableHead>
+					<TableHead>{t("settings.workCategories.usedInSets", "Used in Sets")}</TableHead>
+					{canManage ? (
+						<TableHead className="w-[100px] text-right">{t("common.actions", "Actions")}</TableHead>
+					) : null}
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{categories.map((category) => (
+					<TableRow key={category.id}>
+						<TableCell>
+							{category.color ? (
+								<div
+									className="size-6 rounded-full border"
+									style={{ backgroundColor: category.color }}
+									aria-hidden="true"
+								/>
+							) : (
+								<div
+									className="size-6 rounded-full border border-dashed bg-muted"
+									aria-hidden="true"
+								/>
+							)}
+						</TableCell>
+						<TableCell className="max-w-xs">
+							<div className="flex min-w-0 flex-col">
+								<span className="truncate font-medium" title={category.name}>
+									{category.name}
+								</span>
+								{category.description && (
+									<span className="break-words text-xs text-muted-foreground">
+										{category.description}
+									</span>
+								)}
+							</div>
+						</TableCell>
+						<TableCell>
+							<Badge variant="outline" className="tabular-nums">
+								{formatFactorAsMultiplier(parseFloat(category.factor))}
+							</Badge>
+						</TableCell>
+						<TableCell>
+							<Badge variant="secondary" className="tabular-nums">
+								{category.usedInSetsCount}{" "}
+								{category.usedInSetsCount === 1 ? t("common.set", "set") : t("common.sets", "sets")}
+							</Badge>
+						</TableCell>
+						{canManage ? (
+							<TableCell className="text-right">
+								<div className="flex items-center justify-end gap-1">
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8"
+													onClick={() => handleEditClick(category)}
+													aria-label={t(
+														"settings.workCategories.editCategoryNamed",
+														"Edit category {name}",
+														{ name: category.name },
+													)}
+												>
+													<IconEdit className="size-4" aria-hidden="true" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteClick(category)}
+													disabled={isDeleting || category.usedInSetsCount > 0}
+													aria-label={
+														category.usedInSetsCount > 0
+															? t(
+																	"settings.workCategories.cannotDeleteInUse",
+																	"Remove from sets first",
+																)
+															: t(
+																	"settings.workCategories.deleteCategoryNamed",
+																	"Delete category {name}",
+																	{ name: category.name },
+																)
+													}
+												>
+													<IconTrash className="size-4" aria-hidden="true" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{category.usedInSetsCount > 0
+													? t("settings.workCategories.cannotDeleteInUse", "Remove from sets first")
+													: t("common.delete", "Delete")}
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+								</div>
+							</TableCell>
+						) : null}
+					</TableRow>
+				))}
+			</TableBody>
+		</Table>
 	);
 }

@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { useOrganization } from "@/components/providers/organization-context-provider";
 import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
+import { isMarkedFormer } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import type { BalanceAdjustmentGrantEmployee } from "@/lib/payroll-access/adjustment-coverage";
@@ -71,11 +72,11 @@ export function WorkBalancesView({
 										</span>
 									) : null}
 								</span>
-								{employee.isActive ? null : (
+								{isMarkedFormer(employee) ? (
 									<Badge variant="secondary">
 										{t("payroll.workBalances.former", "Former employee")}
 									</Badge>
-								)}
+								) : null}
 								<span className="inline-flex items-center gap-2 text-sm text-foreground">
 									{t("payroll.workBalances.openEmployee", "Open employee balance")}
 									<IconArrowRight aria-hidden="true" className="size-4 shrink-0" />

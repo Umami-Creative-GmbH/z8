@@ -85,7 +85,8 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 		patterns: [
 			/>Custom Domain</,
 			/>No custom domain configured yet\.</,
-			/"Failed to delete domain"/,
+			// Enterprise action failures accept a [translation key, fallback] pair.
+			/(?<!\[\s*"settings\.enterprise\.domains\.deleteFailed",\s*)"Failed to delete domain"/,
 		],
 	},
 	{

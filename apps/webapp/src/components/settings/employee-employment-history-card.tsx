@@ -243,74 +243,108 @@ export function EmployeeEmploymentHistoryCard({
 				/>
 				{lifecycleEvents}
 			</CardContent>
-			<AlertDialog
-				open={pendingCancelId !== null}
-				onOpenChange={(open) => {
-					// Escape or an outside press must not hide a cancellation that is still running.
-					if (!open && !isCancelling) {
-						setPendingCancelId(null);
-						setCancelError(null);
-					}
-				}}
-			>
-				<AlertDialogContent aria-busy={isCancelling}>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{pendingCancelEntry && pendingCancelDate
-								? t(
-										"settings.employmentHistory.cancelConfirmNamedTitle",
-										"Cancel {contractType} change effective {date}?",
-										{
-											contractType: pendingCancelEntry.contractType,
-											date: pendingCancelDate,
-										},
-									)
-								: t("settings.employmentHistory.cancelConfirmTitle", "Cancel employment change?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.employmentHistory.cancelConfirm",
-								"Cancel this employment change? This removes the scheduled or draft employment change.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					{pendingCancelEntry && (
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.employmentHistory.cancelConfirmSummary",
-								"{hours} / week · {workModel} · {reviewState}",
-								{
-									hours: formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes),
-									workModel: pendingCancelEntry.workModel,
-									reviewState: pendingCancelEntry.reviewState,
-								},
-							)}
-						</p>
-					)}
-					{cancelError && (
-						<p role="alert" className="text-sm text-destructive">
-							{cancelError}
-						</p>
-					)}
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isCancelling}>
-							{t("settings.employmentHistory.keepChange", "Keep change")}
-						</AlertDialogCancel>
-						<Button
-							variant="destructive"
-							disabled={isCancelling}
-							onClick={() => {
-								if (pendingCancelId) void handleCancel(pendingCancelId);
-							}}
-						>
-							{isCancelling ? (
-								<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-							) : null}
-							{t("settings.employmentHistory.cancelChange", "Cancel change")}
-						</Button>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<CancelEmploymentChangeDialog
+				pendingCancelId={pendingCancelId}
+				isCancelling={isCancelling}
+				setPendingCancelId={setPendingCancelId}
+				setCancelError={setCancelError}
+				pendingCancelEntry={pendingCancelEntry}
+				pendingCancelDate={pendingCancelDate}
+				cancelError={cancelError}
+				handleCancel={handleCancel}
+			/>
 		</Card>
+	);
+}
+
+function CancelEmploymentChangeDialog({
+	pendingCancelId,
+	isCancelling,
+	setPendingCancelId,
+	setCancelError,
+	pendingCancelEntry,
+	pendingCancelDate,
+	cancelError,
+	handleCancel,
+}: {
+	pendingCancelId: string | null;
+	isCancelling: boolean;
+	setPendingCancelId: (id: null) => void;
+	setCancelError: (error: null) => void;
+	pendingCancelEntry: EmployeeEmploymentHistoryCardProps["history"][number] | undefined | null;
+	pendingCancelDate: string | null;
+	cancelError: string | null;
+	handleCancel: (id: string) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<AlertDialog
+			open={pendingCancelId !== null}
+			onOpenChange={(open) => {
+				// Escape or an outside press must not hide a cancellation that is still running.
+				if (!open && !isCancelling) {
+					setPendingCancelId(null);
+					setCancelError(null);
+				}
+			}}
+		>
+			<AlertDialogContent aria-busy={isCancelling}>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{pendingCancelEntry && pendingCancelDate
+							? t(
+									"settings.employmentHistory.cancelConfirmNamedTitle",
+									"Cancel {contractType} change effective {date}?",
+									{
+										contractType: pendingCancelEntry.contractType,
+										date: pendingCancelDate,
+									},
+								)
+							: t("settings.employmentHistory.cancelConfirmTitle", "Cancel employment change?")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t(
+							"settings.employmentHistory.cancelConfirm",
+							"Cancel this employment change? This removes the scheduled or draft employment change.",
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				{pendingCancelEntry && (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.employmentHistory.cancelConfirmSummary",
+							"{hours} / week · {workModel} · {reviewState}",
+							{
+								hours: formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes),
+								workModel: pendingCancelEntry.workModel,
+								reviewState: pendingCancelEntry.reviewState,
+							},
+						)}
+					</p>
+				)}
+				{cancelError && (
+					<p role="alert" className="text-sm text-destructive">
+						{cancelError}
+					</p>
+				)}
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isCancelling}>
+						{t("settings.employmentHistory.keepChange", "Keep change")}
+					</AlertDialogCancel>
+					<Button
+						variant="destructive"
+						disabled={isCancelling}
+						onClick={() => {
+							if (pendingCancelId) void handleCancel(pendingCancelId);
+						}}
+					>
+						{isCancelling ? (
+							<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+						) : null}
+						{t("settings.employmentHistory.cancelChange", "Cancel change")}
+					</Button>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

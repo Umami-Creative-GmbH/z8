@@ -348,6 +348,16 @@ function ClockControlsView(props: ClockControlsViewProps) {
 	);
 }
 
+function selectedClockTask(
+	currentTask: BookedProjectTask | null,
+	projectId: string | undefined,
+	selectedTaskId: string | null | undefined,
+) {
+	if (selectedTaskId === undefined && currentTask && currentTask.projectId === projectId)
+		return currentTask.id;
+	return selectedTaskId ?? undefined;
+}
+
 function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -409,11 +419,11 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 	// The running work's task shows while its project is chosen and no other choice
 	// was made; the clock-out then keeps it (#874).
 	const currentTask = isClockedIn ? (activeWorkPeriod?.currentTask ?? null) : null;
-	const followsCurrentTask =
-		uiState.selectedTaskId === undefined &&
-		currentTask !== null &&
-		currentTask.projectId === uiState.selectedProjectId;
-	const shownTaskId = followsCurrentTask ? currentTask?.id : (uiState.selectedTaskId ?? undefined);
+	const shownTaskId = selectedClockTask(
+		currentTask,
+		uiState.selectedProjectId,
+		uiState.selectedTaskId,
+	);
 	// A project with an active task requirement holds a server clock-out until a
 	// task is chosen or kept (#884); the server refusal stays the backstop. A
 	// clock-out saved on this device is accepted without one, and so is a break.

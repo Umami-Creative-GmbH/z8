@@ -7,7 +7,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { runScheduledExportNowAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
-import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	AlertDialog,

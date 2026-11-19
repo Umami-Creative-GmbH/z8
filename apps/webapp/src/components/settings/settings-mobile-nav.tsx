@@ -37,23 +37,22 @@ export function SettingsMobileNav({ children }: { children: ReactNode }) {
 	}
 
 	return (
-		<Sheet
-			open={open}
-			onOpenChange={(nextOpen) => setOpenedOn(nextOpen ? pathname : null)}
-		>
+		<Sheet open={open} onOpenChange={(nextOpen) => setOpenedOn(nextOpen ? pathname : null)}>
 			<SheetTrigger asChild>
 				<Button type="button" variant="outline" size="sm" className="shrink-0 md:hidden">
 					<IconLayoutSidebar className="size-4" aria-hidden="true" />
 					{label}
 				</Button>
 			</SheetTrigger>
-			<SheetContent side="left" className="w-80 max-w-[85vw] gap-0 bg-card p-0">
+			<SheetContent
+				onClickCapture={closeOnLinkClick}
+				side="left"
+				className="w-80 max-w-[85vw] gap-0 bg-card p-0"
+			>
 				<SheetHeader className="border-b px-4 py-3 pr-12 text-left">
 					<SheetTitle>{t("settings.title", "Settings")}</SheetTitle>
 				</SheetHeader>
-				<div className="min-h-0 flex-1 overflow-y-auto" onClickCapture={closeOnLinkClick}>
-					{children}
-				</div>
+				<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
 			</SheetContent>
 		</Sheet>
 	);

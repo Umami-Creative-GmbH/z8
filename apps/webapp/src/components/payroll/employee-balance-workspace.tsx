@@ -18,6 +18,7 @@ import {
 	EMPLOYEE_WORK_BALANCE_QUERY_KEY,
 	isRefusal,
 } from "@/components/settings/work-balance/use-employee-work-balance";
+import { isMarkedFormer } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -82,9 +83,7 @@ export function EmployeeBalanceWorkspace(props: Props) {
 	);
 }
 
-function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
-	const { t } = useTranslate();
-	const label = useBalanceAdjustmentLabels();
+function useEmployeeBalanceSection({ employee, organizationId, userId }: Props) {
 	const client = useQueryClient();
 	const arrival = useId();
 	const queryKey = [
@@ -103,13 +102,10 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 		},
 		retry: false,
 	});
-	const [task, setTask] = useState<"opening" | "payout" | null>(null);
-	const [cancelling, setCancelling] = useState<{ id: string; summary: string } | null>(null);
 	const refused = section.isError && isRefusal(section.error);
 	const data = refused ? undefined : section.data;
 	const fresh = !!data && !section.isError && !section.isFetching;
 	const canManage = !!data?.canManage;
-	const balance = data?.balance;
 	const changed = async <T,>(action: () => Promise<BalanceAdjustmentActionResult<T>>) => {
 		if (!fresh || !canManage) throw new BalanceAdjustmentActionError("failed");
 		return refreshAfter(action(), () =>
@@ -119,17 +115,28 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 		);
 	};
 
+	return { section, data, fresh, canManage, changed };
+}
+
+function EmployeeBalanceArrival(props: Props) {
+	const { employee } = props;
+	const { t } = useTranslate();
+	const label = useBalanceAdjustmentLabels();
+	const { section, data, fresh, canManage, changed } = useEmployeeBalanceSection(props);
+	const [task, setTask] = useState<"opening" | "payout" | null>(null);
+	const [cancelling, setCancelling] = useState<{ id: string; summary: string } | null>(null);
+
 	return (
 		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
 				title={
 					<span className="flex flex-wrap items-center gap-2">
 						{employee.name}
-						{employee.isActive ? null : (
+						{isMarkedFormer(employee) ? (
 							<Badge variant="secondary">
 								{t("payroll.workBalances.former", "Former employee")}
 							</Badge>
-						)}
+						) : null}
 					</span>
 				}
 				scope={
@@ -165,7 +172,7 @@ function EmployeeBalanceArrival({ employee, organizationId, userId }: Props) {
 			{data ? (
 				<>
 					<EmployeeBalanceProjection
-						balance={balance ?? null}
+						balance={data.balance ?? null}
 						timezone={data.timezone}
 						actions={canManage ? { enabled: fresh, open: setTask } : null}
 					/>

@@ -16,7 +16,8 @@ import {
 	saveStorageConfigAction,
 	testStorageConnectionAction,
 } from "@/app/[locale]/(app)/settings/export/actions";
-import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";

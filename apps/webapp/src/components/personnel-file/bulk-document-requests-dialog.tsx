@@ -21,7 +21,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DocumentRequestDeadline } from "./document-request-deadline";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -37,6 +37,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -194,12 +195,11 @@ export function BulkDocumentRequestsDialog({
 						</ActionPanelFooter>
 					</div>
 				) : (
-					<form
+					<ClientForm
 						ref={formElement}
 						className="flex min-h-0 flex-1 flex-col"
-						onSubmit={(event) => {
-							event.preventDefault();
-							event.stopPropagation();
+						stopPropagation
+						onSubmit={() => {
 							const owner = arrival.current;
 							if (!owner || running.current) return;
 							running.current = owner;
@@ -392,26 +392,7 @@ export function BulkDocumentRequestsDialog({
 									}}
 								>
 									{(field) => (
-										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)} required>
-												{t("settings.personnelFiles.requests.create.deadline", "Deadline")}
-											</TFormLabel>
-											<TFormControl hasError={fieldHasError(field)}>
-												<DatePicker
-													value={field.state.value}
-													onChange={(value) => field.handleChange(value)}
-													min={today}
-													required
-												/>
-											</TFormControl>
-											<TFormDescription>
-												{t(
-													"settings.personnelFiles.requests.create.deadlineHint",
-													"The day by which the employee should submit. After it, the request is overdue.",
-												)}
-											</TFormDescription>
-											<TFormMessage field={field} />
-										</TFormItem>
+										<DocumentRequestDeadline field={field} today={today} />
 									)}
 								</form.Field>
 							</fieldset>
@@ -431,7 +412,7 @@ export function BulkDocumentRequestsDialog({
 								)}
 							</form.Subscribe>
 						</ActionPanelFooter>
-					</form>
+					</ClientForm>
 				)}
 			</ActionPanelContent>
 		</ActionPanel>

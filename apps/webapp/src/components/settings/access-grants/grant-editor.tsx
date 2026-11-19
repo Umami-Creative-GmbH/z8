@@ -3,7 +3,7 @@
 import { IconEdit, IconLoader2, IconPlus, IconUserOff } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { EmployeeMultiSelect, type SelectableEmployee } from "@/components/employee-select";
-import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import {
 	AlertDialog,
 	AlertDialogAction,

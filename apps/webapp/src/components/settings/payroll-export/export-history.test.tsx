@@ -22,11 +22,11 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const localeState = vi.hoisted(() => ({ locale: "en" }));
 vi.mock("next-intl", () => ({ useLocale: () => localeState.locale }));
 
+import { ExportHistory } from "./export-history";
 import {
 	createPayrollExportTimeFormatter,
-	ExportHistory,
 	formatPayrollExportRange,
-} from "./export-history";
+} from "./export-history-format";
 
 const completedExport: PayrollExportJobSummary = {
 	id: "job-1",

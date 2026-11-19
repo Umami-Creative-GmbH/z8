@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/empty";
 import { PageHeader } from "@/components/ui/page-header";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsListSkeleton } from "./settings-list-skeleton";
 import {
 	Table,
 	TableBody,
@@ -299,17 +299,7 @@ export function ProjectManagement({
 
 			{isLoading ? (
 				// Mirrors the loaded list card: a titled header above the project rows.
-				<Card aria-busy="true">
-					<CardHeader className="space-y-2">
-						<Skeleton className="h-6 w-40" />
-						<Skeleton className="h-4 w-28" />
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-					</CardContent>
-				</Card>
+				<SettingsListSkeleton />
 			) : isError ? (
 				<Card>
 					<CardContent className="flex flex-col items-start gap-3">

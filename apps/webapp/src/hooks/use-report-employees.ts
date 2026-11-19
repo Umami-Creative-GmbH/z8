@@ -1,7 +1,7 @@
 "use client";
 
-import { CancelledError, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { CancelledError, type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useId, useMemo, useSyncExternalStore } from "react";
 import { getAccessibleEmployeesAction } from "@/app/[locale]/(app)/reports/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { authClient, useSession } from "@/lib/auth-client";
@@ -62,6 +62,55 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 	};
 }
 
+type RosterKey = readonly unknown[];
+let nextOpeningId = 0;
+
+function createRosterOpening(
+	client: QueryClient,
+	prefix: RosterKey,
+	scope: string,
+	ready: boolean,
+) {
+	let key: RosterKey | null = null;
+
+	function retire() {
+		const retiredKey = key;
+		key = null;
+		if (retiredKey) {
+			// A server action may still settle. Only retire this observer's exact cache entry.
+			void client.cancelQueries({ queryKey: retiredKey, exact: true }).then(() => {
+				client.removeQueries({ queryKey: retiredKey, exact: true });
+			});
+		}
+	}
+
+	return {
+		getSnapshot: () => key,
+		subscribe(notify: () => void) {
+			if (!ready) return () => {};
+			key = [...prefix, ++nextOpeningId];
+			let previous = scope;
+			const unsubscribe = authClient.$store.atoms.session.subscribe((value) => {
+				const next = JSON.stringify([
+					value.data?.user.id,
+					value.data?.session.activeOrganizationId,
+				]);
+				if (next === previous) return;
+				previous = next;
+				retire();
+				if (next === scope) key = [...prefix, ++nextOpeningId];
+				notify();
+			});
+			return () => {
+				unsubscribe();
+				retire();
+			};
+		},
+	};
+}
+
+const getServerRosterOpening = () => null;
+
 /**
  * Hook to fetch employees accessible for report generation.
  *
@@ -83,67 +132,23 @@ export function useReportEmployees(currentEmployeeId?: string): UseReportEmploye
 	const scope = JSON.stringify([actor, organization]);
 	const ready = !session.isPending && !!actor && !!organization && !!currentEmployeeId;
 	const openingId = useId();
-	const sequence = useRef(0);
-	const active = useRef<object | null>(null);
-	const [revision, setRevision] = useState(0);
-	const [opening, setOpening] = useState<{
-		owner: object;
-		scope: string;
-		key: readonly unknown[];
-		revision: number;
-	} | null>(null);
-	// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- This read opening must reconnect after Activity/StrictMode cleanup; the assembled public regression verifies fresh options and exact retirement.
-	useLayoutEffect(() => {
-		if (!ready) {
-			setOpening(null);
-			return;
-		}
-		const owner = {};
-		const key = [
-			...queryKeys.reports.employees(currentEmployeeId ?? ""),
-			actor,
-			organization,
-			openingId,
-			++sequence.current,
-		];
-		active.current = owner;
-		setOpening({ owner, scope, key, revision });
-		const retire = () => {
-			if (active.current === owner) active.current = null;
-			// TanStack cancels acceptance, not the server-action transport. Never touch
-			// another opening's cache or an unrelated reports consumer.
-			void client.cancelQueries({ queryKey: key, exact: true }).then(() => {
-				client.removeQueries({ queryKey: key, exact: true });
-			});
-		};
-		let previous = scope;
-		const unsubscribe = authClient.$store.atoms.session.subscribe((value) => {
-			const next = JSON.stringify([value.data?.user.id, value.data?.session.activeOrganizationId]);
-			if (next !== previous) {
-				previous = next;
-				retire();
-				setRevision((value) => value + 1);
-			}
-		});
-		return () => {
-			unsubscribe();
-			retire();
-		};
-	}, [client, currentEmployeeId, actor, organization, scope, ready, openingId, revision]);
-	const admitted = ready && opening?.scope === scope && opening.revision === revision;
+	const prefix = useMemo(
+		() => [...queryKeys.reports.employees(currentEmployeeId ?? ""), actor, organization, openingId],
+		[currentEmployeeId, actor, organization, openingId],
+	);
+	const opening = useMemo(
+		() => createRosterOpening(client, prefix, scope, ready),
+		[client, prefix, scope, ready],
+	);
+	const key = useSyncExternalStore(opening.subscribe, opening.getSnapshot, getServerRosterOpening);
+	const admitted = key !== null;
 	const { data, isLoading, isRefetching, error, refetch } = useQuery({
-		queryKey: opening?.key ?? [
-			...queryKeys.reports.employees(currentEmployeeId ?? ""),
-			actor,
-			organization,
-			openingId,
-			"pending",
-		],
+		queryKey: key ?? [...prefix, "pending"],
 		queryFn: async ({ signal }) => {
-			if (signal.aborted || active.current !== opening?.owner)
+			if (signal.aborted || opening.getSnapshot() !== key)
 				throw new CancelledError({ silent: true });
 			const result = await getAccessibleEmployeesAction();
-			if (signal.aborted || active.current !== opening?.owner)
+			if (signal.aborted || opening.getSnapshot() !== key)
 				throw new CancelledError({ silent: true });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch accessible employees");
@@ -172,7 +177,7 @@ export function useReportEmployees(currentEmployeeId?: string): UseReportEmploye
 		isLoading: !admitted || isLoading,
 		isRefetching: admitted && isRefetching,
 		refetch: async () => {
-			if (!admitted || active.current !== opening?.owner) return;
+			if (!admitted || opening.getSnapshot() !== key) return;
 			await refetch({ cancelRefetch: false });
 		},
 		error: admitted && error instanceof Error ? error : null,

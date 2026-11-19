@@ -292,27 +292,11 @@ export function ChangePolicyTable({
 			/>
 
 			{filteredPolicies.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-12 gap-4 border rounded-lg">
-					<p className="text-muted-foreground">
-						{search
-							? t("settings.changePolicies.noSearchResults", "No policies match your search")
-							: t("settings.changePolicies.noPolicies", "No change policies configured yet")}
-					</p>
-					{!search && canManage ? (
-						<>
-							<p className="text-sm text-muted-foreground max-w-md text-center">
-								{t(
-									"settings.changePolicies.noPoliciesHint",
-									"Without a change policy, employees can edit their time entries without restrictions. Create a policy to enforce approval workflows.",
-								)}
-							</p>
-							<Button onClick={onCreateClick}>
-								<IconPlus className="size-4 mr-2" />
-								{t("settings.changePolicies.createFirst", "Create Your First Policy")}
-							</Button>
-						</>
-					) : null}
-				</div>
+				<ChangePoliciesEmptyState
+					search={search}
+					canManage={canManage}
+					onCreateClick={onCreateClick}
+				/>
 			) : (
 				<DataTable mobileLayout="stacked" columns={columns} data={filteredPolicies} />
 			)}
@@ -341,5 +325,40 @@ export function ChangePolicyTable({
 				onConfirm={handleDeleteConfirm}
 			/>
 		</>
+	);
+}
+
+function ChangePoliciesEmptyState({
+	search,
+	canManage,
+	onCreateClick,
+}: {
+	search: string;
+	canManage: boolean;
+	onCreateClick: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-col items-center justify-center py-12 gap-4 border rounded-lg">
+			<p className="text-muted-foreground">
+				{search
+					? t("settings.changePolicies.noSearchResults", "No policies match your search")
+					: t("settings.changePolicies.noPolicies", "No change policies configured yet")}
+			</p>
+			{!search && canManage ? (
+				<>
+					<p className="text-sm text-muted-foreground max-w-md text-center">
+						{t(
+							"settings.changePolicies.noPoliciesHint",
+							"Without a change policy, employees can edit their time entries without restrictions. Create a policy to enforce approval workflows.",
+						)}
+					</p>
+					<Button onClick={onCreateClick}>
+						<IconPlus className="size-4 mr-2" />
+						{t("settings.changePolicies.createFirst", "Create Your First Policy")}
+					</Button>
+				</>
+			) : null}
+		</div>
 	);
 }

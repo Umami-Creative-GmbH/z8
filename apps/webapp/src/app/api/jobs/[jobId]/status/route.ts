@@ -43,9 +43,8 @@ export async function GET(
 			return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 		}
 
-		// Strip organizationId from the response -- the client doesn't need it
-		const { organizationId: _, ...clientStatus } = status;
-		return NextResponse.json(clientStatus);
+		const { state, progress, result, error } = status;
+		return NextResponse.json({ state, progress, result, error });
 	} catch (error) {
 		console.error("Failed to get job status:", error);
 		return NextResponse.json({ error: "Failed to fetch job status" }, { status: 500 });

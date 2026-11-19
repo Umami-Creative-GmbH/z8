@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconDownload, IconFileUpload, IconLoader2, IconUpload } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ function OpeningBalanceUploadHeader() {
 	);
 }
 
-function ScopedOpeningBalanceUploadDialog() {
+function useOpeningBalanceUpload() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const actionError = useBalanceAdjustmentErrorMessage();
@@ -223,6 +224,41 @@ function ScopedOpeningBalanceUploadDialog() {
 	const rows = outcome && "rows" in outcome ? outcome.rows : [];
 	const errorRows = rows.filter((row) => row.errors.length > 0).length;
 	const replacing = rows.filter((row) => row.replaces && row.errors.length === 0).length;
+	return {
+		t,
+		fileError,
+		open,
+		upload,
+		pending,
+		error,
+		busy,
+		form,
+		handleOpenChange,
+		handleFile,
+		outcome,
+		rows,
+		errorRows,
+		replacing,
+	};
+}
+
+function ScopedOpeningBalanceUploadDialog() {
+	const {
+		t,
+		fileError,
+		open,
+		upload,
+		pending,
+		error,
+		busy,
+		form,
+		handleOpenChange,
+		handleFile,
+		outcome,
+		rows,
+		errorRows,
+		replacing,
+	} = useOpeningBalanceUpload();
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -242,14 +278,13 @@ function ScopedOpeningBalanceUploadDialog() {
 					if (busy.current) event.preventDefault();
 				}}
 			>
-				<form
+				<ClientForm
 					className="grid min-w-0 gap-4"
 					aria-busy={pending !== null}
-					onSubmit={async (event) => {
-						event.preventDefault();
-						event.stopPropagation();
+					stopPropagation
+					onSubmit={() => {
 						if (busy.current) return;
-						await form.handleSubmit();
+						return form.handleSubmit();
 					}}
 				>
 					<OpeningBalanceUploadHeader />
@@ -332,36 +367,12 @@ function ScopedOpeningBalanceUploadDialog() {
 					) : null}
 
 					{rows.length > 0 ? (
-						<div className="grid gap-3">
-							{errorRows > 0 ? (
-								<Alert variant="destructive">
-									<AlertTitle>
-										{upload?.refused
-											? t("settings.employees.workBalance.upload.refusedTitle", "Nothing was saved")
-											: t(
-													"settings.employees.workBalance.upload.hasErrorsTitle",
-													"Fix the rows with errors",
-												)}
-									</AlertTitle>
-									<AlertDescription>
-										{t(
-											"settings.employees.workBalance.upload.hasErrors",
-											"{errors, plural, one {# of {total} rows has an error} other {# of {total} rows have errors}}. Correct the file and upload it again.",
-											{ errors: errorRows, total: rows.length },
-										)}
-									</AlertDescription>
-								</Alert>
-							) : (
-								<p className="text-sm">
-									{t(
-										"settings.employees.workBalance.upload.allReady",
-										"{total, plural, one {# row is ready} other {All # rows are ready}}; {replacing, plural, =0 {none replaces an opening balance in effect} one {# replaces an opening balance in effect} other {# replace an opening balance in effect}}.",
-										{ total: rows.length, replacing },
-									)}
-								</p>
-							)}
-							<OpeningBalanceUploadTable rows={rows} />
-						</div>
+						<OpeningBalancePreview
+							rows={rows}
+							errorRows={errorRows}
+							refused={upload?.refused}
+							replacing={replacing}
+						/>
 					) : null}
 
 					<DialogFooter>
@@ -389,8 +400,54 @@ function ScopedOpeningBalanceUploadDialog() {
 							)}
 						</Button>
 					</DialogFooter>
-				</form>
+				</ClientForm>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function OpeningBalancePreview({
+	rows,
+	errorRows,
+	refused,
+	replacing,
+}: {
+	rows: ReturnType<typeof useOpeningBalanceUpload>["rows"];
+	errorRows: number;
+	refused: boolean | undefined;
+	replacing: number;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="grid gap-3">
+			{errorRows > 0 ? (
+				<Alert variant="destructive">
+					<AlertTitle>
+						{refused
+							? t("settings.employees.workBalance.upload.refusedTitle", "Nothing was saved")
+							: t(
+									"settings.employees.workBalance.upload.hasErrorsTitle",
+									"Fix the rows with errors",
+								)}
+					</AlertTitle>
+					<AlertDescription>
+						{t(
+							"settings.employees.workBalance.upload.hasErrors",
+							"{errors, plural, one {# of {total} rows has an error} other {# of {total} rows have errors}}. Correct the file and upload it again.",
+							{ errors: errorRows, total: rows.length },
+						)}
+					</AlertDescription>
+				</Alert>
+			) : (
+				<p className="text-sm">
+					{t(
+						"settings.employees.workBalance.upload.allReady",
+						"{total, plural, one {# row is ready} other {All # rows are ready}}; {replacing, plural, =0 {none replaces an opening balance in effect} one {# replaces an opening balance in effect} other {# replace an opening balance in effect}}.",
+						{ total: rows.length, replacing },
+					)}
+				</p>
+			)}
+			<OpeningBalanceUploadTable rows={rows} />
+		</div>
 	);
 }

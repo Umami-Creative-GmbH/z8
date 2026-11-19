@@ -226,14 +226,21 @@ describe("SiteHeader", () => {
 		expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
 	});
 
-	it("shows the most specific route title instead of falling back to Dashboard", () => {
+	it("shows the employee section label while the employee page owns its heading", () => {
 		pathname = "/en/settings/employees/employee-1";
 
-		render(<SiteHeader />);
+		render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Ada Lovelace" />
+			</>,
+		);
 
-		expect(screen.getByText("Employees")).toBeTruthy();
+		expect(within(screen.getByRole("banner")).getByText("Employees")).toBeTruthy();
 		expect(screen.queryByText("Dashboard")).toBeNull();
-		expect(screen.getByRole("heading", { name: "Employees" })).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 }).map((title) => title.textContent)).toEqual([
+			"Ada Lovelace",
+		]);
 	});
 
 	it("truncates a long title so the header actions stay on a phone screen (#846)", () => {

@@ -28,7 +28,7 @@ export function PermissionsPageClient(props: {
 		permissionsPageReducer,
 		initialPermissionsPageState,
 	);
-	const requestSequence = useRef(0);
+	const currentRequest = useRef<symbol | null>(null);
 	const activeOrganizationId = useRef(props.organizationId);
 	const mounted = useRef(false);
 	const deniedOrganizationId = useRef<string | null>(null);
@@ -37,13 +37,13 @@ export function PermissionsPageClient(props: {
 		mounted.current = true;
 		return () => {
 			mounted.current = false;
-			requestSequence.current++;
+			currentRequest.current = null;
 		};
 	}, []);
 
 	useLayoutEffect(() => {
 		activeOrganizationId.current = props.organizationId;
-		requestSequence.current++;
+		currentRequest.current = null;
 	}, [props.organizationId]);
 
 	useEffect(() => {
@@ -75,7 +75,8 @@ export function PermissionsPageClient(props: {
 		}
 		deniedOrganizationId.current = null;
 		let cancelled = false;
-		const requestId = ++requestSequence.current;
+		const requestId = Symbol();
+		currentRequest.current = requestId;
 		dispatch({ type: "setLoading", value: true });
 		dispatch({ type: "setEmployees", employees: [] });
 		dispatch({ type: "setPermissions", permissions: {} });
@@ -87,7 +88,7 @@ export function PermissionsPageClient(props: {
 				result = await loadPermissionsPageData();
 			} catch {
 				if (cancelled) return;
-				if (requestSequence.current !== requestId) return;
+				if (currentRequest.current !== requestId) return;
 				toast.error(
 					t(
 						"settings.permissions.toast.loadEmployeesFailed",
@@ -113,7 +114,7 @@ export function PermissionsPageClient(props: {
 				return;
 			}
 			if (cancelled) return;
-			if (requestSequence.current !== requestId) return;
+			if (currentRequest.current !== requestId) return;
 
 			if (
 				!result.success ||
@@ -173,7 +174,8 @@ export function PermissionsPageClient(props: {
 		const organizationId = props.organizationId;
 		if (!mounted.current) return;
 		if (activeOrganizationId.current !== organizationId) return;
-		const requestId = ++requestSequence.current;
+		const requestId = Symbol();
+		currentRequest.current = requestId;
 		if (!background) dispatch({ type: "setLoading", value: true });
 
 		let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
@@ -182,7 +184,7 @@ export function PermissionsPageClient(props: {
 		} catch {
 			if (
 				!mounted.current ||
-				requestSequence.current !== requestId ||
+				currentRequest.current !== requestId ||
 				activeOrganizationId.current !== organizationId
 			)
 				return;
@@ -197,7 +199,7 @@ export function PermissionsPageClient(props: {
 		}
 		if (
 			!mounted.current ||
-			requestSequence.current !== requestId ||
+			currentRequest.current !== requestId ||
 			activeOrganizationId.current !== organizationId
 		)
 			return;

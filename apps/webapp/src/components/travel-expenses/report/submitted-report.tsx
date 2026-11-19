@@ -154,7 +154,7 @@ export function SubmittedTravelExpenseReport({
 	}
 
 	const latest = data.submissionCycle === data.latestCycle;
-	const [firstItem] = data.facts.items;
+
 	return (
 		<div className="space-y-4">
 			{isError && (
@@ -167,14 +167,7 @@ export function SubmittedTravelExpenseReport({
 					isRetrying={isFetching}
 				/>
 			)}
-			<ReportHeader
-				source={{
-					kind: data.facts.reportKind,
-					itemType: data.facts.reportKind === "trip" ? null : (firstItem?.type ?? null),
-					title: data.facts.trip ? data.facts.trip.purpose : (firstItem?.description ?? null),
-				}}
-				status={data.cycleOutcome === "pending" ? "submitted" : data.cycleOutcome}
-			/>
+			<SubmittedReportHeader data={data} />
 			<SubmissionHeading reportId={reportId} data={data} latest={latest} />
 			<SubmissionNotices reportId={reportId} data={data} latest={latest} />
 			<DecisionNotice decision={data.decision} />
@@ -506,5 +499,19 @@ function SubmissionHistory({ reportId, data }: { reportId: string; data: Submitt
 				</Timeline>
 			</CardContent>
 		</Card>
+	);
+}
+
+function SubmittedReportHeader({ data }: { data: SubmittedReportView }) {
+	const [firstItem] = data.facts.items;
+	return (
+		<ReportHeader
+			source={{
+				kind: data.facts.reportKind,
+				itemType: data.facts.reportKind === "trip" ? null : (firstItem?.type ?? null),
+				title: data.facts.trip ? data.facts.trip.purpose : (firstItem?.description ?? null),
+			}}
+			status={data.cycleOutcome === "pending" ? "submitted" : data.cycleOutcome}
+		/>
 	);
 }

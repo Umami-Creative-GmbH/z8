@@ -130,8 +130,8 @@ export function useEquipmentSetup(initialData: EquipmentSetupView) {
 			requestId = crypto.randomUUID();
 			archiveRequests.current.set(key, requestId);
 		}
-		const { name: _name, ...command } = target;
-		return submit({ ...command, requestId });
+		const { kind, id, expectedRevision } = target;
+		return submit({ kind, id, expectedRevision, requestId });
 	}
 
 	return { data, pending, submit, loadType, archive };

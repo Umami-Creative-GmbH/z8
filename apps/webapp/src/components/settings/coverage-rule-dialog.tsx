@@ -87,14 +87,13 @@ function daysOfWeek(
 	];
 }
 
-export function CoverageRuleDialog({
-	open,
-	onOpenChange,
-	locations,
-	requireScopedSubareaSelection,
-	editingRule,
-	onSuccess,
-}: CoverageRuleDialogProps) {
+function useCoverageRuleForm({
+		open,
+		locations,
+		requireScopedSubareaSelection,
+		editingRule,
+		onSuccess,
+	}: CoverageRuleDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!editingRule;
@@ -250,6 +249,27 @@ export function CoverageRuleDialog({
 				return undefined;
 		}
 	};
+	return {
+		t,
+		isEditing,
+		subareaOptions,
+		form,
+		isSubmitting,
+		errorText,
+	};
+}
+
+export function CoverageRuleDialog(props: CoverageRuleDialogProps) {
+	const { open, onOpenChange } = props;
+	const {
+		t,
+		isEditing,
+		subareaOptions,
+		form,
+		isSubmitting,
+		errorText,
+	} =
+		useCoverageRuleForm(props);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>

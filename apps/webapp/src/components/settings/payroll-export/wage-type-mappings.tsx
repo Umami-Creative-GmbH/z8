@@ -30,7 +30,8 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
-import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,9 +119,7 @@ const EMPTY_DRAFT: MappingDraft = {
 	successFactorsName: "",
 };
 
-export function WageTypeMappings({
-	hasMappingFormat,
-}: WageTypeMappingsProps) {
+export function WageTypeMappings({ hasMappingFormat }: WageTypeMappingsProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [mappings, setMappings] = useState<WageTypeMapping[]>([]);
@@ -290,9 +289,7 @@ export function WageTypeMappings({
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle>
-						{t("settings.payrollExport.mappings.title", "Wage Type Mappings")}
-					</CardTitle>
+					<CardTitle>{t("settings.payrollExport.mappings.title", "Wage Type Mappings")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.payrollExport.mappings.configureFirst",
@@ -306,9 +303,7 @@ export function WageTypeMappings({
 		<Card>
 			<CardHeader className="flex flex-row items-center justify-between">
 				<div>
-					<CardTitle>
-						{t("settings.payrollExport.mappings.title", "Wage Type Mappings")}
-					</CardTitle>
+					<CardTitle>{t("settings.payrollExport.mappings.title", "Wage Type Mappings")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.payrollExport.mappings.subtitle",
@@ -688,21 +683,11 @@ function MappingsTable({
 			<Table>
 				<TableHeader>
 					<TableRow>
-						<TableHead>
-							{t("settings.payrollExport.mappings.table.type", "Type")}
-						</TableHead>
-						<TableHead>
-							{t("settings.payrollExport.mappings.table.category", "Category")}
-						</TableHead>
-						<TableHead>
-							{t("settings.payrollExport.mappings.table.datev", "DATEV")}
-						</TableHead>
-						<TableHead>
-							{t("settings.payrollExport.mappings.table.lexware", "Lexware")}
-						</TableHead>
-						<TableHead>
-							{t("settings.payrollExport.mappings.table.sage", "Sage")}
-						</TableHead>
+						<TableHead>{t("settings.payrollExport.mappings.table.type", "Type")}</TableHead>
+						<TableHead>{t("settings.payrollExport.mappings.table.category", "Category")}</TableHead>
+						<TableHead>{t("settings.payrollExport.mappings.table.datev", "DATEV")}</TableHead>
+						<TableHead>{t("settings.payrollExport.mappings.table.lexware", "Lexware")}</TableHead>
+						<TableHead>{t("settings.payrollExport.mappings.table.sage", "Sage")}</TableHead>
 						<TableHead>
 							{t(
 								"settings.payrollExport.mappings.table.successFactors",
@@ -718,9 +703,7 @@ function MappingsTable({
 							<TableCell className="text-muted-foreground">
 								{getSourceTypeLabel(mapping, t)}
 							</TableCell>
-							<TableCell className="font-medium">
-								{getDisplayName(mapping)}
-							</TableCell>
+							<TableCell className="font-medium">{getDisplayName(mapping)}</TableCell>
 							<WageCodeCell
 								code={mapping.datevWageTypeCode}
 								name={mapping.datevWageTypeName}

@@ -17,9 +17,9 @@ import {
 } from "@/app/[locale]/(app)/settings/approval-policies/actions";
 import {
 	ConfirmActionDialog,
-	describeFailure,
 	useConfirmedAction,
 } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,9 +79,7 @@ function activeStatePayload(
 	};
 }
 
-export function ApprovalPolicyManagement({
-	organizationId,
-}: ApprovalPolicyManagementProps) {
+export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -276,115 +274,14 @@ export function ApprovalPolicyManagement({
 							)}
 						</div>
 					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>
-										{t("settings.approvalPolicies.priority", "Priority")}
-									</TableHead>
-									<TableHead className="min-w-0">
-										{t("common.name", "Name")}
-									</TableHead>
-									<TableHead>
-										{t(
-											"settings.approvalPolicies.activeStatus",
-											"Active status",
-										)}
-									</TableHead>
-									<TableHead>
-										{t(
-											"settings.approvalPolicies.conditionsCount",
-											"Conditions count",
-										)}
-									</TableHead>
-									<TableHead>
-										{t("settings.approvalPolicies.stagesCount", "Stages count")}
-									</TableHead>
-									<TableHead className="w-[96px]">
-										{t("common.actions", "Actions")}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{policies.map((policy) => {
-									const changingActiveState =
-										activeStateMutation.isPending &&
-										activeStateMutation.variables?.policy.id === policy.id;
-									return (
-										<TableRow key={policy.id}>
-											<TableCell className="tabular-nums">
-												{policy.priority}
-											</TableCell>
-											<TableCell className="min-w-0 max-w-[18rem] font-medium">
-												<div className="truncate" title={policy.name}>
-													{policy.name}
-												</div>
-											</TableCell>
-											<TableCell>
-												<Badge variant={policy.isActive ? "default" : "outline"}>
-													{policy.isActive
-														? t(
-																"settings.approvalPolicies.status.active",
-																"Active",
-															)
-														: t(
-																"settings.approvalPolicies.status.inactive",
-																"Inactive",
-															)}
-												</Badge>
-											</TableCell>
-											<TableCell className="tabular-nums">
-												{policy.conditions.length}
-											</TableCell>
-											<TableCell className="tabular-nums">
-												{policy.stages.length}
-											</TableCell>
-											<TableCell>
-												<div className="flex items-center gap-1">
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() => openEdit(policy)}
-														aria-label={t(
-															"settings.approvalPolicies.editPolicyNamed",
-															"Edit {name}",
-															{ name: policy.name },
-														)}
-													>
-														<IconPencil className="size-4" aria-hidden="true" />
-													</Button>
-													{policy.isActive ? (
-														<Button
-															variant="ghost"
-															size="icon"
-															onClick={() => deactivation.request(policy)}
-															disabled={changingActiveState}
-															aria-label={t(
-																"settings.approvalPolicies.deactivatePolicyNamed",
-																"Deactivate {name}",
-																{ name: policy.name },
-															)}
-														>
-															{changingActiveState ? (
-																<IconLoader2
-																	className="size-4 motion-safe:animate-spin"
-																	aria-hidden="true"
-																/>
-															) : (
-																<IconPlayerPause
-																	className="size-4"
-																	aria-hidden="true"
-																/>
-															)}
-														</Button>
-													) : null}
-												</div>
-											</TableCell>
-										</TableRow>
-									);
-								})}
-							</TableBody>
-						</Table>
+						<ApprovalPoliciesTable
+							policies={policies}
+							pendingPolicyId={
+								activeStateMutation.isPending ? activeStateMutation.variables?.policy.id : undefined
+							}
+							openEdit={openEdit}
+							onDeactivate={deactivation.request}
+						/>
 					)}
 				</CardContent>
 			</Card>
@@ -413,5 +310,95 @@ export function ApprovalPolicyManagement({
 				onConfirm={confirmDeactivation}
 			/>
 		</div>
+	);
+}
+
+function ApprovalPoliciesTable({
+	policies,
+	pendingPolicyId,
+	openEdit,
+	onDeactivate,
+}: {
+	policies: ApprovalPolicyData[];
+	pendingPolicyId: string | undefined;
+	openEdit: (policy: ApprovalPolicyData) => void;
+	onDeactivate: (policy: ApprovalPolicyData) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead>{t("settings.approvalPolicies.priority", "Priority")}</TableHead>
+					<TableHead className="min-w-0">{t("common.name", "Name")}</TableHead>
+					<TableHead>{t("settings.approvalPolicies.activeStatus", "Active status")}</TableHead>
+					<TableHead>
+						{t("settings.approvalPolicies.conditionsCount", "Conditions count")}
+					</TableHead>
+					<TableHead>{t("settings.approvalPolicies.stagesCount", "Stages count")}</TableHead>
+					<TableHead className="w-[96px]">{t("common.actions", "Actions")}</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{policies.map((policy) => {
+					const changingActiveState = pendingPolicyId === policy.id;
+					return (
+						<TableRow key={policy.id}>
+							<TableCell className="tabular-nums">{policy.priority}</TableCell>
+							<TableCell className="min-w-0 max-w-[18rem] font-medium">
+								<div className="truncate" title={policy.name}>
+									{policy.name}
+								</div>
+							</TableCell>
+							<TableCell>
+								<Badge variant={policy.isActive ? "default" : "outline"}>
+									{policy.isActive
+										? t("settings.approvalPolicies.status.active", "Active")
+										: t("settings.approvalPolicies.status.inactive", "Inactive")}
+								</Badge>
+							</TableCell>
+							<TableCell className="tabular-nums">{policy.conditions.length}</TableCell>
+							<TableCell className="tabular-nums">{policy.stages.length}</TableCell>
+							<TableCell>
+								<div className="flex items-center gap-1">
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => openEdit(policy)}
+										aria-label={t("settings.approvalPolicies.editPolicyNamed", "Edit {name}", {
+											name: policy.name,
+										})}
+									>
+										<IconPencil className="size-4" aria-hidden="true" />
+									</Button>
+									{policy.isActive ? (
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => onDeactivate(policy)}
+											disabled={changingActiveState}
+											aria-label={t(
+												"settings.approvalPolicies.deactivatePolicyNamed",
+												"Deactivate {name}",
+												{ name: policy.name },
+											)}
+										>
+											{changingActiveState ? (
+												<IconLoader2
+													className="size-4 motion-safe:animate-spin"
+													aria-hidden="true"
+												/>
+											) : (
+												<IconPlayerPause className="size-4" aria-hidden="true" />
+											)}
+										</Button>
+									) : null}
+								</div>
+							</TableCell>
+						</TableRow>
+					);
+				})}
+			</TableBody>
+		</Table>
 	);
 }

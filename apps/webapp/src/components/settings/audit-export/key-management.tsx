@@ -120,8 +120,9 @@ function KeyManagementForOrganization({
 	const publicKeyOperationRef = useRef(0);
 
 	useEffect(() => {
+		const operation = organizationOperationRef.current;
 		return () => {
-			organizationOperationRef.current.active = false;
+			operation.active = false;
 			rotateOperationRef.current += 1;
 			historyOperationRef.current += 1;
 			publicKeyOperationRef.current += 1;
@@ -497,9 +498,7 @@ function KeyManagementCard({
 												<TableHead>
 													{t("settings.auditExport.keys.colCreated", "Created")}
 												</TableHead>
-												<TableHead>
-													{t("settings.auditExport.keys.colStatus", "Status")}
-												</TableHead>
+												<TableHead>{t("settings.auditExport.keys.colStatus", "Status")}</TableHead>
 											</TableRow>
 										</TableHeader>
 										<TableBody>
@@ -518,12 +517,7 @@ function KeyManagementCard({
 													</TableCell>
 													<TableCell>
 														{key.isActive ? (
-															<Badge>
-																{t(
-																	"settings.auditExport.keys.active",
-																	"Active",
-																)}
-															</Badge>
+															<Badge>{t("settings.auditExport.keys.active", "Active")}</Badge>
 														) : (
 															<Badge variant="secondary">
 																{t(

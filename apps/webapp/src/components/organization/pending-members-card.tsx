@@ -20,12 +20,8 @@ import {
 	rejectPendingMember,
 } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
-import {
-	ConfirmActionDialog,
-	type ConfirmedAction,
-	describeFailure,
-	useConfirmedAction,
-} from "@/components/settings/confirm-action-dialog";
+import { ConfirmActionDialog, type ConfirmedAction, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

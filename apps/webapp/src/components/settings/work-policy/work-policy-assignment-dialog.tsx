@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,13 +48,13 @@ interface WorkPolicyAssignmentDialogProps {
 	onSuccess: () => void;
 }
 
-export function WorkPolicyAssignmentDialog({
-	open,
-	onOpenChange,
-	organizationId,
-	assignmentType,
-	onSuccess,
-}: WorkPolicyAssignmentDialogProps) {
+function useWorkPolicyAssignmentForm({
+		open,
+		onOpenChange,
+		organizationId,
+		assignmentType,
+		onSuccess,
+	}: WorkPolicyAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -204,6 +205,50 @@ export function WorkPolicyAssignmentDialog({
 	const isLoading = loadingPolicies || (assignmentType === "team" && loadingTeams);
 
 	const isPending = createMutation.isPending;
+	return {
+		t,
+		form,
+		requirePolicy,
+		requireTeam,
+		requireEmployee,
+		handleOpenChange,
+		policies,
+		loadingPolicies,
+		policiesFailed,
+		refetchPolicies,
+		teams,
+		loadingTeams,
+		teamsFailed,
+		refetchTeams,
+		getDialogTitle,
+		getDialogDescription,
+		isLoading,
+		isPending,
+	};
+}
+
+export function WorkPolicyAssignmentDialog(props: WorkPolicyAssignmentDialogProps) {
+	const { open, onOpenChange, assignmentType } = props;
+	const {
+		t,
+		form,
+		requirePolicy,
+		requireTeam,
+		requireEmployee,
+		handleOpenChange,
+		policies,
+		loadingPolicies,
+		policiesFailed,
+		refetchPolicies,
+		teams,
+		loadingTeams,
+		teamsFailed,
+		refetchTeams,
+		getDialogTitle,
+		getDialogDescription,
+		isLoading,
+		isPending,
+	} = useWorkPolicyAssignmentForm(props);
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -213,12 +258,11 @@ export function WorkPolicyAssignmentDialog({
 					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form
+				<ClientForm
 					className="flex min-h-0 flex-1 flex-col"
 					noValidate
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+					stopPropagation
+					onSubmit={() => {
 						if (!isPending) form.handleSubmit();
 					}}
 				>
@@ -396,7 +440,7 @@ export function WorkPolicyAssignmentDialog({
 							)}
 						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

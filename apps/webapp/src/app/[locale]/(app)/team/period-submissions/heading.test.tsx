@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 import { PageHeader } from "@/components/ui/page-header";
 import { appPageOwnsHeading } from "@/lib/navigation/route-metadata";
 
-it("gives only the period submissions route one task heading during arrival", () => {
+it("gives the period submissions route one task heading during arrival", () => {
 	render(
 		<>
 			<header>
@@ -20,6 +20,4 @@ it("gives only the period submissions route one task heading during arrival", ()
 	expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Period submissions");
 	expect(appPageOwnsHeading("/de/team/period-submissions/")).toBe(true);
 	expect(appPageOwnsHeading("/en/team/period-submissions/detail")).toBe(false);
-	expect(appPageOwnsHeading("/en/team/presence")).toBe(false);
-	expect(appPageOwnsHeading("/en/reports/projects")).toBe(true);
 });

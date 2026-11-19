@@ -142,6 +142,7 @@ describe("suspended billing recovery route", () => {
 	it("defines suspended billing messages in the loaded common namespace", () => {
 		const expectedEnglish = {
 			title: "Organization suspended",
+			accessConsequence: "Access to this organization is paused until billing is updated.",
 			adminDescription:
 				"Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
 			memberDescription:

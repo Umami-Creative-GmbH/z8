@@ -25,7 +25,8 @@ import {
 	saveEmailConfig,
 	testEmailConfig,
 } from "@/app/[locale]/(app)/settings/enterprise/email/actions";
-import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -52,11 +53,7 @@ interface EmailConfigFormProps {
 	secretStoreStatus: SecretStoreStatus;
 }
 
-function SecretStoreStatusAlert({
-	secretStoreStatus,
-}: {
-	secretStoreStatus: SecretStoreStatus;
-}) {
+function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: SecretStoreStatus }) {
 	const { t } = useTranslate();
 
 	if (secretStoreStatus.provider === "scaleway") {
@@ -140,9 +137,7 @@ function SecretStoreStatusAlert({
 		return (
 			<Alert variant="destructive" className="mb-4">
 				<IconAlertTriangle className="size-4" aria-hidden="true" />
-				<AlertTitle>
-					{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}
-				</AlertTitle>
+				<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
 				<AlertDescription>
 					{t(
 						"settings.enterprise.email.vaultSealedDesc",
@@ -156,9 +151,7 @@ function SecretStoreStatusAlert({
 	return (
 		<Alert className="mb-4">
 			<IconShield className="size-4" aria-hidden="true" />
-			<AlertTitle>
-				{t("settings.enterprise.email.vaultConnected", "Vault Connected")}
-			</AlertTitle>
+			<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
 			<AlertDescription>
 				{t(
 					"settings.enterprise.email.vaultConnectedDesc",
@@ -437,11 +430,7 @@ function ProviderFieldsSection({
 	);
 }
 
-function SmtpConfigurationSection({
-	controller,
-}: {
-	controller: EmailConfigController;
-}) {
+function SmtpConfigurationSection({ controller }: { controller: EmailConfigController }) {
 	const { form, initialConfig, t } = controller;
 
 	return (
@@ -547,8 +536,7 @@ function SmtpConfigurationSection({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor="smtpUsername">
-											{t("settings.enterprise.email.smtpUsername", "Username")}{" "}
-											*
+											{t("settings.enterprise.email.smtpUsername", "Username")} *
 										</Label>
 										<Input
 											id="smtpUsername"
@@ -642,11 +630,7 @@ function SmtpConfigurationSection({
 	);
 }
 
-function EmailStatusSection({
-	controller,
-}: {
-	controller: EmailConfigController;
-}) {
+function EmailStatusSection({ controller }: { controller: EmailConfigController }) {
 	const {
 		form,
 		handleTest,
@@ -682,9 +666,7 @@ function EmailStatusSection({
 			</form.Field>
 			{initialConfig?.lastTestAt && (
 				<div className="rounded-lg border p-4 space-y-2">
-					<h4 className="font-medium">
-						{t("settings.enterprise.email.lastTest", "Last Test")}
-					</h4>
+					<h4 className="font-medium">{t("settings.enterprise.email.lastTest", "Last Test")}</h4>
 					<div className="flex flex-wrap items-center gap-2 text-sm">
 						{initialConfig.lastTestSuccess ? (
 							<>
@@ -712,9 +694,7 @@ function EmailStatusSection({
 						</span>
 					</div>
 					{initialConfig.lastTestError && (
-						<p className="break-words text-sm text-destructive">
-							{initialConfig.lastTestError}
-						</p>
+						<p className="break-words text-sm text-destructive">{initialConfig.lastTestError}</p>
 					)}
 				</div>
 			)}

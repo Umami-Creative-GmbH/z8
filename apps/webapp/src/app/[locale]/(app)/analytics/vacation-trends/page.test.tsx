@@ -9,7 +9,6 @@ import {
 	within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { SWRConfig } from "swr";
 import { beforeEach, expect, it, vi } from "vitest";
 
 const { read, translate } = vi.hoisted(() => ({
@@ -70,12 +69,10 @@ function Refresh() {
 function setup() {
 	return render(
 		<QueryClientProvider client={new QueryClient()}>
-			<SWRConfig value={{ provider: () => new Map() }}>
-				<ViewRefreshProvider>
-					<Refresh />
-					<Page />
-				</ViewRefreshProvider>
-			</SWRConfig>
+			<ViewRefreshProvider>
+				<Refresh />
+				<Page />
+			</ViewRefreshProvider>
 		</QueryClientProvider>,
 	);
 }

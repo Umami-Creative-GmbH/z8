@@ -43,19 +43,22 @@ export function OrganizationDangerZoneCard({
 	organization,
 	settingsAccess,
 }: OrganizationDangerZoneCardProps) {
+	if (!meetsSettingsAccess(settingsAccess, "orgAdmin")) return null;
+	return organization.deletedAt ? (
+		<RecoverOrganizationCard organization={organization} />
+	) : (
+		<DeleteOrganizationCard organization={organization} />
+	);
+}
+
+function RecoverOrganizationCard({
+	organization,
+}: Pick<OrganizationDangerZoneCardProps, "organization">) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [recoverDialogOpen, setRecoverDialogOpen] = useState(false);
-	const [confirmationName, setConfirmationName] = useState("");
-	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [recoverError, setRecoverError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
-
-	const canManage = meetsSettingsAccess(settingsAccess, "orgAdmin");
-	const isDeleted = !!organization.deletedAt;
-	const isConfirmationValid = confirmationName === organization.name;
-
 	// Calculate remaining time until permanent deletion
 	const permanentDeletionDate = organization.deletedAt
 		? DateTime.fromJSDate(new Date(organization.deletedAt)).plus({ days: 5 })
@@ -63,6 +66,160 @@ export function OrganizationDangerZoneCard({
 	const remainingDays = permanentDeletionDate
 		? Math.max(0, Math.ceil(permanentDeletionDate.diffNow("days").days))
 		: 0;
+
+	const handleRecover = () => {
+		if (isPending) return;
+
+		setRecoverError(null);
+		startTransition(async () => {
+			let message: string;
+			try {
+				const result = await recoverOrganization();
+
+				if (result.success) {
+					toast.success(t("organization.recover.success", "Organization recovered successfully"));
+					setRecoverDialogOpen(false);
+					router.refresh();
+					return;
+				}
+				message =
+					result.error || t("organization.recover.failed", "Failed to recover organization");
+			} catch {
+				message = t("organization.recover.failed", "Failed to recover organization");
+			}
+			setRecoverError(message);
+			toast.error(message);
+		});
+	};
+
+	const handleRecoverDialogOpenChange = (open: boolean) => {
+		if (!open && isPending) return;
+		setRecoverDialogOpen(open);
+		if (!open) {
+			setRecoverError(null);
+		}
+	};
+
+	return (
+		<>
+			<Card className="border-warning/40">
+				<CardHeader>
+					<CardTitle as="h2" className="flex items-center gap-2">
+						<IconAlertTriangle aria-hidden="true" className="size-5 shrink-0 text-warning" />
+						{t("organization.delete.pendingDeletion", "Pending Deletion")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"organization.delete.pendingDescription",
+							"This organization is scheduled for permanent deletion",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{/* Warning surface: tint and border carry the state; text stays on the
+						    foreground token for body-text contrast in light and dark themes. */}
+					<div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-foreground">
+						<div className="space-y-4">
+							<div className="flex flex-wrap items-start justify-between gap-4">
+								<div>
+									<p className="font-medium">
+										{t("organization.delete.timeRemaining", "Time remaining to recover:")}
+									</p>
+									<p className="text-2xl font-semibold tabular-nums">
+										{t(
+											"organization.delete.daysRemaining",
+											"{count, plural, one {# day} other {# days}}",
+											{ count: remainingDays },
+										)}
+									</p>
+								</div>
+								<div className="text-sm text-muted-foreground sm:text-right">
+									<p>{t("organization.delete.permanentDeletionOn", "Permanent deletion on:")}</p>
+									<p className="font-medium">
+										{permanentDeletionDate?.toLocaleString(DateTime.DATETIME_MED)}
+									</p>
+								</div>
+							</div>
+
+							<div className="text-sm">
+								<p>
+									{t(
+										"organization.delete.recoveryNote",
+										"All organization data will be permanently deleted after this date. Click the button below to cancel deletion and recover the organization.",
+									)}
+								</p>
+							</div>
+
+							<Button
+								variant="default"
+								onClick={() => setRecoverDialogOpen(true)}
+								className="w-full sm:w-auto"
+							>
+								<IconRestore aria-hidden="true" className="size-4" />
+								{t("organization.recover.button", "Recover Organization")}
+							</Button>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			<AlertDialog open={recoverDialogOpen} onOpenChange={handleRecoverDialogOpenChange}>
+				<AlertDialogContent aria-busy={isPending}>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<IconRestore aria-hidden="true" className="size-5" />
+							{t("organization.recover.confirmTitle", "Recover Organization?")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"organization.recover.confirmDescription",
+								"This will cancel the scheduled deletion and restore the organization. All data will be preserved.",
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{recoverError && (
+						<p role="alert" className="text-sm text-destructive">
+							{recoverError}
+						</p>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(event) => {
+								// Keep the dialog open so the pending state and any failure stay visible.
+								event.preventDefault();
+								(event as unknown as BaseUIPreventableEvent).preventBaseUIHandler?.();
+								handleRecover();
+							}}
+							disabled={isPending}
+						>
+							{isPending && (
+								<IconLoader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+							)}
+							{isPending
+								? t("common.recovering", "Recovering...")
+								: t("organization.recover.confirmButton", "Recover Organization")}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
+	);
+}
+
+function DeleteOrganizationCard({
+	organization,
+}: Pick<OrganizationDangerZoneCardProps, "organization">) {
+	const { t } = useTranslate();
+	const router = useRouter();
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [confirmationName, setConfirmationName] = useState("");
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [isPending, startTransition] = useTransition();
+
+	const isConfirmationValid = confirmationName === organization.name;
 
 	const handleDelete = () => {
 		if (!isConfirmationValid || isPending) return;
@@ -95,31 +252,6 @@ export function OrganizationDangerZoneCard({
 		});
 	};
 
-	const handleRecover = () => {
-		if (isPending) return;
-
-		setRecoverError(null);
-		startTransition(async () => {
-			let message: string;
-			try {
-				const result = await recoverOrganization();
-
-				if (result.success) {
-					toast.success(t("organization.recover.success", "Organization recovered successfully"));
-					setRecoverDialogOpen(false);
-					router.refresh();
-					return;
-				}
-				message =
-					result.error || t("organization.recover.failed", "Failed to recover organization");
-			} catch {
-				message = t("organization.recover.failed", "Failed to recover organization");
-			}
-			setRecoverError(message);
-			toast.error(message);
-		});
-	};
-
 	const handleDeleteDialogOpenChange = (open: boolean) => {
 		// Escape, an outside press or Cancel must not hide a deletion that is still running.
 		if (!open && isPending) return;
@@ -129,127 +261,6 @@ export function OrganizationDangerZoneCard({
 			setDeleteError(null);
 		}
 	};
-
-	const handleRecoverDialogOpenChange = (open: boolean) => {
-		if (!open && isPending) return;
-		setRecoverDialogOpen(open);
-		if (!open) {
-			setRecoverError(null);
-		}
-	};
-
-	if (!canManage) {
-		return null;
-	}
-
-	// Show recovery UI if organization is scheduled for deletion
-	if (isDeleted) {
-		return (
-			<>
-				<Card className="border-warning/40">
-					<CardHeader>
-						<CardTitle as="h2" className="flex items-center gap-2">
-							<IconAlertTriangle aria-hidden="true" className="size-5 shrink-0 text-warning" />
-							{t("organization.delete.pendingDeletion", "Pending Deletion")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"organization.delete.pendingDescription",
-								"This organization is scheduled for permanent deletion",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{/* Warning surface: tint and border carry the state; text stays on the
-						    foreground token for body-text contrast in light and dark themes. */}
-						<div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-foreground">
-							<div className="space-y-4">
-								<div className="flex flex-wrap items-start justify-between gap-4">
-									<div>
-										<p className="font-medium">
-											{t("organization.delete.timeRemaining", "Time remaining to recover:")}
-										</p>
-										<p className="text-2xl font-semibold tabular-nums">
-											{t(
-												"organization.delete.daysRemaining",
-												"{count, plural, one {# day} other {# days}}",
-												{ count: remainingDays },
-											)}
-										</p>
-									</div>
-									<div className="text-sm text-muted-foreground sm:text-right">
-										<p>{t("organization.delete.permanentDeletionOn", "Permanent deletion on:")}</p>
-										<p className="font-medium">
-											{permanentDeletionDate?.toLocaleString(DateTime.DATETIME_MED)}
-										</p>
-									</div>
-								</div>
-
-								<div className="text-sm">
-									<p>
-										{t(
-											"organization.delete.recoveryNote",
-											"All organization data will be permanently deleted after this date. Click the button below to cancel deletion and recover the organization.",
-										)}
-									</p>
-								</div>
-
-								<Button
-									variant="default"
-									onClick={() => setRecoverDialogOpen(true)}
-									className="w-full sm:w-auto"
-								>
-									<IconRestore aria-hidden="true" className="size-4" />
-									{t("organization.recover.button", "Recover Organization")}
-								</Button>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				<AlertDialog open={recoverDialogOpen} onOpenChange={handleRecoverDialogOpenChange}>
-					<AlertDialogContent aria-busy={isPending}>
-						<AlertDialogHeader>
-							<AlertDialogTitle className="flex items-center gap-2">
-								<IconRestore aria-hidden="true" className="size-5" />
-								{t("organization.recover.confirmTitle", "Recover Organization?")}
-							</AlertDialogTitle>
-							<AlertDialogDescription>
-								{t(
-									"organization.recover.confirmDescription",
-									"This will cancel the scheduled deletion and restore the organization. All data will be preserved.",
-								)}
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						{recoverError && (
-							<p role="alert" className="text-sm text-destructive">
-								{recoverError}
-							</p>
-						)}
-						<AlertDialogFooter>
-							<AlertDialogCancel disabled={isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-							<AlertDialogAction
-								onClick={(event) => {
-									// Keep the dialog open so the pending state and any failure stay visible.
-									event.preventDefault();
-									(event as unknown as BaseUIPreventableEvent).preventBaseUIHandler?.();
-									handleRecover();
-								}}
-								disabled={isPending}
-							>
-								{isPending && (
-									<IconLoader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
-								)}
-								{isPending
-									? t("common.recovering", "Recovering...")
-									: t("organization.recover.confirmButton", "Recover Organization")}
-							</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
-			</>
-		);
-	}
 
 	// Show delete UI for active organization
 	return (
@@ -352,7 +363,9 @@ export function OrganizationDangerZoneCard({
 						</p>
 					)}
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel disabled={isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={(event) => {
 								// Keep the dialog open so the pending state and any failure stay visible.

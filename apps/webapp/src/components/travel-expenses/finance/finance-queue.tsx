@@ -462,11 +462,6 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 		const button = markButtonRef.current;
 		return button?.isConnected && !button.disabled ? button : queueHeadingRef.current;
 	}
-	const statusLabel: Record<FinanceQueueStatus, string> = {
-		open: t("travelExpenses.finance.filter.open", "Open"),
-		reimbursed: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
-		all: t("travelExpenses.finance.filter.all", "All approved"),
-	};
 	const filtered = hasFilters(view);
 	if (data === null) {
 		if (bulkSelection) setBulkSelection(null);
@@ -498,52 +493,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					{coverage ? (
-						<p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-							<span className="text-muted-foreground">
-								{t(
-									"travelExpenses.finance.coverageGap.queueFilter",
-									"Approved expenses awaiting reimbursement that no expense officer covers.",
-								)}
-							</span>
-							<Link
-								href="/travel-expenses/finance"
-								className="font-medium underline underline-offset-4"
-							>
-								{t("travelExpenses.finance.coverageGap.showAll", "Show all approved expenses")}
-							</Link>
-						</p>
-					) : (
-						<ToggleGroup
-							type="single"
-							variant="outline"
-							value={view.status}
-							onValueChange={(value: string) => {
-								const status = FINANCE_QUEUE_STATUSES.find((entry) => entry === value);
-								if (status) setView({ ...view, status, page: 1 });
-							}}
-							aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
-						>
-							{FINANCE_QUEUE_STATUSES.map((value) => (
-								<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
-									{statusLabel[value]}
-								</ToggleGroupItem>
-							))}
-						</ToggleGroup>
-					)}
-					{filtered && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setView({ ...DEFAULT_FINANCE_QUEUE_VIEW, status: view.status })}
-						>
-							<IconFilterOff aria-hidden="true" className="size-4" />
-							{t("travelExpenses.finance.filter.clear", "Clear filters")}
-						</Button>
-					)}
-				</div>
-				<QueueFilters view={view} onChange={setView} />
+				<FinanceQueueFilters coverage={coverage} view={view} setView={setView} />
 				{isError && (
 					<TravelExpenseLoadError
 						message={t(
@@ -707,5 +657,73 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 				/>
 			)}
 		</Card>
+	);
+}
+
+function FinanceQueueFilters({
+	coverage,
+	view,
+	setView,
+}: {
+	coverage?: FinanceQueueCoverage;
+	view: FinanceQueueView;
+	setView: (view: FinanceQueueView) => void;
+}) {
+	const { t } = useTranslate();
+	const statusLabel: Record<FinanceQueueStatus, string> = {
+		open: t("travelExpenses.finance.filter.open", "Open"),
+		reimbursed: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
+		all: t("travelExpenses.finance.filter.all", "All approved"),
+	};
+	const filtered = hasFilters(view);
+	return (
+		<>
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				{coverage ? (
+					<p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+						<span className="text-muted-foreground">
+							{t(
+								"travelExpenses.finance.coverageGap.queueFilter",
+								"Approved expenses awaiting reimbursement that no expense officer covers.",
+							)}
+						</span>
+						<Link
+							href="/travel-expenses/finance"
+							className="font-medium underline underline-offset-4"
+						>
+							{t("travelExpenses.finance.coverageGap.showAll", "Show all approved expenses")}
+						</Link>
+					</p>
+				) : (
+					<ToggleGroup
+						type="single"
+						variant="outline"
+						value={view.status}
+						onValueChange={(value: string) => {
+							const status = FINANCE_QUEUE_STATUSES.find((entry) => entry === value);
+							if (status) setView({ ...view, status, page: 1 });
+						}}
+						aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
+					>
+						{FINANCE_QUEUE_STATUSES.map((value) => (
+							<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
+								{statusLabel[value]}
+							</ToggleGroupItem>
+						))}
+					</ToggleGroup>
+				)}
+				{filtered && (
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => setView({ ...DEFAULT_FINANCE_QUEUE_VIEW, status: view.status })}
+					>
+						<IconFilterOff aria-hidden="true" className="size-4" />
+						{t("travelExpenses.finance.filter.clear", "Clear filters")}
+					</Button>
+				)}
+			</div>
+			<QueueFilters view={view} onChange={setView} />
+		</>
 	);
 }

@@ -7,11 +7,8 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
-import {
-	ConfirmActionDialog,
-	describeFailure,
-	useConfirmedAction,
-} from "@/components/settings/confirm-action-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import type { team as teamTable } from "@/db/schema";

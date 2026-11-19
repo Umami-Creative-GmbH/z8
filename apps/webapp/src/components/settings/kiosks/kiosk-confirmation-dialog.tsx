@@ -3,7 +3,7 @@
 import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { KioskData } from "@/app/[locale]/(app)/settings/kiosks/actions";
-import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
 	AlertDialog,

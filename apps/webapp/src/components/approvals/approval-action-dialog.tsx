@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
@@ -14,12 +15,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ApprovalActionDialogProps {
@@ -72,6 +68,10 @@ export function ApprovalActionDialog({
 		},
 	});
 
+	function submitForm() {
+		if (!pending.current) void form.handleSubmit();
+	}
+
 	return (
 		<ActionPanel
 			open={open}
@@ -94,15 +94,11 @@ export function ApprovalActionDialog({
 				</ActionPanelHeader>
 
 				<ActionPanelBody>
-					<form
+					<ClientForm
 						id={formId}
 						noValidate
 						aria-busy={loading}
-						onSubmit={(event) => {
-							event.preventDefault();
-							event.stopPropagation();
-							if (!pending.current) void form.handleSubmit();
-						}}
+						stopPropagation onSubmit={submitForm}
 					>
 						{action === "reject" && (
 							<form.Field
@@ -152,7 +148,7 @@ export function ApprovalActionDialog({
 								{error}
 							</p>
 						) : null}
-					</form>
+					</ClientForm>
 
 					{action === "approve" && (
 						<p className="text-sm text-muted-foreground">

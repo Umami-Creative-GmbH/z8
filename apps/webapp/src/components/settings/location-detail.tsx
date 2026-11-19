@@ -36,9 +36,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingRegion } from "@/components/ui/loading-region";
+import { LocationDetailSkeleton } from "./location-detail-skeleton";
 import { PageHeader } from "@/components/ui/page-header";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
@@ -63,11 +62,7 @@ function getEmployeeName(emp: LocationWithDetails["employees"][number]["employee
 	return emp.user.name || emp.user.email;
 }
 
-export function LocationDetail({
-	locationId,
-	organizationId,
-	canManageLocations,
-}: LocationDetailProps) {
+function useLocationDetail({ locationId, organizationId }: LocationDetailProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -277,6 +272,70 @@ export function LocationDetail({
 			queryKey: queryKeys.locations.list(organizationId),
 		});
 	};
+	return {
+		t,
+		editLocationOpen,
+		setEditLocationOpen,
+		deleteLocationOpen,
+		setDeleteLocationOpen,
+		addEmployeeOpen,
+		setAddEmployeeOpen,
+		addSubareaOpen,
+		setAddSubareaOpen,
+		editSubarea,
+		setEditSubarea,
+		subareaToDelete,
+		setSubareaToDelete,
+		deletingLocation,
+		deletingSubarea,
+		removingAssignmentId,
+		subareaEmployeeDialog,
+		setSubareaEmployeeDialog,
+		isLoading,
+		isError,
+		isFetching,
+		refetch,
+		location,
+		handleDeleteLocation,
+		handleRemoveEmployee,
+		handleDeleteSubarea,
+		handleRemoveSubareaEmployee,
+		handleSuccess,
+	};
+}
+
+export function LocationDetail(props: LocationDetailProps) {
+	const { locationId, canManageLocations } = props;
+	const {
+		t,
+		editLocationOpen,
+		setEditLocationOpen,
+		deleteLocationOpen,
+		setDeleteLocationOpen,
+		addEmployeeOpen,
+		setAddEmployeeOpen,
+		addSubareaOpen,
+		setAddSubareaOpen,
+		editSubarea,
+		setEditSubarea,
+		subareaToDelete,
+		setSubareaToDelete,
+		deletingLocation,
+		deletingSubarea,
+		removingAssignmentId,
+		subareaEmployeeDialog,
+		setSubareaEmployeeDialog,
+		isLoading,
+		isError,
+		isFetching,
+		refetch,
+		location,
+		handleDeleteLocation,
+		handleRemoveEmployee,
+		handleDeleteSubarea,
+		handleRemoveSubareaEmployee,
+		handleSuccess,
+	} = useLocationDetail(props);
 
 	if (isLoading) {
 		return <LocationDetailSkeleton />;
@@ -378,98 +437,92 @@ export function LocationDetail({
 				/>
 			</div>
 
-			{/* Edit Location Dialog */}
 			{canManageLocations && (
-				<LocationDialog
-					location={{
-						id: location.id,
-						name: location.name,
-						city: location.city,
-						country: location.country,
-						isActive: location.isActive,
-						subareaCount: location.subareaCount,
-						employeeCount: location.employeeCount,
-					}}
-					open={editLocationOpen}
-					onOpenChange={setEditLocationOpen}
-					onSuccess={() => {
-						setEditLocationOpen(false);
-						handleSuccess();
-					}}
-				/>
-			)}
+				<>
+					{/* Edit Location Dialog */}
+					<LocationDialog
+						location={{
+							id: location.id,
+							name: location.name,
+							city: location.city,
+							country: location.country,
+							isActive: location.isActive,
+							subareaCount: location.subareaCount,
+							employeeCount: location.employeeCount,
+						}}
+						open={editLocationOpen}
+						onOpenChange={setEditLocationOpen}
+						onSuccess={() => {
+							setEditLocationOpen(false);
+							handleSuccess();
+						}}
+					/>
 
-			{canManageLocations && (
-				<DeleteLocationDialog
-					locationName={location.name}
-					onConfirm={() => void handleDeleteLocation()}
-					onOpenChange={(open) => {
-						if (!deletingLocation) setDeleteLocationOpen(open);
-					}}
-					open={deleteLocationOpen}
-					pending={deletingLocation}
-				/>
-			)}
+					<DeleteLocationDialog
+						locationName={location.name}
+						onConfirm={() => void handleDeleteLocation()}
+						onOpenChange={(open) => {
+							if (!deletingLocation) setDeleteLocationOpen(open);
+						}}
+						open={deleteLocationOpen}
+						pending={deletingLocation}
+					/>
 
-			{/* Add Employee Dialog */}
-			{canManageLocations && (
-				<LocationEmployeeDialog
-					locationId={locationId}
-					open={addEmployeeOpen}
-					onOpenChange={setAddEmployeeOpen}
-					onSuccess={handleSuccess}
-				/>
-			)}
+					{/* Add Employee Dialog */}
+					<LocationEmployeeDialog
+						locationId={locationId}
+						open={addEmployeeOpen}
+						onOpenChange={setAddEmployeeOpen}
+						onSuccess={handleSuccess}
+					/>
 
-			{/* Subarea Dialog (Create) */}
-			{canManageLocations && (
-				<SubareaDialog
-					locationId={locationId}
-					subarea={null}
-					open={addSubareaOpen}
-					onOpenChange={setAddSubareaOpen}
-					onSuccess={() => {
-						setAddSubareaOpen(false);
-						handleSuccess();
-					}}
-				/>
-			)}
+					{/* Subarea Dialog (Create) */}
+					<SubareaDialog
+						locationId={locationId}
+						subarea={null}
+						open={addSubareaOpen}
+						onOpenChange={setAddSubareaOpen}
+						onSuccess={() => {
+							setAddSubareaOpen(false);
+							handleSuccess();
+						}}
+					/>
 
-			{/* Subarea Dialog (Edit) */}
-			{canManageLocations && editSubarea && (
-				<SubareaDialog
-					locationId={locationId}
-					subarea={editSubarea}
-					open={!!editSubarea}
-					onOpenChange={(open) => !open && setEditSubarea(null)}
-					onSuccess={() => {
-						setEditSubarea(null);
-						handleSuccess();
-					}}
-				/>
-			)}
+					{/* Subarea Dialog (Edit) */}
+					{editSubarea && (
+						<SubareaDialog
+							locationId={locationId}
+							subarea={editSubarea}
+							open={!!editSubarea}
+							onOpenChange={(open) => !open && setEditSubarea(null)}
+							onSuccess={() => {
+								setEditSubarea(null);
+								handleSuccess();
+							}}
+						/>
+					)}
 
-			{canManageLocations && (
-				<DeleteSubareaDialog
-					subareaName={subareaToDelete?.name ?? ""}
-					onConfirm={() => void handleDeleteSubarea()}
-					onOpenChange={(open) => {
-						if (!open && !deletingSubarea) setSubareaToDelete(null);
-					}}
-					open={subareaToDelete !== null}
-					pending={deletingSubarea}
-				/>
-			)}
+					<DeleteSubareaDialog
+						subareaName={subareaToDelete?.name ?? ""}
+						onConfirm={() => void handleDeleteSubarea()}
+						onOpenChange={(open) => {
+							if (!open && !deletingSubarea) setSubareaToDelete(null);
+						}}
+						open={subareaToDelete !== null}
+						pending={deletingSubarea}
+					/>
 
-			{/* Subarea Employee Dialog */}
-			{canManageLocations && subareaEmployeeDialog && (
-				<SubareaEmployeeDialog
-					subareaId={subareaEmployeeDialog.subareaId}
-					subareaName={subareaEmployeeDialog.subareaName}
-					open={subareaEmployeeDialog.open}
-					onOpenChange={(open) => !open && setSubareaEmployeeDialog(null)}
-					onSuccess={handleSuccess}
-				/>
+					{/* Subarea Employee Dialog */}
+					{subareaEmployeeDialog && (
+						<SubareaEmployeeDialog
+							subareaId={subareaEmployeeDialog.subareaId}
+							subareaName={subareaEmployeeDialog.subareaName}
+							open={subareaEmployeeDialog.open}
+							onOpenChange={(open) => !open && setSubareaEmployeeDialog(null)}
+							onSuccess={handleSuccess}
+						/>
+					)}
+				</>
 			)}
 		</div>
 	);
@@ -592,28 +645,6 @@ function LocationDetailHeader({
 				</>
 			}
 		/>
-	);
-}
-
-function LocationDetailSkeleton() {
-	return (
-		<LoadingRegion
-			className="page-frame flex flex-1 flex-col gap-6"
-			label={{
-				labelKey: "common.loadingRegions.locationSettings",
-				labelDefault: "Loading location settings",
-			}}
-		>
-			<div className="space-y-2">
-				<Skeleton className="h-5 w-36" aria-hidden="true" />
-				<Skeleton className="h-8 w-56" aria-hidden="true" />
-				<Skeleton className="h-5 w-full max-w-sm" aria-hidden="true" />
-			</div>
-			<div className="grid gap-4 lg:grid-cols-2">
-				<Skeleton className="h-64" aria-hidden="true" />
-				<Skeleton className="h-64" aria-hidden="true" />
-			</div>
-		</LoadingRegion>
 	);
 }
 

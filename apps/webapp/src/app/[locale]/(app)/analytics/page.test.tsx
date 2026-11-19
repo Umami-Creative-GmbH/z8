@@ -10,7 +10,6 @@ import {
 	within,
 } from "@testing-library/react";
 import type React from "react";
-import { SWRConfig } from "swr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -114,12 +113,10 @@ function RefreshControl() {
 function renderWithRefresh() {
 	return render(
 		<QueryClientProvider client={new QueryClient()}>
-			<SWRConfig value={{ provider: () => new Map() }}>
-				<ViewRefreshProvider>
-					<RefreshControl />
-					<AnalyticsOverviewPage />
-				</ViewRefreshProvider>
-			</SWRConfig>
+			<ViewRefreshProvider>
+				<RefreshControl />
+				<AnalyticsOverviewPage />
+			</ViewRefreshProvider>
 		</QueryClientProvider>,
 	);
 }

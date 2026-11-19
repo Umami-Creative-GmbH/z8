@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconKey, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
@@ -46,13 +47,12 @@ function VerificationField({
 		},
 	});
 	return (
-		<form
+		<ClientForm
 			noValidate
 			className="space-y-3"
 			aria-busy={pending}
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
+			stopPropagation
+			onSubmit={() => {
 				if (!pending) void form.handleSubmit();
 			}}
 		>
@@ -79,9 +79,7 @@ function VerificationField({
 								disabled={pending}
 							/>
 						</TFormControl>
-						<TFormDescription className="sr-only">
-							{requiredMessage}
-						</TFormDescription>
+						<TFormDescription className="sr-only">{requiredMessage}</TFormDescription>
 						<TFormMessage field={field} />
 					</TFormItem>
 				)}
@@ -99,23 +97,11 @@ function VerificationField({
 				)}
 				{action}
 			</Button>
-		</form>
+		</ClientForm>
 	);
 }
 
-export function MfaVerification({
-	organizationId,
-	hasPassword,
-	socialProviders,
-	callbackUrl,
-	children,
-}: {
-	organizationId: string | null;
-	hasPassword: boolean;
-	socialProviders: SocialProviderId[];
-	callbackUrl?: string;
-	children?: ReactNode;
-}) {
+function useVerificationAttempt() {
 	const { t } = useTranslate();
 	const [message, setMessage] = useState<{
 		text: string;
@@ -133,10 +119,7 @@ export function MfaVerification({
 			setPending(false);
 		};
 	}, []);
-	const run = async (
-		work: () => Promise<undefined | (() => void)>,
-		recovery = false,
-	) => {
+	const run = async (work: () => Promise<undefined | (() => void)>, recovery = false) => {
 		if (running.current || !arrival.current) return false;
 		const requestArrival = arrival.current;
 		running.current = true;
@@ -169,6 +152,24 @@ export function MfaVerification({
 				setPending(false);
 			});
 	};
+	return { pending, message, setMessage, run, arrival };
+}
+
+export function MfaVerification({
+	organizationId,
+	hasPassword,
+	socialProviders,
+	callbackUrl,
+	children,
+}: {
+	organizationId: string | null;
+	hasPassword: boolean;
+	socialProviders: SocialProviderId[];
+	callbackUrl?: string;
+	children?: ReactNode;
+}) {
+	const { t } = useTranslate();
+	const { pending, message, setMessage, run, arrival } = useVerificationAttempt();
 	const continueToOrganization = () => {
 		if (!arrival.current) return;
 		const query = new URLSearchParams();
@@ -178,18 +179,12 @@ export function MfaVerification({
 	};
 	const verifyPassword = (password: string) =>
 		run(async () => {
-			const response = await fetch(
-				"/api/auth/organization-mfa/verify-password",
-				{
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({ password }),
-				},
-			);
-			if (!response.ok)
-				throw new Error(
-					t("mfa.password.failed", "Password verification failed"),
-				);
+			const response = await fetch("/api/auth/organization-mfa/verify-password", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ password }),
+			});
+			if (!response.ok) throw new Error(t("mfa.password.failed", "Password verification failed"));
 			return () =>
 				setMessage({
 					text: t(
@@ -220,10 +215,7 @@ export function MfaVerification({
 					name="code"
 					label={t("mfa.code.label", "Authenticator code")}
 					action={t("mfa.code.verify", "Verify authenticator")}
-					requiredMessage={t(
-						"mfa.code.required",
-						"Enter an authenticator code",
-					)}
+					requiredMessage={t("mfa.code.required", "Enter an authenticator code")}
 					pending={pending}
 					autoComplete="one-time-code"
 					inputMode="numeric"
@@ -253,111 +245,19 @@ export function MfaVerification({
 					<IconKey aria-hidden="true" className="size-4" />
 					{t("mfa.passkey.verify", "Verify with a passkey")}
 				</Button>
-				<details className="border-t pt-4">
-					<summary className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
-						{t("mfa.alternatives.title", "Verify an existing sign-in")}
-					</summary>
-					<div className="mt-4 space-y-4">
-						{hasPassword && (
-							<VerificationField
-								name="password"
-								label={t("mfa.password.label", "Current password")}
-								action={t("mfa.password.verify", "Verify password")}
-								requiredMessage={t(
-									"mfa.password.required",
-									"Enter your current password",
-								)}
-								pending={pending}
-								type="password"
-								autoComplete="current-password"
-								verify={verifyPassword}
-							/>
-						)}
-						<div className="flex flex-wrap gap-2">
-							{socialProviders.map((provider) => (
-								<Button
-									key={provider}
-									variant="outline"
-									disabled={pending}
-									className="h-auto min-h-9 max-w-full whitespace-normal"
-									onClick={() =>
-										void run(async () => {
-											const result = await authClient.signIn.social({
-												provider,
-												callbackURL: window.location.href,
-												disableRedirect: true,
-											});
-											if (result.error) throw new Error(result.error.message);
-											if (result.data?.url) {
-												const destination = new URL(
-													result.data.url,
-													window.location.href,
-												);
-												if (!["https:", "http:"].includes(destination.protocol))
-													throw new Error(
-														t("mfa.verification.failed", "Verification failed"),
-													);
-												return () => {
-													window.location.href = destination.href;
-												};
-											}
-										})
-									}
-								>
-									{t(
-										"mfa.social.verify",
-										"Verify existing sign-in with {provider}",
-										{ provider },
-									)}
-								</Button>
-							))}
-							{organizationId && (
-								<Button
-									variant="outline"
-									disabled={pending}
-									className="h-auto min-h-9 max-w-full whitespace-normal"
-									onClick={() =>
-										void run(async () => {
-											const failure = () =>
-												new Error(
-													t(
-														"mfa.sso.failed",
-														"Organization SSO could not be started",
-													),
-												);
-											const response = await fetch("/api/organizations/sso", {
-												method: "POST",
-												headers: { "content-type": "application/json" },
-												body: JSON.stringify({
-													organizationId,
-													callbackUrl:
-														window.location.pathname + window.location.search,
-												}),
-											});
-											if (!response.ok) throw failure();
-											const result = await response.json();
-											if (!result.url) throw failure();
-											return () => {
-												window.location.href = result.url;
-											};
-										})
-									}
-								>
-									{t("mfa.sso.verify", "Verify with organization SSO")}
-								</Button>
-							)}
-						</div>
-					</div>
-				</details>
+				<AlternativeSignInMethods
+					hasPassword={hasPassword}
+					socialProviders={socialProviders}
+					organizationId={organizationId}
+					pending={pending}
+					verifyPassword={verifyPassword}
+					run={run}
+				/>
 				{message && !message.recovery && (
 					<p
 						role={message.error ? "alert" : "status"}
 						aria-live="polite"
-						className={
-							message.error
-								? "text-sm text-destructive"
-								: "text-sm text-muted-foreground"
-						}
+						className={message.error ? "text-sm text-destructive" : "text-sm text-muted-foreground"}
 					>
 						{message.text}
 					</p>
@@ -372,10 +272,7 @@ export function MfaVerification({
 				</Button>
 			</section>
 			{children}
-			<section
-				className="space-y-4 border-t pt-6"
-				aria-labelledby="mfa-recovery-title"
-			>
+			<section className="space-y-4 border-t pt-6" aria-labelledby="mfa-recovery-title">
 				<h2 id="mfa-recovery-title" className="text-lg font-semibold">
 					{t("mfa.recovery.title", "Account recovery")}
 				</h2>
@@ -401,10 +298,7 @@ export function MfaVerification({
 								name="backupCode"
 								label={t("mfa.recovery.label", "Backup code")}
 								action={t("mfa.recovery.action", "Recover with backup code")}
-								requiredMessage={t(
-									"mfa.recovery.required",
-									"Enter an unused backup code",
-								)}
+								requiredMessage={t("mfa.recovery.required", "Enter an unused backup code")}
 								pending={pending}
 								autoComplete="off"
 								verify={(code) =>
@@ -432,11 +326,7 @@ export function MfaVerification({
 					<p
 						role={message.error ? "alert" : "status"}
 						aria-live="polite"
-						className={
-							message.error
-								? "text-sm text-destructive"
-								: "text-sm text-muted-foreground"
-						}
+						className={message.error ? "text-sm text-destructive" : "text-sm text-muted-foreground"}
 					>
 						{message.text}
 						{!message.error && (
@@ -452,5 +342,103 @@ export function MfaVerification({
 				)}
 			</section>
 		</>
+	);
+}
+
+function AlternativeSignInMethods({
+	hasPassword,
+	socialProviders,
+	organizationId,
+	pending,
+	verifyPassword,
+	run,
+}: {
+	hasPassword: boolean;
+	socialProviders: SocialProviderId[];
+	organizationId: string | null;
+	pending: boolean;
+	verifyPassword: (password: string) => Promise<boolean>;
+	run: ReturnType<typeof useVerificationAttempt>["run"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<details className="border-t pt-4">
+			<summary className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
+				{t("mfa.alternatives.title", "Verify an existing sign-in")}
+			</summary>
+			<div className="mt-4 space-y-4">
+				{hasPassword && (
+					<VerificationField
+						name="password"
+						label={t("mfa.password.label", "Current password")}
+						action={t("mfa.password.verify", "Verify password")}
+						requiredMessage={t("mfa.password.required", "Enter your current password")}
+						pending={pending}
+						type="password"
+						autoComplete="current-password"
+						verify={verifyPassword}
+					/>
+				)}
+				<div className="flex flex-wrap gap-2">
+					{socialProviders.map((provider) => (
+						<Button
+							key={provider}
+							variant="outline"
+							disabled={pending}
+							className="h-auto min-h-9 max-w-full whitespace-normal"
+							onClick={() =>
+								void run(async () => {
+									const result = await authClient.signIn.social({
+										provider,
+										callbackURL: window.location.href,
+										disableRedirect: true,
+									});
+									if (result.error) throw new Error(result.error.message);
+									if (result.data?.url) {
+										const destination = new URL(result.data.url, window.location.href);
+										if (!["https:", "http:"].includes(destination.protocol))
+											throw new Error(t("mfa.verification.failed", "Verification failed"));
+										return () => {
+											window.location.href = destination.href;
+										};
+									}
+								})
+							}
+						>
+							{t("mfa.social.verify", "Verify existing sign-in with {provider}", { provider })}
+						</Button>
+					))}
+					{organizationId && (
+						<Button
+							variant="outline"
+							disabled={pending}
+							className="h-auto min-h-9 max-w-full whitespace-normal"
+							onClick={() =>
+								void run(async () => {
+									const failure = () =>
+										new Error(t("mfa.sso.failed", "Organization SSO could not be started"));
+									const response = await fetch("/api/organizations/sso", {
+										method: "POST",
+										headers: { "content-type": "application/json" },
+										body: JSON.stringify({
+											organizationId,
+											callbackUrl: window.location.pathname + window.location.search,
+										}),
+									});
+									if (!response.ok) throw failure();
+									const result = await response.json();
+									if (!result.url) throw failure();
+									return () => {
+										window.location.href = result.url;
+									};
+								})
+							}
+						>
+							{t("mfa.sso.verify", "Verify with organization SSO")}
+						</Button>
+					)}
+				</div>
+			</div>
+		</details>
 	);
 }

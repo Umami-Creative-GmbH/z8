@@ -138,13 +138,7 @@ function FeatureToggleRow({
 	);
 }
 
-export function NotificationChannelSettings({
-	channelName,
-	description,
-	config,
-	updateAction,
-	connectAction,
-}: NotificationChannelSettingsProps) {
+function useNotificationChannelForm({ channelName, config, updateAction }: NotificationChannelSettingsProps) {
 	const { t } = useTranslate();
 	const isConfigured = Boolean(config);
 	const isActive = config?.setupStatus === "active";
@@ -152,7 +146,7 @@ export function NotificationChannelSettings({
 		? getSetupStatusLabel(config.setupStatus, t)
 		: t("settings.notifications.status.notConfigured", "Not configured");
 	const controlsDisabled = !isConfigured;
-	const { refresh } = useRouter();
+	const router = useRouter();
 
 	const updateMutation = useMutation({
 		mutationFn: (settings: NotificationChannelSettingsFormValues) => updateAction(settings),
@@ -163,7 +157,7 @@ export function NotificationChannelSettings({
 						channelName,
 					}),
 				);
-				refresh();
+				router.refresh();
 				return;
 			}
 
@@ -203,6 +197,33 @@ export function NotificationChannelSettings({
 	const isDirty = useStore(form.store, (state) => state.isDirty);
 	const isSubmitting = updateMutation.isPending;
 	const disableForm = controlsDisabled || isSubmitting;
+	return {
+		t,
+		isActive,
+		statusLabel,
+		form,
+		isDirty,
+		isSubmitting,
+		disableForm,
+	};
+}
+
+export function NotificationChannelSettings(props: NotificationChannelSettingsProps) {
+	const {
+		channelName,
+		description,
+		config,
+		connectAction,
+	} = props;
+	const {
+		t,
+		isActive,
+		statusLabel,
+		form,
+		isDirty,
+		isSubmitting,
+		disableForm,
+	} = useNotificationChannelForm(props);
 
 	return (
 		<div className="min-w-0 space-y-6">

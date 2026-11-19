@@ -1,29 +1,8 @@
 "use client";
 
-import { IconCalendar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { useDisplayContext } from "@/hooks/use-display-context";
-import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import {
-	dateToCalendarString,
-	formatDateRangeLabel,
-	getDateRangeForPreset,
-} from "@/lib/reports/date-ranges";
-import type { PeriodPreset, ReportDateRange } from "@/lib/reports/types";
-import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import { DateRangePicker } from "../date-range-picker";
+import type { ReportDateRange } from "@/lib/reports/types";
 
 interface VehicleReportPeriodPickerProps {
 	value: ReportDateRange;
@@ -32,135 +11,15 @@ interface VehicleReportPeriodPickerProps {
 
 export function VehicleReportPeriodPicker({ value, onChange }: VehicleReportPeriodPickerProps) {
 	const { t } = useTranslate();
-	const { locale } = useDisplayContext();
-	const { isHydrated, timezone } = useOrganizationSettings(
-		useShallow((state) => ({
-			isHydrated: state.isHydrated,
-			timezone: state.timezone,
-		})),
-	);
-	const loadingDescriptionId = useId();
-	const [preset, setPreset] = useState<PeriodPreset>("current_year");
-	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
-	const handlePresetChange = (newPreset: PeriodPreset) => {
-		if (!isHydrated) {
-			return;
-		}
-
-		setPreset(newPreset);
-
-		if (newPreset !== "custom") {
-			const range = getDateRangeForPreset(newPreset, { timezone });
-			onChange(range);
-			setIsCalendarOpen(false);
-		} else {
-			setIsCalendarOpen(true);
-		}
-	};
-
-	const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
-		if (range?.from && range?.to) {
-			onChange({
-				startDate: dateToCalendarString(range.from),
-				endDate: dateToCalendarString(range.to),
-			});
-		}
-	};
-
-	const currentYear = systemClock.nowInstant().toZonedDateTimeISO(timezone).year;
-	const { startDate, endDate } = value;
-	const start = parsePlainDate(startDate);
-	const end = parsePlainDate(endDate);
-
 	return (
-		<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-			{/* Preset Selector */}
-			<Select
-				value={preset}
-				onValueChange={(v) => handlePresetChange(v as PeriodPreset)}
-				disabled={!isHydrated}
-			>
-				<SelectTrigger
-					aria-describedby={!isHydrated ? loadingDescriptionId : undefined}
-					aria-label={t("reports.filter.period", "Period")}
-					className="w-full sm:w-[200px]"
-				>
-					<SelectValue placeholder={t("reports.filter.selectPeriod", "Select period")} />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="last_month">{t("reports.period.lastMonth", "Last Month")}</SelectItem>
-					<SelectItem value="current_month">
-						{t("reports.period.currentMonth", "Current Month")}
-					</SelectItem>
-					<SelectItem value="last_year">{t("reports.period.lastYear", "Last Year")}</SelectItem>
-					<SelectItem value="current_year">
-						{t("reports.period.currentYear", "Current Year")}
-					</SelectItem>
-					<SelectItem value="ytd">{t("reports.period.yearToDate", "Year to Date")}</SelectItem>
-					<SelectItem value="q1">Q1 {currentYear}</SelectItem>
-					<SelectItem value="q2">Q2 {currentYear}</SelectItem>
-					<SelectItem value="q3">Q3 {currentYear}</SelectItem>
-					<SelectItem value="q4">Q4 {currentYear}</SelectItem>
-					<SelectItem value="custom">{t("reports.period.customRange", "Custom Range")}</SelectItem>
-				</SelectContent>
-			</Select>
-			{!isHydrated && (
-				<p id={loadingDescriptionId} className="text-sm text-muted-foreground">
-					{t(
-						"reports.filter.loadingSettings",
-						"Loading organization settings before enabling presets.",
-					)}
-				</p>
+		<DateRangePicker
+			value={value}
+			onChange={onChange}
+			initialPreset="current_year"
+			loadingDescription={t(
+				"reports.filter.loadingSettings",
+				"Loading organization settings before enabling presets.",
 			)}
-
-			{/* Calendar picker for custom range */}
-			{preset === "custom" && (
-				<Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-					<PopoverTrigger asChild>
-						<Button
-							variant="field"
-							className="w-full justify-start text-left sm:w-[280px]"
-							data-placeholder={startDate ? undefined : ""}
-						>
-							<IconCalendar aria-hidden="true" className="mr-2 size-4" />
-							{startDate ? (
-								endDate ? (
-									<>
-										{formatPlainDate(start, locale, "dateMedium")} -{" "}
-										{formatPlainDate(end, locale, "dateMedium")}
-									</>
-								) : (
-									formatPlainDate(start, locale, "dateMedium")
-								)
-							) : (
-								<span>{t("reports.period.pickDateRange", "Pick a date range")}</span>
-							)}
-						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="w-auto p-0" align="start">
-						<Calendar
-							autoFocus
-							mode="range"
-							defaultMonth={new Date(start.year, start.month - 1, start.day)}
-							selected={{
-								from: new Date(start.year, start.month - 1, start.day),
-								to: new Date(end.year, end.month - 1, end.day),
-							}}
-							onSelect={handleDateSelect}
-							numberOfMonths={2}
-						/>
-					</PopoverContent>
-				</Popover>
-			)}
-
-			{/* Display current range for non-custom presets */}
-			{preset !== "custom" && (
-				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
-					<IconCalendar aria-hidden="true" className="mr-2 size-4" />
-					{formatDateRangeLabel(startDate, endDate, locale)}
-				</div>
-			)}
-		</div>
+		/>
 	);
 }

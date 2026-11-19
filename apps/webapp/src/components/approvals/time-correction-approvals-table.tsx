@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconLoader2,
-	IconRefresh,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -54,58 +49,17 @@ function workCategoryLabel(value: WorkCategoryReviewValue, t: Translate) {
 	if (value.state === "named") return value.name;
 	return value.state === "none"
 		? t("timeTracking.noCategory", "No category (100%)")
-		: t(
-				"approvals:approvals.workCategoryUnavailable",
-				"Unknown category (unavailable)",
-			);
+		: t("approvals:approvals.workCategoryUnavailable", "Unknown category (unavailable)");
 }
 
-export function TimeCorrectionApprovalsTable({
-	scope,
-}: {
-	scope?: { userId: string; organizationId: string };
-} = {}) {
-	const { t } = useTranslate();
-	const tolgee = useTolgee(["language"]);
-	const locale = tolgee.getLanguage() || "en";
-	const timeFormat = useTimeFormat();
-	const correctionQueryKey = queryKeys.approvals.timeCorrections({
-		...scope,
-		locale,
-		timeFormat,
-	});
+function useCorrectionDecisions(
+	correctionQueryKey: ReturnType<typeof queryKeys.approvals.timeCorrections>,
+	t: Translate,
+) {
 	const queryClient = useQueryClient();
-	const [search, setSearch] = useState("");
-	const [dialogOpen, setDialogOpen] = useState(false);
-	const [dialogAction, setDialogAction] = useState<"approve" | "reject">(
-		"approve",
-	);
-	const [selectedApproval, setSelectedApproval] =
-		useState<ApprovalWithTimeCorrection | null>(null);
-
-	// Fetch approvals with React Query
-	const {
-		data: approvals,
-		isLoading,
-		isFetching,
-		isError,
-		refetch,
-	} = useQuery({
-		queryKey: correctionQueryKey,
-		queryFn: async () => {
-			const result = await getPendingApprovals(locale, scope);
-			return result.timeCorrectionApprovals;
-		},
-	});
-
 	// Approve mutation with optimistic update
 	const approveMutation = useMutation({
-		mutationFn: ({
-			approvalRequestId,
-		}: {
-			approvalRequestId: string;
-			workPeriodId: string;
-		}) =>
+		mutationFn: ({ approvalRequestId }: { approvalRequestId: string; workPeriodId: string }) =>
 			dispatchApprovalDecision({
 				approvalId: approvalRequestId,
 				action: "approve",
@@ -113,37 +67,23 @@ export function TimeCorrectionApprovalsTable({
 		onMutate: async ({ workPeriodId }) => {
 			await queryClient.cancelQueries({ queryKey: correctionQueryKey });
 			const previousApprovals =
-				queryClient.getQueryData<ApprovalWithTimeCorrection[]>(
-					correctionQueryKey,
-				);
-			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(
-				correctionQueryKey,
-				(old) => old?.filter((a) => a.workPeriod.id !== workPeriodId),
+				queryClient.getQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey);
+			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey, (old) =>
+				old?.filter((a) => a.workPeriod.id !== workPeriodId),
 			);
 			return { previousApprovals };
 		},
 		onSuccess: (result, _variables, context) => {
 			if (result.success) {
-				toast.success(
-					t(
-						"approvals:approvals.timeCorrectionApproved",
-						"Time correction approved",
-					),
-				);
+				toast.success(t("approvals:approvals.timeCorrectionApproved", "Time correction approved"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 			} else {
 				if (context?.previousApprovals) {
-					queryClient.setQueryData(
-						correctionQueryKey,
-						context.previousApprovals,
-					);
+					queryClient.setQueryData(correctionQueryKey, context.previousApprovals);
 				}
 				toast.error(
 					result.error ||
-						t(
-							"approvals:approvals.approveFailed",
-							"Failed to approve time correction",
-						),
+						t("approvals:approvals.approveFailed", "Failed to approve time correction"),
 				);
 			}
 		},
@@ -151,12 +91,7 @@ export function TimeCorrectionApprovalsTable({
 			if (context?.previousApprovals) {
 				queryClient.setQueryData(correctionQueryKey, context.previousApprovals);
 			}
-			toast.error(
-				t(
-					"approvals:approvals.approveFailed",
-					"Failed to approve time correction",
-				),
-			);
+			toast.error(t("approvals:approvals.approveFailed", "Failed to approve time correction"));
 		},
 	});
 
@@ -178,37 +113,22 @@ export function TimeCorrectionApprovalsTable({
 		onMutate: async ({ workPeriodId }) => {
 			await queryClient.cancelQueries({ queryKey: correctionQueryKey });
 			const previousApprovals =
-				queryClient.getQueryData<ApprovalWithTimeCorrection[]>(
-					correctionQueryKey,
-				);
-			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(
-				correctionQueryKey,
-				(old) => old?.filter((a) => a.workPeriod.id !== workPeriodId),
+				queryClient.getQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey);
+			queryClient.setQueryData<ApprovalWithTimeCorrection[]>(correctionQueryKey, (old) =>
+				old?.filter((a) => a.workPeriod.id !== workPeriodId),
 			);
 			return { previousApprovals };
 		},
 		onSuccess: (result, _variables, context) => {
 			if (result.success) {
-				toast.success(
-					t(
-						"approvals:approvals.timeCorrectionRejected",
-						"Time correction rejected",
-					),
-				);
+				toast.success(t("approvals:approvals.timeCorrectionRejected", "Time correction rejected"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 			} else {
 				if (context?.previousApprovals) {
-					queryClient.setQueryData(
-						correctionQueryKey,
-						context.previousApprovals,
-					);
+					queryClient.setQueryData(correctionQueryKey, context.previousApprovals);
 				}
 				toast.error(
-					result.error ||
-						t(
-							"approvals:approvals.rejectFailed",
-							"Failed to reject time correction",
-						),
+					result.error || t("approvals:approvals.rejectFailed", "Failed to reject time correction"),
 				);
 			}
 		},
@@ -216,14 +136,48 @@ export function TimeCorrectionApprovalsTable({
 			if (context?.previousApprovals) {
 				queryClient.setQueryData(correctionQueryKey, context.previousApprovals);
 			}
-			toast.error(
-				t(
-					"approvals:approvals.rejectFailed",
-					"Failed to reject time correction",
-				),
-			);
+			toast.error(t("approvals:approvals.rejectFailed", "Failed to reject time correction"));
 		},
 	});
+
+	return { approveMutation, rejectMutation };
+}
+
+export function TimeCorrectionApprovalsTable({
+	scope,
+}: {
+	scope?: { userId: string; organizationId: string };
+} = {}) {
+	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
+	const timeFormat = useTimeFormat();
+	const correctionQueryKey = queryKeys.approvals.timeCorrections({
+		...scope,
+		locale,
+		timeFormat,
+	});
+	const [search, setSearch] = useState("");
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [dialogAction, setDialogAction] = useState<"approve" | "reject">("approve");
+	const [selectedApproval, setSelectedApproval] = useState<ApprovalWithTimeCorrection | null>(null);
+
+	// Fetch approvals with React Query
+	const {
+		data: approvals,
+		isLoading,
+		isFetching,
+		isError,
+		refetch,
+	} = useQuery({
+		queryKey: correctionQueryKey,
+		queryFn: async () => {
+			const result = await getPendingApprovals(locale, scope);
+			return result.timeCorrectionApprovals;
+		},
+	});
+
+	const { approveMutation, rejectMutation } = useCorrectionDecisions(correctionQueryKey, t);
 
 	const handleApprove = (approval: ApprovalWithTimeCorrection) => {
 		setSelectedApproval(approval);
@@ -248,10 +202,7 @@ export function TimeCorrectionApprovalsTable({
 			if (!result.success)
 				throw new Error(
 					result.error ||
-						t(
-							"approvals:approvals.approveFailed",
-							"Failed to approve time correction",
-						),
+						t("approvals:approvals.approveFailed", "Failed to approve time correction"),
 				);
 		} else {
 			const result = await rejectMutation.mutateAsync({
@@ -261,11 +212,7 @@ export function TimeCorrectionApprovalsTable({
 			});
 			if (!result.success)
 				throw new Error(
-					result.error ||
-						t(
-							"approvals:approvals.rejectFailed",
-							"Failed to reject time correction",
-						),
+					result.error || t("approvals:approvals.rejectFailed", "Failed to reject time correction"),
 				);
 		}
 	};
@@ -320,10 +267,7 @@ export function TimeCorrectionApprovalsTable({
 					)}
 				</p>
 				{isError ? (
-					<div
-						role="alert"
-						className="flex flex-wrap items-center gap-3 rounded-md border p-3"
-					>
+					<div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border p-3">
 						<p className="text-sm text-destructive">
 							{t("approvals:approvals.loadError", "Failed to load approvals")}
 						</p>
@@ -334,22 +278,14 @@ export function TimeCorrectionApprovalsTable({
 				) : null}
 				<DataTableToolbar
 					search={search}
-					searchLabel={t(
-						"approvals:approvals.searchCorrections",
-						"Search time corrections",
-					)}
+					searchLabel={t("approvals:approvals.searchCorrections", "Search time corrections")}
 					onSearchChange={setSearch}
 					searchPlaceholder={t(
 						"approvals:approvals.searchPlaceholder",
 						"Search by name or email...",
 					)}
 					actions={
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => refetch()}
-							disabled={isFetching}
-						>
+						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
 								<IconLoader2 className="size-4 animate-spin" />
 							) : (
@@ -368,10 +304,7 @@ export function TimeCorrectionApprovalsTable({
 					isFetching={isFetching}
 					emptyMessage={
 						search
-							? t(
-									"approvals:approvals.noSearchResults",
-									"No approvals match your search.",
-								)
+							? t("approvals:approvals.noSearchResults", "No approvals match your search.")
 							: t(
 									"approvals:approvals.noTimeCorrectionApprovals",
 									"No pending time correction requests to review.",
@@ -390,14 +323,8 @@ export function TimeCorrectionApprovalsTable({
 					action={dialogAction}
 					title={
 						dialogAction === "approve"
-							? t(
-									"approvals:approvals.approveTimeCorrectionTitle",
-									"Approve Time Correction",
-								)
-							: t(
-									"approvals:approvals.rejectTimeCorrectionTitle",
-									"Reject Time Correction",
-								)
+							? t("approvals:approvals.approveTimeCorrectionTitle", "Approve Time Correction")
+							: t("approvals:approvals.rejectTimeCorrectionTitle", "Reject Time Correction")
 					}
 					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingCorrection", "is requesting a time correction for")} ${formatCorrectionApprovalDate(selectedApproval.workPeriod.startTime, selectedApproval.displayContext!)}.`}
 					onConfirm={handleConfirm}
@@ -435,12 +362,8 @@ function buildTimeCorrectionColumns({
 						clockStatus="unknown"
 					/>
 					<div className="min-w-0 break-words">
-						<div className="font-medium">
-							{row.original.requester.user.name}
-						</div>
-						<div className="text-xs text-muted-foreground">
-							{row.original.requester.user.email}
-						</div>
+						<div className="font-medium">{row.original.requester.user.name}</div>
+						<div className="text-xs text-muted-foreground">{row.original.requester.user.email}</div>
 					</div>
 				</div>
 			),
@@ -492,8 +415,7 @@ function buildTimeCorrectionColumns({
 								{
 									label: t("approvals:approvals.workLocation", "Work location"),
 									value: workLocationLabel(
-										row.original.workPeriod.metadataChanges.workLocation
-											.original,
+										row.original.workPeriod.metadataChanges.workLocation.original,
 										t,
 									),
 								},
@@ -504,8 +426,7 @@ function buildTimeCorrectionColumns({
 								{
 									label: t("approvals:approvals.workCategory", "Work category"),
 									value: workCategoryLabel(
-										row.original.workPeriod.metadataChanges.workCategory
-											.original,
+										row.original.workPeriod.metadataChanges.workCategory.original,
 										t,
 									),
 								},
@@ -530,9 +451,7 @@ function buildTimeCorrectionColumns({
 							<div key={value.label} className="grid gap-0.5">
 								<dt className="text-xs text-muted-foreground">{value.label}</dt>
 								<dd>
-									<span className="sr-only">
-										{t("approvals:approvals.original", "Original")}:{" "}
-									</span>
+									<span className="sr-only">{t("approvals:approvals.original", "Original")}: </span>
 									<span className="font-mono">{value.value}</span>
 								</dd>
 							</div>
@@ -552,8 +471,7 @@ function buildTimeCorrectionColumns({
 									label: t("approvals:approvals.clockIn", "Clock in"),
 									value: formatCorrectionAuditEndpoint(
 										row.original.workPeriod.clockInCorrectionEntry.timestamp,
-										row.original.workPeriod.clockInCorrectionEntry
-											.utcOffsetMinutes,
+										row.original.workPeriod.clockInCorrectionEntry.utcOffsetMinutes,
 										row.original.displayContext!,
 									),
 								},
@@ -565,8 +483,7 @@ function buildTimeCorrectionColumns({
 									label: t("approvals:approvals.clockOut", "Clock out"),
 									value: formatCorrectionAuditEndpoint(
 										row.original.workPeriod.clockOutCorrectionEntry.timestamp,
-										row.original.workPeriod.clockOutCorrectionEntry
-											.utcOffsetMinutes,
+										row.original.workPeriod.clockOutCorrectionEntry.utcOffsetMinutes,
 										row.original.displayContext!,
 									),
 								},
@@ -577,8 +494,7 @@ function buildTimeCorrectionColumns({
 								{
 									label: t("approvals:approvals.workLocation", "Work location"),
 									value: workLocationLabel(
-										row.original.workPeriod.metadataChanges.workLocation
-											.requested,
+										row.original.workPeriod.metadataChanges.workLocation.requested,
 										t,
 									),
 								},
@@ -589,8 +505,7 @@ function buildTimeCorrectionColumns({
 								{
 									label: t("approvals:approvals.workCategory", "Work category"),
 									value: workCategoryLabel(
-										row.original.workPeriod.metadataChanges.workCategory
-											.requested,
+										row.original.workPeriod.metadataChanges.workCategory.requested,
 										t,
 									),
 								},
@@ -602,8 +517,7 @@ function buildTimeCorrectionColumns({
 									label: t("approvals:approvals.vehicleUse", "Vehicle use"),
 									value: vehicleUseText(
 										t,
-										row.original.workPeriod.metadataChanges.vehicleUse
-											.requested,
+										row.original.workPeriod.metadataChanges.vehicleUse.requested,
 										locale,
 									),
 								},
@@ -620,16 +534,12 @@ function buildTimeCorrectionColumns({
 							<dl className="grid gap-2 text-sm">
 								{values.map((value) => (
 									<div key={value.label} className="grid gap-0.5">
-										<dt className="text-xs text-muted-foreground">
-											{value.label}
-										</dt>
+										<dt className="text-xs text-muted-foreground">{value.label}</dt>
 										<dd>
 											<span className="sr-only">
 												{t("approvals:approvals.requested", "Requested")}:{" "}
 											</span>
-											<span className="font-mono font-medium text-foreground">
-												{value.value}
-											</span>
+											<span className="font-mono font-medium text-foreground">{value.value}</span>
 										</dd>
 									</div>
 								))}

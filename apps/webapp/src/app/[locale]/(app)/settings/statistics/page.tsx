@@ -13,11 +13,8 @@ import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timez
 import { getTranslate } from "@/tolgee/server";
 import type { ManagerStatisticsReadView, OrganizationStats } from "./actions";
 import { getManagerStatisticsReadView, getOrganizationStats } from "./actions";
-import {
-	formatSignedCount,
-	formatStatisticsFetchedAt,
-	StatisticsSection,
-} from "./statistics-summary";
+import { formatSignedCount, formatStatisticsFetchedAt } from "./statistics-format";
+import { StatisticsSection } from "./statistics-summary";
 
 async function StatisticsContent() {
 	const [settingsRouteContext, t, locale] = await Promise.all([

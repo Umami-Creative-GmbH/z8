@@ -201,244 +201,102 @@ export function SkillCatalogManagement({
 	return (
 		<div className="page-frame">
 			<div className="page-measure space-y-6">
-			<PageHeader
-				title={t("settings.skills.title", "Skills & Qualifications")}
-				description={t(
-					"settings.skills.description",
-					"Manage skills and certifications that can be assigned to employees",
-				)}
-				actions={
-					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => refetch()}
-							disabled={isFetching}
-							aria-label={t("settings.skills.refresh", "Refresh skill catalog")}
-						>
-							<IconRefresh
-								className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
-								aria-hidden="true"
-							/>
-						</Button>
-						{canManageCatalog ? (
-							<Button onClick={handleCreate}>
-								<IconPlus className="mr-2 size-4" aria-hidden="true" />
-								{t("settings.skills.addSkill", "Add Skill")}
+				<PageHeader
+					title={t("settings.skills.title", "Skills & Qualifications")}
+					description={t(
+						"settings.skills.description",
+						"Manage skills and certifications that can be assigned to employees",
+					)}
+					actions={
+						<>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => refetch()}
+								disabled={isFetching}
+								aria-label={t("settings.skills.refresh", "Refresh skill catalog")}
+							>
+								<IconRefresh
+									className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
+									aria-hidden="true"
+								/>
 							</Button>
-						) : null}
-					</>
-				}
-			/>
-
-			{/* Content */}
-			<Card>
-				<CardHeader>
-					<CardTitle>{t("settings.skills.catalog", "Skill Catalog")}</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.skills.catalogDescription",
-							"Define skills that can be required for subareas and shift templates",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{isLoading ? (
-						<div
-							className="flex items-center justify-center py-8"
-							role="status"
-							aria-label={t("common.loadingRegions.skillSettings", "Loading skill settings")}
-						>
-							<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-						</div>
-					) : isError ? (
-						<div
-							role="alert"
-							className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
-						>
-							<p className="text-sm">
-								{error?.message ||
-									t("settings.skills.loadFailed", "The skill catalog could not be loaded.")}
-							</p>
-							<Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
-								{t("common.retry", "Try again")}
-							</Button>
-						</div>
-					) : skills.length === 0 ? (
-						<div className="flex flex-col items-start gap-3 py-6 text-muted-foreground sm:items-center sm:text-center">
-							<IconAward className="size-8 opacity-50" aria-hidden="true" />
-							<div className="space-y-1">
-								<p className="font-medium text-foreground">
-									{t("settings.skills.noSkills", "No skills defined yet")}
-								</p>
-								{canManageCatalog ? (
-									<p className="text-sm">
-										{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
-									</p>
-								) : null}
-							</div>
 							{canManageCatalog ? (
-								<Button variant="outline" onClick={handleCreate}>
+								<Button onClick={handleCreate}>
 									<IconPlus className="mr-2 size-4" aria-hidden="true" />
 									{t("settings.skills.addSkill", "Add Skill")}
 								</Button>
 							) : null}
-						</div>
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead className="w-[50px]">
-										{t("settings.skills.category", "Category")}
-									</TableHead>
-									<TableHead>{t("settings.skills.name", "Name")}</TableHead>
-									<TableHead>{t("settings.skills.expiry", "Expiry Tracking")}</TableHead>
-									<TableHead className="w-[100px] text-right">
-										{t("common.actions", "Actions")}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{skills.map((skill) => {
-									const CategoryIcon = getCategoryIcon(skill.category as SkillCategory);
-									const categoryLabel =
-										skill.category === "custom" && skill.customCategoryName
-											? skill.customCategoryName
-											: getCategoryLabel(skill.category as SkillCategory, t);
-									return (
-										<TableRow key={skill.id}>
-											<TableCell>
-												<TooltipProvider>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<div className="flex items-center justify-center">
-																<CategoryIcon
-																	className="size-5 text-muted-foreground"
-																	aria-hidden="true"
-																/>
-																<span className="sr-only">{categoryLabel}</span>
-															</div>
-														</TooltipTrigger>
-														<TooltipContent>{categoryLabel}</TooltipContent>
-													</Tooltip>
-												</TooltipProvider>
-											</TableCell>
-											<TableCell className="max-w-xs">
-												<div className="flex min-w-0 flex-col">
-													<span className="truncate font-medium" title={skill.name}>
-														{skill.name}
-													</span>
-													{skill.description && (
-														<span
-															className="text-xs text-muted-foreground line-clamp-1"
-															title={skill.description}
-														>
-															{skill.description}
-														</span>
-													)}
-												</div>
-											</TableCell>
-											<TableCell>
-												{skill.requiresExpiry ? (
-													<Badge variant="secondary">
-														{t("settings.skills.expiryRequired", "Required")}
-													</Badge>
-												) : (
-													<span className="text-muted-foreground text-sm">
-														{t("settings.skills.noExpiry", "No")}
-													</span>
-												)}
-											</TableCell>
-											<TableCell className="text-right">
-												<div className="flex items-center justify-end gap-1">
-													{canManageCatalog ? (
-														<>
-															<TooltipProvider>
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			className="size-8"
-																			onClick={() => handleEdit(skill)}
-																			aria-label={`${t("common.edit", "Edit")}: ${skill.name}`}
-																		>
-																			<IconEdit className="size-4" aria-hidden="true" />
-																		</Button>
-																	</TooltipTrigger>
-																	<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
-																</Tooltip>
-															</TooltipProvider>
-															<TooltipProvider>
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			className="size-8"
-																			onClick={() => handleDelete(skill)}
-																			aria-label={`${t("common.delete", "Delete")}: ${skill.name}`}
-																			disabled={deleteMutation.isPending}
-																		>
-																			<IconTrash className="size-4" aria-hidden="true" />
-																		</Button>
-																	</TooltipTrigger>
-																	<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
-																</Tooltip>
-															</TooltipProvider>
-														</>
-													) : null}
-												</div>
-											</TableCell>
-										</TableRow>
-									);
-								})}
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
-			</Card>
-
-			{canManageCatalog && reminderLeadDays !== undefined ? (
-				<SkillReminderSettingsCard leadDays={reminderLeadDays} />
-			) : null}
-
-			{/* Create/Edit ActionPanel */}
-			{canManageCatalog ? (
-				<SkillDialog
-					organizationId={organizationId}
-					skill={editingSkill}
-					open={dialogOpen}
-					onOpenChange={setDialogOpen}
-					onSuccess={handleSuccess}
-				/>
-			) : null}
-
-			{canManageCatalog ? (
-				<DeleteConfirmDialog
-					open={deleteTarget !== null}
-					onOpenChange={(open) => {
-						if (!open) setDeleteTarget(null);
-					}}
-					title={t("settings.skills.deleteDialog.title", "Delete skill?")}
-					description={t(
-						"settings.skills.deleteDialog.description",
-						'"{name}" will be removed from the skill catalog.',
-						{ name: deleteTarget?.name ?? "" },
-					)}
-					confirmLabel={t("settings.skills.deleteDialog.confirm", "Delete skill")}
-					isDeleting={deleteMutation.isPending}
-					error={
-						deleteMutation.isError
-							? deleteMutation.error.message ||
-								t("settings.skills.deleteError", "Failed to delete skill")
-							: null
+						</>
 					}
-					onConfirm={() => {
-						if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(deleteTarget.id);
-					}}
 				/>
-			) : null}
+
+				{/* Content */}
+				<Card>
+					<CardHeader>
+						<CardTitle>{t("settings.skills.catalog", "Skill Catalog")}</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.skills.catalogDescription",
+								"Define skills that can be required for subareas and shift templates",
+							)}
+						</CardDescription>
+					</CardHeader>
+					<SkillCatalogResults
+						isLoading={isLoading}
+						isError={isError}
+						error={error}
+						isFetching={isFetching}
+						refetch={refetch}
+						skills={skills}
+						canManageCatalog={canManageCatalog}
+						handleCreate={handleCreate}
+						handleEdit={handleEdit}
+						handleDelete={handleDelete}
+						deleting={deleteMutation.isPending}
+					/>
+				</Card>
+
+				{canManageCatalog && reminderLeadDays !== undefined ? (
+					<SkillReminderSettingsCard leadDays={reminderLeadDays} />
+				) : null}
+
+				{/* Create/Edit ActionPanel */}
+				{canManageCatalog ? (
+					<SkillDialog
+						organizationId={organizationId}
+						skill={editingSkill}
+						open={dialogOpen}
+						onOpenChange={setDialogOpen}
+						onSuccess={handleSuccess}
+					/>
+				) : null}
+
+				{canManageCatalog ? (
+					<DeleteConfirmDialog
+						open={deleteTarget !== null}
+						onOpenChange={(open) => {
+							if (!open) setDeleteTarget(null);
+						}}
+						title={t("settings.skills.deleteDialog.title", "Delete skill?")}
+						description={t(
+							"settings.skills.deleteDialog.description",
+							'"{name}" will be removed from the skill catalog.',
+							{ name: deleteTarget?.name ?? "" },
+						)}
+						confirmLabel={t("settings.skills.deleteDialog.confirm", "Delete skill")}
+						isDeleting={deleteMutation.isPending}
+						error={
+							deleteMutation.isError
+								? deleteMutation.error.message ||
+									t("settings.skills.deleteError", "Failed to delete skill")
+								: null
+						}
+						onConfirm={() => {
+							if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(deleteTarget.id);
+						}}
+					/>
+				) : null}
 			</div>
 		</div>
 	);
@@ -751,5 +609,208 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function SkillCatalogTable({
+	skills,
+	canManageCatalog,
+	handleEdit,
+	handleDelete,
+	deleting,
+}: {
+	skills: SkillWithRelations[];
+	canManageCatalog: boolean;
+	handleEdit: (skill: SkillWithRelations) => void;
+	handleDelete: (skill: SkillWithRelations) => void;
+	deleting: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead className="w-[50px]">{t("settings.skills.category", "Category")}</TableHead>
+					<TableHead>{t("settings.skills.name", "Name")}</TableHead>
+					<TableHead>{t("settings.skills.expiry", "Expiry Tracking")}</TableHead>
+					<TableHead className="w-[100px] text-right">{t("common.actions", "Actions")}</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{skills.map((skill) => {
+					const CategoryIcon = getCategoryIcon(skill.category as SkillCategory);
+					const categoryLabel =
+						skill.category === "custom" && skill.customCategoryName
+							? skill.customCategoryName
+							: getCategoryLabel(skill.category as SkillCategory, t);
+					return (
+						<TableRow key={skill.id}>
+							<TableCell>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="flex items-center justify-center">
+												<CategoryIcon className="size-5 text-muted-foreground" aria-hidden="true" />
+												<span className="sr-only">{categoryLabel}</span>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>{categoryLabel}</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</TableCell>
+							<TableCell className="max-w-xs">
+								<div className="flex min-w-0 flex-col">
+									<span className="truncate font-medium" title={skill.name}>
+										{skill.name}
+									</span>
+									{skill.description && (
+										<span
+											className="text-xs text-muted-foreground line-clamp-1"
+											title={skill.description}
+										>
+											{skill.description}
+										</span>
+									)}
+								</div>
+							</TableCell>
+							<TableCell>
+								{skill.requiresExpiry ? (
+									<Badge variant="secondary">
+										{t("settings.skills.expiryRequired", "Required")}
+									</Badge>
+								) : (
+									<span className="text-muted-foreground text-sm">
+										{t("settings.skills.noExpiry", "No")}
+									</span>
+								)}
+							</TableCell>
+							<TableCell className="text-right">
+								<div className="flex items-center justify-end gap-1">
+									{canManageCatalog ? (
+										<>
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8"
+															onClick={() => handleEdit(skill)}
+															aria-label={`${t("common.edit", "Edit")}: ${skill.name}`}
+														>
+															<IconEdit className="size-4" aria-hidden="true" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="size-8"
+															onClick={() => handleDelete(skill)}
+															aria-label={`${t("common.delete", "Delete")}: ${skill.name}`}
+															disabled={deleting}
+														>
+															<IconTrash className="size-4" aria-hidden="true" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+										</>
+									) : null}
+								</div>
+							</TableCell>
+						</TableRow>
+					);
+				})}
+			</TableBody>
+		</Table>
+	);
+}
+
+function SkillCatalogResults({
+	isLoading,
+	isError,
+	error,
+	isFetching,
+	refetch,
+	skills,
+	canManageCatalog,
+	handleCreate,
+	handleEdit,
+	handleDelete,
+	deleting,
+}: {
+	isLoading: boolean;
+	isError: boolean;
+	error: Error | null;
+	isFetching: boolean;
+	refetch: () => void;
+	skills: SkillWithRelations[];
+	canManageCatalog: boolean;
+	handleCreate: () => void;
+	handleEdit: (skill: SkillWithRelations) => void;
+	handleDelete: (skill: SkillWithRelations) => void;
+	deleting: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<CardContent>
+			{isLoading ? (
+				<div
+					className="flex items-center justify-center py-8"
+					role="status"
+					aria-label={t("common.loadingRegions.skillSettings", "Loading skill settings")}
+				>
+					<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+				</div>
+			) : isError ? (
+				<div
+					role="alert"
+					className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+				>
+					<p className="text-sm">
+						{error?.message ||
+							t("settings.skills.loadFailed", "The skill catalog could not be loaded.")}
+					</p>
+					<Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+						{t("common.retry", "Try again")}
+					</Button>
+				</div>
+			) : skills.length === 0 ? (
+				<div className="flex flex-col items-start gap-3 py-6 text-muted-foreground sm:items-center sm:text-center">
+					<IconAward className="size-8 opacity-50" aria-hidden="true" />
+					<div className="space-y-1">
+						<p className="font-medium text-foreground">
+							{t("settings.skills.noSkills", "No skills defined yet")}
+						</p>
+						{canManageCatalog ? (
+							<p className="text-sm">
+								{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
+							</p>
+						) : null}
+					</div>
+					{canManageCatalog ? (
+						<Button variant="outline" onClick={handleCreate}>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t("settings.skills.addSkill", "Add Skill")}
+						</Button>
+					) : null}
+				</div>
+			) : (
+				<SkillCatalogTable
+					skills={skills}
+					canManageCatalog={canManageCatalog}
+					handleEdit={handleEdit}
+					handleDelete={handleDelete}
+					deleting={deleting}
+				/>
+			)}
+		</CardContent>
 	);
 }

@@ -52,11 +52,7 @@ interface WorksCouncilSettingsFormProps {
 	) => Promise<{ success: boolean; error?: string; code?: string; refusal?: string }>;
 }
 
-export function WorksCouncilSettingsForm({
-	initialSettings,
-	scopeOptions = EMPTY_SCOPE_OPTIONS,
-	onSave,
-}: WorksCouncilSettingsFormProps) {
+function useWorksCouncilForm({ initialSettings, onSave }: WorksCouncilSettingsFormProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
 
@@ -109,6 +105,27 @@ export function WorksCouncilSettingsForm({
 	);
 	const removeLabel = (name: string) =>
 		t("settings.worksCouncil.removeScopeItem", "Remove {name}", { name });
+	return {
+		t,
+		loading,
+		form,
+		controlsDisabled,
+		thresholdInvalid,
+		removeLabel,
+	};
+}
+
+export function WorksCouncilSettingsForm(props: WorksCouncilSettingsFormProps) {
+	const { scopeOptions = EMPTY_SCOPE_OPTIONS } = props;
+	const {
+		t,
+		loading,
+		form,
+		controlsDisabled,
+		thresholdInvalid,
+		removeLabel,
+	} =
+		useWorksCouncilForm(props);
 
 	return (
 		<form
@@ -310,92 +327,12 @@ export function WorksCouncilSettingsForm({
 						}}
 					</form.Field>
 
-					<div className="grid gap-4 md:grid-cols-2">
-						<form.Field name="visibleTeamIds">
-							{(field) => (
-								<ScopePicker
-									id="works-council-visible-teams"
-									label={t("settings.worksCouncil.visibleTeams", "Visible teams")}
-									description={t(
-										"settings.worksCouncil.visibleTeamsDescription",
-										"Leave empty to include all teams.",
-									)}
-									selectedListLabel={t(
-										"settings.worksCouncil.selectedTeams",
-										"Selected teams",
-									)}
-									addPlaceholder={t("settings.worksCouncil.addTeam", "Add a team")}
-									searchPlaceholder={t(
-										"settings.worksCouncil.searchTeams",
-										"Search teams",
-									)}
-									emptyText={t("settings.worksCouncil.noTeamFound", "No team found")}
-									noOptionsText={t(
-										"settings.worksCouncil.noTeamsAvailable",
-										"No more teams to add",
-									)}
-									unknownLabel={(shortId) =>
-										t("settings.worksCouncil.unknownTeam", "Unknown team ({shortId})", {
-											shortId,
-										})
-									}
-									removeLabel={removeLabel}
-									options={scopeOptions.teams}
-									selectedIds={field.state.value}
-									onChange={field.handleChange}
-									disabled={controlsDisabled}
-								/>
-							)}
-						</form.Field>
-
-						<form.Field name="visibleLocationIds">
-							{(field) => (
-								<ScopePicker
-									id="works-council-visible-locations"
-									label={t(
-										"settings.worksCouncil.visibleLocations",
-										"Visible locations",
-									)}
-									description={t(
-										"settings.worksCouncil.visibleLocationsDescription",
-										"Leave empty to include all locations.",
-									)}
-									selectedListLabel={t(
-										"settings.worksCouncil.selectedLocations",
-										"Selected locations",
-									)}
-									addPlaceholder={t(
-										"settings.worksCouncil.addLocation",
-										"Add a location",
-									)}
-									searchPlaceholder={t(
-										"settings.worksCouncil.searchLocations",
-										"Search locations",
-									)}
-									emptyText={t(
-										"settings.worksCouncil.noLocationFound",
-										"No location found",
-									)}
-									noOptionsText={t(
-										"settings.worksCouncil.noLocationsAvailable",
-										"No more locations to add",
-									)}
-									unknownLabel={(shortId) =>
-										t(
-											"settings.worksCouncil.unknownLocation",
-											"Unknown location ({shortId})",
-											{ shortId },
-										)
-									}
-									removeLabel={removeLabel}
-									options={scopeOptions.locations}
-									selectedIds={field.state.value}
-									onChange={field.handleChange}
-									disabled={controlsDisabled}
-								/>
-							)}
-						</form.Field>
-					</div>
+					<WorksCouncilScopeFields
+						form={form}
+						scopeOptions={scopeOptions}
+						controlsDisabled={controlsDisabled}
+						removeLabel={removeLabel}
+					/>
 
 					<Button type="submit" disabled={loading}>
 						{loading && (
@@ -547,6 +484,82 @@ function ScopePicker({
 					})}
 				</ul>
 			) : null}
+		</div>
+	);
+}
+
+function WorksCouncilScopeFields({
+	form,
+	scopeOptions,
+	controlsDisabled,
+	removeLabel,
+}: {
+	form: ReturnType<typeof useWorksCouncilForm>["form"];
+	scopeOptions: WorksCouncilScopeOptions;
+	controlsDisabled: boolean;
+	removeLabel: ReturnType<typeof useWorksCouncilForm>["removeLabel"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="grid gap-4 md:grid-cols-2">
+			<form.Field name="visibleTeamIds">
+				{(field) => (
+					<ScopePicker
+						id="works-council-visible-teams"
+						label={t("settings.worksCouncil.visibleTeams", "Visible teams")}
+						description={t(
+							"settings.worksCouncil.visibleTeamsDescription",
+							"Leave empty to include all teams.",
+						)}
+						selectedListLabel={t("settings.worksCouncil.selectedTeams", "Selected teams")}
+						addPlaceholder={t("settings.worksCouncil.addTeam", "Add a team")}
+						searchPlaceholder={t("settings.worksCouncil.searchTeams", "Search teams")}
+						emptyText={t("settings.worksCouncil.noTeamFound", "No team found")}
+						noOptionsText={t("settings.worksCouncil.noTeamsAvailable", "No more teams to add")}
+						unknownLabel={(shortId) =>
+							t("settings.worksCouncil.unknownTeam", "Unknown team ({shortId})", {
+								shortId,
+							})
+						}
+						removeLabel={removeLabel}
+						options={scopeOptions.teams}
+						selectedIds={field.state.value}
+						onChange={field.handleChange}
+						disabled={controlsDisabled}
+					/>
+				)}
+			</form.Field>
+
+			<form.Field name="visibleLocationIds">
+				{(field) => (
+					<ScopePicker
+						id="works-council-visible-locations"
+						label={t("settings.worksCouncil.visibleLocations", "Visible locations")}
+						description={t(
+							"settings.worksCouncil.visibleLocationsDescription",
+							"Leave empty to include all locations.",
+						)}
+						selectedListLabel={t("settings.worksCouncil.selectedLocations", "Selected locations")}
+						addPlaceholder={t("settings.worksCouncil.addLocation", "Add a location")}
+						searchPlaceholder={t("settings.worksCouncil.searchLocations", "Search locations")}
+						emptyText={t("settings.worksCouncil.noLocationFound", "No location found")}
+						noOptionsText={t(
+							"settings.worksCouncil.noLocationsAvailable",
+							"No more locations to add",
+						)}
+						unknownLabel={(shortId) =>
+							t("settings.worksCouncil.unknownLocation", "Unknown location ({shortId})", {
+								shortId,
+							})
+						}
+						removeLabel={removeLabel}
+						options={scopeOptions.locations}
+						selectedIds={field.state.value}
+						onChange={field.handleChange}
+						disabled={controlsDisabled}
+					/>
+				)}
+			</form.Field>
 		</div>
 	);
 }

@@ -18,7 +18,7 @@ interface DeliveryLogRowProps {
 }
 
 /** Delivery time in the organization's zone; `createdAt` is a UTC instant from the database boundary. */
-export function formatDeliveryTime(createdAt: Date, timeZone: string, locale: string) {
+function formatDeliveryTime(createdAt: Date, timeZone: string, locale: string) {
 	return Temporal.Instant.fromEpochMilliseconds(createdAt.getTime()).toLocaleString(locale, {
 		timeZone,
 		month: "short",

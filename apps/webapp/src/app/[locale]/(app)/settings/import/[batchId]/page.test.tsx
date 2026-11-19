@@ -163,7 +163,7 @@ describe("ImportReviewRoute", () => {
 	});
 
 	it("authorizes before a tenant-scoped lookup and scopes review queries", async () => {
-		const reviewPage = await renderRequestContent("batch-1");
+		await renderRequestContent("batch-1");
 
 		expect(mockState.callOrder).toEqual(["authorize", "query"]);
 		expect(mockState.findBatch).toHaveBeenCalledWith({
@@ -243,7 +243,7 @@ describe("ImportReviewRoute", () => {
 			},
 		]);
 
-		const reviewPage = await renderRequestContent("batch-1");
+		await renderRequestContent("batch-1");
 
 		expect(mockState.listImportReviewRows).toHaveBeenCalledWith(
 			expect.objectContaining({ limit: 100, offset: 0 }),
@@ -296,7 +296,7 @@ describe("ImportReviewRoute", () => {
 			mockState.listImportReviewRows.mockResolvedValue([]);
 			mockState.listCustomerAccounting.mockResolvedValue([]);
 
-			const reviewPage = await renderRequestContent("batch-1", { page });
+			await renderRequestContent("batch-1", { page });
 
 			expect(mockState.listImportReviewRows).toHaveBeenCalledWith({
 				batchId: "batch-1",
@@ -332,7 +332,7 @@ describe("ImportReviewRoute", () => {
 			{ id: "row-3", entityType: "team", normalizedPayload: {} },
 		]);
 
-		const reviewPage = await renderRequestContent("batch-1");
+		await renderRequestContent("batch-1");
 
 		const props = mockState.renderReviewPage.mock.lastCall?.[0];
 		expect(props.showBillability).toBe(true);

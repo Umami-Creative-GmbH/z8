@@ -3,6 +3,7 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
+import { isMarkedFormer } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
@@ -66,11 +67,11 @@ export function EmployeeFileWorkspace({
 				}
 				description={
 					<div className="flex flex-wrap items-center gap-2">
-						{employee.isActive ? null : (
+						{isMarkedFormer(employee) ? (
 							<Badge variant="secondary">
 								{t("settings.personnelFiles.area.former", "Former employee")}
 							</Badge>
-						)}
+						) : null}
 						{employee.employeeNumber ? (
 							<span>
 								{t("settings.personnelFiles.employeeFile.number", "Personnel number: {number}", {

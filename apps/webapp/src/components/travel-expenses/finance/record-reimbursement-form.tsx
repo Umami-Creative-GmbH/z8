@@ -21,6 +21,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -282,11 +283,10 @@ export function RecordReimbursementForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
+			stopPropagation
+			onSubmit={() => {
 				const submission = command.reserve();
 				if (!submission) return;
 				void form
@@ -437,6 +437,6 @@ export function RecordReimbursementForm({
 					</Button>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }

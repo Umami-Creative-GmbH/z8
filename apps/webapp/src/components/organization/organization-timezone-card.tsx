@@ -13,6 +13,7 @@ import {
 	meetsSettingsAccess,
 	type SettingsAccess,
 } from "@/lib/organization-action/settings-access-level";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
@@ -46,12 +47,10 @@ export function OrganizationTimezoneCard({
 
 		// Lock the picker until the save settles so a second pick cannot race the first.
 		setIsSaving(true);
-		let result: Awaited<ReturnType<typeof updateOrganizationTimezone>>;
-		try {
-			result = await updateOrganizationTimezone(newTimezone);
-		} finally {
-			setIsSaving(false);
-		}
+		const result = await runWithCleanup(
+			() => updateOrganizationTimezone(newTimezone),
+			() => setIsSaving(false),
+		);
 
 		if (result.success) {
 			// The save is committed; balances follow once they are rebuilt.

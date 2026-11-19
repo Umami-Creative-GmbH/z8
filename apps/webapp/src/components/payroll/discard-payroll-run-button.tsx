@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
 	ConfirmActionDialog,
-	describeFailure,
 	useConfirmedAction,
 } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { DiscardPayrollRunResult } from "@/lib/travel-expenses/payroll-run";

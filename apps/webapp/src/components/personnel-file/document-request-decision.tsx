@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -221,13 +222,14 @@ function ReturnDocumentRequestDialog({
 			}}
 		>
 			<AlertDialogContent>
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+				<ClientForm
+					stopPropagation
+					onSubmit={() => {
 						const submission = confirmation.reserve();
 						if (!submission) return;
-						void form.handleSubmit({ submission }).finally(() => confirmation.release(submission));
+						void form
+							.handleSubmit({ submission })
+							.finally(() => confirmation.release(submission));
 					}}
 					className="grid gap-4"
 				>
@@ -287,7 +289,7 @@ function ReturnDocumentRequestDialog({
 							)}
 						</form.Subscribe>
 					</AlertDialogFooter>
-				</form>
+				</ClientForm>
 			</AlertDialogContent>
 		</AlertDialog>
 	);

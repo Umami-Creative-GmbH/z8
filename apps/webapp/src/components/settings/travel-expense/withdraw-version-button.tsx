@@ -4,9 +4,9 @@ import { type QueryKey, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
 	ConfirmActionDialog,
-	describeFailure,
 	useConfirmedAction,
 } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 
 /** The wording of one policy's withdraw confirmation, translated by its card. */

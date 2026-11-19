@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
@@ -107,10 +108,9 @@ function DeleteDocumentTask({
 			}}
 		>
 			<AlertDialogContent>
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
+				<ClientForm
+					stopPropagation
+					onSubmit={() => {
 						if (!document || pending.current) return;
 						// Reserve at activation, before TanStack's asynchronous validation.
 						pending.current = true;
@@ -169,7 +169,7 @@ function DeleteDocumentTask({
 							)}
 						</form.Subscribe>
 					</AlertDialogFooter>
-				</form>
+				</ClientForm>
 			</AlertDialogContent>
 		</AlertDialog>
 	);

@@ -59,12 +59,7 @@ function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
 	};
 }
 
-export function ApprovalPolicyDialog({
-	open,
-	onOpenChange,
-	policy = null,
-	onSubmit,
-}: ApprovalPolicyDialogProps) {
+function useApprovalPolicyForm({ open, policy = null, onSubmit }: ApprovalPolicyDialogProps) {
 	const { t } = useTranslate();
 	const isEditing = policy !== null;
 	function approvalTypeLabel(
@@ -163,6 +158,32 @@ export function ApprovalPolicyDialog({
 			form.reset(policy?.values ?? defaultApprovalPolicyFormValues);
 		}
 	}, [open, form, policy]);
+	return {
+		t,
+		isEditing,
+		approvalTypeLabel,
+		form,
+		isSubmitting,
+		stages,
+		approverLookup,
+		preservedConditionCount,
+		legacyApprovalTypeCount,
+	};
+}
+
+export function ApprovalPolicyDialog(props: ApprovalPolicyDialogProps) {
+	const { open, onOpenChange } = props;
+	const {
+		t,
+		isEditing,
+		approvalTypeLabel,
+		form,
+		isSubmitting,
+		stages,
+		approverLookup,
+		preservedConditionCount,
+		legacyApprovalTypeCount,
+	} = useApprovalPolicyForm(props);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -240,9 +261,7 @@ export function ApprovalPolicyDialog({
 						<form.Field name="description">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel>
-										{t("common.description", "Description")}
-									</TFormLabel>
+									<TFormLabel>{t("common.description", "Description")}</TFormLabel>
 									<TFormControl>
 										<Textarea
 											name="description"

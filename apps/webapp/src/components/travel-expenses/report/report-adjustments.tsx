@@ -27,6 +27,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query/keys";
@@ -403,11 +404,10 @@ function CreateAdjustmentForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			className="space-y-4"
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
+			onSubmit={() => {
 				const activation = task.reserve();
 				if (!activation) return;
 				onPendingChange(true);
@@ -470,7 +470,7 @@ function CreateAdjustmentForm({
 					</DialogFooter>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }
 

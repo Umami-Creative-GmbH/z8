@@ -153,15 +153,12 @@ export function TodayBriefing({
 		.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
 	const incomplete = Boolean(
 		readError ||
-			briefing.needsActionError ||
-			Object.values(briefing.sections).some((section) => section.error),
+		briefing.needsActionError ||
+		Object.values(briefing.sections).some((section) => section.error),
 	);
 
 	return (
-		<div
-			className="@container/main page-frame flex flex-1 flex-col gap-6"
-			aria-busy={isRefreshing}
-		>
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6" aria-busy={isRefreshing}>
 			<PageHeader
 				title={t("today.briefing.title", "Manager Daily Briefing")}
 				scope={briefingDate}
@@ -340,6 +337,7 @@ function NeedsActionCard({
 
 function SectionCard({ section, icon: Icon, onRetry }: SectionCardProps) {
 	const { t } = useTranslate();
+	const title = section.titleKey ? t(section.titleKey, section.title) : section.title;
 
 	return (
 		<Card className="gap-4">
@@ -348,7 +346,7 @@ function SectionCard({ section, icon: Icon, onRetry }: SectionCardProps) {
 					<div className="space-y-1">
 						<h2 className="flex items-center gap-2 font-semibold text-base leading-snug">
 							<Icon className="size-4 text-primary" aria-hidden="true" />
-							{section.titleKey ? t(section.titleKey, section.title) : section.title}
+							{title}
 						</h2>
 						<CardDescription>
 							{section.descriptionKey
@@ -361,39 +359,46 @@ function SectionCard({ section, icon: Icon, onRetry }: SectionCardProps) {
 					</Badge>
 				</div>
 			</CardHeader>
-			<CardContent className="space-y-3">
-				{section.error ? (
-					<SectionError
-						message={section.error}
-						onRetry={onRetry}
-						title={section.titleKey ? t(section.titleKey, section.title) : section.title}
-					/>
-				) : null}
-				{section.error && section.items.length > 0 ? (
-					<p role="status" className="text-sm text-muted-foreground">
-						{t(
-							"today.briefing.retainedSection",
-							"Previous results shown. Retry to check for changes.",
-						)}
-					</p>
-				) : null}
-				{section.items.length > 0 ? (
-					<div className="divide-y rounded-lg border">
-						{section.items.map((item) => (
-							<ActionRow key={item.id} item={item} compact />
-						))}
-					</div>
-				) : !section.error ? (
-					<EmptyState
-						message={
-							section.emptyStateKey
-								? t(section.emptyStateKey, section.emptyState ?? "No issues detected.")
-								: (section.emptyState ?? t("today.briefing.sections.empty", "No issues detected."))
-						}
-					/>
-				) : null}
-			</CardContent>
+			<SectionItems section={section} onRetry={onRetry} title={title} />
 		</Card>
+	);
+}
+
+function SectionItems({
+	section,
+	onRetry,
+	title,
+}: Pick<SectionCardProps, "section" | "onRetry"> & { title: string }) {
+	const { t } = useTranslate();
+	return (
+		<CardContent className="space-y-3">
+			{section.error ? (
+				<SectionError message={section.error} onRetry={onRetry} title={title} />
+			) : null}
+			{section.error && section.items.length > 0 ? (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t(
+						"today.briefing.retainedSection",
+						"Previous results shown. Retry to check for changes.",
+					)}
+				</p>
+			) : null}
+			{section.items.length > 0 ? (
+				<div className="divide-y rounded-lg border">
+					{section.items.map((item) => (
+						<ActionRow key={item.id} item={item} compact />
+					))}
+				</div>
+			) : !section.error ? (
+				<EmptyState
+					message={
+						section.emptyStateKey
+							? t(section.emptyStateKey, section.emptyState ?? "No issues detected.")
+							: (section.emptyState ?? t("today.briefing.sections.empty", "No issues detected."))
+					}
+				/>
+			) : null}
+		</CardContent>
 	);
 }
 

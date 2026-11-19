@@ -354,6 +354,7 @@ function RetentionReview({ scope }: { scope: RetentionReviewScope }) {
 		const attempt = { active: true, submitting: false };
 		lifetime.current = attempt;
 		// Activity reactivation must clear old evidence and confirmation before paint.
+		// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- Revealing a retained Activity must discard its purge confirmation and read fresh retention evidence before paint.
 		setGeneration((value) => value + 1);
 		setSelected(new Set());
 		setReview(null);

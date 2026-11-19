@@ -87,6 +87,47 @@ function useInvitationLifetime(identity: string | null) {
 	};
 }
 
+function useMemberMutations(
+	organizationId: string,
+	lifetime: ReturnType<typeof useInvitationLifetime>,
+) {
+	const queryClient = useQueryClient();
+	const inviteMutation = useMutation({
+		mutationFn: ({
+			input,
+		}: {
+			activation: InvitationActivation;
+			input: Parameters<typeof sendInvitation>[0];
+		}) => sendInvitation(input),
+		onSuccess: async (result, { activation }) => {
+			if (!result.success || !lifetime.isCurrent(activation)) return;
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) }),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.organization(organizationId),
+				}),
+			]);
+		},
+	});
+
+	const kioskOnlyMutation = useMutation({
+		mutationFn: ({
+			input,
+		}: {
+			activation: InvitationActivation;
+			input: CreateKioskOnlyEmployeeActionInput;
+		}) => createKioskOnlyEmployeeAction(input),
+		onSuccess: async (result, { activation }) => {
+			if (!result.success || !lifetime.isCurrent(activation)) return;
+			await queryClient.invalidateQueries({
+				queryKey: queryKeys.employees.organization(organizationId),
+			});
+		},
+	});
+
+	return { inviteMutation, kioskOnlyMutation };
+}
+
 export function InviteMemberDialog({
 	organizationId,
 	organizationName,
@@ -96,7 +137,6 @@ export function InviteMemberDialog({
 }: InviteMemberDialogProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
-	const queryClient = useQueryClient();
 	const session = useSession();
 	const actorId = session.data?.user.id;
 	const activeOrganizationId = session.data?.session.activeOrganizationId;
@@ -123,18 +163,7 @@ export function InviteMemberDialog({
 	});
 	const kioskLocations = locationsResult?.success ? locationsResult.data : [];
 
-	const inviteMutation = useMutation({
-		mutationFn: (data: {
-			email: string;
-			role: "owner" | "admin" | "member";
-			canCreateOrganizations: boolean;
-			targetTeamId: string | null;
-		}) => sendInvitation(data),
-	});
-
-	const kioskOnlyMutation = useMutation({
-		mutationFn: (data: CreateKioskOnlyEmployeeActionInput) => createKioskOnlyEmployeeAction(data),
-	});
+	const { inviteMutation, kioskOnlyMutation } = useMemberMutations(organizationId, lifetime);
 
 	const form = useForm({
 		defaultValues: {
@@ -156,10 +185,13 @@ export function InviteMemberDialog({
 			if (value.kioskOnly) {
 				const created = await kioskOnlyMutation
 					.mutateAsync({
-						firstName: value.firstName,
-						lastName: value.lastName,
-						teamId: value.targetTeamId === "none" ? null : value.targetTeamId,
-						locationIds: value.locationIds,
+						activation,
+						input: {
+							firstName: value.firstName,
+							lastName: value.lastName,
+							teamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+							locationIds: value.locationIds,
+						},
 					})
 					.catch(() => {
 						if (current())
@@ -169,10 +201,6 @@ export function InviteMemberDialog({
 				if (!current()) return;
 				if (!created) return;
 				if (created.success) {
-					await queryClient.invalidateQueries({
-						queryKey: queryKeys.employees.organization(organizationId),
-					});
-					if (!current()) return;
 					toast.success(t("organization.invite.kioskOnly.success", "Kiosk-only employee created"));
 					form.reset();
 					onOpenChange(false);
@@ -185,10 +213,13 @@ export function InviteMemberDialog({
 
 			const result = await inviteMutation
 				.mutateAsync({
-					email: value.email,
-					role: value.role,
-					canCreateOrganizations: value.canCreateOrganizations,
-					targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+					activation,
+					input: {
+						email: value.email,
+						role: value.role,
+						canCreateOrganizations: value.canCreateOrganizations,
+						targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+					},
 				})
 				.catch(() => {
 					if (current()) toast.error(t("organization.invite.error", "Failed to send invitation"));
@@ -200,15 +231,6 @@ export function InviteMemberDialog({
 			}
 
 			if (result.success) {
-				await Promise.all([
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.invitations.list(organizationId),
-					}),
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.employees.organization(organizationId),
-					}),
-				]);
-				if (!current()) return;
 				toast.success(t("organization.invite.success", "Invitation sent successfully"));
 				form.reset();
 				onOpenChange(false);

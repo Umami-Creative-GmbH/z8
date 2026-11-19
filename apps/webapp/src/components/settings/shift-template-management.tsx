@@ -21,7 +21,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -353,9 +353,7 @@ function ShiftTemplateDialog({
 						<form.Field name="name">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="name">
-										{t("settings.shiftTemplates.form.name", "Name")}
-									</Label>
+									<Label htmlFor="name">{t("settings.shiftTemplates.form.name", "Name")}</Label>
 									<Input
 										id="name"
 										placeholder={t(

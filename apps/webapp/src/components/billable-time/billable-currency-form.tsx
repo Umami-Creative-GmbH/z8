@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
@@ -71,12 +72,9 @@ export function BillableCurrencyForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				// TanStack Form owns validation and the async submission; native submission would navigate away.
-				// react-doctor-disable-next-line react-doctor/no-prevent-default
-				event.preventDefault();
+			onSubmit={() => {
 				// One save at a time: a second submit while saving is ignored.
 				if (form.state.isSubmitting) return;
 				void form.handleSubmit();
@@ -126,6 +124,6 @@ export function BillableCurrencyForm({
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(pending) => children({ pending })}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }

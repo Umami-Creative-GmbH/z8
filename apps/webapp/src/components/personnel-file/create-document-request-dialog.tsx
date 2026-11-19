@@ -15,7 +15,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DocumentRequestDeadline } from "./document-request-deadline";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -262,26 +262,7 @@ export function CreateDocumentRequestDialog({
 							}}
 						>
 							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("settings.personnelFiles.requests.create.deadline", "Deadline")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<DatePicker
-											value={field.state.value}
-											onChange={(value) => field.handleChange(value)}
-											min={today}
-											required
-										/>
-									</TFormControl>
-									<TFormDescription>
-										{t(
-											"settings.personnelFiles.requests.create.deadlineHint",
-											"The day by which the employee should submit. After it, the request is overdue.",
-										)}
-									</TFormDescription>
-									<TFormMessage field={field} />
-								</TFormItem>
+								<DocumentRequestDeadline field={field} today={today} />
 							)}
 						</form.Field>
 					</ActionPanelBody>

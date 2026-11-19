@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -230,75 +230,7 @@ export function OwnPositionStampsPanel({ data, accessLog }: OwnPositionStampsPan
 				</CardContent>
 			</Card>
 
-			{accessLog !== undefined ? (
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							{t("settings.positionStamps.accessLogTitle", "Who saw your positions")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.positionStamps.accessLogDescription",
-								"Every time someone else is shown your recorded positions, it is listed here.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{accessLog === null ? (
-							<p role="alert" className="text-sm text-destructive">
-								{t(
-									"settings.positionStamps.accessLogLoadFailed",
-									"The list of who saw your positions could not be loaded. Reload the page to try again.",
-								)}
-							</p>
-						) : accessLog.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.positionStamps.accessLogEmpty",
-									"Nobody else has been shown your positions.",
-								)}
-							</p>
-						) : (
-							<ul className="divide-y">
-								{accessLog.map((entry) => (
-									<li
-										key={entry.id}
-										className="flex flex-col gap-0.5 py-2 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
-									>
-										<div className="min-w-0">
-											<p className="font-medium">
-												{entry.viewerName ??
-													t("settings.positionStamps.accessLogDeletedViewer", "A deleted user")}
-											</p>
-											<p className="text-muted-foreground">
-												{entry.kind === "data_export"
-													? t("settings.positionStamps.accessLogExport", "Data export")
-													: entry.workPeriods.map((period) => (
-															<span key={period.id} className="block">
-																{period.date
-																	? t(
-																			"settings.positionStamps.accessLogWorkPeriod",
-																			"Work period on {date}",
-																			{ date: period.date },
-																		)
-																	: t(
-																			"settings.positionStamps.accessLogRemovedWorkPeriod",
-																			"A work period that no longer exists",
-																		)}
-															</span>
-														))}
-											</p>
-										</div>
-										<p className="shrink-0 text-muted-foreground tabular-nums">
-											{date(entry.accessedAt)}
-										</p>
-									</li>
-								))}
-							</ul>
-						)}
-					</CardContent>
-				</Card>
-			) : null}
+			{accessLog !== undefined ? <PositionAccessLog accessLog={accessLog} date={date} /> : null}
 
 			<AlertDialog
 				open={confirmingWithdrawal}
@@ -342,5 +274,84 @@ export function OwnPositionStampsPanel({ data, accessLog }: OwnPositionStampsPan
 				</AlertDialogContent>
 			</AlertDialog>
 		</div>
+	);
+}
+
+function PositionAccessLog({
+	accessLog,
+	date,
+}: {
+	accessLog: OwnPositionStampAccessEntry[] | null;
+	date: (iso: string) => string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("settings.positionStamps.accessLogTitle", "Who saw your positions")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.positionStamps.accessLogDescription",
+						"Every time someone else is shown your recorded positions, it is listed here.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{accessLog === null ? (
+					<p role="alert" className="text-sm text-destructive">
+						{t(
+							"settings.positionStamps.accessLogLoadFailed",
+							"The list of who saw your positions could not be loaded. Reload the page to try again.",
+						)}
+					</p>
+				) : accessLog.length === 0 ? (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.positionStamps.accessLogEmpty",
+							"Nobody else has been shown your positions.",
+						)}
+					</p>
+				) : (
+					<ul className="divide-y">
+						{accessLog.map((entry) => (
+							<li
+								key={entry.id}
+								className="flex flex-col gap-0.5 py-2 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+							>
+								<div className="min-w-0">
+									<p className="font-medium">
+										{entry.viewerName ??
+											t("settings.positionStamps.accessLogDeletedViewer", "A deleted user")}
+									</p>
+									<p className="text-muted-foreground">
+										{entry.kind === "data_export"
+											? t("settings.positionStamps.accessLogExport", "Data export")
+											: entry.workPeriods.map((period) => (
+													<span key={period.id} className="block">
+														{period.date
+															? t(
+																	"settings.positionStamps.accessLogWorkPeriod",
+																	"Work period on {date}",
+																	{ date: period.date },
+																)
+															: t(
+																	"settings.positionStamps.accessLogRemovedWorkPeriod",
+																	"A work period that no longer exists",
+																)}
+													</span>
+												))}
+									</p>
+								</div>
+								<p className="shrink-0 text-muted-foreground tabular-nums">
+									{date(entry.accessedAt)}
+								</p>
+							</li>
+						))}
+					</ul>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

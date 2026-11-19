@@ -10,14 +10,12 @@ import type { SickNoteMarker } from "@/lib/personnel-file/sick-note-store";
 import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import { useRouter } from "@/navigation";
 import { AbsenceChangeDialog } from "./absence-change-dialog";
-import {
-	AbsenceEntryActions,
-	hasPendingChangeRequest,
-} from "./absence-entry-actions";
+import { AbsenceEntryActions } from "./absence-entry-actions";
 import { ChangeDeputyDialog } from "./change-deputy-dialog";
 import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
 import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
 import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
+import { hasPendingChangeRequest } from "./has-pending-change-request";
 import { useOwnAbsenceChanges } from "./use-own-absence-changes";
 
 interface OwnAbsenceActionsValue {
@@ -36,9 +34,7 @@ interface OwnAbsenceActionsValue {
 	cancel: (absenceId: string) => Promise<void>;
 }
 
-const OwnAbsenceActionsContext = createContext<OwnAbsenceActionsValue | null>(
-	null,
-);
+const OwnAbsenceActionsContext = createContext<OwnAbsenceActionsValue | null>(null);
 
 /** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
 function takesSickNotes(absence: AbsenceWithDays): boolean {
@@ -68,8 +64,7 @@ export function OwnAbsenceActionsProvider({
 	const sickNotes = useOwnAbsenceSickNotes(absences);
 	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithDays | null>(null);
 	const [attachingTo, setAttachingTo] = useState<AbsenceWithDays | null>(null);
-	const [changingDeputyOf, setChangingDeputyOf] =
-		useState<AbsenceWithDays | null>(null);
+	const [changingDeputyOf, setChangingDeputyOf] = useState<AbsenceWithDays | null>(null);
 	const [changeOf, setChangeOf] = useState<{
 		absence: AbsenceWithDays;
 		kind: AbsenceChangeKind;
@@ -101,8 +96,7 @@ export function OwnAbsenceActionsProvider({
 			onUpdate?.();
 		} else {
 			toast.error(
-				result.error ||
-					t("absences.toast.cancelFailed", "Failed to cancel absence request"),
+				result.error || t("absences.toast.cancelFailed", "Failed to cancel absence request"),
 			);
 		}
 	};
@@ -111,11 +105,9 @@ export function OwnAbsenceActionsProvider({
 		changes,
 		changed,
 		sickNoteMarkers: sickNotes.markers,
-		hasPendingChange: (absenceId) =>
-			hasPendingChangeRequest(changes.data, absenceId),
+		hasPendingChange: (absenceId) => hasPendingChangeRequest(changes.data, absenceId),
 		openSickNotes: setSickNotesOf,
-		canAttachSickNote: (absence) =>
-			sickNotes.canAttach && takesSickNotes(absence),
+		canAttachSickNote: (absence) => sickNotes.canAttach && takesSickNotes(absence),
 		cancelingId,
 		requestChange: (absence, kind) => setChangeOf({ absence, kind }),
 		changeDeputy: setChangingDeputyOf,
@@ -178,9 +170,7 @@ export function OwnAbsenceActionsProvider({
 export function useOwnAbsenceActions(): OwnAbsenceActionsValue {
 	const value = use(OwnAbsenceActionsContext);
 	if (!value) {
-		throw new Error(
-			"useOwnAbsenceActions must be used inside OwnAbsenceActionsProvider",
-		);
+		throw new Error("useOwnAbsenceActions must be used inside OwnAbsenceActionsProvider");
 	}
 	return value;
 }

@@ -68,14 +68,12 @@ export function WebhooksPageClient({
 
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-	const handleWebhookCreated = (webhook: WebhookEndpoint) => {
-		const { secret: _secret, ...publicWebhook } = webhook;
+	const handleWebhookCreated = ({ secret: _secret, ...publicWebhook }: WebhookEndpoint) => {
 		return setWebhooks((prev) => [publicWebhook, ...prev]);
 	};
 
-	const handleWebhookUpdated = (webhook: WebhookEndpoint) => {
-		const { secret: _secret, ...publicWebhook } = webhook;
-		return setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? publicWebhook : w)));
+	const handleWebhookUpdated = ({ secret: _secret, ...publicWebhook }: WebhookEndpoint) => {
+		return setWebhooks((prev) => prev.map((w) => (w.id === publicWebhook.id ? publicWebhook : w)));
 	};
 
 	const handleWebhookDeleted = (webhookId: string) => {

@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/action-panel";
 import {
 	ConfirmActionDialog,
-	describeFailure,
 	useConfirmedAction,
 } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { departureCutoffDate } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
