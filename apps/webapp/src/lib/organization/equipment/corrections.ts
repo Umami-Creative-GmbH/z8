@@ -35,6 +35,7 @@ import type {
 } from "./contracts";
 import { equipmentDepartureDeadline } from "./deadlines";
 import { readEquipmentEndingContexts } from "./endings";
+import { settle, settlementColumns } from "./settlement";
 import type { EquipmentTransaction } from "./setup";
 
 type Handover = typeof equipmentHandover.$inferSelect;
@@ -372,36 +373,16 @@ export async function correctEquipment(
 				return refused("conflicting_history");
 		}
 	}
-	proposed.receivedQuantity = handovers
-		.filter((h) => h.kind === "receipt")
-		.reduce((n, h) => n + h.quantity, 0);
-	proposed.exceptionReceivedQuantity = handovers
-		.filter((h) => h.kind === "receipt" && h.exceptionId)
-		.reduce((n, h) => n + h.quantity, 0);
-	proposed.lostQuantity = exceptions
-		.filter((e) => e.kind === "lost")
-		.reduce((n, e) => n + e.quantity, 0);
-	proposed.waivedQuantity = exceptions
-		.filter((e) => e.kind === "waived")
-		.reduce((n, e) => n + e.quantity, 0);
-	for (const e of exceptions) {
-		e.receivedQuantity = handovers
-			.filter((h) => h.exceptionId === e.id)
-			.reduce((n, h) => n + h.quantity, 0);
-		if (e.receivedQuantity > e.quantity) return refused("recovery_conflict");
-	}
-	if (
-		proposed.receivedQuantity > proposed.quantity ||
-		proposed.receivedQuantity +
-			proposed.lostQuantity +
-			proposed.waivedQuantity -
-			proposed.exceptionReceivedQuantity >
-			proposed.quantity ||
-		(!proposed.returnRequired && exceptions.some((e) => e.quantity > 0)) ||
-		(assignment.itemId && proposed.quantity !== 1)
-	)
+	const settled = settle(
+		proposed,
+		handovers.filter((h) => h.kind === "receipt"),
+		exceptions,
+	);
+	if (!settled.ok) return refused(settled.reason);
+	if (assignment.itemId && proposed.quantity !== 1)
 		return refused("excess_quantity");
-	proposed.received = proposed.receivedQuantity === proposed.quantity;
+	for (const e of exceptions)
+		e.receivedQuantity = settled.recoveredByException.get(e.id) ?? 0;
 	const hIds = handovers.map((h) => h.id);
 	const links = await tx
 		.select()
@@ -671,11 +652,7 @@ export async function correctEquipment(
 			explicitDeadline: proposed.explicitDeadline,
 			departureDeadline: proposed.departureDeadline,
 			departureId: proposed.departureId,
-			receivedQuantity: proposed.receivedQuantity,
-			exceptionReceivedQuantity: proposed.exceptionReceivedQuantity,
-			lostQuantity: proposed.lostQuantity,
-			waivedQuantity: proposed.waivedQuantity,
-			received: proposed.received,
+			...settlementColumns(settled.settlement),
 			revision: assignment.revision + 1,
 		})
 		.where(assignmentWhere(actor.organizationId, assignment.id));

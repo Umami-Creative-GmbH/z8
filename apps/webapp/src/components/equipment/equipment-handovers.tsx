@@ -794,26 +794,14 @@ export function ReceiveEquipmentForm({
 						name="quantity"
 						validators={{
 							onSubmit: ({ value }) =>
-								quantityError(
-									value,
-									t,
-									assignment.returnRequired
-										? assignment.outstandingQuantity
-										: assignment.quantity -
-												assignment.physicallyReceivedQuantity,
-								),
+								quantityError(value, t, assignment.receivableQuantity),
 						}}
 					>
 						{(field) => (
 							<QuantityField
 								field={field}
 								pending={pending}
-								maximum={
-									assignment.returnRequired
-										? assignment.outstandingQuantity
-										: assignment.quantity -
-											assignment.physicallyReceivedQuantity
-								}
+								maximum={assignment.receivableQuantity}
 								t={t}
 							/>
 						)}

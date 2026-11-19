@@ -38,10 +38,8 @@ import {
 	equipmentWorkerAccess,
 	lockEquipmentContext,
 } from "./access";
-import {
-	effectiveEquipmentDeadline,
-	outstandingEquipmentQuantity,
-} from "./deadlines";
+import { effectiveEquipmentDeadline } from "./deadlines";
+import { assignmentSettlement, outstandingQuantity } from "./settlement";
 import type { EquipmentTransaction } from "./setup";
 
 type Delivery = typeof equipmentReminderDelivery.$inferSelect;
@@ -85,7 +83,7 @@ async function readOccasion(
 			),
 		);
 	if (!row) return null;
-	const quantity = outstandingEquipmentQuantity(row.assignment);
+	const quantity = outstandingQuantity(assignmentSettlement(row.assignment));
 	const deadline = effectiveEquipmentDeadline(
 		row.assignment.explicitDeadline,
 		row.assignment.departureDeadline,

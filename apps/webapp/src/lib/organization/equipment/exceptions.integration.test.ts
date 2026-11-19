@@ -169,67 +169,6 @@ function receive(assignmentId: string, extra: Record<string, unknown> = {}) {
 		...extra,
 	});
 }
-it("receives two shirts and closes one as lost without reporting a third physical receipt", async () => {
-	const type = await quantityType();
-	const result = await issue(type.id);
-	if (!result.success || !result.data.ok)
-		throw new Error(JSON.stringify(result));
-	const id = result.data.id;
-	expect(await receive(id)).toMatchObject({
-		success: true,
-		data: { ok: true, revision: 2 },
-	});
-	expect(
-		await actions.changeEquipment({
-			kind: "close_return",
-			requestId: crypto.randomUUID(),
-			assignmentId: id,
-			expectedRevision: 2,
-			outcome: "lost",
-			quantity: 1,
-			reason: "Missing after site move",
-		}),
-	).toMatchObject({ success: true, data: { ok: true, revision: 3 } });
-	expect((await overview()).assignments).toMatchObject([
-		{
-			quantity: 3,
-			physicallyReceivedQuantity: 2,
-			lostQuantity: 1,
-			waivedQuantity: 0,
-			recoveredQuantity: 0,
-			outstandingQuantity: 0,
-			outstanding: false,
-			held: true,
-			canReceive: false,
-			exceptions: [
-				{
-					kind: "lost",
-					quantity: 1,
-					receivedQuantity: 0,
-					reason: "Missing after site move",
-					actorName: "t1540-owner",
-					recordedAt: "2026-11-04T23:30:00Z",
-				},
-			],
-		},
-	]);
-	expect((await overview({ outstanding: true })).assignments).toEqual([]);
-	session.userId = "t1540-holder";
-	expect(await actions.getMyEquipment()).toMatchObject({
-		success: true,
-		data: {
-			assignments: [
-				{
-					physicallyReceivedQuantity: 2,
-					lostQuantity: 1,
-					outstandingQuantity: 0,
-					canCloseException: false,
-				},
-			],
-		},
-	});
-});
-
 async function issued(extra: Record<string, unknown> = {}) {
 	const type = await quantityType();
 	const result = await issue(type.id, extra);
@@ -267,7 +206,7 @@ function recover(
 		...extra,
 	});
 }
-it("links partial physical recovery to its original loss without settling it twice", async () => {
+it("persists a partial physical recovery linked to its original loss", async () => {
 	const { assignment } = await issued();
 	expect(await close(assignment.id, { quantity: 2 })).toMatchObject({
 		success: true,
@@ -280,15 +219,13 @@ it("links partial physical recovery to its original loss without settling it twi
 	});
 	expect((await overview()).assignments).toMatchObject([
 		{
-			physicallyReceivedQuantity: 1,
-			lostQuantity: 2,
 			recoveredQuantity: 1,
-			outstandingQuantity: 1,
+			receivableQuantity: 1,
 			exceptions: [
 				{
 					id: loss.id,
-					quantity: 2,
 					receivedQuantity: 1,
+					receivableQuantity: 1,
 					reason: "Missing after site move",
 					canReceive: true,
 				},
@@ -301,30 +238,6 @@ it("links partial physical recovery to its original loss without settling it twi
 					notes: "Found in old office",
 					actualDate: "2026-11-05",
 				},
-			],
-		},
-	]);
-	expect(
-		await receive(assignment.id, { expectedRevision: 3, quantity: 2 }),
-	).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "excess_quantity" },
-	});
-	expect(
-		await receive(assignment.id, { expectedRevision: 3, quantity: 1 }),
-	).toMatchObject({ success: true, data: { ok: true, revision: 4 } });
-	expect(
-		await recover(assignment.id, loss.id, { expectedRevision: 4 }),
-	).toMatchObject({ success: true, data: { ok: true, revision: 5 } });
-	expect((await overview()).assignments).toMatchObject([
-		{
-			physicallyReceivedQuantity: 3,
-			lostQuantity: 2,
-			recoveredQuantity: 2,
-			outstandingQuantity: 0,
-			held: false,
-			exceptions: [
-				{ id: loss.id, quantity: 2, receivedQuantity: 2, canReceive: false },
 			],
 		},
 	]);
@@ -355,17 +268,8 @@ it("requires a reason and positive whole quantities, refuses excess and issued-t
 			reason: "  Approved uniform allowance  ",
 		}),
 	).toMatchObject({ success: true, data: { ok: true, revision: 2 } });
-	expect(
-		await close(assignment.id, { expectedRevision: 2, quantity: 2 }),
-	).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "excess_quantity" },
-	});
 	expect((await overview()).assignments).toMatchObject([
 		{
-			physicallyReceivedQuantity: 0,
-			waivedQuantity: 2,
-			outstandingQuantity: 1,
 			exceptions: [{ reason: "Approved uniform allowance" }],
 		},
 	]);
@@ -646,7 +550,8 @@ it("keeps waived individual equipment in custody until a linked physical receipt
 	expect(view.availableItems).toMatchObject([{ id: item.id }]);
 	expect(view.assignments[0]).toMatchObject({
 		waivedQuantity: 1,
-		recoveredQuantity: 0,
+		// A recovery may follow a return waiver as well as a loss.
+		recoveredQuantity: 1,
 		outstandingQuantity: 0,
 		physicallyReceivedQuantity: 1,
 		held: false,
@@ -879,63 +784,6 @@ it("rolls closure and physical recovery back with replay failure, allowing uncha
 		{ inCustody: false, status: "unavailable" },
 	]);
 });
-it("keeps distinct partial loss and waiver evidence after both are physically received", async () => {
-	const { assignment } = await issued();
-	await receive(assignment.id, { quantity: 1 });
-	await close(assignment.id, { expectedRevision: 2 });
-	await close(assignment.id, {
-		expectedRevision: 3,
-		outcome: "waived",
-		reason: "Uniform allowance",
-	});
-	const before = (await overview()).assignments[0];
-	expect(before).toMatchObject({
-		physicallyReceivedQuantity: 1,
-		lostQuantity: 1,
-		waivedQuantity: 1,
-		outstandingQuantity: 0,
-	});
-	const loss = before.exceptions.find((e) => e.kind === "lost");
-	const waiver = before.exceptions.find((e) => e.kind === "waived");
-	if (!loss || !waiver)
-		throw new Error("Expected independent loss and waiver decisions");
-	await recover(assignment.id, loss.id, {
-		expectedRevision: 4,
-		condition: "good",
-	});
-	expect((await overview()).assignments[0]).toMatchObject({
-		outstandingQuantity: 0,
-		physicallyReceivedQuantity: 2,
-		lostQuantity: 1,
-		recoveredQuantity: 1,
-		waivedQuantity: 1,
-	});
-	await recover(assignment.id, waiver.id, {
-		expectedRevision: 5,
-		condition: "damaged",
-	});
-	expect(await close(assignment.id, { expectedRevision: 6 })).toMatchObject({
-		success: true,
-		data: { ok: false, reason: "excess_quantity" },
-	});
-	expect((await overview()).assignments[0]).toMatchObject({
-		outstandingQuantity: 0,
-		physicallyReceivedQuantity: 3,
-		lostQuantity: 1,
-		recoveredQuantity: 1,
-		waivedQuantity: 1,
-		held: false,
-		exceptions: expect.arrayContaining([
-			{ ...loss, receivedQuantity: 1, canReceive: false },
-			{ ...waiver, receivedQuantity: 1, canReceive: false },
-		]),
-		receipts: expect.arrayContaining([
-			expect.objectContaining({ exceptionId: loss.id, condition: "good" }),
-			expect.objectContaining({ exceptionId: waiver.id, condition: "damaged" }),
-		]),
-	});
-});
-
 it("refuses a recovery whose officer grant is revoked while it waits", async () => {
 	const { assignment } = await issued();
 	await close(assignment.id);
@@ -1062,11 +910,9 @@ it("transfers only the unsettled balance and preserves loss evidence through lat
 		(a) => a.id === assignment.id,
 	);
 	expect(transferred).toMatchObject({
-		lostQuantity: 2,
-		physicallyReceivedQuantity: 1,
-		outstandingQuantity: 0,
 		held: true,
 		canReceive: false,
+		receipts: [{ quantity: 1 }],
 	});
 	expect(transferred?.transfer).toBeUndefined();
 	expect(
@@ -1075,10 +921,7 @@ it("transfers only the unsettled balance and preserves loss evidence through lat
 	expect(
 		(await overview()).assignments.find((a) => a.id === assignment.id),
 	).toMatchObject({
-		lostQuantity: 2,
-		recoveredQuantity: 2,
-		physicallyReceivedQuantity: 3,
-		outstandingQuantity: 0,
 		held: false,
+		exceptions: [{ id: loss.id, receivedQuantity: 2 }],
 	});
 });

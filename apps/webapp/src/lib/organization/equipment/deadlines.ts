@@ -20,21 +20,3 @@ export function effectiveEquipmentDeadline(
 		? explicit
 		: derived;
 }
-
-/** Corrected assignment projections already include effective receipts and exception overlap. */
-export function outstandingEquipmentQuantity(assignment: {
-	returnRequired: boolean;
-	quantity: number;
-	receivedQuantity: number;
-	lostQuantity: number;
-	waivedQuantity: number;
-	exceptionReceivedQuantity: number;
-}) {
-	return assignment.returnRequired
-		? assignment.quantity -
-				assignment.receivedQuantity -
-				assignment.lostQuantity -
-				assignment.waivedQuantity +
-				assignment.exceptionReceivedQuantity
-		: 0;
-}

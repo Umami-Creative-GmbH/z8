@@ -237,10 +237,12 @@ export const equipmentAssignment = pgTable(
 			"equipment_assignment_received_quantity_check",
 			sql`${t.receivedQuantity} >= 0 and ${t.receivedQuantity} <= ${t.quantity}`,
 		),
+		// Mirrors the assignment totals in settlementViolation (lib/organization/equipment/settlement.ts).
 		check(
 			"equipment_assignment_settlement_check",
 			sql`${t.lostQuantity} >= 0 and ${t.waivedQuantity} >= 0 and ${t.exceptionReceivedQuantity} >= 0 and ${t.exceptionReceivedQuantity} <= ${t.receivedQuantity} and ${t.exceptionReceivedQuantity}::bigint <= ${t.lostQuantity}::bigint + ${t.waivedQuantity} and ${t.receivedQuantity}::bigint + ${t.lostQuantity} + ${t.waivedQuantity} - ${t.exceptionReceivedQuantity} <= ${t.quantity} and (${t.returnRequired} or (${t.lostQuantity} = 0 and ${t.waivedQuantity} = 0))`,
 		),
+		// Mirrors isFullyReceived in lib/organization/equipment/settlement.ts.
 		check(
 			"equipment_assignment_received_check",
 			sql`${t.received} = (${t.receivedQuantity} = ${t.quantity})`,
