@@ -125,6 +125,8 @@ export function ShiftRequestsPanel({
 									<ShiftRequestItem
 										request={request}
 										organizationTimezone={organizationTimezone}
+										// Nobody decides their own request; it waits for another decider (ADR-0004).
+										ownRequest={request.requesterId === approverId}
 										decision={decision?.requestId === request.id ? decision.kind : null}
 										onDecide={(kind) => setDecision({ requestId: request.id, kind })}
 										onClose={() => setDecision(null)}
@@ -142,6 +144,7 @@ export function ShiftRequestsPanel({
 interface ShiftRequestItemProps {
 	request: ShiftRequestWithRelations;
 	organizationTimezone: string;
+	ownRequest: boolean;
 	decision: Decision["kind"] | null;
 	onDecide: (kind: Decision["kind"]) => void;
 	onClose: () => void;
@@ -150,6 +153,7 @@ interface ShiftRequestItemProps {
 function ShiftRequestItem({
 	request,
 	organizationTimezone,
+	ownRequest,
 	decision,
 	onDecide,
 	onClose,
@@ -227,7 +231,14 @@ function ShiftRequestItem({
 				</p>
 			)}
 
-			{decision === "approve" ? (
+			{ownRequest ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"scheduling:scheduling.shiftRequests.ownRequest",
+						"Your request. Another manager or admin decides it.",
+					)}
+				</p>
+			) : decision === "approve" ? (
 				<ApproveShiftRequestForm
 					request={request}
 					organizationTimezone={organizationTimezone}

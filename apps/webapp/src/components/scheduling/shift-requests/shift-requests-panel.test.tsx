@@ -271,6 +271,30 @@ describe("ShiftRequestsPanel", () => {
 		await waitFor(() => expect(toastSuccessMock).toHaveBeenCalledWith("Request rejected"));
 	});
 
+	it("shows the planner's own request without decisions, for another decider (#1597)", async () => {
+		getPendingShiftRequestsMock.mockResolvedValue({
+			success: true,
+			data: [
+				buildRequest({
+					requesterId: "employee-manager",
+					requester: {
+						id: "employee-manager",
+						firstName: null,
+						lastName: null,
+						user: { firstName: "Morgan", lastName: "Manager" },
+					},
+				} as Partial<ShiftRequestWithRelations>),
+			],
+		});
+		renderPanel();
+
+		expect(
+			await screen.findByText("Your request. Another manager or admin decides it."),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Reject" })).toBeNull();
+	});
+
 	it("says when nothing is pending", async () => {
 		getPendingShiftRequestsMock.mockResolvedValue({ success: true, data: [] });
 		renderPanel();
