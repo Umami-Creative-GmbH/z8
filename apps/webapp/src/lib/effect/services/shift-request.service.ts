@@ -1,7 +1,12 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import type { db } from "@/db";
-import { isShiftRequestDecider } from "@/lib/approvals/shift-request-deciders";
+import {
+	isOnlyShiftRequestDecider,
+	isShiftRequestDecider,
+	mayDecideShiftRequest,
+	SHIFT_REQUEST_DECIDER_ROLES,
+} from "@/lib/approvals/shift-request-deciders";
 import {
 	auditLog,
 	employee,
@@ -169,6 +174,7 @@ async function requireApprover(
 	tx: ShiftRequestTransaction,
 	organizationId: string,
 	approverId: string,
+	request: ShiftRequest,
 	action: "approve" | "reject",
 ) {
 	const approver = await getActiveEmployee(tx, organizationId, approverId);
@@ -183,7 +189,144 @@ async function requireApprover(
 			}),
 		);
 	}
+	// Nobody decides their own shift request (ADR-0004).
+	if (!mayDecideShiftRequest(approver, request)) {
+		abort(
+			new AuthorizationError({
+				message: "You cannot decide your own shift request",
+				userId: approverId,
+				resource: "shiftRequest",
+				action,
+			}),
+		);
+	}
 	return approver;
+}
+
+/**
+ * Approves a pending request whose shift is locked, published and scoped to the organization:
+ * assigns the shift and records the approval. Shared by a decider's approval and by approval on
+ * submission when the requester is the only decider (ADR-0004).
+ */
+async function approvePendingRequest(
+	tx: ShiftRequestTransaction,
+	organizationId: string,
+	current: ShiftRequest & { shift: Shift },
+	approver: { id: string; userId: string },
+	options?: ApproveRequestOptions,
+) {
+	await requireActiveRequestParticipants(tx, organizationId, current);
+
+	if (current.type === "swap" && !current.targetEmployeeId) {
+		abort(
+			new ConflictError({
+				message:
+					"A target employee is required before approving a swap",
+				conflictType: "missing_target_employee",
+			}),
+		);
+	}
+
+	const assignedEmployeeId =
+		current.type === "pickup"
+			? current.requesterId
+			: current.targetEmployeeId;
+	if (!assignedEmployeeId) {
+		abort(
+			new ConflictError({
+				message:
+					"A target employee is required before approving this request",
+				conflictType: "missing_target_employee",
+			}),
+		);
+	}
+
+	// Assigning someone without a required skill takes the approver's reason, recorded
+	// with the approval (#893). Checked under the shift lock, at commit time.
+	const context: AssignmentContext = {
+		employeeId: assignedEmployeeId,
+		shiftDate: current.shift.date,
+		subareaId: current.shift.subareaId,
+		templateId: current.shift.templateId,
+	};
+	const { decision } = await decideSkillOverride(tx, {
+		organizationId,
+		organizationTimezone: await loadOrganizationTimezone(tx, organizationId),
+		shiftId: current.shiftId,
+		context,
+		// The request always assigns someone new to the shift.
+		previous: null,
+		reason: options?.skillOverrideReason,
+	});
+	if (decision.kind === "reason_required") {
+		abort(skillOverrideReasonRequiredError(decision.missingSkillIds));
+	}
+
+	const expectedAssignment =
+		current.type === "pickup"
+			? isNull(shift.employeeId)
+			: current.type === "swap"
+				? eq(shift.employeeId, current.requesterId)
+				: current.shift.employeeId === null
+					? isNull(shift.employeeId)
+					: eq(shift.employeeId, current.shift.employeeId);
+	const [updatedShift] = await tx
+		.update(shift)
+		.set({ employeeId: assignedEmployeeId })
+		.where(
+			and(
+				eq(shift.id, current.shiftId),
+				eq(shift.organizationId, organizationId),
+				eq(shift.status, "published"),
+				expectedAssignment,
+			),
+		)
+		.returning({ id: shift.id });
+	if (!updatedShift) abort(staleRequest());
+
+	// shiftId is locked and was verified against organizationId above; shift_request gets
+	// its direct organization column in Phase 1.
+	const [approved] = await tx
+		.update(shiftRequest)
+		.set({ status: "approved", approverId: approver.id, approvedAt: new Date() })
+		.where(
+			and(
+				eq(shiftRequest.id, current.id),
+				eq(shiftRequest.shiftId, current.shiftId),
+				eq(shiftRequest.status, "pending"),
+			),
+		)
+		.returning();
+	if (!approved) abort(staleRequest());
+
+	if (decision.kind === "record") {
+		await insertSkillOverride(tx, {
+			organizationId,
+			shiftId: current.shiftId,
+			context,
+			missingSkillIds: decision.missingSkillIds,
+			reason: decision.reason,
+			overriddenBy: approver.userId,
+		});
+	}
+
+	if (current.type === "pickup") {
+		await tx
+			.update(shiftRequest)
+			.set({
+				status: "rejected",
+				rejectionReason: "Another pickup request was approved",
+			})
+			.where(
+				and(
+					eq(shiftRequest.shiftId, current.shiftId),
+					eq(shiftRequest.type, "pickup"),
+					eq(shiftRequest.status, "pending"),
+				),
+			);
+	}
+
+	return approved;
 }
 
 export interface SwapRequestInput {
@@ -405,7 +548,25 @@ export const ShiftRequestServiceLive = Layer.effect(
 							updatedAt: new Date(),
 						})
 						.returning();
-					return created;
+
+					// Nobody else can decide the only decider's request: it is approved as it is
+					// submitted, with every check a decider's approval makes (ADR-0004).
+					const deciders = await tx
+						.select({ id: employee.id, role: employee.role })
+						.from(employee)
+						.where(
+							and(
+								onCurrentRoster(organizationId),
+								inArray(employee.role, [...SHIFT_REQUEST_DECIDER_ROLES]),
+							),
+						);
+					if (!isOnlyShiftRequestDecider(deciders, requester.id)) return created;
+					return await approvePendingRequest(
+						tx,
+						organizationId,
+						{ ...created, shift: currentShift },
+						requester,
+					);
 				},
 			);
 
@@ -433,119 +594,8 @@ export const ShiftRequestServiceLive = Layer.effect(
 					}
 					requirePublishedShift(current.shift);
 					if (current.status !== "pending") abort(staleRequest(current.status));
-					const approver = await requireApprover(tx, organizationId, approverId, "approve");
-					await requireActiveRequestParticipants(tx, organizationId, current);
-
-					if (current.type === "swap" && !current.targetEmployeeId) {
-						abort(
-							new ConflictError({
-								message:
-									"A target employee is required before approving a swap",
-								conflictType: "missing_target_employee",
-							}),
-						);
-					}
-
-					const assignedEmployeeId =
-						current.type === "pickup"
-							? current.requesterId
-							: current.targetEmployeeId;
-					if (!assignedEmployeeId) {
-						abort(
-							new ConflictError({
-								message:
-									"A target employee is required before approving this request",
-								conflictType: "missing_target_employee",
-							}),
-						);
-					}
-
-					// Assigning someone without a required skill takes the approver's reason, recorded
-					// with the approval (#893). Checked under the shift lock, at commit time.
-					const context: AssignmentContext = {
-						employeeId: assignedEmployeeId,
-						shiftDate: current.shift.date,
-						subareaId: current.shift.subareaId,
-						templateId: current.shift.templateId,
-					};
-					const { decision } = await decideSkillOverride(tx, {
-						organizationId,
-						organizationTimezone: await loadOrganizationTimezone(tx, organizationId),
-						shiftId: current.shiftId,
-						context,
-						// The request always assigns someone new to the shift.
-						previous: null,
-						reason: options?.skillOverrideReason,
-					});
-					if (decision.kind === "reason_required") {
-						abort(skillOverrideReasonRequiredError(decision.missingSkillIds));
-					}
-
-					const expectedAssignment =
-						current.type === "pickup"
-							? isNull(shift.employeeId)
-							: current.type === "swap"
-								? eq(shift.employeeId, current.requesterId)
-								: current.shift.employeeId === null
-									? isNull(shift.employeeId)
-									: eq(shift.employeeId, current.shift.employeeId);
-					const [updatedShift] = await tx
-						.update(shift)
-						.set({ employeeId: assignedEmployeeId })
-						.where(
-							and(
-								eq(shift.id, current.shiftId),
-								eq(shift.organizationId, organizationId),
-								eq(shift.status, "published"),
-								expectedAssignment,
-							),
-						)
-						.returning({ id: shift.id });
-					if (!updatedShift) abort(staleRequest());
-
-					// shiftId is locked and was verified against organizationId above; shift_request gets
-					// its direct organization column in Phase 1.
-					const [approved] = await tx
-						.update(shiftRequest)
-						.set({ status: "approved", approverId, approvedAt: new Date() })
-						.where(
-							and(
-								eq(shiftRequest.id, requestId),
-								eq(shiftRequest.shiftId, current.shiftId),
-								eq(shiftRequest.status, "pending"),
-							),
-						)
-						.returning();
-					if (!approved) abort(staleRequest());
-
-					if (decision.kind === "record") {
-						await insertSkillOverride(tx, {
-							organizationId,
-							shiftId: current.shiftId,
-							context,
-							missingSkillIds: decision.missingSkillIds,
-							reason: decision.reason,
-							overriddenBy: approver.userId,
-						});
-					}
-
-					if (current.type === "pickup") {
-						await tx
-							.update(shiftRequest)
-							.set({
-								status: "rejected",
-								rejectionReason: "Another pickup request was approved",
-							})
-							.where(
-								and(
-									eq(shiftRequest.shiftId, current.shiftId),
-									eq(shiftRequest.type, "pickup"),
-									eq(shiftRequest.status, "pending"),
-								),
-							);
-					}
-
-					return approved;
+					const approver = await requireApprover(tx, organizationId, approverId, current, "approve");
+					return await approvePendingRequest(tx, organizationId, current, approver, options);
 				}),
 
 			rejectRequest: (organizationId, requestId, approverId, reason) =>
@@ -564,7 +614,7 @@ export const ShiftRequestServiceLive = Layer.effect(
 						);
 					}
 					if (current.status !== "pending") abort(staleRequest(current.status));
-					await requireApprover(tx, organizationId, approverId, "reject");
+					await requireApprover(tx, organizationId, approverId, current, "reject");
 
 					const [rejected] = await tx
 						.update(shiftRequest)
@@ -652,11 +702,8 @@ export const ShiftRequestServiceLive = Layer.effect(
 						"getPendingRequestApprover",
 						async () =>
 							dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, approverId),
-									eq(employee.organizationId, organizationId),
-									eq(employee.isActive, true),
-								),
+								// The same decider rule as the decision check (#1597).
+								where: and(eq(employee.id, approverId), onCurrentRoster(organizationId)),
 							}),
 					);
 					if (!approver || !isShiftRequestDecider(approver)) {

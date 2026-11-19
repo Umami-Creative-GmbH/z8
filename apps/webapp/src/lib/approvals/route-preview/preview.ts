@@ -39,7 +39,7 @@ import {
 	loadApprovalStageDirectory,
 } from "../routing/stage-activation-resolver";
 import type { ApprovalRoutingContext } from "../routing/types";
-import { shiftRequestDeciders } from "../shift-request-deciders";
+import { isOnlyShiftRequestDecider, shiftRequestDeciders } from "../shift-request-deciders";
 import type { ApprovalDbService, ApprovalWorkflowSnapshot, JsonObject } from "../workflow/ports";
 import { normalizeStableData } from "../workflow/stable-data";
 import { ApprovalWorkflowStartError, planApprovalWorkflowStart } from "../workflow/start-workflow";
@@ -718,10 +718,11 @@ export async function routeApprovalRequesters(
 	}
 
 	function shiftRequestRoute(requester: Requester): ApprovalRoute {
-		const deciders = shiftRequestDeciders(snapshot.roster);
-		if (deciders.length === 0) return unroutable({ code: "no_decider" });
-		// Exactly the employees the decision check admits: a requesting decider among them (#1604).
-		const alone = deciders.every((id) => id === requester.id);
+		// Exactly the employees the decision check admits, never the requester (#1604). The only
+		// decider's own request is approved on submission (ADR-0004).
+		const alone = isOnlyShiftRequestDecider(snapshot.roster, requester.id);
+		const deciders = shiftRequestDeciders(snapshot.roster, requester.id);
+		if (deciders.length === 0 && !alone) return unroutable({ code: "no_decider" });
 		return combine([
 			{
 				variant: {},
@@ -740,9 +741,8 @@ export async function routeApprovalRequesters(
 							activation: alone ? "requester_auto_approve" : "human",
 						},
 					],
-					// The request stays pending until they decide it themselves.
-					autoCompleted: false,
-					notes: alone ? [{ code: "requester_only_decider" }] : [],
+					autoCompleted: alone,
+					notes: [],
 				},
 			},
 		]);
