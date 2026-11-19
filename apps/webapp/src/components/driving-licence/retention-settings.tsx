@@ -3,19 +3,13 @@
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+	ConfirmActionDialog,
+	describeFailure,
+	useConfirmedAction,
+} from "@/components/settings/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -497,31 +491,20 @@ function CleanupCard({
 }) {
 	const { t } = useTranslate();
 	const formatTime = useRetentionTime();
-	const [busy, setBusy] = useState(false);
-	function failed() {
-		toast.error(
+	/** Runs the cleanup; throws the worded failure so its confirmation stays open showing it. */
+	async function cleanup() {
+		const failure = new Error(
 			t(
 				"drivingLicence.retention.error",
 				"Retention administration could not be completed. Refresh and check your access and case details.",
 			),
 		);
-	}
-	async function cleanup() {
-		setBusy(true);
-		try {
-			const result = await cleanupDrivingLicenceEvidenceAction();
-			if (result.success) {
-				toast.success(
-					t("drivingLicence.settingsTabs.cleanupFinished", "Due evidence cleanup finished"),
-				);
-				await onCleaned();
-			} else {
-				failed();
-			}
-		} catch {
-			failed();
-		}
-		setBusy(false);
+		const result = await cleanupDrivingLicenceEvidenceAction().catch(() => null);
+		if (!result?.success) throw failure;
+		toast.success(
+			t("drivingLicence.settingsTabs.cleanupFinished", "Due evidence cleanup finished"),
+		);
+		await onCleaned();
 	}
 	return (
 		<Card>
@@ -535,7 +518,7 @@ function CleanupCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<CleanupButton busy={busy} onConfirm={() => void cleanup()} />
+				<CleanupButton onConfirm={cleanup} />
 				{data.runs.length ? (
 					<>
 						<h3 className="font-medium">
@@ -586,36 +569,49 @@ function useRetentionTime() {
 		value ? formatter.format(parseInstant(value).epochMilliseconds) : "—";
 }
 
-function CleanupButton({ busy, onConfirm }: { busy: boolean; onConfirm: () => void }) {
+/**
+ * The irreversible cleanup behind a confirmation that stays open while it runs
+ * and shows a failure inline, so it can be retried or cancelled.
+ */
+function CleanupButton({ onConfirm }: { onConfirm: () => Promise<void> }) {
 	const { t } = useTranslate();
+	const cleanup = useConfirmedAction<"due-evidence">();
 	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button type="button" variant="outline" disabled={busy}>
-					{busy
-						? t("drivingLicence.retention.cleaning", "Checking due records…")
-						: t("drivingLicence.retention.cleanup", "Run due evidence cleanup")}
-				</Button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("drivingLicence.retention.confirmTitle", "Delete due evidence?")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"drivingLicence.retention.confirmDescription",
-							"This permanently removes evidence whose retention period has ended. Current active authorizations and legal-case holds remain protected. Deleted originals and supplements cannot be recovered through the application.",
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction onClick={onConfirm}>
-						{t("drivingLicence.retention.confirmDelete", "Delete due evidence")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+		<>
+			<Button
+				type="button"
+				variant="outline"
+				disabled={cleanup.isPending}
+				onClick={() => cleanup.request("due-evidence")}
+			>
+				{cleanup.isPending
+					? t("drivingLicence.retention.cleaning", "Checking due records…")
+					: t("drivingLicence.retention.cleanup", "Run due evidence cleanup")}
+			</Button>
+			<ConfirmActionDialog
+				open={cleanup.open}
+				onOpenChange={cleanup.onOpenChange}
+				title={t("drivingLicence.retention.confirmTitle", "Delete due evidence?")}
+				description={t(
+					"drivingLicence.retention.confirmDescription",
+					"This permanently removes evidence whose retention period has ended. Current active authorizations and legal-case holds remain protected. Deleted originals and supplements cannot be recovered through the application.",
+				)}
+				confirmLabel={t("drivingLicence.retention.confirmDelete", "Delete due evidence")}
+				pendingLabel={t("drivingLicence.retention.cleaning", "Checking due records…")}
+				isPending={cleanup.isPending}
+				error={cleanup.error}
+				onConfirm={() =>
+					void cleanup.confirm(onConfirm, (failure) =>
+						describeFailure(
+							failure,
+							t(
+								"drivingLicence.retention.error",
+								"Retention administration could not be completed. Refresh and check your access and case details.",
+							),
+						),
+					)
+				}
+			/>
+		</>
 	);
 }

@@ -7,15 +7,26 @@ import type {
 	SettingsEntry,
 	SettingsGroupConfig,
 } from "@/components/settings/settings-config";
+import { PageHeader } from "@/components/ui/page-header";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import { SettingsSearch, useSettingsSearch } from "./settings-search";
+import {
+	SettingsSearch,
+	SettingsSearchEmpty,
+	useSettingsSearch,
+} from "./settings-search";
 
 interface SettingsGridProps {
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
+	/** The viewer reaches Organization settings, where features are switched on. */
+	canChangeFeatures?: boolean;
 }
 
-export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridProps) {
+export function SettingsGrid({
+	visibleSettings,
+	visibleGroups,
+	canChangeFeatures = false,
+}: SettingsGridProps) {
 	const { t } = useTranslate();
 	const orgSettings = useOrganizationSettings();
 	const isHydrated = orgSettings.isHydrated;
@@ -27,42 +38,49 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 	};
 
 	return (
-		<div className="space-y-8">
+		<div className="space-y-6">
+			<PageHeader title={t("settings.title", "Settings")} />
 			<SettingsSearch value={query} onChange={setQuery} />
 			{matchingGroups.length === 0 ? (
-				<p role="status" className="py-8 text-center text-sm text-muted-foreground">
-					{t("settings.search.noResults", "No settings found. Try a different search.")}
-				</p>
+				<SettingsSearchEmpty onClear={() => setQuery("")} className="py-4" />
 			) : null}
-			{matchingGroups.map((group) => {
-				return (
-					<section key={group.id}>
-						<h2 className="sticky top-0 z-10 -mx-1 mb-4 bg-background px-1 py-2 text-lg font-medium">
-							{t(group.labelKey, group.labelDefault)}
-						</h2>
-						<div className="grid gap-4 md:grid-cols-2">
-							{group.entries.map((entry) => {
-								const hasFeatureFlag = !!entry.requiredFeature;
-								const isLoading = hasFeatureFlag && !isHydrated;
-								const isDisabled =
-									hasFeatureFlag && isHydrated && !isFeatureEnabled(entry.requiredFeature);
+			<div className="space-y-8">
+				{matchingGroups.map((group) => {
+					return (
+						<section key={group.id} aria-labelledby={`settings-group-${group.id}`}>
+							<h2
+								id={`settings-group-${group.id}`}
+								className="sticky top-0 z-10 -mx-1 mb-4 bg-background px-1 py-2 text-lg font-medium"
+							>
+								{t(group.labelKey, group.labelDefault)}
+							</h2>
+							<ul className="grid gap-4 md:grid-cols-2">
+								{group.entries.map((entry) => {
+									const hasFeatureFlag = !!entry.requiredFeature;
+									const isLoading = hasFeatureFlag && !isHydrated;
+									const isDisabled =
+										hasFeatureFlag && isHydrated && !isFeatureEnabled(entry.requiredFeature);
 
-								return (
-									<SettingsCard
-										key={entry.id}
-										title={t(entry.titleKey, entry.titleDefault)}
-										description={t(entry.descriptionKey, entry.descriptionDefault)}
-										href={entry.href}
-										icon={entry.icon}
-										disabled={isDisabled}
-										loading={isLoading}
-									/>
-								);
-							})}
-						</div>
-					</section>
-				);
-			})}
+									return (
+										<li key={entry.id} className="min-w-0">
+											<SettingsCard
+												title={t(entry.titleKey, entry.titleDefault)}
+												description={t(entry.descriptionKey, entry.descriptionDefault)}
+												href={entry.href}
+												icon={entry.icon}
+												disabled={isDisabled}
+												loading={isLoading}
+												requiredFeature={entry.requiredFeature}
+												canChangeFeatures={canChangeFeatures}
+											/>
+										</li>
+									);
+								})}
+							</ul>
+						</section>
+					);
+				})}
+			</div>
 		</div>
 	);
 }

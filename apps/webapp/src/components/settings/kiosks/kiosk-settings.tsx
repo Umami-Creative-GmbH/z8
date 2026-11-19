@@ -1,6 +1,13 @@
 "use client";
 
-import { IconBan, IconDeviceTablet, IconPencil, IconPlus, IconQrcode } from "@tabler/icons-react";
+import {
+	IconBan,
+	IconDeviceTablet,
+	IconMapPin,
+	IconPencil,
+	IconPlus,
+	IconQrcode,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -16,7 +23,8 @@ import {
 } from "@/app/[locale]/(app)/settings/kiosks/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
@@ -27,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { Link } from "@/navigation";
 import { type KioskConfirmation, KioskConfirmationDialog } from "./kiosk-confirmation-dialog";
 import { KioskFormDialog } from "./kiosk-form-dialog";
 import { formatKioskInstant } from "./kiosk-format";
@@ -91,40 +100,57 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 		});
 	}
 
+	const noLocations = data.locations.length === 0;
+	const addKiosk = (
+		<Button onClick={() => setCreating(true)} disabled={noLocations}>
+			<IconPlus className="size-4" aria-hidden="true" />
+			{t("settings.kiosks.add", "Add kiosk")}
+		</Button>
+	);
+
 	return (
 		<div className="space-y-6">
+			<PageHeader
+				title={t("settings.kiosks.title", "Kiosks")}
+				description={t(
+					"settings.kiosks.description",
+					"Shared devices at a location where employees clock with their kiosk PIN",
+				)}
+				actions={addKiosk}
+			/>
 			<Card>
-				<CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
-					<div className="space-y-1.5">
-						<CardTitle className="flex items-center gap-2">
-							<IconDeviceTablet className="size-5" aria-hidden="true" />
-							{t("settings.kiosks.listTitle", "Kiosks")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.kiosks.listDescription",
-								"Each kiosk belongs to one location. Pair a device by opening the kiosk page on it and entering the pairing code.",
-							)}
-						</CardDescription>
-					</div>
-					<Button onClick={() => setCreating(true)} disabled={data.locations.length === 0}>
-						<IconPlus className="size-4" aria-hidden="true" />
-						{t("settings.kiosks.add", "Add kiosk")}
-					</Button>
+				<CardHeader>
+					<CardDescription>
+						{t(
+							"settings.kiosks.listDescription",
+							"Each kiosk belongs to one location. Pair a device by opening the kiosk page on it and entering the pairing code.",
+						)}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{data.locations.length === 0 ? (
-						<p className="mb-4 text-sm text-muted-foreground">
-							{t(
-								"settings.kiosks.noLocations",
-								"Create a location first: every kiosk belongs to one location.",
-							)}
-						</p>
+					{noLocations ? (
+						<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed p-4">
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.kiosks.noLocations",
+									"Create a location first: every kiosk belongs to one location.",
+								)}
+							</p>
+							<Button asChild variant="outline" size="sm">
+								<Link href="/settings/locations">
+									<IconMapPin className="size-4" aria-hidden="true" />
+									{t("settings.locations.title", "Locations")}
+								</Link>
+							</Button>
+						</div>
 					) : null}
 					{data.kiosks.length === 0 ? (
-						<p className="text-sm text-muted-foreground">
-							{t("settings.kiosks.empty", "No kiosks yet.")}
-						</p>
+						<div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center">
+							<IconDeviceTablet className="size-6 text-muted-foreground" aria-hidden="true" />
+							<p className="text-sm text-muted-foreground">
+								{t("settings.kiosks.empty", "No kiosks yet.")}
+							</p>
+						</div>
 					) : (
 						<KioskTable
 							kiosks={data.kiosks}
@@ -218,8 +244,8 @@ function KioskTable({
 				<TableBody>
 					{kiosks.map((kiosk) => (
 						<TableRow key={kiosk.id}>
-							<TableCell>
-								<div className="font-medium">{kiosk.name}</div>
+							<TableCell className="min-w-48 max-w-80 whitespace-normal">
+								<div className="break-words font-medium">{kiosk.name}</div>
 								<div className="text-xs text-muted-foreground">
 									{kiosk.timezone}
 									{kiosk.boardEnabled
@@ -246,11 +272,13 @@ function KioskTable({
 										: ""}
 								</div>
 							</TableCell>
-							<TableCell>{kiosk.locationName}</TableCell>
+							<TableCell className="max-w-56 truncate" title={kiosk.locationName}>
+								{kiosk.locationName}
+							</TableCell>
 							<TableCell>
 								<KioskStatusBadge kiosk={kiosk} />
 							</TableCell>
-							<TableCell className="text-sm">
+							<TableCell className="text-sm tabular-nums">
 								{kiosk.lastSeenAt
 									? formatKioskInstant(locale, kiosk.lastSeenAt, kiosk.timezone)
 									: t("settings.kiosks.neverSeen", "Never")}

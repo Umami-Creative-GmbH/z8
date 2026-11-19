@@ -117,7 +117,11 @@ function buildAbsenceCategoryColumns({
 	];
 }
 
-function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) {
+function useAbsenceCategoryMutations(
+	queryKey: QueryKey,
+	onDeleted: () => void,
+	onDeleteFailed: (message: string) => void,
+) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -156,7 +160,8 @@ function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) 
 				queryClient.invalidateQueries({ queryKey });
 				onDeleted();
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				onDeleteFailed(
 					actionErrorMessage(t, result, DELETE_REFUSALS, [
 						"settings.absenceCategories.deleteFailed",
 						"Could not delete category",
@@ -165,7 +170,7 @@ function useAbsenceCategoryMutations(queryKey: QueryKey, onDeleted: () => void) 
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.absenceCategories.deleteFailed", "Could not delete category"));
+			onDeleteFailed(t("settings.absenceCategories.deleteFailed", "Could not delete category"));
 		},
 	});
 
@@ -183,6 +188,7 @@ export function AbsenceCategoriesTable({
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [categoryToDelete, setCategoryToDelete] = useState<AbsenceCategoryForSettings | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [editingCategory, setEditingCategory] = useState<AbsenceCategoryForSettings | null>(null);
 	const [createFormOpen, setCreateFormOpen] = useState(false);
 
@@ -205,8 +211,10 @@ export function AbsenceCategoriesTable({
 		},
 	});
 
-	const { toggleActiveMutation, deleteMutation } = useAbsenceCategoryMutations(queryKey, () =>
-		setCategoryToDelete(null),
+	const { toggleActiveMutation, deleteMutation } = useAbsenceCategoryMutations(
+		queryKey,
+		() => setCategoryToDelete(null),
+		setDeleteError,
 	);
 
 	const filteredCategories = filterAbsenceCategories(categories, search, locale, t);
@@ -218,7 +226,10 @@ export function AbsenceCategoriesTable({
 		onEdit: setEditingCategory,
 		onToggleActive: toggleActiveMutation.mutate,
 		toggleActivePending: toggleActiveMutation.isPending,
-		onDelete: setCategoryToDelete,
+		onDelete: (category) => {
+			setDeleteError(null);
+			setCategoryToDelete(category);
+		},
 	});
 
 	const openCreateForm = () => setCreateFormOpen(true);
@@ -286,8 +297,15 @@ export function AbsenceCategoriesTable({
 				category={categoryToDelete}
 				locale={locale}
 				isPending={deleteMutation.isPending}
-				onClose={() => setCategoryToDelete(null)}
-				onConfirm={(categoryId) => deleteMutation.mutate(categoryId)}
+				error={deleteError}
+				onClose={() => {
+					setCategoryToDelete(null);
+					setDeleteError(null);
+				}}
+				onConfirm={(categoryId) => {
+					setDeleteError(null);
+					deleteMutation.mutate(categoryId);
+				}}
 				t={t}
 			/>
 

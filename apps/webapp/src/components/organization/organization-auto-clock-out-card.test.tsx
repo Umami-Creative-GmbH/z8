@@ -61,6 +61,11 @@ describe("OrganizationAutoClockOutCard", () => {
 		});
 	});
 	afterEach(cleanup);
+	it("keeps the panel heading for assistive tech without repeating the tab name on screen", () => {
+		show();
+		const heading = screen.getByRole("heading", { level: 2, name: "Automatic clock-out" });
+		expect(heading.className).toContain("sr-only");
+	});
 	it.each([
 		["", "5"],
 		["0", "0"],

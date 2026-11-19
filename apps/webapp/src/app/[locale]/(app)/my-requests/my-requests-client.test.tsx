@@ -49,13 +49,29 @@ vi.mock("next-intl", () => ({
 	useLocale: () => "de",
 }));
 
-vi.mock("@tabler/icons-react", () => ({
-	IconAlertTriangle: () => <span aria-hidden="true" />,
-	IconCheck: () => <span aria-hidden="true" />,
-	IconClock: () => <span aria-hidden="true" />,
-	IconFileDescription: () => <span aria-hidden="true" />,
-	IconInfoCircle: () => <span aria-hidden="true" />,
-}));
+vi.mock("@tabler/icons-react", () => {
+	const Icon = () => <span aria-hidden="true" />;
+	return {
+		IconAlertTriangle: Icon,
+		IconBan: Icon,
+		IconCalendarEvent: Icon,
+		IconCheck: Icon,
+		IconClock: Icon,
+		IconClockEdit: Icon,
+		IconFileDescription: Icon,
+		IconInfoCircle: Icon,
+		IconReceipt: Icon,
+		IconSearch: Icon,
+		IconX: Icon,
+	};
+});
+
+/** Opens a request's cancel confirmation and answers it. */
+async function answerCancel(scope: HTMLElement, answer: "Cancel request" | "Keep request") {
+	fireEvent.click(within(scope).getByRole("button", { name: "Cancel request" }));
+	const dialog = await screen.findByRole("alertdialog", { name: "Cancel this request?" });
+	fireEvent.click(within(dialog).getByRole("button", { name: answer }));
+}
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => ({
 	readPeriodReadiness: vi.fn(),
@@ -167,7 +183,6 @@ describe("MyRequestsClient", () => {
 		vi.clearAllMocks();
 		cancelMyAbsenceRequestMock.mockResolvedValue({ success: true });
 		cancelMyTimeCorrectionRequestMock.mockResolvedValue({ success: true });
-		vi.spyOn(window, "confirm").mockReturnValue(true);
 	});
 
 	afterEach(() => {
@@ -179,8 +194,9 @@ describe("MyRequestsClient", () => {
 		render(<MyRequestsClient initialResult={createResult()} />);
 
 		expect(screen.getByRole("heading", { name: "My Requests" })).toBeTruthy();
-		expect(screen.getByText("Pending")).toBeTruthy();
-		expect(screen.getByText("Required fixes")).toBeTruthy();
+		const summary = screen.getByRole("region", { name: "Request summary" });
+		expect(within(summary).getByText("In review")).toBeTruthy();
+		expect(within(summary).getByText("Required fixes")).toBeTruthy();
 
 		const needsAttention = screen.getByRole("region", {
 			name: "Needs attention",
@@ -203,10 +219,42 @@ describe("MyRequestsClient", () => {
 			name: "Recently decided",
 		});
 		expect(within(recentlyDecided).getByText("Travel expense claim")).toBeTruthy();
+		// The rejection to fix is a recent decision too, but is shown once, under "Needs attention".
+		expect(within(recentlyDecided).queryByText("Vacation")).toBeNull();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
+		expect(within(allRequests).getByText("Vacation")).toBeTruthy();
 		expect(within(allRequests).getByText("Time correction request")).toBeTruthy();
 		expect(within(allRequests).getByText("Travel expense claim")).toBeTruthy();
+	});
+
+	it("keeps a rejection without a fix out of the attention list, matching the fix count", () => {
+		const [rejected, ...rest] = createResult().items;
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					items: [{ ...rejected, availableActions: ["view"] }, ...rest],
+				})}
+			/>,
+		);
+
+		expect(screen.queryByRole("region", { name: "Needs attention" })).toBeNull();
+		const recentlyDecided = screen.getByRole("region", { name: "Recently decided" });
+		expect(within(recentlyDecided).getByText("Coverage needed")).toBeTruthy();
+	});
+
+	it("clears every filter from the filtered-empty state", () => {
+		render(<MyRequestsClient initialResult={createResult()} />);
+		fireEvent.change(screen.getByLabelText("Type"), { target: { value: "absence" } });
+		fireEvent.change(screen.getByLabelText("Search"), { target: { value: "does-not-match" } });
+
+		const clear = screen.getAllByRole("button", { name: "Clear filters" });
+		fireEvent.click(clear[clear.length - 1]);
+
+		expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe("all");
+		expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+		expect(screen.getByRole("region", { name: "In review" })).toBeTruthy();
 	});
 
 	it("formats request dates with the active locale", () => {
@@ -264,10 +312,10 @@ describe("MyRequestsClient", () => {
 		);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
-		expect(within(inReview).getByRole("button", { name: "Cancel" })).toBeTruthy();
+		expect(within(inReview).getByRole("button", { name: "Cancel request" })).toBeTruthy();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
-		expect(within(allRequests).queryByRole("button", { name: "Cancel" })).toBeNull();
+		expect(within(allRequests).queryByRole("button", { name: "Cancel request" })).toBeNull();
 		expect(within(allRequests).getByRole("link", { name: "View" })).toBeTruthy();
 	});
 
@@ -338,7 +386,7 @@ describe("MyRequestsClient", () => {
 		);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
-		expect(within(inReview).queryByRole("button", { name: "Cancel" })).toBeNull();
+		expect(within(inReview).queryByRole("button", { name: "Cancel request" })).toBeNull();
 	});
 
 	it("dispatches pending cancellation by source type with neutral copy", async () => {
@@ -384,19 +432,14 @@ describe("MyRequestsClient", () => {
 		const inReview = screen.getByRole("region", { name: "In review" });
 		const absenceCard = within(inReview).getByText("Pending vacation").closest("article");
 		expect(absenceCard).not.toBeNull();
-		fireEvent.click(
-			within(absenceCard as HTMLElement).getByRole("button", {
-				name: "Cancel",
-			}),
-		);
+		await answerCancel(absenceCard as HTMLElement, "Cancel request");
 
-		expect(window.confirm).toHaveBeenCalledWith("Cancel this request?");
 		await waitFor(() => {
 			expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith("absence-pending");
 		});
 		const timeCard = within(inReview).getByText("Time correction request").closest("article");
 		expect(timeCard).not.toBeNull();
-		fireEvent.click(within(timeCard as HTMLElement).getByRole("button", { name: "Cancel" }));
+		await answerCancel(timeCard as HTMLElement, "Cancel request");
 		await waitFor(() => {
 			expect(cancelMyTimeCorrectionRequestMock).toHaveBeenCalledWith("period-1");
 		});
@@ -405,8 +448,7 @@ describe("MyRequestsClient", () => {
 		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledTimes(2));
 	});
 
-	it("does not cancel when confirmation is declined", () => {
-		vi.mocked(window.confirm).mockReturnValue(false);
+	it("does not cancel when confirmation is declined", async () => {
 		render(
 			<MyRequestsClient
 				initialResult={createResult({
@@ -431,9 +473,9 @@ describe("MyRequestsClient", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		await answerCancel(screen.getByRole("region", { name: "In review" }), "Keep request");
 
-		expect(window.confirm).toHaveBeenCalledWith("Cancel this request?");
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
 		expect(cancelMyAbsenceRequestMock).not.toHaveBeenCalled();
 	});
 
@@ -490,7 +532,9 @@ describe("MyRequestsClient", () => {
 			const inReview = screen.getByRole("region", { name: "In review" });
 			const card = within(inReview).getByText("Pending vacation").closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
-			expect(within(card as HTMLElement).getByRole("button", { name: "Cancel" })).toBeTruthy();
+			expect(
+				within(card as HTMLElement).getByRole("button", { name: "Cancel request" }),
+			).toBeTruthy();
 		});
 
 		it("selects the filters needed to reveal the focused request", async () => {
@@ -534,7 +578,9 @@ describe("MyRequestsClient", () => {
 				}),
 			);
 			// Only the employee's own list renders, unchanged; no card is focused or marked.
-			expect(screen.getAllByRole("article")).toHaveLength(7);
+			expect(screen.getAllByRole("article")).toHaveLength(3);
+			const history = screen.getByRole("region", { name: "All requests" });
+			expect(within(history).getAllByRole("row")).toHaveLength(4);
 			expect(document.activeElement?.closest("article")).toBeNull();
 		});
 
@@ -610,7 +656,7 @@ describe("MyRequestsClient", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		await answerCancel(screen.getByRole("region", { name: "In review" }), "Cancel request");
 
 		expect((await screen.findByRole("alert")).textContent).toContain("Cannot cancel");
 	});
@@ -622,10 +668,12 @@ describe("MyRequestsClient", () => {
 			availableActions: ["view", "cancel"] as ("view" | "cancel")[],
 		};
 		render(<MyRequestsClient initialResult={createResult({ items: [item] })} />);
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		const inReview = screen.getByRole("region", { name: "In review" });
+		await answerCancel(inReview, "Cancel request");
 		expect((await screen.findByRole("alert")).textContent).toBe("Request could not be cancelled.");
 		expect(invalidateReadinessMock).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		await answerCancel(inReview, "Cancel request");
 		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledOnce());
 	});
 });

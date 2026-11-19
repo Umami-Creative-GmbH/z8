@@ -1,6 +1,9 @@
 "use client";
 
-import { actionData } from "@/components/settings/enterprise/action-data";
+import {
+	actionData,
+	enterpriseErrorMessage,
+} from "@/components/settings/enterprise/action-data";
 import { IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -10,19 +13,10 @@ import {
 	requestSSODomainVerificationAction,
 	verifySSODomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
@@ -30,6 +24,10 @@ import {
 } from "@/components/ui/card";
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import { getOidcCallbackUrl } from "@/lib/enterprise-identity/entra-setup";
+import {
+	EnterpriseDeleteConfirmDialog,
+	useConfirmedRemoval,
+} from "./enterprise-delete-confirm-dialog";
 import { SSOProviderDialog } from "./sso-provider-dialog";
 import { SsoCallbackUrl, SsoSetupNextSteps } from "./sso-provider-guide";
 import {
@@ -63,10 +61,7 @@ export function SSOProviderManagement({
 		}, {}),
 	);
 	const [busyProviderId, setBusyProviderId] = useState<string | null>(null);
-	const [deleteDialog, setDeleteDialog] = useState<{
-		isOpen: boolean;
-		provider: SSOProvider | null;
-	}>({ isOpen: false, provider: null });
+	const removal = useConfirmedRemoval<SSOProvider>();
 	const callbackUrl = getOidcCallbackUrl(callbackBaseUrl);
 
 	const handleProviderAdded = (newProvider: SSOProvider) => {
@@ -144,66 +139,57 @@ export function SSOProviderManagement({
 		setBusyProviderId(null);
 	};
 
-	const handleDelete = async () => {
-		const provider = deleteDialog.provider;
-		if (!provider) return;
-
-		const didDelete = await actionData(deleteSSOProviderAction({ providerId: provider.id }))
-			.then(() => true)
-			.catch(() => false);
-
-		if (didDelete) {
-			setProviders((prev) => prev.filter((p) => p.id !== provider.id));
-			setTokenByProviderId((prev) => {
-				const next = { ...prev };
-				delete next[provider.providerId];
-				return next;
-			});
-			toast.success(
-				t("settings.enterprise.sso.deleteSuccess", "SSO provider deleted"),
-			);
-		} else {
-			toast.error(
-				t(
+	const handleDelete = () =>
+		removal.confirm(
+			async (provider) => {
+				await actionData(deleteSSOProviderAction({ providerId: provider.id }));
+				setProviders((prev) => prev.filter((p) => p.id !== provider.id));
+				setTokenByProviderId((prev) => {
+					const next = { ...prev };
+					delete next[provider.providerId];
+					return next;
+				});
+				toast.success(
+					t("settings.enterprise.sso.deleteSuccess", "SSO provider deleted"),
+				);
+			},
+			(error) =>
+				enterpriseErrorMessage(t, error, [
 					"settings.enterprise.sso.deleteError",
 					"Failed to delete SSO provider",
-				),
-			);
-		}
-
-		setDeleteDialog({ isOpen: false, provider: null });
-	};
+				]),
+		);
 
 	return (
-		<>
+		<div className="space-y-6">
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between">
-					<div>
-						<CardTitle>
-							{t("settings.enterprise.sso.title", "Identity Providers")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.enterprise.sso.description",
-								"Add OIDC identity providers to enable SSO for your organization.",
-							)}
-						</CardDescription>
-					</div>
-					<Button onClick={() => setIsAddDialogOpen(true)}>
-						<IconPlus className="mr-2 size-4" />
-						{t("settings.enterprise.addProvider", "Add Provider")}
-					</Button>
+				<CardHeader>
+					<CardTitle>
+						{t("settings.enterprise.sso.title", "Identity Providers")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.enterprise.sso.description",
+							"Add OIDC identity providers to enable SSO for your organization.",
+						)}
+					</CardDescription>
+					<CardAction>
+						<Button onClick={() => setIsAddDialogOpen(true)}>
+							<IconPlus className="size-4" aria-hidden="true" />
+							{t("settings.enterprise.addProvider", "Add Provider")}
+						</Button>
+					</CardAction>
 				</CardHeader>
 				<CardContent>
 					{providers.length === 0 ? (
-						<div className="text-center py-8 text-muted-foreground">
-							<p>
+						<div className="rounded-lg border border-dashed p-4 text-sm">
+							<p className="font-medium">
 								{t(
 									"settings.enterprise.sso.empty",
 									"No SSO providers configured yet.",
 								)}
 							</p>
-							<p className="text-sm">
+							<p className="text-muted-foreground">
 								{t(
 									"settings.enterprise.sso.emptyDescription",
 									"Add an OIDC provider to enable enterprise single sign-on.",
@@ -215,9 +201,7 @@ export function SSOProviderManagement({
 							busyProviderId={busyProviderId}
 							providers={providers}
 							tokenByProviderId={tokenByProviderId}
-							onDelete={(provider) =>
-								setDeleteDialog({ isOpen: true, provider })
-							}
+							onDelete={removal.request}
 							onRequestVerificationToken={handleRequestVerificationToken}
 							onVerifyDomain={handleVerifyDomain}
 						/>
@@ -225,7 +209,7 @@ export function SSOProviderManagement({
 				</CardContent>
 			</Card>
 
-			<Card className="mt-6">
+			<Card>
 				<CardHeader>
 					<CardTitle>
 						{t(
@@ -276,40 +260,23 @@ export function SSOProviderManagement({
 				onProviderAdded={handleProviderAdded}
 			/>
 
-			<AlertDialog
-				open={deleteDialog.isOpen}
-				onOpenChange={(open) =>
-					setDeleteDialog({ isOpen: open, provider: deleteDialog.provider })
-				}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.enterprise.sso.deleteDialogTitle",
-								"Delete SSO Provider",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.enterprise.sso.deleteDialogDescription",
-								"Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		</>
+			<EnterpriseDeleteConfirmDialog
+				open={removal.open}
+				onOpenChange={removal.onOpenChange}
+				title={t(
+					"settings.enterprise.sso.deleteDialogTitleNamed",
+					"Delete SSO provider {provider}?",
+					{ provider: removal.target?.providerId ?? "" },
+				)}
+				description={t(
+					"settings.enterprise.sso.deleteDialogDescription",
+					"Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
+				)}
+				confirmLabel={t("settings.enterprise.sso.deleteConfirm", "Delete provider")}
+				isPending={removal.isPending}
+				error={removal.error}
+				onConfirm={handleDelete}
+			/>
+		</div>
 	);
 }

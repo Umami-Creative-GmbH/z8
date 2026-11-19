@@ -13,16 +13,7 @@ import {
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
@@ -46,6 +37,7 @@ export function WorkPolicyTable({
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [policyToDelete, setPolicyToDelete] = useState<WorkPolicyWithDetails | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 
 	// Fetch policies
@@ -77,9 +69,9 @@ export function WorkPolicyTable({
 					queryKey: queryKeys.workPolicies.list(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setPolicyToDelete(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.workPolicies.deleteFailed",
 						"Failed to delete",
@@ -88,7 +80,7 @@ export function WorkPolicyTable({
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workPolicies.deleteFailed", "Failed to delete policy"));
+			setDeleteError(t("settings.workPolicies.deleteFailed", "Failed to delete policy"));
 		},
 	});
 
@@ -140,11 +132,13 @@ export function WorkPolicyTable({
 
 	const handleDeleteClick = (policy: WorkPolicyWithDetails) => {
 		setPolicyToDelete(policy);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (policyToDelete) {
+		if (policyToDelete && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(policyToDelete.id);
 		}
 	};
@@ -243,35 +237,22 @@ export function WorkPolicyTable({
 				}
 			/>
 
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.workPolicies.deleteTitle", "Delete Policy")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.workPolicies.deleteDescription",
-								'Are you sure you want to delete "{name}"? This will also remove all assignments for this policy. This action cannot be undone.',
-								{ name: policyToDelete?.name },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							disabled={deleteMutation.isPending}
-						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteError(null);
+				}}
+				title={t("settings.workPolicies.deleteTitle", "Delete Policy")}
+				description={t(
+					"settings.workPolicies.deleteDescription",
+					'Are you sure you want to delete "{name}"? This will also remove all assignments for this policy. This action cannot be undone.',
+					{ name: policyToDelete?.name },
+				)}
+				isDeleting={deleteMutation.isPending}
+				error={deleteError}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</div>
 	);
 }

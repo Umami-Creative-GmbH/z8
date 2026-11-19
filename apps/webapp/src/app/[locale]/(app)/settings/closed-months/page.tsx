@@ -1,6 +1,10 @@
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { Suspense } from "react";
 import { ClosedMonthsSettings } from "@/components/settings/closed-months/closed-months-settings";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { getTranslate } from "@/tolgee/server";
 import { getClosedMonthsOverview } from "./actions";
 
@@ -14,23 +18,28 @@ async function ClosedMonthsSettingsPageContent() {
 	return (
 		<div className="page-frame">
 			<div className="min-w-0 space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.closedMonths.title", "Closed months")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.closedMonths.description",
-							"Close months after payroll so their work and absences can no longer change",
-						)}
-					</p>
-				</div>
+				<PageHeader
+					title={t("settings.closedMonths.title", "Closed months")}
+					description={t(
+						"settings.closedMonths.description",
+						"Close months after payroll so their work and absences can no longer change",
+					)}
+				/>
 				{overview.success ? (
 					<ClosedMonthsSettings overview={overview.data} />
 				) : (
-					<p role="alert" className="text-destructive text-sm">
-						{overview.error}
-					</p>
+					<Alert variant="destructive">
+						<IconAlertTriangle aria-hidden="true" />
+						<AlertTitle>
+							{t("settings.closedMonths.loadErrorTitle", "Closed months could not be loaded")}
+						</AlertTitle>
+						<AlertDescription>
+							{actionErrorMessage(t, overview, {}, [
+								"settings.closedMonths.loadErrorDescription",
+								"Reload the page to try again.",
+							])}
+						</AlertDescription>
+					</Alert>
 				)}
 			</div>
 		</div>
@@ -39,13 +48,13 @@ async function ClosedMonthsSettingsPageContent() {
 
 function ClosedMonthsSettingsPageLoading() {
 	return (
-		<div className="page-frame">
+		<div className="page-frame" aria-busy="true">
 			<div className="min-w-0 space-y-6">
 				<div className="space-y-2">
-					<Skeleton className="h-8 w-56" />
-					<Skeleton className="h-5 w-full max-w-xl" />
+					<Skeleton className="h-8 w-56" aria-hidden="true" />
+					<Skeleton className="h-5 w-full max-w-xl" aria-hidden="true" />
 				</div>
-				<Skeleton className="h-96 w-full" />
+				<Skeleton className="h-96 w-full" aria-hidden="true" />
 			</div>
 		</div>
 	);

@@ -80,13 +80,11 @@ async function ImportReviewRouteContent({
 		);
 		return (
 			<div className="page-frame">
-				<div>
-					<CsvWorkReview
-						batchId={batch.id}
-						view={{ ...view, rows }}
-						paging={paging}
-					/>
-				</div>
+				<CsvWorkReview
+					batchId={batch.id}
+					view={{ ...view, rows }}
+					paging={paging}
+				/>
 			</div>
 		);
 	}
@@ -136,22 +134,23 @@ async function ImportReviewRouteContent({
 
 	return (
 		<div className="page-frame">
-			<div>
-				{!isCustomerImport ? (
-					<HistoricalVacationImportReview batchId={batch.id} />
-				) : null}
-				<ImportReviewPage
-					batchId={batch.id}
-					summary={summary}
-					paging={paging}
-					rows={rows.map((row, index) => ({
-						...row,
-						billability: billability[index] ?? null,
-					}))}
-					showBillability={showBillability}
-					customerImport={customerImport}
-				/>
-			</div>
+			<ImportReviewPage
+				batchId={batch.id}
+				summary={summary}
+				paging={paging}
+				rows={rows.map((row, index) => ({
+					...row,
+					billability: billability[index] ?? null,
+				}))}
+				showBillability={showBillability}
+				customerImport={customerImport}
+				// The historical vacation review belongs below the page heading, not above it.
+				supplement={
+					!isCustomerImport ? (
+						<HistoricalVacationImportReview batchId={batch.id} />
+					) : undefined
+				}
+			/>
 		</div>
 	);
 }
@@ -167,9 +166,20 @@ function ImportReviewRouteLoading() {
 			}}
 		>
 			<div className="space-y-6">
-				<div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+				<div className="flex flex-wrap items-end justify-between gap-4">
+					<div className="space-y-2">
+						<Skeleton aria-hidden="true" className="h-8 w-56 max-w-full" />
+						<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
+					</div>
+					<Skeleton aria-hidden="true" className="h-9 w-48" />
+				</div>
+				<div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border sm:grid-cols-3 lg:grid-cols-6">
 					{IMPORT_REVIEW_SUMMARY_LOADING_KEYS.map((key) => (
-						<Skeleton key={key} aria-hidden="true" className="h-24 w-full" />
+						<Skeleton
+							key={key}
+							aria-hidden="true"
+							className="h-[4.75rem] w-full rounded-none"
+						/>
 					))}
 				</div>
 				<Skeleton aria-hidden="true" className="h-80 w-full" />

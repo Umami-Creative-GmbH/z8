@@ -5,7 +5,8 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { AppErrorState } from "@/components/errors/app-error-state";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/navigation";
+import { appPageOwnsHeading } from "@/lib/navigation/route-metadata";
+import { Link, usePathname } from "@/navigation";
 
 export default function SettingsError({
 	error,
@@ -15,13 +16,15 @@ export default function SettingsError({
 	retry: () => void;
 }) {
 	const { t } = useTranslate();
+	const pathname = usePathname();
 	useEffect(() => {
 		console.error("Settings error:", error);
 	}, [error]);
 	return (
 		<AppErrorState
 			variant="error"
-			headingLevel={2}
+			// The shell renders the route title as a paragraph on pages that own their h1.
+			headingLevel={appPageOwnsHeading(pathname) ? 1 : 2}
 			titleKey="settings.error.title"
 			titleDefault="Something went wrong"
 			descriptionKey="settings.error.description"

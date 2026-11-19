@@ -1,16 +1,23 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/query/keys";
 import { render } from "@/test/render-with-translations";
 
 const mocks = vi.hoisted(() => ({
 	list: vi.fn(),
+	revoke: vi.fn(),
+	toastSuccess: vi.fn(),
 	scope: { userId: "reader", activeOrganizationId: "A", isLoading: false },
 }));
 vi.mock("@/app/[locale]/(app)/reports/projects/share-actions", () => ({
 	listReportShareLinks: mocks.list,
+	revokeReportShareLink: mocks.revoke,
+}));
+vi.mock("sonner", () => ({
+	toast: { success: mocks.toastSuccess, error: vi.fn() },
 }));
 vi.mock("@/hooks/use-organization", () => ({
 	useOrganization: () => mocks.scope,
@@ -43,6 +50,7 @@ const link = {
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.list.mockReset();
+	mocks.revoke.mockReset();
 	mocks.scope = {
 		userId: "reader",
 		activeOrganizationId: "A",
@@ -107,6 +115,52 @@ it.each([
 		).toHaveLength(1);
 	},
 );
+
+it("names the link in the revoke confirmation and keeps it open while pending and on failure", async () => {
+	const user = userEvent.setup();
+	mocks.list.mockResolvedValue({ success: true, data: [{ ...link, canRevoke: true }] });
+	let settle!: (value: unknown) => void;
+	mocks.revoke.mockReturnValueOnce(
+		new Promise((done) => {
+			settle = done;
+		}),
+	);
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	render(
+		<QueryClientProvider client={client}>
+			<ReportShareLinkList showReport />
+		</QueryClientProvider>,
+	);
+
+	await user.click(await screen.findByRole("button", { name: "Revoke" }));
+	const dialog = await screen.findByRole("alertdialog");
+	expect(within(dialog).getByRole("heading").textContent).toMatch(
+		/^Revoke the share link for A report, .*2026\?$/,
+	);
+
+	await user.click(within(dialog).getByRole("button", { name: "Revoke link" }));
+	expect(mocks.revoke).toHaveBeenCalledWith("A-link");
+	await waitFor(() =>
+		expect(within(dialog).getByRole("button", { name: "Revoke link" })).toHaveProperty(
+			"disabled",
+			true,
+		),
+	);
+	await user.keyboard("{Escape}");
+	expect(screen.getByRole("alertdialog")).toBeTruthy();
+
+	await act(async () => settle({ success: false, error: "Not allowed" }));
+	const alert = await within(screen.getByRole("alertdialog")).findByRole("alert");
+	expect(alert.textContent).toContain("The link could not be revoked");
+	expect(alert.textContent).toContain("Not allowed");
+
+	mocks.revoke.mockResolvedValueOnce({ success: true, data: null });
+	await user.click(
+		within(screen.getByRole("alertdialog")).getByRole("button", { name: "Revoke link" }),
+	);
+	await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+	expect(mocks.toastSuccess).toHaveBeenCalledWith("Link revoked");
+});
 
 it("does not fetch or expose cached links while organization scope is unresolved", () => {
 	mocks.scope = { ...mocks.scope, isLoading: true };

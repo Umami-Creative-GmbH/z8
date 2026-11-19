@@ -30,17 +30,8 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -277,23 +268,23 @@ export function WageTypeMappings({
 				);
 		});
 	};
-	const deleteMapping = (mappingId: string) =>
-		startTransition(async () => {
-			const result = await deleteMappingAction({ mappingId });
-			if (result.success) {
-				toast.success(
-					t("settings.payrollExport.mappings.deleteSuccess", "Mapping deleted"),
-				);
-				refreshData();
-			} else
-				toast.error(
-					t(
-						"settings.payrollExport.mappings.deleteError",
-						"Failed to delete mapping",
-					),
-					{ description: actionErrorMessage(t, result) },
-				);
-		});
+	// Resolves once the mapping is gone and throws the worded reason otherwise,
+	// so the confirmation stays open with the failure inline.
+	const deleteMapping = async (mappingId: string) => {
+		const result = await deleteMappingAction({ mappingId });
+		if (!result.success) {
+			throw new Error(
+				actionErrorMessage(t, result, {}, [
+					"settings.payrollExport.mappings.deleteError",
+					"Failed to delete mapping",
+				]),
+			);
+		}
+		toast.success(
+			t("settings.payrollExport.mappings.deleteSuccess", "Mapping deleted"),
+		);
+		refreshData();
+	};
 
 	if (!hasMappingFormat)
 		return (
@@ -673,9 +664,10 @@ function MappingsTable({
 }: {
 	mappings: WageTypeMapping[];
 	isPending: boolean;
-	onDelete: (id: string) => void;
+	onDelete: (id: string) => Promise<void>;
 	t: Translate;
 }) {
+	const deletion = useConfirmedAction<WageTypeMapping>();
 	if (isPending && mappings.length === 0)
 		return (
 			<div className="flex items-center justify-center py-8">
@@ -746,16 +738,57 @@ function MappingsTable({
 								name={mapping.successFactorsTimeTypeName}
 							/>
 							<TableCell>
-								<DeleteMappingButton
-									mappingId={mapping.id}
-									onDelete={onDelete}
-									t={t}
-								/>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="text-destructive"
+									aria-label={t(
+										"settings.payrollExport.mappings.deleteMappingNamed",
+										"Delete mapping for {name}",
+										{ name: getDisplayName(mapping) },
+									)}
+									disabled={deletion.isPending && deletion.target?.id === mapping.id}
+									onClick={() => deletion.request(mapping)}
+								>
+									<IconTrash className="size-4" aria-hidden="true" />
+								</Button>
 							</TableCell>
 						</TableRow>
 					))}
 				</TableBody>
 			</Table>
+			<DeleteConfirmDialog
+				open={deletion.open}
+				onOpenChange={deletion.onOpenChange}
+				title={t("settings.payrollExport.mappings.deleteTitle", "Delete Mapping")}
+				description={
+					deletion.target
+						? t(
+								"settings.payrollExport.mappings.deleteNamedDescription",
+								'Delete the wage type mapping for "{name}"?',
+								{ name: getDisplayName(deletion.target) },
+							)
+						: t(
+								"settings.payrollExport.mappings.deleteDescription",
+								"Are you sure you want to delete this wage type mapping?",
+							)
+				}
+				isDeleting={deletion.isPending}
+				error={deletion.error}
+				onConfirm={() =>
+					void deletion.confirm(
+						(mapping) => onDelete(mapping.id),
+						(failure) =>
+							describeFailure(
+								failure,
+								t(
+									"settings.payrollExport.mappings.deleteError",
+									"Failed to delete mapping",
+								),
+							),
+					)
+				}
+			/>
 		</TooltipProvider>
 	);
 }
@@ -780,56 +813,6 @@ function WageCodeCell({
 				<span className="text-muted-foreground">-</span>
 			)}
 		</TableCell>
-	);
-}
-
-function DeleteMappingButton({
-	mappingId,
-	onDelete,
-	t,
-}: {
-	mappingId: string;
-	onDelete: (id: string) => void;
-	t: Translate;
-}) {
-	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="text-destructive"
-					aria-label={t(
-						"settings.payrollExport.mappings.deleteMapping",
-						"Delete mapping",
-					)}
-				>
-					<IconTrash className="size-4" />
-				</Button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.payrollExport.mappings.deleteTitle", "Delete Mapping")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.payrollExport.mappings.deleteDescription",
-							"Are you sure you want to delete this wage type mapping?",
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={() => onDelete(mappingId)}
-						className="bg-destructive text-destructive-foreground"
-					>
-						{t("common.delete", "Delete")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
 	);
 }
 

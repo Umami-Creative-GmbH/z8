@@ -72,9 +72,8 @@ export function WorkdayMonthPicker({
 	return (
 		<Card className="rounded-xl shadow-none">
 			<CardHeader className="flex flex-row items-center justify-between gap-2">
-				<CardTitle className="text-base">
-					{t("timeTracking.table.viewCalendar", "View Calendar")}
-				</CardTitle>
+				{/* A heading, not the action label "View Calendar", which the entries list uses for /calendar. */}
+				<CardTitle className="text-base">{t("nav.calendar", "Calendar")}</CardTitle>
 				<Button asChild size="sm" variant="ghost">
 					<Link href={workdayHref(todayDateKey)}>
 						{t("timeTracking.timeline.today", "Today")}

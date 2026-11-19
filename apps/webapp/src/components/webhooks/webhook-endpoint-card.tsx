@@ -45,6 +45,18 @@ import { WebhookDeliveryLogsDialog } from "./webhook-delivery-logs-dialog";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
+const ENDPOINT_LABEL_URL_LENGTH = 48;
+
+/** Identifies an endpoint in control names: its name, or a shortened URL when it has none. */
+export function webhookEndpointLabel(webhook: Pick<PublicWebhookEndpoint, "name" | "url">) {
+	const name = webhook.name.trim();
+	if (name) return name;
+	const url = webhook.url.replace(/^https?:\/\//, "");
+	return url.length > ENDPOINT_LABEL_URL_LENGTH
+		? `${url.slice(0, ENDPOINT_LABEL_URL_LENGTH - 1)}…`
+		: url;
+}
+
 interface WebhookEndpointCardProps {
 	webhook: PublicWebhookEndpoint;
 	/** Current list snapshot must still accept command completion. Server authorization is unchanged. */
@@ -75,10 +87,12 @@ function useWebhookEndpointCard({
 	const isPending = commandPending || isRefreshing;
 	useLayoutEffect(() => {
 		life.current = {};
-		setNewSecret(null);
-		setIsSecretDialogOpen(false);
 		return () => {
 			life.current = null;
+			// Retiring the owner (unmount or Activity hide) discards a one-time secret, so it never
+			// reappears when the endpoint is shown again. Initial state already has no secret.
+			setNewSecret(null);
+			setIsSecretDialogOpen(false);
 		};
 	}, []);
 	async function runCommand(run: (current: () => boolean) => Promise<void>) {
@@ -127,7 +141,7 @@ function useWebhookEndpointCard({
 		}
 		if (webhook.consecutiveFailures > 0) {
 			return (
-				<Badge variant="outline" className="border-yellow-500 text-yellow-600">
+				<Badge variant="warning">
 					{t("webhooks:webhooks.status.degraded", "Degraded")}
 				</Badge>
 			);
@@ -139,7 +153,7 @@ function useWebhookEndpointCard({
 				</Badge>
 			);
 		return (
-			<Badge variant="default" className="bg-green-600">
+			<Badge variant="success">
 				{t("webhooks:webhooks.status.healthy", "Healthy")}
 			</Badge>
 		);
@@ -248,6 +262,7 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 		setNewSecret,
 		lastDeliveryTime,
 	} = useWebhookEndpointCard(props);
+	const endpointLabel = webhookEndpointLabel(webhook);
 
 	return (
 		<>
@@ -260,18 +275,24 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 						</div>
 						<CardDescription className="break-all font-mono text-xs">{webhook.url}</CardDescription>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex shrink-0 items-center gap-2">
 						<Switch
 							checked={webhook.isActive}
 							onCheckedChange={handleToggleActive}
 							disabled={isPending}
-							aria-label={t("webhooks:webhooks.toggle-active", "Toggle webhook active")}
+							aria-label={t("webhooks:webhooks.toggle-active-named", "Active: {endpoint}", {
+								endpoint: endpointLabel,
+							})}
 						/>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="ghost" size="icon" disabled={isPending}>
 									<IconDots className="size-4" aria-hidden="true" />
-									<span className="sr-only">{t("common.actions", "Actions")}</span>
+									<span className="sr-only">
+										{t("webhooks:webhooks.actions-named", "Actions for {endpoint}", {
+											endpoint: endpointLabel,
+										})}
+									</span>
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
@@ -309,7 +330,7 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 							{commandError}
 						</p>
 					) : null}
-					<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+					<div className="flex flex-wrap gap-4 text-sm text-muted-foreground tabular-nums">
 						<div>
 							<span className="font-medium">{t("webhooks:webhooks.events", "Events")}:</span>{" "}
 							{(webhook.subscribedEvents as string[]).length}
@@ -372,8 +393,10 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 					}}
 				>
 					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("webhooks:webhooks.delete-confirm.title", "Delete webhook?")}
+						<AlertDialogTitle className="break-words">
+							{t("webhooks:webhooks.delete-confirm.title-named", "Delete webhook {name}?", {
+								name: endpointLabel,
+							})}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -391,11 +414,7 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 						<AlertDialogCancel disabled={isPending}>
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
-						<Button
-							disabled={isPending}
-							onClick={handleDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
+						<Button variant="destructive" disabled={isPending} onClick={handleDelete}>
 							{t("common.delete", "Delete")}
 						</Button>
 					</AlertDialogFooter>

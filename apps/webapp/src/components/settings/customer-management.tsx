@@ -4,6 +4,7 @@ import {
 	IconAddressBook,
 	IconCoin,
 	IconEdit,
+	IconLoader2,
 	IconPlugConnected,
 	IconPlus,
 	IconRefresh,
@@ -23,7 +24,6 @@ import { CustomerAccountingPanel } from "@/components/billable-time/accounting/c
 import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -33,6 +33,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -69,6 +78,7 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 	const {
 		data: customersResult,
 		isLoading,
+		isError,
 		isFetching,
 		refetch,
 	} = useQuery({
@@ -152,6 +162,8 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 		handleCreate,
 		canCreateCustomer,
 		isLoading,
+		// A failed background refetch keeps the loaded list; only a failed first load shows the error.
+		isError: isError && !customersResult,
 		customers,
 		handleEdit,
 		canSetBillableRates,
@@ -180,6 +192,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 		handleCreate,
 		canCreateCustomer,
 		isLoading,
+		isError,
 		customers,
 		handleEdit,
 		canSetBillableRates,
@@ -197,31 +210,36 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 		handleDelete,
 	} = useCustomerManagement({ organizationId, accessTier });
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			<div className="flex items-center justify-between">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.customers.title", "Customers")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.customers.description",
-							"Manage customer contacts for project assignments",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-					</Button>
-					<Button onClick={handleCreate} disabled={!canCreateCustomer}>
-						<IconPlus className="mr-2 size-4" />
-						{t("settings.customers.create", "Add Customer")}
-					</Button>
-				</div>
-			</div>
-			{!canCreateCustomer ? (
+		<div className="page-frame flex flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("settings.customers.title", "Customers")}
+				description={t(
+					"settings.customers.description",
+					"Manage customer contacts for project assignments",
+				)}
+				actions={
+					<>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => refetch()}
+							disabled={isFetching}
+							aria-label={t("common.refresh", "Refresh")}
+						>
+							<IconRefresh
+								aria-hidden="true"
+								className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+							/>
+						</Button>
+						<Button onClick={handleCreate} disabled={!canCreateCustomer}>
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
+							{t("settings.customers.create", "Add Customer")}
+						</Button>
+					</>
+				}
+			/>
+			{/* The empty state repeats this hint beside its own add button. */}
+			{!canCreateCustomer && (isLoading || isError || customers.length > 0) ? (
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.customers.managerNoProjects",
@@ -231,40 +249,65 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 			) : null}
 
 			{isLoading ? (
+				<Card aria-busy="true">
+					<CardHeader className="space-y-2">
+						<Skeleton className="h-6 w-40" />
+						<Skeleton className="h-4 w-28" />
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<Skeleton className="h-10 w-full" />
+						<Skeleton className="h-10 w-full" />
+						<Skeleton className="h-10 w-full" />
+					</CardContent>
+				</Card>
+			) : isError ? (
 				<Card>
-					<CardContent className="p-6">
-						<div className="space-y-4">
-							<Skeleton className="h-10 w-full" />
-							<Skeleton className="h-10 w-full" />
-							<Skeleton className="h-10 w-full" />
-						</div>
+					<CardContent className="flex flex-col items-start gap-3">
+						<p className="text-sm text-destructive" role="alert">
+							{t(
+								"settings.customers.loadFailed",
+								"Customers could not be loaded. Check your connection and try again.",
+							)}
+						</p>
+						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+							<IconRefresh aria-hidden="true" className="mr-2 size-4" />
+							{t("common.retry", "Retry")}
+						</Button>
 					</CardContent>
 				</Card>
 			) : customers.length === 0 ? (
 				<Card>
-					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconAddressBook className="size-12 text-muted-foreground" />
-						<h3 className="mt-4 text-lg font-medium">
-							{t("settings.customers.empty.title", "No customers yet")}
-						</h3>
-						<p className="mt-2 text-sm text-muted-foreground">
-							{t(
-								"settings.customers.empty.description",
-								"Add your first customer to assign them to projects.",
-							)}
-						</p>
-						<Button onClick={handleCreate} className="mt-4" disabled={!canCreateCustomer}>
-							<IconPlus className="mr-2 size-4" />
-							{t("settings.customers.create", "Add Customer")}
-						</Button>
-						{!canCreateCustomer ? (
-							<p className="mt-3 text-center text-sm text-muted-foreground">
-								{t(
-									"settings.customers.managerNoProjects",
-									"No managed projects available. Create or manage a project before adding customers.",
-								)}
-							</p>
-						) : null}
+					<CardContent>
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<IconAddressBook aria-hidden="true" />
+								</EmptyMedia>
+								<EmptyTitle role="heading" aria-level={2}>
+									{t("settings.customers.empty.title", "No customers yet")}
+								</EmptyTitle>
+								<EmptyDescription>
+									{t(
+										"settings.customers.empty.description",
+										"Add your first customer to assign them to projects.",
+									)}
+								</EmptyDescription>
+							</EmptyHeader>
+							<EmptyContent>
+								<Button onClick={handleCreate} disabled={!canCreateCustomer}>
+									<IconPlus aria-hidden="true" className="mr-2 size-4" />
+									{t("settings.customers.create", "Add Customer")}
+								</Button>
+								{!canCreateCustomer ? (
+									<p className="text-center text-sm text-muted-foreground">
+										{t(
+											"settings.customers.managerNoProjects",
+											"No managed projects available. Create or manage a project before adding customers.",
+										)}
+									</p>
+								) : null}
+							</EmptyContent>
+						</Empty>
 					</CardContent>
 				</Card>
 			) : (
@@ -316,7 +359,13 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 				onSuccess={handleSuccess}
 			/>
 
-			<AlertDialog open={!!deletingCustomer} onOpenChange={() => setDeletingCustomer(null)}>
+			<AlertDialog
+				open={!!deletingCustomer}
+				onOpenChange={(open) => {
+					// Stay open while the delete runs, so its outcome belongs to this customer.
+					if (!open && !isDeleting) setDeletingCustomer(null);
+				}}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
@@ -334,13 +383,15 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 						<AlertDialogCancel disabled={isDeleting}>
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							disabled={isDeleting}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
+						{/* A plain button keeps the dialog open, showing progress until the delete settles. */}
+						<Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+							{isDeleting && (
+								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+							)}
+							{t("settings.customers.delete.confirm", "Delete {name}", {
+								name: deletingCustomer?.name ?? "",
+							})}
+						</Button>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -369,7 +420,9 @@ function CustomerTableCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.customers.list.title", "All Customers")}</CardTitle>
+				<CardTitle role="heading" aria-level={2}>
+					{t("settings.customers.list.title", "All Customers")}
+				</CardTitle>
 				<CardDescription>
 					{t("settings.customers.list.description", "{count} customers total", {
 						count: customers.length,
@@ -386,14 +439,18 @@ function CustomerTableCard({
 							</TableHead>
 							<TableHead>{t("settings.customers.column.email", "Email")}</TableHead>
 							<TableHead>{t("settings.customers.column.phone", "Phone")}</TableHead>
-							<TableHead className="w-[100px]" />
+							<TableHead className="w-[100px]">
+								<span className="sr-only">{t("settings.customers.column.actions", "Actions")}</span>
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{customers.map((cust) => (
 							<TableRow key={cust.id}>
-								<TableCell>
-									<div className="font-medium">{cust.name}</div>
+								<TableCell className="max-w-xs">
+									<div className="truncate font-medium" title={cust.name}>
+										{cust.name}
+									</div>
 									{cust.missingRequiredCustomFields && (
 										<MissingRequiredValuesBadge className="mt-1" />
 									)}
@@ -420,16 +477,28 @@ function CustomerTableCard({
 									{cust.phone || <span className="text-muted-foreground">-</span>}
 								</TableCell>
 								<TableCell>
-									<div className="flex items-center gap-1">
-										<Button variant="ghost" size="sm" onClick={() => handleEdit(cust)}>
-											<IconEdit className="size-4" />
+									<div className="flex flex-wrap items-center justify-end gap-1">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => handleEdit(cust)}
+											aria-label={t("settings.customers.editAction", "Edit {name}", {
+												name: cust.name,
+											})}
+											title={t("settings.customers.edit", "Edit customer")}
+										>
+											<IconEdit aria-hidden="true" className="size-4" />
 										</Button>
 										{canSetBillableRates && (
 											<Button
 												variant="ghost"
 												size="sm"
 												onClick={() => setRatesCustomer(cust)}
-												aria-label={t("settings.billableTime.rates.customerRate", "Billable rate")}
+												aria-label={t(
+													"settings.billableTime.rates.customerRateTitle",
+													"Billable rate for {name}",
+													{ name: cust.name },
+												)}
 												title={t("settings.billableTime.rates.customerRate", "Billable rate")}
 											>
 												<IconCoin aria-hidden="true" className="size-4" />
@@ -441,16 +510,25 @@ function CustomerTableCard({
 												size="sm"
 												onClick={() => setAccountingCustomer(cust)}
 												aria-label={t(
-													"settings.billableTime.accounting.customer.entry",
-													"Accounting",
+													"settings.customers.accountingAction",
+													"Accounting for {name}",
+													{ name: cust.name },
 												)}
 												title={t("settings.billableTime.accounting.customer.entry", "Accounting")}
 											>
 												<IconPlugConnected aria-hidden="true" className="size-4" />
 											</Button>
 										)}
-										<Button variant="ghost" size="sm" onClick={() => setDeletingCustomer(cust)}>
-											<IconTrash className="size-4 text-destructive" />
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => setDeletingCustomer(cust)}
+											aria-label={t("settings.customers.deleteAction", "Delete {name}", {
+												name: cust.name,
+											})}
+											title={t("settings.customers.delete.title", "Delete Customer")}
+										>
+											<IconTrash aria-hidden="true" className="size-4 text-destructive" />
 										</Button>
 									</div>
 								</TableCell>

@@ -10,7 +10,7 @@ import {
 } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import type { PublicWebhookEndpoint } from "@/lib/webhooks/types";
 import { render } from "@/test/render-with-translations";
-import { WebhookEndpointCard } from "./webhook-endpoint-card";
+import { WebhookEndpointCard, webhookEndpointLabel } from "./webhook-endpoint-card";
 
 vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
 	deleteWebhook: vi.fn(),
@@ -41,6 +41,24 @@ const endpoint: PublicWebhookEndpoint = {
 	updatedAt: new Date("2026-11-01T00:00:00Z"),
 };
 
+it("names the active switch and actions menu after the endpoint they control", () => {
+	render(<WebhookEndpointCard webhook={endpoint} onUpdated={vi.fn()} onDeleted={vi.fn()} />);
+	expect(screen.getByRole("switch", { name: "Active: Payroll webhook" })).toBeTruthy();
+	expect(screen.getByRole("button", { name: "Actions for Payroll webhook" })).toBeTruthy();
+});
+
+it("falls back to a shortened endpoint URL when the endpoint has no name", () => {
+	expect(webhookEndpointLabel({ name: "  ", url: "https://example.com/fixture" })).toBe(
+		"example.com/fixture",
+	);
+	const label = webhookEndpointLabel({
+		name: "",
+		url: `https://example.com/${"segment/".repeat(10)}`,
+	});
+	expect(label.length).toBe(48);
+	expect(label.endsWith("…")).toBe(true);
+});
+
 it("keeps the actual delete confirmation pending and retains it after an owner refusal", async () => {
 	let finish!: (value: Awaited<ReturnType<typeof deleteWebhook>>) => void;
 	vi.mocked(deleteWebhook).mockImplementation(
@@ -51,7 +69,7 @@ it("keeps the actual delete confirmation pending and retains it after an owner r
 	);
 	render(<WebhookEndpointCard webhook={endpoint} onUpdated={vi.fn()} onDeleted={vi.fn()} />);
 	const user = userEvent.setup();
-	await user.click(screen.getByRole("button", { name: "Actions" }));
+	await user.click(screen.getByRole("button", { name: "Actions for Payroll webhook" }));
 	await user.click(screen.getByRole("menuitem", { name: "Delete" }));
 	const confirm = screen.getByRole("button", { name: "Delete" });
 	act(() => {
@@ -74,7 +92,7 @@ it("coalesces toggle activation while pending and retains the canonical state af
 			}),
 	);
 	render(<WebhookEndpointCard webhook={endpoint} onUpdated={vi.fn()} onDeleted={vi.fn()} />);
-	const toggle = screen.getByRole("switch", { name: "Toggle webhook active" });
+	const toggle = screen.getByRole("switch", { name: "Active: Payroll webhook" });
 	act(() => {
 		fireEvent.click(toggle);
 		fireEvent.click(toggle);
@@ -103,7 +121,7 @@ it("ignores a late rotation secret after Activity retires the endpoint command o
 	);
 	const view = render(tree(true));
 	const user = userEvent.setup();
-	await user.click(screen.getByRole("button", { name: "Actions" }));
+	await user.click(screen.getByRole("button", { name: "Actions for Payroll webhook" }));
 	await user.click(screen.getByRole("menuitem", { name: "Regenerate Secret" }));
 	await waitFor(() => expect(regenerateSecret).toHaveBeenCalledTimes(1));
 	await act(async () => view.rerender(tree(false)));

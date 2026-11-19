@@ -53,13 +53,45 @@ describe("route metadata", () => {
 	it("adopts the request queue without adopting its independent descendants", () => {
 		expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);
-		expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(true);
 	});
 	it("adopts only the report share-link settings heading without other settings or descendants", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
 		expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);
 		expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/other")).toBe(false);
+	});
+	it("adopts settings pages and records that render their own heading, keeping redirect-only routes on the shell title", () => {
+		for (const path of [
+			"/en/settings",
+			"/de/settings/",
+			"/en/settings/clocking",
+			"/en/settings/audit-export",
+			"/en/settings/notification-channels",
+			"/en/settings/work-policies",
+			"/en/settings/vacation",
+			"/en/settings/enterprise/domains",
+			"/en/settings/enterprise/identity-setup",
+			"/en/settings/enterprise/email",
+			"/en/settings/billable-time/rates",
+			"/en/settings/employees/employee-1",
+			"/en/settings/teams/team-1",
+			"/en/settings/locations/location-1",
+			"/en/settings/vacation/employees/employee-1",
+		]) {
+			expect(appPageOwnsHeading(path)).toBe(true);
+		}
+		for (const path of [
+			"/en/settings/webhooks",
+			"/en/settings/slack",
+			"/en/settings/holidays",
+			"/en/settings/change-policies",
+			"/en/settings/enterprise",
+			"/en/settings/employees/employee-1/detail",
+			"/en/settings-other",
+		]) {
+			expect(appPageOwnsHeading(path)).toBe(false);
+		}
 	});
 	it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {
 		expect(
@@ -86,7 +118,7 @@ describe("route metadata", () => {
 	it("adopts only the scheduling page heading, preserving its descendants and settings", () => {
 		expect(appPageOwnsHeading("/de/scheduling")).toBe(true);
 		expect(appPageOwnsHeading("/en/scheduling/detail")).toBe(false);
-		expect(appPageOwnsHeading("/en/settings/shifts")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/shifts")).toBe(true);
 	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
@@ -101,7 +133,7 @@ describe("route metadata", () => {
 	it("adopts only the notification timeline heading, retaining settings and descendants", () => {
 		expect(appPageOwnsHeading("/de/notifications")).toBe(true);
 		expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
-		expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/notifications")).toBe(true);
 	});
 	it("adopts only the personal requests page heading", () => {
 		expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
@@ -119,7 +151,6 @@ describe("route metadata", () => {
 		for (const path of [
 			"/en/personnel-files/id",
 			"/en/personnel-files/sick-leave/detail",
-			"/en/settings/personnel-files",
 		])
 			expect(appPageOwnsHeading(path)).toBe(false);
 	});
@@ -134,7 +165,7 @@ describe("route metadata", () => {
 			false,
 		);
 		expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);
-		expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/equipment")).toBe(true);
 	});
 	it("adopts the employee equipment record heading without adopting its collection", () => {
 		expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);
@@ -149,7 +180,7 @@ describe("route metadata", () => {
 			appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
 		).toBe(false);
 		expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
-		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(true);
 	});
 	it("retains independent approvals page headings", () => {
 		expect(appPageOwnsHeading("/de/approvals")).toBe(true);

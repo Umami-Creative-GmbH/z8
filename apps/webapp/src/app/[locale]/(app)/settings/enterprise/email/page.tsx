@@ -3,6 +3,7 @@ import { EmailTemplateSettingsClient } from "@/components/settings/email-templat
 import { actionData } from "@/components/settings/enterprise/action-data";
 import { EmailConfigForm } from "@/components/settings/enterprise/email-config-form";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -42,6 +43,7 @@ async function EmailConfigContent() {
 						"settings.enterprise.email.description",
 						"Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
 					),
+					measure: true,
 					panel: (
 						<EmailConfigForm initialConfig={emailConfig} secretStoreStatus={secretStoreStatus} />
 					),
@@ -69,11 +71,17 @@ async function EmailConfigContent() {
 
 function EmailConfigLoading() {
 	return (
-		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
-			<Skeleton className="h-8 w-64" />
-			<Skeleton className="h-5 w-96" />
-			<Skeleton className="h-[380px] w-full" />
-		</div>
+		<LoadingRegion
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
+			label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-64 max-w-full" />
+				<Skeleton aria-hidden="true" className="h-5 w-96 max-w-full" />
+			</div>
+			<Skeleton aria-hidden="true" className="h-9 w-56 max-w-full" />
+			<Skeleton aria-hidden="true" className="page-measure h-[380px]" />
+		</LoadingRegion>
 	);
 }
 

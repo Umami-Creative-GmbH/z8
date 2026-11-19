@@ -1,8 +1,10 @@
 "use client";
 
-import { IconAlertTriangle } from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { KioskData } from "@/app/[locale]/(app)/settings/kiosks/actions";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -43,7 +45,7 @@ export function KioskConfirmationDialog({
 				if (!open && !pending) onDismiss();
 			}}
 		>
-			<AlertDialogContent>
+			<AlertDialogContent aria-busy={pending}>
 				{confirmation?.kind === "revoke" ? (
 					<RevokeHeader kioskName={confirmation.kiosk.name} />
 				) : (
@@ -53,11 +55,20 @@ export function KioskConfirmationDialog({
 					<AlertDialogCancel disabled={pending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 					<AlertDialogAction
 						disabled={pending}
+						className={
+							confirmation?.kind === "revoke" ? buttonVariants({ variant: "destructive" }) : undefined
+						}
 						onClick={(event) => {
-							event.preventDefault();
+							// Base UI's Close ignores preventDefault; stop its handler so the dialog
+							// stays open until the action settles.
+							keepAlertDialogOpen(event);
+							if (pending) return;
 							onConfirm();
 						}}
 					>
+						{pending ? (
+							<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+						) : null}
 						<ConfirmLabel confirmation={confirmation} />
 					</AlertDialogAction>
 				</AlertDialogFooter>
@@ -113,7 +124,7 @@ function PairHeader({
 						)}
 			</AlertDialogDescription>
 			{paired && kiosk.offlineModeEnabled && organizationAdopted ? (
-				<p className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+				<p className="flex items-start gap-2 rounded-md border border-warning/50 bg-warning/10 p-3 text-sm text-foreground">
 					<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
 					{t(
 						"settings.kiosks.rotateOfflineWarning",

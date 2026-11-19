@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TABS = ["projects", "templates"] as const;
@@ -35,21 +36,30 @@ export function ProjectSettingsTabs(panels: Record<ProjectSettingsTab, ReactNode
 	};
 
 	return (
-		<Tabs value={active} onValueChange={select} className="page-frame flex flex-1 flex-col gap-4">
-			<div className="max-w-full overflow-x-auto">
-				<TabsList>
-					{TABS.map((tab) => (
-						<TabsTrigger key={tab} value={tab}>
-							{labels[tab]}
-						</TabsTrigger>
-					))}
-				</TabsList>
-			</div>
-			{TABS.map((tab) => (
-				<TabsContent key={tab} value={tab} className="flex flex-1 flex-col">
-					{panels[tab]}
-				</TabsContent>
-			))}
-		</Tabs>
+		<div className="page-frame flex flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("settings.projects.title", "Projects")}
+				description={t(
+					"settings.projects.description",
+					"Manage projects, budgets, deadlines, and time assignments",
+				)}
+			/>
+			<Tabs value={active} onValueChange={select} className="flex flex-1 flex-col gap-4">
+				<div className="max-w-full overflow-x-auto">
+					<TabsList>
+						{TABS.map((tab) => (
+							<TabsTrigger key={tab} value={tab}>
+								{labels[tab]}
+							</TabsTrigger>
+						))}
+					</TabsList>
+				</div>
+				{TABS.map((tab) => (
+					<TabsContent key={tab} value={tab} className="flex flex-1 flex-col">
+						{panels[tab]}
+					</TabsContent>
+				))}
+			</Tabs>
+		</div>
 	);
 }

@@ -2,6 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -26,19 +27,26 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	type ApprovalPolicyEditState,
 	type ApprovalPolicyFormValues,
 	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
+import { ApprovalPolicyChainPreview } from "./approval-policy-preview";
 import { ApprovalPolicyStagesField } from "./approval-policy-stages-field";
+import { useApproverEmployees } from "./use-approver-employees";
+
+export type ApprovalPolicySubmitPayload = ReturnType<
+	typeof buildApprovalPolicyPayload
+> & { id?: string };
 
 interface ApprovalPolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onSubmit: (
-		payload: ReturnType<typeof buildApprovalPolicyPayload>,
-	) => Promise<void>;
+	/** The stored policy being edited; omitted or null creates a new policy. */
+	policy?: ApprovalPolicyEditState | null;
+	onSubmit: (payload: ApprovalPolicySubmitPayload) => Promise<void>;
 }
 
 function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
@@ -54,9 +62,11 @@ function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
 export function ApprovalPolicyDialog({
 	open,
 	onOpenChange,
+	policy = null,
 	onSubmit,
 }: ApprovalPolicyDialogProps) {
 	const { t } = useTranslate();
+	const isEditing = policy !== null;
 	function approvalTypeLabel(
 		value: (typeof approvalTypeOptions)[number]["value"],
 	) {
@@ -101,21 +111,27 @@ export function ApprovalPolicyDialog({
 		}
 	}
 	const form = useForm({
-		defaultValues: defaultApprovalPolicyFormValues,
+		defaultValues: policy?.values ?? defaultApprovalPolicyFormValues,
 		onSubmit: async ({ value }) => {
 			try {
-				await onSubmit(
-					buildApprovalPolicyPayload(value, {
+				const payload = buildApprovalPolicyPayload(
+					value,
+					{
 						activePolicyRequiresStage: t(
 							"settings.approvalPolicies.validation.activePolicyRequiresStage",
 							"Active policies require at least one approval stage.",
 						),
 						specificEmployeeRequiresId: t(
-							"settings.approvalPolicies.validation.specificEmployeeRequiresId",
-							"Specific employee stages require an approver employee ID.",
+							"settings.approvalPolicies.validation.specificEmployeeRequired",
+							"Choose the approving employee for each specific employee stage.",
 						),
-					}),
+					},
+					{
+						preservedConditions: policy?.preservedConditions,
+						legacyApprovalTypes: policy?.legacyApprovalTypes,
+					},
 				);
+				await onSubmit(policy ? { ...payload, id: policy.id } : payload);
 			} catch (error) {
 				toast.error(
 					error instanceof Error
@@ -129,21 +145,39 @@ export function ApprovalPolicyDialog({
 		},
 	});
 
+	// `form.state` is not reactive; subscribe so the footer reflects submission.
+	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
+	const stages = useStore(form.store, (state) => state.values.stages);
+	const approverLookup = useApproverEmployees(
+		stages.flatMap((stage) =>
+			stage.approverType === "specific_employee" && stage.approverEmployeeId
+				? [stage.approverEmployeeId]
+				: [],
+		),
+	);
+	const preservedConditionCount = policy?.preservedConditions.length ?? 0;
+	const legacyApprovalTypeCount = policy?.legacyApprovalTypes.length ?? 0;
+
 	useEffect(() => {
 		if (open) {
-			form.reset(defaultApprovalPolicyFormValues);
+			form.reset(policy?.values ?? defaultApprovalPolicyFormValues);
 		}
-	}, [open, form]);
+	}, [open, form, policy]);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t(
-							"settings.approvalPolicies.createPolicy",
-							"Create Approval Policy",
-						)}
+						{isEditing
+							? t(
+									"settings.approvalPolicies.editPolicyTitle",
+									"Edit approval policy",
+								)
+							: t(
+									"settings.approvalPolicies.createPolicy",
+									"Create Approval Policy",
+								)}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -161,6 +195,24 @@ export function ApprovalPolicyDialog({
 					className="flex min-h-0 flex-1 flex-col"
 				>
 					<ActionPanelBody className="space-y-5">
+						{preservedConditionCount > 0 ? (
+							<p className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+								{t(
+									"settings.approvalPolicies.preservedConditions",
+									"This policy has {count, plural, one {# further condition} other {# further conditions}} that can't be changed here. Saving keeps {count, plural, one {it} other {them}} unchanged.",
+									{ count: preservedConditionCount },
+								)}
+							</p>
+						) : null}
+						{legacyApprovalTypeCount > 0 ? (
+							<p className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+								{t(
+									"settings.approvalPolicies.legacyApprovalTypesNotice",
+									"This policy also matches {count, plural, one {# older approval type} other {# older approval types}} that can't be selected here. Saving keeps {count, plural, one {it} other {them}} unchanged.",
+									{ count: legacyApprovalTypeCount },
+								)}
+							</p>
+						) : null}
 						<form.Field name="name">
 							{(field) => (
 								<TFormItem>
@@ -320,10 +372,16 @@ export function ApprovalPolicyDialog({
 											),
 										])
 									}
+									approverLookup={approverLookup}
 									t={t}
 								/>
 							)}
 						</form.Field>
+
+						<ApprovalPolicyChainPreview
+							stages={stages}
+							approverLookup={approverLookup}
+						/>
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
@@ -331,18 +389,20 @@ export function ApprovalPolicyDialog({
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							disabled={form.state.isSubmitting}
+							disabled={isSubmitting}
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={form.state.isSubmitting}>
-							{form.state.isSubmitting && (
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting && (
 								<IconLoader2
-									className="mr-2 size-4 animate-spin"
+									className="mr-2 size-4 motion-safe:animate-spin"
 									aria-hidden="true"
 								/>
 							)}
-							{t("common.create", "Create")}
+							{isEditing
+								? t("settings.approvalPolicies.savePolicySubmit", "Save policy")
+								: t("settings.approvalPolicies.createPolicySubmit", "Create policy")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

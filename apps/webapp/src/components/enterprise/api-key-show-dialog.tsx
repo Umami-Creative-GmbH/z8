@@ -2,7 +2,7 @@
 
 import { IconAlertTriangle, IconCheck, IconCopy, IconKey } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -15,6 +15,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CreateApiKeyResponse } from "@/lib/validations/api-key";
 
@@ -38,6 +39,7 @@ function ApiKeyReveal({
 	const [copied, setCopied] = useState(false);
 	const [hasConfirmed, setHasConfirmed] = useState(false);
 	const [visible, setVisible] = useState(true);
+	const keyFieldId = useId();
 	const lifetime = useRef<object | null>(null);
 	useLayoutEffect(() => {
 		lifetime.current = {};
@@ -79,7 +81,7 @@ function ApiKeyReveal({
 			<ActionPanelContent onPointerDownOutside={(e) => e.preventDefault()}>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconKey className="size-5 text-green-600" />
+						<IconKey className="size-5 text-success" aria-hidden="true" />
 						{t("settings.apiKeys.showTitle", "API Key Created")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -93,9 +95,9 @@ function ApiKeyReveal({
 
 				<ActionPanelBody className="space-y-4">
 					{/* Warning Banner */}
-					<div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
-						<IconAlertTriangle className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-						<div className="text-sm text-amber-800 dark:text-amber-200">
+					<div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 p-3">
+						<IconAlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden="true" />
+						<div className="text-sm">
 							<strong>{t("settings.apiKeys.showWarningTitle", "Important:")}</strong>{" "}
 							{t(
 								"settings.apiKeys.showWarning",
@@ -106,27 +108,33 @@ function ApiKeyReveal({
 
 					{/* API Key Display */}
 					<div className="space-y-2">
-						<Label htmlFor="api-key-display">
+						<Label htmlFor={keyFieldId}>
 							{t("settings.apiKeys.showLabel", "Your API Key")}
 						</Label>
 						<div className="relative">
-							<div
-								id="api-key-display"
-								className="font-mono text-sm bg-muted p-4 rounded-md break-all pr-12 border"
-							>
-								{visible ? apiKey.key : t("settings.apiKeys.keyHidden", "Key hidden")}
-							</div>
+							{/* Hidden: the key leaves the field entirely; the placeholder says why it is empty. */}
+							<Input
+								id={keyFieldId}
+								type="text"
+								readOnly
+								value={visible ? apiKey.key : ""}
+								placeholder={t("settings.apiKeys.keyHidden", "Key hidden")}
+								autoComplete="off"
+								spellCheck={false}
+								onFocus={(event) => event.currentTarget.select()}
+								className="h-11 bg-muted pr-12 font-mono text-sm"
+							/>
 							<Button
 								variant="ghost"
 								size="sm"
-								className="absolute right-2 top-2"
+								className="absolute right-1.5 top-1/2 -translate-y-1/2"
 								onClick={handleCopy}
 								aria-label={t("settings.apiKeys.copyKey", "Copy API key")}
 							>
 								{copied ? (
-									<IconCheck className="size-4 text-green-600" />
+									<IconCheck className="size-4 text-success" aria-hidden="true" />
 								) : (
-									<IconCopy className="size-4" />
+									<IconCopy className="size-4" aria-hidden="true" />
 								)}
 							</Button>
 						</div>
@@ -140,7 +148,7 @@ function ApiKeyReveal({
 					</div>
 
 					{/* Key Details */}
-					<div className="grid grid-cols-2 gap-4 text-sm">
+					<div className="grid gap-4 text-sm sm:grid-cols-2 [&>div]:min-w-0 [&>div]:break-words">
 						<div>
 							<span className="text-muted-foreground">
 								{t("settings.apiKeys.showName", "Name:")}
@@ -166,8 +174,11 @@ function ApiKeyReveal({
 
 					{/* Copy Status */}
 					{copied && (
-						<div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-							<IconCheck className="size-4" />
+						<div
+							role="status"
+							className="flex items-center gap-2 text-sm text-success"
+						>
+							<IconCheck className="size-4" aria-hidden="true" />
 							{t("settings.apiKeys.showCopied", "Key copied to clipboard")}
 						</div>
 					)}

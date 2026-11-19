@@ -42,15 +42,13 @@ export function CustomDomainSummary({
 
 	if (!domain) {
 		return (
-			<div className="text-center py-8">
-				<div className="mx-auto size-12 rounded-full bg-muted flex items-center justify-center mb-4">
-					<IconWorld className="size-6 text-muted-foreground" />
+			<div className="flex flex-col items-start gap-3 rounded-lg border border-dashed p-4">
+				<div className="flex items-center gap-2 text-sm text-muted-foreground">
+					<IconWorld className="size-4 shrink-0" aria-hidden="true" />
+					<p>{t("settings.enterprise.domains.empty", "No custom domain configured yet.")}</p>
 				</div>
-				<p className="text-muted-foreground mb-4">
-					{t("settings.enterprise.domains.empty", "No custom domain configured yet.")}
-				</p>
 				<Button onClick={onAdd}>
-					<IconPlus className="mr-2 size-4" />
+					<IconPlus className="size-4" aria-hidden="true" />
 					{t("settings.enterprise.domains.add", "Add Custom Domain")}
 				</Button>
 			</div>
@@ -62,32 +60,34 @@ export function CustomDomainSummary({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between p-4 border rounded-lg">
-				<div className="flex items-center gap-4">
-					<div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-						<IconWorld className="size-5 text-primary" />
+			<div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex min-w-0 items-center gap-4">
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+						<IconWorld className="size-5 text-primary" aria-hidden="true" />
 					</div>
-					<div>
-						<p className="font-medium">{domain.domain}</p>
+					<div className="min-w-0">
+						<p className="truncate font-medium" title={domain.domain}>
+							{domain.domain}
+						</p>
 						<div className="flex items-center gap-2 mt-1">
 							{domain.domainVerified ? (
-								<Badge variant="default" className="bg-green-600">
-									<IconCheck className="mr-1 size-3" />
+								<Badge variant="success">
+									<IconCheck className="size-3" aria-hidden="true" />
 									{t("settings.enterprise.domains.status.verified", "Verified")}
 								</Badge>
 							) : (
-								<Badge variant="destructive">
-									<IconX className="mr-1 size-3" />
+								<Badge variant="outline">
+									<IconX className="size-3" aria-hidden="true" />
 									{t("settings.enterprise.domains.status.pending", "Pending Verification")}
 								</Badge>
 							)}
 						</div>
 					</div>
 				</div>
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					{!domain.domainVerified ? (
 						<Button variant="outline" size="sm" onClick={() => onVerify(domain)}>
-							<IconRefresh className="mr-1 size-4" />
+							<IconRefresh className="size-4" aria-hidden="true" />
 							{t("settings.enterprise.domains.verify", "Verify")}
 						</Button>
 					) : null}
@@ -118,55 +118,55 @@ export function CustomDomainSummary({
 				</div>
 			</div>
 
-		<div className="p-4 bg-muted/50 rounded-lg">
-			<p className="text-sm font-medium mb-2">
-				{t("settings.enterprise.domains.enabledAuthMethods", "Enabled Auth Methods")}
-			</p>
-			<div className="flex flex-wrap gap-2">
-				{domain.authConfig.emailPasswordEnabled ? (
-					<Badge variant="outline">
-						{t("settings.enterprise.domains.authMethod.emailPassword", "Email/Password")}
-					</Badge>
-				) : null}
-				{domain.authConfig.ssoEnabled ? (
-					<Badge variant="outline">{t("settings.enterprise.domains.authMethod.sso", "SSO")}</Badge>
-				) : null}
-				{domain.authConfig.socialProvidersEnabled.length > 0 ? (
-					<Badge variant="outline">
-						{t("settings.enterprise.domains.authMethod.social", "Social ({providers})", {
-							providers: domain.authConfig.socialProvidersEnabled.join(", "),
+			<div className="p-4 bg-muted/50 rounded-lg">
+				<p className="text-sm font-medium mb-2">
+					{t("settings.enterprise.domains.enabledAuthMethods", "Enabled Auth Methods")}
+				</p>
+				<div className="flex flex-wrap gap-2">
+					{domain.authConfig.emailPasswordEnabled ? (
+						<Badge variant="outline">
+							{t("settings.enterprise.domains.authMethod.emailPassword", "Email/Password")}
+						</Badge>
+					) : null}
+					{domain.authConfig.ssoEnabled ? (
+						<Badge variant="outline">{t("settings.enterprise.domains.authMethod.sso", "SSO")}</Badge>
+					) : null}
+					{domain.authConfig.socialProvidersEnabled.length > 0 ? (
+						<Badge variant="outline" className="max-w-full whitespace-normal">
+							{t("settings.enterprise.domains.authMethod.social", "Social ({providers})", {
+								providers: domain.authConfig.socialProvidersEnabled.join(", "),
+							})}
+						</Badge>
+					) : null}
+					{domain.authConfig.passkeyEnabled ? (
+						<Badge variant="outline">
+							{t("settings.enterprise.domains.authMethod.passkey", "Passkey")}
+						</Badge>
+					) : null}
+				</div>
+			</div>
+
+			<div className="p-4 bg-muted/50 rounded-lg">
+				<p className="text-sm font-medium mb-2">
+					{t("settings.enterprise.domains.domainPageSettings", "Domain Page Settings")}
+				</p>
+				<div className="flex flex-wrap gap-2">
+					<Badge variant={hasTurnstileSiteKey ? "outline" : "secondary"}>
+						{t("settings.enterprise.domains.turnstileSiteKeyStatus", "Turnstile site key {status}", {
+							status: hasTurnstileSiteKey
+								? t("settings.enterprise.domains.configured", "configured")
+								: t("settings.enterprise.domains.notConfigured", "not configured"),
 						})}
 					</Badge>
-				) : null}
-				{domain.authConfig.passkeyEnabled ? (
-					<Badge variant="outline">
-						{t("settings.enterprise.domains.authMethod.passkey", "Passkey")}
+					<Badge variant={hasCookieConsentScript ? "outline" : "secondary"}>
+						{t("settings.enterprise.domains.cookieConsentStatus", "Cookie consent {status}", {
+							status: hasCookieConsentScript
+								? t("settings.enterprise.domains.configured", "configured")
+								: t("settings.enterprise.domains.notConfigured", "not configured"),
+						})}
 					</Badge>
-				) : null}
+				</div>
 			</div>
 		</div>
-
-		<div className="p-4 bg-muted/50 rounded-lg">
-			<p className="text-sm font-medium mb-2">
-				{t("settings.enterprise.domains.domainPageSettings", "Domain Page Settings")}
-			</p>
-			<div className="flex flex-wrap gap-2">
-				<Badge variant={hasTurnstileSiteKey ? "outline" : "secondary"}>
-					{t("settings.enterprise.domains.turnstileSiteKeyStatus", "Turnstile site key {status}", {
-						status: hasTurnstileSiteKey
-							? t("settings.enterprise.domains.configured", "configured")
-							: t("settings.enterprise.domains.notConfigured", "not configured"),
-					})}
-				</Badge>
-				<Badge variant={hasCookieConsentScript ? "outline" : "secondary"}>
-					{t("settings.enterprise.domains.cookieConsentStatus", "Cookie consent {status}", {
-						status: hasCookieConsentScript
-							? t("settings.enterprise.domains.configured", "configured")
-							: t("settings.enterprise.domains.notConfigured", "not configured"),
-					})}
-				</Badge>
-			</div>
-		</div>
-	</div>
 	);
 }

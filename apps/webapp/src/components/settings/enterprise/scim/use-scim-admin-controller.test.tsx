@@ -108,6 +108,30 @@ describe("useScimAdminController", () => {
 		await waitFor(() => expect(result.current.lifecycle).toBe("decommissioned"));
 	});
 
+	it("keeps a failed revoke confirmation open with the reason and closes it after a retry", async () => {
+		toast.error.mockClear();
+		actions.revoke.mockReset();
+		actions.revoke.mockRejectedValueOnce(new Error("network"));
+		actions.revoke.mockResolvedValueOnce(undefined);
+		actions.get.mockResolvedValue(safeStatus);
+		actions.events.mockResolvedValue([]);
+		const { result } = renderHook(() => useScimAdminController(setup));
+		act(() => result.current.requestRevoke("credential-1"));
+		act(() => result.current.confirm());
+
+		await waitFor(() =>
+			expect(result.current.destructiveError).toBe("Unable to update the SCIM connection."),
+		);
+		expect(result.current.destructive).toBe("revoke");
+		expect(result.current.destructivePending).toBe(false);
+		expect(toast.error).not.toHaveBeenCalled();
+
+		act(() => result.current.confirm());
+		await waitFor(() => expect(result.current.destructive).toBeNull());
+		expect(result.current.destructiveError).toBeNull();
+		expect(actions.revoke).toHaveBeenCalledTimes(2);
+	});
+
 	it("maps a deferred decommission result to reconciliation rather than completion", async () => {
 		actions.decommission.mockResolvedValue("deferred");
 		const { result } = renderHook(() => useScimAdminController(setup));

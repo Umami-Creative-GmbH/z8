@@ -2,9 +2,10 @@
 
 import {
 	IconBuilding,
-	IconLoader2,
+	IconInfoCircle,
 	IconLock,
 	IconPlus,
+	IconRefresh,
 	IconShieldCheck,
 	IconTrash,
 	IconUser,
@@ -20,16 +21,7 @@ import {
 	getChangePolicyAssignments,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,10 +68,71 @@ const formatPolicySummary = (
 
 const getEmployeeName = (
 	employee: { firstName: string | null; lastName: string | null } | null,
+	t: ReturnType<typeof useTranslate>["t"],
 ) => {
-	if (!employee) return "";
-	return buildAuthUserDisplayName(employee) || "Unnamed";
+	if (!employee) return t("common.unknownEmployee", "Unknown Employee");
+	return buildAuthUserDisplayName(employee) || t("common.unnamed", "Unnamed");
 };
+
+const getAssignmentTargetLabel = (
+	assignment: ChangePolicyAssignmentWithDetails,
+	t: ReturnType<typeof useTranslate>["t"],
+) => {
+	switch (assignment.assignmentType) {
+		case "organization":
+			return t("settings.changePolicies.organizationDefault", "Organization Default");
+		case "team":
+			return assignment.team?.name || t("common.unknownTeam", "Unknown Team");
+		default:
+			return getEmployeeName(assignment.employee, t);
+	}
+};
+
+function RemoveAssignmentButton({
+	assignment,
+	t,
+	onClick,
+}: {
+	assignment: ChangePolicyAssignmentWithDetails;
+	t: ReturnType<typeof useTranslate>["t"];
+	onClick: (assignment: ChangePolicyAssignmentWithDetails) => void;
+}) {
+	return (
+		<Button
+			variant="ghost"
+			size="icon"
+			className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+			onClick={() => onClick(assignment)}
+			aria-label={t("settings.changePolicies.removeAssignmentFor", "Remove assignment for {name}", {
+				name: getAssignmentTargetLabel(assignment, t),
+			})}
+		>
+			<IconTrash className="size-4" aria-hidden="true" />
+		</Button>
+	);
+}
+
+function AssignedPolicySummary({
+	policy,
+	t,
+}: {
+	policy: ChangePolicyAssignmentWithDetails["policy"];
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-sm sm:ml-7">
+			<Badge variant="outline" className="max-w-full truncate text-xs" title={policy?.name}>
+				{policy?.name}
+			</Badge>
+			{policy?.noApprovalRequired && (
+				<Badge variant="secondary" className="text-xs">
+					{t("settings.changePolicies.trustMode", "Trust Mode")}
+				</Badge>
+			)}
+			<span className="text-muted-foreground">{formatPolicySummary(policy, t)}</span>
+		</div>
+	);
+}
 
 interface AssignmentViewArgs {
 	canManage: boolean;
@@ -94,6 +147,7 @@ interface AssignmentViewArgs {
 	selectedAssignment: ChangePolicyAssignmentWithDetails | null;
 	handleDeleteConfirm: () => void;
 	deletePending: boolean;
+	deleteError: string | null;
 }
 
 const renderAssignmentView = ({
@@ -109,19 +163,19 @@ const renderAssignmentView = ({
 	selectedAssignment,
 	handleDeleteConfirm,
 	deletePending,
+	deleteError,
 }: AssignmentViewArgs) => (
 	<>
 		<div className="space-y-6">
-			<Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/30">
-				<CardContent className="py-4">
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.changePolicies.inheritanceInfo",
-							"Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the Organization Default. If no policy is assigned at any level, employees can edit their time entries without restrictions.",
-						)}
-					</p>
-				</CardContent>
-			</Card>
+			<div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+				<IconInfoCircle className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.changePolicies.inheritanceInfo",
+						"Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the Organization Default. If no policy is assigned at any level, employees can edit their time entries without restrictions.",
+					)}
+				</p>
+			</div>
 
 			<Card>
 				<CardHeader>
@@ -142,32 +196,33 @@ const renderAssignmentView = ({
 				</CardHeader>
 				<CardContent>
 					{orgAssignment ? (
-						<div className="rounded-lg border p-4 bg-accent/30">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-3">
-									<IconShieldCheck className="size-4 text-primary" />
-									<div>
-										<span className="font-medium">{orgAssignment.policy?.name}</span>
+						<div className="rounded-lg border bg-accent/30 p-4">
+							<div className="flex items-start justify-between gap-3">
+								<div className="flex min-w-0 items-start gap-3">
+									<IconShieldCheck
+										className="mt-0.5 size-4 shrink-0 text-primary"
+										aria-hidden="true"
+									/>
+									<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+										<span className="min-w-0 truncate font-medium" title={orgAssignment.policy?.name}>
+											{orgAssignment.policy?.name}
+										</span>
 										{orgAssignment.policy?.noApprovalRequired && (
-											<Badge variant="outline" className="ml-2 text-xs">
+											<Badge variant="outline" className="text-xs">
 												{t("settings.changePolicies.trustMode", "Trust Mode")}
 											</Badge>
 										)}
-										<span className="text-sm text-muted-foreground ml-2">
-											: {formatPolicySummary(orgAssignment.policy, t)}
+										<span className="text-sm text-muted-foreground">
+											{formatPolicySummary(orgAssignment.policy, t)}
 										</span>
 									</div>
 								</div>
 								{canManage ? (
-									<Button
-										variant="ghost"
-										size="icon"
-										className="size-8 text-muted-foreground hover:text-destructive"
-										onClick={() => handleDeleteClick(orgAssignment)}
-									>
-										<IconTrash className="size-4" />
-										<span className="sr-only">{t("common.remove", "Remove")}</span>
-									</Button>
+									<RemoveAssignmentButton
+										assignment={orgAssignment}
+										t={t}
+										onClick={handleDeleteClick}
+									/>
 								) : null}
 							</div>
 						</div>
@@ -234,42 +289,26 @@ const renderAssignmentView = ({
 					{teamAssignments.length > 0 ? (
 						<div className="space-y-3">
 							{teamAssignments.map((assignment) => (
-								<div
-									key={assignment.id}
-									className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
-								>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<IconUsers className="size-4 text-muted-foreground" />
-											<span className="font-medium">{assignment.team?.name}</span>
-										</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
+								<div key={assignment.id} className="rounded-lg border p-4">
+									<div className="flex items-center justify-between gap-3">
+										<div className="flex min-w-0 items-center gap-3">
+											<IconUsers className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+											<span
+												className="min-w-0 truncate font-medium"
+												title={getAssignmentTargetLabel(assignment, t)}
 											>
-												<IconTrash className="size-4" />
-												<span className="sr-only">{t("common.remove", "Remove")}</span>
-											</Button>
-										) : null}
-									</div>
-									<div className="mt-2 ml-7">
-										<div className="flex items-center gap-2 text-sm">
-											<Badge variant="outline" className="text-xs">
-												{assignment.policy?.name}
-											</Badge>
-											{assignment.policy?.noApprovalRequired && (
-												<Badge variant="secondary" className="text-xs">
-													{t("settings.changePolicies.trustMode", "Trust Mode")}
-												</Badge>
-											)}
-											<span className="text-muted-foreground">
-												: {formatPolicySummary(assignment.policy, t)}
+												{getAssignmentTargetLabel(assignment, t)}
 											</span>
 										</div>
+										{canManage ? (
+											<RemoveAssignmentButton
+												assignment={assignment}
+												t={t}
+												onClick={handleDeleteClick}
+											/>
+										) : null}
 									</div>
+									<AssignedPolicySummary policy={assignment.policy} t={t} />
 								</div>
 							))}
 						</div>
@@ -318,42 +357,26 @@ const renderAssignmentView = ({
 					{employeeAssignments.length > 0 ? (
 						<div className="space-y-3">
 							{employeeAssignments.map((assignment) => (
-								<div
-									key={assignment.id}
-									className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
-								>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<IconUser className="size-4 text-muted-foreground" />
-											<span className="font-medium">{getEmployeeName(assignment.employee)}</span>
-										</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
+								<div key={assignment.id} className="rounded-lg border p-4">
+									<div className="flex items-center justify-between gap-3">
+										<div className="flex min-w-0 items-center gap-3">
+											<IconUser className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+											<span
+												className="min-w-0 truncate font-medium"
+												title={getAssignmentTargetLabel(assignment, t)}
 											>
-												<IconTrash className="size-4" />
-												<span className="sr-only">{t("common.remove", "Remove")}</span>
-											</Button>
-										) : null}
-									</div>
-									<div className="mt-2 ml-7">
-										<div className="flex items-center gap-2 text-sm">
-											<Badge variant="outline" className="text-xs">
-												{assignment.policy?.name}
-											</Badge>
-											{assignment.policy?.noApprovalRequired && (
-												<Badge variant="secondary" className="text-xs">
-													{t("settings.changePolicies.trustMode", "Trust Mode")}
-												</Badge>
-											)}
-											<span className="text-muted-foreground">
-												: {formatPolicySummary(assignment.policy, t)}
+												{getAssignmentTargetLabel(assignment, t)}
 											</span>
 										</div>
+										{canManage ? (
+											<RemoveAssignmentButton
+												assignment={assignment}
+												t={t}
+												onClick={handleDeleteClick}
+											/>
+										) : null}
 									</div>
+									<AssignedPolicySummary policy={assignment.policy} t={t} />
 								</div>
 							))}
 						</div>
@@ -369,53 +392,43 @@ const renderAssignmentView = ({
 			</Card>
 		</div>
 
-		<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.changePolicies.removeAssignmentTitle", "Remove Policy Assignment?")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{selectedAssignment?.assignmentType === "organization" &&
-							t(
-								"settings.changePolicies.removeOrgDescription",
-								"This will remove the organization default policy. Employees will have no restrictions unless they have a team or individual override.",
-							)}
-						{selectedAssignment?.assignmentType === "team" &&
-							t(
-								"settings.changePolicies.removeTeamDescription",
-								'This will remove the policy from team "{team}". They will use the organization default.',
-								{ team: selectedAssignment.team?.name },
-							)}
-						{selectedAssignment?.assignmentType === "employee" &&
-							t(
-								"settings.changePolicies.removeEmployeeDescription",
-								'This will remove the override for "{name}". They will use their team or organization default.',
-								{ name: getEmployeeName(selectedAssignment.employee) },
-							)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel disabled={deletePending}>
-						{t("common.cancel", "Cancel")}
-					</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={handleDeleteConfirm}
-						disabled={deletePending}
-						className="bg-destructive hover:bg-destructive/90"
-					>
-						{deletePending ? (
-							<>
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-								{t("common.removing", "Removing…")}
-							</>
-						) : (
-							t("common.remove", "Remove")
+		<ConfirmActionDialog
+			open={canManage && deleteDialogOpen}
+			onOpenChange={setDeleteDialogOpen}
+			title={t("settings.changePolicies.removeAssignmentTitle", "Remove Policy Assignment?")}
+			description={
+				<>
+					{selectedAssignment?.assignmentType === "organization" &&
+						(selectedAssignment.policy?.name
+							? t(
+									"settings.changePolicies.removeOrgNamedDescription",
+									'This will remove "{policy}" as the organization default policy. Employees will have no restrictions unless they have a team or individual override.',
+									{ policy: selectedAssignment.policy.name },
+								)
+							: t(
+									"settings.changePolicies.removeOrgDescription",
+									"This will remove the organization default policy. Employees will have no restrictions unless they have a team or individual override.",
+								))}
+					{selectedAssignment?.assignmentType === "team" &&
+						t(
+							"settings.changePolicies.removeTeamDescription",
+							'This will remove the policy from team "{team}". They will use the organization default.',
+							{ team: selectedAssignment.team?.name },
 						)}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+					{selectedAssignment?.assignmentType === "employee" &&
+						t(
+							"settings.changePolicies.removeEmployeeDescription",
+							'This will remove the override for "{name}". They will use their team or organization default.',
+							{ name: getEmployeeName(selectedAssignment.employee, t) },
+						)}
+				</>
+			}
+			confirmLabel={t("common.remove", "Remove")}
+			pendingLabel={t("common.removing", "Removing…")}
+			isPending={deletePending}
+			error={deleteError}
+			onConfirm={handleDeleteConfirm}
+		/>
 	</>
 );
 
@@ -429,11 +442,13 @@ export function ChangePolicyAssignmentManager({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedAssignment, setSelectedAssignment] =
 		useState<ChangePolicyAssignmentWithDetails | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const {
 		data: assignments,
 		isLoading,
 		error,
+		refetch,
 	} = useQuery({
 		queryKey: queryKeys.changePolicies.assignments(organizationId),
 		queryFn: async () => {
@@ -455,9 +470,9 @@ export function ChangePolicyAssignmentManager({
 					queryKey: queryKeys.changePolicies.assignments(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setSelectedAssignment(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the removal can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.changePolicies.assignmentDeleteFailed",
 						"Failed to remove assignment",
@@ -466,7 +481,7 @@ export function ChangePolicyAssignmentManager({
 			}
 		},
 		onError: () => {
-			toast.error(
+			setDeleteError(
 				t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"),
 			);
 		},
@@ -474,11 +489,13 @@ export function ChangePolicyAssignmentManager({
 
 	const handleDeleteClick = (assignment: ChangePolicyAssignmentWithDetails) => {
 		setSelectedAssignment(assignment);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (selectedAssignment) {
+		if (selectedAssignment && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(selectedAssignment.id);
 		}
 	};
@@ -494,10 +511,14 @@ export function ChangePolicyAssignmentManager({
 	if (error) {
 		return (
 			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
+				<CardContent className="flex flex-col items-center gap-4 py-8 text-center">
+					<p role="alert" className="text-destructive">
 						{t("settings.changePolicies.assignmentsLoadError", "Failed to load policy assignments")}
 					</p>
+					<Button variant="outline" onClick={() => refetch()}>
+						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+						{t("common.retry", "Retry")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -516,5 +537,6 @@ export function ChangePolicyAssignmentManager({
 		selectedAssignment,
 		handleDeleteConfirm,
 		deletePending: deleteMutation.isPending,
+		deleteError,
 	});
 }

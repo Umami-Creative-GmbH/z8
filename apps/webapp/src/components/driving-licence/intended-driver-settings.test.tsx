@@ -206,9 +206,16 @@ describe("IntendedDriverSettings", () => {
 				previewToken: nobodyEnds.data.previewToken,
 			}),
 		);
+		// One removal toast, from the shared assignments component, with Undo.
 		await waitFor(() =>
-			expect(api.toast.success).toHaveBeenCalledWith("Intended driver assignment removed"),
+			expect(api.toast.success).toHaveBeenCalledWith(
+				"Override removed for Delivery",
+				expect.objectContaining({ action: expect.objectContaining({ label: "Undo" }) }),
+			),
 		);
+		expect(
+			api.toast.success.mock.calls.filter(([message]) => String(message).includes("removed")),
+		).toHaveLength(1);
 	});
 
 	it("shows who loses which classes before a save that ends authorizations, and saves on confirmation", async () => {

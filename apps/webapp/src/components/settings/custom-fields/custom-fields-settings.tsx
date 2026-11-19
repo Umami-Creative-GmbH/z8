@@ -285,9 +285,9 @@ function EntityFields({
 
 			{archived.length > 0 ? (
 				<div className="space-y-2">
-					<h3 className="text-sm font-medium">
+					<h2 className="text-sm font-medium">
 						{t("settings.customFields.archivedTitle", "Archived")}
-					</h3>
+					</h2>
 					<ul
 						aria-label={t("settings.customFields.archivedList", "Archived custom fields")}
 						className="divide-y rounded-lg border"
@@ -295,7 +295,9 @@ function EntityFields({
 						{archived.map((field) => (
 							<li key={field.id} className="flex items-center gap-3 p-3">
 								<div className="min-w-0 flex-1">
-									<p className="truncate font-medium text-muted-foreground">{field.name}</p>
+									<p className="truncate font-medium text-muted-foreground" title={field.name}>
+										{field.name}
+									</p>
 									<p className="text-xs text-muted-foreground">{typeLabel(t, field.type)}</p>
 								</div>
 								<Button
@@ -346,7 +348,7 @@ function SortableFieldRow({
 		<li
 			ref={setNodeRef}
 			style={{ transform: CSS.Transform.toString(transform), transition }}
-			className={`flex items-center gap-3 bg-card p-3 ${isDragging ? "relative z-10 shadow-md" : ""}`}
+			className={`flex items-center gap-2 bg-card p-3 sm:gap-3 ${isDragging ? "relative z-10 shadow-md" : ""}`}
 		>
 			<button
 				type="button"
@@ -360,7 +362,11 @@ function SortableFieldRow({
 			</button>
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
-					<span data-testid="custom-field-name" className="truncate font-medium">
+					<span
+						data-testid="custom-field-name"
+						className="min-w-0 max-w-full truncate font-medium"
+						title={field.name}
+					>
 						{field.name}
 					</span>
 					<Badge variant="secondary">{typeLabel(t, field.type)}</Badge>

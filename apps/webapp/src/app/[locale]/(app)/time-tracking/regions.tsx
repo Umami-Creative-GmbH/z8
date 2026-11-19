@@ -11,6 +11,7 @@ import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-
 import { PeriodBlockerFocus } from "@/components/time-tracking/period-blocker-focus";
 import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
+import { SessionReminders } from "@/components/time-tracking/session-reminders";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { TimeTrackingPageActions } from "@/components/time-tracking/time-tracking-page-actions";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
@@ -366,6 +367,7 @@ export async function TimeTrackingPageContent({
 					</Suspense>
 				</div>
 				<aside className="min-w-0 space-y-6">
+					<SessionReminders />
 					<Suspense fallback={null}>
 						<WorkdayContextRegion context={context} searchParams={searchParams} />
 					</Suspense>

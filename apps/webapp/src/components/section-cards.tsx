@@ -165,7 +165,6 @@ function DashboardRegionLayout({
 	const records = dashboardRegionWidgets(visibleWidgetOrder, "records");
 	const personal = dashboardRegionWidgets(visibleWidgetOrder, "personal");
 	const showPersonalDay = visibleWidgetOrder.includes("quick-stats");
-	const hasWorkColumn = attention.length > 0 || records.length > 0;
 	const hasPersonalColumn = showPersonalDay || personal.length > 0;
 
 	return (
@@ -186,41 +185,34 @@ function DashboardRegionLayout({
 					</section>
 				</WidgetCardVariantContext>
 			) : null}
-			<div className="flex min-w-0 flex-col gap-6 empty:hidden @4xl/main:flex-row @4xl/main:items-start">
-				{hasWorkColumn ? (
-					<div className="flex min-w-0 flex-col gap-6 @4xl/main:flex-[1.75] @[110rem]/main:flex-[2] @[110rem]/main:flex-row @[110rem]/main:items-start [&:not(:has([data-widget-id]))]:hidden">
-						{attention.length > 0 ? (
-							<section
-								aria-label={t("dashboard.refresh.attention", "Today at a glance")}
-								data-dashboard-region="attention"
-								className={cn(
-									SHARED_SURFACE,
-									"@[110rem]/main:min-w-0 @[110rem]/main:flex-1",
-								)}
-							>
-								{attention.map(renderWidget)}
-							</section>
-						) : null}
-						<div
-							data-dashboard-region="records"
-							className="flex min-w-0 flex-col gap-6 @[110rem]/main:flex-1 [&:not(:has([data-widget-id]))]:hidden [&_[data-widget-id]]:mb-0"
-						>
-							{records.map(renderWidget)}
-						</div>
+			{/*
+			 * Balanced columns: widget heights vary by role and data, so fixed region
+			 * columns leave large gaps. The browser balances the columns instead.
+			 * Regions are `display: contents` so they keep their identity without
+			 * becoming column items; DashboardWidget already avoids column breaks.
+			 */}
+			<div className="min-w-0 gap-4 @3xl/main:columns-2 @[96rem]/main:columns-3">
+				{attention.length > 0 ? (
+					<section
+						aria-label={t("dashboard.refresh.attention", "Today at a glance")}
+						data-dashboard-region="attention"
+						className={cn(SHARED_SURFACE, "mb-4 break-inside-avoid")}
+					>
+						{attention.map(renderWidget)}
+					</section>
+				) : null}
+				{records.length > 0 ? (
+					<div data-dashboard-region="records" className="contents">
+						{records.map(renderWidget)}
 					</div>
 				) : null}
 				{hasPersonalColumn ? (
-					<div
-						data-dashboard-region="personal"
-						className={cn(
-							"min-w-0 gap-6 [&:not(:has([data-widget-id],[data-slot=card]))]:hidden [&_[data-widget-id]]:mb-0",
-							hasWorkColumn
-								? "flex flex-col @4xl/main:flex-1"
-								: // Without team modules the personal widgets get the full width as a grid.
-									"grid items-start @2xl/main:grid-cols-2 @6xl/main:grid-cols-3",
-						)}
-					>
-						{showPersonalDay ? (personalDaySlot ?? <PersonalDay />) : null}
+					<div data-dashboard-region="personal" className="contents">
+						{showPersonalDay ? (
+							<div className="mb-4 break-inside-avoid empty:hidden">
+								{personalDaySlot ?? <PersonalDay />}
+							</div>
+						) : null}
 						{personal.map(renderWidget)}
 					</div>
 				) : null}

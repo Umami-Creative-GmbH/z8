@@ -84,16 +84,11 @@ export function WebhooksPageClient({
 
 	return (
 		<div className="min-w-0">
-			<div className="mx-auto max-w-7xl">
-				<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-					<div>
+			<div>
+				{/* The page heading already describes this tab; this row names the section, as on the API keys tab. */}
+				<div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+					<div className="min-w-0">
 						<h2 className="text-lg font-semibold">{t("webhooks:webhooks.title", "Webhooks")}</h2>
-						<p className="text-muted-foreground">
-							{t(
-								"webhooks:webhooks.description",
-								"Configure webhook endpoints to receive real-time notifications when events occur in your organization.",
-							)}
-						</p>
 					</div>
 					<Button disabled={failed || query.isPending} onClick={() => setIsCreateDialogOpen(true)}>
 						<IconPlus className="mr-2 size-4" aria-hidden="true" />
@@ -127,18 +122,20 @@ export function WebhooksPageClient({
 								label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
 							/>
 						) : failed && webhooks.length === 0 ? null : webhooks.length === 0 ? (
-							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<IconWebhook className="size-12 text-muted-foreground/50" aria-hidden="true" />
-								<h3 className="mt-4 text-lg font-semibold">
-									{t("webhooks:webhooks.empty.title", "No webhooks configured")}
-								</h3>
-								<p className="mt-2 text-sm text-muted-foreground">
+							<div className="flex flex-col items-start gap-3 py-2">
+								<div className="flex items-center gap-2">
+									<IconWebhook className="size-5 text-muted-foreground" aria-hidden="true" />
+									<h3 className="font-medium">
+										{t("webhooks:webhooks.empty.title", "No webhooks configured")}
+									</h3>
+								</div>
+								<p className="text-sm text-muted-foreground">
 									{t(
 										"webhooks:webhooks.empty.description",
 										"Create your first webhook to start receiving event notifications.",
 									)}
 								</p>
-								<Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+								<Button onClick={() => setIsCreateDialogOpen(true)}>
 									<IconPlus className="mr-2 size-4" aria-hidden="true" />
 									{t("webhooks:webhooks.create", "Add Webhook")}
 								</Button>

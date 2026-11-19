@@ -113,7 +113,11 @@ describe("AuditLogViewer", () => {
 		expect(queryOptions.at(-1)?.queryKey).toContain("org-1");
 		expect(screen.getByText("Jan 2, 2026")).toBeTruthy();
 		expect(screen.getByText("00:30:00")).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Export" }));
+		const exportButton = screen.getByRole("button", { name: "Export JSON" });
+		expect(
+			document.getElementById(exportButton.getAttribute("aria-describedby") ?? "")?.textContent,
+		).toMatch(/selected From–To period/);
+		fireEvent.click(exportButton);
 
 		rerender(
 			<AuditLogViewer
@@ -124,7 +128,7 @@ describe("AuditLogViewer", () => {
 		expect(queryOptions.at(-1)?.queryKey).toContain("org-2");
 		expect(screen.getByText("Jan 1, 2026")).toBeTruthy();
 		expect(screen.getByText("18:30:00")).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Export" }));
+		fireEvent.click(screen.getByRole("button", { name: "Export JSON" }));
 
 		await waitFor(() => expect(toast.success).toHaveBeenCalledTimes(1));
 		resolveFirstExport?.({ success: true, data: [log] });

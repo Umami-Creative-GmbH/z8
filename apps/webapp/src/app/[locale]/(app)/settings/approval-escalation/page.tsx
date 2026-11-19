@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { ApprovalSettingsLoading } from "../approval-policies/approval-settings-loading";
 
 async function ApprovalEscalationSettingsContent() {
 	const authContext = await getAuthContext();
@@ -20,14 +20,9 @@ async function ApprovalEscalationSettingsContent() {
 	return redirectWithLocale("/settings/approval-policies?tab=escalation");
 }
 
+/** This route redirects to the Approval settings page; load in its frame. */
 function ApprovalEscalationSettingsLoading() {
-	return (
-		<div className="page-frame flex min-w-0 flex-1 flex-col gap-4">
-			<Skeleton className="h-8 w-64" />
-			<Skeleton className="h-5 w-96" />
-			<Skeleton className="h-[420px] w-full" />
-		</div>
-	);
+	return <ApprovalSettingsLoading />;
 }
 
 export default function ApprovalEscalationSettingsPage() {

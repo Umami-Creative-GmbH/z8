@@ -1,19 +1,52 @@
 "use client";
 
+import {
+	IconAlertTriangle,
+	IconBan,
+	IconCalendarEvent,
+	IconCheck,
+	IconClock,
+	IconClockEdit,
+	IconReceipt,
+	IconSearch,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { useEffect, useId, useState, useTransition } from "react";
+import { type ReactNode, useEffect, useId, useState, useTransition } from "react";
+import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { ArrivalNotice } from "@/components/time-tracking/arrival-focus";
 import { focusArrivalTarget } from "@/components/time-tracking/arrival-focus-target";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import type {
+	SelfServiceRequestCounts,
 	SelfServiceRequestItem,
 	SelfServiceRequestResult,
 	SelfServiceRequestSourceType,
@@ -23,6 +56,7 @@ import {
 	myRequestFocusTargetId,
 	parseMyRequestsFocus,
 } from "@/lib/time-tracking/period-submissions/blocker-navigation";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { cancelMyAbsenceRequest, cancelMyTimeCorrectionRequest } from "./actions";
 
@@ -39,21 +73,30 @@ type Translate = (key: string, fallback: string) => string;
 const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; fallback: string }> =
 	{
 		absence: {
-			key: "myRequests:myRequests.sourceTypes.absence",
+			key: "myRequests:myRequests.types.absence",
 			fallback: "Absence",
 		},
 		time_correction: {
-			key: "myRequests:myRequests.sourceTypes.timeCorrection",
-			fallback: "Time",
+			key: "myRequests:myRequests.types.timeCorrection",
+			fallback: "Time correction",
 		},
 		travel_expense: {
-			key: "myRequests:myRequests.sourceTypes.travelExpense",
-			fallback: "Expense",
+			key: "myRequests:myRequests.types.travelExpense",
+			fallback: "Travel expense",
 		},
 	};
 
+type TablerIcon = typeof IconClock;
+
+const sourceTypeIcons: Record<SelfServiceRequestSourceType, TablerIcon> = {
+	absence: IconCalendarEvent,
+	time_correction: IconClockEdit,
+	travel_expense: IconReceipt,
+};
+
+/** Pending requests are called "In review" everywhere on this page: summary, filter, badge, section. */
 const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback: string }> = {
-	pending: { key: "myRequests:myRequests.status.pending", fallback: "Pending" },
+	pending: { key: "myRequests:myRequests.status.inReview", fallback: "In review" },
 	approved: {
 		key: "myRequests:myRequests.status.approved",
 		fallback: "Approved",
@@ -68,8 +111,12 @@ const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback:
 	},
 };
 
-const RECENT_DECISION_DAYS = 30;
+const RECENT_DECISION_HOURS = 30 * 24;
 const travelExpenseAmountFormatters = new Map<string, Intl.NumberFormat>();
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+const selectClassName =
+	"h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
 
 function getTravelExpenseAmountFormatter(locale: string, currency: string) {
 	const formatterKey = `${locale}:${currency}`;
@@ -84,6 +131,31 @@ function getTravelExpenseAmountFormatter(locale: string, currency: string) {
 	});
 	travelExpenseAmountFormatters.set(formatterKey, formatter);
 	return formatter;
+}
+
+/** Medium dates, read in UTC: request instants and stored calendar dates format the same everywhere. */
+function getDateFormatter(locale: string) {
+	const cachedFormatter = dateFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		timeZone: "UTC",
+	});
+	dateFormatters.set(locale, formatter);
+	return formatter;
+}
+
+function sourceTypeLabel(sourceType: SelfServiceRequestSourceType, t: Translate) {
+	return t(sourceTypeLabelKeys[sourceType].key, sourceTypeLabelKeys[sourceType].fallback);
+}
+
+function statusLabel(status: SelfServiceRequestStatus, t: Translate) {
+	return t(statusLabelKeys[status].key, statusLabelKeys[status].fallback);
 }
 
 function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Translate) {
@@ -140,21 +212,29 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 	return item.subtitle;
 }
 
+function plainDateToUtcDate(value: string) {
+	try {
+		const date = Temporal.PlainDate.from(value);
+		return new Date(Date.UTC(date.year, date.month - 1, date.day));
+	} catch {
+		return null;
+	}
+}
+
+/** An absence's stored calendar range ("YYYY-MM-DD to YYYY-MM-DD"), formatted as one locale range. */
 function formatStoredDateRange(value: string, locale: string) {
 	const match = /^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})$/.exec(value);
 	if (!match) {
 		return null;
 	}
 
-	const formatter = DateTime.DATE_MED;
-	const start = DateTime.fromISO(match[1], { zone: "utc" }).setLocale(locale);
-	const end = DateTime.fromISO(match[2], { zone: "utc" }).setLocale(locale);
-
-	if (!start.isValid || !end.isValid) {
+	const start = plainDateToUtcDate(match[1]);
+	const end = plainDateToUtcDate(match[2]);
+	if (!start || !end) {
 		return null;
 	}
 
-	return `${start.toLocaleString(formatter)} - ${end.toLocaleString(formatter)}`;
+	return getDateFormatter(locale).formatRange(start, end);
 }
 
 function formatTravelExpenseSubtitle(value: string, locale: string) {
@@ -173,20 +253,40 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }
 
+function formatDate(date: Date, locale: string) {
+	return getDateFormatter(locale).format(date);
+}
+
+/** A rejection the employee can correct and resubmit: the summary's "Required fixes". */
+function needsFix(item: SelfServiceRequestItem) {
+	return item.status === "rejected" && item.availableActions.includes("fix");
+}
+
 function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
 	if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
 		return false;
 	}
 
-	const cutoff = DateTime.fromJSDate(now).minus({ days: RECENT_DECISION_DAYS });
-	return DateTime.fromJSDate(item.resolvedAt) >= cutoff;
+	const cutoff = Temporal.Instant.fromEpochMilliseconds(now.getTime()).subtract({
+		hours: RECENT_DECISION_HOURS,
+	});
+	return (
+		Temporal.Instant.compare(
+			Temporal.Instant.fromEpochMilliseconds(item.resolvedAt.getTime()),
+			cutoff,
+		) >= 0
+	);
 }
 
+/**
+ * Each request appears once in the working sections (fix, review, recent decision) and once in the
+ * history. A rejection that needs a fix is shown under "Needs attention", not again as a decision.
+ */
 function groupRequestItems(items: SelfServiceRequestItem[], now: Date) {
 	return {
-		needsAttention: items.filter((item) => item.status === "rejected"),
+		needsAttention: items.filter(needsFix),
 		inReview: items.filter((item) => item.status === "pending"),
-		recentlyDecided: items.filter((item) => isRecentlyDecided(item, now)),
+		recentlyDecided: items.filter((item) => !needsFix(item) && isRecentlyDecided(item, now)),
 		all: items,
 	};
 }
@@ -196,8 +296,8 @@ function matchesSearch(item: SelfServiceRequestItem, search: string, locale: str
 		requestTitle(item, t),
 		requestSubtitle(item, locale, t),
 		item.decisionReason ?? "",
-		t(sourceTypeLabelKeys[item.sourceType].key, sourceTypeLabelKeys[item.sourceType].fallback),
-		t(statusLabelKeys[item.status].key, statusLabelKeys[item.status].fallback),
+		sourceTypeLabel(item.sourceType, t),
+		statusLabel(item.status, t),
 	]
 		.join(" ")
 		.toLowerCase();
@@ -269,6 +369,13 @@ function useMyRequestsFilters(
 		return matchesStatus && matchesSourceType && matchesSearch(item, search, locale, t);
 	});
 
+	const isFiltered = statusFilter !== "all" || sourceTypeFilter !== "all" || search.trim() !== "";
+	function clearFilters() {
+		setStatusFilter("all");
+		setSourceTypeFilter("all");
+		setSearch("");
+	}
+
 	return {
 		statusFilter,
 		setStatusFilter,
@@ -276,8 +383,11 @@ function useMyRequestsFilters(
 		setSourceTypeFilter,
 		search,
 		setSearch,
+		isFiltered,
+		clearFilters,
 		arrivedUnavailable,
 		filteredItems,
+		totalCount: items.length,
 	};
 }
 
@@ -288,7 +398,10 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 	const [isRefreshing, startRefresh] = useTransition();
 	const filters = useMyRequestsFilters(initialResult.items, focusRequest, locale, t);
 	const { arrivedUnavailable, filteredItems } = filters;
-	const groupedItems = groupRequestItems(filteredItems, new Date());
+	// The page's reading time: "recent" is a 30-day window, so it need not tick while the page is open.
+	const [now] = useState(() => new Date());
+	const groupedItems = groupRequestItems(filteredItems, now);
+	const hasSourceErrors = initialResult.sourceErrors.length > 0;
 
 	return (
 		<div
@@ -297,10 +410,6 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 		>
 			<PageHeader
 				title={t("myRequests:myRequests.title", "My Requests")}
-				description={t(
-					"myRequests:myRequests.subtitle",
-					"Track pending requests, required fixes, and recent decisions in one place.",
-				)}
 				scope={t(
 					"myRequests:myRequests.scope",
 					"Your absence, time-correction and legacy expense requests in the active organization",
@@ -313,35 +422,9 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 				</section>
 			) : null}
 
-			<section
-				aria-label={t("myRequests:myRequests.summary.ariaLabel", "Request summary")}
-				className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:grid-cols-4"
-			>
-				<SummaryCard
-					label={t("myRequests:myRequests.summary.pending", "Pending")}
-					value={initialResult.counts.pending}
-				/>
-				<SummaryCard
-					label={t("myRequests:myRequests.summary.requiredFixes", "Required fixes")}
-					value={initialResult.counts.requiredFixes}
-				/>
-				<SummaryCard
-					label={t("myRequests:myRequests.summary.recentDecisions", "Recent decisions")}
-					value={initialResult.counts.recentDecisions}
-				/>
-				<SummaryCard
-					label={t("myRequests:myRequests.summary.totalLoaded", "Total loaded")}
-					value={initialResult.counts.total}
-				/>
-			</section>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"myRequests:myRequests.summary.loadedScope",
-					"Counts cover loaded requests before filters. Recent decisions cover the last 30 days.",
-				)}
-			</p>
+			<RequestSummary counts={initialResult.counts} />
 
-			{initialResult.sourceErrors.length > 0 ? (
+			{hasSourceErrors ? (
 				<section>
 					<Alert variant="destructive">
 						<AlertTitle>
@@ -370,88 +453,148 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 				</section>
 			) : null}
 
-			<RequestFilters filters={filters} />
-
 			{initialResult.items.length === 0 ? (
 				<section>
-					<EmptyState
-						title={
-							initialResult.sourceErrors.length
-								? t("myRequests:myRequests.empty.unavailable.title", "No requests loaded")
-								: t("myRequests:myRequests.empty.none.title", "No requests yet")
-						}
-						description={
-							initialResult.sourceErrors.length
-								? t(
-										"myRequests:myRequests.empty.unavailable.description",
-										"Retry the unavailable sources to check your requests.",
-									)
-								: t(
-										"myRequests:myRequests.empty.none.description",
-										"Requests will appear here when they are submitted or loaded.",
-									)
-						}
-					/>
-				</section>
-			) : filteredItems.length === 0 ? (
-				<section>
-					<EmptyState
-						title={t(
-							"myRequests:myRequests.empty.filtered.title",
-							"No requests match your filters",
-						)}
-						description={t(
-							"myRequests:myRequests.empty.filtered.description",
-							"Requests will appear here when they are submitted or loaded.",
-						)}
-					/>
+					{hasSourceErrors ? (
+						<EmptyState
+							title={t("myRequests:myRequests.empty.unavailable.title", "No requests loaded")}
+							description={t(
+								"myRequests:myRequests.empty.unavailable.description",
+								"Retry the unavailable sources to check your requests.",
+							)}
+						/>
+					) : (
+						<EmptyState
+							title={t("myRequests:myRequests.empty.none.title", "No requests yet")}
+							description={t(
+								"myRequests:myRequests.empty.none.description",
+								"Requests will appear here when they are submitted or loaded.",
+							)}
+						/>
+					)}
 				</section>
 			) : (
 				<>
-					<RequestSection
-						title={t("myRequests:myRequests.needsAttention.title", "Needs attention")}
-						description={t(
-							"myRequests:myRequests.needsAttention.description",
-							"Rejected requests that may require a correction before resubmission.",
-						)}
-						items={groupedItems.needsAttention}
-						preferFix
-						tone="attention"
-					/>
-					<RequestSection
-						title={t("myRequests:myRequests.inReview.title", "In review")}
-						description={t(
-							"myRequests:myRequests.inReview.description",
-							"Requests waiting for approval or processing.",
-						)}
-						items={groupedItems.inReview}
-						focusTargets
-					/>
-					<RequestSection
-						title={t("myRequests:myRequests.recentlyDecided.title", "Recently decided")}
-						description={t(
-							"myRequests:myRequests.recentlyDecided.description",
-							"Approved and rejected decisions from the last 30 days.",
-						)}
-						items={groupedItems.recentlyDecided}
-					/>
-					<RequestSection
-						title={t("myRequests:myRequests.all.title", "All requests")}
-						description={t(
-							"myRequests:myRequests.all.description",
-							"Review requests across absences, time corrections, and expenses.",
-						)}
-						items={groupedItems.all}
-						allowCancel={false}
-					/>
+					<RequestFilters filters={filters} />
+
+					{filteredItems.length === 0 ? (
+						<section>
+							<EmptyState
+								title={t(
+									"myRequests:myRequests.empty.filtered.title",
+									"No requests match your filters",
+								)}
+								description={t(
+									"myRequests:myRequests.empty.filtered.hint",
+									"Try another search term, status or type.",
+								)}
+								action={
+									<Button type="button" variant="outline" size="sm" onClick={filters.clearFilters}>
+										{t("table.clearFilters", "Clear filters")}
+									</Button>
+								}
+							/>
+						</section>
+					) : (
+						<>
+							<RequestSection
+								title={t("myRequests:myRequests.needsAttention.title", "Needs attention")}
+								description={t(
+									"myRequests:myRequests.needsAttention.description",
+									"Rejected requests that may require a correction before resubmission.",
+								)}
+								items={groupedItems.needsAttention}
+								preferFix
+								tone="attention"
+							/>
+							<RequestSection
+								title={t("myRequests:myRequests.inReview.title", "In review")}
+								items={groupedItems.inReview}
+								focusTargets
+							/>
+							<RequestSection
+								title={t("myRequests:myRequests.recentlyDecided.title", "Recently decided")}
+								description={t(
+									"myRequests:myRequests.recentlyDecided.description",
+									"Approved and rejected decisions from the last 30 days.",
+								)}
+								items={groupedItems.recentlyDecided}
+								allowCancel={false}
+							/>
+							<RequestHistory items={groupedItems.all} />
+						</>
+					)}
 				</>
 			)}
 		</div>
 	);
 }
 
+/** One shared surface, ordered by urgency. Counts cover every loaded request, before filters. */
+function RequestSummary({ counts }: { counts: SelfServiceRequestCounts }) {
+	const { t } = useTranslate();
+	return (
+		<section
+			aria-label={t("myRequests:myRequests.summary.ariaLabel", "Request summary")}
+			className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:grid-cols-4"
+		>
+			<SummaryCell
+				label={t("myRequests:myRequests.summary.requiredFixes", "Required fixes")}
+				value={counts.requiredFixes}
+				tone={counts.requiredFixes > 0 ? "attention" : "default"}
+			/>
+			<SummaryCell
+				label={t("myRequests:myRequests.status.inReview", "In review")}
+				value={counts.pending}
+			/>
+			<SummaryCell
+				label={t("myRequests:myRequests.summary.recentDecisions", "Recent decisions")}
+				hint={t("myRequests:myRequests.summary.recentWindow", "Last 30 days")}
+				value={counts.recentDecisions}
+			/>
+			<SummaryCell
+				label={t("myRequests:myRequests.summary.totalLoaded", "Total loaded")}
+				value={counts.total}
+			/>
+		</section>
+	);
+}
+
+function SummaryCell({
+	label,
+	hint,
+	value,
+	tone = "default",
+}: {
+	label: string;
+	hint?: string;
+	value: number;
+	tone?: "default" | "attention";
+}) {
+	return (
+		<div className="flex min-w-0 flex-col gap-1 bg-card p-4 md:px-5">
+			<p className="flex items-center gap-1.5 text-muted-foreground text-sm">
+				{tone === "attention" ? (
+					<IconAlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+				) : null}
+				<span className="min-w-0 truncate">{label}</span>
+			</p>
+			<p
+				className={cn(
+					"font-semibold text-2xl tabular-nums",
+					tone === "attention" && "text-destructive",
+				)}
+			>
+				{value}
+			</p>
+			{hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
+		</div>
+	);
+}
+
 function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsFilters> }) {
 	const { t } = useTranslate();
+	const searchId = useId();
 	const {
 		statusFilter,
 		setStatusFilter,
@@ -459,81 +602,127 @@ function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsF
 		setSourceTypeFilter,
 		search,
 		setSearch,
+		isFiltered,
+		clearFilters,
+		filteredItems,
+		totalCount,
 	} = filters;
 	return (
-		<section>
-			<div className="space-y-4 border-y py-5">
-				<div className="space-y-1">
-					<h2 className="font-semibold">
-						{t("myRequests:myRequests.filters.title", "Find requests")}
-					</h2>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"myRequests:myRequests.filters.description",
-							"Filter every request section by text, status, or request type.",
-						)}
-					</p>
-				</div>
-				<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)]">
-					<label htmlFor="request-search" className="grid gap-2 text-sm font-medium">
-						{t("myRequests:myRequests.filters.search", "Search")}
+		<section
+			aria-label={t("myRequests:myRequests.filters.title", "Find requests")}
+			className="flex flex-col gap-2"
+		>
+			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_12rem_auto] lg:items-end">
+				<label
+					htmlFor={searchId}
+					className="grid gap-1.5 font-medium text-sm sm:col-span-2 lg:col-span-1"
+				>
+					{t("myRequests:myRequests.filters.search", "Search")}
+					<span className="relative block">
+						<IconSearch
+							className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+							aria-hidden="true"
+						/>
 						<Input
-							id="request-search"
+							id={searchId}
 							name="request-search"
+							type="search"
 							autoComplete="off"
+							className="pl-9"
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
-							placeholder={t("myRequests:myRequests.filters.searchPlaceholder", "Search by title…")}
+							placeholder={t(
+								"myRequests:myRequests.filters.searchRequestsPlaceholder",
+								"Title, dates, amount or reason…",
+							)}
 						/>
-					</label>
-					<label className="grid gap-2 text-sm font-medium">
-						{t("myRequests:myRequests.filters.status", "Status")}
-						<select
-							className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-							value={statusFilter}
-							onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-						>
-							<option value="all">
-								{t("myRequests:myRequests.filters.allStatuses", "All statuses")}
-							</option>
-							<option value="pending">
-								{t("myRequests:myRequests.filters.pendingRequests", "Pending requests")}
-							</option>
-							<option value="approved">
-								{t("myRequests:myRequests.filters.approvedRequests", "Approved requests")}
-							</option>
-							<option value="rejected">
-								{t("myRequests:myRequests.filters.rejectedRequests", "Rejected requests")}
-							</option>
-							<option value="cancelled">
-								{t("myRequests:myRequests.filters.cancelledRequests", "Cancelled requests")}
-							</option>
-						</select>
-					</label>
-					<label className="grid gap-2 text-sm font-medium">
-						{t("myRequests:myRequests.filters.type", "Type")}
-						<select
-							className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-							value={sourceTypeFilter}
-							onChange={(event) => setSourceTypeFilter(event.target.value as SourceTypeFilter)}
-						>
-							<option value="all">
-								{t("myRequests:myRequests.filters.allTypes", "All types")}
-							</option>
-							<option value="absence">
-								{t("myRequests:myRequests.sourceTypes.absence", "Absence")}
-							</option>
-							<option value="time_correction">
-								{t("myRequests:myRequests.sourceTypes.timeCorrection", "Time")}
-							</option>
-							<option value="travel_expense">
-								{t("myRequests:myRequests.sourceTypes.travelExpense", "Expense")}
-							</option>
-						</select>
-					</label>
-				</div>
+					</span>
+				</label>
+				<label className="grid gap-1.5 font-medium text-sm">
+					{t("myRequests:myRequests.filters.status", "Status")}
+					<select
+						className={selectClassName}
+						value={statusFilter}
+						onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+					>
+						<option value="all">
+							{t("myRequests:myRequests.filters.allStatuses", "All statuses")}
+						</option>
+						<option value="pending">{statusLabel("pending", t)}</option>
+						<option value="approved">{statusLabel("approved", t)}</option>
+						<option value="rejected">{statusLabel("rejected", t)}</option>
+						<option value="cancelled">{statusLabel("cancelled", t)}</option>
+					</select>
+				</label>
+				<label className="grid gap-1.5 font-medium text-sm">
+					{t("myRequests:myRequests.filters.type", "Type")}
+					<select
+						className={selectClassName}
+						value={sourceTypeFilter}
+						onChange={(event) => setSourceTypeFilter(event.target.value as SourceTypeFilter)}
+					>
+						<option value="all">
+							{t("myRequests:myRequests.filters.allTypes", "All types")}
+						</option>
+						<option value="absence">{sourceTypeLabel("absence", t)}</option>
+						<option value="time_correction">{sourceTypeLabel("time_correction", t)}</option>
+						<option value="travel_expense">{sourceTypeLabel("travel_expense", t)}</option>
+					</select>
+				</label>
+				{isFiltered ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="justify-self-start lg:mb-0.5"
+						onClick={clearFilters}
+					>
+						<IconX aria-hidden="true" />
+						{t("table.clearFilters", "Clear filters")}
+					</Button>
+				) : null}
 			</div>
+			<p className="text-muted-foreground text-sm tabular-nums" aria-live="polite">
+				{isFiltered
+					? t(
+							"myRequests:myRequests.filters.resultCount",
+							"Showing {visible} of {total} requests",
+							{ visible: filteredItems.length, total: totalCount },
+						)
+					: null}
+			</p>
 		</section>
+	);
+}
+
+function SectionHeading({
+	id,
+	title,
+	count,
+	description,
+	tone = "default",
+}: {
+	id: string;
+	title: string;
+	count: number;
+	description?: string;
+	tone?: "default" | "attention";
+}) {
+	return (
+		<div className="mb-3 space-y-1">
+			<div className="flex items-center gap-2">
+				{tone === "attention" ? (
+					<IconAlertTriangle className="size-5 shrink-0 text-destructive" aria-hidden="true" />
+				) : null}
+				<h2 id={id} className="font-semibold text-lg">
+					{title}
+				</h2>
+				<span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
+					{count}
+				</span>
+			</div>
+			{description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+		</div>
 	);
 }
 
@@ -547,7 +736,7 @@ function RequestSection({
 	focusTargets = false,
 }: {
 	title: string;
-	description: string;
+	description?: string;
 	items: SelfServiceRequestItem[];
 	allowCancel?: boolean;
 	preferFix?: boolean;
@@ -563,18 +752,18 @@ function RequestSection({
 
 	return (
 		<section aria-labelledby={titleId}>
-			<div className="mb-3 space-y-1">
-				<h2 id={titleId} className="text-lg font-semibold">
-					{title}
-				</h2>
-				<p className="text-sm text-muted-foreground">{description}</p>
-			</div>
+			<SectionHeading
+				id={titleId}
+				title={title}
+				count={items.length}
+				description={description}
+				tone={tone}
+			/>
 			<div
-				className={
-					tone === "attention"
-						? "divide-y rounded-xl border border-destructive/30 bg-destructive/5"
-						: "divide-y rounded-xl border bg-card"
-				}
+				className={cn(
+					"divide-y overflow-hidden rounded-xl border bg-card",
+					tone === "attention" && "border-destructive/40",
+				)}
 			>
 				{items.map((item) => (
 					<RequestCard
@@ -587,6 +776,15 @@ function RequestSection({
 				))}
 			</div>
 		</section>
+	);
+}
+
+function RequestTypeIcon({ sourceType }: { sourceType: SelfServiceRequestSourceType }) {
+	const Icon = sourceTypeIcons[sourceType];
+	return (
+		<span className="hidden size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground sm:flex">
+			<Icon className="size-[1.125rem]" aria-hidden="true" />
+		</span>
 	);
 }
 
@@ -604,34 +802,47 @@ function RequestCard({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const titleId = useId();
+	const title = requestTitle(item, t);
+	const subtitle = requestSubtitle(item, locale, t);
 
 	return (
 		<article
 			id={targetId}
 			aria-labelledby={titleId}
 			tabIndex={targetId ? -1 : undefined}
-			className="scroll-mt-24 p-4 outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 md:p-5"
+			className="scroll-mt-24 p-4 outline-none focus:ring-2 focus:ring-ring focus:ring-inset md:px-5"
 		>
-			<div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-				<div className="min-w-0 space-y-3">
-					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="outline">
-							{t(
-								sourceTypeLabelKeys[item.sourceType].key,
-								sourceTypeLabelKeys[item.sourceType].fallback,
-							)}
-						</Badge>
-						<StatusBadge status={item.status} />
-					</div>
-					<div className="space-y-1">
-						<h3 id={titleId} className="break-words font-medium text-base leading-tight">
-							{requestTitle(item, t)}
-						</h3>
-						<p className="break-words text-muted-foreground text-sm">
-							{requestSubtitle(item, locale, t)}
-						</p>
+			<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-6">
+				<div className="flex min-w-0 gap-3">
+					<RequestTypeIcon sourceType={item.sourceType} />
+					<div className="min-w-0 flex-1 space-y-1">
+						<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+							<h3 id={titleId} className="break-words font-medium text-base leading-snug">
+								{title}
+							</h3>
+							<StatusBadge status={item.status} />
+						</div>
+						<p className="break-words text-muted-foreground text-sm">{subtitle}</p>
+						<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm tabular-nums">
+							<span>{sourceTypeLabel(item.sourceType, t)}</span>
+							<span>
+								{t("myRequests:myRequests.card.submitted", "Submitted")}:{" "}
+								{formatDate(item.submittedAt, locale)}
+							</span>
+							{item.resolvedAt ? (
+								<span>
+									{t("myRequests:myRequests.card.decision", "Decision")}:{" "}
+									{formatDate(item.resolvedAt, locale)}
+								</span>
+							) : null}
+						</div>
 						{item.decisionReason ? (
-							<p className="break-words text-sm">
+							<p
+								className={cn(
+									"mt-2 break-words rounded-md border-l-2 bg-muted/50 px-3 py-2 text-sm",
+									item.status === "rejected" ? "border-destructive" : "border-border",
+								)}
+							>
 								<span className="font-medium">
 									{t("myRequests:myRequests.reasonLabel", "Reason")}:
 								</span>{" "}
@@ -639,57 +850,128 @@ function RequestCard({
 							</p>
 						) : null}
 					</div>
-					<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm tabular-nums">
-						<span>
-							{t("myRequests:myRequests.card.submitted", "Submitted")}:{" "}
-							{formatDate(item.submittedAt, locale)}
-						</span>
-						{item.resolvedAt ? (
-							<span>
-								{t("myRequests:myRequests.card.decision", "Decision")}:{" "}
-								{formatDate(item.resolvedAt, locale)}
-							</span>
-						) : null}
-					</div>
 				</div>
-				<RequestAction item={item} allowCancel={allowCancel} preferFix={preferFix} />
+				<RequestAction
+					item={item}
+					title={title}
+					subtitle={subtitle}
+					titleId={titleId}
+					allowCancel={allowCancel}
+					preferFix={preferFix}
+				/>
 			</div>
 		</article>
 	);
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+/** Every loaded request once, as an aligned record table; it opens records but never cancels them. */
+function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const titleId = useId();
+
 	return (
-		<div className="min-w-0 space-y-2 bg-card p-4 md:p-5">
-			<p className="text-sm text-muted-foreground">{label}</p>
-			<p className="text-2xl font-semibold tabular-nums">{value}</p>
-		</div>
+		<section aria-labelledby={titleId}>
+			<SectionHeading
+				id={titleId}
+				title={t("myRequests:myRequests.all.title", "All requests")}
+				count={items.length}
+			/>
+			<div className="overflow-hidden rounded-xl border bg-card">
+				<Table mobileLayout="stacked" aria-labelledby={titleId}>
+					<TableHeader className="bg-muted/40">
+						<TableRow className="hover:bg-transparent">
+							<TableHead className="pl-4 md:pl-5">
+								{t("myRequests:myRequests.history.request", "Request")}
+							</TableHead>
+							<TableHead>{t("myRequests:myRequests.filters.type", "Type")}</TableHead>
+							<TableHead>{t("myRequests:myRequests.filters.status", "Status")}</TableHead>
+							<TableHead>{t("myRequests:myRequests.card.submitted", "Submitted")}</TableHead>
+							<TableHead>{t("myRequests:myRequests.card.decision", "Decision")}</TableHead>
+							<TableHead className="pr-4 text-right md:pr-5">
+								<span className="sr-only">{t("common.actions", "Actions")}</span>
+							</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{items.map((item) => (
+							<RequestHistoryRow key={item.id} item={item} locale={locale} />
+						))}
+					</TableBody>
+				</Table>
+			</div>
+		</section>
 	);
 }
 
-function StatusBadge({ status }: { status: SelfServiceRequestStatus }) {
+function RequestHistoryRow({ item, locale }: { item: SelfServiceRequestItem; locale: string }) {
 	const { t } = useTranslate();
-
-	if (status === "rejected") {
-		return (
-			<Badge variant="destructive">{t("myRequests:myRequests.status.rejected", "Rejected")}</Badge>
-		);
-	}
-
-	if (status === "approved") {
-		return (
-			<Badge variant="default">{t("myRequests:myRequests.status.approved", "Approved")}</Badge>
-		);
-	}
-
-	if (status === "pending") {
-		return (
-			<Badge variant="secondary">{t("myRequests:myRequests.status.inReview", "In review")}</Badge>
-		);
-	}
+	const titleId = useId();
+	const primaryAction = getPrimaryRequestAction(item, false);
 
 	return (
-		<Badge variant="outline">{t("myRequests:myRequests.status.cancelled", "Cancelled")}</Badge>
+		<TableRow>
+			<TableCell className="max-w-0 whitespace-normal py-3 pl-4 md:w-[40%] md:pl-5">
+				<div id={titleId} className="break-words font-medium">
+					{requestTitle(item, t)}
+				</div>
+				<div className="break-words text-muted-foreground text-sm">
+					{requestSubtitle(item, locale, t)}
+				</div>
+			</TableCell>
+			<TableCell className="text-muted-foreground">{sourceTypeLabel(item.sourceType, t)}</TableCell>
+			<TableCell>
+				<StatusBadge status={item.status} />
+			</TableCell>
+			<TableCell className="tabular-nums">{formatDate(item.submittedAt, locale)}</TableCell>
+			<TableCell className="text-muted-foreground tabular-nums">
+				{item.resolvedAt ? formatDate(item.resolvedAt, locale) : "—"}
+			</TableCell>
+			<TableCell className="pr-4 sm:text-right md:pr-5">
+				{primaryAction ? (
+					<Button asChild size="sm" variant={primaryAction === "fix" ? "default" : "ghost"}>
+						<Link href={item.sourceHref} aria-describedby={titleId}>
+							{primaryAction === "fix"
+								? t("myRequests:myRequests.actions.fix", "Fix")
+								: t("myRequests:myRequests.actions.view", "View")}
+						</Link>
+					</Button>
+				) : null}
+			</TableCell>
+		</TableRow>
+	);
+}
+
+const statusBadgeStyles: Record<SelfServiceRequestStatus, { className: string; Icon: TablerIcon }> = {
+	pending: {
+		className:
+			"border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200",
+		Icon: IconClock,
+	},
+	approved: {
+		className:
+			"border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+		Icon: IconCheck,
+	},
+	rejected: {
+		className: "border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/20",
+		Icon: IconX,
+	},
+	cancelled: {
+		className: "text-muted-foreground",
+		Icon: IconBan,
+	},
+};
+
+function StatusBadge({ status }: { status: SelfServiceRequestStatus }) {
+	const { t } = useTranslate();
+	const { className, Icon } = statusBadgeStyles[status];
+
+	return (
+		<Badge variant="outline" className={className}>
+			<Icon aria-hidden="true" />
+			{statusLabel(status, t)}
+		</Badge>
 	);
 }
 
@@ -702,10 +984,16 @@ function getPrimaryRequestAction(item: SelfServiceRequestItem, preferFix: boolea
 
 function RequestAction({
 	item,
+	title,
+	subtitle,
+	titleId,
 	allowCancel = true,
 	preferFix = false,
 }: {
 	item: SelfServiceRequestItem;
+	title: string;
+	subtitle: string;
+	titleId: string;
 	allowCancel?: boolean;
 	preferFix?: boolean;
 }) {
@@ -726,22 +1014,10 @@ function RequestAction({
 				: null;
 
 	if (!primaryActionLabel && !canCancel) {
-		return (
-			<span className="text-sm text-muted-foreground">
-				{t("myRequests:myRequests.actions.notAvailable", "Not available")}
-			</span>
-		);
+		return null;
 	}
 
 	function handleCancel() {
-		if (
-			!window.confirm(
-				t("myRequests:myRequests.actions.cancelRequestConfirmation", "Cancel this request?"),
-			)
-		) {
-			return;
-		}
-
 		setCancelError(null);
 		startCancelTransition(async () => {
 			try {
@@ -751,6 +1027,7 @@ function RequestAction({
 						: await cancelMyAbsenceRequest(item.sourceId);
 				if (result.success) {
 					setCancelError(null);
+					toast.success(t("myRequests:myRequests.actions.cancelled", "Request cancelled"));
 					// A pending request keeps its submission period open (#1350).
 					void invalidateReadiness();
 					return;
@@ -772,24 +1049,62 @@ function RequestAction({
 	}
 
 	return (
-		<div className="grid justify-items-end gap-2">
-			<div className="flex flex-wrap justify-end gap-2">
+		<div className="grid gap-2 md:justify-items-end">
+			<div className="flex flex-wrap gap-2 md:justify-end">
+				{canCancel ? (
+					<AlertDialog>
+						<AlertDialogTrigger asChild>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+								disabled={isCancelPending}
+								aria-describedby={titleId}
+							>
+								{isCancelPending
+									? t("myRequests:myRequests.actions.cancelling", "Cancelling…")
+									: t("myRequests:myRequests.actions.cancelRequest", "Cancel request")}
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>
+									{t(
+										"myRequests:myRequests.actions.cancelRequestConfirmation",
+										"Cancel this request?",
+									)}
+								</AlertDialogTitle>
+								<AlertDialogDescription>
+									{t(
+										"myRequests:myRequests.actions.cancelRequestDescription",
+										"It is withdrawn from review and can't be reopened. To ask again, submit a new request.",
+									)}
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+								<p className="break-words font-medium">{title}</p>
+								<p className="break-words text-muted-foreground">{subtitle}</p>
+							</div>
+							<AlertDialogFooter>
+								<AlertDialogCancel>
+									{t("myRequests:myRequests.actions.keepRequest", "Keep request")}
+								</AlertDialogCancel>
+								<AlertDialogAction
+									className={buttonVariants({ variant: "destructive" })}
+									onClick={handleCancel}
+								>
+									{t("myRequests:myRequests.actions.cancelRequest", "Cancel request")}
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				) : null}
 				{primaryActionLabel ? (
 					<Button asChild size="sm" variant={primaryAction === "fix" ? "default" : "outline"}>
-						<Link href={item.sourceHref}>{primaryActionLabel}</Link>
-					</Button>
-				) : null}
-				{canCancel ? (
-					<Button
-						type="button"
-						size="sm"
-						variant="destructive"
-						disabled={isCancelPending}
-						onClick={handleCancel}
-					>
-						{isCancelPending
-							? t("myRequests:myRequests.actions.cancelling", "Cancelling…")
-							: t("myRequests:myRequests.actions.cancel", "Cancel")}
+						<Link href={item.sourceHref} aria-describedby={titleId}>
+							{primaryActionLabel}
+						</Link>
 					</Button>
 				) : null}
 			</div>
@@ -825,21 +1140,22 @@ function FocusedRequestUnavailable() {
 	);
 }
 
-function EmptyState({ title, description }: { title: string; description: string }) {
+function EmptyState({
+	title,
+	description,
+	action,
+}: {
+	title: string;
+	description: string;
+	action?: ReactNode;
+}) {
 	return (
-		<div className="rounded-lg border border-dashed p-8 text-center">
-			<p className="font-medium">{title}</p>
-			<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+		<div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
+			<div className="space-y-1">
+				<p className="font-medium">{title}</p>
+				<p className="text-muted-foreground text-sm">{description}</p>
+			</div>
+			{action}
 		</div>
 	);
-}
-
-function formatDate(date: Date | null, locale: string) {
-	if (!date) {
-		return "-";
-	}
-
-	return DateTime.fromJSDate(date, { zone: "utc" })
-		.setLocale(locale)
-		.toLocaleString(DateTime.DATE_MED);
 }

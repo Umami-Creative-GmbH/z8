@@ -1,20 +1,28 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 import {
 	getFilterOptionsAction,
 	getPayrollConfigsAction,
 	getScheduledExportsAction,
 } from "./actions";
 
-export const metadata = {
-	title: "Scheduled Exports",
-	description:
-		"Configure recurring exports for payroll, data, and audit reports",
-};
+export async function generateMetadata(): Promise<Metadata> {
+	const t = await getTranslate();
+
+	return {
+		title: t("settings.scheduledExports.title", "Scheduled Exports"),
+		description: t(
+			"settings.scheduledExports.description",
+			"Configure recurring exports for payroll, data, and audit reports.",
+		),
+	};
+}
 
 async function ScheduledExportsContent() {
 	const { organizationId, authContext } = await requireOrgAdminSettingsAccess();

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconAlertTriangle, IconRestore, IconTrash } from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2, IconRestore, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState, useTransition } from "react";
@@ -20,6 +20,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,8 @@ import {
 	type SettingsAccess,
 } from "@/lib/organization-action/settings-access-level";
 import { useRouter } from "@/navigation";
+
+type BaseUIPreventableEvent = { preventBaseUIHandler?: () => void };
 
 interface OrganizationDangerZoneCardProps {
 	organization: typeof authSchema.organization.$inferSelect;
@@ -45,6 +48,8 @@ export function OrganizationDangerZoneCard({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [recoverDialogOpen, setRecoverDialogOpen] = useState(false);
 	const [confirmationName, setConfirmationName] = useState("");
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [recoverError, setRecoverError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
 
 	const canManage = meetsSettingsAccess(settingsAccess, "orgAdmin");
@@ -60,43 +65,77 @@ export function OrganizationDangerZoneCard({
 		: 0;
 
 	const handleDelete = () => {
-		if (!isConfirmationValid) return;
+		if (!isConfirmationValid || isPending) return;
 
+		setDeleteError(null);
 		startTransition(async () => {
-			const result = await deleteOrganization({ confirmationName });
+			let message: string;
+			try {
+				const result = await deleteOrganization({ confirmationName });
 
-			if (result.success) {
-				toast.success(
-					t(
-						"organization.delete.scheduledSuccess",
-						"Organization scheduled for deletion. You have 5 days to recover it.",
-					),
-				);
-				setDeleteDialogOpen(false);
-				setConfirmationName("");
-				router.refresh();
-			} else {
-				toast.error(
-					result.error || t("organization.delete.failed", "Failed to delete organization"),
-				);
+				if (result.success) {
+					toast.success(
+						t(
+							"organization.delete.scheduledSuccess",
+							"Organization scheduled for deletion. You have 5 days to recover it.",
+						),
+					);
+					setDeleteDialogOpen(false);
+					setConfirmationName("");
+					router.refresh();
+					return;
+				}
+				message = result.error || t("organization.delete.failed", "Failed to delete organization");
+			} catch {
+				message = t("organization.delete.failed", "Failed to delete organization");
 			}
+			// Keep the dialog open with the typed name so the admin can retry.
+			setDeleteError(message);
+			toast.error(message);
 		});
 	};
 
 	const handleRecover = () => {
-		startTransition(async () => {
-			const result = await recoverOrganization();
+		if (isPending) return;
 
-			if (result.success) {
-				toast.success(t("organization.recover.success", "Organization recovered successfully"));
-				setRecoverDialogOpen(false);
-				router.refresh();
-			} else {
-				toast.error(
-					result.error || t("organization.recover.failed", "Failed to recover organization"),
-				);
+		setRecoverError(null);
+		startTransition(async () => {
+			let message: string;
+			try {
+				const result = await recoverOrganization();
+
+				if (result.success) {
+					toast.success(t("organization.recover.success", "Organization recovered successfully"));
+					setRecoverDialogOpen(false);
+					router.refresh();
+					return;
+				}
+				message =
+					result.error || t("organization.recover.failed", "Failed to recover organization");
+			} catch {
+				message = t("organization.recover.failed", "Failed to recover organization");
 			}
+			setRecoverError(message);
+			toast.error(message);
 		});
+	};
+
+	const handleDeleteDialogOpenChange = (open: boolean) => {
+		// Escape, an outside press or Cancel must not hide a deletion that is still running.
+		if (!open && isPending) return;
+		setDeleteDialogOpen(open);
+		if (!open) {
+			setConfirmationName("");
+			setDeleteError(null);
+		}
+	};
+
+	const handleRecoverDialogOpenChange = (open: boolean) => {
+		if (!open && isPending) return;
+		setRecoverDialogOpen(open);
+		if (!open) {
+			setRecoverError(null);
+		}
 	};
 
 	if (!canManage) {
@@ -107,10 +146,10 @@ export function OrganizationDangerZoneCard({
 	if (isDeleted) {
 		return (
 			<>
-				<Card className="border-amber-500/50">
+				<Card className="border-warning/40">
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-amber-600">
-							<IconAlertTriangle className="size-5" />
+						<CardTitle as="h2" className="flex items-center gap-2">
+							<IconAlertTriangle aria-hidden="true" className="size-5 shrink-0 text-warning" />
 							{t("organization.delete.pendingDeletion", "Pending Deletion")}
 						</CardTitle>
 						<CardDescription>
@@ -121,14 +160,16 @@ export function OrganizationDangerZoneCard({
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="rounded-lg border border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4">
+						{/* Warning surface: tint and border carry the state; text stays on the
+						    foreground token for body-text contrast in light and dark themes. */}
+						<div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-foreground">
 							<div className="space-y-4">
-								<div className="flex items-center justify-between">
+								<div className="flex flex-wrap items-start justify-between gap-4">
 									<div>
-										<p className="font-medium text-amber-800 dark:text-amber-200">
+										<p className="font-medium">
 											{t("organization.delete.timeRemaining", "Time remaining to recover:")}
 										</p>
-										<p className="text-2xl font-bold text-amber-600">
+										<p className="text-2xl font-semibold tabular-nums">
 											{t(
 												"organization.delete.daysRemaining",
 												"{count, plural, one {# day} other {# days}}",
@@ -136,7 +177,7 @@ export function OrganizationDangerZoneCard({
 											)}
 										</p>
 									</div>
-									<div className="text-right text-sm text-muted-foreground">
+									<div className="text-sm text-muted-foreground sm:text-right">
 										<p>{t("organization.delete.permanentDeletionOn", "Permanent deletion on:")}</p>
 										<p className="font-medium">
 											{permanentDeletionDate?.toLocaleString(DateTime.DATETIME_MED)}
@@ -144,7 +185,7 @@ export function OrganizationDangerZoneCard({
 									</div>
 								</div>
 
-								<div className="text-sm text-amber-800 dark:text-amber-200">
+								<div className="text-sm">
 									<p>
 										{t(
 											"organization.delete.recoveryNote",
@@ -156,9 +197,9 @@ export function OrganizationDangerZoneCard({
 								<Button
 									variant="default"
 									onClick={() => setRecoverDialogOpen(true)}
-									className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+									className="w-full sm:w-auto"
 								>
-									<IconRestore className="size-4 mr-2" />
+									<IconRestore aria-hidden="true" className="size-4" />
 									{t("organization.recover.button", "Recover Organization")}
 								</Button>
 							</div>
@@ -166,11 +207,11 @@ export function OrganizationDangerZoneCard({
 					</CardContent>
 				</Card>
 
-				<AlertDialog open={recoverDialogOpen} onOpenChange={setRecoverDialogOpen}>
-					<AlertDialogContent>
+				<AlertDialog open={recoverDialogOpen} onOpenChange={handleRecoverDialogOpenChange}>
+					<AlertDialogContent aria-busy={isPending}>
 						<AlertDialogHeader>
-							<AlertDialogTitle className="flex items-center gap-2 text-green-600">
-								<IconRestore className="size-5" />
+							<AlertDialogTitle className="flex items-center gap-2">
+								<IconRestore aria-hidden="true" className="size-5" />
 								{t("organization.recover.confirmTitle", "Recover Organization?")}
 							</AlertDialogTitle>
 							<AlertDialogDescription>
@@ -180,13 +221,25 @@ export function OrganizationDangerZoneCard({
 								)}
 							</AlertDialogDescription>
 						</AlertDialogHeader>
+						{recoverError && (
+							<p role="alert" className="text-sm text-destructive">
+								{recoverError}
+							</p>
+						)}
 						<AlertDialogFooter>
-							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+							<AlertDialogCancel disabled={isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 							<AlertDialogAction
-								onClick={handleRecover}
+								onClick={(event) => {
+									// Keep the dialog open so the pending state and any failure stay visible.
+									event.preventDefault();
+									(event as unknown as BaseUIPreventableEvent).preventBaseUIHandler?.();
+									handleRecover();
+								}}
 								disabled={isPending}
-								className="bg-green-600 text-white hover:bg-green-700"
 							>
+								{isPending && (
+									<IconLoader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+								)}
 								{isPending
 									? t("common.recovering", "Recovering...")
 									: t("organization.recover.confirmButton", "Recover Organization")}
@@ -203,8 +256,8 @@ export function OrganizationDangerZoneCard({
 		<>
 			<Card className="border-destructive/50">
 				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-destructive">
-						<IconAlertTriangle className="size-5" />
+					<CardTitle as="h2" className="flex items-center gap-2 text-destructive">
+						<IconAlertTriangle aria-hidden="true" className="size-5 shrink-0" />
 						{t("organization.delete.dangerZone", "Danger Zone")}
 					</CardTitle>
 					<CardDescription>
@@ -218,9 +271,9 @@ export function OrganizationDangerZoneCard({
 					<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
 						<div className="space-y-4">
 							<div>
-								<h4 className="font-medium text-destructive">
+								<h3 className="font-medium text-destructive">
 									{t("organization.delete.title", "Delete Organization")}
-								</h4>
+								</h3>
 								<p className="text-sm text-muted-foreground mt-1">
 									{t(
 										"organization.delete.warning",
@@ -249,7 +302,7 @@ export function OrganizationDangerZoneCard({
 								onClick={() => setDeleteDialogOpen(true)}
 								className="w-full sm:w-auto"
 							>
-								<IconTrash className="size-4 mr-2" />
+								<IconTrash aria-hidden="true" className="size-4" />
 								{t("organization.delete.button", "Delete Organization")}
 							</Button>
 						</div>
@@ -257,11 +310,11 @@ export function OrganizationDangerZoneCard({
 				</CardContent>
 			</Card>
 
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
+			<AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
+				<AlertDialogContent aria-busy={isPending}>
 					<AlertDialogHeader>
 						<AlertDialogTitle className="flex items-center gap-2 text-destructive">
-							<IconAlertTriangle className="size-5" />
+							<IconAlertTriangle aria-hidden="true" className="size-5" />
 							{t("organization.delete.confirmTitle", "Delete Organization?")}
 						</AlertDialogTitle>
 						<AlertDialogDescription asChild>
@@ -285,20 +338,34 @@ export function OrganizationDangerZoneCard({
 										placeholder={organization.name}
 										className="font-mono"
 										autoComplete="off"
+										disabled={isPending}
+										aria-invalid={deleteError ? true : undefined}
+										aria-describedby={deleteError ? "delete-organization-error" : undefined}
 									/>
 								</div>
 							</div>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
+					{deleteError && (
+						<p id="delete-organization-error" role="alert" className="text-sm text-destructive">
+							{deleteError}
+						</p>
+					)}
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setConfirmationName("")}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
+						<AlertDialogCancel disabled={isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
-							onClick={handleDelete}
+							onClick={(event) => {
+								// Keep the dialog open so the pending state and any failure stay visible.
+								event.preventDefault();
+								(event as unknown as BaseUIPreventableEvent).preventBaseUIHandler?.();
+								handleDelete();
+							}}
 							disabled={!isConfirmationValid || isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className={buttonVariants({ variant: "destructive" })}
 						>
+							{isPending && (
+								<IconLoader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+							)}
 							{isPending
 								? t("common.deleting", "Deleting...")
 								: t("organization.delete.confirmButton", "Delete Organization")}

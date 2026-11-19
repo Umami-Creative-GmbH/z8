@@ -34,8 +34,13 @@ async function ImplementationChecklistPageContent() {
 function ImplementationChecklistPageLoading() {
 	return (
 		<div className="page-frame flex-1">
-			<div className="page-measure space-y-4">
-				<Skeleton className="h-8 w-64" />
+			<div className="page-measure space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-4 w-40 max-w-full" />
+					<Skeleton className="h-9 w-72 max-w-full" />
+					<Skeleton className="h-5 w-full max-w-xl" />
+				</div>
+				<Skeleton className="h-48 w-full" />
 				<Skeleton className="h-64 w-full" />
 			</div>
 		</div>

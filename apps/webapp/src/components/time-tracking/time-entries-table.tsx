@@ -19,6 +19,7 @@ import {
 } from "@/components/time-tracking/time-entries-table-columns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDuration } from "@/lib/time-tracking/time-utils";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
+import { cn } from "@/lib/utils";
 import { Link, useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { timeEntryDayGroups } from "./time-entry-day-groups";
@@ -136,16 +138,23 @@ export function TimeEntriesTable({
 					</h2>
 				</CardTitle>
 				<div className="flex flex-wrap items-center gap-2">
-					<Button
-						variant="ghost"
+					{/* Both views named up front: a single toggle labelled with its current state read as an action. */}
+					<ToggleGroup
+						type="single"
 						size="sm"
-						aria-pressed={grouped}
-						onClick={() => setGrouped(!grouped)}
+						variant="outline"
+						value={grouped ? "day" : "all"}
+						onValueChange={(value) => {
+							if (value) setGrouped(value === "day");
+						}}
 					>
-						{grouped
-							? t("timeTracking.table.groupedByDay", "Grouped by day")
-							: t("timeTracking.table.allEntries", "All entries")}
-					</Button>
+						<ToggleGroupItem value="day">
+							{t("timeTracking.table.groupedByDay", "Grouped by day")}
+						</ToggleGroupItem>
+						<ToggleGroupItem value="all">
+							{t("timeTracking.table.allEntries", "All entries")}
+						</ToggleGroupItem>
+					</ToggleGroup>
 					<Button asChild variant="outline" size="sm">
 						<Link href="/calendar">
 							<IconCalendarEvent className="size-4" aria-hidden="true" />
@@ -162,7 +171,7 @@ export function TimeEntriesTable({
 			</CardHeader>
 			<CardContent className="px-0 sm:[&_th]:align-top sm:[&_th]:py-1 sm:[&_th]:leading-4 sm:[&_th]:whitespace-normal sm:[&_td]:align-top sm:[&_:is(th,td):first-child]:pl-4 sm:[&_:is(th,td):last-child]:pr-4">
 				{grouped && groups.length > 0 ? (
-					groups.map((group) => (
+					groups.map((group, groupIndex) => (
 						<section
 							key={group.date}
 							aria-label={Temporal.PlainDate.from(group.date).toLocaleString(
@@ -204,7 +213,13 @@ export function TimeEntriesTable({
 								columns={groupedColumns}
 								data={group.periods}
 								manualPagination
-								className="rounded-none border-0 sm:[&_table]:min-w-xl sm:[&_table]:table-fixed sm:[&_th:nth-child(-n+2)]:w-[22%] sm:[&_th:nth-child(3)]:w-28 sm:[&_th:last-child]:w-24 sm:[&_[data-slot=badge]]:max-w-full sm:[&_[data-slot=badge]]:whitespace-normal sm:[&_[data-slot=badge]]:wrap-anywhere"
+								// One visible column header for the whole list; later days keep theirs for
+								// screen readers. Widths sit on every cell so hidden headers keep columns aligned.
+								className={cn(
+									"rounded-none border-0 sm:[&_table]:min-w-xl sm:[&_table]:table-fixed sm:[&_:is(th,td):nth-child(-n+2)]:w-[22%] sm:[&_:is(th,td):nth-child(3)]:w-28 sm:[&_:is(th,td):last-child]:w-24 sm:[&_[data-slot=badge]]:max-w-full sm:[&_[data-slot=badge]]:whitespace-normal sm:[&_[data-slot=badge]]:wrap-anywhere",
+									// A fixed layout reads widths from the (now hidden) first row; auto honours the cells'.
+									groupIndex > 0 && "sm:[&_thead]:sr-only sm:[&_table]:table-auto",
+								)}
 							/>
 						</section>
 					))

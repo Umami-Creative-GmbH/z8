@@ -94,6 +94,38 @@ describe("location editing contract", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
+	it("labels its address fields with instance-unique ids rather than static DOM ids", () => {
+		render(
+			<LocationDialog
+				location={{
+					id: "site-1",
+					name: "Workshop",
+					city: "Berlin",
+					country: "DE",
+					isActive: true,
+					employeeCount: 0,
+					subareaCount: 0,
+				}}
+				open
+				onOpenChange={vi.fn()}
+				onSuccess={vi.fn()}
+			/>,
+		);
+		const fields = [
+			screen.getByRole("textbox", { name: "Street" }),
+			screen.getByRole("textbox", { name: "City" }),
+			screen.getByRole("textbox", { name: "Postal Code" }),
+			screen.getByRole("textbox", { name: "Country Code" }),
+			screen.getByRole("switch", { name: "Active" }),
+		];
+		for (const id of ["street", "city", "postalCode", "country", "isActive"]) {
+			expect(document.getElementById(id)).toBeNull();
+		}
+		const ids = fields.map((field) => field.id);
+		expect(new Set(ids).size).toBe(ids.length);
+		for (const id of ids) expect(id).not.toBe("");
+	});
+
 	it("preserves edit defaults including false and sends the existing update payload", async () => {
 		updateLocation.mockResolvedValue({ success: true, data: {} });
 		const user = userEvent.setup();

@@ -1,3 +1,4 @@
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { AuditConfigForm } from "@/components/settings/audit-export/audit-config-form";
@@ -7,6 +8,7 @@ import { KeyManagement } from "@/components/settings/audit-export/key-management
 import { AuditLogViewer } from "@/components/settings/audit-log-viewer";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -67,8 +69,25 @@ async function AuditExportSettingsContent() {
 						"settings.auditExport.description",
 						"GoBD-compliant export hardening with digital signatures and WORM retention",
 					),
-					panel: (
+					measure: true,
+					panel: configResult.success ? (
 						<AuditConfigForm initialConfig={config} />
+					) : (
+						<Alert variant="destructive">
+							<IconAlertTriangle aria-hidden="true" />
+							<AlertTitle>
+								{t(
+									"settings.auditExport.config.loadErrorTitle",
+									"Audit export configuration could not be loaded",
+								)}
+							</AlertTitle>
+							<AlertDescription>
+								{t(
+									"settings.auditExport.config.loadErrorDescription",
+									"Reload the page to try again. Your existing configuration and signing keys are unchanged.",
+								)}
+							</AlertDescription>
+						</Alert>
 					),
 				},
 				{
@@ -84,7 +103,25 @@ async function AuditExportSettingsContent() {
 								organizationId={organizationId}
 								organizationTimezone={organizationTimezone}
 							/>
-							<AuditPackagesTable packages={packages} />
+							{packagesResult.success ? (
+								<AuditPackagesTable packages={packages} />
+							) : (
+								<Alert variant="destructive">
+									<IconAlertTriangle aria-hidden="true" />
+									<AlertTitle>
+										{t(
+											"settings.auditExport.packages.loadErrorTitle",
+											"Audit packages could not be loaded",
+										)}
+									</AlertTitle>
+									<AlertDescription>
+										{t(
+											"settings.auditExport.packages.loadErrorDescription",
+											"Reload the page to try again. Existing packages are unchanged.",
+										)}
+									</AlertDescription>
+								</Alert>
+							)}
 						</div>
 					),
 				},
@@ -97,6 +134,7 @@ async function AuditExportSettingsContent() {
 									"settings.navigation.audit.keysDescription",
 									"Manage the signing keys used by audit exports",
 								),
+								measure: true,
 								panel: (
 									<KeyManagement
 										organizationId={organizationId}

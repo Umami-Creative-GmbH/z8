@@ -10,7 +10,7 @@ import { OrgExplorerClient } from "./org-explorer-client";
 import { OrgExplorerHeader, OrgExplorerRetry } from "./org-explorer-header";
 
 async function OrganizationPageContent() {
-	// The Effect runtime must execute per request outside the prerendered shell.
+	// Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
 	await connection();
 	const [t, result, accessTier] = await Promise.all([
 		getTranslate(),
@@ -51,18 +51,20 @@ async function OrganizationPageContent() {
 	);
 }
 
+function OrganizationPageLoading() {
+	return (
+		<div role="status" aria-busy="true" className="space-y-4">
+			<Skeleton className="h-12 w-full" />
+			<Skeleton className="h-[60dvh] w-full" />
+		</div>
+	);
+}
+
 export default function OrganizationPage() {
 	return (
 		<div className="@container/main page-frame-full flex min-w-0 flex-1 flex-col gap-6">
 			<OrgExplorerHeader />
-			<Suspense
-				fallback={
-					<div role="status" aria-busy="true" className="space-y-4">
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-[60dvh] w-full" />
-					</div>
-				}
-			>
+			<Suspense fallback={<OrganizationPageLoading />}>
 				<OrganizationPageContent />
 			</Suspense>
 		</div>

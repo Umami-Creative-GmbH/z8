@@ -5,6 +5,7 @@ import { PersonnelFileOfficerSettingsCard } from "@/components/personnel-file/of
 import { PersonnelFileSettingsTabs } from "@/components/personnel-file/personnel-file-settings-tabs";
 import { PersonnelFileRetentionSettingsCard } from "@/components/personnel-file/retention-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -26,40 +27,44 @@ async function PersonnelFileSettingsPageContent() {
 	const leadDays = await loadExpiryReminderLeadDays(db, organizationId);
 
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.personnelFiles.settings.title", "Personnel Files")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("settings.personnelFiles.settings.title", "Personnel Files")}
+					description={t(
 						"settings.personnelFiles.settings.description",
 						"Choose who besides owners and admins manages employee documents.",
 					)}
-				</p>
+				/>
+				<PersonnelFileSettingsTabs
+					access={<PersonnelFileOfficerSettingsCard />}
+					reminders={<ExpiryReminderSettingsCard leadDays={leadDays} />}
+					retention={<PersonnelFileRetentionSettingsCard />}
+				/>
 			</div>
-			<PersonnelFileSettingsTabs
-				access={<PersonnelFileOfficerSettingsCard />}
-				reminders={<ExpiryReminderSettingsCard leadDays={leadDays} />}
-				retention={<PersonnelFileRetentionSettingsCard />}
-			/>
 		</div>
 	);
 }
 
 function PersonnelFileSettingsPageLoading() {
 	return (
-		<LoadingRegion
-			className="page-frame flex flex-1 flex-col gap-4"
-			role="status"
-			label={{
-				labelKey: "settings.personnelFiles.settings.loading",
-				labelDefault: "Loading personnel file settings",
-			}}
-		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
-			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</LoadingRegion>
+		<div className="page-frame">
+			<LoadingRegion
+				className="page-measure space-y-6"
+				role="status"
+				label={{
+					labelKey: "settings.personnelFiles.settings.loading",
+					labelDefault: "Loading personnel file settings",
+				}}
+			>
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-48" aria-hidden="true" />
+					<Skeleton className="h-5 w-full max-w-xl" aria-hidden="true" />
+				</div>
+				<Skeleton className="h-9 w-64" aria-hidden="true" />
+				<Skeleton className="h-64 w-full" aria-hidden="true" />
+			</LoadingRegion>
+		</div>
 	);
 }
 

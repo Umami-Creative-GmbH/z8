@@ -182,12 +182,12 @@ it("keeps drafts across a retained pending session and retires a revealed key at
 		"Payroll fixture",
 	);
 	fireEvent.submit(screen.getByRole("button", { name: "Create Key" }).closest("form")!);
-	expect(await screen.findByText("public-test-dummy-key")).toBeTruthy();
+	expect(await screen.findByDisplayValue("public-test-dummy-key")).toBeTruthy();
 	transport.pending = true;
 	await act(async () => view.rerender(tree()));
 	transport.pending = false;
 	await act(async () => view.rerender(tree()));
-	expect(screen.queryByText("public-test-dummy-key")).toBeNull();
+	expect(screen.queryByDisplayValue("public-test-dummy-key")).toBeNull();
 });
 
 it("retains the actual webhook form draft during a retained pending session", async () => {

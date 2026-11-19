@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	createLocation,
@@ -156,6 +156,15 @@ export function LocationDialog({
 	const { t } = useTranslate();
 	const { form, isSubmitting, submitError, nameInputRef, isEditing } =
 		useLocationForm({ location, onSuccess });
+	// Unique per instance, so two open panels never share label targets.
+	const idPrefix = useId();
+	const fieldIds = {
+		street: `${idPrefix}-street`,
+		city: `${idPrefix}-city`,
+		postalCode: `${idPrefix}-postalCode`,
+		country: `${idPrefix}-country`,
+		isActive: `${idPrefix}-isActive`,
+	};
 
 	return (
 		<ActionPanel
@@ -242,11 +251,11 @@ export function LocationDialog({
 						<form.Field name="street">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="street">
+									<Label htmlFor={fieldIds.street}>
 										{t("settings.locations.field.street", "Street")}
 									</Label>
 									<Input
-										id="street"
+										id={fieldIds.street}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -264,11 +273,11 @@ export function LocationDialog({
 							<form.Field name="city">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="city">
+										<Label htmlFor={fieldIds.city}>
 											{t("settings.locations.field.city", "City")}
 										</Label>
 										<Input
-											id="city"
+											id={fieldIds.city}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
@@ -284,11 +293,11 @@ export function LocationDialog({
 							<form.Field name="postalCode">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="postalCode">
+										<Label htmlFor={fieldIds.postalCode}>
 											{t("settings.locations.field.postalCode", "Postal Code")}
 										</Label>
 										<Input
-											id="postalCode"
+											id={fieldIds.postalCode}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
@@ -306,11 +315,11 @@ export function LocationDialog({
 						<form.Field name="country">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="country">
+									<Label htmlFor={fieldIds.country}>
 										{t("settings.locations.field.country", "Country Code")}
 									</Label>
 									<Input
-										id="country"
+										id={fieldIds.country}
 										value={field.state.value}
 										onChange={(e) =>
 											field.handleChange(e.target.value.toUpperCase())
@@ -338,7 +347,7 @@ export function LocationDialog({
 								{(field) => (
 									<div className="flex items-center justify-between rounded-lg border p-4">
 										<div className="space-y-0.5">
-											<Label htmlFor="isActive">
+											<Label htmlFor={fieldIds.isActive}>
 												{t("settings.locations.field.active", "Active")}
 											</Label>
 											<p className="text-sm text-muted-foreground">
@@ -349,7 +358,7 @@ export function LocationDialog({
 											</p>
 										</div>
 										<Switch
-											id="isActive"
+											id={fieldIds.isActive}
 											checked={field.state.value}
 											onCheckedChange={field.handleChange}
 										/>
@@ -370,7 +379,7 @@ export function LocationDialog({
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
 							{isEditing
 								? t("settings.locations.dialog.save", "Save Changes")

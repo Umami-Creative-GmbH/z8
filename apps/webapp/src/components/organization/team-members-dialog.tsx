@@ -252,9 +252,9 @@ export function TeamMembersDialog({
 						</div>
 
 						{teamMembers.length === 0 ? (
-							<div className="text-center py-8 text-muted-foreground">
-								<IconUsers className="size-12 mx-auto mb-2 opacity-50" />
-								<p className="text-sm">
+							<div className="space-y-1 py-8 text-center text-muted-foreground">
+								<IconUsers className="mx-auto mb-2 size-6" aria-hidden="true" />
+								<p className="text-sm font-medium text-foreground">
 									{t("organization.teams.members.empty", "No members in this team yet")}
 								</p>
 								{canManageMembers && (

@@ -91,13 +91,12 @@ export function RateSeries<History extends RateSeriesHistory>({
 		return null;
 	};
 
-	if (history.isError) {
-		return (
-			<p className="text-sm text-destructive" role="alert">
-				{history.error.message || messages.loadError}
-			</p>
-		);
-	}
+	// A failed read keeps the card frame and title, explains the failure and offers a retry.
+	// A failed background refetch keeps showing the history already loaded.
+	const loadError =
+		history.isError && history.data === undefined
+			? history.error.message || messages.loadError
+			: undefined;
 
 	return (
 		<RateHistoryCard
@@ -105,6 +104,9 @@ export function RateSeries<History extends RateSeriesHistory>({
 			currency={history.data?.currency ?? ""}
 			periods={history.data?.periods ?? []}
 			isLoading={history.isPending}
+			loadError={loadError}
+			onRetry={() => void history.refetch()}
+			isRetrying={history.isFetching}
 			canEdit={history.isSuccess}
 			suggestion={suggestion?.(history.data)}
 			onSetRate={(input) => applyChange(setRate(input))}

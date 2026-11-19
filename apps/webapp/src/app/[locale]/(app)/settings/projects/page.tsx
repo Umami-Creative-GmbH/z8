@@ -57,7 +57,9 @@ async function ProjectSettingsPageContent() {
 	// Only org owners and admins manage project templates (#878).
 	return (
 		<ProjectSettingsTabs
-			projects={<ProjectManagement organizationId={organizationId} canManageProjectManagers />}
+			projects={
+				<ProjectManagement organizationId={organizationId} canManageProjectManagers embedded />
+			}
 			templates={<ProjectTemplateManagement organizationId={organizationId} />}
 		/>
 	);
@@ -73,7 +75,10 @@ function ProjectSettingsPageLoading() {
 				labelDefault: "Loading project settings",
 			}}
 		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
+			<div className="space-y-2 pb-2">
+				<Skeleton className="h-8 w-48" aria-hidden="true" />
+				<Skeleton className="h-4 w-full max-w-md" aria-hidden="true" />
+			</div>
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
 		</LoadingRegion>
 	);

@@ -1,6 +1,7 @@
 import { count, eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
@@ -55,18 +56,18 @@ async function OrganizationsPageContent() {
 	if (!organization) {
 		return (
 			<div className="page-frame flex-1">
-				<h1 className="text-2xl font-semibold">
-					{t(
-						"settings.organizations.notFound.title",
-						"Organization Not Found",
-					)}
-				</h1>
-				<p className="text-muted-foreground mt-2">
-					{t(
-						"settings.organizations.notFound.description",
-						"The organization could not be found or you don't have access to it.",
-					)}
-				</p>
+				<div className="page-measure space-y-6">
+					<PageHeader
+						title={t(
+							"settings.organizations.notFound.title",
+							"Organization Not Found",
+						)}
+						description={t(
+							"settings.organizations.notFound.description",
+							"The organization could not be found or you don't have access to it.",
+						)}
+					/>
+				</div>
 			</div>
 		);
 	}
@@ -89,10 +90,15 @@ async function OrganizationsPageContent() {
 
 function OrganizationsPageLoading() {
 	return (
-		<div className="page-frame flex-1 space-y-4">
-			<Skeleton className="h-8 w-64" />
-			<Skeleton className="h-5 w-96" />
-			<Skeleton className="h-[420px] w-full" />
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-9 w-56 max-w-full" />
+					<Skeleton className="h-5 w-96 max-w-full" />
+				</div>
+				<Skeleton className="h-[180px] w-full" />
+				<Skeleton className="h-[420px] w-full" />
+			</div>
 		</div>
 	);
 }

@@ -37,6 +37,14 @@ Use a stable shell, a concise page heading, relevant actions, and clearly groupe
 | Supporting column | Context useful while working in the main record | Use for a selected period, policy, balance or related detail; stack deliberately on narrow screens. |
 | Secondary content | Optional widgets and less frequent detail | Use explicit disclosure, tabs or existing customization; retain access and saved preferences. |
 
+Every app route renders inside one page frame, defined as utilities in [globals.css](../../apps/webapp/src/app/globals.css), so the title, gutters and top offset never move between pages:
+
+- `page-frame` is the page root by default: centered, bounded at 120rem (1920px), with the shared gutters and vertical padding. Children do not add their own page gutters.
+- `page-measure` bounds forms, settings and detail content at 56rem, left-aligned inside the frame. Do not center narrow content with `mx-auto max-w-*`.
+- `page-frame-full` keeps the gutters without the bound. Use it only for planning canvases (calendar, scheduling, organization explorer).
+
+A route's loading fallback uses the same frame classes as its content.
+
 This is a vocabulary of regions, not a requirement to render all six. Avoid repeating a complete metric widget when a summary already communicates the same information. A repeated clock state must agree everywhere it appears.
 
 Keep personal work and team oversight distinct. Manager and organization sections follow actual permissions. When a section is unavailable to an employee, the remaining personal layout must still make sense. Preserve user-selected widgets and ordering when mapping an existing dashboard into new regions.

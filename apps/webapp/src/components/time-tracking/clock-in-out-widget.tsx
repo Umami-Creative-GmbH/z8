@@ -28,7 +28,6 @@ import {
 	ClockOutVehicleUse,
 } from "@/components/time-tracking/clock-vehicle-use";
 import { QuickBreakPopover } from "@/components/time-tracking/quick-break-popover";
-import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import { useClockInOutWidget } from "@/components/time-tracking/use-clock-in-out-widget";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -131,26 +130,32 @@ function ClockWidgetHeading({
 	);
 }
 
+/** Today's total beside the live session: both answer "how long", so they share one row. */
 function ClockSessionStatus({
 	widget,
 	timeFormat,
+	daySummary,
 }: {
 	widget: ClockWidget;
 	timeFormat: TimeFormat;
+	daySummary?: ReactNode;
 }) {
 	const activeWorkPeriod = widget.isClockedIn ? widget.activeWorkPeriod : null;
 	const breakStartedAt = activeWorkPeriod?.breakStartedAt;
 
 	return (
 		<>
-			{activeWorkPeriod ? (
-				<ActiveSessionSummary
-					elapsedSeconds={widget.elapsedSeconds}
-					startTime={activeWorkPeriod.startTime}
-					t={widget.t}
-					timeFormat={timeFormat}
-				/>
-			) : null}
+			<div className="flex flex-wrap items-start gap-x-12 gap-y-4 empty:hidden">
+				{daySummary}
+				{activeWorkPeriod ? (
+					<ActiveSessionSummary
+						elapsedSeconds={widget.elapsedSeconds}
+						startTime={activeWorkPeriod.startTime}
+						t={widget.t}
+						timeFormat={timeFormat}
+					/>
+				) : null}
+			</div>
 			{breakStartedAt ? (
 				<BreakInProgressNotice
 					since={breakStartedAt}
@@ -312,19 +317,17 @@ export function ClockInOutWidget({
 	// Wide cards put the state beside the controls, so Clock In stays a button-sized target
 	// instead of a bar across the page; narrow cards stack them.
 	return (
-		<Card className="@container/widget rounded-xl border-l-4 border-l-primary shadow-none">
-			<CardContent className="grid gap-6 @3xl/widget:grid-cols-[minmax(12rem,1fr)_minmax(0,2fr)] @3xl/widget:items-center @3xl/widget:gap-x-8">
+		<Card className="@container/widget rounded-xl shadow-none">
+			<CardContent className="grid gap-6 @3xl/widget:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @3xl/widget:items-center @3xl/widget:gap-x-8">
 				<div className="flex min-w-0 flex-col gap-4">
 					<ClockWidgetHeading widget={widget} employeeName={employeeName} />
-					{daySummary}
-					<ClockSessionStatus widget={widget} timeFormat={timeFormat} />
+					<ClockSessionStatus
+						widget={widget}
+						timeFormat={timeFormat}
+						daySummary={daySummary}
+					/>
 
 					<ClockComplianceNotices widget={widget} />
-
-					<SessionReminderPanel
-						isClockedIn={widget.isClockedIn}
-						sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
-					/>
 				</div>
 
 				{/* Its own widget container: the location options size to this column, not the card. */}

@@ -103,7 +103,7 @@ export function EquipmentRetentionCard({
 					<div className="flex flex-col gap-4 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex min-w-0 items-start gap-3">
 							<IconAlertTriangle
-								className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
+								className="mt-0.5 size-5 shrink-0 text-warning"
 								aria-hidden="true"
 							/>
 							<div className="min-w-0 space-y-1">

@@ -5,6 +5,7 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
 import { WeekStartSettings } from "@/components/settings/week-start-settings";
+import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
@@ -55,14 +56,13 @@ export default async function ProfilePage() {
 	return (
 		<div className="page-frame">
 			<div className="page-measure space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.profile.title", "Profile Settings")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t("settings.profile.description", "Manage your personal information and preferences")}
-					</p>
-				</div>
+				<PageHeader
+					title={t("settings.profile.title", "Profile Settings")}
+					description={t(
+						"settings.profile.description",
+						"Manage your personal information and preferences",
+					)}
+				/>
 
 				<ProfileForm user={user} />
 

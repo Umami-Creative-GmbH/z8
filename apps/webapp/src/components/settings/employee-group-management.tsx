@@ -1,9 +1,11 @@
 "use client";
 
+import { IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { getEmployeeGroups } from "@/app/[locale]/(app)/settings/approval-policies/actions";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
@@ -32,7 +34,7 @@ function groupMemberCount(group: EmployeeGroupData) {
 
 export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagementProps) {
 	const { t } = useTranslate();
-	const { data, isLoading, isError } = useQuery({
+	const { data, isLoading, isError, isRefetching, refetch } = useQuery({
 		queryKey: employeeGroupQueryKey(organizationId),
 		queryFn: async () => {
 			const result = await getEmployeeGroups();
@@ -55,13 +57,31 @@ export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagem
 			</CardHeader>
 			<CardContent>
 				{isLoading ? (
-					<div className="py-6 text-sm text-muted-foreground">
+					<div className="py-6 text-sm text-muted-foreground" role="status">
 						{t("settings.employeeGroups.loading", "Loading employee groups…")}
 					</div>
 				) : isError ? (
-					<output className="block py-6 text-sm text-destructive">
-						{t("settings.employeeGroups.loadFailed", "Employee groups could not be loaded.")}
-					</output>
+					<div className="flex flex-wrap items-center gap-3 py-6">
+						<p className="text-sm text-destructive" role="alert">
+							{t("settings.employeeGroups.loadFailed", "Employee groups could not be loaded.")}
+						</p>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => refetch()}
+							disabled={isRefetching}
+						>
+							{isRefetching ? (
+								<IconLoader2
+									className="mr-2 size-4 motion-safe:animate-spin"
+									aria-hidden="true"
+								/>
+							) : (
+								<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+							)}
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
 				) : groups.length === 0 ? (
 					<div className="py-6 text-sm text-muted-foreground">
 						{t(
@@ -92,7 +112,7 @@ export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagem
 											{group.description || "-"}
 										</div>
 									</TableCell>
-									<TableCell>{groupMemberCount(group)}</TableCell>
+									<TableCell className="tabular-nums">{groupMemberCount(group)}</TableCell>
 									<TableCell>
 										<Badge variant={group.isActive ? "default" : "outline"}>
 											{group.isActive

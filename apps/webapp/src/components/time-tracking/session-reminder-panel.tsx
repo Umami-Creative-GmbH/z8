@@ -22,6 +22,9 @@ import { cn } from "@/lib/utils";
 
 const WARNING_THRESHOLD_MINUTES = 15;
 
+/** Reminders are rows of one card, split by dividers; the coloured icon marks each kind. */
+const REMINDER_ROW = "py-3 first:pt-0 last:pb-0";
+
 interface SessionReminderPanelProps {
 	isClockedIn: boolean;
 	sessionStartTime: Date | null;
@@ -50,7 +53,7 @@ function BreakReminderCard({
 	t,
 }: BreakReminderCardProps) {
 	return (
-		<div className="rounded-lg border bg-background/60 p-3">
+		<div className={REMINDER_ROW}>
 			<div className="flex items-start gap-3">
 				<div
 					className={cn(
@@ -154,7 +157,7 @@ function HydrationReminderCard({
 	todayIntake,
 }: HydrationReminderCardProps) {
 	return (
-		<div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 dark:border-blue-900 dark:bg-blue-950/30">
+		<div className={REMINDER_ROW}>
 			<div className="flex items-start gap-3">
 				<div className="mt-0.5 rounded-full bg-blue-500/10 p-1.5 text-blue-600 dark:text-blue-400">
 					<IconDroplet className="size-4" aria-hidden="true" />
@@ -433,10 +436,10 @@ export function SessionReminderPanel({
 		: 0;
 
 	return (
-		<section className="rounded-xl border bg-card p-3 text-card-foreground shadow-sm">
-			<div className="mb-3 flex items-center justify-between gap-3">
+		<section className="rounded-xl border bg-card p-5 text-card-foreground">
+			<div className="mb-4 flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-sm font-semibold leading-none">
+					<h2 className="text-base font-semibold leading-none">
 						{t("timeTracking.sessionReminders.title", "Session reminders")}
 					</h2>
 					<p className="mt-1 text-xs text-muted-foreground">
@@ -445,7 +448,7 @@ export function SessionReminderPanel({
 				</div>
 			</div>
 
-			<div className="space-y-2">
+			<div className="divide-y">
 				{showBreakRow && (
 					<BreakReminderCard
 						breakProgress={breakProgress}

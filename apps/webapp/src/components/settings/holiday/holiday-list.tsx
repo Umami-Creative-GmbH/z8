@@ -160,6 +160,7 @@ export function HolidayList({
 						{ name: deletion.holidayToDelete?.name || "" },
 					)}
 					isDeleting={deletion.deleteMutation.isPending}
+					error={deletion.deleteError}
 					onConfirm={deletion.confirmDelete}
 				/>
 			) : null}
@@ -170,6 +171,7 @@ export function HolidayList({
 					onOpenChange={deletion.setBulkDeleteConfirmOpen}
 					count={selectedCount}
 					isDeleting={deletion.bulkDeleteMutation.isPending}
+					error={deletion.bulkDeleteError}
 					onConfirm={deletion.confirmBulkDelete}
 				/>
 			) : null}

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -7,13 +7,15 @@ async function TelegramSettingsContent() {
 	await requireOrgAdminSettingsAccess();
 	return redirectWithLocale("/settings/notification-channels?tab=telegram");
 }
+/** This route redirects to Chat Integrations; load in that page's frame. */
 function TelegramSettingsLoading() {
 	return (
-		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
-			<Skeleton className="h-8 w-48" />
-			<Skeleton className="h-5 w-96" />
-			<Skeleton className="h-[380px] w-full" />
-		</div>
+		<SettingsPageSkeleton
+			label={{
+				labelKey: "settings.loading",
+				labelDefault: "Loading settings",
+			}}
+		/>
 	);
 }
 

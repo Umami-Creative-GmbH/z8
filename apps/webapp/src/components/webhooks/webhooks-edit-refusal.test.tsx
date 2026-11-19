@@ -199,7 +199,7 @@ function holdUpdate() {
 }
 async function editAndDispatch() {
 	const user = userEvent.setup();
-	await user.click(await screen.findByRole("button", { name: "Actions", exact: true }));
+	await user.click(await screen.findByRole("button", { name: "Actions for Synthetic endpoint", exact: true }));
 	await user.click(await screen.findByRole("menuitem", { name: "Edit", exact: true }));
 	const name = await screen.findByRole("textbox", { name: "Name" });
 	await user.clear(name);
@@ -311,11 +311,11 @@ function holdCardCommand(command: CardCommand) {
 async function dispatchCardCommand(command: CardCommand) {
 	const user = userEvent.setup();
 	if (command === "toggle") {
-		await user.click(screen.getByRole("switch", { name: "Toggle webhook active" }));
+		await user.click(screen.getByRole("switch", { name: "Active: Synthetic endpoint" }));
 		await waitFor(() => expect(updateWebhook).toHaveBeenCalledTimes(1));
 		return;
 	}
-	await user.click(screen.getByRole("button", { name: "Actions", exact: true }));
+	await user.click(screen.getByRole("button", { name: "Actions for Synthetic endpoint", exact: true }));
 	const label = { delete: "Delete", test: "Send Test", rotate: "Regenerate Secret" }[command];
 	await user.click(await screen.findByRole("menuitem", { name: label, exact: true }));
 	if (command === "delete")
@@ -378,10 +378,10 @@ it.each(["toggle", "delete", "test", "rotate"] as const)(
 		});
 		const control =
 			command === "toggle"
-				? screen.getByRole("switch", { name: "Toggle webhook active" })
+				? screen.getByRole("switch", { name: "Active: Synthetic endpoint" })
 				: command === "delete"
 					? screen.getByRole("button", { name: "Delete", exact: true })
-					: screen.getByRole("button", { name: "Actions", exact: true });
+					: screen.getByRole("button", { name: "Actions for Synthetic endpoint", exact: true });
 		expect(control.hasAttribute("disabled")).toBe(true);
 		await act(async () => finish());
 		await waitFor(() => expect(control.hasAttribute("disabled")).toBe(false));

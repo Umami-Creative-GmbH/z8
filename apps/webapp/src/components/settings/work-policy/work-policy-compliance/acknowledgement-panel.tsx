@@ -2,7 +2,6 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import type { WorkPolicyViolationWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import {
 	ActionPanel,
@@ -16,9 +15,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { formatEmployeeName, getViolationTypeLabel, violationTypeColors } from "./helpers";
+import {
+	formatEmployeeName,
+	formatViolationDate,
+	getViolationTypeLabel,
+	type ViolationDisplayContext,
+	violationTypeColors,
+} from "./helpers";
 
 interface AcknowledgementPanelProps {
+	display: ViolationDisplayContext;
 	open: boolean;
 	violation: WorkPolicyViolationWithDetails | null;
 	note: string;
@@ -30,6 +36,7 @@ interface AcknowledgementPanelProps {
 }
 
 export function AcknowledgementPanel({
+	display,
 	open,
 	violation,
 	note,
@@ -75,9 +82,10 @@ export function AcknowledgementPanel({
 									<span className="text-muted-foreground">
 										{t("settings.workPolicies.dateLabel", "Date:")}
 									</span>{" "}
-									<span className="font-medium">
-										{DateTime.fromJSDate(violation.violationDate).toFormat("LLL d, yyyy")}
-									</span>
+									<span className="font-medium tabular-nums">
+										{formatViolationDate(violation.violationDate, display)}
+									</span>{" "}
+									<span className="text-muted-foreground">({display.timezone})</span>
 								</div>
 								<div className="col-span-2">
 									<span className="text-muted-foreground">
@@ -115,7 +123,9 @@ export function AcknowledgementPanel({
 						{t("common.cancel", "Cancel")}
 					</Button>
 					<Button onClick={onConfirm} disabled={isPending}>
-						{isPending ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
+						{isPending ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+						) : null}
 						{t("settings.workPolicies.acknowledge", "Acknowledge")}
 					</Button>
 				</ActionPanelFooter>

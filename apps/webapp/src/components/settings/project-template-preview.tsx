@@ -129,7 +129,7 @@ export function ProjectTemplatePreview({ template }: { template: ProjectTemplate
 			</ul>
 			{skipped.length > 0 && (
 				<div className="grid gap-1">
-					<div className="font-medium text-amber-700 dark:text-amber-400">
+					<div className="font-medium text-warning">
 						{t("settings.projects.fromTemplate.willSkip", "Will not be copied")}
 					</div>
 					<ul className="grid gap-1 text-muted-foreground">

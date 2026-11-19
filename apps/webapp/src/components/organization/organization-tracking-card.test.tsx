@@ -112,4 +112,46 @@ describe("organization tracking review", () => {
 		);
 		expect(mocks.refresh).toHaveBeenCalled();
 	});
+	it("keeps the panel heading for assistive tech and shows progress while saving", async () => {
+		mocks.preview.mockResolvedValue({
+			success: true,
+			data: {
+				kind: "date_change",
+				currentDate: "2026-05-21",
+				proposedDate: "2026-05-26",
+				fingerprint: "changed",
+				employees: [],
+				blockers: [],
+			},
+		});
+		let finishCommit: (value: unknown) => void = () => {};
+		mocks.commit.mockReturnValue(
+			new Promise((resolve) => {
+				finishCommit = resolve;
+			}),
+		);
+		render(
+			<OrganizationTrackingCard
+				settings={{ active: true, trackingStartDate: "2026-05-21" }}
+				createdAt="2026-01-01T00:00:00Z"
+				timezone="Europe/Berlin"
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Time tracking start" }).className,
+		).toContain("sr-only");
+
+		fireEvent.click(screen.getByRole("button", { name: "Change tracking date" }));
+		await screen.findByRole("button", { name: "Save reviewed date" });
+		fireEvent.change(screen.getByLabelText("Reason for this change"), {
+			target: { value: "Correct rollout date" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save reviewed date" }));
+
+		const saving = await screen.findByRole("button", { name: "Save reviewed date" });
+		await waitFor(() => expect(saving.getAttribute("aria-busy")).toBe("true"));
+		expect(saving).toHaveProperty("disabled", true);
+		finishCommit({ success: true, data: { status: "committed", refreshPending: false } });
+		await waitFor(() => expect(mocks.success).toHaveBeenCalled());
+	});
 });

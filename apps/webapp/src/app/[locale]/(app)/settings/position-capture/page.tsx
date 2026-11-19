@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { PositionCaptureSettings } from "@/components/settings/position-capture/position-capture-settings";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -13,23 +15,24 @@ async function PositionCaptureSettingsPageContent() {
 	]);
 
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			<div className="min-w-0 space-y-4">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.positionCapture.title", "Position capture")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.positionCapture.description",
-							"Record positions with employees' own clock events, with their consent",
-						)}
-					</p>
-				</div>
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
+				<PageHeader
+					title={t("settings.positionCapture.title", "Position capture")}
+					description={t(
+						"settings.positionCapture.description",
+						"Record positions with employees' own clock events, with their consent",
+					)}
+				/>
 				{result.success ? (
 					<PositionCaptureSettings data={result.data} />
 				) : (
-					<p className="text-sm text-muted-foreground">{result.error}</p>
+					<SettingsLoadError
+						message={t(
+							"settings.positionCapture.loadFailed",
+							"Position capture settings could not be loaded",
+						)}
+					/>
 				)}
 			</div>
 		</div>
@@ -38,12 +41,13 @@ async function PositionCaptureSettingsPageContent() {
 
 function PositionCaptureSettingsPageLoading() {
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			<div className="min-w-0 space-y-4">
+		<div className="page-frame" aria-busy="true">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
 					<Skeleton className="h-8 w-56" />
 					<Skeleton className="h-5 w-full max-w-xl" />
 				</div>
+				<Skeleton className="h-9 w-56" />
 				<Skeleton className="h-80 w-full" />
 				<Skeleton className="h-48 w-full" />
 			</div>

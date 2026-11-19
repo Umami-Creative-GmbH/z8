@@ -20,8 +20,14 @@ function CustomRolesSettingsPageLoading() {
 				labelDefault: "Loading custom role settings",
 			}}
 		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
-			<Skeleton className="h-64 w-full" aria-hidden="true" />
+			{/* Same measure as the loaded page: heading, then the roles table. */}
+			<div className="page-measure space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-48" aria-hidden="true" />
+					<Skeleton className="h-5 w-full max-w-xl" aria-hidden="true" />
+				</div>
+				<Skeleton className="h-64 w-full" aria-hidden="true" />
+			</div>
 		</LoadingRegion>
 	);
 }

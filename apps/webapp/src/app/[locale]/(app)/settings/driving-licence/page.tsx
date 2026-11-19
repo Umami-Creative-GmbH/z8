@@ -6,6 +6,7 @@ import {
 	DrivingLicenceSettingsTabs,
 } from "@/components/driving-licence/settings-tabs";
 import { VerifierSettings } from "@/components/driving-licence/verifier-settings";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { requireDrivingLicenceSettingsPage } from "@/lib/organization/driving-licence/page-guards";
 import { getDrivingLicenceAdminDataAction } from "@/lib/organization/driving-licence/policy-actions";
@@ -55,9 +56,26 @@ async function DrivingLicenceSettingsContent() {
 		/>
 	);
 }
+function DrivingLicenceSettingsLoading() {
+	return (
+		<div className="page-frame" aria-busy="true">
+			<div className="page-measure flex min-w-0 flex-col gap-6">
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-64" />
+					<Skeleton className="h-5 w-full max-w-xl" />
+				</div>
+				<div className="space-y-4">
+					<Skeleton className="h-9 w-96 max-w-full" />
+					<Skeleton className="h-72 w-full" />
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function DrivingLicenceSettingsPage() {
 	return (
-		<Suspense fallback={<div className="page-frame" aria-busy="true" />}>
+		<Suspense fallback={<DrivingLicenceSettingsLoading />}>
 			<DrivingLicenceSettingsContent />
 		</Suspense>
 	);

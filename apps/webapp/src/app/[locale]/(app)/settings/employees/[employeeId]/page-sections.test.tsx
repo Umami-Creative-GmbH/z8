@@ -457,7 +457,30 @@ describe("employee detail page sections", () => {
 		expect(source).not.toContain("displayName={");
 	});
 
-	it("stacks header actions on mobile and right-aligns them from the small breakpoint", () => {
+	it("titles the page with the employee's name under the Employee Details scope", () => {
+		render(<EmployeeDetailHeader t={t} employeeName="Alex Morgan" />);
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Alex Morgan" }),
+		).toBeTruthy();
+		expect(screen.getByText("Employee Details")).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Back to employee list" }),
+		).toBeTruthy();
+	});
+
+	it.each([undefined, null, "  "])(
+		"falls back to the Employee Details title when the name is %j",
+		(employeeName) => {
+			render(<EmployeeDetailHeader t={t} employeeName={employeeName} />);
+
+			expect(
+				screen.getByRole("heading", { level: 1, name: "Employee Details" }),
+			).toBeTruthy();
+		},
+	);
+
+	it("uses the shared page header with a back link and wrapping actions", () => {
 		render(
 			<EmployeeDetailHeader
 				t={t}
@@ -465,19 +488,20 @@ describe("employee detail page sections", () => {
 			/>,
 		);
 
-		const heading = screen.getByRole("heading", { name: "Employee Details" });
-		const header = heading.parentElement?.parentElement?.parentElement;
+		const heading = screen.getByRole("heading", {
+			level: 1,
+			name: "Employee Details",
+		});
+		const back = screen.getByRole("link", { name: "Back to employee list" });
 		const actions = screen.getByRole("button", {
 			name: "Employee actions",
 		}).parentElement;
 
-		expect(header?.className).toContain("flex-col");
-		expect(header?.className).toContain("items-start");
-		expect(header?.className).toContain("sm:flex-row");
-		expect(header?.className).toContain("sm:items-center");
-		expect(actions?.className).toContain("w-full");
-		expect(actions?.className).toContain("sm:w-auto");
-		expect(actions?.className).toContain("sm:justify-end");
+		expect(heading).toBeTruthy();
+		expect(back.getAttribute("href")).toBe("/settings/employees");
+		// Actions wrap below the title on narrow widths instead of overflowing.
+		expect(actions?.className).toContain("flex-wrap");
+		expect(actions?.parentElement?.className).toContain("flex-wrap");
 	});
 
 	it("renders the edit form strings in German", () => {

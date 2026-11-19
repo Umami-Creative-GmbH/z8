@@ -9,9 +9,13 @@ export function DeveloperAccessLoading() {
 	return (
 		<div className="page-frame space-y-6">
 			<PageHeader title={t("settings.navigation.developerAccess.title", "Developer Access")} />
-			<LoadingRegion label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}>
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="mt-4 h-48 w-full" />
+			<LoadingRegion
+				className="space-y-4"
+				label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
+			>
+				<Skeleton aria-hidden="true" className="h-9 w-56 max-w-full" />
+				<Skeleton aria-hidden="true" className="h-10 w-full" />
+				<Skeleton aria-hidden="true" className="h-48 w-full rounded-xl" />
 			</LoadingRegion>
 		</div>
 	);

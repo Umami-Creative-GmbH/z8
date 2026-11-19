@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { WorksCouncilSettingsForm } from "@/components/settings/works-council-settings-form";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import {
@@ -8,6 +9,7 @@ import {
 	type WorksCouncilSettingsFormValues,
 } from "@/lib/works-council/settings";
 import { getTranslate } from "@/tolgee/server";
+import { loadWorksCouncilScopeOptions } from "./scope-options";
 
 async function updateWorksCouncilSettings(
 	values: WorksCouncilSettingsFormValues,
@@ -32,25 +34,29 @@ async function WorksCouncilSettingsPageContent() {
 	const settingsPromise = authContextPromise.then(({ organizationId }) =>
 		loadWorksCouncilSettings(organizationId),
 	);
-	const [settings, t] = await Promise.all([settingsPromise, getTranslate()]);
+	const scopeOptionsPromise = authContextPromise.then(({ organizationId }) =>
+		loadWorksCouncilScopeOptions(organizationId),
+	);
+	const [settings, scopeOptions, t] = await Promise.all([
+		settingsPromise,
+		scopeOptionsPromise,
+		getTranslate(),
+	]);
 
 	return (
 		<div className="page-frame">
 			<div className="page-measure space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.worksCouncil.title", "Works Council Mode")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.worksCouncil.description",
-							"Configure privacy-safe Betriebsrat access and review exports",
-						)}
-					</p>
-				</div>
+				<PageHeader
+					title={t("settings.worksCouncil.title", "Works Council Mode")}
+					description={t(
+						"settings.worksCouncil.description",
+						"Configure privacy-safe Betriebsrat access and review exports",
+					)}
+				/>
 
 				<WorksCouncilSettingsForm
 					initialSettings={settings}
+					scopeOptions={scopeOptions}
 					onSave={updateWorksCouncilSettings}
 				/>
 			</div>
@@ -60,13 +66,13 @@ async function WorksCouncilSettingsPageContent() {
 
 function WorksCouncilSettingsPageLoading() {
 	return (
-		<div className="page-frame">
+		<div className="page-frame" aria-busy="true">
 			<div className="page-measure space-y-6">
 				<div className="space-y-2">
-					<Skeleton className="h-8 w-56" />
-					<Skeleton className="h-5 w-full max-w-xl" />
+					<Skeleton className="h-8 w-56" aria-hidden="true" />
+					<Skeleton className="h-5 w-full max-w-xl" aria-hidden="true" />
 				</div>
-				<Skeleton className="h-64 w-full" />
+				<Skeleton className="h-[30rem] w-full" aria-hidden="true" />
 			</div>
 		</div>
 	);

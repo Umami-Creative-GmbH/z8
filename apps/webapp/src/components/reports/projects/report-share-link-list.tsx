@@ -185,6 +185,8 @@ function ReportShareLinkRow({
 	const [showViews, setShowViews] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const [revoking, setRevoking] = useState(false);
+	/** A failed revocation, with the server's explanation when it gave one. */
+	const [revokeError, setRevokeError] = useState<{ detail: string | null } | null>(null);
 	const lifetime = useRef<object | null>(null);
 	const pending = useRef<object | null>(null);
 	useLayoutEffect(() => {
@@ -233,26 +235,25 @@ function ReportShareLinkRow({
 		if (!generation || pending.current || !link.canRevoke || link.status !== "active") return;
 		pending.current = generation;
 		setRevoking(true);
+		setRevokeError(null);
 		await runWithCleanup(
 			async () => {
 				try {
 					const result = await revokeReportShareLink(link.id);
 					if (lifetime.current !== generation) return;
 					setRevoking(false);
-					setConfirming(false);
 					if (!result.success) {
-						toast.error(t("reports.share.revoke.failed", "The link could not be revoked"), {
-							description: result.error,
-						});
+						// The dialog stays open so the failure is read next to the link it concerns.
+						setRevokeError({ detail: result.error || null });
 						return;
 					}
+					setConfirming(false);
 					toast.success(t("reports.share.revoke.done", "Link revoked"));
 					await queryClient.invalidateQueries({
 						queryKey: queryKeys.reportShareLinks.all,
 					});
 				} catch {
-					if (lifetime.current === generation)
-						toast.error(t("reports.share.revoke.failed", "The link could not be revoked"));
+					if (lifetime.current === generation) setRevokeError({ detail: null });
 				}
 			},
 			() => {
@@ -313,18 +314,42 @@ function ReportShareLinkRow({
 						` · ${t("reports.share.list.lastViewed", "last {date}", { date: at(link.lastViewedAt) })}`}
 				</Button>
 				{link.status === "active" && link.canRevoke && (
-					<Button variant="outline" size="sm" onClick={() => setConfirming(true)}>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							setRevokeError(null);
+							setConfirming(true);
+						}}
+					>
 						<IconLinkOff aria-hidden="true" className="size-4" />
 						{t("reports.share.revoke.action", "Revoke")}
 					</Button>
 				)}
 			</div>
 			{showViews && <ReportShareLinkViews linkId={link.id} scope={scope} />}
-			<AlertDialog open={confirming} onOpenChange={setConfirming}>
-				<AlertDialogContent>
+			<AlertDialog
+				open={confirming}
+				onOpenChange={(next) => {
+					// Escape or an outside press must not hide a revocation that is still running.
+					if (!next && revoking) return;
+					setConfirming(next);
+				}}
+			>
+				<AlertDialogContent aria-busy={revoking}>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("reports.share.revoke.title", "Revoke this link?")}
+							{link.reportName
+								? t(
+										"reports.share.revoke.titleNamed",
+										"Revoke the share link for {report}, {period}?",
+										{ report: link.reportName, period },
+									)
+								: t(
+										"reports.share.revoke.titleDeletedReport",
+										"Revoke the share link for a deleted report, {period}?",
+										{ period },
+									)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -333,18 +358,31 @@ function ReportShareLinkRow({
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
+					{revokeError && (
+						<div role="alert" className="space-y-1 text-sm text-destructive">
+							<p>{t("reports.share.revoke.failed", "The link could not be revoked")}</p>
+							{revokeError.detail && (
+								<p className="text-muted-foreground">{revokeError.detail}</p>
+							)}
+						</div>
+					)}
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={revoking}>
 							{t("reports.share.revoke.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
 							disabled={revoking || !link.canRevoke || link.status !== "active"}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							onClick={(event) => {
+								// Keep the dialog open so the pending state and any failure stay visible.
 								event.preventDefault();
+								(event as unknown as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
 								void revoke();
 							}}
 						>
-							{revoking && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
+							{revoking && (
+								<IconLoader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+							)}
 							{t("reports.share.revoke.confirm", "Revoke link")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

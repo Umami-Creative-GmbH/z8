@@ -192,10 +192,7 @@ function CalendarProvidersCard({
 				"settings.calendar.providers.googleDesc",
 				"Sync absences with Google Calendar",
 			),
-			icon: (
-				<IconBrandGoogle className="size-5 text-red-500" aria-hidden="true" />
-			),
-			iconClassName: "bg-red-100 dark:bg-red-900/30",
+			icon: <IconBrandGoogle className="size-5" aria-hidden="true" />,
 		},
 		{
 			name: "microsoft365Enabled" as const,
@@ -207,10 +204,7 @@ function CalendarProvidersCard({
 				"settings.calendar.providers.microsoftDesc",
 				"Sync absences with Outlook Calendar",
 			),
-			icon: (
-				<IconBrandWindows className="size-5 text-blue-500" aria-hidden="true" />
-			),
-			iconClassName: "bg-blue-100 dark:bg-blue-900/30",
+			icon: <IconBrandWindows className="size-5" aria-hidden="true" />,
 		},
 	];
 
@@ -232,16 +226,14 @@ function CalendarProvidersCard({
 				{providers.map((provider) => (
 					<div
 						key={provider.name}
-						className="flex items-center justify-between rounded-lg border p-4"
+						className="flex items-center justify-between gap-4 rounded-lg border p-4"
 					>
-						<div className="flex items-center gap-3">
-							<div
-								className={`flex size-10 items-center justify-center rounded-full ${provider.iconClassName}`}
-							>
+						<div className="flex min-w-0 items-center gap-3">
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
 								{provider.icon}
 							</div>
-							<div>
-								<div className="flex items-center gap-2">
+							<div className="min-w-0">
+								<div className="flex flex-wrap items-center gap-2">
 									<span id={provider.labelId} className="font-medium">
 										{provider.label}
 									</span>
@@ -306,13 +298,7 @@ function IcsFeedsCard({
 				"settings.calendar.icsFeeds.personalDesc",
 				"Employees can create read-only calendar subscriptions for their absences",
 			),
-			icon: (
-				<IconCalendarShare
-					className="size-5 text-purple-500"
-					aria-hidden="true"
-				/>
-			),
-			iconClassName: "bg-purple-100 dark:bg-purple-900/30",
+			icon: <IconCalendarShare className="size-5" aria-hidden="true" />,
 		},
 		{
 			name: "teamIcsFeedsEnabled" as const,
@@ -323,8 +309,7 @@ function IcsFeedsCard({
 				"settings.calendar.icsFeeds.teamDesc",
 				"Team leads can create shared feeds showing all team absences",
 			),
-			icon: <IconUsers className="size-5 text-green-500" aria-hidden="true" />,
-			iconClassName: "bg-green-100 dark:bg-green-900/30",
+			icon: <IconUsers className="size-5" aria-hidden="true" />,
 		},
 	];
 
@@ -346,15 +331,13 @@ function IcsFeedsCard({
 				{feeds.map((feed) => (
 					<div
 						key={feed.name}
-						className="flex items-center justify-between rounded-lg border p-4"
+						className="flex items-center justify-between gap-4 rounded-lg border p-4"
 					>
-						<div className="flex items-center gap-3">
-							<div
-								className={`flex size-10 items-center justify-center rounded-full ${feed.iconClassName}`}
-							>
+						<div className="flex min-w-0 items-center gap-3">
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
 								{feed.icon}
 							</div>
-							<div>
+							<div className="min-w-0">
 								<span id={feed.labelId} className="font-medium">
 									{feed.label}
 								</span>
@@ -460,8 +443,8 @@ function CalendarSwitchField({
 	disabled: boolean;
 }) {
 	return (
-		<div className="flex items-center justify-between">
-			<div>
+		<div className="flex items-center justify-between gap-4">
+			<div className="min-w-0">
 				<Label id={labelId} className="text-sm font-medium">
 					{label}
 				</Label>
@@ -599,9 +582,14 @@ function CalendarConnectionsCard({
 							key={connection.id}
 							className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
 						>
-							<div className="space-y-1">
-								<p className="font-medium">{connection.employeeName}</p>
-								<p className="text-sm text-muted-foreground">
+							<div className="min-w-0 space-y-1">
+								<p className="truncate font-medium" title={connection.employeeName}>
+									{connection.employeeName}
+								</p>
+								<p
+									className="truncate text-sm text-muted-foreground"
+									title={connection.providerAccountId}
+								>
 									{connection.providerAccountId}
 								</p>
 							</div>

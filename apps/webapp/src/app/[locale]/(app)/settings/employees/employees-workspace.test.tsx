@@ -188,15 +188,17 @@ it("a narrowed provider role retires stale server administration until refreshed
 	).toBeTruthy();
 });
 
-it.each(["/settings/employees", "/en/settings/employees", "/de/settings/employees/"])(
-	"owns only the exact directory heading at %s",
-	(path) => {
-		expect(appPageOwnsHeading(path)).toBe(true);
-	},
-);
+it.each([
+	"/settings/employees",
+	"/en/settings/employees",
+	"/de/settings/employees/",
+	// The employee detail page renders its own PageHeader h1.
+	"/en/settings/employees/person",
+])("owns the page heading at %s", (path) => {
+	expect(appPageOwnsHeading(path)).toBe(true);
+});
 it.each([
 	"/en/settings/employees/new",
-	"/en/settings/employees/person",
 	"/settings/employees/person/edit",
 ])("retains descendant shell ownership at %s", (path) => {
 	expect(appPageOwnsHeading(path)).toBe(false);

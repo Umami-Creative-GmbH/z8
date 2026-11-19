@@ -8,22 +8,17 @@ import { toast } from "sonner";
 import {
 	deleteSurchargeModel,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { surchargeModelsQuery } from "@/lib/query/surcharge-models";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
+import { SettingsLoadError } from "./settings-load-error";
 import { SurchargeAssignmentDialog } from "./surcharge-assignment-dialog";
 import { SurchargeAssignmentManager } from "./surcharge-assignment-manager";
 import { SurchargeModelDialog } from "./surcharge-model-dialog";
@@ -57,6 +52,7 @@ export function SurchargeManagement({
 
 	// Delete confirmation states
 	const [deleteModelId, setDeleteModelId] = useState<string | null>(null);
+	const [deleteModelError, setDeleteModelError] = useState<string | null>(null);
 
 	// Delete model mutation
 	const deleteModelMutation = useMutation({
@@ -69,21 +65,21 @@ export function SurchargeManagement({
 				toast.success(
 					t("settings.surcharges.modelDeleted", "Surcharge model deleted"),
 				);
+				setDeleteModelId(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				setDeleteModelError(
 					actionErrorMessage(t, result, {}, [
 						"settings.surcharges.deleteFailed",
 						"Failed to delete",
 					]),
 				);
 			}
-			setDeleteModelId(null);
 		},
 		onError: () => {
-			toast.error(
+			setDeleteModelError(
 				t("settings.surcharges.deleteFailed", "Failed to delete model"),
 			);
-			setDeleteModelId(null);
 		},
 	});
 
@@ -114,43 +110,65 @@ export function SurchargeManagement({
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
 	};
-	const modelError = <div role="alert" className="space-y-3 p-4">
-		<p>{t("settings.surcharges.loadFailed", "Surcharge models could not be loaded. Please try again.")}</p>
-		<Button type="button" onClick={() => void modelsQuery.refetch()} disabled={modelsQuery.isFetching}>{t("common.retry", "Try again")}</Button>
-	</div>;
+	const pageHeader = (
+		<PageHeader
+			title={t("settings.surcharges.title", "Surcharges")}
+			description={t(
+				"settings.surcharges.description",
+				"Configure time surcharges for overtime, night work, weekends, and holidays.",
+			)}
+		/>
+	);
+	const modelError = (
+		<SettingsLoadError
+			message={t(
+				"settings.surcharges.loadFailed",
+				"Surcharge models could not be loaded. Please try again.",
+			)}
+			retryLabel={t("common.retry", "Try again")}
+			onRetry={() => void modelsQuery.refetch()}
+			isRetrying={modelsQuery.isFetching}
+		/>
+	);
+	const deleteModelName =
+		models.find((model) => model.id === deleteModelId)?.name ?? "";
 
 	if (isLoading) {
 		return (
-			<div className="flex h-64 items-center justify-center">
-				<div className="text-muted-foreground">
-					{t("settings.surcharges.loading", "Loading surcharge settings...")}
+			<LoadingRegion
+				className="page-frame flex flex-1 flex-col gap-6"
+				label={{
+					labelKey: "settings.surcharges.loading",
+					labelDefault: "Loading surcharge settings...",
+				}}
+			>
+				<div className="space-y-2">
+					<Skeleton aria-hidden="true" className="h-8 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
 				</div>
-			</div>
+				<Skeleton aria-hidden="true" className="h-9 w-72 max-w-full" />
+				<Skeleton aria-hidden="true" className="h-64 w-full" />
+			</LoadingRegion>
 		);
 	}
 	if (modelsQuery.isError && !modelsQuery.data) {
-		return modelError;
+		return (
+			<div className="page-frame flex flex-1 flex-col gap-6">
+				{pageHeader}
+				{modelError}
+			</div>
+		);
 	}
 
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
+			{pageHeader}
 			{modelsQuery.isError ? modelError : null}
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-bold">
-					{t("settings.surcharges.title", "Surcharges")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.surcharges.description",
-						"Configure time surcharges for overtime, night work, weekends, and holidays.",
-					)}
-				</p>
-			</div>
 
 			<Tabs
 				value={activeTab}
 				onValueChange={setActiveTab}
-				className="space-y-4"
+				className="min-w-0 gap-4"
 			>
 				<TabsList>
 					<TabsTrigger value="models">
@@ -219,40 +237,36 @@ export function SurchargeManagement({
 			) : null}
 
 			{/* Delete Model Confirmation */}
-			<AlertDialog
+			<DeleteConfirmDialog
 				open={canManage && !!deleteModelId}
-				onOpenChange={() => setDeleteModelId(null)}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.surcharges.deleteModelTitle",
-								"Delete Surcharge Model?",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.surcharges.deleteModelDescription",
-								"This will deactivate the model and all its assignments. This action cannot be undone.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={() =>
-								deleteModelId && deleteModelMutation.mutate(deleteModelId)
-							}
-						>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+				onOpenChange={(open) => {
+					if (!open) {
+						setDeleteModelId(null);
+						setDeleteModelError(null);
+					}
+				}}
+				title={t("settings.surcharges.deleteModelTitle", "Delete Surcharge Model?")}
+				description={
+					<>
+						{deleteModelName ? (
+							<span className="mb-2 block font-medium text-foreground break-words">
+								{deleteModelName}
+							</span>
+						) : null}
+						{t(
+							"settings.surcharges.deleteModelDescription",
+							"This will deactivate the model and all its assignments. This action cannot be undone.",
+						)}
+					</>
+				}
+				isDeleting={deleteModelMutation.isPending}
+				error={deleteModelError}
+				onConfirm={() => {
+					if (!deleteModelId || deleteModelMutation.isPending) return;
+					setDeleteModelError(null);
+					deleteModelMutation.mutate(deleteModelId);
+				}}
+			/>
 		</div>
 	);
 }

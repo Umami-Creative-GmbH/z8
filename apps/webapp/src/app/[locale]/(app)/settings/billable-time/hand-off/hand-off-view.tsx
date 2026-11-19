@@ -18,6 +18,8 @@ import { ReconciliationCsvButton } from "@/components/billable-time/hand-off/rec
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -95,19 +97,37 @@ export function HandOffView() {
 
 	if (overview.isPending) {
 		return (
-			<div className="flex justify-center p-6">
-				<IconLoader2
-					aria-label={t("common.loading", "Loading")}
-					className="size-6 animate-spin text-muted-foreground"
-				/>
-			</div>
+			<LoadingRegion
+				className="space-y-6"
+				label={{
+					labelKey: "settings.billableTime.handOff.loading",
+					labelDefault: "Loading hand-offs",
+				}}
+			>
+				<Skeleton aria-hidden="true" className="h-56 w-full" />
+				<Skeleton aria-hidden="true" className="h-64 w-full" />
+			</LoadingRegion>
 		);
 	}
 	if (overview.isError) {
 		return (
-			<p className="text-sm text-destructive" role="alert">
-				{overview.error.message}
-			</p>
+			<div className="space-y-3 rounded-lg border p-4" role="alert">
+				<p className="text-sm font-medium text-destructive">
+					{t("settings.billableTime.handOff.loadFailed", "The hand-offs could not be loaded.")}
+				</p>
+				<p className="text-sm text-muted-foreground">{overview.error.message}</p>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={overview.isFetching}
+					onClick={() => void overview.refetch()}
+				>
+					{overview.isFetching && (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					)}
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
 		);
 	}
 
@@ -142,7 +162,9 @@ export function HandOffView() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.billableTime.handOff.list.title", "Hand-offs")}</CardTitle>
+					<CardTitle role="heading" aria-level={2}>
+						{t("settings.billableTime.handOff.list.title", "Hand-offs")}
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.billableTime.handOff.list.description",
@@ -202,7 +224,16 @@ export function HandOffView() {
 											{formatBillableAmount(locale, draft.netTotal, draft.currency)}
 										</TableCell>
 										<TableCell className="text-right">
-											<Button size="sm" variant="outline" onClick={() => setOpenDraftId(draft.id)}>
+											<Button
+												size="sm"
+												variant="outline"
+												aria-label={t(
+													"settings.billableTime.handOff.list.openAction",
+													"Open hand-off for {name}, {period}",
+													{ name: draft.customerName, period: labels.period(draft.period) },
+												)}
+												onClick={() => setOpenDraftId(draft.id)}
+											>
 												{t("settings.billableTime.handOff.list.open", "Open")}
 											</Button>
 										</TableCell>

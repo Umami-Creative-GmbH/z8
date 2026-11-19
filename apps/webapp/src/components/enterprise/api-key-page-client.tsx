@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	IconAlertTriangle,
 	IconCheck,
 	IconCopy,
 	IconDownload,
@@ -32,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditDeleteMenu } from "@/components/ui/edit-delete-menu";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	Table,
 	TableBody,
@@ -173,10 +175,13 @@ function useApiKeyPageViewModel({
 	useLayoutEffect(() => {
 		lifetime.current = refused ? null : {};
 		pending.current = false;
-		setDeleting(false);
-		setNewlyCreatedKey(null);
 		return () => {
 			lifetime.current = null;
+			// Retiring this lifetime (refusal change, Activity hide or unmount) settles a pending
+			// revoke and discards the one-time key; initial state already has neither.
+			pending.current = false;
+			setDeleting(false);
+			setNewlyCreatedKey(null);
 		};
 	}, [refused]);
 	const deleteMutation = {
@@ -295,23 +300,31 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 					</Alert>
 				) : null}
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
-					</div>
+					<LoadingRegion
+						className="flex items-center justify-center py-8"
+						label={{ labelKey: "settings.apiKeys.loading", labelDefault: "Loading API keys" }}
+					>
+						<IconLoader2
+							className="size-6 animate-spin text-muted-foreground"
+							aria-hidden="true"
+						/>
+					</LoadingRegion>
 				) : isError && apiKeys.length === 0 ? null : apiKeys.length === 0 ? (
-					<div className="text-center py-12">
-						<IconKey className="size-12 mx-auto text-muted-foreground mb-4" />
-						<h3 className="text-lg font-medium mb-2">
-							{t("settings.apiKeys.empty.title", "No API Keys")}
-						</h3>
-						<p className="text-muted-foreground mb-4">
+					<div className="flex flex-col items-start gap-3 py-2">
+						<div className="flex items-center gap-2">
+							<IconKey className="size-5 text-muted-foreground" aria-hidden="true" />
+							<h3 className="font-medium">
+								{t("settings.apiKeys.empty.title", "No API Keys")}
+							</h3>
+						</div>
+						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.apiKeys.empty.description",
 								"Create your first API key to enable programmatic access to your organization.",
 							)}
 						</p>
 						<Button onClick={() => setCreateDialogOpen(true)}>
-							<IconPlus className="mr-2 size-4" />
+							<IconPlus className="size-4" aria-hidden="true" />
 							{t("settings.apiKeys.create", "Create Key")}
 						</Button>
 					</div>
@@ -378,9 +391,12 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 															onClick={() => handleCopyPrefix(apiKey.prefix || "", apiKey.id)}
 														>
 															{copiedKeyId === apiKey.id ? (
-																<IconCheck className="size-4 text-green-600" />
+																<IconCheck
+																	className="size-4 text-success"
+																	aria-hidden="true"
+																/>
 															) : (
-																<IconCopy className="size-4" />
+																<IconCopy className="size-4" aria-hidden="true" />
 															)}
 														</Button>
 													</TooltipTrigger>
@@ -405,13 +421,16 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 											</Tooltip>
 										</TableCell>
 										<TableCell>
-											<Badge
-												variant={
-													expStatus.variant as "default" | "secondary" | "destructive" | "outline"
-												}
-											>
-												{expStatus.label}
-											</Badge>
+											{expStatus.variant === "warning" ? (
+												<Badge variant="warning" className="tabular-nums">
+													<IconAlertTriangle aria-hidden="true" />
+													{expStatus.label}
+												</Badge>
+											) : (
+												<Badge variant={expStatus.variant} className="tabular-nums">
+													{expStatus.label}
+												</Badge>
+											)}
 										</TableCell>
 										<TableCell>
 											{apiKey.lastRequest ? formatDate(apiKey.lastRequest) : "-"}
@@ -510,14 +529,14 @@ function ApiKeyDialogs({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<Button
+							variant="destructive"
 							disabled={deleteMutation.isPending}
 							onClick={() => deleteDialogKey && deleteMutation.mutate(deleteDialogKey.id)}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{deleteMutation.isPending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
+								<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 							) : (
-								<IconTrash className="size-4 mr-2" />
+								<IconTrash className="size-4" aria-hidden="true" />
 							)}
 							{t("common.delete", "Delete")}
 						</Button>
@@ -533,17 +552,12 @@ function ApiKeyPageView({ viewModel }: { viewModel: ReturnType<typeof useApiKeyP
 
 	return (
 		<div className="min-w-0">
-			<div className="mx-auto max-w-7xl">
-				<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-					<div>
+			<div>
+				{/* The page heading already describes this tab; this row names the section and its capacity. */}
+				<div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+					<div className="min-w-0">
 						<h2 className="text-lg font-semibold">{t("settings.apiKeys.title", "API Keys")}</h2>
-						<p className="text-muted-foreground">
-							{t(
-								"settings.apiKeys.description",
-								"Create and manage API keys for programmatic access to your organization data.",
-							)}
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground" hidden={isError || isLoading}>
+						<p className="mt-1 text-sm text-muted-foreground tabular-nums" hidden={isError || isLoading}>
 							{t("settings.apiKeys.usage", "{count} of {max} keys used", {
 								count: keyCount,
 								max: MAX_API_KEYS_PER_ORG,
@@ -551,7 +565,7 @@ function ApiKeyPageView({ viewModel }: { viewModel: ReturnType<typeof useApiKeyP
 						</p>
 					</div>
 					<Button onClick={() => setCreateDialogOpen(true)} disabled={!canCreateMore || isError}>
-						<IconPlus className="mr-2 size-4" />
+						<IconPlus className="size-4" aria-hidden="true" />
 						{t("settings.apiKeys.create", "Create Key")}
 					</Button>
 				</div>
@@ -567,15 +581,15 @@ function ApiKeyPageView({ viewModel }: { viewModel: ReturnType<typeof useApiKeyP
 					</ApiKeyDocumentation>
 
 					{/* Security Notice */}
-					<Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+					<Card role="note" className="border-warning/40 bg-warning/10">
 						<CardContent>
 							<div className="flex gap-3">
-								<IconKey className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-								<div>
-									<h4 className="font-medium text-amber-800 dark:text-amber-200">
+								<IconKey className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden="true" />
+								<div className="min-w-0">
+									<h3 className="font-medium">
 										{t("settings.apiKeys.security.title", "Security Notice")}
-									</h4>
-									<p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+									</h3>
+									<p className="mt-1 text-sm text-muted-foreground">
 										{t(
 											"settings.apiKeys.security.description",
 											"API keys provide full access to your organization data within their permission scope. Keep them secure and never share them in public repositories or client-side code.",

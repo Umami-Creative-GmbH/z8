@@ -528,7 +528,10 @@ function EmployeeDirectoryTab(props: {
 										<TableRow>
 											<TableCell colSpan={columns.length} className="h-24 text-center">
 												<div className="flex flex-col items-center justify-center">
-													<IconUser className="mb-2 size-8 text-muted-foreground" />
+													<IconUser
+													className="mb-2 size-8 text-muted-foreground"
+													aria-hidden="true"
+												/>
 													<p className="text-sm text-muted-foreground">
 														{t("settings.employees.directory.emptyState", "No employees found")}
 													</p>
@@ -542,7 +545,7 @@ function EmployeeDirectoryTab(props: {
 
 						{pageCount > 1 && (
 							<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-								<div className="text-sm text-muted-foreground">
+								<div className="text-sm tabular-nums text-muted-foreground">
 									{t("settings.employees.directory.pagination.pageOf", "Page {page} of {total}", {
 										page: table.state.pagination.pageIndex + 1,
 										total: table.getPageCount(),
@@ -555,7 +558,7 @@ function EmployeeDirectoryTab(props: {
 										onClick={() => table.previousPage()}
 										disabled={!table.getCanPreviousPage() || isFetching}
 									>
-										<IconChevronLeft className="mr-1 size-4" />
+										<IconChevronLeft className="mr-1 size-4" aria-hidden="true" />
 										{t("settings.employees.directory.pagination.previous", "Previous")}
 									</Button>
 									<Button
@@ -565,7 +568,7 @@ function EmployeeDirectoryTab(props: {
 										disabled={!table.getCanNextPage() || isFetching}
 									>
 										{t("settings.employees.directory.pagination.next", "Next")}
-										<IconChevronRight className="ml-1 size-4" />
+										<IconChevronRight className="ml-1 size-4" aria-hidden="true" />
 									</Button>
 								</div>
 							</div>

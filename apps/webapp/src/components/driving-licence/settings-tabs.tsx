@@ -11,6 +11,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { IntendedDriverAdminData } from "@/lib/organization/driving-licence/intended-driver-rules";
 import type { DrivingLicenceSettingsVisibility } from "@/lib/organization/driving-licence/visibility-rules";
@@ -63,41 +64,40 @@ export function DrivingLicenceSettingsTabs({
 	const { active, select, mounted } = useLinkedTabs<DrivingLicenceSettingsTab>(tabs);
 
 	return (
-		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
-			<div className="space-y-2">
-				<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-				<p className="text-sm text-muted-foreground">{descriptions[active]}</p>
+		<div className="page-frame">
+			<div className="page-measure flex min-w-0 flex-col gap-6">
+				<PageHeader title={title} description={descriptions[active]} />
+				{settings === "retention_only" ? (
+					<Alert role="status">
+						<IconInfoCircle aria-hidden="true" />
+						<AlertTitle>{t("drivingLicence.off.title", "Driving licence control is off")}</AlertTitle>
+						<AlertDescription>
+							{t(
+								"drivingLicence.off.description",
+								"Nobody sees driving licence control and no reminders are sent. Intended drivers, verifier grants, check records and authorizations are kept, and evidence cleanup continues under the saved retention period. Only Retention & holds is available until it is switched on again.",
+							)}
+						</AlertDescription>
+					</Alert>
+				) : (
+					<DrivingLicenceReassignmentAlert onAssign={() => select("verifiers")} />
+				)}
+				<Tabs value={active} onValueChange={select} className="min-w-0 gap-4">
+					<div className="max-w-full overflow-x-auto">
+						<TabsList aria-label={title}>
+							{tabs.map((tab) => (
+								<TabsTrigger key={tab} value={tab}>
+									{labels[tab]}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</div>
+					{tabs.map((tab) => (
+						<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
+							{mounted(tab) ? panels[tab] : null}
+						</TabsContent>
+					))}
+				</Tabs>
 			</div>
-			{settings === "retention_only" ? (
-				<Alert role="status">
-					<IconInfoCircle aria-hidden="true" />
-					<AlertTitle>{t("drivingLicence.off.title", "Driving licence control is off")}</AlertTitle>
-					<AlertDescription>
-						{t(
-							"drivingLicence.off.description",
-							"Nobody sees driving licence control and no reminders are sent. Intended drivers, verifier grants, check records and authorizations are kept, and evidence cleanup continues under the saved retention period. Only Retention & holds is available until it is switched on again.",
-						)}
-					</AlertDescription>
-				</Alert>
-			) : (
-				<DrivingLicenceReassignmentAlert onAssign={() => select("verifiers")} />
-			)}
-			<Tabs value={active} onValueChange={select} className="min-w-0 gap-4">
-				<div className="max-w-full overflow-x-auto">
-					<TabsList aria-label={title}>
-						{tabs.map((tab) => (
-							<TabsTrigger key={tab} value={tab}>
-								{labels[tab]}
-							</TabsTrigger>
-						))}
-					</TabsList>
-				</div>
-				{tabs.map((tab) => (
-					<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
-						{mounted(tab) ? panels[tab] : null}
-					</TabsContent>
-				))}
-			</Tabs>
 		</div>
 	);
 }

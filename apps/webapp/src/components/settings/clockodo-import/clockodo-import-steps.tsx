@@ -126,12 +126,20 @@ function ClockodoStepIndicator({
 	];
 	const currentIndex = steps.findIndex((step) => step.key === currentStep);
 	return (
-		<div className="flex min-w-0 items-center justify-between gap-1 overflow-x-auto pb-1">
+		<ol
+			className="flex min-w-0 items-center justify-between gap-1 overflow-x-auto pb-1"
+			aria-label={t("settings.clockodoImport.step.progressLabel", "Import steps")}
+		>
 			{steps.map((step, index) => (
-				<div key={step.key} className="flex min-w-0 flex-1 items-center last:flex-none">
+				<li
+					key={step.key}
+					className="flex min-w-0 flex-1 items-center last:flex-none"
+					aria-current={index === currentIndex ? "step" : undefined}
+				>
 					<div className="flex items-center gap-2">
 						<div
-							className={`flex size-8 items-center justify-center rounded-full text-xs font-medium ${index < currentIndex ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : index === currentIndex ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+							aria-hidden="true"
+							className={`flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium tabular-nums ${index < currentIndex ? "bg-primary/10 text-primary" : index === currentIndex ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
 						>
 							{index < currentIndex ? (
 								<IconCheck className="size-4" />
@@ -139,18 +147,22 @@ function ClockodoStepIndicator({
 								index + 1
 							)}
 						</div>
+						{/* Labels collapse visually on phones but stay readable to assistive technology. */}
 						<span
-							className={`hidden text-sm sm:inline ${index === currentIndex ? "font-medium" : "text-muted-foreground"}`}
+							className={`sr-only text-sm sm:not-sr-only ${index === currentIndex ? "font-medium" : "text-muted-foreground"}`}
 						>
 							{step.label}
 						</span>
 					</div>
 					{index < steps.length - 1 && (
-						<div className="mx-1 h-px min-w-1 flex-1 bg-border sm:mx-2 sm:w-12 sm:flex-none" />
+						<div
+							aria-hidden="true"
+							className="mx-1 h-px min-w-1 flex-1 bg-border sm:mx-2 sm:w-12 sm:flex-none"
+						/>
 					)}
-				</div>
+				</li>
 			))}
-		</div>
+		</ol>
 	);
 }
 
@@ -361,7 +373,7 @@ function ClockodoPreviewStep({
 						</tbody>
 					</table>
 				</div>
-				<div className="mt-4 flex justify-between">
+				<div className="mt-4 flex flex-wrap justify-between gap-2">
 					<Button
 						variant="outline"
 						onClick={() => controller.setStep("credentials")}
@@ -492,12 +504,9 @@ function ClockodoMappingStep({
 						</tbody>
 					</table>
 				</div>
-				<div className="flex items-center gap-4 text-xs text-muted-foreground">
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs tabular-nums text-muted-foreground">
 					<span className="flex items-center gap-1">
-						<IconLink
-							className="size-3.5 text-emerald-500"
-							aria-hidden="true"
-						/>
+						<IconLink className="size-3.5" aria-hidden="true" />
 						{t(
 							"settings.clockodoImport.userMapping.autoMatched",
 							"{count} auto-matched",
@@ -509,10 +518,7 @@ function ClockodoMappingStep({
 						)}
 					</span>
 					<span className="flex items-center gap-1">
-						<IconUserPlus
-							className="size-3.5 text-blue-500"
-							aria-hidden="true"
-						/>
+						<IconUserPlus className="size-3.5" aria-hidden="true" />
 						{t(
 							"settings.clockodoImport.userMapping.newEmployees",
 							"{count} new",
@@ -524,10 +530,7 @@ function ClockodoMappingStep({
 						)}
 					</span>
 					<span className="flex items-center gap-1">
-						<IconUserX
-							className="size-3.5 text-muted-foreground"
-							aria-hidden="true"
-						/>
+						<IconUserX className="size-3.5" aria-hidden="true" />
 						{t(
 							"settings.clockodoImport.userMapping.skippedCount",
 							"{count} skipped",
@@ -539,7 +542,7 @@ function ClockodoMappingStep({
 						)}
 					</span>
 				</div>
-				<div className="flex justify-between pt-2">
+				<div className="flex flex-wrap justify-between gap-2 pt-2">
 					<Button
 						variant="outline"
 						onClick={() => controller.setStep("preview")}
@@ -613,7 +616,15 @@ function ClockodoMappingRow({
 							: onChangeMappingType(value as UserMappingType)
 					}
 				>
-					<SelectTrigger size="sm" className="w-[180px]">
+					<SelectTrigger
+						size="sm"
+						className="w-[180px]"
+						aria-label={t(
+							"settings.clockodoImport.userMapping.actionFor",
+							"Action for {name}",
+							{ name: mapping.clockodoUserName },
+						)}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -664,12 +675,9 @@ function ClockodoMappingStatusBadge({ type }: { type: UserMappingType }) {
 		],
 	};
 	const classes = {
-		auto_email:
-			"border-emerald-200 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400",
-		manual:
-			"border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400",
-		new_employee:
-			"border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400",
+		auto_email: "border-success/40 text-success",
+		manual: "border-primary/40 text-primary",
+		new_employee: "border-warning/40 text-warning",
 		skipped: "text-muted-foreground",
 	};
 	return (
@@ -708,23 +716,29 @@ function ClockodoSelectionStep({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<Card className="border-dashed">
-					<CardHeader className="pb-3">
-						<CardTitle className="flex items-center gap-2 text-sm">
+				<section
+					aria-labelledby="clockodo-date-range-heading"
+					className="space-y-3 rounded-lg border border-dashed p-4"
+				>
+					<div className="space-y-1">
+						<h3
+							id="clockodo-date-range-heading"
+							className="flex items-center gap-2 text-sm font-medium"
+						>
 							<IconCalendar className="size-4" aria-hidden="true" />
 							{t(
 								"settings.clockodoImport.selection.dateRange",
 								"Date range for time entries & absences",
 							)}
-						</CardTitle>
-						<CardDescription className="text-xs">
+						</h3>
+						<p className="text-xs text-muted-foreground">
 							{t(
 								"settings.clockodoImport.selection.dateRangeDescription",
 								"This only affects time entries and absences. Other data (users, teams, etc.) is always scanned fully.",
 							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-3">
+						</p>
+					</div>
+					<div className="space-y-3">
 						<Select
 							value={selections.dateRange.preset}
 							onValueChange={(value) =>
@@ -733,7 +747,7 @@ function ClockodoSelectionStep({
 								)
 							}
 						>
-							<SelectTrigger>
+							<SelectTrigger aria-labelledby="clockodo-date-range-heading">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -786,8 +800,8 @@ function ClockodoSelectionStep({
 								</PopoverContent>
 							</Popover>
 						)}
-					</CardContent>
-				</Card>
+					</div>
+				</section>
 				{CLOCKODO_IMPORT_ENTITIES.map((entity) => {
 					const count = controller.preview?.[entity.key] ?? 0;
 					const missingDeps =
@@ -821,7 +835,7 @@ function ClockodoSelectionStep({
 										)}
 									</Label>
 									{missingDeps && selections[entity.key] && (
-										<p className="text-xs text-amber-600 dark:text-amber-400">
+										<p className="text-xs text-warning">
 											{t(
 												"settings.clockodoImport.selection.dependencyWarning",
 												"Dependencies will be scanned automatically",
@@ -836,7 +850,7 @@ function ClockodoSelectionStep({
 						</div>
 					);
 				})}
-				<div className="flex justify-between pt-4">
+				<div className="flex flex-wrap justify-between gap-2 pt-4">
 					<Button
 						variant="outline"
 						onClick={() =>
@@ -941,10 +955,7 @@ function ClockodoCompleteStep({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconCircleCheck
-						className="size-5 text-emerald-500"
-						aria-hidden="true"
-					/>
+					<IconCircleCheck className="size-5 text-primary" aria-hidden="true" />
 					{t(
 						"settings.clockodoImport.complete.successTitle",
 						"Import review scan started",
@@ -958,13 +969,12 @@ function ClockodoCompleteStep({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+				<p className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
 					{t(
-						"settings.clockodoImport.complete.batch",
-						"Review batch {batchId} is scanning.",
-						{ batchId },
+						"settings.clockodoImport.complete.scanning",
+						"The review scan is running. No records are imported until you accept them in the review.",
 					)}
-				</div>
+				</p>
 				<div className="mt-6 flex justify-end">
 					<Button onClick={() => router.push(`/settings/import/${batchId}`)}>
 						<IconExternalLink className="mr-2 size-4" aria-hidden="true" />

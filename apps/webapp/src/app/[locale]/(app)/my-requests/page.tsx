@@ -59,17 +59,26 @@ async function MyRequestsPageLoading() {
 			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<PageHeader title={t("myRequests:myRequests.title", "My Requests")} />
-			<div>
-				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
-			</div>
-			<section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				{["pending", "fixes", "decisions", "total"].map((key) => (
-					<Skeleton aria-hidden="true" className="h-28 w-full" key={key} />
+			<PageHeader
+				title={t("myRequests:myRequests.title", "My Requests")}
+				scope={<Skeleton aria-hidden="true" className="h-5 w-full max-w-md" />}
+			/>
+			<section className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:grid-cols-4">
+				{["fixes", "review", "decisions", "total"].map((key) => (
+					<div className="space-y-2 bg-card p-4 md:px-5" key={key}>
+						<Skeleton aria-hidden="true" className="h-4 w-24" />
+						<Skeleton aria-hidden="true" className="h-8 w-10" />
+					</div>
 				))}
 			</section>
-			<section>
-				<Skeleton aria-hidden="true" className="h-80 w-full" />
+			<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+				<Skeleton aria-hidden="true" className="h-9 w-full sm:col-span-2 lg:col-span-1" />
+				<Skeleton aria-hidden="true" className="h-9 w-full" />
+				<Skeleton aria-hidden="true" className="h-9 w-full" />
+			</section>
+			<section className="space-y-3">
+				<Skeleton aria-hidden="true" className="h-6 w-40" />
+				<Skeleton aria-hidden="true" className="h-64 w-full rounded-xl" />
 			</section>
 		</LoadingRegion>
 	);

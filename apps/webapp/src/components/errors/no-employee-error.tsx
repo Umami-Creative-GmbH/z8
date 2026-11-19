@@ -107,21 +107,23 @@ export function NoEmployeeError({
 		<>
 			<Card className={className}>
 				<CardHeader className="text-center">
-					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
-						<IconAlertCircle className="size-8 text-destructive" />
+					<div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+						<IconAlertCircle aria-hidden="true" className="size-6 text-destructive" />
 					</div>
-					<CardTitle className="text-2xl">{copy.title}</CardTitle>
+					<CardTitle as="h2" className="text-xl">
+						{copy.title}
+					</CardTitle>
 					<CardDescription className="text-base">{copy.description}</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					{offerCreateOrg && (
 						<Button className="w-full" size="lg" onClick={() => setCreateDialogOpen(true)}>
-							<IconBuilding className="mr-2 size-5" />
+							<IconBuilding aria-hidden="true" className="size-5" />
 							{t("errors.noEmployee.createOrg", "Create Organization")}
 						</Button>
 					)}
 					<Button variant="outline" className="w-full" size="lg" onClick={handleContactAdmin}>
-						<IconMail className="mr-2 size-5" />
+						<IconMail aria-hidden="true" className="size-5" />
 						{t("errors.noEmployee.contactAdmin", "Contact Administrator")}
 					</Button>
 					<p className="text-center text-sm text-muted-foreground">{copy.helpText}</p>

@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { ImportReviewPage } from "@/components/settings/import/import-review-page";
@@ -87,16 +88,50 @@ describe("ImportReviewPage", () => {
 		);
 	});
 
-	it("starts commit for the current organization and batch", async () => {
+	it("confirms before starting the commit for the current organization and batch", async () => {
 		render(<ImportReviewPage batchId="batch_1" summary={baseSummary} rows={[acceptedRow]} />);
 
 		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
+
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain("accepted row");
+		expect(dialog.textContent).toContain("An import cannot be undone");
+		expect(startImportCommitAction).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("button", { name: "Commit rows" }));
 
 		await waitFor(() => {
 			expect(startImportCommitAction).toHaveBeenCalledWith({
 				batchId: "batch_1",
 			});
 		});
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		expect(toast.success).toHaveBeenCalled();
+	});
+
+	it("keeps the confirmation open and shows a failed commit inline", async () => {
+		vi.mocked(startImportCommitAction).mockResolvedValue({
+			success: false,
+			error: "Import is already committing",
+		} as never);
+		render(<ImportReviewPage batchId="batch_1" summary={baseSummary} rows={[acceptedRow]} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
+		fireEvent.click(await screen.findByRole("button", { name: "Commit rows" }));
+
+		const dialog = await screen.findByRole("alertdialog");
+		await waitFor(() => expect(dialog.querySelector("[role=alert]")?.textContent).toBeTruthy());
+		expect(toast.success).not.toHaveBeenCalled();
+	});
+
+	it("does not commit when the confirmation is cancelled", async () => {
+		render(<ImportReviewPage batchId="batch_1" summary={baseSummary} rows={[acceptedRow]} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
+		fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		expect(startImportCommitAction).not.toHaveBeenCalled();
 	});
 
 	it("does not start commit when blocked rows keep the button disabled", async () => {

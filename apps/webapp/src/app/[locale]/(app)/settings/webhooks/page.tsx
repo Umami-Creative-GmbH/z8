@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -16,9 +17,21 @@ async function RedirectContent({ searchParams }: { searchParams: SearchParams })
 	return redirectWithLocale(`/settings/enterprise/api-keys?${query}`);
 }
 
+/** This route redirects to Developer Access; load in the settings page frame. */
+function WebhooksSettingsLoading() {
+	return (
+		<SettingsPageSkeleton
+			label={{
+				labelKey: "settings.loading",
+				labelDefault: "Loading settings",
+			}}
+		/>
+	);
+}
+
 export default function WebhooksSettingsPage({ searchParams }: { searchParams: SearchParams }) {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<WebhooksSettingsLoading />}>
 			<RedirectContent searchParams={searchParams} />
 		</Suspense>
 	);

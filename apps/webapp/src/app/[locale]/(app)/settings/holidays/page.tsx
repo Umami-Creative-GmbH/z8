@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { LoadingRegion } from "@/components/ui/loading-region";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -21,19 +20,15 @@ async function HolidaySettingsPageContent() {
 	return redirectWithLocale("/settings/vacation?tab=holidays");
 }
 
+/** This route redirects to the Absences holidays tab; load in the settings page frame. */
 function HolidaySettingsPageLoading() {
 	return (
-		<LoadingRegion
-			className="page-frame flex flex-1 flex-col gap-4"
-			role="status"
+		<SettingsPageSkeleton
 			label={{
 				labelKey: "common.loadingRegions.holidaySettings",
 				labelDefault: "Loading holiday settings",
 			}}
-		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
-			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</LoadingRegion>
+		/>
 	);
 }
 

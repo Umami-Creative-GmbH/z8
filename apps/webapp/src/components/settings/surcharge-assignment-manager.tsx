@@ -2,7 +2,6 @@
 
 import {
 	IconBuilding,
-	IconLoader2,
 	IconPercentage,
 	IconPlus,
 	IconTrash,
@@ -17,20 +16,12 @@ import {
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+import { SettingsLoadError } from "./settings-load-error";
 import {
 	type SurchargeAssignmentData,
 	SurchargeEmployeeAssignmentsCard,
@@ -53,12 +44,15 @@ export function SurchargeAssignmentManager({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedAssignment, setSelectedAssignment] =
 		useState<SurchargeAssignmentData | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	// Fetch assignments
 	const {
 		data: assignments,
 		isLoading,
 		error,
+		refetch,
+		isFetching,
 	} = useQuery({
 		queryKey: queryKeys.surcharges.assignments.list(organizationId),
 		queryFn: async () => {
@@ -86,9 +80,9 @@ export function SurchargeAssignmentManager({
 					queryKey: queryKeys.surcharges.assignments.list(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setSelectedAssignment(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the removal can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.surcharges.assignmentDeleteFailed",
 						"Failed to remove assignment",
@@ -97,7 +91,7 @@ export function SurchargeAssignmentManager({
 			}
 		},
 		onError: () => {
-			toast.error(
+			setDeleteError(
 				t(
 					"settings.surcharges.assignmentDeleteFailed",
 					"Failed to remove assignment",
@@ -108,11 +102,13 @@ export function SurchargeAssignmentManager({
 
 	const handleDeleteClick = (assignment: SurchargeAssignmentData) => {
 		setSelectedAssignment(assignment);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (selectedAssignment) {
+		if (selectedAssignment && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(selectedAssignment.id);
 		}
 	};
@@ -135,13 +131,11 @@ export function SurchargeAssignmentManager({
 
 	if (error) {
 		return (
-			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
-						{t("settings.surcharges.loadError", "Failed to load assignments")}
-					</p>
-				</CardContent>
-			</Card>
+			<SettingsLoadError
+				message={t("settings.surcharges.loadError", "Failed to load assignments")}
+				onRetry={() => void refetch()}
+				isRetrying={isFetching}
+			/>
 		);
 	}
 
@@ -175,19 +169,25 @@ export function SurchargeAssignmentManager({
 							)}
 						</div>
 						{orgAssignment ? (
-							<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
-								<div className="flex items-center gap-3">
-									<IconPercentage className="size-4 text-muted-foreground" />
-									<span className="font-medium">
+							<div className="flex items-center justify-between gap-2 rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+								<div className="flex min-w-0 items-center gap-3">
+									<IconPercentage
+										aria-hidden="true"
+										className="size-4 shrink-0 text-muted-foreground"
+									/>
+									<span
+										className="min-w-0 truncate font-medium"
+										title={orgAssignment.model.name}
+									>
 										{orgAssignment.model.name}
 									</span>
 								</div>
 								{canManage ? (
 									<Button
-										aria-label={t(
+										aria-label={`${t(
 											"settings.surcharges.removeOrganizationAssignment",
 											"Remove organization assignment",
-										)}
+										)}: ${orgAssignment.model.name}`}
 										variant="ghost"
 										size="icon"
 										className="size-8 text-muted-foreground hover:text-destructive"
@@ -224,61 +224,43 @@ export function SurchargeAssignmentManager({
 			</div>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog
+			<ConfirmActionDialog
 				open={canManage && deleteDialogOpen}
-				onOpenChange={setDeleteDialogOpen}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.surcharges.deleteAssignmentTitle",
-								"Remove Assignment?",
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteError(null);
+				}}
+				title={t("settings.surcharges.deleteAssignmentTitle", "Remove Assignment?")}
+				description={
+					<>
+						{selectedAssignment?.assignmentType === "organization" &&
+							t(
+								"settings.surcharges.deleteOrgAssignmentNamedDescription",
+								'This will remove "{model}" as the organization default. Teams and employees without specific assignments will have no surcharge model applied.',
+								{ model: selectedAssignment.model.name },
 							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{selectedAssignment?.assignmentType === "organization" &&
-								t(
-									"settings.surcharges.deleteOrgAssignmentDescription",
-									"This will remove the organization default. Teams and employees without specific assignments will have no surcharge model applied.",
-								)}
-							{selectedAssignment?.assignmentType === "team" &&
-								t(
-									"settings.surcharges.deleteTeamAssignmentDescription",
-									'This will remove the surcharge model from team "{team}". They will use the organization default.',
-									{ team: selectedAssignment.team?.name },
-								)}
-							{selectedAssignment?.assignmentType === "employee" &&
-								t(
-									"settings.surcharges.deleteEmployeeAssignmentDescription",
-									'This will remove the override for "{name}". They will use their team or organization default.',
-									{
-										name: `${selectedAssignment.employee?.firstName} ${selectedAssignment.employee?.lastName}`,
-									},
-								)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending ? (
-								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-									{t("common.removing", "Removing...")}
-								</>
-							) : (
-								t("common.remove", "Remove")
+						{selectedAssignment?.assignmentType === "team" &&
+							t(
+								"settings.surcharges.deleteTeamAssignmentDescription",
+								'This will remove the surcharge model from team "{team}". They will use the organization default.',
+								{ team: selectedAssignment.team?.name },
 							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+						{selectedAssignment?.assignmentType === "employee" &&
+							t(
+								"settings.surcharges.deleteEmployeeAssignmentDescription",
+								'This will remove the override for "{name}". They will use their team or organization default.',
+								{
+									name: `${selectedAssignment.employee?.firstName ?? ""} ${selectedAssignment.employee?.lastName ?? ""}`.trim(),
+								},
+							)}
+					</>
+				}
+				confirmLabel={t("common.remove", "Remove")}
+				pendingLabel={t("common.removing", "Removing...")}
+				isPending={deleteMutation.isPending}
+				error={deleteError}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</>
 	);
 }

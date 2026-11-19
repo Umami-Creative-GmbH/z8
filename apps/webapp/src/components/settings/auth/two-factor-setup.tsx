@@ -11,6 +11,14 @@ import {
 import { useTwoFactorSetupController } from "@/components/settings/auth/use-two-factor-setup-controller";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Dynamic import QRCode (~30KB) - only loaded when 2FA setup dialog opens
@@ -22,34 +30,81 @@ const QRCodeSVG = dynamic(() => import("qrcode.react").then((mod) => mod.QRCodeS
 interface TwoFactorSetupProps {
 	isEnabled: boolean;
 	userEmail: string;
+	/**
+	 * `card` renders a page section (Card with an h2 title), like the other
+	 * sections of the security settings page. `inline` (default) renders an h3
+	 * block for hosts that already provide the section heading, such as /mfa.
+	 */
+	variant?: "card" | "inline";
 }
 
-export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupProps) {
+export function TwoFactorSetup({
+	isEnabled: initialIsEnabled,
+	variant = "inline",
+}: TwoFactorSetupProps) {
 	const { t } = useTranslate();
 	const { isPending, state, actions, handlers } = useTwoFactorSetupController(initialIsEnabled, t);
+	const title = t("settings.security.twoFactor.title", "Two-Factor Authentication");
+	const description = t(
+		"settings.security.twoFactor.description",
+		"Add an extra layer of security to your account",
+	);
+	const status = (
+		<Badge variant={state.isEnabled ? "success" : "secondary"}>
+			{state.isEnabled
+				? t("settings.security.twoFactor.status.enabled", "Enabled")
+				: t("settings.security.twoFactor.status.disabled", "Disabled")}
+		</Badge>
+	);
+	const body = (
+		<TwoFactorSetupBody
+			isPending={isPending}
+			state={state}
+			actions={actions}
+			handlers={handlers}
+		/>
+	);
+
+	if (variant === "card") {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle as="h2">{title}</CardTitle>
+					<CardDescription>{description}</CardDescription>
+					<CardAction>{status}</CardAction>
+				</CardHeader>
+				<CardContent>{body}</CardContent>
+			</Card>
+		);
+	}
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h3 className="text-lg font-medium">
-						{t("settings.security.twoFactor.title", "Two-Factor Authentication")}
-					</h3>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.security.twoFactor.description",
-							"Add an extra layer of security to your account",
-						)}
-					</p>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<div className="min-w-0">
+					<h3 className="text-lg font-medium">{title}</h3>
+					<p className="text-sm text-muted-foreground">{description}</p>
 				</div>
-				<Badge variant={state.isEnabled ? "default" : "secondary"}>
-					{state.isEnabled
-						? t("settings.security.twoFactor.status.enabled", "Enabled")
-						: t("settings.security.twoFactor.status.disabled", "Disabled")}
-				</Badge>
+				{status}
 			</div>
+			{body}
+		</div>
+	);
+}
 
-			<div className="flex gap-2">
+function TwoFactorSetupBody({
+	isPending,
+	state,
+	actions,
+	handlers,
+}: Pick<
+	ReturnType<typeof useTwoFactorSetupController>,
+	"isPending" | "state" | "actions" | "handlers"
+>) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<div className="flex flex-wrap gap-2">
 				{!state.isEnabled ? (
 					<Button onClick={handlers.handleRequestEnable} disabled={isPending}>
 						{t("settings.security.twoFactor.enable", "Enable Two-Factor Authentication")}
@@ -151,6 +206,6 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 				isPending={isPending}
 				t={t}
 			/>
-		</div>
+		</>
 	);
 }

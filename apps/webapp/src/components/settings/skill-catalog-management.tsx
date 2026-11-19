@@ -33,11 +33,13 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Select,
 	SelectContent,
@@ -71,25 +73,41 @@ interface SkillCatalogManagementProps {
 
 const SKILL_CATEGORIES: Array<{
 	value: SkillCategory;
-	label: string;
 	icon: typeof IconShieldCheck;
 }> = [
-	{ value: "safety", label: "Safety", icon: IconShieldCheck },
-	{ value: "equipment", label: "Equipment", icon: IconTools },
-	{ value: "certification", label: "Certification", icon: IconCertificate },
-	{ value: "training", label: "Training", icon: IconSchool },
-	{ value: "language", label: "Language", icon: IconLanguage },
-	{ value: "custom", label: "Custom", icon: IconAward },
+	{ value: "safety", icon: IconShieldCheck },
+	{ value: "equipment", icon: IconTools },
+	{ value: "certification", icon: IconCertificate },
+	{ value: "training", icon: IconSchool },
+	{ value: "language", icon: IconLanguage },
+	{ value: "custom", icon: IconAward },
 ];
+
+type Translate = ReturnType<typeof useTranslate>["t"];
 
 function getCategoryIcon(category: SkillCategory) {
 	const found = SKILL_CATEGORIES.find((c) => c.value === category);
 	return found?.icon ?? IconAward;
 }
 
-function getCategoryLabel(category: SkillCategory) {
-	const found = SKILL_CATEGORIES.find((c) => c.value === category);
-	return found?.label ?? category;
+/** Each label is a static literal so the i18n extractor can find it. */
+function getCategoryLabel(category: SkillCategory, t: Translate) {
+	switch (category) {
+		case "safety":
+			return t("settings.skills.categories.safety", "Safety");
+		case "equipment":
+			return t("settings.skills.categories.equipment", "Equipment");
+		case "certification":
+			return t("settings.skills.categories.certification", "Certification");
+		case "training":
+			return t("settings.skills.categories.training", "Training");
+		case "language":
+			return t("settings.skills.categories.language", "Language");
+		case "custom":
+			return t("settings.skills.categories.custom", "Custom");
+		default:
+			return category;
+	}
 }
 
 export function SkillCatalogManagement({
@@ -101,11 +119,14 @@ export function SkillCatalogManagement({
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingSkill, setEditingSkill] = useState<SkillWithRelations | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<SkillWithRelations | null>(null);
 
 	// Fetch skills
 	const {
 		data: skillsResult,
 		isLoading,
+		isError,
+		error,
 		isFetching,
 		refetch,
 	} = useQuery({
@@ -145,13 +166,12 @@ export function SkillCatalogManagement({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillDeleted", "Skill deleted"));
+			setDeleteTarget(null);
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.skills.list(organizationId),
 			});
 		},
-		onError: (error) => {
-			toast.error(error.message || t("settings.skills.deleteError", "Failed to delete skill"));
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	const handleCreate = () => {
@@ -165,11 +185,9 @@ export function SkillCatalogManagement({
 	};
 
 	const handleDelete = (skill: SkillWithRelations) => {
-		if (
-			confirm(t("settings.skills.confirmDelete", "Are you sure you want to delete this skill?"))
-		) {
-			deleteMutation.mutate(skill.id);
-		}
+		if (deleteMutation.isPending) return;
+		deleteMutation.reset();
+		setDeleteTarget(skill);
 	};
 
 	const handleSuccess = () => {
@@ -181,38 +199,37 @@ export function SkillCatalogManagement({
 	};
 
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.skills.title", "Skills & Qualifications")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.skills.description",
-							"Manage skills and certifications that can be assigned to employees",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={() => refetch()}
-						disabled={isFetching}
-						aria-label={t("common.refresh", "Refresh")}
-					>
-						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-					</Button>
-					{canManageCatalog ? (
-						<Button onClick={handleCreate}>
-							<IconPlus className="mr-2 size-4" />
-							{t("settings.skills.addSkill", "Add Skill")}
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+			<PageHeader
+				title={t("settings.skills.title", "Skills & Qualifications")}
+				description={t(
+					"settings.skills.description",
+					"Manage skills and certifications that can be assigned to employees",
+				)}
+				actions={
+					<>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => refetch()}
+							disabled={isFetching}
+							aria-label={t("settings.skills.refresh", "Refresh skill catalog")}
+						>
+							<IconRefresh
+								className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
+								aria-hidden="true"
+							/>
 						</Button>
-					) : null}
-				</div>
-			</div>
+						{canManageCatalog ? (
+							<Button onClick={handleCreate}>
+								<IconPlus className="mr-2 size-4" aria-hidden="true" />
+								{t("settings.skills.addSkill", "Add Skill")}
+							</Button>
+						) : null}
+					</>
+				}
+			/>
 
 			{/* Content */}
 			<Card>
@@ -227,16 +244,45 @@ export function SkillCatalogManagement({
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (
-						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+						<div
+							className="flex items-center justify-center py-8"
+							role="status"
+							aria-label={t("common.loadingRegions.skillSettings", "Loading skill settings")}
+						>
+							<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+						</div>
+					) : isError ? (
+						<div
+							role="alert"
+							className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+						>
+							<p className="text-sm">
+								{error?.message ||
+									t("settings.skills.loadFailed", "The skill catalog could not be loaded.")}
+							</p>
+							<Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+								{t("common.retry", "Try again")}
+							</Button>
 						</div>
 					) : skills.length === 0 ? (
-						<div className="py-8 text-center text-muted-foreground">
-							<IconAward className="mx-auto size-12 mb-4 opacity-50" />
-							<p>{t("settings.skills.noSkills", "No skills defined yet")}</p>
-							<p className="text-sm mt-1">
-								{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
-							</p>
+						<div className="flex flex-col items-start gap-3 py-6 text-muted-foreground sm:items-center sm:text-center">
+							<IconAward className="size-8 opacity-50" aria-hidden="true" />
+							<div className="space-y-1">
+								<p className="font-medium text-foreground">
+									{t("settings.skills.noSkills", "No skills defined yet")}
+								</p>
+								{canManageCatalog ? (
+									<p className="text-sm">
+										{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
+									</p>
+								) : null}
+							</div>
+							{canManageCatalog ? (
+								<Button variant="outline" onClick={handleCreate}>
+									<IconPlus className="mr-2 size-4" aria-hidden="true" />
+									{t("settings.skills.addSkill", "Add Skill")}
+								</Button>
+							) : null}
 						</div>
 					) : (
 						<Table>
@@ -255,6 +301,10 @@ export function SkillCatalogManagement({
 							<TableBody>
 								{skills.map((skill) => {
 									const CategoryIcon = getCategoryIcon(skill.category as SkillCategory);
+									const categoryLabel =
+										skill.category === "custom" && skill.customCategoryName
+											? skill.customCategoryName
+											: getCategoryLabel(skill.category as SkillCategory, t);
 									return (
 										<TableRow key={skill.id}>
 											<TableCell>
@@ -262,22 +312,27 @@ export function SkillCatalogManagement({
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<div className="flex items-center justify-center">
-																<CategoryIcon className="size-5 text-muted-foreground" />
+																<CategoryIcon
+																	className="size-5 text-muted-foreground"
+																	aria-hidden="true"
+																/>
+																<span className="sr-only">{categoryLabel}</span>
 															</div>
 														</TooltipTrigger>
-														<TooltipContent>
-															{skill.category === "custom" && skill.customCategoryName
-																? skill.customCategoryName
-																: getCategoryLabel(skill.category as SkillCategory)}
-														</TooltipContent>
+														<TooltipContent>{categoryLabel}</TooltipContent>
 													</Tooltip>
 												</TooltipProvider>
 											</TableCell>
-											<TableCell>
-												<div className="flex flex-col">
-													<span className="font-medium">{skill.name}</span>
+											<TableCell className="max-w-xs">
+												<div className="flex min-w-0 flex-col">
+													<span className="truncate font-medium" title={skill.name}>
+														{skill.name}
+													</span>
 													{skill.description && (
-														<span className="text-xs text-muted-foreground line-clamp-1">
+														<span
+															className="text-xs text-muted-foreground line-clamp-1"
+															title={skill.description}
+														>
 															{skill.description}
 														</span>
 													)}
@@ -308,7 +363,7 @@ export function SkillCatalogManagement({
 																			onClick={() => handleEdit(skill)}
 																			aria-label={`${t("common.edit", "Edit")}: ${skill.name}`}
 																		>
-																			<IconEdit className="size-4" />
+																			<IconEdit className="size-4" aria-hidden="true" />
 																		</Button>
 																	</TooltipTrigger>
 																	<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
@@ -325,7 +380,7 @@ export function SkillCatalogManagement({
 																			aria-label={`${t("common.delete", "Delete")}: ${skill.name}`}
 																			disabled={deleteMutation.isPending}
 																		>
-																			<IconTrash className="size-4" />
+																			<IconTrash className="size-4" aria-hidden="true" />
 																		</Button>
 																	</TooltipTrigger>
 																	<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
@@ -358,6 +413,33 @@ export function SkillCatalogManagement({
 					onSuccess={handleSuccess}
 				/>
 			) : null}
+
+			{canManageCatalog ? (
+				<DeleteConfirmDialog
+					open={deleteTarget !== null}
+					onOpenChange={(open) => {
+						if (!open) setDeleteTarget(null);
+					}}
+					title={t("settings.skills.deleteDialog.title", "Delete skill?")}
+					description={t(
+						"settings.skills.deleteDialog.description",
+						'"{name}" will be removed from the skill catalog.',
+						{ name: deleteTarget?.name ?? "" },
+					)}
+					confirmLabel={t("settings.skills.deleteDialog.confirm", "Delete skill")}
+					isDeleting={deleteMutation.isPending}
+					error={
+						deleteMutation.isError
+							? deleteMutation.error.message ||
+								t("settings.skills.deleteError", "Failed to delete skill")
+							: null
+					}
+					onConfirm={() => {
+						if (deleteTarget && !deleteMutation.isPending) deleteMutation.mutate(deleteTarget.id);
+					}}
+				/>
+			) : null}
+			</div>
 		</div>
 	);
 }
@@ -512,19 +594,37 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 				>
 					<ActionPanelBody className="grid content-start gap-4">
 						{/* Name */}
-						<form.Field name="name">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="skill-name">{t("settings.skills.skillName", "Name")} *</Label>
-									<Input
-										id="skill-name"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t("settings.skills.namePlaceholder", "e.g., Forklift License")}
-									/>
-								</div>
-							)}
+						<form.Field
+							name="name"
+							validators={{
+								onSubmit: ({ value }) =>
+									value.trim()
+										? undefined
+										: t("settings.skills.nameRequired", "Enter a name for the skill."),
+							}}
+						>
+							{(field) => {
+								const error = field.state.meta.errors[0];
+								return (
+									<div className="grid gap-2">
+										<Label htmlFor="skill-name">{t("settings.skills.skillName", "Name")} *</Label>
+										<Input
+											id="skill-name"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={t("settings.skills.namePlaceholder", "e.g., Forklift License")}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={error ? "skill-name-error" : undefined}
+										/>
+										{error ? (
+											<p id="skill-name-error" className="text-sm text-destructive">
+												{String(error)}
+											</p>
+										) : null}
+									</div>
+								);
+							}}
 						</form.Field>
 
 						{/* Category */}
@@ -547,8 +647,8 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 											{SKILL_CATEGORIES.map((cat) => (
 												<SelectItem key={cat.value} value={cat.value}>
 													<span className="flex items-center gap-2">
-														<cat.icon className="size-4" />
-														{cat.label}
+														<cat.icon className="size-4" aria-hidden="true" />
+														{getCategoryLabel(cat.value, t)}
 													</span>
 												</SelectItem>
 											))}
@@ -644,7 +744,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isMutating}>
-							{isMutating && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{isMutating && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconPlus, IconTrash } from "@tabler/icons-react";
-import type { useTranslate } from "@tolgee/react";
+import { EmployeeSingleSelect } from "@/components/employee-select/employee-select-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,13 @@ import type {
 	ApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
 import { fallbackBehaviorOptions } from "./approval-policy-dialog-utils";
+import {
+	type ApprovalPolicyTranslate,
+	approverTypeLabel,
+	fallbackBehaviorLabel,
+	unknownEmployeeLabel,
+} from "./approval-policy-labels";
+import type { ApproverEmployeeLookup } from "./use-approver-employees";
 
 const approverTypeOptions = [
 	{ value: "direct_manager" },
@@ -19,68 +26,22 @@ const approverTypeOptions = [
 	{ value: "specific_employee" },
 ] as const;
 
-type Translate = ReturnType<typeof useTranslate>["t"];
-
 interface ApprovalPolicyStagesFieldProps {
 	stages: ApprovalPolicyFormValues["stages"];
 	onChange: (stages: ApprovalPolicyFormValues["stages"]) => void;
 	onAddStage: () => void;
-	t: Translate;
+	/** Names stored specific-employee approvers; unresolved IDs show as unknown. */
+	approverLookup?: ApproverEmployeeLookup;
+	t: ApprovalPolicyTranslate;
 }
 
 export function ApprovalPolicyStagesField({
 	stages,
 	onChange,
 	onAddStage,
+	approverLookup,
 	t,
 }: ApprovalPolicyStagesFieldProps) {
-	function approverTypeLabel(
-		value: (typeof approverTypeOptions)[number]["value"],
-	) {
-		switch (value) {
-			case "direct_manager":
-				return t(
-					"settings.approvalPolicies.approverType.directManager",
-					"Direct manager",
-				);
-			case "manager_manager":
-				return t(
-					"settings.approvalPolicies.approverType.managerManager",
-					"Manager's manager",
-				);
-			case "org_admin":
-				return t(
-					"settings.approvalPolicies.approverType.organizationAdmin",
-					"Organization admin",
-				);
-			case "specific_employee":
-				return t(
-					"settings.approvalPolicies.approverType.specificEmployee",
-					"Specific employee",
-				);
-		}
-	}
-
-	function fallbackBehaviorLabel(value: ApprovalPolicyFallbackBehavior) {
-		switch (value) {
-			case "fail":
-				return t(
-					"settings.approvalPolicies.fallbackBehavior.fail.label",
-					"Fail request",
-				);
-			case "default_manager":
-				return t(
-					"settings.approvalPolicies.fallbackBehavior.defaultManager.label",
-					"Default manager",
-				);
-			case "organization_admin":
-				return t(
-					"settings.approvalPolicies.fallbackBehavior.organizationAdmin.label",
-					"Organization admin",
-				);
-		}
-	}
-
 	function fallbackBehaviorDescription(value: ApprovalPolicyFallbackBehavior) {
 		switch (value) {
 			case "fail":
@@ -151,8 +112,9 @@ export function ApprovalPolicyStagesField({
 										)
 									}
 									aria-label={t(
-										"settings.approvalPolicies.removeStage",
-										"Remove stage",
+										"settings.approvalPolicies.removeStageNumber",
+										"Remove stage {number}",
+										{ number: index + 1 },
 									)}
 								>
 									<IconTrash className="size-4" aria-hidden="true" />
@@ -212,7 +174,7 @@ export function ApprovalPolicyStagesField({
 									>
 										{approverTypeOptions.map((option) => (
 											<option key={option.value} value={option.value}>
-												{approverTypeLabel(option.value)}
+												{approverTypeLabel(option.value, t)}
 											</option>
 										))}
 									</select>
@@ -250,7 +212,7 @@ export function ApprovalPolicyStagesField({
 									>
 										{fallbackBehaviorOptions.map((option) => (
 											<option key={option.value} value={option.value}>
-												{fallbackBehaviorLabel(option.value)}
+												{fallbackBehaviorLabel(option.value, t)}
 											</option>
 										))}
 									</select>
@@ -262,36 +224,36 @@ export function ApprovalPolicyStagesField({
 									</p>
 								</div>
 								{stage.approverType === "specific_employee" ? (
-									<div className="grid gap-2 sm:col-span-2">
-										<Label htmlFor={`approval-stage-employee-${stage.localId}`}>
-											{t(
-												"settings.approvalPolicies.approverEmployeeId",
-												"Approver Employee ID",
-											)}
-										</Label>
-										<Input
-											id={`approval-stage-employee-${stage.localId}`}
-											name={`approval-stage-employee-${index + 1}`}
-											autoComplete="off"
-											value={stage.approverEmployeeId}
-											onChange={(event) =>
-												onChange(
-													stages.map((item) =>
-														item.localId === stage.localId
-															? {
-																	...item,
-																	approverEmployeeId: event.target.value,
-																}
-															: item,
-													),
-												)
-											}
-											placeholder={t(
-												"settings.approvalPolicies.approverEmployeeIdPlaceholder",
-												"Example: employee_123…",
-											)}
-										/>
-									</div>
+									<EmployeeSingleSelect
+										className="sm:col-span-2"
+										label={t(
+											"settings.approvalPolicies.approverEmployee",
+											"Approving employee",
+										)}
+										value={stage.approverEmployeeId || null}
+										onChange={(employeeId) =>
+											onChange(
+												stages.map((item) =>
+													item.localId === stage.localId
+														? {
+																...item,
+																approverEmployeeId: employeeId ?? "",
+															}
+														: item,
+												),
+											)
+										}
+										placeholder={
+											stage.approverEmployeeId &&
+											approverLookup?.(stage.approverEmployeeId).status ===
+												"unknown"
+												? unknownEmployeeLabel(stage.approverEmployeeId, t)
+												: t(
+														"settings.approvalPolicies.selectApproverEmployee",
+														"Select employee",
+													)
+										}
+									/>
 								) : null}
 							</div>
 						</div>

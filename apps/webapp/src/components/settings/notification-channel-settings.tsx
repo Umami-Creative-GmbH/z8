@@ -19,16 +19,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TimeInput } from "@/components/ui/time-input";
+import { TimezonePicker } from "@/components/settings/timezone-picker";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface NotificationChannelSettingsProps {
 	channelName: string;
-	description: string;
+	/** Omit when the surrounding page already shows the channel description. */
+	description?: string;
 	config: NotificationChannelConfig | null;
 	updateAction: (
 		settings: NotificationChannelSettingsFormValues,
 	) => Promise<ServerActionResult<undefined>>;
+	/**
+	 * How to connect the channel, shown while it is not connected: a connect
+	 * button or setup instructions. The page decides who may see it.
+	 */
+	connectAction?: ReactNode;
+}
+
+function needsConnection(config: NotificationChannelConfig | null): boolean {
+	return !config || config.setupStatus === "disconnected";
 }
 
 const fallbackSettings: NotificationChannelSettingsFormValues = {
@@ -49,13 +60,15 @@ function ChannelSummaryCard({
 	config,
 	isActive,
 	statusLabel,
+	connectAction,
 	t,
 }: {
 	channelName: string;
-	description: string;
+	description?: string;
 	config: NotificationChannelConfig | null;
 	isActive: boolean;
 	statusLabel: string;
+	connectAction?: ReactNode;
 	t: NotificationTranslate;
 }) {
 	return (
@@ -64,7 +77,9 @@ function ChannelSummaryCard({
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0 space-y-1">
 						<CardTitle>{channelName}</CardTitle>
-						<CardDescription>{description}</CardDescription>
+						{description ? (
+							<CardDescription>{description}</CardDescription>
+						) : null}
 					</div>
 					<Badge variant={isActive ? "default" : "secondary"}>{statusLabel}</Badge>
 				</div>
@@ -87,6 +102,9 @@ function ChannelSummaryCard({
 								"Connect or configure this integration before changing notification settings.",
 							)}
 				</p>
+				{connectAction && needsConnection(config) ? (
+					<div className="pt-2">{connectAction}</div>
+				) : null}
 			</CardContent>
 		</Card>
 	);
@@ -125,6 +143,7 @@ export function NotificationChannelSettings({
 	description,
 	config,
 	updateAction,
+	connectAction,
 }: NotificationChannelSettingsProps) {
 	const { t } = useTranslate();
 	const isConfigured = Boolean(config);
@@ -193,6 +212,7 @@ export function NotificationChannelSettings({
 				config={config}
 				isActive={isActive}
 				statusLabel={statusLabel}
+				connectAction={connectAction}
 				t={t}
 			/>
 
@@ -309,17 +329,11 @@ export function NotificationChannelSettings({
 											<Label htmlFor="digestTimezone">
 												{t("settings.notifications.timezone", "Timezone")}
 											</Label>
-											<Input
+											<TimezonePicker
 												id="digestTimezone"
-												name="digestTimezone"
 												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
+												onChange={field.handleChange}
 												disabled={disableForm}
-												placeholder={t(
-													"settings.notifications.timezonePlaceholder",
-													"Europe/Berlin…",
-												)}
-												autoComplete="off"
 											/>
 										</div>
 									)}
@@ -352,29 +366,61 @@ export function NotificationChannelSettings({
 								</form.Field>
 							</FeatureToggleRow>
 
-							<form.Field name="escalationTimeoutHours">
-								{(field) => (
-									<div className="flex max-w-xs items-center gap-3 rounded-lg border bg-muted/30 p-3">
-										<Label htmlFor="escalationTimeoutHours" className="shrink-0">
-											{t("settings.notifications.timeout", "Timeout")}
-										</Label>
-										<Input
-											id="escalationTimeoutHours"
-											name="escalationTimeoutHours"
-											type="number"
-											min={1}
-											max={168}
-											value={field.state.value}
-											onChange={(event) => field.handleChange(Number(event.target.value))}
-											disabled={disableForm}
-											autoComplete="off"
-											className="w-24"
-										/>
-										<span className="text-sm text-muted-foreground">
-											{t("settings.notifications.hours", "hours")}
-										</span>
-									</div>
-								)}
+							<form.Field
+								name="escalationTimeoutHours"
+								validators={{
+									onChange: ({ value }) =>
+										Number.isInteger(value) && value >= 1 && value <= 168
+											? undefined
+											: t(
+													"settings.notifications.timeoutInvalid",
+													"Enter a whole number of hours from 1 to 168.",
+												),
+								}}
+							>
+								{(field) => {
+									const hasError = field.state.meta.errors.length > 0;
+									return (
+										<div className="space-y-2">
+											<div className="flex max-w-xs items-center gap-3 rounded-lg border bg-muted/30 p-3">
+												<Label htmlFor="escalationTimeoutHours" className="shrink-0">
+													{t("settings.notifications.timeout", "Timeout")}
+												</Label>
+												<Input
+													id="escalationTimeoutHours"
+													name="escalationTimeoutHours"
+													type="number"
+													inputMode="numeric"
+													min={1}
+													max={168}
+													step={1}
+													value={Number.isNaN(field.state.value) ? "" : field.state.value}
+													onChange={(event) => field.handleChange(event.target.valueAsNumber)}
+													onBlur={field.handleBlur}
+													disabled={disableForm}
+													autoComplete="off"
+													aria-invalid={hasError}
+													aria-describedby={
+														hasError ? "escalationTimeoutHours-error" : undefined
+													}
+													className="w-24 tabular-nums"
+												/>
+												<span className="text-sm text-muted-foreground">
+													{t("settings.notifications.hours", "hours")}
+												</span>
+											</div>
+											{hasError ? (
+												<p
+													id="escalationTimeoutHours-error"
+													className="text-sm text-destructive"
+													role="alert"
+												>
+													{field.state.meta.errors.join(" ")}
+												</p>
+											) : null}
+										</div>
+									);
+								}}
 							</form.Field>
 						</div>
 

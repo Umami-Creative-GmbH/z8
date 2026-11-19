@@ -2,11 +2,10 @@
 
 import { IconAlertTriangle, IconCheck, IconDownload, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import type { WorkPolicyViolationWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
@@ -23,11 +22,19 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { formatEmployeeName, getViolationTypeLabel, violationTypeColors } from "./helpers";
+import { cn } from "@/lib/utils";
+import {
+	formatEmployeeName,
+	formatViolationDate,
+	getViolationTypeLabel,
+	type ViolationDisplayContext,
+	violationTypeColors,
+} from "./helpers";
 
 type DateRange = "7d" | "30d" | "90d";
 
 interface WorkPolicyComplianceContentProps {
+	display: ViolationDisplayContext;
 	dateRange: DateRange;
 	violations: WorkPolicyViolationWithDetails[] | undefined;
 	onDateRangeChange: (range: DateRange) => void;
@@ -38,20 +45,17 @@ interface WorkPolicyComplianceContentProps {
 
 export function WorkPolicyComplianceLoading() {
 	return (
-		<div className="space-y-4">
-			<div className="grid gap-4 sm:grid-cols-4">
+		<div className="space-y-4" aria-busy="true">
+			<Skeleton className="h-9 w-40" aria-hidden="true" />
+			<div className="grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-4">
 				{[1, 2, 3, 4].map((index) => (
-					<Card key={index}>
-						<CardHeader className="pb-2">
-							<Skeleton className="h-4 w-20" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="h-8 w-16" />
-						</CardContent>
-					</Card>
+					<div key={index} className="space-y-2 bg-card p-4">
+						<Skeleton className="h-4 w-20" aria-hidden="true" />
+						<Skeleton className="h-8 w-16" aria-hidden="true" />
+					</div>
 				))}
 			</div>
-			<Skeleton className="h-64 w-full" />
+			<Skeleton className="h-64 w-full" aria-hidden="true" />
 		</div>
 	);
 }
@@ -62,11 +66,11 @@ export function WorkPolicyComplianceError({ onRetry }: { onRetry: () => void }) 
 	return (
 		<Card>
 			<CardContent className="py-8 text-center">
-				<p className="text-destructive">
+				<p role="alert" className="text-destructive">
 					{t("settings.workPolicies.violationsLoadError", "Failed to load violations")}
 				</p>
 				<Button className="mt-4" variant="outline" onClick={onRetry}>
-					<IconRefresh className="mr-2 size-4" />
+					<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</CardContent>
@@ -75,6 +79,7 @@ export function WorkPolicyComplianceError({ onRetry }: { onRetry: () => void }) 
 }
 
 export function WorkPolicyComplianceContent({
+	display,
 	dateRange,
 	violations,
 	onDateRangeChange,
@@ -94,9 +99,12 @@ export function WorkPolicyComplianceContent({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-2">
 				<Select value={dateRange} onValueChange={(value) => onDateRangeChange(value as DateRange)}>
-					<SelectTrigger className="w-40">
+					<SelectTrigger
+						className="w-40"
+						aria-label={t("settings.workPolicies.violationPeriod", "Violation period")}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -119,17 +127,17 @@ export function WorkPolicyComplianceContent({
 						onClick={onExport}
 						disabled={!violations || violations.length === 0}
 					>
-						<IconDownload className="mr-2 size-4" />
+						<IconDownload className="mr-2 size-4" aria-hidden="true" />
 						{t("settings.workPolicies.exportCsv", "Export CSV")}
 					</Button>
 					<Button variant="ghost" size="icon" onClick={onRefresh}>
-						<IconRefresh className="size-4" />
+						<IconRefresh className="size-4" aria-hidden="true" />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
 				</div>
 			</div>
 
-			<div className="grid gap-4 sm:grid-cols-4">
+			<dl className="grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-4">
 				<ComplianceStat
 					label={t("settings.workPolicies.totalViolations", "Total Violations")}
 					value={stats.total}
@@ -147,13 +155,13 @@ export function WorkPolicyComplianceContent({
 					label={t("settings.workPolicies.breakMissing", "Break Missing")}
 					value={stats.breakRequired}
 				/>
-			</div>
+			</dl>
 
 			{!violations || violations.length === 0 ? (
 				<Card>
-					<CardContent className="py-12 text-center">
-						<IconCheck className="mx-auto mb-4 size-12 text-green-500" />
-						<p className="text-lg font-medium">
+					<CardContent className="py-10 text-center">
+						<IconCheck className="mx-auto mb-3 size-6 text-primary" aria-hidden="true" />
+						<p className="font-medium">
 							{t("settings.workPolicies.noViolations", "No violations found")}
 						</p>
 						<p className="mt-1 text-sm text-muted-foreground">
@@ -170,11 +178,17 @@ export function WorkPolicyComplianceContent({
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("settings.workPolicies.employee", "Employee")}</TableHead>
-								<TableHead>{t("settings.workPolicies.date", "Date")}</TableHead>
+								<TableHead>
+									{t("settings.workPolicies.dateInTimezone", "Date ({timezone})", {
+										timezone: display.timezone,
+									})}
+								</TableHead>
 								<TableHead>{t("settings.workPolicies.policyName", "Policy")}</TableHead>
 								<TableHead>{t("settings.workPolicies.type", "Type")}</TableHead>
 								<TableHead>{t("settings.workPolicies.status", "Status")}</TableHead>
-								<TableHead className="w-[100px]" />
+								<TableHead className="w-[100px]">
+									<span className="sr-only">{t("common.actions", "Actions")}</span>
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -183,8 +197,8 @@ export function WorkPolicyComplianceContent({
 									<TableCell className="font-medium">
 										{formatEmployeeName(violation.employee, t("common.unknown", "Unknown"))}
 									</TableCell>
-									<TableCell>
-										{DateTime.fromJSDate(violation.violationDate).toFormat("LLL d, yyyy")}
+									<TableCell className="whitespace-nowrap tabular-nums">
+										{formatViolationDate(violation.violationDate, display)}
 									</TableCell>
 									<TableCell className="text-sm text-muted-foreground">
 										{violation.policy?.name || t("common.unknown", "Unknown")}
@@ -197,19 +211,34 @@ export function WorkPolicyComplianceContent({
 									<TableCell>
 										{violation.acknowledgedAt ? (
 											<Badge variant="secondary">
-												<IconCheck className="mr-1 size-3" />
+												<IconCheck className="mr-1 size-3" aria-hidden="true" />
 												{t("settings.workPolicies.acknowledged", "Acknowledged")}
 											</Badge>
 										) : (
 											<Badge variant="outline">
-												<IconAlertTriangle className="mr-1 size-3" />
+												<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
 												{t("settings.workPolicies.pending", "Pending")}
 											</Badge>
 										)}
 									</TableCell>
 									<TableCell>
 										{!violation.acknowledgedAt ? (
-											<Button variant="ghost" size="sm" onClick={() => onAcknowledge(violation)}>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => onAcknowledge(violation)}
+												aria-label={t(
+													"settings.workPolicies.acknowledgeFor",
+													"Acknowledge {type} violation for {name}",
+													{
+														type: getViolationTypeLabel(violation.violationType, t),
+														name: formatEmployeeName(
+															violation.employee,
+															t("common.unknown", "Unknown"),
+														),
+													},
+												)}
+											>
 												{t("settings.workPolicies.acknowledge", "Acknowledge")}
 											</Button>
 										) : null}
@@ -233,14 +262,11 @@ function ComplianceStat({
 	value: number;
 	valueClassName?: string;
 }) {
+	// One cell of the shared summary strip.
 	return (
-		<Card>
-			<CardHeader className="pb-2">
-				<CardDescription>{label}</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<div className={`text-2xl font-bold ${valueClassName || ""}`}>{value}</div>
-			</CardContent>
-		</Card>
+		<div className="min-w-0 space-y-1 bg-card p-4 text-card-foreground">
+			<dt className="text-sm text-muted-foreground">{label}</dt>
+			<dd className={cn("text-2xl font-semibold tabular-nums", valueClassName)}>{value}</dd>
+		</div>
 	);
 }

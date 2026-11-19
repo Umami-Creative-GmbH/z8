@@ -28,16 +28,18 @@ export function OrganizationDeletionBanner() {
 	const permanentDeletionDate = DateTime.fromISO(deletedAt).plus({ days: 5 });
 	const remainingDays = Math.max(0, Math.ceil(permanentDeletionDate.diffNow("days").days));
 
+	// Warning tokens: the tinted surface and icon carry the attention state, while
+	// the copy stays on the foreground token so it keeps body-text contrast in
+	// both themes (the warning hue itself is too light for text in dark mode).
+	// The Alert's own `[&>svg]:text-current` outranks a class on the icon, so the
+	// icon colour is set through the same child selector.
 	return (
-		<Alert
-			variant="destructive"
-			className="rounded-none border-x-0 border-t-0 bg-amber-50 dark:bg-amber-950/50 border-amber-500/50"
-		>
-			<IconAlertTriangle className="size-4 text-amber-600" aria-hidden="true" />
-			<AlertTitle className="text-amber-800 dark:text-amber-200">
+		<Alert className="rounded-none border-x-0 border-t-0 border-warning/40 bg-warning/10 text-foreground [&>svg]:text-warning">
+			<IconAlertTriangle className="size-4" aria-hidden="true" />
+			<AlertTitle>
 				{t("organization.delete.bannerTitle", "Organization Scheduled for Deletion")}
 			</AlertTitle>
-			<AlertDescription className="text-amber-700 dark:text-amber-300">
+			<AlertDescription className="text-foreground">
 				{t(
 					"organization.delete.bannerDescription",
 					"This organization will be permanently deleted in {count, plural, one {# day} other {# days}}. Contact your administrator if you believe this is a mistake.",
@@ -45,7 +47,7 @@ export function OrganizationDeletionBanner() {
 				)}{" "}
 				<Link
 					href="/settings/organization"
-					className="font-medium underline underline-offset-4 hover:text-amber-900 dark:hover:text-amber-100"
+					className="rounded-sm font-medium underline underline-offset-4 hover:decoration-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				>
 					{t("organization.delete.bannerLearnMore", "Learn more")}
 				</Link>

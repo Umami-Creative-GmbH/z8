@@ -1,40 +1,25 @@
-import { and, eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { ImportHub } from "@/components/settings/import/import-hub";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 async function ImportPageContent() {
-	const [{ authContext, organizationId }, t] = await Promise.all([
-		requireOrgAdminSettingsAccess(),
-		getTranslate(),
-	]);
-
-	const _memberRecord = await db.query.member.findFirst({
-		where: and(
-			eq(authSchema.member.userId, authContext.user.id),
-			eq(authSchema.member.organizationId, organizationId),
-		),
-	});
+	// Org-admin access is enforced here (it redirects otherwise); the import actions re-check it.
+	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
 
 	return (
 		<div className="page-frame">
-			<div className="space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.import.title", "Import Data")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.import.supportedSources",
-							"Import work from CSV files or connect supported providers such as Clockodo and Clockin.",
-						)}
-					</p>
-				</div>
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("settings.import.title", "Import Data")}
+					description={t(
+						"settings.import.supportedSources",
+						"Import work from CSV files or connect supported providers such as Clockodo and Clockin.",
+					)}
+				/>
 
 				<ImportHub />
 			</div>
@@ -52,7 +37,7 @@ function ImportPageLoading() {
 				labelDefault: "Loading import settings",
 			}}
 		>
-			<div className="space-y-6">
+			<div className="page-measure space-y-6">
 				<div className="space-y-2">
 					<Skeleton aria-hidden="true" className="h-8 w-48" />
 					<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />

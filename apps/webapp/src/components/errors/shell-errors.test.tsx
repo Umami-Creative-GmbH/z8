@@ -23,7 +23,8 @@ vi.mock("@/navigation", () => ({
 it("keeps Settings retry and recovery without displaying internal error messages", () => {
 	const retry = vi.fn();
 	vi.spyOn(console, "error").mockImplementation(() => {});
-	render(
+	pathname = "/de/settings/webhooks";
+	const { unmount } = render(
 		<SettingsError
 			error={new Error("private database detail")}
 			retry={retry}
@@ -32,12 +33,25 @@ it("keeps Settings retry and recovery without displaying internal error messages
 	expect(
 		screen.getByRole("heading", { level: 2, name: "Something went wrong" }),
 	).toBeTruthy();
+	unmount();
+	// A settings page that owns its heading gets the main heading from the boundary.
+	pathname = "/de/settings/security";
+	const owned = render(
+		<SettingsError
+			error={new Error("private database detail")}
+			retry={retry}
+		/>,
+	);
+	expect(
+		screen.getByRole("heading", { level: 1, name: "Something went wrong" }),
+	).toBeTruthy();
 	expect(screen.queryByText("private database detail")).toBeNull();
 	expect(
 		screen.getByRole("link", { name: "Back to Settings" }).getAttribute("href"),
 	).toBe("/settings");
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 	expect(retry).toHaveBeenCalledOnce();
+	owned.unmount();
 });
 
 it.each([

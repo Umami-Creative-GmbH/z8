@@ -1,6 +1,6 @@
 "use client";
 
-import { IconGavel, IconLoader2 } from "@tabler/icons-react";
+import { IconGavel, IconLoader2, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useState } from "react";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 import type {
 	WorksCouncilAbsenceVisibility,
@@ -24,15 +25,28 @@ import { actionErrorMessage } from "@/lib/organization-action/action-error-messa
 import type { WorksCouncilSettingsFormValues } from "@/lib/works-council/settings";
 import { runWithBusyState } from "./run-with-busy-state";
 
-function parseCommaSeparatedIds(value: string) {
-	return value.split(",").flatMap((item) => {
-		const trimmed = item.trim();
-		return trimmed ? [trimmed] : [];
-	});
+const nativeSelectClassName =
+	"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
+
+const MINIMUM_AGGREGATION_THRESHOLD = 5;
+
+/** A team or location the Works Council scope can be limited to. */
+export interface WorksCouncilScopeOption {
+	id: string;
+	name: string;
 }
+
+/** The organization's teams and locations offered by the scope pickers. */
+export interface WorksCouncilScopeOptions {
+	teams: WorksCouncilScopeOption[];
+	locations: WorksCouncilScopeOption[];
+}
+
+const EMPTY_SCOPE_OPTIONS: WorksCouncilScopeOptions = { teams: [], locations: [] };
 
 interface WorksCouncilSettingsFormProps {
 	initialSettings: WorksCouncilSettingsFormValues & { organizationId?: string };
+	scopeOptions?: WorksCouncilScopeOptions;
 	onSave?: (
 		values: WorksCouncilSettingsFormValues,
 	) => Promise<{ success: boolean; error?: string; code?: string; refusal?: string }>;
@@ -40,6 +54,7 @@ interface WorksCouncilSettingsFormProps {
 
 export function WorksCouncilSettingsForm({
 	initialSettings,
+	scopeOptions = EMPTY_SCOPE_OPTIONS,
 	onSave,
 }: WorksCouncilSettingsFormProps) {
 	const { t } = useTranslate();
@@ -88,6 +103,12 @@ export function WorksCouncilSettingsForm({
 		},
 	});
 	const controlsDisabled = loading;
+	const thresholdInvalid = t(
+		"settings.worksCouncil.minimumThresholdInvalid",
+		"Enter a whole number of at least 5",
+	);
+	const removeLabel = (name: string) =>
+		t("settings.worksCouncil.removeScopeItem", "Remove {name}", { name });
 
 	return (
 		<form
@@ -101,7 +122,7 @@ export function WorksCouncilSettingsForm({
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
 						<IconGavel className="size-5" aria-hidden="true" />
-						{t("settings.worksCouncil.title", "Works Council Mode")}
+						{t("settings.worksCouncil.accessSectionTitle", "Access and review exports")}
 					</CardTitle>
 					<CardDescription>
 						{t(
@@ -128,7 +149,7 @@ export function WorksCouncilSettingsForm({
 											"Identity visibility",
 										)}
 										name="identityVisibility"
-										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
+										className={nativeSelectClassName}
 										value={field.state.value}
 										onChange={(event) =>
 											field.handleChange(
@@ -173,7 +194,7 @@ export function WorksCouncilSettingsForm({
 											"Absence visibility",
 										)}
 										name="absenceVisibility"
-										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
+										className={nativeSelectClassName}
 										value={field.state.value}
 										onChange={(event) =>
 											field.handleChange(
@@ -225,98 +246,153 @@ export function WorksCouncilSettingsForm({
 						</form.Field>
 					</SwitchField>
 
-					<form.Field name="minimumAggregationThreshold">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="works-council-minimum-threshold">
-									{t(
-										"settings.worksCouncil.minimumThreshold",
-										"Minimum aggregation threshold",
-									)}
-								</Label>
-								<Input
-									id="works-council-minimum-threshold"
-									name="minimumAggregationThreshold"
-									type="number"
-									inputMode="numeric"
-									autoComplete="off"
-									min={5}
-									value={field.state.value}
-									onChange={(event) =>
-										field.handleChange(Number(event.target.value))
-									}
-									disabled={controlsDisabled}
-								/>
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.worksCouncil.minimumThresholdDescription",
-										"Groups below this size are suppressed to reduce re-identification risk.",
-									)}
-								</p>
-							</div>
-						)}
+					<form.Field
+						name="minimumAggregationThreshold"
+						validators={{
+							onChange: ({ value }) =>
+								Number.isInteger(value) && value >= MINIMUM_AGGREGATION_THRESHOLD
+									? undefined
+									: thresholdInvalid,
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="works-council-minimum-threshold">
+										{t(
+											"settings.worksCouncil.minimumThreshold",
+											"Minimum aggregation threshold",
+										)}
+									</Label>
+									<Input
+										id="works-council-minimum-threshold"
+										name="minimumAggregationThreshold"
+										type="number"
+										inputMode="numeric"
+										autoComplete="off"
+										min={MINIMUM_AGGREGATION_THRESHOLD}
+										step={1}
+										className="max-w-40 tabular-nums"
+										value={field.state.value}
+										onChange={(event) =>
+											field.handleChange(Number(event.target.value))
+										}
+										onBlur={field.handleBlur}
+										aria-invalid={error ? true : undefined}
+										aria-describedby={
+											error
+												? "works-council-minimum-threshold-description works-council-minimum-threshold-error"
+												: "works-council-minimum-threshold-description"
+										}
+										disabled={controlsDisabled}
+									/>
+									<p
+										id="works-council-minimum-threshold-description"
+										className="text-sm text-muted-foreground"
+									>
+										{t(
+											"settings.worksCouncil.minimumThresholdDescription",
+											"Groups below this size are suppressed to reduce re-identification risk.",
+										)}
+									</p>
+									{error ? (
+										<p
+											id="works-council-minimum-threshold-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{String(error)}
+										</p>
+									) : null}
+								</div>
+							);
+						}}
 					</form.Field>
 
 					<div className="grid gap-4 md:grid-cols-2">
 						<form.Field name="visibleTeamIds">
 							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="works-council-visible-team-ids">
-										{t(
-											"settings.worksCouncil.visibleTeamIds",
-											"Visible team IDs",
-										)}
-									</Label>
-									<Input
-										id="works-council-visible-team-ids"
-										name="visibleTeamIds"
-										autoComplete="off"
-										value={field.state.value.join(", ")}
-										onChange={(event) =>
-											field.handleChange(
-												parseCommaSeparatedIds(event.target.value),
-											)
-										}
-										disabled={controlsDisabled}
-									/>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.worksCouncil.visibleTeamIdsDescription",
-											"Optional comma-separated team IDs. Leave empty to include all teams.",
-										)}
-									</p>
-								</div>
+								<ScopePicker
+									id="works-council-visible-teams"
+									label={t("settings.worksCouncil.visibleTeams", "Visible teams")}
+									description={t(
+										"settings.worksCouncil.visibleTeamsDescription",
+										"Leave empty to include all teams.",
+									)}
+									selectedListLabel={t(
+										"settings.worksCouncil.selectedTeams",
+										"Selected teams",
+									)}
+									addPlaceholder={t("settings.worksCouncil.addTeam", "Add a team")}
+									searchPlaceholder={t(
+										"settings.worksCouncil.searchTeams",
+										"Search teams",
+									)}
+									emptyText={t("settings.worksCouncil.noTeamFound", "No team found")}
+									noOptionsText={t(
+										"settings.worksCouncil.noTeamsAvailable",
+										"No more teams to add",
+									)}
+									unknownLabel={(shortId) =>
+										t("settings.worksCouncil.unknownTeam", "Unknown team ({shortId})", {
+											shortId,
+										})
+									}
+									removeLabel={removeLabel}
+									options={scopeOptions.teams}
+									selectedIds={field.state.value}
+									onChange={field.handleChange}
+									disabled={controlsDisabled}
+								/>
 							)}
 						</form.Field>
 
 						<form.Field name="visibleLocationIds">
 							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="works-council-visible-location-ids">
-										{t(
-											"settings.worksCouncil.visibleLocationIds",
-											"Visible location IDs",
-										)}
-									</Label>
-									<Input
-										id="works-council-visible-location-ids"
-										name="visibleLocationIds"
-										autoComplete="off"
-										value={field.state.value.join(", ")}
-										onChange={(event) =>
-											field.handleChange(
-												parseCommaSeparatedIds(event.target.value),
-											)
-										}
-										disabled={controlsDisabled}
-									/>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.worksCouncil.visibleLocationIdsDescription",
-											"Optional comma-separated location IDs. Leave empty to include all locations.",
-										)}
-									</p>
-								</div>
+								<ScopePicker
+									id="works-council-visible-locations"
+									label={t(
+										"settings.worksCouncil.visibleLocations",
+										"Visible locations",
+									)}
+									description={t(
+										"settings.worksCouncil.visibleLocationsDescription",
+										"Leave empty to include all locations.",
+									)}
+									selectedListLabel={t(
+										"settings.worksCouncil.selectedLocations",
+										"Selected locations",
+									)}
+									addPlaceholder={t(
+										"settings.worksCouncil.addLocation",
+										"Add a location",
+									)}
+									searchPlaceholder={t(
+										"settings.worksCouncil.searchLocations",
+										"Search locations",
+									)}
+									emptyText={t(
+										"settings.worksCouncil.noLocationFound",
+										"No location found",
+									)}
+									noOptionsText={t(
+										"settings.worksCouncil.noLocationsAvailable",
+										"No more locations to add",
+									)}
+									unknownLabel={(shortId) =>
+										t(
+											"settings.worksCouncil.unknownLocation",
+											"Unknown location ({shortId})",
+											{ shortId },
+										)
+									}
+									removeLabel={removeLabel}
+									options={scopeOptions.locations}
+									selectedIds={field.state.value}
+									onChange={field.handleChange}
+									disabled={controlsDisabled}
+								/>
 							)}
 						</form.Field>
 					</div>
@@ -352,6 +428,125 @@ function SwitchField({
 				<p className="text-sm text-muted-foreground">{description}</p>
 			</div>
 			{children}
+		</div>
+	);
+}
+
+/** The first characters of an id, enough to tell a stale saved id apart. */
+function shortScopeId(id: string) {
+	return id.length > 8 ? id.slice(0, 8) : id;
+}
+
+/**
+ * Picks teams or locations by name while keeping the stored value an id array.
+ * Ids saved earlier that no longer match an option stay listed as unknown, so a save never
+ * silently drops them; the admin removes them explicitly.
+ */
+function ScopePicker({
+	id,
+	label,
+	description,
+	selectedListLabel,
+	addPlaceholder,
+	searchPlaceholder,
+	emptyText,
+	noOptionsText,
+	unknownLabel,
+	removeLabel,
+	options,
+	selectedIds,
+	onChange,
+	disabled,
+}: {
+	id: string;
+	label: string;
+	description: string;
+	selectedListLabel: string;
+	addPlaceholder: string;
+	searchPlaceholder: string;
+	emptyText: string;
+	noOptionsText: string;
+	unknownLabel: (shortId: string) => string;
+	removeLabel: (name: string) => string;
+	options: WorksCouncilScopeOption[];
+	selectedIds: string[];
+	onChange: (ids: string[]) => void;
+	disabled: boolean;
+}) {
+	const descriptionId = `${id}-description`;
+	// Team names need not be unique; a shared name gets its short id so the
+	// options and chips can be told apart.
+	const nameCounts = new Map<string, number>();
+	for (const option of options) {
+		nameCounts.set(option.name, (nameCounts.get(option.name) ?? 0) + 1);
+	}
+	const namesById = new Map(
+		options.map((option) => [
+			option.id,
+			(nameCounts.get(option.name) ?? 0) > 1
+				? `${option.name} (${shortScopeId(option.id)})`
+				: option.name,
+		]),
+	);
+	const selectedIdSet = new Set(selectedIds);
+	const addableOptions = options
+		.filter((option) => !selectedIdSet.has(option.id))
+		.map((option) => ({ code: option.id, name: namesById.get(option.id) ?? option.name }));
+	const nothingToAdd = addableOptions.length === 0;
+
+	return (
+		<div className="space-y-2">
+			<Label htmlFor={id}>{label}</Label>
+			<SearchableSelect
+				id={id}
+				options={addableOptions}
+				value=""
+				onValueChange={(addedId) => {
+					if (addedId && !selectedIdSet.has(addedId)) {
+						onChange([...selectedIds, addedId]);
+					}
+				}}
+				placeholder={nothingToAdd ? noOptionsText : addPlaceholder}
+				searchPlaceholder={searchPlaceholder}
+				emptyText={emptyText}
+				disabled={disabled || nothingToAdd}
+				aria-describedby={descriptionId}
+			/>
+			<p id={descriptionId} className="text-sm text-muted-foreground">
+				{description}
+			</p>
+			{selectedIds.length > 0 ? (
+				<ul aria-label={selectedListLabel} className="flex flex-wrap gap-2">
+					{selectedIds.map((selectedId) => {
+						const name = namesById.get(selectedId);
+						const displayName = name ?? unknownLabel(shortScopeId(selectedId));
+						return (
+							<li
+								key={selectedId}
+								className={
+									name
+										? "flex max-w-full items-center gap-1 rounded-md border bg-muted/50 py-0.5 pr-0.5 pl-2 text-sm"
+										: "flex max-w-full items-center gap-1 rounded-md border border-warning/40 bg-warning/10 py-0.5 pr-0.5 pl-2 text-sm"
+								}
+								title={name ? undefined : selectedId}
+							>
+								<span className="truncate">{displayName}</span>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="size-7 shrink-0"
+									onClick={() => onChange(selectedIds.filter((value) => value !== selectedId))}
+									disabled={disabled}
+									aria-label={removeLabel(displayName)}
+								>
+									<IconX className="size-4" aria-hidden="true" />
+								</Button>
+							</li>
+						);
+					})}
+				</ul>
+			) : null}
 		</div>
 	);
 }

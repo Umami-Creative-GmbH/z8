@@ -51,10 +51,10 @@ export function WageHistoryMergeNote({ employeeId }: { employeeId: string }) {
 	if (!note) return null;
 
 	return (
-		<Alert>
+		<Alert className="[&>svg]:translate-y-2">
 			<IconHistory aria-hidden="true" className="size-4" />
 			<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-				<span>
+				<span className="py-1.5">
 					{t(
 						"settings.employmentHistory.wageHistoryMergeNote",
 						"Wage history was merged from the old rate history on {date}; {count, plural, one {# rate change was adjusted} other {# rate changes were adjusted}}.",

@@ -1,4 +1,5 @@
 import { ReportShareLinkList } from "@/components/reports/projects/report-share-link-list";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
@@ -9,17 +10,13 @@ export default async function ReportShareLinksPage() {
 	return (
 		<div className="page-frame">
 			<div className="page-measure min-w-0 space-y-6">
-				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.reportShareLinks.title", "Report Share Links")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.reportShareLinks.pageDescription",
-							"Links that show a frozen snapshot of a project or customer report to someone outside Z8. Revoking a link stops it at once and deletes its snapshot.",
-						)}
-					</p>
-				</div>
+				<PageHeader
+					title={t("settings.reportShareLinks.title", "Report Share Links")}
+					description={t(
+						"settings.reportShareLinks.pageDescription",
+						"Links that show a frozen snapshot of a project or customer report to someone outside Z8. Revoking a link stops it at once and deletes its snapshot.",
+					)}
+				/>
 				<ReportShareLinkList showReport />
 			</div>
 		</div>

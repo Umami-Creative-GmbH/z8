@@ -153,5 +153,45 @@ describe("SurchargeAssignmentManager", () => {
 		expect(invalidateQueries).toHaveBeenCalledWith({
 			queryKey: queryKeys.surcharges.assignments.list("org-approved"),
 		});
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+	});
+
+	it("keeps the dialog open while the removal runs and shows a failure inline", async () => {
+		let resolveDelete: (value: unknown) => void = () => {};
+		deleteSurchargeAssignmentMock.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveDelete = resolve;
+				}),
+		);
+		const { container } = renderManager();
+
+		await screen.findByText("Support");
+		fireEvent.click(
+			container.querySelector<HTMLButtonElement>(
+				"button.text-muted-foreground.hover\\:text-destructive",
+			) as HTMLButtonElement,
+		);
+		expect(
+			screen.getByText(
+				'This will remove the surcharge model from team "{team}". They will use the organization default.',
+			),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+		const pending = await screen.findByRole("button", { name: "Removing..." });
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect((pending as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
+			true,
+		);
+		fireEvent.click(pending);
+		expect(deleteSurchargeAssignmentMock).toHaveBeenCalledTimes(1);
+
+		resolveDelete({ success: false, error: "Assignment is locked" });
+
+		expect((await screen.findByRole("alert")).textContent).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Remove" })).toBeTruthy();
 	});
 });

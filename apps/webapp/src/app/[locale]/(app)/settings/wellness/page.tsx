@@ -1,7 +1,9 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
 import { WellnessSettingsForm } from "@/components/settings/wellness-settings-form";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -16,32 +18,28 @@ async function WellnessPageContent() {
 		getTranslate(),
 	]);
 
-	// Handle error case
-	const settings = settingsResult.success
-		? settingsResult.data
-		: {
-				enabled: false,
-				preset: "moderate" as const,
-				intervalMinutes: 45,
-				dailyGoal: 8,
-			};
-
 	return (
 		<div className="page-frame">
 			<div className="page-measure space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.wellness.title", "Wellness Settings")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.wellness.description",
-							"Configure water reminders and hydration tracking during your work sessions",
-						)}
-					</p>
-				</div>
+				<PageHeader
+					title={t("settings.wellness.title", "Wellness Settings")}
+					description={t(
+						"settings.wellness.description",
+						"Configure water reminders and hydration tracking during your work sessions",
+					)}
+				/>
 
-				<WellnessSettingsForm initialSettings={settings} />
+				{settingsResult.success ? (
+					<WellnessSettingsForm initialSettings={settingsResult.data} />
+				) : (
+					// Editing defaults here would overwrite the saved reminders on save.
+					<SettingsLoadError
+						message={t(
+							"settings.wellness.loadFailed",
+							"Your water reminder settings could not be loaded. Try again.",
+						)}
+					/>
+				)}
 			</div>
 		</div>
 	);
@@ -59,7 +57,7 @@ function WellnessPageLoading() {
 		>
 			<div className="page-measure space-y-6">
 				<div className="space-y-2">
-					<Skeleton aria-hidden="true" className="h-8 w-56" />
+					<Skeleton aria-hidden="true" className="h-8 w-56 sm:h-9" />
 					<Skeleton aria-hidden="true" className="h-4 w-full max-w-lg" />
 				</div>
 				<Skeleton aria-hidden="true" className="h-80 w-full" />

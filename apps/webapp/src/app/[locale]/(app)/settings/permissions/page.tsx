@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
@@ -27,11 +28,16 @@ async function PermissionsPageContent() {
 
 function PermissionsPageLoading() {
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			<Skeleton className="h-8 w-56" />
-			<Skeleton className="h-5 w-72" />
-			<Skeleton className="h-[420px] w-full" />
-		</div>
+		<LoadingRegion
+			className="page-frame flex flex-1 flex-col gap-6"
+			label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-56 max-w-full sm:h-9" />
+				<Skeleton aria-hidden="true" className="h-5 w-72 max-w-full" />
+			</div>
+			<Skeleton aria-hidden="true" className="h-[420px] w-full" />
+		</LoadingRegion>
 	);
 }
 

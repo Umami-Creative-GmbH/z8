@@ -6,7 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ScheduledExportSummary } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import { ScheduledExportsTable } from "./scheduled-exports-table";
 
-const actions = vi.hoisted(() => ({ list: vi.fn(), toggle: vi.fn(), error: vi.fn() }));
+const actions = vi.hoisted(() => ({
+	list: vi.fn(),
+	toggle: vi.fn(),
+	remove: vi.fn(),
+	error: vi.fn(),
+}));
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -15,6 +20,7 @@ vi.mock("sonner", () => ({ toast: { error: actions.error } }));
 vi.mock("@/app/[locale]/(app)/settings/scheduled-exports/actions", () => ({
 	getScheduledExportsAction: actions.list,
 	toggleScheduledExportAction: actions.toggle,
+	deleteScheduledExportAction: actions.remove,
 }));
 
 const schedule: ScheduledExportSummary = {
@@ -72,6 +78,40 @@ describe("Scheduled exports query ownership", () => {
 		await act(async () => refuse({ success: false, error: "Owner is no longer eligible" }));
 		await waitFor(() => expect(toggle.getAttribute("aria-checked")).toBe("true"));
 		expect(actions.error).toHaveBeenCalled();
+	});
+
+	it("keeps the delete confirmation open until the deletion settles and shows a refusal inline", async () => {
+		let refuse!: (value: { success: false; error: string }) => void;
+		actions.remove.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					refuse = resolve;
+				}),
+		);
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		render(<QueryClientProvider client={client}>{table("actor-one")}</QueryClientProvider>);
+		await screen.findByText("Monthly payroll");
+
+		fireEvent.pointerDown(screen.getByRole("button", { name: "Open actions menu" }));
+		fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain(
+			'Are you sure you want to delete "{name}"? This action cannot be undone.',
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+		await waitFor(() => expect(actions.remove).toHaveBeenCalledTimes(1));
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(
+			(screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled,
+		).toBe(true);
+
+		await act(async () => refuse({ success: false, error: "Schedule is running" }));
+
+		expect((await screen.findByRole("alert")).textContent).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(screen.getByText("Monthly payroll")).toBeTruthy();
+		expect(actions.error).not.toHaveBeenCalled();
 	});
 
 	it("does not reuse a different actor's schedule snapshot", async () => {

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ExportOperationsDashboard } from "@/components/settings/export-operations/export-operations-dashboard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getExportOperationsCockpit } from "@/lib/export-operations/get-export-operations-cockpit";
@@ -37,17 +38,13 @@ async function ExportOperationsPageContent() {
 
 	return (
 		<div className="page-frame flex flex-1 flex-col gap-6">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.exportOperations.title", "Export Operations")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.exportOperations.description",
-						"Monitor payroll, audit, and scheduled export activity for your organization.",
-					)}
-				</p>
-			</div>
+			<PageHeader
+				title={t("settings.exportOperations.title", "Export Operations")}
+				description={t(
+					"settings.exportOperations.description",
+					"Monitor payroll, audit, and scheduled export activity for your organization.",
+				)}
+			/>
 			<ExportOperationsDashboard t={t} data={data} />
 		</div>
 	);
@@ -67,17 +64,13 @@ function ExportOperationsPageLoading() {
 				<Skeleton aria-hidden="true" className="h-8 w-48" />
 				<Skeleton aria-hidden="true" className="h-4 w-[32rem] max-w-full" />
 			</div>
-			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			<div className="grid gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-2 xl:grid-cols-4">
 				{EXPORT_SUMMARY_LOADING_KEYS.map((key) => (
-					<Card key={key}>
-						<CardHeader>
-							<Skeleton aria-hidden="true" className="h-4 w-28" />
-							<Skeleton aria-hidden="true" className="h-5 w-36" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton aria-hidden="true" className="h-8 w-24" />
-						</CardContent>
-					</Card>
+					<div key={key} className="space-y-2 bg-card p-4">
+						<Skeleton aria-hidden="true" className="h-4 w-28" />
+						<Skeleton aria-hidden="true" className="h-8 w-24" />
+						<Skeleton aria-hidden="true" className="h-3 w-40 max-w-full" />
+					</div>
 				))}
 			</div>
 			<div className="grid gap-6 xl:grid-cols-2">

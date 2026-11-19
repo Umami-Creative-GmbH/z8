@@ -17,16 +17,7 @@ import {
 	deleteHolidayPreset,
 	getHolidayPresets,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +34,7 @@ import {
 	type RefusalOverrides,
 } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
+import { SettingsLoadError } from "./settings-load-error";
 
 /** A delete refused because the preset is still assigned. */
 const DELETE_REFUSALS: RefusalOverrides = {
@@ -83,9 +75,10 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedPreset, setSelectedPreset] = useState<PresetData | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	// Fetch presets
-	const { data, isLoading, error } = useQuery({
+	const { data, isLoading, error, refetch, isFetching } = useQuery({
 		queryKey: queryKeys.holidayPresets.list(organizationId),
 		queryFn: async () => {
 			const result = await getHolidayPresets();
@@ -104,9 +97,9 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 				toast.success(t("settings.holidays.presets.deleted", "Preset deleted successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.list(organizationId) });
 				setDeleteDialogOpen(false);
-				setSelectedPreset(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, DELETE_REFUSALS, [
 						"settings.holidays.presets.deleteFailed",
 						"Failed to delete preset",
@@ -115,17 +108,19 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.holidays.presets.deleteFailed", "Failed to delete preset"));
+			setDeleteError(t("settings.holidays.presets.deleteFailed", "Failed to delete preset"));
 		},
 	});
 
 	const handleDeleteClick = (preset: PresetData) => {
 		setSelectedPreset(preset);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (selectedPreset) {
+		if (selectedPreset && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(selectedPreset.id);
 		}
 	};
@@ -159,13 +154,11 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 
 	if (error) {
 		return (
-			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
-						{t("settings.holidays.presets.loadError", "Failed to load presets")}
-					</p>
-				</CardContent>
-			</Card>
+			<SettingsLoadError
+				message={t("settings.holidays.presets.loadError", "Failed to load presets")}
+				onRetry={() => void refetch()}
+				isRetrying={isFetching}
+			/>
 		);
 	}
 
@@ -175,9 +168,11 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 		<>
 			<Card>
 				<CardHeader>
-					<div className="flex items-start justify-between">
-						<div>
-							<CardTitle>{t("settings.holidays.presets.title", "Holiday Presets")}</CardTitle>
+					<div className="flex flex-wrap items-start justify-between gap-4">
+						<div className="min-w-0 flex-[1_1_16rem]">
+							<CardTitle>
+								<h2>{t("settings.holidays.presets.title", "Holiday Presets")}</h2>
+							</CardTitle>
 							<CardDescription>
 								{t(
 									"settings.holidays.presets.description",
@@ -186,16 +181,16 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 							</CardDescription>
 						</div>
 						<Button onClick={onImportClick}>
-							<IconPlus className="mr-2 size-4" />
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
 							{t("settings.holidays.presets.import", "Import Holidays")}
 						</Button>
 					</div>
 				</CardHeader>
 				<CardContent>
 					{presets.length === 0 ? (
-						<div className="text-center py-12 text-muted-foreground">
-							<IconCalendar className="size-16 mx-auto mb-4 opacity-50" />
-							<h3 className="text-lg font-medium mb-2">
+						<div className="text-center py-10 text-muted-foreground">
+							<IconCalendar aria-hidden="true" className="size-8 mx-auto mb-3" />
+							<h3 className="text-base font-medium text-foreground mb-1">
 								{t("settings.holidays.presets.empty", "No presets yet")}
 							</h3>
 							<p className="text-sm mb-4">
@@ -221,11 +216,14 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 											<div className="flex items-center gap-2">
 												{preset.color && (
 													<div
+														aria-hidden="true"
 														className="size-3 rounded-full flex-shrink-0"
 														style={{ backgroundColor: preset.color }}
 													/>
 												)}
-												<h4 className="font-medium truncate">{preset.name}</h4>
+												<h3 className="min-w-0 font-medium truncate" title={preset.name}>
+													{preset.name}
+												</h3>
 											</div>
 											{preset.year && (
 												<Badge variant="outline" className="mt-2">
@@ -245,9 +243,9 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 													variant="ghost"
 													size="icon"
 													className="size-8"
-													aria-label={t("settings.holidays.presets.actions", "Preset actions")}
+													aria-label={`${t("settings.holidays.presets.actions", "Preset actions")}: ${preset.name}`}
 												>
-													<IconDotsVertical className="size-4" />
+													<IconDotsVertical aria-hidden="true" className="size-4" />
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
@@ -267,17 +265,32 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 											</DropdownMenuContent>
 										</DropdownMenu>
 									</div>
-									<div className="flex items-center gap-3 mt-3 text-sm text-muted-foreground">
+									<div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-muted-foreground">
 										<div className="flex items-center gap-1">
-											<IconCalendar className="size-4" />
-											<span>
+											<IconCalendar aria-hidden="true" className="size-4" />
+											<span className="tabular-nums">
 												{preset.holidayCount} {t("settings.holidays.presets.holidays", "holidays")}
 											</span>
 										</div>
 										{preset.assignmentCount > 0 && (
-											<Badge variant="secondary" className="gap-1">
-												<IconUsers className="size-3" />
-												{preset.assignmentCount}
+											<Badge
+												variant="secondary"
+												className="gap-1 tabular-nums"
+												title={t(
+													"settings.holidays.presets.assignmentCount",
+													"{count, plural, one {# assignment} other {# assignments}}",
+													{ count: preset.assignmentCount },
+												)}
+											>
+												<IconUsers aria-hidden="true" className="size-3" />
+												<span aria-hidden="true">{preset.assignmentCount}</span>
+												<span className="sr-only">
+													{t(
+														"settings.holidays.presets.assignmentCount",
+														"{count, plural, one {# assignment} other {# assignments}}",
+														{ count: preset.assignmentCount },
+													)}
+												</span>
 											</Badge>
 										)}
 									</div>
@@ -294,44 +307,37 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 			</Card>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.holidays.presets.deleteTitle", "Delete Preset?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.holidays.presets.deleteDescription",
-								'This will permanently delete the preset "{name}" and all its holidays.',
-								{ name: selectedPreset?.name },
-							)}
-							{selectedPreset?.assignmentCount ? (
-								<span className="block mt-2 text-destructive font-medium">
-									{t(
-										"settings.holidays.presets.hasAssignments",
-										"This preset has active assignments and cannot be deleted.",
-									)}
-								</span>
-							) : null}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending || (selectedPreset?.assignmentCount ?? 0) > 0}
-							className="bg-destructive hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending
-								? t("common.deleting", "Deleting...")
-								: t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteError(null);
+				}}
+				title={t("settings.holidays.presets.deleteTitle", "Delete Preset?")}
+				description={
+					<>
+						{t(
+							"settings.holidays.presets.deleteDescription",
+							'This will permanently delete the preset "{name}" and all its holidays.',
+							{ name: selectedPreset?.name },
+						)}
+						{selectedPreset?.assignmentCount ? (
+							<span className="block mt-2 text-destructive font-medium">
+								{t(
+									"settings.holidays.presets.hasAssignments",
+									"This preset has active assignments and cannot be deleted.",
+								)}
+							</span>
+						) : null}
+					</>
+				}
+				confirmLabel={t("common.delete", "Delete")}
+				pendingLabel={t("common.deleting", "Deleting...")}
+				isPending={deleteMutation.isPending}
+				confirmDisabled={(selectedPreset?.assignmentCount ?? 0) > 0}
+				error={deleteError}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</>
 	);
 }

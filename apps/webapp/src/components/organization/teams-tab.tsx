@@ -8,23 +8,12 @@ import { toast } from "sonner";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+	ConfirmActionDialog,
+	describeFailure,
+	useConfirmedAction,
+} from "@/components/settings/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import type { team as teamTable } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
@@ -83,66 +72,61 @@ function TeamsView({
 	onManageMembers: (team: ScopedTeam) => void;
 	t: ReturnType<typeof useTranslate>["t"];
 }) {
+	// The page heading owns the title and actions; team cards sit directly on the page (no card-in-card).
 	return (
-		<Card>
-			<CardHeader>
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div>
-						<CardTitle>{t("organization.teams.title", "Teams")}</CardTitle>
-						<CardDescription>
-							{t(
-								"organization.teams.description",
-								"Organize your employees into teams for better collaboration",
-							)}
-						</CardDescription>
-					</div>
-					<div className="flex flex-wrap items-center gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onRefresh}
-							disabled={isRefreshing}
-							className="w-full sm:w-auto"
-						>
-							<IconRefresh className="mr-2 size-4" />
+		<>
+			<PageHeader
+				title={t("settings.teams.title", "Teams")}
+				description={t(
+					"settings.teams.description",
+					"Organize employees into teams and manage team assignments",
+				)}
+				actions={
+					<>
+						<Button type="button" variant="outline" onClick={onRefresh} disabled={isRefreshing}>
+							<IconRefresh
+								className={`mr-2 size-4 ${isRefreshing ? "motion-safe:animate-spin" : ""}`}
+								aria-hidden="true"
+							/>
 							{isRefreshing
 								? t("common.refreshing", "Refreshing...")
 								: t("common.refresh", "Refresh")}
 						</Button>
 						{canCreateTeams && (
-							<Button onClick={onCreate} className="w-full sm:w-auto">
-								<IconPlus className="mr-2 size-4" />
+							<Button onClick={onCreate}>
+								<IconPlus className="mr-2 size-4" aria-hidden="true" />
 								{t("organization.teams.create", "Create Team")}
 							</Button>
 						)}
-					</div>
-				</div>
-			</CardHeader>
-			<CardContent>
-				{teams.length === 0 ? (
-					<div className="text-center py-12 text-muted-foreground">
-						<IconUsers className="size-16 mx-auto mb-4 opacity-50" />
-						<h3 className="text-lg font-medium mb-2">
+					</>
+				}
+			/>
+			{teams.length === 0 ? (
+				<div className="flex flex-col items-start gap-3 rounded-lg border p-6 text-muted-foreground sm:items-center sm:text-center">
+					<IconUsers className="size-8 opacity-50" aria-hidden="true" />
+					<div className="space-y-1">
+						<h2 className="text-base font-medium text-foreground">
 							{t("organization.teams.empty", "No teams yet")}
-						</h3>
-						<p className="text-sm mb-4">
+						</h2>
+						<p className="text-sm">
 							{t(
 								"organization.teams.emptyDescription",
 								"Create your first team to start organizing your employees",
 							)}
 						</p>
-						{canCreateTeams && (
-							<Button onClick={onCreate} variant="outline">
-								<IconPlus className="mr-2 size-4" />
-								{t("organization.teams.createFirst", "Create Your First Team")}
-							</Button>
-						)}
 					</div>
-				) : (
-					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{teams.map((team) => (
+					{canCreateTeams && (
+						<Button onClick={onCreate} variant="outline">
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t("organization.teams.createFirst", "Create Your First Team")}
+						</Button>
+					)}
+				</div>
+			) : (
+				<ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+					{teams.map((team) => (
+						<li key={team.id} className="min-w-0">
 							<TeamCard
-								key={team.id}
 								team={team}
 								employees={getTeamEmployees(team.id)}
 								primaryManager={getPrimaryManager(team.primaryManagerId)}
@@ -152,11 +136,11 @@ function TeamsView({
 								onDelete={() => onDelete(team)}
 								onManageMembers={() => onManageMembers(team)}
 							/>
-						))}
-					</div>
-				)}
-			</CardContent>
-		</Card>
+						</li>
+					))}
+				</ul>
+			)}
+		</>
 	);
 }
 
@@ -170,7 +154,9 @@ function TeamDialogStack({
 	membersDialogOpen,
 	deleteDialogOpen,
 	deletePending,
-	selectedTeamMemberCount,
+	deleteError,
+	teamToDelete,
+	deleteTeamMemberCount,
 	onCreateOpenChange,
 	onEditOpenChange,
 	onMembersOpenChange,
@@ -189,7 +175,9 @@ function TeamDialogStack({
 	membersDialogOpen: boolean;
 	deleteDialogOpen: boolean;
 	deletePending: boolean;
-	selectedTeamMemberCount: number;
+	deleteError: string | null;
+	teamToDelete: ScopedTeam | null;
+	deleteTeamMemberCount: number;
 	onCreateOpenChange: (open: boolean) => void;
 	onEditOpenChange: (open: boolean) => void;
 	onMembersOpenChange: (open: boolean) => void;
@@ -222,45 +210,40 @@ function TeamDialogStack({
 				onOpenChange={onMembersOpenChange}
 				canManageMembers={selectedTeam?.canManageMembers ?? false}
 			/>
-			<AlertDialog open={deleteDialogOpen} onOpenChange={onDeleteOpenChange}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("organization.teams.deleteDialogTitle", "Are you sure?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"organization.teams.deleteDialogDescription",
-								'This will permanently delete the team "{teamName}".',
-								{ teamName: selectedTeam?.name ?? "" },
-							)}
-							{selectedTeam && selectedTeamMemberCount > 0 && (
-								<span className="block mt-2 text-destructive font-medium">
-									{t(
-										"organization.teams.deleteDialogMembersWarning",
-										"Warning: This team has {count} member(s). They will be removed from the team.",
-										{ count: selectedTeamMemberCount },
-									)}
-								</span>
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deletePending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={onDeleteConfirm}
-							disabled={deletePending}
-							className="bg-destructive hover:bg-destructive/90"
-						>
-							{deletePending
-								? t("common.deleting", "Deleting...")
-								: t("organization.teams.delete", "Delete Team")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={deleteDialogOpen}
+				onOpenChange={onDeleteOpenChange}
+				title={
+					teamToDelete
+						? t("organization.teams.deleteDialogNamedTitle", "Delete team {name}?", {
+								name: teamToDelete.name,
+							})
+						: t("organization.teams.deleteDialogTitle", "Are you sure?")
+				}
+				description={
+					<>
+						{t(
+							"organization.teams.deleteDialogDescription",
+							'This will permanently delete the team "{teamName}".',
+							{ teamName: teamToDelete?.name ?? "" },
+						)}
+						{teamToDelete && deleteTeamMemberCount > 0 && (
+							<span className="block mt-2 text-destructive font-medium">
+								{t(
+									"organization.teams.deleteDialogMembersWarning",
+									"Warning: This team has {count} member(s). They will be removed from the team.",
+									{ count: deleteTeamMemberCount },
+								)}
+							</span>
+						)}
+					</>
+				}
+				confirmLabel={t("organization.teams.delete", "Delete Team")}
+				pendingLabel={t("common.deleting", "Deleting...")}
+				isPending={deletePending}
+				error={deleteError}
+				onConfirm={onDeleteConfirm}
+			/>
 		</>
 	);
 }
@@ -284,7 +267,8 @@ export function TeamsTab({
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [membersDialogOpen, setMembersDialogOpen] = useState(false);
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	// Deletion stays open until it settles and keeps a failure visible inline.
+	const deletion = useConfirmedAction<ScopedTeam>();
 
 	// Selected team
 	const [selectedTeam, setSelectedTeam] = useState<ScopedTeam | null>(null);
@@ -364,7 +348,14 @@ export function TeamsTab({
 
 	// Delete mutation with optimistic update
 	const deleteMutation = useMutation({
-		mutationFn: (teamId: string) => deleteTeam({ teamId }),
+		mutationFn: async (teamId: string) => {
+			const result = await deleteTeam({ teamId });
+			if (!result.success) {
+				throw new Error(
+					result.error || t("organization.teams.deleteError", "Failed to delete team"),
+				);
+			}
+		},
 		onMutate: async (teamId) => {
 			const previousTeamPatches = teamPatches;
 			setTeamPatches((previous) => {
@@ -378,30 +369,21 @@ export function TeamsTab({
 					deletedTeamIds: new Set(patches.deletedTeamIds).add(teamId),
 				};
 			});
-			setDeleteDialogOpen(false);
-			setSelectedTeam(null);
 			return { previousTeamPatches };
 		},
-		onSuccess: (result, _teamId, context) => {
-			if (result.success) {
-				toast.success(
-					t("organization.teams.deleteSuccess", "Team deleted successfully"),
-				);
-				void queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
-				refreshTeams();
-				return;
-			}
-
-			if (context?.previousTeamPatches) {
-				setTeamPatches(context.previousTeamPatches);
-			}
-			toast.error(result.error || t("organization.teams.deleteError", "Failed to delete team"));
+		onSuccess: () => {
+			toast.success(
+				t("organization.teams.deleteSuccess", "Team deleted successfully"),
+			);
+			void queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			refreshTeams();
 		},
+		// The team comes back and the failure is shown inside the confirmation dialog,
+		// which stays open for a retry.
 		onError: (_error, _teamId, context) => {
 			if (context?.previousTeamPatches) {
 				setTeamPatches(context.previousTeamPatches);
 			}
-			toast.error(t("organization.teams.deleteError", "Failed to delete team"));
 		},
 	});
 
@@ -461,14 +443,18 @@ export function TeamsTab({
 
 	// Handle team deletion
 	const handleDeleteRequest = (teamToDelete: ScopedTeam) => {
-		setSelectedTeam(teamToDelete);
-		setDeleteDialogOpen(true);
+		deletion.request(teamToDelete);
 	};
 
-	const handleDeleteConfirm = () => {
-		if (!selectedTeam) return;
-		deleteMutation.mutate(selectedTeam.id);
-	};
+	const handleDeleteConfirm = () =>
+		void deletion.confirm(
+			(team) => deleteMutation.mutateAsync(team.id),
+			(failure) =>
+				describeFailure(
+					failure,
+					t("organization.teams.deleteError", "Failed to delete team"),
+				),
+		);
 
 	// Handle manage members
 	const handleManageMembers = (teamToManage: ScopedTeam) => {
@@ -499,17 +485,19 @@ export function TeamsTab({
 				createDialogOpen={createDialogOpen}
 				editDialogOpen={editDialogOpen}
 				membersDialogOpen={membersDialogOpen}
-				deleteDialogOpen={deleteDialogOpen}
-				deletePending={deleteMutation.isPending}
-				selectedTeamMemberCount={
-					selectedTeam
-						? getTeamEmployees(selectedTeam.id, { includeFormer: true }).length
+				deleteDialogOpen={deletion.open}
+				deletePending={deletion.isPending}
+				deleteError={deletion.error}
+				teamToDelete={deletion.target}
+				deleteTeamMemberCount={
+					deletion.target
+						? getTeamEmployees(deletion.target.id, { includeFormer: true }).length
 						: 0
 				}
 				onCreateOpenChange={setCreateDialogOpen}
 				onEditOpenChange={setEditDialogOpen}
 				onMembersOpenChange={setMembersDialogOpen}
-				onDeleteOpenChange={setDeleteDialogOpen}
+				onDeleteOpenChange={deletion.onOpenChange}
 				onCreated={handleTeamCreated}
 				onUpdated={handleTeamUpdated}
 				onDeleteConfirm={handleDeleteConfirm}

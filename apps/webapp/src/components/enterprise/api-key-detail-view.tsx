@@ -7,6 +7,7 @@ import type { ApiKeyDetail } from "@/app/[locale]/(app)/settings/enterprise/api-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
@@ -36,7 +37,9 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 	const at = (iso: string | null) =>
 		iso ? formatInstant(Temporal.Instant.from(iso), display, "dateTimeMedium") : "-";
 	const creatorName = key.creator
-		? key.creator.name || key.creator.email || key.creator.userId
+		? key.creator.name ||
+			key.creator.email ||
+			t("settings.apiKeys.unknownCreator", "a former admin")
 		: null;
 	const channelLabels = {
 		api: t("settings.apiKeys.detail.channelApi", "API"),
@@ -82,23 +85,28 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 	return (
 		<div className="page-frame">
 			<div className="page-measure min-w-0 space-y-6">
-				<div className="space-y-2">
-					<Button variant="ghost" size="sm" asChild className="-ml-2">
-						<Link href="/settings/enterprise/api-keys">
-							<IconArrowLeft className="mr-1 size-4" aria-hidden="true" />
-							{t("settings.apiKeys.detail.back", "All API keys")}
-						</Link>
-					</Button>
-					<div className="flex flex-wrap items-center gap-3">
-						<IconKey className="size-6 text-muted-foreground" aria-hidden="true" />
-						<h1 className="text-2xl font-semibold">{key.name}</h1>
-						<Badge variant={key.enabled ? "default" : "secondary"}>
-							{key.enabled
-								? t("settings.apiKeys.active", "Active")
-								: t("settings.apiKeys.disabled", "Disabled")}
-						</Badge>
-					</div>
-				</div>
+				<PageHeader
+					scope={
+						<Button variant="ghost" size="sm" asChild className="-ml-2">
+							<Link href="/settings/enterprise/api-keys">
+								<IconArrowLeft className="size-4" aria-hidden="true" />
+								{t("settings.apiKeys.detail.back", "All API keys")}
+							</Link>
+						</Button>
+					}
+					title={key.name}
+					description={
+						<span className="flex flex-wrap items-center gap-2">
+							<IconKey className="size-4" aria-hidden="true" />
+							{t("settings.apiKeys.detail.kind", "API key")}
+							<Badge variant={key.enabled ? "default" : "secondary"}>
+								{key.enabled
+									? t("settings.apiKeys.active", "Active")
+									: t("settings.apiKeys.disabled", "Disabled")}
+							</Badge>
+						</span>
+					}
+				/>
 
 				<Card>
 					<CardContent className="pt-6">
@@ -143,7 +151,7 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 					</CardHeader>
 					<CardContent>
 						{requests.length === 0 ? (
-							<p className="py-6 text-center text-sm text-muted-foreground">
+							<p className="py-2 text-sm text-muted-foreground">
 								{t("settings.apiKeys.detail.noRequests", "No requests in the last 90 days.")}
 							</p>
 						) : (
@@ -170,11 +178,13 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 												<TableCell>
 													<Badge variant="outline">{channelLabels[request.channel]}</Badge>
 												</TableCell>
-												<TableCell className="font-mono text-sm">
+												<TableCell className="max-w-80 whitespace-normal break-all font-mono text-sm">
 													{request.method} {request.route}
 												</TableCell>
 												<TableCell>
-													<Badge variant={statusVariant(request.status)}>{request.status}</Badge>
+													<Badge variant={statusVariant(request.status)} className="tabular-nums">
+														{request.status}
+													</Badge>
 												</TableCell>
 												<TableCell className="text-right tabular-nums">
 													{request.rowCount ?? "-"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconCopy, IconKey } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCheck, IconCopy, IconKey } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -57,11 +57,12 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 				</ActionPanelHeader>
 
 				<ActionPanelBody className="space-y-4">
-					<Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
-						<AlertTitle className="text-yellow-700 dark:text-yellow-400">
+					<Alert variant="default" className="border-warning/40 bg-warning/10">
+						<IconAlertTriangle className="text-warning" aria-hidden="true" />
+						<AlertTitle>
 							{t("webhooks:webhooks.secret-dialog.warning-title", "Important")}
 						</AlertTitle>
-						<AlertDescription className="text-yellow-600 dark:text-yellow-500">
+						<AlertDescription className="text-foreground">
 							{t(
 								"webhooks:webhooks.secret-dialog.warning",
 								"This secret will only be shown once. Make sure to save it now.",
@@ -91,7 +92,7 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 								)}
 							>
 								{copied ? (
-									<IconCheck className="size-4 text-green-600" aria-hidden="true" />
+									<IconCheck className="size-4 text-success" aria-hidden="true" />
 								) : (
 									<IconCopy className="size-4" aria-hidden="true" />
 								)}

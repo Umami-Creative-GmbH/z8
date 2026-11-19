@@ -12,6 +12,7 @@ async function ExportSettingsContent() {
 function ExportSettingsLoading() {
 	return (
 		<SettingsPageSkeleton
+			measure
 			label={{
 				labelKey: "common.loadingRegions.dataExportSettings",
 				labelDefault: "Loading data export settings",

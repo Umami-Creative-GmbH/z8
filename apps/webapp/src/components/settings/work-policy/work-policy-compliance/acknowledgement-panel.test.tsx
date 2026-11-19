@@ -25,6 +25,7 @@ describe("AcknowledgementPanel", () => {
 
 		render(
 			<AcknowledgementPanel
+				display={{ locale: "en-US", timezone: "Europe/Berlin" }}
 				open
 				violation={violation}
 				note="Already addressed"
@@ -39,5 +40,25 @@ describe("AcknowledgementPanel", () => {
 		await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
 		expect(onCancel).toHaveBeenCalledOnce();
+	});
+
+	it("shows the violation day in the organization's timezone with the zone named", () => {
+		render(
+			<AcknowledgementPanel
+				display={{ locale: "en-US", timezone: "Pacific/Auckland" }}
+				open
+				violation={{ ...violation, violationDate: new Date("2026-07-01T13:00:00.000Z") }}
+				note=""
+				onOpenChange={vi.fn()}
+				onNoteChange={vi.fn()}
+				onCancel={vi.fn()}
+				onConfirm={vi.fn()}
+				isPending={false}
+			/>,
+		);
+
+		// 13:00 UTC is already 01:00 the next day in Auckland.
+		expect(screen.getByText("Jul 2, 2026")).toBeTruthy();
+		expect(screen.getByText("(Pacific/Auckland)")).toBeTruthy();
 	});
 });

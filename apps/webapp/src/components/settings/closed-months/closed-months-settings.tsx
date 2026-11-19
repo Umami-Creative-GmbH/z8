@@ -55,41 +55,48 @@ export function ClosedMonthsSettings({ overview }: { overview: ClosedMonthsOverv
 				</CardHeader>
 				<CardContent>
 					<ul className="divide-y">
-						{overview.months.map((month) => (
-							<li
-								key={month.month}
-								className="flex flex-wrap items-center justify-between gap-3 py-3"
-							>
-								<div className="flex min-w-0 items-center gap-3">
-									<span className="font-medium tabular-nums">
-										{formatClosedMonthLabel(month.month, locale)}
-									</span>
-									<ClosureStatusBadge status={month} />
-								</div>
-								<div className="flex gap-2">
-									{overview.canClose && month.state !== "closed" ? (
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => setPanel({ kind: "close", month })}
-										>
-											<IconLock className="size-4" aria-hidden="true" />
-											{t("settings.closedMonths.close", "Close")}
-										</Button>
-									) : null}
-									{overview.canReopen && month.state !== "open" ? (
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => setPanel({ kind: "reopen", month })}
-										>
-											<IconLockOpen className="size-4" aria-hidden="true" />
-											{t("settings.closedMonths.reopen", "Reopen")}
-										</Button>
-									) : null}
-								</div>
-							</li>
-						))}
+						{overview.months.map((month) => {
+							const monthLabel = formatClosedMonthLabel(month.month, locale);
+							return (
+								<li
+									key={month.month}
+									className="flex flex-wrap items-center justify-between gap-3 py-3"
+								>
+									<div className="flex min-w-0 flex-wrap items-center gap-3">
+										<span className="font-medium tabular-nums">{monthLabel}</span>
+										<ClosureStatusBadge status={month} />
+									</div>
+									<div className="flex flex-wrap gap-2">
+										{overview.canClose && month.state !== "closed" ? (
+											<Button
+												size="sm"
+												variant="outline"
+												aria-label={t("settings.closedMonths.closeTitle", "Close {month}", {
+													month: monthLabel,
+												})}
+												onClick={() => setPanel({ kind: "close", month })}
+											>
+												<IconLock className="size-4" aria-hidden="true" />
+												{t("settings.closedMonths.close", "Close")}
+											</Button>
+										) : null}
+										{overview.canReopen && month.state !== "open" ? (
+											<Button
+												size="sm"
+												variant="outline"
+												aria-label={t("settings.closedMonths.reopenTitle", "Reopen {month}", {
+													month: monthLabel,
+												})}
+												onClick={() => setPanel({ kind: "reopen", month })}
+											>
+												<IconLockOpen className="size-4" aria-hidden="true" />
+												{t("settings.closedMonths.reopen", "Reopen")}
+											</Button>
+										) : null}
+									</div>
+								</li>
+							);
+						})}
 					</ul>
 				</CardContent>
 			</Card>

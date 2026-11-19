@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import { IconAlertCircle, IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { use, useCallback, useEffect, useId, useRef, useState } from "react";
@@ -15,6 +15,8 @@ import {
 import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +28,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Select,
 	SelectContent,
@@ -34,6 +38,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { useDisplayContext } from "@/hooks/use-display-context";
@@ -56,6 +61,14 @@ import {
 	getEmployeePolicyAssignment,
 	setEmployeePolicyAssignment,
 } from "../../assignment-actions";
+import {
+	type AllowanceSaveOutcome,
+	type AllowanceSaveStep,
+	type AllowanceSaveStepPlan,
+	type AllowanceSaveStepResult,
+	runAllowanceSaveSteps,
+	type SavedAllowanceSteps,
+} from "./allowance-save-steps";
 
 const defaultValues = {
 	policyId: "__default__",
@@ -66,6 +79,9 @@ const defaultValues = {
 };
 
 const DEFAULT_POLICY_VALUE = "__default__";
+
+/** Added days, in the theme's success token; the sign carries the meaning on its own. */
+const POSITIVE_DAYS_CLASS = "text-success";
 
 type EmployeeAllowanceView = {
 	user: { name: string; email: string; image: string | null };
@@ -102,6 +118,17 @@ type EmployeePolicyAssignment = {
 	policy?: { name: string } | null;
 };
 
+type FailedAllowanceSave = Extract<AllowanceSaveOutcome, { status: "failed" }>;
+
+/** A save action's result as a step result; the server's message is kept for the alert. */
+function stepResult(
+	result: { success: true } | { success: false; error?: string | null },
+): AllowanceSaveStepResult {
+	return result.success
+		? { success: true }
+		: { success: false, error: result.error ?? undefined };
+}
+
 function useEmployeeAllowanceEditor(employeeId: string) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -113,12 +140,20 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const [currentAssignment, setCurrentAssignment] =
 		useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
+	// A failed read of the employee, policies or balance; shown only while nothing is loaded yet.
+	const [loadFailed, setLoadFailed] = useState(false);
 	// The balance and its year come from the server, in the organization's timezone (#1111).
 	const [balanceView, setBalanceView] =
 		useState<EmployeeVacationBalanceView | null>(null);
 	const currentYear = balanceView?.year ?? null;
 	const [adjustmentSummary, setAdjustmentSummary] =
 		useState<EmployeeAdjustmentSummary>(EMPTY_ADJUSTMENT_SUMMARY);
+	// What each save step wrote since the last complete save, so a retry skips it.
+	const savedSteps = useRef<SavedAllowanceSteps>(new Map());
+	// A save that stopped partway: what was saved, what failed, what is still to do.
+	const [saveFailure, setSaveFailure] = useState<FailedAllowanceSave | null>(
+		null,
+	);
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
@@ -126,76 +161,92 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			setLoading(true);
 			await runWithCleanup(
 				async () => {
-					try {
-						const currentPolicyId = currentAssignment?.policyId || "";
-						const newPolicyId =
-							value.policyId === DEFAULT_POLICY_VALUE
-								? ""
-								: value.policyId || "";
+					const currentPolicyId = currentAssignment?.policyId || "";
+					const newPolicyId =
+						value.policyId === DEFAULT_POLICY_VALUE
+							? ""
+							: value.policyId || "";
+					const plans: AllowanceSaveStepPlan[] = [];
 
-						if (currentPolicyId !== newPolicyId) {
-							const assignmentResult = await setEmployeePolicyAssignment({ employeeId, policyId: newPolicyId || null });
-							if (!assignmentResult.success) {
-								toast.error(
-									assignmentResult.error ||
-										t(
-											"settings.vacation.employees.detail.errors.updatePolicyAssignmentFailed",
-											"Failed to update policy assignment",
-										),
-								);
-								return;
-							}
-						}
-
-						if (value.customAnnualDays || value.customCarryoverDays) {
-							const result = await updateEmployeeAllowance({ employeeId, year: currentYear, data: {
-									customAnnualDays: value.customAnnualDays || undefined,
-									customCarryoverDays: value.customCarryoverDays || undefined,
-								} });
-							if (!result.success) {
-								toast.error(
-									result.error ||
-										t(
-											"settings.vacation.employees.detail.errors.updateAllowanceFailed",
-											"Failed to update allowance",
-										),
-								);
-								return;
-							}
-						}
-
-						if (value.adjustmentDays && value.adjustmentReason) {
-							const adjustmentResult = await createVacationAdjustmentAction({ employeeId, year: currentYear, data: {
-									days: value.adjustmentDays,
-									reason: value.adjustmentReason,
-								} });
-							if (!adjustmentResult.success) {
-								toast.error(
-									adjustmentResult.error ||
-										t(
-											"settings.vacation.employees.detail.errors.createAdjustmentFailed",
-											"Failed to create adjustment",
-										),
-								);
-								return;
-							}
-						}
-
-						toast.success(
-							t(
-								"settings.vacation.employees.detail.updateSuccess",
-								"Employee allowance updated successfully",
-							),
-						);
-						router.push("/settings/vacation/employees");
-					} catch (_error) {
-						toast.error(
-							t(
-								"settings.vacation.employees.detail.errors.unexpected",
-								"An unexpected error occurred",
-							),
-						);
+					if (currentPolicyId !== newPolicyId) {
+						plans.push({
+							step: "policy",
+							signature: newPolicyId,
+							run: async () =>
+								stepResult(
+									await setEmployeePolicyAssignment({
+										employeeId,
+										policyId: newPolicyId || null,
+									}),
+								),
+						});
 					}
+
+					if (value.customAnnualDays || value.customCarryoverDays) {
+						plans.push({
+							step: "allowance",
+							signature: JSON.stringify([
+								currentYear,
+								value.customAnnualDays,
+								value.customCarryoverDays,
+							]),
+							run: async () =>
+								stepResult(
+									await updateEmployeeAllowance({
+										employeeId,
+										year: currentYear,
+										data: {
+											customAnnualDays: value.customAnnualDays || undefined,
+											customCarryoverDays:
+												value.customCarryoverDays || undefined,
+										},
+									}),
+								),
+						});
+					}
+
+					if (value.adjustmentDays && value.adjustmentReason) {
+						plans.push({
+							step: "adjustment",
+							signature: JSON.stringify([
+								currentYear,
+								value.adjustmentDays,
+								value.adjustmentReason,
+							]),
+							run: async () =>
+								stepResult(
+									await createVacationAdjustmentAction({
+										employeeId,
+										year: currentYear,
+										data: {
+											days: value.adjustmentDays,
+											reason: value.adjustmentReason,
+										},
+									}),
+								),
+						});
+					}
+
+					const outcome = await runAllowanceSaveSteps(
+						plans,
+						savedSteps.current,
+					);
+					if (outcome.status === "failed") {
+						// Keep the entered values and show the saved parts as they are now.
+						setSaveFailure(outcome);
+						if (outcome.saved.length > 0) void runLoadData(true);
+						return;
+					}
+
+					savedSteps.current.clear();
+					setSaveFailure(null);
+					toast.success(
+						t(
+							"settings.vacation.employees.detail.updateSuccess",
+							"Employee allowance updated successfully",
+						),
+					);
+					router.push("/settings/vacation/employees");
 				},
 				() => setLoading(false),
 			);
@@ -207,6 +258,8 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const runLoadData = useCallback(
 		async (background = false) => {
 			const generation = ++loadGeneration.current;
+			setLoadFailed(false);
+			try {
 			const current = await getCurrentEmployee();
 			if (generation !== loadGeneration.current) return;
 			if (!current) {
@@ -218,8 +271,11 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				current.role === "admin" ? current.organizationId : null,
 			);
 			const balanceResult = await getEmployeeVacationBalance(employeeId);
-			if (generation !== loadGeneration.current || !balanceResult.success)
+			if (generation !== loadGeneration.current) return;
+			if (!balanceResult.success) {
+				setLoadFailed(true);
 				return;
+			}
 			const { year } = balanceResult.data;
 
 			const [
@@ -236,6 +292,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			if (generation !== loadGeneration.current) return;
 
 			setBalanceView(balanceResult.data);
+			if (!empResult.success || !empResult.data) setLoadFailed(true);
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data as EmployeeAllowanceView);
 				if (!background || !form.store.state.isDirty) {
@@ -270,6 +327,9 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			}
 			if (adjustmentSummaryResult.success)
 				setAdjustmentSummary(adjustmentSummaryResult.data);
+			} catch {
+				if (generation === loadGeneration.current) setLoadFailed(true);
+			}
 		},
 		[employeeId, form],
 	);
@@ -287,6 +347,8 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 
 	return {
 		historicalAdminOrganizationId,
+		loadFailed,
+		retry: () => runLoadData(),
 		reload: () => runLoadData(true),
 		adjustmentSummary,
 		balanceView,
@@ -297,6 +359,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		loading,
 		noEmployee,
 		policies,
+		saveFailure,
 	};
 }
 
@@ -324,29 +387,79 @@ export function EmployeeAllowanceEditPageClient({
 		noEmployee,
 		policies,
 		historicalAdminOrganizationId,
+		loadFailed,
+		retry,
 		reload,
+		saveFailure,
 	} = useEmployeeAllowanceEditor(employeeId);
+	const pageTitle = t(
+		"settings.vacation.employees.edit.title",
+		"Edit Vacation Allowance",
+	);
 
 	if (noEmployee) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError
-					feature={t(
-						"settings.vacation.employees.detail.manageAllowances",
-						"manage employee vacation allowances",
-					)}
-				/>
+			<div className="page-frame">
+				<div className="page-measure space-y-6">
+					<PageHeader title={pageTitle} />
+					<NoEmployeeError
+						className="w-full max-w-xl"
+						feature={t(
+							"settings.vacation.employees.detail.manageAllowances",
+							"manage employee vacation allowances",
+						)}
+					/>
+				</div>
 			</div>
 		);
 	}
 
 	if (!employee || currentYear === null) {
-		return (
-			<div className="page-frame flex flex-1 flex-col gap-4">
-				<div className="flex items-center justify-center p-8">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+		if (loadFailed) {
+			return (
+				<div className="page-frame">
+					<div className="page-measure space-y-6">
+						<PageHeader title={pageTitle} />
+						<SettingsLoadError
+							message={t(
+								"settings.vacation.employees.detail.errors.loadFailed",
+								"The employee's vacation allowance could not be loaded.",
+							)}
+							onRetry={() => void retry()}
+						/>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => router.push("/settings/vacation/employees")}
+						>
+							{t(
+								"settings.vacation.employees.detail.backToAllowances",
+								"Back to employee allowances",
+							)}
+						</Button>
+					</div>
 				</div>
-			</div>
+			);
+		}
+		return (
+			<LoadingRegion
+				className="page-frame"
+				label={{
+					labelKey: "common.loadingRegions.employeeVacationAllowance",
+					labelDefault: "Loading employee vacation allowance",
+				}}
+			>
+				<div className="page-measure space-y-6">
+					<div className="space-y-2">
+						<Skeleton aria-hidden="true" className="h-8 w-64 max-w-full" />
+						<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
+					</div>
+					<div className="grid gap-4 lg:grid-cols-3">
+						<Skeleton aria-hidden="true" className="h-72 w-full" />
+						<Skeleton aria-hidden="true" className="h-96 w-full lg:col-span-2" />
+					</div>
+				</div>
+			</LoadingRegion>
 		);
 	}
 
@@ -355,37 +468,21 @@ export function EmployeeAllowanceEditPageClient({
 	const balance = balanceView?.balance ?? null;
 
 	return (
-		<div className="page-frame flex flex-1 flex-col gap-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t(
-							"settings.vacation.employees.edit.title",
-							"Edit Vacation Allowance",
-						)}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.vacation.employees.edit.description",
-							"Configure custom vacation allowance for {name}",
-							{ name: employee.user.name },
-						)}
-					</p>
-				</div>
-			</div>
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+			<PageHeader
+				title={pageTitle}
+				description={t(
+					"settings.vacation.employees.edit.description",
+					"Configure custom vacation allowance for {name}",
+					{ name: employee.user.name },
+				)}
+			/>
 
 			<div className="grid gap-4 lg:grid-cols-3">
-				{historicalAdminOrganizationId && (
-					<HistoricalVacationUsageCard
-						organizationId={historicalAdminOrganizationId}
-						employeeId={employeeId}
-						initialYear={currentYear}
-						onSaved={reload}
-					/>
-				)}
 				<EmployeeInformationCard employee={employee} employeeId={employeeId} />
 
-				<Card className="lg:col-span-2">
+				<Card className="min-w-0 lg:col-span-2">
 					<CardHeader>
 						<CardTitle>
 							{t(
@@ -460,7 +557,15 @@ export function EmployeeAllowanceEditPageClient({
 
 							<ManualAdjustmentFields form={form} />
 
-							<div className="flex justify-end gap-2">
+							{saveFailure ? (
+								<PartialSaveAlert
+									failure={saveFailure}
+									isRetrying={loading}
+									onRetry={() => void form.handleSubmit()}
+								/>
+							) : null}
+
+							<div className="flex flex-wrap justify-end gap-2">
 								<Button
 									type="button"
 									variant="outline"
@@ -470,10 +575,14 @@ export function EmployeeAllowanceEditPageClient({
 									{t("settings.vacation.employees.detail.cancel", "Cancel")}
 								</Button>
 								<Button type="submit" disabled={loading}>
-									{loading && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
+									{loading ? (
+										<IconLoader2
+											aria-hidden="true"
+											className="mr-2 size-4 animate-spin"
+										/>
+									) : (
+										<IconDeviceFloppy aria-hidden="true" className="mr-2 size-4" />
 									)}
-									<IconDeviceFloppy className="mr-2 size-4" />
 									{t(
 										"settings.vacation.employees.detail.saveChanges",
 										"Save Changes",
@@ -483,6 +592,18 @@ export function EmployeeAllowanceEditPageClient({
 						</form>
 					</CardContent>
 				</Card>
+				{historicalAdminOrganizationId && (
+					// Supporting history below the allowance it explains.
+					<div className="min-w-0 lg:col-span-3">
+						<HistoricalVacationUsageCard
+							organizationId={historicalAdminOrganizationId}
+							employeeId={employeeId}
+							initialYear={currentYear}
+							onSaved={reload}
+						/>
+					</div>
+				)}
+			</div>
 			</div>
 		</div>
 	);
@@ -748,18 +869,15 @@ function AllowanceBalanceSummary({
 	const showAllowance = !accrualPolicy;
 	const carryover = balance.carryoverDays ?? 0;
 	return (
-		<div
-			className={`mb-6 grid gap-4 rounded-lg border p-4 ${
-				showAccrued && showAllowance ? "md:grid-cols-5" : "md:grid-cols-4"
-			}`}
-		>
+		// Columns follow the card's width, not the viewport, so values never squeeze.
+		<div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-4 rounded-lg border p-4">
 			{showAllowance && (
 				<div className="space-y-1">
 					<div className="text-sm text-muted-foreground">
 						{t("settings.vacation.employees.detail.allowance", "Allowance")}
 					</div>
 					{/* The custom or policy allowance, prorated in a start or exit year (#1110). */}
-					<div className="text-2xl font-bold">{balance.allowanceDays}</div>
+					<div className="text-2xl font-bold tabular-nums">{balance.allowanceDays}</div>
 				</div>
 			)}
 			{showAccrued && (
@@ -770,7 +888,7 @@ function AllowanceBalanceSummary({
 							"Accrued to Date",
 						)}
 					</div>
-					<div className="text-2xl font-bold">{accrued}</div>
+					<div className="text-2xl font-bold tabular-nums">{accrued}</div>
 					{accrualPolicy && balance.allowance && (
 						<div className="text-xs text-muted-foreground">
 							{t(
@@ -786,18 +904,20 @@ function AllowanceBalanceSummary({
 				<div className="text-sm text-muted-foreground">
 					{t("settings.vacation.employees.detail.carryover", "Carryover")}
 				</div>
-				<div className="text-2xl font-bold text-green-600">+{carryover}</div>
+				<div className={`text-2xl font-bold tabular-nums ${POSITIVE_DAYS_CLASS}`}>
+					+{carryover}
+				</div>
 			</div>
 			<div className="space-y-1">
 				<div className="text-sm text-muted-foreground">
 					{t("settings.vacation.employees.detail.adjustments", "Adjustments")}
 				</div>
 				<div
-					className={`text-2xl font-bold ${
+					className={`text-2xl font-bold tabular-nums ${
 						adjustments > 0
-							? "text-green-600"
+							? POSITIVE_DAYS_CLASS
 							: adjustments < 0
-								? "text-red-600"
+								? "text-destructive"
 								: ""
 					}`}
 				>
@@ -812,7 +932,7 @@ function AllowanceBalanceSummary({
 						"Total Available",
 					)}
 				</div>
-				<div className="text-2xl font-bold">{balance.totalDays}</div>
+				<div className="text-2xl font-bold tabular-nums">{balance.totalDays}</div>
 			</div>
 		</div>
 	);
@@ -850,7 +970,7 @@ function ManualAdjustmentHistory({
 						<li key={adjustment.id} className="space-y-1 p-3">
 							<span
 								className={`text-sm font-medium tabular-nums ${
-									adjustment.days > 0 ? "text-green-600" : "text-red-600"
+									adjustment.days > 0 ? POSITIVE_DAYS_CLASS : "text-destructive"
 								}`}
 							>
 								{adjustment.days > 0 ? "+" : ""}
@@ -881,6 +1001,131 @@ function ManualAdjustmentHistory({
 				</ul>
 			)}
 		</div>
+	);
+}
+
+/**
+ * A save that stopped partway: which parts were saved, which failed and why, and which were not
+ * attempted. The form keeps the entered values; Retry runs only the failed and remaining steps.
+ */
+export function PartialSaveAlert({
+	failure,
+	isRetrying,
+	onRetry,
+}: {
+	failure: FailedAllowanceSave;
+	isRetrying: boolean;
+	onRetry: () => void;
+}) {
+	const { t } = useTranslate();
+	const savedText: Record<AllowanceSaveStep, string> = {
+		policy: t(
+			"settings.vacation.employees.detail.partialSave.saved.policy",
+			"Policy assignment saved.",
+		),
+		allowance: t(
+			"settings.vacation.employees.detail.partialSave.saved.allowance",
+			"Custom allowance saved.",
+		),
+		adjustment: t(
+			"settings.vacation.employees.detail.partialSave.saved.adjustment",
+			"Manual adjustment saved.",
+		),
+	};
+	const pendingText: Record<AllowanceSaveStep, string> = {
+		policy: t(
+			"settings.vacation.employees.detail.partialSave.pending.policy",
+			"Policy assignment not saved yet.",
+		),
+		allowance: t(
+			"settings.vacation.employees.detail.partialSave.pending.allowance",
+			"Custom allowance not saved yet.",
+		),
+		adjustment: t(
+			"settings.vacation.employees.detail.partialSave.pending.adjustment",
+			"Manual adjustment not saved yet.",
+		),
+	};
+	// The server's reason, or the step's existing failure message when it gave none.
+	const reason =
+		failure.failed.error ??
+		{
+			policy: t(
+				"settings.vacation.employees.detail.errors.updatePolicyAssignmentFailed",
+				"Failed to update policy assignment",
+			),
+			allowance: t(
+				"settings.vacation.employees.detail.errors.updateAllowanceFailed",
+				"Failed to update allowance",
+			),
+			adjustment: t(
+				"settings.vacation.employees.detail.errors.createAdjustmentFailed",
+				"Failed to create adjustment",
+			),
+		}[failure.failed.step];
+	const failedText = {
+		policy: t(
+			"settings.vacation.employees.detail.partialSave.failed.policy",
+			"Policy assignment could not be saved: {reason}",
+			{ reason },
+		),
+		allowance: t(
+			"settings.vacation.employees.detail.partialSave.failed.allowance",
+			"Custom allowance could not be saved: {reason}",
+			{ reason },
+		),
+		adjustment: t(
+			"settings.vacation.employees.detail.partialSave.failed.adjustment",
+			"Manual adjustment could not be saved: {reason}",
+			{ reason },
+		),
+	}[failure.failed.step];
+
+	return (
+		<Alert variant="destructive">
+			<IconAlertCircle aria-hidden="true" />
+			<AlertTitle>
+				{failure.saved.length > 0
+					? t(
+							"settings.vacation.employees.detail.partialSave.title",
+							"Some changes were not saved",
+						)
+					: t(
+							"settings.vacation.employees.detail.partialSave.titleNothingSaved",
+							"Changes were not saved",
+						)}
+			</AlertTitle>
+			<AlertDescription>
+				<ul className="list-disc space-y-1 ps-4">
+					{failure.saved.map((step) => (
+						<li key={step}>{savedText[step]}</li>
+					))}
+					<li>{failedText}</li>
+					{failure.pending.map((step) => (
+						<li key={step}>{pendingText[step]}</li>
+					))}
+				</ul>
+				<p>
+					{t(
+						"settings.vacation.employees.detail.partialSave.description",
+						"Your entries are kept. Retry saves only what is still missing.",
+					)}
+				</p>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="mt-1"
+					disabled={isRetrying}
+					onClick={onRetry}
+				>
+					{isRetrying ? (
+						<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+					) : null}
+					{t("settings.vacation.employees.detail.partialSave.retry", "Retry unsaved changes")}
+				</Button>
+			</AlertDescription>
+		</Alert>
 	);
 }
 
@@ -939,7 +1184,19 @@ function ManualAdjustmentFields({ form }: { form: EmployeeAllowanceFormApi }) {
 				)}
 			</form.Field>
 
-			<form.Field name="adjustmentReason">
+			<form.Field
+				name="adjustmentReason"
+				validators={{
+					// Days without a reason were silently skipped on save; say so beside the field.
+					onSubmit: ({ value, fieldApi }) =>
+						fieldApi.form.getFieldValue("adjustmentDays") && !value.trim()
+							? t(
+									"settings.vacation.employees.detail.errors.adjustmentReasonRequired",
+									"Enter a reason to record this adjustment.",
+								)
+							: undefined,
+				}}
+			>
 				{(field) => (
 					<div className="space-y-2">
 						<Label htmlFor={adjustmentReasonId}>

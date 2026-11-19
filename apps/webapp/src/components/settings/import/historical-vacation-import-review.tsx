@@ -88,7 +88,7 @@ function ImportMappingForm({
 		},
 	});
 	return (
-		<Card className="mb-6">
+		<Card>
 			<CardHeader>
 				<CardTitle>
 					{t(
@@ -268,7 +268,7 @@ export function HistoricalVacationImportReview({
 	});
 	if (context.error)
 		return (
-			<p role="alert">
+			<p role="alert" className="text-sm text-destructive">
 				{t(
 					"absences.reconciliation.contextFailed",
 					"Could not load historical absence review. Refresh to try again.",

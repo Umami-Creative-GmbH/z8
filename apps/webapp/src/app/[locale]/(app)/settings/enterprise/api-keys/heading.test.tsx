@@ -59,7 +59,7 @@ it("assembles one Developer Access heading with the real SiteHeader and preserve
 		</QueryClientProvider>,
 	);
 	expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-	expect(appPageOwnsHeading("/en/settings/enterprise/api-keys/example-key")).toBe(false);
+	expect(appPageOwnsHeading("/en/settings/enterprise/api-keys/example-key")).toBe(true);
 	expect(appPageOwnsHeading("/en/settings/webhooks")).toBe(false);
 	expect(appPageOwnsHeading("/en/settings/enterprise/api-keys/deeper/route")).toBe(false);
 });

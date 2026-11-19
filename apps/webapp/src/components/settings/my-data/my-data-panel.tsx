@@ -170,16 +170,39 @@ export function MyDataPanel({ exports }: MyDataPanelProps) {
 						)}
 					</li>
 				</ul>
-				<Button onClick={requestExport} disabled={requesting || building}>
-					{requesting ? (
-						<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-					) : (
-						<IconDatabaseExport className="size-4" aria-hidden="true" />
-					)}
-					{t("settings.myData.requestExport", "Request export")}
-				</Button>
+				<div className="space-y-2">
+					<Button
+						onClick={requestExport}
+						disabled={requesting || building}
+						aria-describedby={building ? "my-data-export-in-progress" : undefined}
+					>
+						{requesting ? (
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+						) : (
+							<IconDatabaseExport className="size-4" aria-hidden="true" />
+						)}
+						{t("settings.myData.requestExport", "Request export")}
+					</Button>
+					{building ? (
+						<p id="my-data-export-in-progress" className="text-sm text-muted-foreground">
+							{t(
+								"settings.myData.refusalInProgress",
+								"An export of your data is already being prepared. You'll be notified when it is ready.",
+							)}
+						</p>
+					) : null}
+				</div>
 
-				<PersonalDataExportList exports={exports} labels={listLabels(t)} />
+				{exports.length === 0 ? (
+					<p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+						{t(
+							"settings.myData.noExports",
+							"You have not requested an export yet. Request one to download a copy of your data.",
+						)}
+					</p>
+				) : (
+					<PersonalDataExportList exports={exports} labels={listLabels(t)} />
+				)}
 			</CardContent>
 		</Card>
 	);

@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
@@ -129,23 +130,23 @@ export function AuditPackagesTable({
 	return (
 		<>
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							<IconFileZip className="size-5" />
-							{t("settings.auditExport.packages.title", "Audit Packages")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.auditExport.packages.description",
-								"Cryptographically hardened export packages",
-							)}
-						</CardDescription>
-					</div>
-					<Button variant="outline" size="sm" onClick={() => router.refresh()}>
-						<IconRefresh className="mr-2 size-4" />
-						{t("common.refresh", "Refresh")}
-					</Button>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<IconFileZip className="size-5 shrink-0" aria-hidden="true" />
+						{t("settings.auditExport.packages.title", "Audit Packages")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.auditExport.packages.description",
+							"Cryptographically hardened export packages",
+						)}
+					</CardDescription>
+					<CardAction>
+						<Button variant="outline" size="sm" onClick={() => router.refresh()}>
+							<IconRefresh className="size-4" aria-hidden="true" />
+							{t("common.refresh", "Refresh")}
+						</Button>
+					</CardAction>
 				</CardHeader>
 				<CardContent>
 					<Table>
@@ -211,24 +212,37 @@ export function AuditPackagesTable({
 									<TableCell>
 										<PackageStatusBadge status={pkg.status} t={t} />
 									</TableCell>
-									<TableCell>{pkg.fileCount ?? "-"}</TableCell>
-									<TableCell>
+									<TableCell className="tabular-nums">{pkg.fileCount ?? "-"}</TableCell>
+									<TableCell className="whitespace-nowrap tabular-nums">
 										{pkg.fileSizeBytes
 											? formatFileSize(pkg.fileSizeBytes)
 											: "-"}
 									</TableCell>
 									<TableCell>
-										<div className="flex items-center gap-1">
+										<div className="flex items-center gap-1 whitespace-nowrap">
 											{pkg.objectLockEnabled && (
-												<IconLock
-													className="size-4 text-green-600"
-													title={t(
-														"settings.auditExport.wORMProtected",
-														"WORM protected",
-													)}
-												/>
+												<>
+													<IconLock
+														className="size-4 text-muted-foreground"
+														aria-hidden="true"
+														title={t(
+															"settings.auditExport.wORMProtected",
+															"WORM protected",
+														)}
+													/>
+													<span className="sr-only">
+														{t(
+															"settings.auditExport.wORMProtected",
+															"WORM protected",
+														)}
+													</span>
+												</>
 											)}
-											<span>{pkg.retentionYears}y</span>
+											<span className="tabular-nums">
+												{t("settings.auditExport.config.yearsOption", "{years} years", {
+													years: pkg.retentionYears,
+												})}
+											</span>
 										</div>
 									</TableCell>
 									<TableCell className="text-right">
@@ -240,13 +254,11 @@ export function AuditPackagesTable({
 												disabled={verifying === pkg.id}
 											>
 												{verifying === pkg.id ? (
-													<IconLoader2 className="size-4 animate-spin" />
+													<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 												) : (
-													<IconShieldCheck className="size-4" />
+													<IconShieldCheck className="size-4" aria-hidden="true" />
 												)}
-												<span className="sr-only">
-													{t("settings.auditExport.packages.verify", "Verify")}
-												</span>
+												{t("settings.auditExport.packages.verify", "Verify")}
 											</Button>
 										)}
 									</TableCell>
@@ -267,7 +279,10 @@ export function AuditPackagesTable({
 						<ActionPanelTitle className="flex items-center gap-2">
 							{verificationResult?.result.isValid ? (
 								<>
-									<IconCheck className="size-5 text-green-600" />
+									<IconCheck
+										className="size-5 shrink-0 text-success"
+										aria-hidden="true"
+									/>
 									{t(
 										"settings.auditExport.verification.valid",
 										"Verification Passed",
@@ -275,7 +290,7 @@ export function AuditPackagesTable({
 								</>
 							) : (
 								<>
-									<IconX className="size-5 text-red-600" />
+									<IconX className="size-5 shrink-0 text-destructive" aria-hidden="true" />
 									{t(
 										"settings.auditExport.verification.invalid",
 										"Verification Failed",
@@ -296,14 +311,20 @@ export function AuditPackagesTable({
 											key={check.name}
 											className={`flex items-start gap-2 rounded-lg border p-3 ${
 												check.passed
-													? "border-green-500/30 bg-green-500/5"
-													: "border-red-500/30 bg-red-500/5"
+													? "border-success/30 bg-success/5"
+													: "border-destructive/30 bg-destructive/5"
 											}`}
 										>
 											{check.passed ? (
-												<IconCheck className="size-4 text-green-600 mt-0.5" />
+												<IconCheck
+													className="mt-0.5 size-4 shrink-0 text-success"
+													aria-hidden="true"
+												/>
 											) : (
-												<IconX className="size-4 text-red-600 mt-0.5" />
+												<IconX
+													className="mt-0.5 size-4 shrink-0 text-destructive"
+													aria-hidden="true"
+												/>
 											)}
 											<div className="flex-1 min-w-0">
 												<p className="font-medium text-sm">{check.name}</p>
@@ -365,7 +386,7 @@ function PackageStatusBadge({
 			);
 		case "completed":
 			return (
-				<Badge className="gap-1 bg-green-600 hover:bg-green-600">
+				<Badge variant="success" className="gap-1">
 					<IconCheck className="size-3" />
 					{t("settings.auditExport.packages.statusCompleted", "Completed")}
 				</Badge>
