@@ -68,7 +68,7 @@ describe("DeleteWorkPeriodDialog", () => {
 		vi.spyOn(globalThis.crypto, "randomUUID").mockImplementation(randomUUID);
 	});
 
-	it("renders deletion request copy and reason field", () => {
+	it("explains what deletion records before the approval outcome is known", () => {
 		render(
 			<DeleteWorkPeriodDialog
 				event={workPeriodEvent}
