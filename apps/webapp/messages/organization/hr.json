@@ -89,7 +89,13 @@
       "slugLabel": "Slug organizacije",
       "title": "Uredi organizaciju",
       "updateError": "Ažuriranje organizacije nije uspjelo",
-      "updateSuccess": "Organizacija je uspješno ažurirana"
+      "updateSuccess": "Organizacija je uspješno ažurirana",
+      "validation": {
+        "nameMax": "Naziv ne može imati više od 100 znakova",
+        "nameMin": "Naziv mora imati najmanje 2 znaka",
+        "slugMax": "Slug ne može imati više od 50 znakova",
+        "slugMin": "Slug mora imati najmanje 2 znaka"
+      }
     },
     "error": {
       "description": "Nije moguće učitati organizacijsku shemu. Pokušajte ponovno.",
@@ -395,6 +401,7 @@
     "switchTo": "Promijeni organizaciju",
     "teams": {
       "card": {
+        "actionsFor": "Radnje za {name}",
         "deleteTeam": "Izbriši tim",
         "editTeam": "Uredi tim",
         "fallbackManager": "Zamjenski voditelj",
@@ -406,10 +413,10 @@
       "delete": "Izbriši tim",
       "deleteDialogDescription": "Ovo će trajno izbrisati tim \"{teamName}\".",
       "deleteDialogMembersWarning": "Upozorenje: Ovaj tim ima {count} član(ov)a. Bit će uklonjeni iz tima.",
+      "deleteDialogNamedTitle": "Izbrisati tim {name}?",
       "deleteDialogTitle": "Jeste li sigurni?",
       "deleteError": "Brisanje tima nije uspjelo",
       "deleteSuccess": "Tim je uspješno izbrisan",
-      "description": "Organizirajte svoje zaposlenike u timove radi bolje suradnje",
       "edit": {
         "description": "Ažurirajte naziv i opis tima",
         "descriptionLabel": "Opis (neobavezno)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Član je uklonjen iz tima",
         "selectEmployee": "Odaberite zaposlenika za dodavanje",
         "title": "{teamName} - Članovi tima"
-      },
-      "title": "Timovi"
+      }
     },
     "timezone": {
       "balances-recalculating": "Stanja radnih sati ponovno se računaju za novu vremensku zonu i ostaju skrivena dok ne budu spremna.",

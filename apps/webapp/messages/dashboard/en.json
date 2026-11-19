@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Absence",
-      "all-caught-up": "All caught up!",
-      "approved-recently": "{count} {request} approved recently",
       "by": "by {name}",
       "description": "Latest approved requests",
       "description-count": "Last {count} approved {request}",
@@ -123,11 +121,27 @@
       "title": "Recently Approved",
       "view-all": "View All Approvals"
     },
+    "refresh": {
+      "activity": "Latest activity",
+      "attention": "Today at a glance",
+      "balanceRetry": "Refresh to try loading the balance again.",
+      "balanceUnavailable": "Balance unavailable",
+      "currentSession": "Current session",
+      "dayUnavailable": "Today's total is unavailable. Refresh to try again.",
+      "employee": "Employee",
+      "greeting": "Good day, {name}.",
+      "noAbsences": "No absences recorded for today.",
+      "openTimeTracking": "Go to time tracking",
+      "overview": "Your work at a glance",
+      "personalDay": "Your working day",
+      "status": "Status",
+      "summary": "Summary",
+      "team": "Team",
+      "todayTarget": "Today · {target} required"
+    },
     "team-overview": {
       "avg-hours": "Avg. Hours",
       "current-employees": "Current employees",
-      "current-employees-description": "Everyone who works here now",
-      "description": "Team statistics at a glance",
       "employees-button": "Employees",
       "per-week": "/week",
       "teams": "Teams",
@@ -175,9 +189,6 @@
       "used": "{days} used"
     },
     "whos-out": {
-      "everyone-in": "Everyone is in the office today",
-      "everyones-in": "Everyone's in!",
-      "full-team": "Full team available!",
       "member": "member",
       "members": "members",
       "members-out": "{count} team {member} out",

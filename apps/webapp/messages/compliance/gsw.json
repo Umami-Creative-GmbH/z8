@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Zuegangskontrolle fasse nur sensibli Audit-Log-Ereignis zäme, wo scho hüt erfasst werded.",
         "auditEvidence": "Audit-Beleg nutzed d'Live-Audit-Export-Konfiguration, Audit-Pack-Aafroge und aktuelli Prüefigsergebnis.",
+        "title": "Abdeckung",
         "workforceCompliance": "D'Compliance vo de Belegschaft basiert uf de Verletzige vo de Arbetsrichtlinie i de letschte 7 Täg und de offene Uusnahme-Aafroge."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Zuletzt aktualisiert: {time}"
+        "lastRefreshed": "Zuletzt aktualisiert: {time}",
+        "refreshMeaning": "Durch Aktualisieren werden erfasste Signale neu geladen; Befunde werden dabei nicht nach einer neuen Richtlinie neu bewertet."
       },
       "links": {
         "inspectCompliance": "Compliance prüefe",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Compliance-Iistellige öffne",
         "reviewAuditExport": "Audit-Export überprüefe"
       },
+      "loading": "Compliance-Signale werden geladen",
       "overview": "Compliance-Übersicht",
       "recentEvents": {
         "empty": "Es wurden kürzlich keine kritischen Ereignisse festgestellt.",
-        "title": "Kürzliche kritische Ereignisse"
+        "partial": "Aktuelle Ereignisse sind auf verfügbare Quellen beschränkt. Einige Signale konnten nicht geladen werden.",
+        "title": "Kürzliche kritische Ereignisse",
+        "unavailable": "Aktuelle Ereignisse konnten nicht bestätigt werden, da die Signalquellen nicht verfügbar sind."
       },
+      "scope": "Aktive Organisation",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Sensibli Änderige a de Kontrollene bruched e Überprüefig",
             "healthy": "Es sind chürzlich kei sensible Änderige a de Kontrollene protokolliert worde",
             "warning": "Es sind chürzlich Änderige a de Kontrollene gmäldet worde"
-          }
+          },
+          "title": "Zugriffskontrollen"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Audit-Nachwiis bruched Ufmerksamkeit",
             "healthy": "Audit-Nachwiis-Signal gsehnd guet us",
             "warning": "Audit-Nachwiis sind nur zum Teil bereit"
-          }
+          },
+          "title": "Audit-Nachweise"
         },
+        "title": "Compliance-Bereiche",
         "unavailable": {
           "headline": "Signal vorübergehend nöd verfügbar"
         },
@@ -94,7 +103,8 @@
             "critical": "Verstöss gäge d'Personalrichtlinie bruched e Überprüefig",
             "healthy": "Es sind chürzlich kei Problem mit de Personalrichtlinie gmäldet worde",
             "warning": "D'Personal-Compliance driftet ab"
-          }
+          },
+          "title": "Personal-Compliance"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Ausnahme genehmigt",
       "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
       "approveFailed": "Genehmigung fehlgeschlagen",
+      "approveFor": "Ausnahme ({type}) für {name} genehmigen",
+      "loadError": "Ausstehende Ausnahmeanträge konnten nicht geladen werden.",
       "plannedDuration": "Geplant",
       "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
       "reason": "Grund für die Ausnahme",
@@ -124,6 +136,7 @@
       "rejected": "Ausnahme abgelehnt",
       "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
       "rejectFailed": "Ablehnung fehlgeschlagen",
+      "rejectFor": "Ausnahme ({type}) für {name} ablehnen",
       "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
       "rejectionReason": "Grund für die Ablehnung",
       "rejectTitle": "Ausnahmeantrag ablehnen",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihren Antrag genehmigen oder ablehnen.",
       "requestTitle": "Compliance-Ausnahme beantragen",
       "submit": "Antrag einreichen",
-      "type": "Ausnahmetyp"
+      "type": "Ausnahmetyp",
+      "types": {
+        "overtimeDaily": "Tägliche Überzeit",
+        "overtimeMonthly": "Monatliche Überzeit",
+        "overtimeWeekly": "Wöchentliche Überzeit",
+        "restPeriod": "Ruhezeit"
+      }
     },
     "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
     "moreAlerts": "mehr",

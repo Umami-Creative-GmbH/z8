@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Add absence",
     "balance": {
       "carryoverDays": "You have {count} days carried over",
-      "carryoverExpiry": "that will expire on",
+      "carryoverDaysExpiring": "You have {count} days carried over. They expire on {date}.",
       "carryoverFrom": "Carryover from {year}",
       "daysRemaining": "Days Remaining",
-      "description": "Your vacation days for the current year",
       "outOfTotalDays": "out of {totalDays} total days",
       "pending": "Pending",
       "title": "Vacation Balance {year}",
       "used": "Used"
     },
     "calendar": {
+      "currentYear": "This year",
       "legend": {
         "approved": "Approved",
-        "halfDayAm": "Half day (AM)",
-        "halfDayPm": "Half day (PM)",
+        "halfDay": "Half day",
         "holiday": "Holiday",
         "pending": "Pending",
         "rejected": "Rejected"
       },
       "nextYear": "Next year",
-      "previousYear": "Previous year"
+      "previousYear": "Previous year",
+      "requestAnotherAbsence": "Request another absence from this day",
+      "selectDayDetailsHint": "Select a day to request an absence from it. A day with an approved or pending absence shows its details instead."
     },
     "change": {
       "afternoon": "Afternoon",
@@ -40,6 +40,7 @@
       "historyFailed": "Could not load change requests.",
       "keepHours": "Keep recorded hours and coverage",
       "morning": "Morning",
+      "pendingCount": "{count} pending",
       "pendingExplanation": "The recorded absence stays effective until another approver accepts your request.",
       "reason": "Reason",
       "reasonRequired": "A reason is required",
@@ -321,10 +322,10 @@
       "pending": "Pending",
       "rejected": "Rejected"
     },
-    "subtitle": "Manage your time off and vacation days",
     "table": {
       "cancelAbsence": "Cancel absence",
       "cancelAbsenceTooltip": "Cancel absence",
+      "changePending": "Change request pending",
       "end": "End",
       "headers": {
         "actions": "Actions",
@@ -337,9 +338,7 @@
       "noRequests": "No absence requests found.",
       "noSearchResults": "No absences match your search.",
       "searchPlaceholder": "Search by type, status, or notes...",
-      "start": "Start",
-      "subtitle": "Recent and upcoming absence requests",
-      "title": "Your Absence Requests"
+      "start": "Start"
     },
     "title": "Absences",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Calendar",
       "table": "Table"
+    },
+    "year": {
+      "loadFailed": "Could not load {year}. Still showing {loadedYear}.",
+      "loading": "Loading {year}… Still showing {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Edit",
       "label": "Time entry actions"
     },
+    "context": {
+      "timezone": "Calendar timezone"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Time entries blocked",
       "category": "Category",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Time entry deletion applied",
       "auditNote": "Time entries will be marked as deleted for audit purposes.",
-      "confirm": "Convert to Break",
-      "description": "This will permanently delete this work period. The gap will appear as a break in the calendar.",
       "failed": "Failed to delete work period",
       "reasonLabel": "Reason for deletion",
-      "reasonRequired": "Reason is required",
-      "success": "Work period converted to break",
-      "title": "Convert to Break?"
+      "reasonRequired": "Reason is required"
     },
     "details": {
       "automaticClockOut": "Automatically clocked out",
@@ -516,10 +518,7 @@
       "holiday": "Holiday",
       "missingRequiredWork": "Missing required work",
       "requirementMetOrOver": "Requirement met/over",
-      "timeEntry": "Time Entry",
-      "title": "Legend",
       "underRequirement": "Under requirement",
-      "workPeriod": "Work Period",
       "workPeriodPending": "Pending Approval"
     },
     "loadEventsError": "Failed to load calendar events: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Recorded time compared with policy hours",
       "weekSum": "Sum"
     },
+    "nextMonth": "Next month",
+    "previousMonth": "Previous month",
     "requirements": {
       "dayLabel": "{date}: {required} required, {actual} recorded, {delta} delta, {status}",
       "includesRunningWork": "Includes running work",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Billable",
+      "breakEnforcementNote": "Auto-adjusted: break enforcement",
       "editedBy": "(edited by {name} at {date})",
       "missingTask": "Missing task",
       "missingTaskHint": "Missing task: add a task",
-      "breakEnforcementNote": "Auto-adjusted: break enforcement"
+      "runningTitle": "{name} - {duration} (running)",
+      "stop": "Stop",
+      "stopFor": "Stop running work period for {name}"
     },
     "workStatus": {
       "overRequirement": "over requirement",

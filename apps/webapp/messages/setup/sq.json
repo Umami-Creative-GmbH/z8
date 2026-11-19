@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Po konfigurohet hapësira juaj e punës...",
+    "checkFailed": "Nuk mundëm t'i kontrollonim organizatat tuaja. Provoni përsëri.",
     "checking": "Po kontrollohet seanca...",
-    "clickToSelect": "Kliko për të zgjedhur",
     "redirecting": "Po ridrejtoheni...",
+    "retry": "Provo përsëri",
+    "selectionHint": "Hapësira juaj e punës hapet pas përzgjedhjes.",
     "selectOrganization": "Zgjidhni organizatën",
-    "selectOrganizationDescription": "Zgjidhni me cilën organizatë dëshironi të punoni"
+    "selectOrganizationDescription": "Zgjidhni me cilën organizatë dëshironi të punoni",
+    "title": "Hapni hapësirën tuaj të punës"
   },
   "setup": {
     "authorization": {

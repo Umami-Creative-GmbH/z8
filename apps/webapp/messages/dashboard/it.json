@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Assenza",
-      "all-caught-up": "Tutto aggiornato!",
-      "approved-recently": "{count} {request} approvate di recente",
       "by": "da {name}",
       "description": "Ultime richieste approvate",
       "description-count": "Ultime {count} {request} approvate",
@@ -123,11 +121,27 @@
       "title": "Approvato di recente",
       "view-all": "Vedi tutte le approvazioni"
     },
+    "refresh": {
+      "activity": "Ultime attività",
+      "attention": "Panoramica di oggi",
+      "balanceRetry": "Aggiorna per riprovare a caricare il saldo.",
+      "balanceUnavailable": "Saldo non disponibile",
+      "currentSession": "Sessione corrente",
+      "dayUnavailable": "Il totale di oggi non è disponibile. Aggiorna per riprovare.",
+      "employee": "Dipendente",
+      "greeting": "Buongiorno, {name}.",
+      "noAbsences": "Nessuna assenza registrata per oggi.",
+      "openTimeTracking": "Vai alla registrazione ore",
+      "overview": "Il tuo lavoro in sintesi",
+      "personalDay": "La tua giornata lavorativa",
+      "status": "Stato",
+      "summary": "Riepilogo",
+      "team": "Team",
+      "todayTarget": "Oggi · {target} richiesti"
+    },
     "team-overview": {
       "avg-hours": "Ore medie",
       "current-employees": "Dipendenti attuali",
-      "current-employees-description": "Tutti coloro che lavorano qui ora",
-      "description": "Statistiche del team in sintesi",
       "employees-button": "Dipendenti",
       "per-week": "/settimana",
       "teams": "Team",
@@ -175,9 +189,6 @@
       "used": "{days} usati"
     },
     "whos-out": {
-      "everyone-in": "Sono tutti in ufficio oggi",
-      "everyones-in": "Tutti presenti!",
-      "full-team": "Team al completo disponibile!",
       "member": "membro",
       "members": "membri",
       "members-out": "{count} membri del team assenti",

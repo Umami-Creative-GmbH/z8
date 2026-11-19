@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Añadir ausencia",
     "balance": {
       "carryoverDays": "Tienes {count} días transferidos",
-      "carryoverExpiry": "que caducarán el",
+      "carryoverDaysExpiring": "Tienes {count} días transferidos. Caducan el {date}.",
       "carryoverFrom": "Transferido de {year}",
       "daysRemaining": "Días restantes",
-      "description": "Sus días de vacaciones para el año actual",
       "outOfTotalDays": "de un total de {totalDays} días",
       "pending": "Pendiente",
       "title": "Saldo de vacaciones {year}",
       "used": "Usado"
     },
     "calendar": {
+      "currentYear": "Este año",
       "legend": {
         "approved": "Aprobado",
-        "halfDayAm": "Medio día (AM)",
-        "halfDayPm": "Medio día (PM)",
+        "halfDay": "Medio día",
         "holiday": "Festivo",
         "pending": "Pendiente",
         "rejected": "Rechazado"
       },
       "nextYear": "Próximo año",
-      "previousYear": "Año anterior"
+      "previousYear": "Año anterior",
+      "requestAnotherAbsence": "Solicitar otra ausencia a partir de este día",
+      "selectDayDetailsHint": "Selecciona un día para solicitar una ausencia a partir de él. Un día con una ausencia aprobada o pendiente muestra sus detalles en su lugar."
     },
     "change": {
       "afternoon": "Tarde",
@@ -40,6 +40,7 @@
       "historyFailed": "No se pudieron cargar las solicitudes de cambio.",
       "keepHours": "Mantener las horas y la cobertura registradas",
       "morning": "Mañana",
+      "pendingCount": "{count} pendientes",
       "pendingExplanation": "La ausencia registrada permanece vigente hasta que otro aprobador acepte tu solicitud.",
       "reason": "Motivo",
       "reasonRequired": "Se requiere un motivo",
@@ -321,10 +322,10 @@
       "pending": "Pendiente",
       "rejected": "Rechazado"
     },
-    "subtitle": "Gestione su tiempo libre y días de vacaciones",
     "table": {
       "cancelAbsence": "Cancelar ausencia",
       "cancelAbsenceTooltip": "Cancelar ausencia",
+      "changePending": "Solicitud de cambio pendiente",
       "end": "Fin",
       "headers": {
         "actions": "Acciones",
@@ -337,9 +338,7 @@
       "noRequests": "No se encontraron solicitudes de ausencia.",
       "noSearchResults": "No hay ausencias que coincidan con tu búsqueda.",
       "searchPlaceholder": "Buscar por tipo, estado o notas...",
-      "start": "Inicio",
-      "subtitle": "Solicitudes de ausencia recientes y próximas",
-      "title": "Sus solicitudes de ausencia"
+      "start": "Inicio"
     },
     "title": "Ausencias",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Calendario",
       "table": "Tabla"
+    },
+    "year": {
+      "loadFailed": "No se pudo cargar {year}. Se sigue mostrando {loadedYear}.",
+      "loading": "Cargando {year}… Se sigue mostrando {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Editar",
       "label": "Acciones de registro de horas"
     },
+    "context": {
+      "timezone": "Zona horaria del calendario"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Entradas de tiempo bloqueadas",
       "category": "Categoría",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Eliminación de registro de tiempo aplicada",
       "auditNote": "Las entradas de tiempo se marcarán como eliminadas para fines de auditoría.",
-      "confirm": "Convertir en descanso",
-      "description": "Esto eliminará permanentemente este período de trabajo. El espacio aparecerá como un descanso en el calendario.",
       "failed": "Falló la eliminación del período de trabajo",
       "reasonLabel": "Motivo de la eliminación",
-      "reasonRequired": "El motivo es obligatorio",
-      "success": "Período de trabajo convertido en descanso",
-      "title": "¿Convertir en descanso?"
+      "reasonRequired": "El motivo es obligatorio"
     },
     "details": {
       "automaticClockOut": "Salida registrada automáticamente",
@@ -516,10 +518,7 @@
       "holiday": "Festivo",
       "missingRequiredWork": "Trabajo requerido faltante",
       "requirementMetOrOver": "Requisito cumplido/superado",
-      "timeEntry": "Entrada de tiempo",
-      "title": "Leyenda",
       "underRequirement": "Por debajo del requisito",
-      "workPeriod": "Período de trabajo",
       "workPeriodPending": "Pendiente de aprobación"
     },
     "loadEventsError": "Error al cargar los eventos del calendario: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Tiempo registrado comparado con las horas de política",
       "weekSum": "Suma"
     },
+    "nextMonth": "Mes siguiente",
+    "previousMonth": "Mes anterior",
     "requirements": {
       "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}.",
       "includesRunningWork": "Incluye trabajo en curso",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Facturable",
+      "breakEnforcementNote": "Ajuste automático: control de descansos",
       "editedBy": "(editado por {name} el {date})",
       "missingTask": "Falta una tarea",
       "missingTaskHint": "Falta una tarea: añadir una tarea",
-      "breakEnforcementNote": "Ajustado automáticamente: aplicación de pausas"
+      "runningTitle": "{name} - {duration} (en curso)",
+      "stop": "Detener",
+      "stopFor": "Detener el período de trabajo en curso para {name}"
     },
     "workStatus": {
       "overRequirement": "por encima del requisito",

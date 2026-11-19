@@ -96,11 +96,12 @@
         "year": "Year"
       },
       "history": {
-        "description": "View and download previous DATEV exports",
+        "descriptionAllFormats": "View and download previous payroll exports",
         "download": "Download export",
         "downloadError": "Failed to get download URL",
         "employees": "employees",
         "noExports": "No exports yet",
+        "noExportsHint": "Start a payroll export on the Export tab. Finished exports appear here for download.",
         "payrollRun": "{count, plural, one {Payroll run: # expense report} other {Payroll run: # expense reports}}",
         "periods": "periods",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Processing"
         },
         "table": {
+          "actions": "Actions",
           "createdAt": "Created",
           "dateRange": "Date Range",
           "records": "Records",
@@ -151,7 +153,8 @@
         "configureFirst": "Please configure at least one payroll export format (DATEV, Lexware, or Sage) before setting up mappings.",
         "deleteDescription": "Are you sure you want to delete this wage type mapping?",
         "deleteError": "Failed to delete mapping",
-        "deleteMapping": "Delete mapping",
+        "deleteMappingNamed": "Delete mapping for {name}",
+        "deleteNamedDescription": "Delete the wage type mapping for \"{name}\"?",
         "deleteSuccess": "Mapping deleted",
         "deleteTitle": "Delete Mapping",
         "description": "Description",
@@ -335,7 +338,8 @@
         "name": "Employee",
         "noNumber": "Not set",
         "personnelIdentifier": "Personnel identifier",
-        "personnelNumber": "Personnel number"
+        "personnelNumber": "Personnel number",
+        "unnamed": "Unnamed employee"
       },
       "checks": {
         "count": "Count",
@@ -364,6 +368,13 @@
       },
       "description": "Check whether a payroll period is ready before exporting time, absence, and payroll data.",
       "openPayrollExport": "Open payroll export",
+      "period": {
+        "currentMonth": "Current month",
+        "navLabel": "Payroll period",
+        "previousMonth": "Previous month",
+        "scope": "Payroll period: {period} (UTC)",
+        "showMonth": "Show {month}"
+      },
       "status": {
         "blocked": "Blocked",
         "ready": "Ready for payroll",

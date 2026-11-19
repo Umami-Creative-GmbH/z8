@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Radnje za {endpoint}",
+    "command-unknown": "Nije moguće potvrditi naredbu. Osvježite ovu krajnju točku prije ponovnog pokušaja.",
     "copy-failed": "Kopiranje u međuspremnik nije uspjelo",
     "create": "Dodaj webhook",
     "create-failed": "Stvaranje webhooka nije uspjelo",
     "delete-confirm": {
       "description": "Ovo će trajno izbrisati krajnju točku webhooka i svu povijest isporuka. Ova se radnja ne može poništiti.",
-      "title": "Izbrisati webhook?"
+      "title-named": "Izbrisati webhook {name}?"
     },
     "deleted": "Webhook je izbrisan",
-    "delete-failed": "Brisanje webhooka nije uspjelo",
     "deliveries": "Isporuke",
-    "description": "Konfigurirajte krajnje točke webhooka za primanje obavijesti u stvarnom vremenu kada se dogode događaji u vašoj organizaciji.",
     "disabled": "Webhook je onemogućen",
     "empty": {
       "description": "Izradite svoj prvi webhook kako biste počeli primati obavijesti o događajima.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Uspješno",
       "time": "Vrijeme",
-      "title": "Zapisnici isporuke"
+      "title": "Zapisnici isporuke",
+      "toggle-details": "Pojedinosti za {event} u {time}"
     },
-    "regenerate-failed": "Ponovno generiranje tajnog ključa nije uspjelo",
     "regenerate-secret": "Ponovno generiraj tajni ključ",
+    "retry-help": "Osvježite ovaj popis kako biste potvrdili trenutne krajnje točke. Prethodno učitani zapisi ostaju zadržani.",
     "secret-copied": "Tajni ključ je kopiran u međuspremnik",
     "secret-dialog": {
       "copy-secret": "Kopiraj tajni ključ u međuspremnik",
@@ -78,14 +79,15 @@
       "degraded": "Degradirano",
       "failing": "Neuspješno",
       "healthy": "Ispravno",
-      "inactive": "Neaktivno"
+      "inactive": "Neaktivno",
+      "untried": "Još nema isporuka"
     },
     "success-rate": "Uspješno",
     "test": "Pošalji test",
-    "test-failed": "Slanje testnog webhooka nije uspjelo",
-    "test-sent": "Testni webhook je poslan",
+    "test-queued": "Testni webhook stavljen u red čekanja",
     "title": "Webhookovi",
-    "toggle-active": "Uključi/isključi aktivnost webhooka",
+    "toggle-active-named": "Aktivno: {endpoint}",
+    "unavailable": "Webhookovi nisu dostupni",
     "updated": "Webhook je ažuriran",
     "update-failed": "Ažuriranje webhooka nije uspjelo",
     "view-logs": "Prikaži zapisnike"

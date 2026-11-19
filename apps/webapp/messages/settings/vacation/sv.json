@@ -61,6 +61,7 @@
           "allowance": "Tilldelning",
           "allowanceForYear": "Semestertilldelning för {year}",
           "assignedPolicy": "Tilldelad policy",
+          "backToAllowances": "Tillbaka till medarbetarnas tilldelningar",
           "cancel": "Avbryt",
           "carryover": "Sparade dagar",
           "carryoverDaysOptional": "Sparade dagar (valfritt)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Standard: {days} dagar",
           "employeeInformation": "Medarbetarinformation",
           "errors": {
+            "adjustmentReasonRequired": "Ange en anledning för att registrera denna justering.",
             "createAdjustmentFailed": "Kunde inte skapa justering",
-            "unexpected": "Ett oväntat fel uppstod",
+            "loadFailed": "Medarbetarens semestertilldelning kunde inte läsas in.",
             "updateAllowanceFailed": "Kunde inte uppdatera semesterkvot",
             "updatePolicyAssignmentFailed": "Kunde inte uppdatera policytilldelning"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "hantera medarbetares semesterkvoter",
           "managers": "Chefer",
           "overrideEffectivePolicy": "Åsidosätt det tilldelade policysaldot ({days} dagar) för denna medarbetare",
+          "partialSave": {
+            "description": "Dina uppgifter behålls. Ett nytt försök sparar endast det som fortfarande saknas.",
+            "failed": {
+              "adjustment": "Manuell justering kunde inte sparas: {reason}",
+              "allowance": "Anpassad tilldelning kunde inte sparas: {reason}",
+              "policy": "Policytilldelning kunde inte sparas: {reason}"
+            },
+            "pending": {
+              "adjustment": "Manuell justering har inte sparats ännu.",
+              "allowance": "Anpassad tilldelning har inte sparats ännu.",
+              "policy": "Policytilldelning har inte sparats ännu."
+            },
+            "retry": "Försök spara osparade ändringar igen",
+            "saved": {
+              "adjustment": "Manuell justering sparad.",
+              "allowance": "Anpassad tilldelning sparad.",
+              "policy": "Policytilldelning sparad."
+            },
+            "title": "Vissa ändringar sparades inte",
+            "titleNothingSaved": "Ändringarna sparades inte"
+          },
           "policyOptionDays": "{name} ({days} dagar)",
           "position": "Befattning",
           "postingsSkipped": "Automatiska semesterregistreringar hoppas över tills policykonfigurationen har åtgärdats.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Varning: \"{name}\" är företagets standardpolicy. Du måste ange en annan policy som standard innan du tar bort denna.",
       "delete-description-v2": "Är du säker på att du vill ta bort \"{name}\"? Detta tar även bort alla tilldelningar för denna policy.",
       "deleteFailed": "Det gick inte att ta bort policyn",
+      "deleteLastDefault": "Detta är företagets enda standardpolicy. Ange en annan policy som standard först.",
       "delete-title": "Ta bort semesterpolicy",
       "header": {
         "accrual": "Intjäning",
@@ -334,6 +358,7 @@
       },
       "loadError": "Det gick inte att läsa in policyer",
       "max-days": "Max {days} dagar",
+      "no-end-date": "Inget slutdatum",
       "none": "Ingen",
       "no-policies-created": "Inga semesterpolicyer har skapats än. Skapa en policy för att definiera semesterkvoter för ditt team.",
       "noSearchResults": "Inga policyer matchar din sökning.",

@@ -96,21 +96,27 @@
       "rejectTitle": "Refuzo kërkesën"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Po konfirmohet organizata dhe punonjësi aktual…",
       "created": "Krijuar",
       "decisionRecorded": "Vendimi u regjistrua",
       "destination": "Destinacioni",
       "history": "Historiku i vendimeve",
       "historyDescription": "Çdo hap i kësaj kërkese, më të vjetrat në fillim. Orët shfaqen në UTC.",
       "intermediateApproval": "Miratimi u regjistrua — në pritje të miratimit të mëtejshëm",
+      "legacyClaim": "Kërkesë e trashëguar",
       "legacyReceiptIdentity": "Faturë e trashëguar: shuma e kontrollit të përmbajtjes nuk u regjistrua.",
       "loading": "Po ngarkohet kërkesa…",
       "noReceipts": "Nuk ka fatura të regjistruara",
       "notRecorded": "Nuk është regjistruar",
       "originalAmount": "Shuma origjinale",
       "receipts": "Faturat",
+      "receiptVersion": "Versioni i regjistruar",
       "refreshing": "Po rifreskohet kërkesa…",
+      "scopeUnavailable": "Rifreskoni këtë kërkesë për të konfirmuar qasjen tuaj aktuale.",
       "submitted": "Dorëzuar",
       "title": "Kërkesë për shpenzimet e udhëtimit",
+      "unavailable": "Kërkesa nuk u gjet ose qasja nuk është më e disponueshme.",
       "unknownDates": "Konteksti i datës së udhëtimit nuk është regjistruar (kërkesë e trashëguar)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Zgjidh {name}",
         "selectAll": "Zgjidhni të gjitha shpenzimet në pritje të rimbursimit në këtë faqe",
         "selected": "{count} të përzgjedhura",
+        "selectionChanged": "Një ose më shumë shpenzime të zgjedhura kanë ndryshuar. Mbylleni këtë dritare dialogu dhe shqyrtoni shpenzimet aktuale përpara se të filloni një pagesë tjetër.",
         "skipped": "Nuk përfshihen ({count})",
         "submit": "Shëno {count} si të rimbursuara",
         "title": "Shëno si të rimbursuar"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Asnjë zyrtar aktiv i shpenzimeve që mund të regjistrojë rimbursime nuk i ka ato në fushëveprim. Pronarët dhe administratorët mund t'i regjistrojnë ende ato, ose të zgjerojnë fushëveprimin e një zyrtari.",
         "empty": "Një zyrtar i shpenzimeve mbulon çdo shpenzim të miratuar në pritje të rimbursimit.",
+        "failed": "Mbulimi nuk mund të kontrollohej. Ju lutemi provoni përsëri.",
         "queueFilter": "Shpenzime të miratuara në pritje të rimbursimit që nuk mbulohen nga asnjë zyrtar shpenzimes.",
         "show": "Shfaq këto shpenzime",
         "showAll": "Shfaq të gjitha shpenzimet e miratuara",
@@ -237,6 +245,7 @@
           "none": "Nuk u gjet asnjë punonjës.",
           "search": "Kërko punonjësit…"
         },
+        "failed": "Opsionet e filtrimit nuk mund të ngarkoheshin. Ju lutemi provoni përsëri.",
         "label": "Shfaq shpenzimet",
         "notExported": "Ende pa u eksportuar",
         "open": "Hap",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Këto llogaritje pagash përmbajnë raporte shpenzimesh që presin rimbursim. Pasi të paguhet llogaritja e pagave, konfirmojeni atë për të regjistruar rimbursimet.",
+        "failed": "Konfirmimet e listëpagesës nuk mund të ngarkoheshin. Ju lutemi provoni përsëri.",
         "reports": "{count, plural, one {# raport shpenzimesh për t'u konfirmuar nga ju, {amount}} other {# raporte shpenzimesh për t'u konfirmuar nga ju, {amount}}}",
         "title": "Llogaritjet e pagave në pritje të konfirmimit"
       },
       "queue": {
         "description": "Hapni një shpenzim për të parë shlyerjen e tij dhe për të regjistruar një rimbursim.",
+        "failed": "Nuk mund të ngarkohej radha e financave. Ju lutemi provoni përsëri.",
         "title": "Shpenzimet e miratuara"
+      },
+      "scope": {
+        "failed": "Qasja juaj aktuale në financa nuk mund të konfirmohej. Ju lutemi provoni përsëri.",
+        "loading": "Po konfirmohet qasja në financa…"
       },
       "title": "Financat e shpenzimeve"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kilometrazh pa titull"
     },
     "legacyDraft": {
+      "checking": "Po kontrollohet vazhdimi i draftit…",
       "continue": "Vazhdo si raport",
       "converted": "E vazhduat këtë draft si një raport shpenzimesh. Kjo kërkesë mbetet këtu e pandryshuar për referencë.",
       "description": "Draftet nga formulari i mëparshëm i kërkesës tani përfundohen si raporte shpenzimesh. Shuma, datat, shënimet dhe faturat tuaja janë bartur; çdo gjë që i nevojitet formularit të ri dhe që ky draft nuk e ka regjistruar kurrë, mbetet ta plotësoni ju. Vetë kjo kërkesë mbetet e pandryshuar.",
@@ -367,6 +383,7 @@
         "title": "Vazhduar nga një draft i mëparshëm kërkese"
       },
       "openReport": "Hapni raportin",
+      "readRefused": "Vazhdimi i draftit nuk është i disponueshëm për lexuesin aktual.",
       "receipt": {
         "mismatch": "skedari i ruajtur nuk përputhet më me atë që u ngarkua",
         "unreadable": "skedari i ruajtur nuk mund të lexohet tani",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Nuk ka asgjë të papaguar për këtë shpenzim.",
         "ownExpense": "Nuk mund të regjistroni pagesa për shpenzimet tuaja.",
         "referenceRequired": "Vendosni referencën e pagesës, p.sh. referencën e transferimit bankar.",
+        "refresh": "Bilanci nuk mund të rifreskohej. Shfaqen të dhënat e ngarkuara më parë; riprovoni përpara se të regjistroni një pagesë.",
         "refused": "Kjo pagesë nuk mund të regjistrohet për këtë shpenzim.",
         "staleBalance": "Bilanci ndryshoi ndërsa po futnit këtë pagesë. Kontrolloni bilancin e përditësuar dhe regjistrojeni përsëri.",
         "tooLong": "Ky tekst është shumë i gjatë."
@@ -1149,7 +1167,13 @@
     },
     "title": "Shpenzimet e udhëtimit",
     "workspace": {
-      "description": "Mblidhni shpenzimet e udhëtimit dhe ato individuale, dërgojini për shqyrtim dhe ndiqni rimbursimin e tyre."
+      "create": "Krijo një raport shpenzimesh",
+      "description": "Mblidhni shpenzimet e udhëtimit dhe ato individuale, dërgojini për shqyrtim dhe ndiqni rimbursimin e tyre.",
+      "mileageDescription": "Regjistroni një udhëtim pune me makinë jashtë një udhëtimi.",
+      "otherWork": "Rishikim dhe financa",
+      "receiptDescription": "Regjistroni një shpenzim me faturën e tij.",
+      "reconciling": "Po ngarkohen shpenzimet tuaja për organizatën aktuale…",
+      "tripDescription": "Grumbulloni shpenzimet me detaje të përbashkëta udhëtimi."
     }
   }
 }

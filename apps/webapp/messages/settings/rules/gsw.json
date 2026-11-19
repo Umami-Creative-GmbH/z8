@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Kategorien, die bereits für Abwesenheiten verwendet werden, können nicht gelöscht werden und sollten stattdessen deaktiviert werden.",
       "deleteFailed": "Kategorie konnte nicht gelöscht werden",
+      "deleteInUse": "Die Kategori wird no bruucht. Deaktivier si stattdesse, oder entfärn zersch, was devo abhängt.",
       "deleteTitle": "Abwesenheitskategorie löschen",
       "drawsOnWorkBalance": "Belaschtet de Arbeitsziitsaldo",
       "editCategory": "Bearbeite \"{name}\"",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Kein Abzug",
       "reactivate": "Reaktiviere",
       "saveFailed": "D'Abweseheitskategorie het nid chönne gspeicheret wärde",
+      "saveInUse": "Die Kategori wird vo bestehende Abwäseheite bruucht. Erstell e neui Kategori für anderi Regle, oder deaktivier die.",
       "searchPlaceholder": "Kategorie sueche…",
       "statusUpdateFailed": "De Kategorystatus het nid chönne aktualisiert wärde",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Kategorie aktualisiere"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Abwäseheit",
+        "absenceChange": "Abwäseheitsänderig",
+        "complianceException": "Compliance-Usnahm",
+        "manualTimeSubmission": "Manuelli Ziitiireichig",
+        "periodSubmission": "Periode-Iireichig",
+        "policyClockOut": "Richtlinie-Usstämpfle",
+        "shiftRequest": "Schichtaafrag",
+        "timeCorrection": "Ziitkorrektur",
+        "travelExpense": "Reisespese"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Zuestellig",
+          "retirement": "Nachrichte-Aktualisierig",
+          "transfer": "Überträgig"
+        },
+        "outcome": {
+          "ambiguous": "Ergebnis unbekannt",
+          "delivered": "Zuestellt",
+          "deliveredAfterPurge": "Nach Bereinigig zuestellt",
+          "destinationInvalid": "Ziil ungültig",
+          "gone": "Nachricht nüme verfüegbar",
+          "notCovering": "Nachricht nüme aktuell",
+          "permanent": "Duurhafte Fähler",
+          "retryable": "Vorübergehende Fähler",
+          "unavailable": "Kanal nöd verfüegbar"
+        }
+      },
       "attention": {
         "alertedAt": "Admins benachrichtigt am {date}",
         "approvalType": "Genehmigung",
@@ -116,6 +147,18 @@
         "recheck": "Erneut prüfen",
         "resolved": "Glöst",
         "retryDelivery": "Zuestellig nomol versueche",
+        "technical": {
+          "approvalRequestId": "Genähmigungsaafrag-ID",
+          "approvalType": "Genähmigungstyp-Code",
+          "assignmentId": "Zuewiisigs-ID",
+          "attemptReference": "Versuechsreferänz",
+          "attentionId": "Hiwiis-Element-ID",
+          "copied": "{label} kopiert",
+          "copy": "{label} kopiere",
+          "copyFailed": "De Wärt hät nöd chönne kopiert wärde. Wähl en uus und kopier en manuell.",
+          "title": "Technischi Details",
+          "workflowId": "Workflow-ID"
+        },
         "title": "Bruucht Ufmerksamkeit",
         "transfer": "Überträge…",
         "unknownApprover": "Nöd erfasst"
@@ -155,6 +198,22 @@
         "disposed": "Verworfe",
         "raised": "Usglöst",
         "resolved": "Glöst"
+      },
+      "evidence": {
+        "actionableAt": "Bearbeitbar sit",
+        "actionableEvidence": "Bearbeitbar sit (Quelle)",
+        "attemptCount": "Duurchgfüerti Versuech",
+        "cause": "Ursache",
+        "code": "Fehlercode",
+        "deadline": "Frist",
+        "effect": "Nachrichtenaktion",
+        "error": "Fehler",
+        "outcome": "Ergebnis",
+        "policyRevision": "Richtlinienversion",
+        "reason": "Begründungscode",
+        "recovered": "Wiederhergestellt durch",
+        "route": "Entscheidungspfad",
+        "workId": "Zustellauftrag"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Eskalations-Iistellige händ nöd chönne glade werde.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Gänderet vo",
+        "empty": "Es wurden noch keine Richtlinienänderungen erfasst.",
         "migration": "Istellige-Migration",
         "policy": "Richtlinie",
         "revision": "Revision",
@@ -217,8 +277,10 @@
       },
       "title": "Freigab-Eskalation",
       "toast": {
+        "conflict": "Dies hat sich inzwischen geändert. Laden Sie die Seite neu, um den aktuellen Stand anzuzeigen.",
         "deliveryRetried": "Erneuti Zuestellig planet",
         "disposed": "Pondänz gschlosse",
+        "notFound": "Dieses Element existiert nicht mehr. Laden Sie die Seite neu, um den aktuellen Stand anzuzeigen.",
         "rechecked": "{checked} Elemänt prüeft, {resolved} glöst",
         "requestFailed": "D'Afrag isch fählgschlage. Probier's namal.",
         "reviewed": "Konflikt als überprüeft markiert",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Freigabetype",
       "approver": "Freigäber",
-      "approverEmployeeId": "Mitarbeiter-ID vom Freigäber",
-      "approverEmployeeIdPlaceholder": "Byschpil: employee_123…",
+      "approverEmployee": "Genehmigende Person",
       "approverType": {
         "directManager": "Direkti Füehrigschraft",
         "managerManager": "Vorgsetzte vom Vorgsetzte",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Aazahl Bedingige",
       "createPolicy": "Freigaberichtlinie erstelle",
+      "createPolicySubmit": "Richtlinie erstellen",
+      "deactivateConfirm": {
+        "confirm": "Deaktivieren",
+        "description": "Neue Anfragen stimmen nicht mehr mit dieser Richtlinie überein und werden über die nächste passende aktive Richtlinie oder den Standard-Genehmigungsweg geleitet. Sie können die Richtlinie durch Bearbeiten wieder aktivieren.",
+        "title": "«{name}» deaktivieren?"
+      },
+      "deactivatePolicyNamed": "{name} deaktivieren",
       "defaultStageLabel": "Prüfig dur Vorgesetzte",
       "description": "Konfiguriere sequenzielli Freigabekettine für betrieblichi Abläuf",
       "descriptionPlaceholder": "Byspil: Eskaliert sensibli Abläuf a de Betrieb…",
       "dialogDescription": "Definiere, wenn e Freigabeketti gilt und weli Persone die einzelni Stufe bearbeitid.",
-      "editPolicy": "Richtlinie bearbeite",
+      "editPolicyNamed": "{name} bearbeiten",
+      "editPolicyTitle": "Genehmigungsrichtlinie bearbeiten",
       "empty": "Es sind no kei Freigaberichtlinie konfiguriert. Erstelle e Richtlinie, zum dini erschti Freigabeketti z'definiere.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Organisations-Admin"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Diese Richtlinie umfasst auch # älteren Genehmigungstyp, der hier nicht ausgewählt werden kann. Beim Speichern bleibt {count, plural, one {er} other {sie}} unverändert.} other {Diese Richtlinie umfasst auch # ältere Genehmigungstypen, die hier nicht ausgewählt werden können. Beim Speichern bleiben {count, plural, one {er} other {sie}} unverändert.}}",
       "loadFailed": "Freigaberichtlinie händ nid chönne glade wärde.",
       "loading": "Richtlinie wärded glade…",
       "namePlaceholder": "Byspil: Abweseheits-Eskalation…",
       "noStages": "Noch keine Genehmigungsstufen konfiguriert.",
+      "preservedConditions": "{count, plural, one {Diese Richtlinie hat # weitere Bedingung, die hier nicht geändert werden kann. Beim Speichern bleibt {count, plural, one {sie} other {sie}} unverändert.} other {Diese Richtlinie hat # weitere Bedingungen, die hier nicht geändert werden können. Beim Speichern bleiben {count, plural, one {sie} other {sie}} unverändert.}}",
       "preview": {
         "ariaLabel": "Vorschau vo de Freigabeketti",
-        "badge": "Vorschau-Shell",
-        "description": "Lueg dir a, wie passendi Aaträg dur jedi Freigabestufe laufid, bevor d'e Richtlinie aktiviersch.",
-        "footer": "D'Vorschau mit vollem Kontext zeigt d'Freigabeberechtigte live a, sobald Richtlinien-Bedingige und Mitarbeitergruppe im Editor verchnüpft sind.",
+        "chainDescription": "Wie eine passende Anfrage die oben konfigurierten Stufen durchläuft.",
+        "chainTitle": "Vorschau der Genehmigungskette",
+        "fallback": "Falls keine genehmigende Person gefunden wird: {fallback}",
+        "loadingEmployee": "Mitarbeitende Person wird geladen…",
+        "noEmployeeSelected": "Noch keine mitarbeitende Person ausgewählt",
+        "noStages": "Fügen Sie eine Stufe hinzu, um die Genehmigungskette zu sehen.",
         "stage": {
           "approved": "Freigee",
-          "directManager": "Direkte Vorgesetzte",
-          "operationsAdmin": "Betriebs-Admin",
           "requester": "Aasteller"
-        },
-        "title": "Zämefassig vo de Vorschau-Chetti"
+        }
       },
       "priority": "Priorität",
-      "removeStage": "Stufe entfernen",
+      "removeStageNumber": "Stufe {number} entfernen",
+      "savePolicySubmit": "Richtlinie speichern",
+      "selectApproverEmployee": "Mitarbeitende Person auswählen",
       "stageNumber": "Stufe {number}",
       "stages": "Genehmigungsstufen",
       "stagesCount": "Azahl Stufe",
@@ -322,14 +395,19 @@
       "title": "Freigaberichtlinie",
       "toast": {
         "created": "Freigaberichtlinie erstellt",
-        "saveFailed": "Freigaberichtlinie hät nöd chönne gspeicheret werde."
+        "deactivated": "«{name}» deaktiviert",
+        "reactivated": "«{name}» ist wieder aktiv",
+        "saveFailed": "Freigaberichtlinie hät nöd chönne gspeicheret werde.",
+        "updated": "Genehmigungsrichtlinie gespeichert"
       },
+      "unknownEmployee": "Unbekannte mitarbeitende Person ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",
-        "specificEmployeeRequiresId": "Für spezifischi Mitarbeiter-Stufe isch en Mitarbeiter-ID vom Freigabeberechtigte nötig."
+        "specificEmployeeRequired": "Wählen Sie die genehmigende Person für jede Stufe mit bestimmten Mitarbeitenden aus."
       }
     },
     "changePolicies": {
+      "actionsFor": "Aktionen für {name}",
       "allManagers": "Alli Manager",
       "approvalDaysDescription": "Über s Self-Service use chönd Mitarbeiter innerhalb vo däm Zitfänschter Änderige aaträge (brucht Freigab). 0 = kei zuesätzlichs Fänschter.",
       "approvalDaysLabel": "Freigabefänschter (Täg)",
@@ -363,6 +441,7 @@
       "deleted": "Richtlinie glöscht",
       "deleteDescription": "Bisch sicher, dass du die Richtlinie lösche wotsch? Alli Zuewisige, wo die Richtlinie bruched, werded au entfernt. Mitarbeiter, wo die Richtlinie bisher brucht händ, händ kei Ischränkige meh, bis e neui Richtlinie zugwise wird.",
       "deleteFailed": "Richtlinie hät nöd chönne glöscht werde",
+      "deleteNamedDescription": "Änderungsrichtlinie «{name}» löschen? Alle Zuweisungen, die diese Richtlinie verwenden, werden ebenfalls entfernt. Mitarbeitende, die diese Richtlinie bisher verwendet haben, haben keine Einschränkungen mehr, bis eine neue Richtlinie zugewiesen wird.",
       "deleteTitle": "Änderigsrichtlinie lösche",
       "description": "Bestimme, wenn Mitarbeiter ihre Zeiteinträge bearbeiten dürfen und wann eine Genehmigung durch Vorgesetzte erforderlich ist",
       "descriptionLabel": "Beschrybig",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "Die Standardrichtlinie, wo für alli Mitarbeiter gilt, wo keini Team- oder Individual-Uberschrybig händ.",
       "policySummary": "Richtlinienzusammenfassig:",
       "primaryOnly": "Nur Hauptvorgesetzte",
+      "removeAssignmentFor": "Zuweisung für {name} entfernen",
       "removeAssignmentTitle": "Richtlinienzuewysig entferne?",
       "removeEmployeeDescription": "Das entfernt d Uberschrybig für \"{name}\". Si wärde dänn de Team- oder Organisationsstandard bruche.",
       "removeOrgDescription": "Das entfernt d Organisationsstandard-Richtlinie. Mitarbeiter händ keini Yschränkige, usser si händ e Team- oder Individual-Uberschrybig.",
+      "removeOrgNamedDescription": "Dadurch wird «{policy}» als Standardrichtlinie der Organisation entfernt. Mitarbeitende haben keine Einschränkungen, sofern für sie keine Team- oder Einzelausnahme gilt.",
       "removeTeamDescription": "Das entfernt d Richtlinie vom Team \"{team}\". Si wärde dänn de Organisationsstandard bruche.",
       "sameDay": "Nur am gliche Tag",
       "sameDayFree": "Bearbeitige am gliche Tag sind frei",
@@ -438,6 +519,13 @@
       "description": "Mindestbesetzungsanforderungen pro Standort und Zeit festlegen",
       "editRule": "Deckungsregel bearbeiten",
       "endTime": "Endzeit",
+      "errors": {
+        "endNotAfterStart": "Die Endzeit muss nach der Startzeit am selben Tag liegen.",
+        "invalidTime": "Geben Sie eine Zeit im 24-Stunden-Format HH:mm ein.",
+        "staffCountRange": "Geben Sie eine ganze Zahl von 1 bis 100 ein.",
+        "subareaRequired": "Wählen Sie einen Teilbereich aus."
+      },
+      "loadFailed": "Abdeckungsregeln konnten nicht geladen werden.",
       "loading": "Deckungsregeln werden geladen...",
       "minimumStaffCount": "Mindestanzahl Personal",
       "minimumStaffHint": "Die Mindestanzahl an Personal, die während dieses Zeitblocks erforderlich ist.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Deckungsregel aktualisiert",
       "selectSubarea": "Unterbereich auswählen",
       "settingsFailed": "Einstellungen konnten nicht gespeichert werden",
+      "settingsLoadFailed": "Veröffentlichungseinstellungen konnten nicht geladen werden.",
       "settingsSaved": "Einstellungen gespeichert",
       "startTime": "Startzeit",
       "subarea": "Standort / Unterbereich",
@@ -493,6 +582,10 @@
         "colorSelection": "Farbauswahl",
         "defaultSubarea": "Standard-Unterbereich",
         "endTime": "Endzeit",
+        "errors": {
+          "invalidTime": "Geben Sie eine Zeit im 24-Stunden-Format HH:mm ein.",
+          "subareaRequired": "Wählen Sie einen Ihrer Teilbereiche aus."
+        },
         "name": "Name",
         "namePlaceholder": "z. B. Morgenschicht…",
         "noSubarea": "Kein Standard-Unterbereich",
@@ -508,6 +601,7 @@
         "description": "Schichtvorlagen verwalten",
         "title": "Vorlagen"
       },
+      "loadError": "Schichtvorlagen konnten nicht geladen werden.",
       "table": {
         "duration": "Dauer",
         "name": "Name",
@@ -544,7 +638,7 @@
       "deleteModel": "Zuschlagsmodell löschen",
       "deleteModelDescription": "Dies deaktiviert das Modell und alle seine Zuweisungen. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteModelTitle": "Zuschlagsmodell löschen?",
-      "deleteOrgAssignmentDescription": "Dies entfernt den Organisationsstandard. Teams und Mitarbeitende ohne spezifische Zuweisung haben dann kein Zuschlagsmodell.",
+      "deleteOrgAssignmentNamedDescription": "Dadurch wird «{model}» als Organisationsstandard entfernt. Für Teams und Mitarbeitende ohne spezifische Zuweisung wird kein Zuschlagsmodell angewendet.",
       "deleteTeamAssignmentDescription": "Dies entfernt das Zuschlagsmodell vom Team \"{team}\". Es wird dann der Organisationsstandard verwendet.",
       "description": "Konfigurieren Sie Zeitzuschläge für Überstunden, Nachtarbeit, Wochenenden und Feiertage.",
       "descriptionLabel": "Beschreibung",
@@ -605,9 +699,11 @@
           "loadTitle": "Berächnige chönd nöd glade werde"
         },
         "filters": {
+          "allEmployees": "Alle Mitarbeitenden",
           "apply": "Filter aawände",
-          "employeeId": "Mitarbeiter-ID",
+          "employee": "Mitarbeiter",
           "endDate": "Änddatum",
+          "showAllEmployees": "Alle Mitarbeitenden anzeigen",
           "startDate": "Startdatum"
         },
         "loading": "Berächnige wärded glade…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Zeige die erschte 500 passende Berächnige aa. Schränked d'Datum- oder Mitarbeiterfilter ii, zum d'Summe z'verfiine.",
         "summary": {
           "baseHours": "Basisstunde",
+          "calculationCount": "{count, plural, one {# Berechnung} other {# Berechnungen}}",
           "calculations": "Berächnige",
           "creditedHours": "Aagrächneti Zueschlagsstunde",
           "qualifyingHours": "Qualifizierendi Zueschlagsstunde"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Zerscht us de Sets entferne",
       "categories": "Kategorie",
       "categoriesDescription": "Arbeitskategorie erstelle und verwalte, wo über mehreri Sets hinweg teilt werde chönd",
+      "categoriesLoadError": "Arbeitskategorien konnten nicht geladen werden",
       "categoriesTitle": "Arbeitskategorie",
       "categoryCreated": "Kategorie erstellt",
       "categoryCreateFailed": "Kategorie konnte nöd erstellt werde",
@@ -709,6 +807,7 @@
       "categoryInUse": "Kategorie kann nicht gelöscht werden, da sie in {count} Set(s) verwendet wird. Bitte zuerst aus allen Sets entfernen.",
       "categoryName": "Name",
       "categoryNamePlaceholder": "z. B. Passive Reisezeit",
+      "categoryNameTaken": "Eine Kategorie mit diesem Namen existiert bereits.",
       "categoryUpdated": "Kategorie aktualisiert",
       "categoryUpdateFailed": "Kategorie konnte nicht aktualisiert werden",
       "chooseColor": "Farbe wählen",
@@ -722,22 +821,30 @@
       "createSetDescription": "Erstellen Sie ein neues Kategorienset und wählen Sie die Kategorien aus, die enthalten sein sollen",
       "defaultSet": "Standard-Kategorienset",
       "deleteAssignmentTitle": "Zuweisung entfernen?",
+      "deleteCategoryDescription": "Die Kategorie «{name}» wird dauerhaft gelöscht.",
+      "deleteCategoryNamed": "Kategorie {name} löschen",
+      "deleteCategoryTitle": "Kategorie löschen?",
       "deleteEmployeeAssignment": "Dies entfernt die Überschreibung für \"{name}\". Es wird der Standard des Teams oder der Organisation verwendet.",
-      "deleteOrgAssignment": "Dies entfernt den Organisationsstandard. Mitarbeiter haben keine Arbeitskategorien verfügbar, sofern sie nicht individuell zugewiesen wurden.",
+      "deleteOrgAssignmentNamed": "Dadurch wird «{set}» als Organisationsstandard entfernt. Mitarbeitenden stehen keine Arbeitskategorien zur Verfügung, sofern diese nicht einzeln zugewiesen wurden.",
       "deleteSetDescription": "Dies löscht das Kategorienset \"{name}\" und alle zugehörigen Kategorien dauerhaft. Alle Zuweisungen, die dieses Set verwenden, werden ebenfalls entfernt.",
+      "deleteSetNamed": "Kategorienset {name} löschen",
       "deleteSetTitle": "Kategorienset löschen?",
       "deleteTeamAssignment": "Dies entfernt das Kategorienset vom Team \"{team}\". Es wird der Organisationsstandard verwendet.",
       "description": "Definieren Sie Arbeitskategorien mit Zeitfaktoren für eine effektive Zeitberechnung",
       "descriptionPlaceholder": "Optionale Beschreibung",
       "editCategory": "Kategorie bearbeiten",
       "editCategoryDescription": "Kategoriedetails aktualisieren",
+      "editCategoryNamed": "Kategorie {name} bearbeiten",
       "editSet": "Kategorienset bearbeiten",
       "editSetDescription": "Details des Kategoriensets aktualisieren und Kategorien verwalten",
+      "editSetNamed": "Kategorienset {name} bearbeiten",
       "employeeLevel": "Mitarbeiter-Überschreibungen",
       "employeeLevelDescription": "Team- oder Organisationsstandards für bestimmte Mitarbeiter überschreiben",
       "factor": "Faktor",
       "factorExplanation": "Der Faktor bestimmt die effektive Zeit: 0.5 = 50% (z. B. passive Reisezeit), 1.0 = 100% (normale Arbeit), 1.5 = 150% (Überstunden)",
       "loadError": "Kategoriensets konnten nicht geladen werden",
+      "moveCategoryDown": "{name} nach unten verschieben",
+      "moveCategoryUp": "{name} nach oben verschieben",
       "noCategories": "Noch keine Kategorien vorhanden",
       "noCategoriesAvailable": "Keine Kategorien verfügbar",
       "noCategoriesHint": "Erstellen Sie Kategorien, um sie Sets zuzuweisen",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Keine Teams verfügbar.",
       "orgLevel": "Organisationsstandard",
       "orgLevelDescription": "Standard-Kategorienset, das für alle Mitarbeiter gilt, sofern nicht anders überschrieben",
+      "removeAssignmentFor": "Zuweisung für {name} entfernen",
+      "removeCategoryFromSet": "{name} aus dem Set entfernen",
       "selectCategories": "Kategorien auswählen",
-      "selectedCategories": "Ausgewählte Kategorien (zum Sortieren ziehen)",
+      "selectedCategoriesOrder": "Ausgewählte Kategorien (Reihenfolge mit den Pfeilen ändern)",
       "selectEmployee": "Mitarbeiter",
       "selectEmployeePlaceholder": "Mitarbeiter auswählen",
       "selectSet": "Kategorienset",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Optionaler Beschrieb für dieses Kategorienset",
       "setName": "Name",
       "setNamePlaceholder": "z. B. Reisekategorien",
+      "setNameTaken": "Ein Kategorienset mit diesem Namen existiert bereits.",
       "setUpdated": "Kategorienset wurde aktualisiert",
       "setUpdateFailed": "Kategorienset konnte nicht aktualisiert werden",
       "tab": {

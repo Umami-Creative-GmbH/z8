@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Etkin",
+      "contextRetry": "Devam etmek için kuruluş bağlamınızı yenileyin.",
+      "contextUnavailable": "Kuruluş bağlamı kullanılamıyor",
+      "copyFailed": "Anahtar kopyalanamadı. Tekrar deneyin.",
       "copyKey": "API anahtarını kopyala",
       "copyPrefix": "Öneki kopyala",
       "create": "Anahtar Oluştur",
@@ -9,6 +12,7 @@
       "createdBy": "{name} tarafından",
       "createDescription": "Programatik erişim için yeni bir API anahtarı oluşturun. Anahtar yalnızca bir kez gösterilecektir.",
       "createdOn": "Oluşturulma tarihi: {date}",
+      "createFailed": "Anahtar oluşturma doğrulanamadı. Tekrar denemeden önce listeyi yenileyin.",
       "createTitle": "API Anahtarı Oluştur",
       "creatorDeparted": "Ayrıldı",
       "deleted": "API anahtarı silindi",
@@ -24,6 +28,8 @@
         "creator": "Oluşturan",
         "creatorDeparted": "{name} (ayrıldı)",
         "ip": "IP adresi",
+        "kind": "API anahtarı",
+        "loading": "API anahtarı yükleniyor",
         "noRateLimit": "Kapalı",
         "noRequests": "Son 90 günde istek yok.",
         "rateLimit": "İstek sınırı",
@@ -80,13 +86,19 @@
         "scopes": "İzinler",
         "scopesRequired": "En az bir izin seçin"
       },
+      "hideKey": "Anahtarı gizle",
       "keyCopied": "API anahtarı panoya kopyalandı",
+      "keyHidden": "Anahtar gizlendi",
       "lastUsed": "Son Kullanım",
+      "loading": "API anahtarları yükleniyor",
       "name": "Ad",
       "neverExpires": "Hiçbir zaman sona ermez",
       "noPermissions": "İzin yok",
       "prefix": "Anahtar Öneki",
       "prefixCopied": "Anahtar öneki kopyalandı",
+      "retryHelp": "Geçerli anahtarları doğrulamak için bu listeyi yenileyin. Önceden yüklenen kayıtlar korunur.",
+      "revealKey": "Anahtarı göster",
+      "revokeUnknown": "İptal işlemi doğrulanamadı. Tekrar denemeden önce listeyi yenileyin.",
       "scopeLabel": {
         "absencesRead": "İzinleri oku",
         "absencesReadHealth": "İzin sağlık ayrıntılarını oku",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Önemli:",
       "status": "Durum",
       "title": "API Anahtarları",
+      "unavailable": "API anahtarları kullanılamıyor",
+      "unavailableDescription": "Ayarlarınız yüklenemedi. Bu sayfayı yenilemek için tekrar deneyin.",
+      "unavailableTitle": "Geliştirici Erişimi kullanılamıyor",
       "unknownCreator": "eski bir yönetici",
       "updated": "API anahtarı güncellendi",
+      "updateUnknown": "Güncelleme doğrulanamadı. Tekrar denemeden önce bu anahtarı yenileyin.",
       "usage": "{max} anahtardan {count} tanesi kullanıldı"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Varsayılan URL'ler",
         "defaultUrlsDescription": "Bu platform tarafından yönetilen URL'ler, özel DNS kurulumu olmadan otomatik olarak çalışır.",
         "deleteAria": "{domain} özel alan adını sil",
+        "deleteConfirm": "Alan adını sil",
         "deleted": "Etki alanı silindi",
         "deleteDescription": "\"{domain}\" alan adını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz. Kullanıcılar artık bu özel alan adı üzerinden giriş yapamayacaklar.",
         "deleteFailed": "Etki alanı silinemedi",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Mevcut anahtarı korumak için boş bırakın. API anahtarınızı resend.com adresinden alın",
         "create": "Yapılandırma Oluştur",
         "delete": "Yapılandırmayı Sil",
-        "deleteConfirm": "Bu e-posta yapılandırmasını silmek istediğinizden emin misiniz?",
+        "deleteConfirmNamed": "{fromEmail} için e-posta yapılandırması silinsin mi? Kuruluş e-postaları yeniden sistemin varsayılan göndericisini kullanacaktır.",
         "deleted": "E-posta yapılandırması silindi",
         "deleteFailed": "Silme başarısız oldu",
+        "deleteTitle": "E-posta yapılandırması silinsin mi?",
         "description": "Kuruluşunuz için özel bir e-posta sağlayıcısı yapılandırın. Tüm kuruluş e-postaları sistem varsayılanı yerine bu yapılandırmayı kullanacaktır.",
         "fromEmail": "Gönderen E-postası",
         "fromName": "Gönderen Adı",
@@ -356,10 +374,9 @@
           "title": "Alan adı"
         },
         "hero": {
-          "description": "Korumalı etkinleştirme ile {organizationId} organizasyonu için SSO, SCIM ve zorunluluk ayarlarını yapılandırın.",
-          "eyebrow": "Kurumsal kimlik",
           "title": "Operasyonel komut kontrol listesi"
         },
+        "progress": "{total} adımdan {completed} tanesi tamamlandı",
         "provider": {
           "action": {
             "save": "Sağlayıcıyı kaydet"
@@ -453,7 +470,6 @@
           },
           "description": "SCIM doğrulama güncellemeleri, kimlik sağlayıcınız bir test kullanıcısı veya grup değişikliği gönderdikten sonra gerçekleşir.",
           "dialog": {
-            "cancel": "İptal",
             "decommission": {
               "description": "Bu işlem SCIM sağlamasını kalıcı olarak devreden çıkarır ve geri alınamaz.",
               "title": "SCIM'i Hizmetten Çıkar"
@@ -602,6 +618,7 @@
         "deleteError": "OAuth yapılandırması silinemedi",
         "description": "Sosyal giriş için kendi OAuth kimlik bilgilerinizi yapılandırın. Bu, kullanıcılarınızın paylaşılan kimlik bilgileri yerine kuruluşunuzun OAuth uygulamalarını kullanarak oturum açmasını sağlar.",
         "developerConsole": "{provider} Geliştirici Konsolu",
+        "editAria": "{provider} ile oturum açmayı düzenle",
         "editDescription": "OAuth kimlik bilgilerinizi güncelleyin.",
         "editTitle": "{provider} OAuth Düzenle",
         "empty": "Yapılandırılmış özel sosyal OAuth sağlayıcısı yok.",
@@ -616,9 +633,11 @@
         "keyId": "Anahtar Kimliği",
         "pasteYourP8PrivateKeyContents": ".p8 özel anahtarınızın içeriğini yapıştırın",
         "privateKey": "Özel Anahtar (.p8)",
+        "removeAria": "{provider} ile oturum açmayı kaldır",
         "removed": "{provider} OAuth kaldırıldı",
         "removeDialogDescription": "Bu OAuth yapılandırmasını kaldırmak istediğinizden emin misiniz? Kullanıcılar (varsa) paylaşılan OAuth kimlik bilgilerine geri dönecektir.",
         "removeDialogTitle": "Sosyal OAuth Sağlayıcısını Kaldır",
+        "removeDialogTitleNamed": "{provider} ile oturum açma kaldırılsın mı?",
         "teamId": "Ekip Kimliği",
         "title": "Sosyal Giriş Sağlayıcıları",
         "unverified": "Doğrulanmamış",
@@ -629,8 +648,9 @@
         "addError": "SSO sağlayıcısı eklenemedi",
         "addSuccess": "SSO sağlayıcısı başarıyla eklendi",
         "addTitle": "SSO Sağlayıcısı Ekle",
+        "deleteConfirm": "Sağlayıcıyı sil",
         "deleteDialogDescription": "Bu SSO sağlayıcısını silmek istediğinizden emin misiniz? Kullanıcılar artık bu kimlik sağlayıcısını kullanarak giriş yapamayacak.",
-        "deleteDialogTitle": "SSO Sağlayıcısını Sil",
+        "deleteDialogTitleNamed": "{provider} SSO sağlayıcısı silinsin mi?",
         "deleteError": "SSO sağlayıcısı silinemedi",
         "deleteProviderAria": "SSO sağlayıcısı {provider} silinsin mi?",
         "deleteSuccess": "SSO sağlayıcısı silindi",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Bu e-posta alan adına sahip kullanıcılar SSO kullanabilecektir",
         "empty": "Henüz yapılandırılmış SSO sağlayıcısı yok.",
         "emptyDescription": "Kurumsal çoklu oturum açmayı etkinleştirmek için bir OIDC sağlayıcısı ekleyin.",
+        "generateToken": "TXT belirteci oluştur",
         "guide": {
           "addDescription": "Sağlayıcınızın kurulum talimatlarını izleyin, ardından kuruluşunuza bağlayın.",
           "afterSave": "Kaydettikten sonra, Z8'deki DNS TXT kaydı ile e-posta alan adınızı doğrulayın. Mevcut yönetici oturumunuzu açık tutarken hedeflenen bir kullanıcıyla pilot giriş yapın. Kılavuzlu kurulumda, sağlayıcı listesinde gösterilen sağlayıcı kimliğini ve e-posta alan adını kaydedin, ardından SSO Zorunlu Kıl seçeneğini değerlendirmeden önce gözlemlenen giriş sonucunu manuel olarak kaydedin. Kaydetme ve DNS doğrulaması başarılı bir girişi kanıtlamaz.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Bu sağlayıcı için benzersiz bir tanımlayıcı (küçük harf, boşluksuz)",
         "providerIdInvalid": "Sağlayıcı Kimliği yalnızca küçük harfler, rakamlar ve kısa çizgiler içermelidir",
         "title": "Kimlik Sağlayıcıları",
-        "token": "Belirteç",
         "tokenError": "Alan adı doğrulama belirteci oluşturulamadı",
         "tokenGenerated": "Doğrulama belirteci oluşturuldu",
         "txtToken": "TXT belirteci:",

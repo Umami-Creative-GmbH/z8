@@ -50,6 +50,7 @@
       "retry": "Riprovo {choice}",
       "unavailable": "{choice} nuk disponohet"
     },
+    "clockedIn": "Regjistruar në hyrje",
     "clockedOutSuccess": "Keni regjistruar daljen!",
     "clockIn": "Regjistro hyrjen",
     "clockingIn": "Duke regjistruar hyrjen…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Dalja nga puna u ruajt në këtë pajisje, por nuk u dërgua. Shqyrtoni regjistrimet e ruajtura.",
     "clockOutSuccess": "Dalja u regjistrua me sukses",
     "clockStatus": {
+      "clockedOut": "Nuk është regjistruar hyrja",
       "loading": "Po ngarkohet statusi i orës",
       "retry": "Riprovo statusin e orës",
       "unavailable": "Statusi i orës nuk disponohet"
@@ -301,6 +303,8 @@
         "wrong": "Ky PIN nuk është i saktë. Provoni përsëri."
       },
       "queue": {
+        "awaiting": "Regjistrimet e orarit në pritje të konfirmimit: {count}",
+        "checking": "Po kontrollohen veprimet e dërguara: {count}",
         "dismiss": "Mbyll",
         "reason": {
           "contact": "Lidhja e fundit e kiosk-ut nuk mund të konfirmohej.",
@@ -311,6 +315,7 @@
           "pin": "PIN-i nuk u pranua.",
           "time": "Koha e tij nuk mund të pranohej."
         },
+        "recovery": "Kioska kontrollon sërish automatikisht kur mund të lidhet me Z8. Mos e përsëritni një veprim rezultati i të cilit nuk dihet.",
         "refused": "{name}: {action} në {time}, ruajtur ndërsa ishte pa lidhje, nuk u pranua. {reason}",
         "title": "Regjistrimet pa lidhje nuk pranohen"
       },
@@ -335,6 +340,9 @@
         "description": "Ky kiosk nuk mund të përdoret më për regjistrimin e orarit. Ju lutemi kontaktoni administratorin tuaj.",
         "pairAgain": "Çifto me një kod të ri",
         "title": "Kiosku u revokua"
+      },
+      "scope": {
+        "zone": "Ora e kioskës: {zone}"
       },
       "state": {
         "clockedIn": "Regjistruar në hyrje që nga {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Pa kategori (100%)",
     "noProject": "Pa projekt",
+    "notClockedIn": "Nuk është regjistruar hyrja",
     "notesPlaceholder": "Në çfarë punuat?",
     "notesSaved": "Shënimet u ruajtën",
+    "onBreak": "Në pushim",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Një kërkesë për mungesë për {dates} është pa vendim.",
@@ -497,6 +507,14 @@
       "withdrawn": "Dorëzimi u tërhoq",
       "withdrawRefused": "Për këtë dorëzim tashmë është vendosur dhe nuk mund të tërhiqet më."
     },
+    "policy": {
+      "fixedDays": "Ditë fikse në zyrë: {days}",
+      "flexible": "Politikë fleksibël e zyrës për këtë periudhë",
+      "homeOfficeLeft": "Ditë të mbetura nga shtëpia",
+      "officeRequired": "Ditë në zyrë ende të kërkuara",
+      "requirementWarning": "Kërkesa për ditët në zyrë tejkalon ditët e mbetura të punës",
+      "unavailable": "Politika e vendit të punës nuk është e disponueshme."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Shto pushim",
@@ -535,6 +553,7 @@
       "title": "Kujtuesit e seancës"
     },
     "startedAt": "Filluar në",
+    "statusUnavailable": "Statusi i regjistrimit të orarit nuk është i disponueshëm. Rifreskoni për të provuar përsëri.",
     "summary": {
       "dayOfRequired": "{date}: {worked} nga {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} tarifë shtesë",
       "thisMonth": "Këtë muaj",
       "thisWeek": "Këtë javë",
+      "title": "Përmbledhja e orarit të punës",
       "today": "Sot",
       "todayOfRequired": "{worked} nga {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Tani: {worked} të punuara nga {required} të kërkuara deri tani. Atëherë: {previousWorked} të punuara nga {previousRequired} të kërkuara.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Po përditësohet totali… Përdorni «Rifresko» për të provuar përsëri nëse mbetet i padisponueshëm.",
       "vsLastMonth": "krahasuar me muajin e kaluar",
       "vsLastWeek": "krahasuar me javën e kaluar"
     },
+    "systemNote": {
+      "breakEnforcement": "Vetërregulluar: zbatim i pushimit"
+    },
     "table": {
       "active": "Aktiv",
+      "allEntries": "Të gjitha regjistrimet",
       "approved": "Regjistrimi i kohës u miratua",
       "approveEntry": "Mirato regjistrimin",
       "approveFailed": "Dështoi miratimi i regjistrimit",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Mungojnë detajet e drejtimit",
       "duration": "Kohëzgjatja",
       "emptyState": "Nuk u gjet asnjë regjistrim kohe për këtë javë.",
+      "entryCount": "{count, plural, one {# regjistrim} other {# regjistrime}}",
+      "groupedByDay": "Grupuar sipas ditës",
+      "incompleteDay": "Përfshin regjistrime aktive ose të paplotësuara",
       "missingTask": "Mungon detyra",
       "missingTaskHint": "Ky projekt kërkon një detyrë: shtoni një te ky regjistrim në kalendar.",
+      "offsetContext": "Orët përfundimtare përdorin zhvendosjen lokale UTC të regjistruar për secilin shënim. Titujt e ditëve ndjekin zonën kohore të kalendarit tuaj: {timezone}.",
       "recordedLocalTime": "Ora lokale e regjistruar",
       "rowActions": "Veprimet e regjistrimit të kohës",
       "title": "Regjistrimet e kohës",
@@ -586,62 +615,64 @@
       "search": "Kërko detyrat…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Pasdite",
+        "fullDay": "Ditë e plotë",
+        "morning": "Mëngjes"
+      },
       "dayPicker": "Zgjedhësi i ditës në vijën kohore",
       "emptyDescription": "Nuk ka ende ndërrime, mungesa ose regjistrime orari për ditën e zgjedhur.",
       "emptyTitle": "Nuk është regjistruar asnjë aktivitet për këtë ditë.",
+      "link": {
+        "reviewRequest": "Shqyrto kërkesën",
+        "viewAbsence": "Shiko mungesën"
+      },
+      "monthPicker": "Zgjidhni një ditë kalendari",
       "nextDay": "Dita tjetër",
       "previousDay": "Dita e mëparshme",
-      "title": "Vija kohore e ditës së punës",
-      "today": "Sot",
-      "unavailableDescription": "Regjistrimi i orarit funksionon ende. Provoni ta rifreskoni këtë pamje më vonë.",
-      "unavailableTitle": "Vija kohore nuk është e disponueshme",
-      "workPeriod": {
-        "title": "Punë e regjistruar"
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Kërkesë për mungesë"
+        },
+        "timeCorrection": {
+          "subtitle": "Korrigjim për një regjistrim orari",
+          "title": "Kërkesë për korrigjimin e orarit"
+        }
       },
       "shift": {
         "title": "Turn i planifikuar"
       },
       "status": {
+        "active": "Aktiv",
         "approved": "Miratuar",
-        "pending": "Në pritje",
-        "rejected": "Refuzuar",
         "cancelled": "Anuluar",
-        "published": "Publikuar",
         "draft": "Draft",
-        "active": "Aktiv"
+        "pending": "Në pritje",
+        "published": "Publikuar",
+        "rejected": "Refuzuar"
       },
-      "absence": {
-        "fullDay": "Ditë e plotë",
-        "morning": "Paradite",
-        "afternoon": "Pasdite"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Kërkesë për korrigjim kohe",
-          "subtitle": "Korrigjim i një regjistrimi kohe"
-        },
-        "absence": {
-          "title": "Kërkesë për mungesë",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Shiko mungesën",
-        "reviewRequest": "Shqyrto kërkesën"
-      },
+      "title": "Vija kohore e ditës së punës",
+      "today": "Sot",
+      "unavailableDescription": "Regjistrimi i orarit funksionon ende. Provoni ta rifreskoni këtë pamje më vonë.",
+      "unavailableTitle": "Vija kohore nuk është e disponueshme",
       "warning": {
-        "pendingEdit": {
-          "title": "Kërkesë për ndryshim në pritje",
-          "description": "Kjo periudhë pune ka ndryshime që presin miratim."
+        "autoAdjusted": {
+          "description": "Rregullat e pushimit ose të përputhshmërisë e rregulluan këtë periudhë pune.",
+          "title": "Regjistrim i rregulluar automatikisht"
         },
         "missingClockOut": {
-          "title": "Mungon dalja",
-          "description": "Kjo periudhë pune është ende aktive."
+          "description": "Kjo periudhë pune është ende aktive.",
+          "title": "Mungon regjistrimi i daljes"
         },
-        "autoAdjusted": {
-          "title": "Regjistrim i rregulluar automatikisht",
-          "description": "Rregullat e pushimeve ose të përputhshmërisë e rregulluan këtë periudhë pune."
+        "pendingEdit": {
+          "description": "Kjo periudhë pune ka ndryshime në pritje të miratimit.",
+          "title": "Kërkesë për modifikim në pritje"
         }
+      },
+      "weekPicker": "Zgjidhni një ditë të javës",
+      "workPeriod": {
+        "title": "Puna e regjistruar"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Ju lutemi kontrolloni përdorimin e automjetit"
       }
     },
-    "welcomeBack": "Mirë se u kthyet, {name}",
     "workCategory": "Kategoria e punës",
     "workLocation": "Vendndodhja e punës",
     "workLocationHome": "Shtëpi",
     "workLocationOffice": "Zyrë",
     "workLocationOther": "Tjetër",
-    "workLocationRemote": "Nga distanca",
-    "systemNote": {
-      "breakEnforcement": "Rregulluar automatikisht: zbatimi i pushimeve"
-    }
+    "workLocationRemote": "Nga distanca"
   },
   "wellness": {
     "water": {

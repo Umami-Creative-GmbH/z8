@@ -39,11 +39,13 @@
       "byCostCenter": "Por centro de costes",
       "byManager": "Por gerente",
       "byTeam": "Por equipo",
+      "chartValues": "Ver valores semanales",
       "costCenter": "Centro de costes",
       "currentOvertime": "Horas extra actuales",
       "description": "Realice un seguimiento de la reducción semanal de horas extra en todos los equipos.",
       "errors": {
-        "loadData": "Error al cargar los datos de reducción de horas extra"
+        "loadData": "Error al cargar los datos de reducción de horas extra",
+        "retryDescription": "No se pudieron cargar los datos de horas extra. Vuelve a intentarlo con el período y los filtros seleccionados."
       },
       "filters": {
         "allCostCenters": "Todos los centros de costes",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Grupos en mejora",
       "improvingGroupsDescription": "Grupos con disminución de horas extra",
+      "loading": "Cargando datos de horas extra",
       "manager": "Gerente",
       "previousOvertime": "Horas extra anteriores",
       "previousPeriodDescription": "En comparación con el período anterior",
+      "refreshing": "Actualizando datos de horas extra",
       "selectedRangeDescription": "Para el rango de fechas y filtros seleccionados",
       "title": "Reducción de horas extra",
       "trendDirection": "Dirección de la tendencia",
@@ -92,6 +96,10 @@
         "title": "Cuellos de botella en aprobaciones",
         "unavailable": "No se pudieron cargar los cuellos de botella en las aprobaciones"
       },
+      "chartValues": "Ver valores del gráfico",
+      "errors": {
+        "retryDescription": "No se pudieron cargar algunas analíticas. Los valores cargados previamente, si se muestran, pueden estar desactualizados."
+      },
       "kpis": {
         "approvalRate": {
           "description": "De las solicitudes decididas, aprobadas",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Cargando datos analíticos",
+      "refreshing": "Actualizando analíticas…",
       "workHoursByTeam": {
         "description": "Total de horas de trabajo registradas por equipo",
         "title": "Horas de trabajo por equipo"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Error al cargar los datos de rendimiento del equipo"
       },
+      "loading": "Cargando datos de rendimiento del equipo",
       "onTrack": "En curso",
+      "refreshFailed": "Error al actualizar. Se muestran los datos cargados previamente para este período. La exportación no estará disponible hasta que el reintento tenga éxito.",
+      "refreshing": "Actualizando datos de rendimiento del equipo",
       "variance": {
         "description": "Variación de horas respecto a las horas de trabajo esperadas",
         "empty": "No hay datos de variación disponibles",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Asignado",
+      "allowanceMissing": "Asignación no configurada",
+      "allowanceSource": "Algunos empleados no tienen una asignación guardada. Los totales solo utilizan las asignaciones guardadas existentes.",
       "balance": {
         "description": "Días asignados, tomados y restantes por empleado",
         "title": "Saldo de vacaciones"
       },
-      "daysRemaining": "{count} días restantes",
-      "daysTaken": "{count} días tomados",
+      "dayValue": "{count} días",
+      "description": "Compara el uso de vacaciones y los saldos de los empleados para el período de la organización seleccionado.",
       "errors": {
-        "loadData": "Error al cargar los datos de tendencias de vacaciones"
+        "loadData": "Error al cargar los datos de tendencias de vacaciones",
+        "retryDescription": "No se pudieron cargar los datos de vacaciones. Vuelve a intentarlo con el período seleccionado."
       },
+      "loading": "Cargando datos de vacaciones",
       "monthlyUsage": {
         "description": "Días de vacaciones tomados por mes",
         "empty": "No hay datos de uso mensual disponibles",
         "title": "Uso mensual de vacaciones"
       },
+      "monthlyValues": "Ver valores mensuales",
       "peakMonths": {
         "description": "Meses con mayor actividad de vacaciones",
         "empty": "No hay datos disponibles sobre meses pico",
         "title": "Meses pico de vacaciones"
       },
+      "refreshing": "Actualizando datos de vacaciones",
       "remaining": "Restante",
       "taken": "Tomado",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "No hay datos disponibles sobre horas diarias",
         "title": "Horas de trabajo diarias"
       },
+      "dailyStatus": "Ver estado diario",
+      "dailyValues": "Ver horas diarias",
       "distribution": {
         "description": "Comparación de horas de trabajo de los empleados (barra horizontal)",
         "empty": "No hay datos de distribución disponibles",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Horas esperadas",
       "hoursPerWeekAbbreviation": "h/sem",
+      "loading": "Cargando datos de analíticas de horas de trabajo",
+      "refreshFailed": "Error al actualizar. Se muestran los datos cargados previamente para este período. La exportación no estará disponible hasta que el reintento tenga éxito.",
+      "refreshing": "Actualizando datos de analíticas de horas de trabajo",
       "variance": "Variación",
       "varianceTrend": {
         "description": "Variación de horas respecto a las horas de trabajo esperadas a lo largo del tiempo",
         "empty": "No hay datos de tendencias disponibles",
-        "title": "Tendencia de horas extra y horas faltantes"
+        "title": "Tendencia de horas extra y horas faltantes",
+        "unavailable": "Los valores diarios de horas extra y déficit de horas no están disponibles en este informe. A continuación se muestra el estado diario registrado."
       }
     }
   }

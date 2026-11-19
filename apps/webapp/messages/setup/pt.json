@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Configurando seu espaço de trabalho...",
+    "checkFailed": "Não foi possível verificar suas organizações. Tente novamente.",
     "checking": "Verificando sessão...",
-    "clickToSelect": "Clique para selecionar",
     "redirecting": "Redirecionando...",
+    "retry": "Tentar novamente",
+    "selectionHint": "Seu espaço de trabalho será aberto após a seleção.",
     "selectOrganization": "Selecionar organização",
-    "selectOrganizationDescription": "Escolha com qual organização você deseja trabalhar"
+    "selectOrganizationDescription": "Escolha com qual organização você deseja trabalhar",
+    "title": "Abrir seu espaço de trabalho"
   },
   "setup": {
     "authorization": {

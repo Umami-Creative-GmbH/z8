@@ -13,9 +13,11 @@
       "yes": "Ja"
     },
     "description": "Generer omfattende rapporter over arbeidstimer og fravær med skatterelevante hjemmekontordata",
+    "employeeNumber": "Ansattnummer",
     "employeeSelector": {
       "error": "Kunne ikke laste inn teammedlemmer",
       "label": "Ansatt",
+      "loading": "Laster inn teammedlemmer",
       "placeholder": "Velg ansatt..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Laster inn organisasjonsinnstillinger før forhåndsinnstillinger aktiveres.",
       "period": "Periode",
-      "selectPeriod": "Velg periode"
+      "selectPeriod": "Velg periode",
+      "settingsError": "Organisasjonsinnstillinger er ikke tilgjengelige",
+      "settingsRequired": "Organisasjonsinnstillinger kreves for å bruke forhåndsinnstillinger.",
+      "title": "Generer en ansattrapport"
     },
     "generate": "Generer rapport",
     "generating": "Genererer rapport…",
@@ -62,6 +67,7 @@
       "month": "Måned",
       "noHomeOfficeDays": "Ingen hjemmekontordager registrert i denne perioden.",
       "overtime": "Overtid",
+      "title": "Forhåndsvisning av rapport",
       "total": "Totalt",
       "totalHomeOfficeDays": "Hjemmekontordager totalt",
       "totalHomeOfficeHours": "Totalt antall timer arbeidet hjemmefra",
@@ -266,6 +272,9 @@
         "noPermission": "Du har ikke tillatelse til å se prosjektrapporter.",
         "title": "Prosjektrapporter"
       },
+      "refreshFailed": "Kunne ikke oppdatere prosjektrapporter",
+      "scopeLoading": "Laster inn gjeldende rapportomfang…",
+      "scopeUnavailable": "Gjeldende rapportomfang kunne ikke lastes inn.",
       "status": {
         "active": "Aktiv",
         "archived": "Arkivert",
@@ -324,7 +333,6 @@
         "failedGenerate": "Kunne ikke generere rapport",
         "failedPortfolio": "Kunne ikke generere porteføljerapport",
         "failedProject": "Kunne ikke generere prosjektrapport",
-        "failedProjectReport": "Kunne ikke generere prosjektrapport",
         "portfolioGenerated": "Porteføljerapport generert",
         "projectGenerated": "Rapport generert for {name}",
         "unexpectedError": "Det oppsto en uventet feil"
@@ -376,6 +384,8 @@
         "loading": "Laster inn delelenker…",
         "revokedAutomatically": "Tilbakekalt automatisk den {date}: oppretteren ser ikke lenger alle prosjekter i den",
         "revokedBy": "Tilbakekalt av {name} den {date}",
+        "scopeLoading": "Laster inn gjeldende delingslenkeomfang…",
+        "scopeUnavailable": "Gjeldende delingslenkeomfang kunne ikke lastes inn.",
         "someone": "noen",
         "title": "Lenker til denne rapporten",
         "views": "{count, plural, one {# visning} other {# visninger}}",
@@ -398,7 +408,8 @@
         "description": "Lenken slutter å fungere umiddelbart, og øyeblikksbildet slettes. Oppføringen og visningsloggen beholdes.",
         "done": "Lenke tilbakekalt",
         "failed": "Kunne ikke tilbakekalle lenken",
-        "title": "Tilbakekalle denne lenken?"
+        "titleDeletedReport": "Tilbakekalle delingslenken for en slettet rapport, {period}?",
+        "titleNamed": "Tilbakekalle delingslenken for {report}, {period}?"
       },
       "status": {
         "active": "Aktiv",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arkivert",
       "archivedBadge": "Arkivert",
+      "comparison": "Månedlig kjørelengde etter kjøretøy og ansatt",
       "empty": {
         "description": "Ingen fullført arbeid med kjøreavstand ble registrert i denne perioden.",
         "title": "Ingen kjøring i denne perioden"
@@ -457,6 +469,7 @@
         "period": "Periode"
       },
       "generate": "Generer rapport",
+      "generated": "Generert {time}",
       "generating": "Genererer rapport…",
       "kilometres": "{distance} km",
       "noReportYet": "Ingen rapport er generert ennå",
@@ -465,7 +478,11 @@
         "description": "Kilometer kjørt i arbeid per kjøretøy og ansatt, etter måned",
         "feature": "se rapporten over distanse per kjøretøy"
       },
+      "scope": "Ansatte som er tilgjengelige for deg i denne organisasjonen",
+      "scopeLoading": "Bekrefter gjeldende organisasjon og ansatt…",
+      "scopeUnavailable": "Gjeldende omfang for kjøretøyrapport kunne ikke lastes inn.",
       "selectPeriod": "Velg en periode og generer rapporten.",
+      "staged": "Perioden er endret. Generer rapporten for å oppdatere resultatene og nedlastingene.",
       "table": {
         "employee": "Ansatt",
         "licencePlate": "Registreringsnummer",
@@ -473,8 +490,7 @@
         "vehicle": "Kjøretøy",
         "vehicleAndEmployee": "Kjøretøy / ansatt"
       },
-      "title": "Distanse per kjøretøy",
-      "totalDriven": "{distance} kjørt"
+      "title": "Distanse per kjøretøy"
     }
   }
 }

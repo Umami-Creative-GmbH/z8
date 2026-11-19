@@ -50,6 +50,7 @@
       "retry": "{choice} erneut versuchen",
       "unavailable": "{choice} nicht verfügbar"
     },
+    "clockedIn": "Eingestempelt",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
     "clockIn": "Einstempeln",
     "clockingIn": "Stemple ein...",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Ausstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Überprüfen Sie die gespeicherten Einträge.",
     "clockOutSuccess": "Erfolgreich ausgestempelt",
     "clockStatus": {
+      "clockedOut": "Nicht eingestempelt",
       "loading": "Stempelstatus wird geladen",
       "retry": "Stempelstatus erneut versuchen",
       "unavailable": "Stempelstatus nicht verfügbar"
@@ -301,6 +303,8 @@
         "wrong": "Diese PIN ist nicht korrekt. Versuchen Sie es erneut."
       },
       "queue": {
+        "awaiting": "Stempelungen mit ausstehender Bestätigung: {count}",
+        "checking": "Übermittelte Aktionen werden geprüft: {count}",
         "dismiss": "Verwerfen",
         "reason": {
           "contact": "Die letzte Verbindung des Kiosks konnte nicht bestätigt werden.",
@@ -311,6 +315,7 @@
           "pin": "Die PIN wurde nicht akzeptiert.",
           "time": "Die Uhrzeit konnte nicht akzeptiert werden."
         },
+        "recovery": "Der Kiosk prüft automatisch erneut, sobald er Z8 erreichen kann. Wiederholen Sie keine Aktion, deren Ergebnis unbekannt ist.",
         "refused": "{name}: {action} um {time}, offline gespeichert, wurde nicht akzeptiert. {reason}",
         "title": "Offline-Stempelungen nicht akzeptiert"
       },
@@ -335,6 +340,9 @@
         "description": "Dieser Kiosk kann nicht mehr zum Einstempeln verwendet werden. Bitte wenden Sie sich an Ihre Administration.",
         "pairAgain": "Mit neuem Code koppeln",
         "title": "Kiosk widerrufen"
+      },
+      "scope": {
+        "zone": "Kiosk-Zeit: {zone}"
       },
       "state": {
         "clockedIn": "Eingestempelt seit {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Keine Kategorie (100 %)",
     "noProject": "Kein Projekt",
+    "notClockedIn": "Nicht eingestempelt",
     "notesPlaceholder": "Woran haben Sie gearbeitet?",
     "notesSaved": "Notizen gespeichert",
+    "onBreak": "In der Pause",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Ein Abwesenheitsantrag für {dates} ist noch nicht entschieden.",
@@ -497,6 +507,14 @@
       "withdrawn": "Einreichung zurückgezogen",
       "withdrawRefused": "Diese Einreichung wurde bereits entschieden und kann nicht mehr zurückgezogen werden."
     },
+    "policy": {
+      "fixedDays": "Feste Bürotage: {days}",
+      "flexible": "Flexible Büroregelung für diesen Zeitraum",
+      "homeOfficeLeft": "Verbleibende Homeoffice-Tage",
+      "officeRequired": "Noch erforderliche Bürotage",
+      "requirementWarning": "Erforderliche Bürotage übersteigen die verbleibenden Arbeitstage",
+      "unavailable": "Arbeitsplatzrichtlinie ist nicht verfügbar."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Pause hinzufügen",
@@ -535,6 +553,7 @@
       "title": "Sitzungserinnerungen"
     },
     "startedAt": "Begonnen um",
+    "statusUnavailable": "Stempelstatus ist nicht verfügbar. Aktualisieren Sie, um es erneut zu versuchen.",
     "summary": {
       "dayOfRequired": "{date}: {worked} von {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} Zuschlag",
       "thisMonth": "Diesen Monat",
       "thisWeek": "Diese Woche",
+      "title": "Arbeitszeitübersicht",
       "today": "Heute",
       "todayOfRequired": "{worked} von {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Jetzt: {worked} gearbeitet von bisher {required} Soll. Damals: {previousWorked} gearbeitet von {previousRequired} Soll.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Gesamtsumme wird aktualisiert… Verwenden Sie „Aktualisieren“, um es erneut zu versuchen, falls sie weiterhin nicht verfügbar ist.",
       "vsLastMonth": "im Vergleich zum Vormonat",
       "vsLastWeek": "im Vergleich zur Vorwoche"
     },
+    "systemNote": {
+      "breakEnforcement": "Automatisch angepasst: Pausenregelung"
+    },
     "table": {
       "active": "Aktiv",
+      "allEntries": "Alle Einträge",
       "approved": "Zeiteintrag genehmigt",
       "approveEntry": "Eintrag genehmigen",
       "approveFailed": "Fehler beim Genehmigen des Eintrags",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Fahrtdetails fehlen",
       "duration": "Dauer",
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
+      "entryCount": "{count, plural, one {# Eintrag} other {# Einträge}}",
+      "groupedByDay": "Nach Tag gruppiert",
+      "incompleteDay": "Enthält aktive oder unvollständige Einträge",
       "missingTask": "Fehlende Aufgabe",
       "missingTaskHint": "Dieses Projekt erfordert eine Aufgabe: Fügen Sie dieser Buchung im Kalender eine hinzu.",
+      "offsetContext": "Endpunktzeiten verwenden den jeweils erfassten lokalen UTC-Versatz des Eintrags. Tagesüberschriften richten sich nach Ihrer Kalender-Zeitzone: {timezone}.",
       "recordedLocalTime": "Erfasste Ortszeit",
       "rowActions": "Aktionen für Zeiteinträge",
       "title": "Zeiteinträge",
@@ -586,62 +615,64 @@
       "search": "Aufgaben suchen…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Nachmittag",
+        "fullDay": "Ganzer Tag",
+        "morning": "Vormittag"
+      },
       "dayPicker": "Zeitstrahl-Tagesauswahl",
       "emptyDescription": "Für den ausgewählten Tag gibt es noch keine Schichten, Abwesenheiten oder Zeiteinträge.",
       "emptyTitle": "Keine Aktivität für diesen Tag aufgezeichnet.",
+      "link": {
+        "reviewRequest": "Antrag prüfen",
+        "viewAbsence": "Abwesenheit anzeigen"
+      },
+      "monthPicker": "Kalendertag auswählen",
       "nextDay": "Nächster Tag",
       "previousDay": "Vorheriger Tag",
-      "title": "Arbeitstag-Zeitstrahl",
-      "today": "Heute",
-      "unavailableDescription": "Die Zeiterfassung läuft noch. Versuchen Sie später, diese Ansicht zu aktualisieren.",
-      "unavailableTitle": "Zeitstrahl nicht verfügbar",
-      "workPeriod": {
-        "title": "Erfasste Arbeit"
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Abwesenheitsantrag"
+        },
+        "timeCorrection": {
+          "subtitle": "Korrektur für einen Zeiteintrag",
+          "title": "Antrag auf Zeitkorrektur"
+        }
       },
       "shift": {
         "title": "Geplante Schicht"
       },
       "status": {
+        "active": "Aktiv",
         "approved": "Genehmigt",
-        "pending": "Ausstehend",
-        "rejected": "Abgelehnt",
         "cancelled": "Storniert",
-        "published": "Veröffentlicht",
         "draft": "Entwurf",
-        "active": "Aktiv"
+        "pending": "Ausstehend",
+        "published": "Veröffentlicht",
+        "rejected": "Abgelehnt"
       },
-      "absence": {
-        "fullDay": "Ganzer Tag",
-        "morning": "Vormittag",
-        "afternoon": "Nachmittag"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Zeitkorrekturantrag",
-          "subtitle": "Korrektur eines Zeiteintrags"
-        },
-        "absence": {
-          "title": "Abwesenheitsantrag",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Abwesenheit anzeigen",
-        "reviewRequest": "Antrag prüfen"
-      },
+      "title": "Arbeitstag-Zeitstrahl",
+      "today": "Heute",
+      "unavailableDescription": "Die Zeiterfassung läuft noch. Versuchen Sie später, diese Ansicht zu aktualisieren.",
+      "unavailableTitle": "Zeitstrahl nicht verfügbar",
       "warning": {
-        "pendingEdit": {
-          "title": "Änderungsantrag ausstehend",
-          "description": "Für diesen Arbeitszeitraum warten Änderungen auf Genehmigung."
+        "autoAdjusted": {
+          "description": "Dieser Arbeitszeitraum wurde durch Pausen- oder Compliance-Regeln angepasst.",
+          "title": "Automatisch angepasster Eintrag"
         },
         "missingClockOut": {
-          "title": "Fehlendes Ausstempeln",
-          "description": "Dieser Arbeitszeitraum ist noch aktiv."
+          "description": "Dieser Arbeitszeitraum ist noch aktiv.",
+          "title": "Fehlendes Ausstempeln"
         },
-        "autoAdjusted": {
-          "title": "Automatisch angepasster Eintrag",
-          "description": "Pausen- oder Compliance-Regeln haben diesen Arbeitszeitraum angepasst."
+        "pendingEdit": {
+          "description": "Für diesen Arbeitszeitraum liegen Änderungen vor, die auf Genehmigung warten.",
+          "title": "Ausstehende Änderungsanfrage"
         }
+      },
+      "weekPicker": "Wochentag auswählen",
+      "workPeriod": {
+        "title": "Erfasste Arbeitszeit"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Bitte überprüfen Sie die Fahrzeugnutzung"
       }
     },
-    "welcomeBack": "Willkommen zurück, {name}",
     "workCategory": "Arbeitskategorie",
     "workLocation": "Arbeitsort",
     "workLocationHome": "Homeoffice",
     "workLocationOffice": "Büro",
     "workLocationOther": "Sonstiges",
-    "workLocationRemote": "Mobil",
-    "systemNote": {
-      "breakEnforcement": "Automatisch angepasst: Pausenregelung"
-    }
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

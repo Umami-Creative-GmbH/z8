@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Controalele de acces rezumă doar evenimentele sensibile din jurnalul de audit care sunt deja înregistrate astăzi.",
         "auditEvidence": "Probele de audit utilizează configurația de export de audit în timp real, cererile de pachete de audit și rezultatele verificărilor recente.",
+        "title": "Acoperire",
         "workforceCompliance": "Conformitatea forței de muncă utilizează încălcările politicilor de lucru din ultimele 7 zile și cererile de derogare în așteptare."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Ultima actualizare: {time}"
+        "lastRefreshed": "Ultima actualizare: {time}",
+        "refreshMeaning": "Reîmprospătarea reîncarcă semnalele înregistrate; nu reevaluează constatările conform unei noi politici."
       },
       "links": {
         "inspectCompliance": "Inspectează conformitatea",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Deschide setările de conformitate",
         "reviewAuditExport": "Revizuiește exportul de audit"
       },
+      "loading": "Se încarcă semnalele de conformitate",
       "overview": "Prezentare generală a conformității",
       "recentEvents": {
         "empty": "Nu au fost detectate evenimente critice recente.",
-        "title": "Evenimente critice recente"
+        "partial": "Evenimentele recente sunt limitate la sursele disponibile. Unele semnale nu au putut fi încărcate.",
+        "title": "Evenimente critice recente",
+        "unavailable": "Evenimentele recente nu au putut fi confirmate deoarece sursele de semnal nu sunt disponibile."
       },
+      "scope": "Organizație activă",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Modificările sensibile ale controalelor necesită revizuire",
             "healthy": "Nu au fost înregistrate modificări sensibile ale controalelor recent",
             "warning": "Au fost detectate modificări recente ale controalelor"
-          }
+          },
+          "title": "Controale de acces"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Dovezile de audit necesită atenție",
             "healthy": "Semnalele dovezilor de audit par în regulă",
             "warning": "Dovezile de audit sunt pregătite doar parțial"
-          }
+          },
+          "title": "Dovezi de audit"
         },
+        "title": "Secțiuni de conformitate",
         "unavailable": {
           "headline": "Semnal temporar indisponibil"
         },
@@ -94,7 +103,8 @@
             "critical": "Încălcările politicilor forței de muncă necesită revizuire",
             "healthy": "Nu au fost detectate probleme recente privind politicile forței de muncă",
             "warning": "Conformitatea forței de muncă deviază"
-          }
+          },
+          "title": "Conformitatea forței de muncă"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Excepție aprobată",
       "approvedDescription": "Excepția de conformitate a fost aprobată.",
       "approveFailed": "Aprobarea a eșuat",
+      "approveFor": "Aprobați excepția {type} pentru {name}",
+      "loadError": "Cererile de excepție în așteptare nu au putut fi încărcate.",
       "plannedDuration": "Planificat",
       "plannedDurationHelp": "Estimați cât timp suplimentar preconizați că veți avea nevoie peste limită.",
       "reason": "Motivul excepției",
@@ -124,6 +136,7 @@
       "rejected": "Excepție respinsă",
       "rejectedDescription": "Excepția de conformitate a fost respinsă.",
       "rejectFailed": "Respingerea a eșuat",
+      "rejectFor": "Respingeți excepția {type} pentru {name}",
       "rejectionPlaceholder": "Introduceți motivul respingerii acestei excepții...",
       "rejectionReason": "Motivul respingerii",
       "rejectTitle": "Respingeți cererea de excepție",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Managerul dvs. va fi notificat și poate aproba sau respinge cererea.",
       "requestTitle": "Solicită excepție de conformitate",
       "submit": "Trimite cererea",
-      "type": "Tip de excepție"
+      "type": "Tip de excepție",
+      "types": {
+        "overtimeDaily": "Ore suplimentare zilnice",
+        "overtimeMonthly": "Ore suplimentare lunare",
+        "overtimeWeekly": "Ore suplimentare săptămânale",
+        "restPeriod": "Perioadă de repaus"
+      }
     },
     "hasApprovedException": "Aveți o excepție aprobată. Puteți continua.",
     "moreAlerts": "mai mult",

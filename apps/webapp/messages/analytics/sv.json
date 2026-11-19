@@ -39,11 +39,13 @@
       "byCostCenter": "Per kostnadsställe",
       "byManager": "Per chef",
       "byTeam": "Per team",
+      "chartValues": "Visa veckovärden",
       "costCenter": "Kostnadsställe",
       "currentOvertime": "Aktuell övertid",
       "description": "Följ veckovis övertidsminskning över team.",
       "errors": {
-        "loadData": "Kunde inte läsa in data för övertidsavveckling"
+        "loadData": "Kunde inte läsa in data för övertidsavveckling",
+        "retryDescription": "Övertidsdata kunde inte läsas in. Försök igen med den valda perioden och filtren."
       },
       "filters": {
         "allCostCenters": "Alla kostnadsställen",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Grupper som förbättras",
       "improvingGroupsDescription": "Grupper med minskande övertid",
+      "loading": "Läser in övertidsdata",
       "manager": "Chef",
       "previousOvertime": "Tidigare övertid",
       "previousPeriodDescription": "Jämfört med föregående period",
+      "refreshing": "Uppdaterar övertidsdata",
       "selectedRangeDescription": "För valt datumintervall och filter",
       "title": "Övertidsavverkning",
       "trendDirection": "Trendriktning",
@@ -92,6 +96,10 @@
         "title": "Flaskhalsar för godkännande",
         "unavailable": "Flaskhalsar för godkännande kunde inte läsas in"
       },
+      "chartValues": "Visa diagramvärden",
+      "errors": {
+        "retryDescription": "Viss analysdata kunde inte läsas in. Tidigare inlästa värden, om de visas, kan vara inaktuella."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Av beslutade förfrågningar godkända",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Läser in analysdata",
+      "refreshing": "Uppdaterar analysdata…",
       "workHoursByTeam": {
         "description": "Totalt antal loggade arbetstimmar per team",
         "title": "Arbetstimmar per team"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Kunde inte läsa in teamprestandadata"
       },
+      "loading": "Läser in teamprestationsdata",
       "onTrack": "Enligt plan",
+      "refreshFailed": "Uppdateringen misslyckades. Tidigare inlästa data för denna period visas. Export är inte tillgänglig förrän ett nytt försök lyckas.",
+      "refreshing": "Uppdaterar teamprestationsdata",
       "variance": {
         "description": "Tidsavvikelse från förväntade arbetstimmar",
         "empty": "Ingen avvikelsedata tillgänglig",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Allokerad",
+      "allowanceMissing": "Tilldelning har inte konfigurerats",
+      "allowanceSource": "Vissa anställda saknar sparad tilldelning. Summor baseras endast på befintliga sparade tilldelningar.",
       "balance": {
         "description": "Tilldelade, uttagna och återstående dagar per anställd",
         "title": "Semestersaldo"
       },
-      "daysRemaining": "{count} dagar kvar",
-      "daysTaken": "{count} dagar uttagna",
+      "dayValue": "{count} dagar",
+      "description": "Jämför semesteranvändning och anställdas saldon för den valda organisationsperioden.",
       "errors": {
-        "loadData": "Det gick inte att läsa in data om semestertrender"
+        "loadData": "Det gick inte att läsa in data om semestertrender",
+        "retryDescription": "Semesterdata kunde inte läsas in. Försök igen med den valda perioden."
       },
+      "loading": "Läser in semesterdata",
       "monthlyUsage": {
         "description": "Uttagna semesterdagar per månad",
         "empty": "Inga månatliga användningsdata tillgängliga",
         "title": "Månatlig semesteranvändning"
       },
+      "monthlyValues": "Visa månadsvärden",
       "peakMonths": {
         "description": "Månader med högst semesteraktivitet",
         "empty": "Inga data om toppmånader tillgängliga",
         "title": "Toppmånader för semester"
       },
+      "refreshing": "Uppdaterar semesterdata",
       "remaining": "Återstående",
       "taken": "Uttagna",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Inga data om dagliga timmar tillgängliga",
         "title": "Dagliga arbetstimmar"
       },
+      "dailyStatus": "Visa daglig status",
+      "dailyValues": "Visa dagliga timmar",
       "distribution": {
         "description": "Jämförelse av anställdas arbetstimmar (liggande stapel)",
         "empty": "Ingen fördelningsdata tillgänglig",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Förväntade timmar",
       "hoursPerWeekAbbreviation": "tim/v",
+      "loading": "Läser in analysdata för arbetstimmar",
+      "refreshFailed": "Uppdateringen misslyckades. Tidigare inlästa data för denna period visas. Export är inte tillgänglig förrän ett nytt försök lyckas.",
+      "refreshing": "Uppdaterar analysdata för arbetstimmar",
       "variance": "Avvikelse",
       "varianceTrend": {
         "description": "Timmars avvikelse från förväntad arbetstid över tid",
         "empty": "Ingen trenddata tillgänglig",
-        "title": "Trend för övertid och undertid"
+        "title": "Trend för övertid och undertid",
+        "unavailable": "Dagliga timvärden för över- och undertid är inte tillgängliga från denna rapport. Registrerad daglig status visas nedan."
       }
     }
   }

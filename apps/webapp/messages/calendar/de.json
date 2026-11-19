@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Abwesenheit hinzufügen",
     "balance": {
       "carryoverDays": "Sie haben {count} Tage übertragen",
-      "carryoverExpiry": "die ablaufen am",
+      "carryoverDaysExpiring": "Sie haben {count} übertragene Tage. Diese verfallen am {date}.",
       "carryoverFrom": "Übertrag aus {year}",
       "daysRemaining": "Verbleibende Tage",
-      "description": "Ihre Urlaubstage für das aktuelle Jahr",
       "outOfTotalDays": "von insgesamt {totalDays} Tagen",
       "pending": "Ausstehend",
       "title": "Urlaubssaldo {year}",
       "used": "Verbraucht"
     },
     "calendar": {
+      "currentYear": "Dieses Jahr",
       "legend": {
         "approved": "Genehmigt",
-        "halfDayAm": "Halber Tag (Vormittag)",
-        "halfDayPm": "Halber Tag (Nachmittag)",
+        "halfDay": "Halber Tag",
         "holiday": "Feiertag",
         "pending": "Ausstehend",
         "rejected": "Abgelehnt"
       },
       "nextYear": "Nächstes Jahr",
-      "previousYear": "Vorheriges Jahr"
+      "previousYear": "Vorheriges Jahr",
+      "requestAnotherAbsence": "Weitere Abwesenheit ab diesem Tag beantragen",
+      "selectDayDetailsHint": "Wählen Sie einen Tag aus, um ab diesem eine Abwesenheit zu beantragen. Bei einem Tag mit einer genehmigten oder ausstehenden Abwesenheit werden stattdessen deren Details angezeigt."
     },
     "change": {
       "afternoon": "Nachmittag",
@@ -40,6 +40,7 @@
       "historyFailed": "Änderungsanträge konnten nicht geladen werden.",
       "keepHours": "Erfasste Stunden und Abdeckung beibehalten",
       "morning": "Vormittag",
+      "pendingCount": "{count} ausstehend",
       "pendingExplanation": "Die erfasste Abwesenheit bleibt gültig, bis eine andere genehmigende Person Ihre Anfrage annimmt.",
       "reason": "Grund",
       "reasonRequired": "Ein Grund ist erforderlich",
@@ -321,10 +322,10 @@
       "pending": "Ausstehend",
       "rejected": "Abgelehnt"
     },
-    "subtitle": "Verwalten Sie Ihre Freizeit und Urlaubstage",
     "table": {
       "cancelAbsence": "Abwesenheit stornieren",
       "cancelAbsenceTooltip": "Abwesenheit stornieren",
+      "changePending": "Änderungsantrag ausstehend",
       "end": "Ende",
       "headers": {
         "actions": "Aktionen",
@@ -337,9 +338,7 @@
       "noRequests": "Keine Abwesenheitsanträge gefunden.",
       "noSearchResults": "Keine Abwesenheiten entsprechen Ihrer Suche.",
       "searchPlaceholder": "Suche nach Typ, Status oder Notizen...",
-      "start": "Start",
-      "subtitle": "Kürzliche und kommende Abwesenheitsanträge",
-      "title": "Ihre Abwesenheitsanträge"
+      "start": "Start"
     },
     "title": "Abwesenheiten",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kalender",
       "table": "Tabelle"
+    },
+    "year": {
+      "loadFailed": "{year} konnte nicht geladen werden. Es wird weiterhin {loadedYear} angezeigt.",
+      "loading": "{year} wird geladen… Es wird weiterhin {loadedYear} angezeigt."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Bearbeiten",
       "label": "Aktionen für Zeiteinträge"
     },
+    "context": {
+      "timezone": "Zeitzone des Kalenders"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Zeiteinträge blockiert",
       "category": "Kategorie",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Löschung des Zeiteintrags angewendet",
       "auditNote": "Zeiteinträge werden für Auditzwecke als gelöscht markiert.",
-      "confirm": "In Pause umwandeln",
-      "description": "Dies wird diesen Arbeitszeitraum dauerhaft löschen. Die Lücke erscheint als Pause im Kalender.",
       "failed": "Löschen des Arbeitszeitraums fehlgeschlagen",
       "reasonLabel": "Grund für die Löschung",
-      "reasonRequired": "Grund ist erforderlich",
-      "success": "Arbeitszeitraum in Pause umgewandelt",
-      "title": "In Pause umwandeln?"
+      "reasonRequired": "Grund ist erforderlich"
     },
     "details": {
       "automaticClockOut": "Automatisch ausgestempelt",
@@ -516,10 +518,7 @@
       "holiday": "Feiertag",
       "missingRequiredWork": "Erforderliche Arbeit fehlt",
       "requirementMetOrOver": "Anforderung erfüllt/überschritten",
-      "timeEntry": "Zeiteintrag",
-      "title": "Legende",
       "underRequirement": "Unter der Anforderung",
-      "workPeriod": "Arbeitszeitraum",
       "workPeriodPending": "Ausstehende Genehmigung"
     },
     "loadEventsError": "Kalenderereignisse konnten nicht geladen werden: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
       "weekSum": "Summe"
     },
+    "nextMonth": "Nächster Monat",
+    "previousMonth": "Vorheriger Monat",
     "requirements": {
       "dayLabel": "{date}: {required} Sollzeit, {actual} erfasst, {delta} Differenz, {status}",
       "includesRunningWork": "Enthält laufende Arbeiten",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Abrechenbar",
+      "breakEnforcementNote": "Automatisch angepasst: Pausenregelung",
       "editedBy": "(bearbeitet von {name} am {date})",
       "missingTask": "Fehlende Aufgabe",
       "missingTaskHint": "Fehlende Aufgabe: Aufgabe hinzufügen",
-      "breakEnforcementNote": "Automatisch angepasst: Pausenregelung"
+      "runningTitle": "{name} - {duration} (läuft)",
+      "stop": "Stoppen",
+      "stopFor": "Laufende Arbeitszeit für {name} stoppen"
     },
     "workStatus": {
       "overRequirement": "über der Anforderung",

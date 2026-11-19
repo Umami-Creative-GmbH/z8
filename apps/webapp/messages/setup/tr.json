@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Çalışma alanınız kuruluyor...",
+    "checkFailed": "Kuruluşlarınız kontrol edilemedi. Tekrar deneyin.",
     "checking": "Oturum kontrol ediliyor...",
-    "clickToSelect": "Seçmek için tıklayın",
     "redirecting": "Yönlendiriliyor...",
+    "retry": "Tekrar dene",
+    "selectionHint": "Çalışma alanınız seçimden sonra açılır.",
     "selectOrganization": "Kuruluş Seçin",
-    "selectOrganizationDescription": "Hangi kuruluşla çalışmak istediğinizi seçin"
+    "selectOrganizationDescription": "Hangi kuruluşla çalışmak istediğinizi seçin",
+    "title": "Çalışma alanınızı açın"
   },
   "setup": {
     "authorization": {

@@ -96,11 +96,12 @@
         "year": "Rok"
       },
       "history": {
-        "description": "Wyświetl i pobierz poprzednie eksporty DATEV",
+        "descriptionAllFormats": "Przeglądaj i pobieraj poprzednie eksporty listy płac",
         "download": "Pobierz eksport",
         "downloadError": "Nie udało się pobrać adresu URL do pobrania",
         "employees": "pracownicy",
         "noExports": "Brak eksportów",
+        "noExportsHint": "Rozpocznij eksport listy płac na karcie Eksport. Ukończone eksporty pojawią się tutaj do pobrania.",
         "payrollRun": "{count, plural, one {Przebieg listy płac: # raport z wydatków} other {Przebieg listy płac: # raportów z wydatków}}",
         "periods": "okresy",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Przetwarzanie"
         },
         "table": {
+          "actions": "Działania",
           "createdAt": "Utworzono",
           "dateRange": "Zakres dat",
           "records": "Rekordy",
@@ -151,7 +153,8 @@
         "configureFirst": "Przed skonfigurowaniem mapowań należy skonfigurować co najmniej jeden format eksportu płac (DATEV, Lexware lub Sage).",
         "deleteDescription": "Czy na pewno chcesz usunąć to mapowanie typu płacy?",
         "deleteError": "Nie udało się usunąć mapowania",
-        "deleteMapping": "Usuń mapowanie",
+        "deleteMappingNamed": "Usuń mapowanie dla {name}",
+        "deleteNamedDescription": "Usunąć mapowanie składnika wynagrodzenia dla \"{name}\"?",
         "deleteSuccess": "Mapowanie usunięte",
         "deleteTitle": "Usuń mapowanie",
         "description": "Opis",
@@ -335,7 +338,8 @@
         "name": "Pracownik",
         "noNumber": "Nie ustawiono",
         "personnelIdentifier": "Identyfikator kadrowy",
-        "personnelNumber": "Numer kadrowy"
+        "personnelNumber": "Numer kadrowy",
+        "unnamed": "Nienazwany pracownik"
       },
       "checks": {
         "count": "Liczba",
@@ -364,6 +368,13 @@
       },
       "description": "Sprawdź, czy okres płacowy jest gotowy przed wyeksportowaniem danych o czasie pracy, nieobecnościach i płacach.",
       "openPayrollExport": "Otwórz eksport listy płac",
+      "period": {
+        "currentMonth": "Bieżący miesiąc",
+        "navLabel": "Okres rozliczeniowy",
+        "previousMonth": "Poprzedni miesiąc",
+        "scope": "Okres rozliczeniowy: {period} (UTC)",
+        "showMonth": "Pokaż {month}"
+      },
       "status": {
         "blocked": "Zablokowane",
         "ready": "Gotowe do listy płac",

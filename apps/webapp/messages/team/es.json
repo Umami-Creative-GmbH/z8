@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Registrar ausencia para {name}"
       },
+      "allowances": "Asignaciones anuales",
       "calendar": {
         "approved": "Aprobado",
         "changeDeputy": "Cambiar sustituto",
@@ -12,7 +13,6 @@
         "deputyMissing": "Falta sustituto",
         "description": "Ausencias aprobadas y pendientes para el equipo y año seleccionados.",
         "error": {
-          "description": "Por favor, inténtelo de nuevo en un momento.",
           "title": "No se pudo cargar el calendario"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Registrar ausencia",
         "titleForEmployee": "Registrar ausencia para {name}"
       },
+      "recordingUnavailable": "No se pueden cargar las opciones de registro de ausencias",
+      "retained": "Se muestran los datos cargados anteriormente. Vuelve a intentarlo para obtener los registros actuales.",
+      "scopeChanged": "El alcance del equipo ha cambiado. Recarga para continuar.",
+      "scopeLoading": "Cargando el alcance actual del equipo…",
+      "scopeUnavailable": "No se puede cargar el alcance actual del equipo",
+      "sections": "Secciones de la página",
       "sort": {
         "ascending": "ascendente",
         "by": "Ordenar por {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Sin saldo"
     },
-    "description": "Ver y gestionar los empleados que supervisas directamente",
+    "directory": {
+      "count": "{count, plural, one {# miembro en este alcance} other {# miembros en este alcance}}",
+      "loading": "Cargando miembros del equipo",
+      "retained": "Mostrando los últimos miembros cargados. Vuelve a intentarlo para actualizarlos.",
+      "retry": "Reintentar",
+      "retrying": "Reintentando…",
+      "scope": "Tú y los empleados que supervisas directamente en la organización activa.",
+      "scopeChanged": "Tu organización o acceso ha cambiado. Actualiza para cargar tu equipo."
+    },
     "driving": {
+      "clearFilters": "Borrar filtros",
       "columns": {
         "calendar": "Calendario",
         "date": "Fecha",
@@ -126,6 +141,8 @@
         "employee": "Empleado",
         "team": "Equipo"
       },
+      "guidance": "Abre el calendario de un empleado para completar la atribución del período de trabajo. Los datos que faltan no bloquean el fichaje ni establecen autorización de conducción.",
+      "loadFailed": "No se pudieron cargar los datos de conducción.",
       "loading": "Cargando detalles de conducción",
       "missing": {
         "endReading": "Sin lectura final",
@@ -133,10 +150,18 @@
         "startReading": "Sin lectura inicial",
         "vehicle": "Sin vehículo"
       },
+      "noMatch": "No hay datos de conducción faltantes que coincidan con estos filtros.",
       "openCalendar": "Calendario",
       "openCalendarOf": "Abrir el calendario de {name}",
+      "refreshFailed": "No se pudieron actualizar los datos de conducción. Se muestran los registros cargados anteriormente.",
+      "restricted": "Los datos de conducción no están disponibles en tu alcance actual.",
+      "scopeAll": "Todos los empleados de esta organización",
+      "scopeFailed": "No se pudo cargar el alcance de conducción actual.",
+      "scopeLoading": "Cargando el alcance de conducción actual…",
+      "scopeManaged": "Empleados que gestionas",
       "title": "Faltan detalles de conducción",
-      "truncated": "Mostrando los {count} períodos de trabajo más recientes. Filtre por equipo o empleado para ver el resto."
+      "truncated": "Mostrando los {count} períodos de trabajo más recientes. Filtre por equipo o empleado para ver el resto.",
+      "updating": "Actualizando datos de conducción…"
     },
     "empty": {
       "action": "Ir a Configuración de empleados",
@@ -148,9 +173,9 @@
       "title": "Algo salió mal"
     },
     "feature": "ver tu equipo",
-    "member": "miembro",
-    "members": "miembros",
-    "member.you": "Tú",
+    "member": {
+      "you": "Tú"
+    },
     "noResults": {
       "action": "Borrar búsqueda",
       "description": "Ningún miembro del equipo coincide con \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Período",
         "status": "Estado"
       },
-      "descriptionAll": "Quién ha enviado el período seleccionado. Aprueba o rechaza los envíos en la bandeja de entrada de aprobaciones.",
-      "descriptionManaged": "Quién de los empleados que gestionas ha enviado el período seleccionado. Aprueba o rechaza los envíos en la bandeja de entrada de aprobaciones.",
+      "confirmationContext": "Los envíos confirman los registros sin congelarlos. Los registros modificados deben volver a enviarse. Revisa las decisiones en la bandeja de aprobación.",
+      "contextFailed": "No se pudo comprobar tu acceso actual.",
       "empty": "No se espera que nadie a quien puedas ver envíe este período.",
       "loading": "Cargando envíos del período",
       "notSubmitted": "No enviado",
@@ -180,7 +205,12 @@
       "openInbox": "Abrir la bandeja de entrada de aprobaciones",
       "owing": "{count, plural, one {# empleado aún no ha enviado este período.} other {# empleados aún no han enviado este período.}}",
       "period": "Período de envío",
+      "readFailed": "No se pudieron cargar los envíos del período. Es posible que los registros cargados anteriormente estén desactualizados.",
+      "records": "Envíos de empleados",
+      "refresh": "Actualizar envíos",
       "running": "Este período todavía está en curso. Los empleados pueden enviarlo a partir de su último día.",
+      "scopeAll": "Todos los empleados cubiertos",
+      "scopeManaged": "Empleados que gestionas",
       "status": {
         "approved": "Aprobado",
         "awaiting": "Pendiente de envío",
@@ -189,10 +219,13 @@
         "submitted": "Enviado"
       },
       "summary": "Estados",
-      "title": "Envíos del período"
+      "title": "Envíos del período",
+      "unavailable": "Los envíos de periodos no están disponibles para tu acceso actual. Actualiza para volver a comprobar el acceso."
     },
     "presence": {
       "allLocations": "Todas las ubicaciones",
+      "assignmentContext": "La asignación de ubicación no acredita la posición del dispositivo. Las horas utilizan la zona capturada al iniciar el trabajo o la pausa. La presencia se actualiza cada minuto.",
+      "chooseLocation": "Elige una ubicación",
       "columns": {
         "name": "Nombre",
         "since": "Desde",
@@ -202,9 +235,19 @@
       "descriptionAll": "Empleados asignados a esta ubicación que han fichado o están en una pausa.",
       "descriptionManaged": "Empleados a tu cargo asignados a esta ubicación que han fichado o están en una pausa.",
       "empty": "Nadie que puedas ver ha fichado en esta ubicación en este momento.",
+      "loadFailed": "No se pudo cargar la presencia de esta ubicación. Reinténtalo o elige una ubicación de nuevo.",
+      "loading": "Cargando presencia de la ubicación…",
+      "loadingLocations": "Cargando ubicaciones de la organización actual…",
       "locationTitle": "Quién está presente: {location}",
+      "locationUnavailable": "Ubicación no disponible",
+      "locationUnavailableDescription": "Esta ubicación no está disponible en tu organización actual. Elige una ubicación activa para ver la presencia.",
       "noLocations": "Tu organización aún no tiene ubicaciones activas.",
-      "title": "Quién está presente"
+      "refreshFailed": "No se pudieron actualizar las ubicaciones. Se muestran las últimas ubicaciones cargadas.",
+      "refreshingLocations": "Actualizando ubicaciones…",
+      "scopeChanged": "La presencia requiere una lectura actualizada para la cuenta u organización actual.",
+      "title": "Quién está presente",
+      "unavailable": "Presencia no disponible",
+      "viewPresence": "Ver presencia"
     },
     "primaryManager": "Eres el gerente principal",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Empleado",
       "position": "Puesto",
+      "region": "Tabla de miembros del equipo",
       "role": "Rol",
       "sort": {
         "ascending": "ascendente",

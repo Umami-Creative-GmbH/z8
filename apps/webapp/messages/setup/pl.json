@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Konfigurowanie obszaru roboczego...",
+    "checkFailed": "Nie udało się sprawdzić Twoich organizacji. Spróbuj ponownie.",
     "checking": "Sprawdzanie sesji...",
-    "clickToSelect": "Kliknij, aby wybrać",
     "redirecting": "Przekierowywanie...",
+    "retry": "Spróbuj ponownie",
+    "selectionHint": "Twój obszar roboczy otworzy się po dokonaniu wyboru.",
     "selectOrganization": "Wybierz organizację",
-    "selectOrganizationDescription": "Wybierz organizację, z którą chcesz pracować"
+    "selectOrganizationDescription": "Wybierz organizację, z którą chcesz pracować",
+    "title": "Otwórz swój obszar roboczy"
   },
   "setup": {
     "authorization": {

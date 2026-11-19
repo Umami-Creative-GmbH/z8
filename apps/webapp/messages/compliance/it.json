@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "I controlli di accesso riassumono solo gli eventi sensibili del registro di controllo già acquisiti oggi.",
         "auditEvidence": "L'evidenza di controllo utilizza la configurazione di esportazione del controllo in tempo reale, le richieste di pacchetti di controllo e i risultati di verifica recenti.",
+        "title": "Copertura",
         "workforceCompliance": "La conformità della forza lavoro utilizza gli ultimi 7 giorni di violazioni delle politiche di lavoro e le richieste di eccezione in sospeso."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Ultimo aggiornamento: {time}"
+        "lastRefreshed": "Ultimo aggiornamento: {time}",
+        "refreshMeaning": "L'aggiornamento ricarica i segnali registrati; non rivaluta i risultati in base a una nuova policy."
       },
       "links": {
         "inspectCompliance": "Ispeziona conformità",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Apri impostazioni di conformità",
         "reviewAuditExport": "Revisiona esportazione audit"
       },
+      "loading": "Caricamento dei segnali di conformità",
       "overview": "Panoramica della conformità",
       "recentEvents": {
         "empty": "Non è stato rilevato alcun evento critico recente.",
-        "title": "Eventi critici recenti"
+        "partial": "Gli eventi recenti sono limitati alle fonti disponibili. Impossibile caricare alcuni segnali.",
+        "title": "Eventi critici recenti",
+        "unavailable": "Impossibile confermare gli eventi recenti perché le fonti dei segnali non sono disponibili."
       },
+      "scope": "Organizzazione attiva",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Le modifiche ai controlli sensibili richiedono una revisione",
             "healthy": "Nessuna modifica ai controlli sensibili è stata registrata di recente",
             "warning": "Sono state rilevate recenti modifiche ai controlli"
-          }
+          },
+          "title": "Controlli di accesso"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Le prove di audit richiedono attenzione",
             "healthy": "I segnali delle prove di audit sembrano corretti",
             "warning": "Le prove di audit sono solo parzialmente pronte"
-          }
+          },
+          "title": "Evidenze di audit"
         },
+        "title": "Sezioni di conformità",
         "unavailable": {
           "headline": "Segnale temporaneamente non disponibile"
         },
@@ -94,7 +103,8 @@
             "critical": "Le violazioni della policy del personale richiedono una revisione",
             "healthy": "Nessun problema recente relativo alla policy del personale è stato rilevato",
             "warning": "La conformità del personale sta peggiorando"
-          }
+          },
+          "title": "Conformità della forza lavoro"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Eccezione approvata",
       "approvedDescription": "L'eccezione di conformità è stata approvata.",
       "approveFailed": "Approvazione non riuscita",
+      "approveFor": "Approva eccezione {type} per {name}",
+      "loadError": "Impossibile caricare le richieste di eccezione in sospeso.",
       "plannedDuration": "Pianificato",
       "plannedDurationHelp": "Stima quanto tempo aggiuntivo prevedi di necessitare oltre il limite.",
       "reason": "Motivo dell'eccezione",
@@ -124,6 +136,7 @@
       "rejected": "Eccezione rifiutata",
       "rejectedDescription": "L'eccezione di conformità è stata rifiutata.",
       "rejectFailed": "Rifiuto non riuscito",
+      "rejectFor": "Rifiuta eccezione {type} per {name}",
       "rejectionPlaceholder": "Inserisci il motivo per il rifiuto di questa eccezione...",
       "rejectionReason": "Motivo del rifiuto",
       "rejectTitle": "Rifiuta richiesta di eccezione",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Il tuo manager riceverà una notifica e potrà approvare o rifiutare la tua richiesta.",
       "requestTitle": "Richiedi eccezione di conformità",
       "submit": "Invia richiesta",
-      "type": "Tipo di eccezione"
+      "type": "Tipo di eccezione",
+      "types": {
+        "overtimeDaily": "Straordinario giornaliero",
+        "overtimeMonthly": "Straordinario mensile",
+        "overtimeWeekly": "Straordinario settimanale",
+        "restPeriod": "Periodo di riposo"
+      }
     },
     "hasApprovedException": "Hai un'eccezione approvata. Puoi procedere.",
     "moreAlerts": "altro",

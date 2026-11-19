@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Ingen produksjonsposter er importert ennå.",
         "openReview": "Åpne gjennomgang",
-        "scanningDescription": "Gjennomgangspulje {reviewBatchId} skannes. Se gjennom og godkjenn poster før overføring.",
+        "scanningDescriptionWithoutId": "Gjennomgangsskanningen kjører. Se gjennom og godkjenn poster før de importeres.",
         "startedTitle": "Skanning for importgjennomgang har startet",
         "starting": "Starter skanning for Clockin-importgjennomgang…",
         "startSuccess": "Skanning for importgjennomgang har startet. Gjennomgang kreves før postene overføres."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Gjennomgangspulje {batchId} skannes.",
         "description": "Gjennomgang kreves før Clockodo-poster overføres til produksjon.",
         "openReview": "Åpne gjennomgang",
+        "scanning": "Gjennomgangsskanningen kjører. Ingen poster importeres før du godtar dem i gjennomgangen.",
         "successTitle": "Skanning for importgjennomgang har startet"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Påloggingsinformasjon",
         "import": "Gjennomgang",
         "preview": "Forhåndsvisning",
+        "progressLabel": "Importtrinn",
         "projectMapping": "Prosjektkobling",
         "selection": "Utvalg",
         "userMapping": "Brukertilordning"
       },
       "userMapping": {
         "action": "Handling",
+        "actionFor": "Handling for {name}",
         "autoMatched": "{count} automatisk matchet",
         "clockodoUser": "Clockodo-bruker",
         "continue": "Fortsett",
@@ -248,14 +250,21 @@
       "linkError": "Kunne ikke generere tilkoblingskode",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Koblingskode kopiert",
+        "codeExpired": "Utløpt — generer en ny kode",
+        "copyCode": "Kopier koblingskode",
+        "copyFailed": "Koblingskoden kunne ikke kopieres. Merk den og kopier den manuelt.",
         "description": "Koble til Telegram-kontoen din for å motta personlige varsler.",
+        "expiresIn": "{minutes, plural, one {Utløper om # minutt} other {Utløper om # minutter}}",
         "generateCode": "Generer tilkoblingskode",
         "instructions": "Send denne kommandoen til boten på Telegram:",
         "linkedStatus": "Telegram-kontoen din er tilkoblet",
+        "regenerateCode": "Generer ny kode",
         "title": "Telegram-konto"
       },
       "notConfigured": "Telegram er ikke konfigurert for denne organisasjonen. Kontakt administratoren din.",
       "saved": "Telegram-innstillinger lagret",
+      "saveError": "Telegram-innstillingene kunne ikke lagres. Prøv igjen.",
       "status": {
         "active": "Aktiv"
       },

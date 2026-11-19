@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Er du sikker på at du vil slette «{name}»? Kategorier som brukes av eksisterende fravær kan ikke slettes og bør deaktiveres i stedet.",
       "deleteFailed": "Kunne ikke slette kategori",
+      "deleteInUse": "Denne kategorien er fortsatt i bruk. Deaktiver den i stedet, eller fjern det som er avhengig av den først.",
       "deleteTitle": "Slett fraværskategori",
       "drawsOnWorkBalance": "Trekker fra arbeidssaldo",
       "editCategory": "Rediger «{name}»",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Ingen trekk",
       "reactivate": "Reaktiver",
       "saveFailed": "Kunne ikke lagre fraværskategorien",
+      "saveInUse": "Denne kategorien brukes av eksisterende fravær. Opprett en ny kategori for andre regler, eller deaktiver denne.",
       "searchPlaceholder": "Søk i kategorier…",
       "statusUpdateFailed": "Kunne ikke oppdatere kategoristatus",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Oppdater kategori"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Fravær",
+        "absenceChange": "Fraværsendring",
+        "complianceException": "Samsvarsunntak",
+        "manualTimeSubmission": "Manuell timeinnsending",
+        "periodSubmission": "Periodeinnsending",
+        "policyClockOut": "Regelstyrt utstempling",
+        "shiftRequest": "Vaktforespørsel",
+        "timeCorrection": "Timekorrigering",
+        "travelExpense": "Reiseutgift"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Levering",
+          "retirement": "Meldingsoppdatering",
+          "transfer": "Overføring"
+        },
+        "outcome": {
+          "ambiguous": "Ukjent resultat",
+          "delivered": "Levert",
+          "deliveredAfterPurge": "Levert etter opprydding",
+          "destinationInvalid": "Ugyldig destinasjon",
+          "gone": "Meldingen er ikke lenger tilgjengelig",
+          "notCovering": "Meldingen er ikke lenger aktuell",
+          "permanent": "Permanent feil",
+          "retryable": "Midlertidig feil",
+          "unavailable": "Kanal utilgjengelig"
+        }
+      },
       "attention": {
         "alertedAt": "Administratorer varslet {date}",
         "approvalType": "Godkjenning",
@@ -116,6 +147,18 @@
         "recheck": "Kontroller på nytt",
         "resolved": "Løst",
         "retryDelivery": "Prøv levering på nytt",
+        "technical": {
+          "approvalRequestId": "Godkjenningsforespørsel-ID",
+          "approvalType": "Godkjenningstypekode",
+          "assignmentId": "Tilordnings-ID",
+          "attemptReference": "Forsøksreferanse",
+          "attentionId": "Oppfølgingselement-ID",
+          "copied": "{label} kopiert",
+          "copy": "Kopier {label}",
+          "copyFailed": "Verdien kunne ikke kopieres. Merk den og kopier manuelt.",
+          "title": "Tekniske detaljer",
+          "workflowId": "Arbeidsflyt-ID"
+        },
         "title": "Krever oppmerksomhet",
         "transfer": "Overfør…",
         "unknownApprover": "Ikke registrert"
@@ -155,6 +198,22 @@
         "disposed": "Forkastet",
         "raised": "Utløst",
         "resolved": "Løst"
+      },
+      "evidence": {
+        "actionableAt": "Handlingsklar siden",
+        "actionableEvidence": "Handlingsklar siden (kilde)",
+        "attemptCount": "Forsøk utført",
+        "cause": "Årsak",
+        "code": "Feilkode",
+        "deadline": "Frist",
+        "effect": "Meldingshandling",
+        "error": "Feil",
+        "outcome": "Utfall",
+        "policyRevision": "Retningslinjerevisjon",
+        "reason": "Årsakskode",
+        "recovered": "Gjenopprettet av",
+        "route": "Beslutningsvei",
+        "workId": "Leveringsjobb"
       },
       "hoursValue": "{hours} t",
       "loadFailed": "Kunne ikke laste inn eskaleringsinnstillinger.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Endret av",
+        "empty": "Ingen endringer i retningslinjen er registrert ennå.",
         "migration": "Innstillingsmigrering",
         "policy": "Retningslinje",
         "revision": "Revisjon",
@@ -217,8 +277,10 @@
       },
       "title": "Eskalering av godkjenning",
       "toast": {
+        "conflict": "Dette ble endret i mellomtiden. Last inn på nytt for å se gjeldende status.",
         "deliveryRetried": "Nytt leveringsforsøk er planlagt",
         "disposed": "Oppmerksomhetselement lukket",
+        "notFound": "Dette elementet finnes ikke lenger. Last inn på nytt for å se gjeldende status.",
         "rechecked": "Kontrollerte {checked} elementer, {resolved} løst",
         "requestFailed": "Forespørselen mislyktes. Prøv på nytt.",
         "reviewed": "Konflikter merket som gjennomgått",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Godkjenningstyper",
       "approver": "Godkjenner",
-      "approverEmployeeId": "Godkjenners ansatt-ID",
-      "approverEmployeeIdPlaceholder": "Eksempel: employee_123…",
+      "approverEmployee": "Godkjennende ansatt",
       "approverType": {
         "directManager": "Nærmeste leder",
         "managerManager": "Leders leder",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Antall betingelser",
       "createPolicy": "Opprett godkjenningspolicy",
+      "createPolicySubmit": "Opprett retningslinje",
+      "deactivateConfirm": {
+        "confirm": "Deaktiver",
+        "description": "Nye forespørsler vil ikke lenger samsvare med denne retningslinjen, og rutes via neste samsvarende aktive retningslinje eller standard godkjenningsrute. Du kan aktivere den igjen ved å redigere den.",
+        "title": "Deaktivere «{name}»?"
+      },
+      "deactivatePolicyNamed": "Deaktiver {name}",
       "defaultStageLabel": "Ledervurdering",
       "description": "Konfigurer sekvensielle godkjenningskjeder for operative arbeidsflyter",
       "descriptionPlaceholder": "Eksempel: Eskalerer sensitive arbeidsflyter til drift…",
       "dialogDescription": "Definer når en godkjenningskjede gjelder og hvilke godkjennere som håndterer hvert sekvensielle trinn.",
-      "editPolicy": "Rediger policy",
+      "editPolicyNamed": "Rediger {name}",
+      "editPolicyTitle": "Rediger godkjenningsretningslinje",
       "empty": "Ingen godkjenningspolicyer er konfigurert ennå. Opprett en policy for å definere din første godkjenningskjede.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Organisasjonsadministrator"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Denne retningslinjen samsvarer også med # eldre godkjenningstype som ikke kan velges her. Hvis du lagrer, forblir {count, plural, one {den} other {dem}} uendret.} other {Denne retningslinjen samsvarer også med # eldre godkjenningstyper som ikke kan velges her. Hvis du lagrer, forblir {count, plural, one {den} other {dem}} uendret.}}",
       "loadFailed": "Kunne ikke laste inn godkjenningspolicyer.",
       "loading": "Laster inn policyer…",
       "namePlaceholder": "Eksempel: Fraværseskalering…",
       "noStages": "Ingen godkjenningstrinn er konfigurert ennå.",
+      "preservedConditions": "{count, plural, one {Denne retningslinjen har # ytterligere betingelse som ikke kan endres her. Hvis du lagrer, forblir {count, plural, one {den} other {dem}} uendret.} other {Denne retningslinjen har # ytterligere betingelser som ikke kan endres her. Hvis du lagrer, forblir {count, plural, one {den} other {dem}} uendret.}}",
       "preview": {
         "ariaLabel": "Forhåndsvisning av godkjenningskjede",
-        "badge": "Forhåndsvisningsskall",
-        "description": "Se hvordan samsvarende forespørsler vil bevege seg gjennom hvert godkjenningstrinn før du aktiverer en policy.",
-        "footer": "Full forhåndsvisning med forespørselskontekst vil hente faktiske godkjennere når policybetingelser og ansattgrupper er koblet til i redigeringsprogrammet.",
+        "chainDescription": "Hvordan en samsvarende forespørsel beveger seg gjennom trinnene slik det er konfigurert ovenfor.",
+        "chainTitle": "Forhåndsvisning av godkjenningskjede",
+        "fallback": "Hvis ingen godkjenner blir funnet: {fallback}",
+        "loadingEmployee": "Laster inn ansatt…",
+        "noEmployeeSelected": "Ingen ansatt er valgt ennå",
+        "noStages": "Legg til et trinn for å se godkjenningskjeden.",
         "stage": {
           "approved": "Godkjent",
-          "directManager": "Nærmeste leder",
-          "operationsAdmin": "Driftsadministrator",
           "requester": "Forespørrer"
-        },
-        "title": "Forhåndsvisning av kjedesammendrag"
+        }
       },
       "priority": "Prioritet",
-      "removeStage": "Fjern trinn",
+      "removeStageNumber": "Fjern trinn {number}",
+      "savePolicySubmit": "Lagre retningslinje",
+      "selectApproverEmployee": "Velg ansatt",
       "stageNumber": "Trinn {number}",
       "stages": "Godkjenningstrinn",
       "stagesCount": "Antall trinn",
@@ -322,14 +395,19 @@
       "title": "Godkjenningspolicyer",
       "toast": {
         "created": "Godkjenningspolicy opprettet",
-        "saveFailed": "Kunne ikke lagre godkjenningspolicy."
+        "deactivated": "«{name}» er deaktivert",
+        "reactivated": "«{name}» er aktiv igjen",
+        "saveFailed": "Kunne ikke lagre godkjenningspolicy.",
+        "updated": "Godkjenningsretningslinje lagret"
       },
+      "unknownEmployee": "Ukjent ansatt ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Aktive retningslinjer krever minst ett godkjenningstrinn.",
-        "specificEmployeeRequiresId": "Spesifikke ansattrinn krever en godkjenners ansatt-ID."
+        "specificEmployeeRequired": "Velg den godkjennende ansatte for hvert spesifikke ansattrinn."
       }
     },
     "changePolicies": {
+      "actionsFor": "Handlinger for {name}",
       "allManagers": "Alle ledere",
       "approvalDaysDescription": "Utover selvbetjening kan ansatte be om endringer innenfor dette tidsvinduet (krever godkjenning). 0 = ingen ekstra tidsperiode.",
       "approvalDaysLabel": "Godkjenningsvindu (dager)",
@@ -363,6 +441,7 @@
       "deleted": "Retningslinjen er slettet",
       "deleteDescription": "Er du sikker på at du vil slette denne retningslinjen? Eventuelle tildelinger som bruker denne retningslinjen vil også bli fjernet. Ansatte som tidligere brukte denne retningslinjen, vil ikke ha noen begrensninger før en ny retningslinje tildeles.",
       "deleteFailed": "Kunne ikke slette retningslinjen",
+      "deleteNamedDescription": "Vil du slette endringsretningslinjen «{name}»? Eventuelle tilordninger som bruker denne retningslinjen, blir også fjernet. Ansatte som tidligere brukte denne retningslinjen, vil ikke ha noen begrensninger før en ny retningslinje er tilordnet.",
       "deleteTitle": "Slett endringsretningslinje",
       "description": "Styr når ansatte kan redigere timeregistreringer og kreve ledergodkjenning",
       "descriptionLabel": "Beskrivelse",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "Standardregelen som gjelder for alle ansatte som ikke har en team- eller individuell overstyring.",
       "policySummary": "Regelsammendrag:",
       "primaryOnly": "Kun primær",
+      "removeAssignmentFor": "Fjern tilordning for {name}",
       "removeAssignmentTitle": "Fjerne regeltildeling?",
       "removeEmployeeDescription": "Dette vil fjerne overstyringen for «{name}». De vil bruke standarden for teamet eller organisasjonen.",
       "removeOrgDescription": "Dette vil fjerne organisasjonens standardregel. Ansatte vil ikke ha noen begrensninger med mindre de har en team- eller individuell overstyring.",
+      "removeOrgNamedDescription": "Dette fjerner «{policy}» som organisasjonens standardretningslinje. Ansatte vil ikke ha noen begrensninger med mindre de har en overstyring på team- eller individnivå.",
       "removeTeamDescription": "Dette vil fjerne regelen fra teamet «{team}». De vil bruke organisasjonens standard.",
       "sameDay": "Kun samme dag",
       "sameDayFree": "Endringer samme dag krever ingen godkjenning",
@@ -438,6 +519,13 @@
       "description": "Angi minimumskrav til bemanning per lokasjon og tid",
       "editRule": "Rediger dekningsregel",
       "endTime": "Sluttid",
+      "errors": {
+        "endNotAfterStart": "Sluttidspunktet må være etter starttidspunktet på samme dag.",
+        "invalidTime": "Angi et klokkeslett i 24-timers HH:mm-format.",
+        "staffCountRange": "Angi et heltall fra 1 til 100.",
+        "subareaRequired": "Velg et delområde."
+      },
+      "loadFailed": "Kunne ikke laste inn dekningsregler.",
       "loading": "Laster inn dekningsregler...",
       "minimumStaffCount": "Minimum antall ansatte",
       "minimumStaffHint": "Det minste antallet ansatte som kreves i denne tidsblokken.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Dekningsregel oppdatert",
       "selectSubarea": "Velg et delområde",
       "settingsFailed": "Kunne ikke lagre innstillinger",
+      "settingsLoadFailed": "Kunne ikke laste inn publiseringsinnstillinger.",
       "settingsSaved": "Innstillinger lagret",
       "startTime": "Starttid",
       "subarea": "Lokasjon / delområde",
@@ -493,6 +582,10 @@
         "colorSelection": "Fargevalg",
         "defaultSubarea": "Standard delområde",
         "endTime": "Sluttid",
+        "errors": {
+          "invalidTime": "Angi et klokkeslett i 24-timers HH:mm-format.",
+          "subareaRequired": "Velg et av delområdene dine."
+        },
         "name": "Navn",
         "namePlaceholder": "f.eks. morgenvakt…",
         "noSubarea": "Ingen standard delområde",
@@ -508,6 +601,7 @@
         "description": "Administrer vaktmalene dine",
         "title": "Maler"
       },
+      "loadError": "Kunne ikke laste inn skiftmaler.",
       "table": {
         "duration": "Varighet",
         "name": "Navn",
@@ -544,7 +638,7 @@
       "deleteModel": "Slett tilleggsmodell",
       "deleteModelDescription": "Dette vil deaktivere modellen og alle tilordningene dens. Denne handlingen kan ikke angres.",
       "deleteModelTitle": "Slette tilleggsmodell?",
-      "deleteOrgAssignmentDescription": "Dette vil fjerne organisasjonsstandarden. Team og ansatte uten spesifikke tilordninger vil ikke ha noen tilleggsmodell brukt.",
+      "deleteOrgAssignmentNamedDescription": "Dette vil fjerne \"{model}\" som organisasjonens standard. Team og ansatte uten spesifikke tildelinger vil ikke ha noen tilleggsmodell brukt.",
       "deleteTeamAssignmentDescription": "Dette vil fjerne tilleggsmodellen fra teamet \"{team}\". De vil bruke organisasjonsstandarden.",
       "description": "Konfigurer tidstillegg for overtid, nattarbeid, helger og helligdager.",
       "descriptionLabel": "Beskrivelse",
@@ -605,9 +699,11 @@
           "loadTitle": "Kunne ikke laste inn beregninger"
         },
         "filters": {
+          "allEmployees": "Alle ansatte",
           "apply": "Bruk filtre",
-          "employeeId": "Ansatt-ID",
+          "employee": "Ansatt",
           "endDate": "Sluttdato",
+          "showAllEmployees": "Vis alle ansatte",
           "startDate": "Startdato"
         },
         "loading": "Laster inn beregninger…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Viser de første 500 samsvarende beregningene. Begrens dato- eller ansattfiltrene for å avgrense totalene.",
         "summary": {
           "baseHours": "Grunntimer",
+          "calculationCount": "{count, plural, one {# beregning} other {# beregninger}}",
           "calculations": "Beregninger",
           "creditedHours": "Godskrevne tilleggstimer",
           "qualifyingHours": "Kvalifiserende tilleggstimer"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Fjern fra sett først",
       "categories": "Kategorier",
       "categoriesDescription": "Opprett og administrer arbeidskategorier som kan deles på tvers av flere sett",
+      "categoriesLoadError": "Kunne ikke laste inn arbeidskategorier",
       "categoriesTitle": "Arbeidskategorier",
       "categoryCreated": "Kategori opprettet",
       "categoryCreateFailed": "Kunne ikke opprette kategori",
@@ -709,6 +807,7 @@
       "categoryInUse": "Kan ikke slette en kategori som brukes i {count} sett. Fjern den fra alle sett først.",
       "categoryName": "Navn",
       "categoryNamePlaceholder": "f.eks. Passiv reise",
+      "categoryNameTaken": "Det finnes allerede en kategori med dette navnet.",
       "categoryUpdated": "Kategori oppdatert",
       "categoryUpdateFailed": "Kunne ikke oppdatere kategori",
       "chooseColor": "Velg farge",
@@ -722,22 +821,30 @@
       "createSetDescription": "Opprett et nytt kategorisett og velg hvilke kategorier som skal inkluderes",
       "defaultSet": "Standard kategorisett",
       "deleteAssignmentTitle": "Fjerne tilordning?",
+      "deleteCategoryDescription": "Kategorien \"{name}\" vil bli slettet permanent.",
+      "deleteCategoryNamed": "Slett kategori {name}",
+      "deleteCategoryTitle": "Slette kategori?",
       "deleteEmployeeAssignment": "Dette vil fjerne overstyringen for \"{name}\". De vil bruke standarden for teamet eller organisasjonen.",
-      "deleteOrgAssignment": "Dette vil fjerne organisasjonsstandarden. Ansatte vil ikke ha arbeidskategorier tilgjengelig med mindre de tilordnes individuelt.",
+      "deleteOrgAssignmentNamed": "Dette vil fjerne \"{set}\" som organisasjonens standard. Ansatte vil ikke ha arbeidskategorier tilgjengelig med mindre de tildeles individuelt.",
       "deleteSetDescription": "Dette vil slette kategorisettet \"{name}\" og alle dets kategorier permanent. Eventuelle tilordninger som bruker dette settet vil også bli fjernet.",
+      "deleteSetNamed": "Slett kategorisett {name}",
       "deleteSetTitle": "Slette kategorisett?",
       "deleteTeamAssignment": "Dette vil fjerne kategorisettet fra teamet \"{team}\". De vil bruke organisasjonsstandarden.",
       "description": "Definer arbeidskategorier med tidsfaktorer for beregning av effektiv tid",
       "descriptionPlaceholder": "Valgfri beskrivelse",
       "editCategory": "Rediger kategori",
       "editCategoryDescription": "Oppdater kategoridetaljene",
+      "editCategoryNamed": "Rediger kategori {name}",
       "editSet": "Rediger kategorisett",
       "editSetDescription": "Oppdater detaljene for kategorisettet og administrer kategoriene",
+      "editSetNamed": "Rediger kategorisett {name}",
       "employeeLevel": "Overstyringer for ansatte",
       "employeeLevelDescription": "Overstyr standarder for team eller organisasjon for spesifikke ansatte",
       "factor": "Faktor",
       "factorExplanation": "Faktor bestemmer effektiv tid: 0,5 = 50 % (f.eks. passiv reise), 1,0 = 100 % (normalt arbeid), 1,5 = 150 % (overtid)",
       "loadError": "Kunne ikke laste inn kategorisett",
+      "moveCategoryDown": "Flytt {name} ned",
+      "moveCategoryUp": "Flytt {name} opp",
       "noCategories": "Ingen kategorier ennå",
       "noCategoriesAvailable": "Ingen kategorier tilgjengelig",
       "noCategoriesHint": "Opprett kategorier for å tilordne dem til sett",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Ingen team tilgjengelig.",
       "orgLevel": "Organisasjonsstandard",
       "orgLevelDescription": "Standard kategorisett som gjelder for alle ansatte med mindre det overstyres",
+      "removeAssignmentFor": "Fjern tildeling for {name}",
+      "removeCategoryFromSet": "Fjern {name} fra sett",
       "selectCategories": "Velg kategorier",
-      "selectedCategories": "Valgte kategorier (dra for å endre rekkefølge)",
+      "selectedCategoriesOrder": "Valgte kategorier (bruk pilene for å endre rekkefølgen)",
       "selectEmployee": "Ansatt",
       "selectEmployeePlaceholder": "Velg en ansatt",
       "selectSet": "Kategorisett",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Valgfri beskrivelse for dette kategorisettet",
       "setName": "Navn",
       "setNamePlaceholder": "f.eks. Reisekategorier",
+      "setNameTaken": "Det finnes allerede et kategorisett med dette navnet.",
       "setUpdated": "Kategorisett oppdatert",
       "setUpdateFailed": "Kunne ikke oppdatere kategorisett",
       "tab": {

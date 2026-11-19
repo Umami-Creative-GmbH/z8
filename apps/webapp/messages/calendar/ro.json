@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Adăugare absență",
     "balance": {
       "carryoverDays": "Aveți {count} zile reportate",
-      "carryoverExpiry": "care vor expira pe",
+      "carryoverDaysExpiring": "Aveți {count} zile reportate. Acestea expiră la {date}.",
       "carryoverFrom": "Report din {year}",
       "daysRemaining": "Zile rămase",
-      "description": "Zilele dumneavoastră de concediu pentru anul curent",
       "outOfTotalDays": "din totalul de {totalDays} zile",
       "pending": "În așteptare",
       "title": "Sold concediu {year}",
       "used": "Utilizate"
     },
     "calendar": {
+      "currentYear": "Anul acesta",
       "legend": {
         "approved": "Aprobate",
-        "halfDayAm": "Jumătate de zi (AM)",
-        "halfDayPm": "Jumătate de zi (PM)",
+        "halfDay": "Jumătate de zi",
         "holiday": "Sărbătoare legală",
         "pending": "În așteptare",
         "rejected": "Respins"
       },
       "nextYear": "Anul următor",
-      "previousYear": "Anul precedent"
+      "previousYear": "Anul precedent",
+      "requestAnotherAbsence": "Solicitați o altă absență din această zi",
+      "selectDayDetailsHint": "Selectați o zi pentru a solicita o absență din ea. O zi cu o absență aprobată sau în așteptare va afișa detaliile acesteia."
     },
     "change": {
       "afternoon": "După-amiază",
@@ -40,6 +40,7 @@
       "historyFailed": "Nu s-au putut încărca solicitările de modificare.",
       "keepHours": "Păstrează orele și acoperirea înregistrate",
       "morning": "Dimineață",
+      "pendingCount": "{count} în așteptare",
       "pendingExplanation": "Absența înregistrată rămâne valabilă până când un alt aprobator acceptă solicitarea dumneavoastră.",
       "reason": "Motiv",
       "reasonRequired": "Este necesar un motiv",
@@ -321,10 +322,10 @@
       "pending": "În așteptare",
       "rejected": "Respins"
     },
-    "subtitle": "Gestionează-ți zilele libere și zilele de concediu",
     "table": {
       "cancelAbsence": "Anulează absența",
       "cancelAbsenceTooltip": "Anulează absența",
+      "changePending": "Cerere de modificare în așteptare",
       "end": "Sfârșit",
       "headers": {
         "actions": "Acțiuni",
@@ -337,9 +338,7 @@
       "noRequests": "Nu a fost găsită nicio cerere de absență.",
       "noSearchResults": "Nicio absență nu corespunde căutării dvs.",
       "searchPlaceholder": "Căutați după tip, stare sau note...",
-      "start": "Început",
-      "subtitle": "Cereri de absență recente și viitoare",
-      "title": "Cererile tale de absență"
+      "start": "Început"
     },
     "title": "Absențe",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Calendar",
       "table": "Tabel"
+    },
+    "year": {
+      "loadFailed": "Nu s-a putut încărca {year}. Se afișează în continuare {loadedYear}.",
+      "loading": "Se încarcă {year}… Se afișează în continuare {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Editează",
       "label": "Acțiuni pentru înregistrarea pontajului"
     },
+    "context": {
+      "timezone": "Fusul orar al calendarului"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Înregistrări de timp blocate",
       "category": "Categorie",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Ștergerea înregistrării de timp a fost aplicată",
       "auditNote": "Înregistrările de timp vor fi marcate ca șterse în scopuri de audit.",
-      "confirm": "Convertește în pauză",
-      "description": "Această acțiune va șterge definitiv această perioadă de lucru. Intervalul va apărea ca o pauză în calendar.",
       "failed": "Ștergerea perioadei de lucru a eșuat",
       "reasonLabel": "Motivul ștergerii",
-      "reasonRequired": "Motivul este obligatoriu",
-      "success": "Perioada de lucru a fost convertită în pauză",
-      "title": "Convertiți în pauză?"
+      "reasonRequired": "Motivul este obligatoriu"
     },
     "details": {
       "automaticClockOut": "Pontat la ieșire automat",
@@ -516,10 +518,7 @@
       "holiday": "Sărbătoare",
       "missingRequiredWork": "Timp de lucru obligatoriu lipsă",
       "requirementMetOrOver": "Cerință îndeplinită/depășită",
-      "timeEntry": "Înregistrare timp",
-      "title": "Legendă",
       "underRequirement": "Sub cerință",
-      "workPeriod": "Perioadă de lucru",
       "workPeriodPending": "În așteptarea aprobării"
     },
     "loadEventsError": "Nu s-au putut încărca evenimentele din calendar: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Timp înregistrat comparat cu orele din politică",
       "weekSum": "Sumă"
     },
+    "nextMonth": "Luna următoare",
+    "previousMonth": "Luna anterioară",
     "requirements": {
       "dayLabel": "{date}: {required} necesare, {actual} înregistrate, {delta} diferență, {status}",
       "includesRunningWork": "Include activitatea în desfășurare",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Facturabil",
+      "breakEnforcementNote": "Ajustat automat: impunerea pauzei",
       "editedBy": "(editat de {name} la {date})",
       "missingTask": "Sarcină lipsă",
       "missingTaskHint": "Sarcină lipsă: adăugați o sarcină",
-      "breakEnforcementNote": "Ajustat automat: aplicarea pauzelor"
+      "runningTitle": "{name} - {duration} (în desfășurare)",
+      "stop": "Oprire",
+      "stopFor": "Opriți perioada de lucru activă pentru {name}"
     },
     "workStatus": {
       "overRequirement": "peste cerință",

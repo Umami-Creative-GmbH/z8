@@ -35,7 +35,6 @@
         "previousWeekDesc": "Verileri önceki haftadan (Pzt-Paz) dışa aktar"
       },
       "deleteDialog": {
-        "cancel": "İptal",
         "confirm": "Sil",
         "description": "{name} öğesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
         "title": "Zamanlanmış Dışa Aktarımı Sil"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Silme başarısız oldu",
         "loadFailed": "Zamanlanmış dışa aktarımlar yüklenemedi",
-        "toggleFailed": "Geçiş başarısız oldu"
+        "retry": "Tekrar dene"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Zamanlama sahibi {owner} artık bir kuruluş yöneticisi değil. Önce kendinizi veya başka bir kuruluş yöneticisini zamanlama sahibi yapın."
       },
       "filters": {
         "allEmployees": "Tüm Çalışanlar",
@@ -284,8 +286,9 @@
         "paused": "Duraklatıldı",
         "schedule": "Zamanlama",
         "status": "Durum",
-        "title": "Etkin Zamanlamalar",
-        "type": "Tür"
+        "titleAll": "Zamanlamalar",
+        "type": "Tür",
+        "unknownOwner": "Bilinmeyen sahip"
       },
       "title": "Zamanlanmış Dışa Aktarımlar",
       "toast": {

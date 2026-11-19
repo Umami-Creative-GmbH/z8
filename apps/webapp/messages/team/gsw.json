@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Absenz für {name} erfasse"
       },
+      "allowances": "Jahreskontingänt",
       "calendar": {
         "approved": "Gnehmigt",
         "changeDeputy": "Stellvertretig ändere",
@@ -12,7 +13,6 @@
         "deputyMissing": "Stellvertretig fählt",
         "description": "Gnehmigti und usstehendi Absänze für s'gwählte Team und Jahr.",
         "error": {
-          "description": "Bitte probier es gli nomal.",
           "title": "Kaländer chan nöd glade wärde"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Absenz erfasse",
         "titleForEmployee": "Abweseheit für {name} erfasse"
       },
+      "recordingUnavailable": "D'Optione für d'Absänzerfassig händ nöd chönne glade wärde",
+      "retained": "Es wärded früener gladeni Date aazeigt. Probier's nomol, zum aktuelli Iiträg z'übercho.",
+      "scopeChanged": "De Teamberiich hät sich gänderet. Lade d'Siite neu, zum wiitermache.",
+      "scopeLoading": "De aktuell Teamberiich wird glade…",
+      "scopeUnavailable": "De aktuell Teamberiich hät nöd chönne glade wärde",
+      "sections": "Siiteabschnitt",
       "sort": {
         "ascending": "ufstigend",
         "by": "Sortiere nach {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Keis Guthabe"
     },
-    "description": "Mitarbeiter, wo du direkt füersch, aaluege und verwalte",
+    "directory": {
+      "count": "{count, plural, one {# Mitglied i däm Beriich} other {# Mitglieder i däm Beriich}}",
+      "loading": "Teammitglieder wärded glade",
+      "retained": "Es wärded d'zletscht gladene Mitglieder aazeigt. Probier's nomol, zum si z'aktualisiere.",
+      "retry": "Nomol probiere",
+      "retrying": "Wird nomol probiert…",
+      "scope": "Du und d'Mitarbeitende, wo du i de aktive Organisation diräkt füehrsch.",
+      "scopeChanged": "Dini Organisation oder din Zuegriff hät sich gänderet. Aktualisiere, zum dis Team z'lade."
+    },
     "driving": {
+      "clearFilters": "Filter lösche",
       "columns": {
         "calendar": "Kalender",
         "date": "Datum",
@@ -126,6 +141,8 @@
         "employee": "Mitarbeiter",
         "team": "Team"
       },
+      "guidance": "Mach de Kaländer vomene Mitarbeitende uf, zum d'Zueordnig vo de Arbeitsziitrüüm abzschlüsse. Fehlendi Aagabe blockiered d'Ziiterfassig nöd und begründed kei Fahrberechtigung.",
+      "loadFailed": "D'Fahrtdetails händ nöd chönne glade wärde.",
       "loading": "Fahrtdetails wärded glade",
       "missing": {
         "endReading": "Kei Endstand",
@@ -133,10 +150,18 @@
         "startReading": "Kei Startstand",
         "vehicle": "Keis Fahrzüg"
       },
+      "noMatch": "Kei fehlendi Fahrtdetails passed zu däne Filter.",
       "openCalendar": "Kaländer",
       "openCalendarOf": "De Kaländer vo {name} öffne",
+      "refreshFailed": "D'Fahrtdetails händ nöd chönne aktualisiert wärde. Es wärded früener gladeni Iiträg aazeigt.",
+      "restricted": "Fahrtdetails sind i dim aktuelle Beriich nöd verfüegbar.",
+      "scopeAll": "Alli Mitarbeitende i dere Organisation",
+      "scopeFailed": "De aktuell Fahrtberiich hät nöd chönne glade wärde.",
+      "scopeLoading": "Aktuelle Fahrtberiich wird glade…",
+      "scopeManaged": "Mitarbeitende, wo du füehrsch",
       "title": "Fahrtdetails fähled",
-      "truncated": "Es wärded die neuste {count} Arbetsperiode aazeigt. Filtrier nach Team oder Mitarbeiter, zum de Rest gseh."
+      "truncated": "Es wärded die neuste {count} Arbetsperiode aazeigt. Filtrier nach Team oder Mitarbeiter, zum de Rest gseh.",
+      "updating": "Fahrtdetails wärded aktualisiert…"
     },
     "empty": {
       "action": "Zu de Mitarbeiter-Iistellige",
@@ -148,9 +173,9 @@
       "title": "Es isch öpis schief gange"
     },
     "feature": "dis Team aaluege",
-    "member": "Mitglied",
-    "members": "Mitglieder",
-    "member.you": "Du",
+    "member": {
+      "you": "Du"
+    },
     "noResults": {
       "action": "Suechi leere",
       "description": "Kei Teammitglieder passet zu \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Periodi",
         "status": "Status"
       },
-      "descriptionAll": "Wer die usgwählti Periodi iigreicht hät. Bstätig oder lehn Iigabe im Freigabe-Iigang ab.",
-      "descriptionManaged": "Wer vo de Mitarbeiter, wo du leitisch, die usgwählti Periodi iigreicht hät. Bstätig oder lehn Iigabe im Freigabe-Iigang ab.",
+      "confirmationContext": "Iireichige bestätiged Iiträg, ohni si iizfrüüre. Gändereti Iiträg müend nomol iigreicht wärde. Prüef d'Entscheidige im Postiigang für Genehmigunge.",
+      "contextFailed": "Din aktuell Zuegriff hät nöd chönne prüeft wärde.",
       "empty": "Vo niemertem, wo du gsehsch, wird erwartet, dass er die Periodi iireicht.",
       "loading": "Perioden-Iigabe werded glade",
       "notSubmitted": "Nöd iigreicht",
@@ -180,7 +205,12 @@
       "openInbox": "Freigabe-Iigang öffne",
       "owing": "{count, plural, one {# Mitarbeiter hät die Periodi no nöd iigreicht.} other {# Mitarbeiter händ die Periodi no nöd iigreicht.}}",
       "period": "Iigabeperiodi",
+      "readFailed": "D'Iireichige für de Ziitruum händ nöd chönne glade wärde. Früener gladeni Iiträg chönnted veraltet sii.",
+      "records": "Iireichige vo Mitarbeitende",
+      "refresh": "Iireichige aktualisiere",
       "running": "Die Periodi lauft no. Mitarbeiter chönd sie ab em letschte Tag iireiche.",
+      "scopeAll": "Alle erfassten Mitarbeitenden",
+      "scopeManaged": "Mitarbeitende, die Sie verwalten",
       "status": {
         "approved": "Gnämigt",
         "awaiting": "Wartet uf Iigab",
@@ -189,10 +219,13 @@
         "submitted": "Iigreicht"
       },
       "summary": "Status",
-      "title": "Perioden-Iigabe"
+      "title": "Perioden-Iigabe",
+      "unavailable": "Periodeneinreichungen sind mit Ihrem aktuellen Zugriff nicht verfügbar. Aktualisieren Sie, um den Zugriff erneut zu prüfen."
     },
     "presence": {
       "allLocations": "Alle Standorte",
+      "assignmentContext": "Die Standortzuweisung ist kein Nachweis für die Geräteposition. Die Zeiten verwenden die zu Beginn der Arbeit oder Pause erfasste Zeitzone. Die Anwesenheit wird jede Minute aktualisiert.",
+      "chooseLocation": "Standort auswählen",
       "columns": {
         "name": "Name",
         "since": "Seit",
@@ -202,9 +235,19 @@
       "descriptionAll": "Diesem Standort zugewiesene Mitarbeitende, die eingestempelt oder in der Pause sind.",
       "descriptionManaged": "Von Ihnen verwaltete Mitarbeitende, die diesem Standort zugewiesen und eingestempelt oder in der Pause sind.",
       "empty": "Niemand, den Sie sehen können, ist derzeit an diesem Standort eingestempelt.",
+      "loadFailed": "Die Anwesenheit für diesen Standort konnte nicht geladen werden. Versuchen Sie es erneut oder wählen Sie wieder einen Standort aus.",
+      "loading": "Standortanwesenheit wird geladen…",
+      "loadingLocations": "Standorte für die aktuelle Organisation werden geladen…",
       "locationTitle": "Wer ist anwesend: {location}",
+      "locationUnavailable": "Standort nicht verfügbar",
+      "locationUnavailableDescription": "Dieser Standort ist in Ihrer aktuellen Organisation nicht verfügbar. Wählen Sie einen aktiven Standort aus, um die Anwesenheit anzuzeigen.",
       "noLocations": "Ihre Organisation hat noch keine aktiven Standorte.",
-      "title": "Wer ist anwesend"
+      "refreshFailed": "Standorte konnten nicht aktualisiert werden. Es werden die zuletzt geladenen Standorte angezeigt.",
+      "refreshingLocations": "Standorte werden aktualisiert…",
+      "scopeChanged": "Die Anwesenheit muss für das aktuelle Konto oder die aktuelle Organisation neu abgerufen werden.",
+      "title": "Wer ist anwesend",
+      "unavailable": "Anwesenheit nicht verfügbar",
+      "viewPresence": "Anwesenheit anzeigen"
     },
     "primaryManager": "Du bisch de Haupt-Manager",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Mitarbeiter",
       "position": "Position",
+      "region": "Tabelle der Teammitglieder",
       "role": "Rollä",
       "sort": {
         "ascending": "ufstigend",

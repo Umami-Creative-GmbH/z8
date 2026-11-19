@@ -61,6 +61,7 @@
           "allowance": "Cota",
           "allowanceForYear": "Licença de Férias para {year}",
           "assignedPolicy": "Política Atribuída",
+          "backToAllowances": "Voltar para as concessões dos funcionários",
           "cancel": "Cancelar",
           "carryover": "Saldo remanescente",
           "carryoverDaysOptional": "Dias de Saldo Remanescente (Opcional)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Padrão: {days} dias",
           "employeeInformation": "Informações do Funcionário",
           "errors": {
+            "adjustmentReasonRequired": "Insira um motivo para registrar este ajuste.",
             "createAdjustmentFailed": "Falha ao criar ajuste",
-            "unexpected": "Ocorreu um erro inesperado",
+            "loadFailed": "Não foi possível carregar a concessão de férias do funcionário.",
             "updateAllowanceFailed": "Falha ao atualizar licença",
             "updatePolicyAssignmentFailed": "Falha ao atualizar atribuição de política"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "gerenciar licenças de férias dos funcionários",
           "managers": "Gerentes",
           "overrideEffectivePolicy": "Substituir o limite da política atribuída ({days} dias) para este colaborador",
+          "partialSave": {
+            "description": "Suas entradas foram mantidas. Tentar novamente salva apenas o que ainda está pendente.",
+            "failed": {
+              "adjustment": "Não foi possível salvar o ajuste manual: {reason}",
+              "allowance": "Não foi possível salvar a concessão personalizada: {reason}",
+              "policy": "Não foi possível salvar a atribuição de política: {reason}"
+            },
+            "pending": {
+              "adjustment": "Ajuste manual ainda não salvo.",
+              "allowance": "Concessão personalizada ainda não salva.",
+              "policy": "Atribuição de política ainda não salva."
+            },
+            "retry": "Tentar novamente alterações não salvas",
+            "saved": {
+              "adjustment": "Ajuste manual salvo.",
+              "allowance": "Concessão personalizada salva.",
+              "policy": "Atribuição de política salva."
+            },
+            "title": "Algumas alterações não foram salvas",
+            "titleNothingSaved": "As alterações não foram salvas"
+          },
           "policyOptionDays": "{name} ({days} dias)",
           "position": "Cargo",
           "postingsSkipped": "Os lançamentos automáticos de férias são ignorados até que a configuração da política seja resolvida.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Aviso: \"{name}\" é a política padrão da empresa. Você deve definir outra política como padrão antes de excluir esta.",
       "delete-description-v2": "Tem certeza de que deseja excluir \"{name}\"? Isso também removerá todas as atribuições desta política.",
       "deleteFailed": "Falha ao excluir política",
+      "deleteLastDefault": "Esta é a única política padrão da empresa. Defina outra política como padrão primeiro.",
       "delete-title": "Excluir política de férias",
       "header": {
         "accrual": "Acúmulo",
@@ -334,6 +358,7 @@
       },
       "loadError": "Falha ao carregar políticas",
       "max-days": "Máx. {days} dias",
+      "no-end-date": "Sem data de término",
       "none": "Nenhum",
       "no-policies-created": "Nenhuma política de férias criada ainda. Crie uma política para definir os subsídios de férias da sua equipe.",
       "noSearchResults": "Nenhuma política corresponde à sua pesquisa.",

@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Sigur doriți să ștergeți „{name}”? Categoriile utilizate pentru absențe existente nu pot fi șterse și ar trebui dezactivate în schimb.",
       "deleteFailed": "Categoria nu a putut fi ștearsă",
+      "deleteInUse": "Această categorie este încă în uz. Dezactivați-o în schimb sau eliminați mai întâi elementele care depind de ea.",
       "deleteTitle": "Șterge categoria de absențe",
       "drawsOnWorkBalance": "Se deduce din soldul de lucru",
       "editCategory": "Editează „{name}”",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Fără deducere",
       "reactivate": "Reactivare",
       "saveFailed": "Nu s-a putut salva categoria de absență",
+      "saveInUse": "Această categorie este utilizată de absențe existente. Creați o categorie nouă pentru reguli diferite sau dezactivați-o pe aceasta.",
       "searchPlaceholder": "Căutați categorii…",
       "statusUpdateFailed": "Nu s-a putut actualiza starea categoriei",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Actualizare categorie"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Absență",
+        "absenceChange": "Modificare absență",
+        "complianceException": "Excepție de conformitate",
+        "manualTimeSubmission": "Trimitere manuală a orelor",
+        "periodSubmission": "Trimitere perioadă",
+        "policyClockOut": "Pontare ieșire conform politicii",
+        "shiftRequest": "Solicitare de tură",
+        "timeCorrection": "Corecție pontaj",
+        "travelExpense": "Cheltuială de deplasare"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Livrare",
+          "retirement": "Actualizare mesaj",
+          "transfer": "Transfer"
+        },
+        "outcome": {
+          "ambiguous": "Rezultat necunoscut",
+          "delivered": "Livrat",
+          "deliveredAfterPurge": "Livrat după curățare",
+          "destinationInvalid": "Destinație nevalidă",
+          "gone": "Mesajul nu mai este disponibil",
+          "notCovering": "Mesajul nu mai este de actualitate",
+          "permanent": "Eroare permanentă",
+          "retryable": "Eroare temporară",
+          "unavailable": "Canal indisponibil"
+        }
+      },
       "attention": {
         "alertedAt": "Administratori alertați la {date}",
         "approvalType": "Aprobare",
@@ -116,6 +147,18 @@
         "recheck": "Reverifică",
         "resolved": "Rezolvat",
         "retryDelivery": "Reîncearcă livrarea",
+        "technical": {
+          "approvalRequestId": "ID solicitare de aprobare",
+          "approvalType": "Cod tip aprobare",
+          "assignmentId": "ID atribuire",
+          "attemptReference": "Referință încercare",
+          "attentionId": "ID element care necesită atenție",
+          "copied": "{label} copiat",
+          "copy": "Copiați {label}",
+          "copyFailed": "Valoarea nu a putut fi copiată. Selectați-o și copiați-o manual.",
+          "title": "Detalii tehnice",
+          "workflowId": "ID flux de lucru"
+        },
         "title": "Necesită atenție",
         "transfer": "Transferă…",
         "unknownApprover": "Neînregistrat"
@@ -155,6 +198,22 @@
         "disposed": "Clasat",
         "raised": "Semnalat",
         "resolved": "Rezolvat"
+      },
+      "evidence": {
+        "actionableAt": "Acționabil din",
+        "actionableEvidence": "Acționabil din (sursă)",
+        "attemptCount": "Încercări efectuate",
+        "cause": "Cauză",
+        "code": "Cod de eroare",
+        "deadline": "Termen limită",
+        "effect": "Acțiune mesaj",
+        "error": "Eroare",
+        "outcome": "Rezultat",
+        "policyRevision": "Revizuire politică",
+        "reason": "Cod motiv",
+        "recovered": "Recuperat de",
+        "route": "Cale de decizie",
+        "workId": "Sarcină de livrare"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Setările de escaladare nu au putut fi încărcate.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Modificat de",
+        "empty": "Nu a fost înregistrată încă nicio modificare a politicii.",
         "migration": "Migrare setări",
         "policy": "Politică",
         "revision": "Revizie",
@@ -217,8 +277,10 @@
       },
       "title": "Escaladare aprobare",
       "toast": {
+        "conflict": "Acesta s-a modificat între timp. Reîncărcați pentru a vedea starea actuală.",
         "deliveryRetried": "Reîncercare de livrare programată",
         "disposed": "Element care necesită atenție închis",
+        "notFound": "Acest element nu mai există. Reîncărcați pentru a vedea starea actuală.",
         "rechecked": "S-au verificat {checked} elemente, {resolved} rezolvate",
         "requestFailed": "Solicitarea a eșuat. Încercați din nou.",
         "reviewed": "Conflicte marcate ca revizuite",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Tipuri de aprobare",
       "approver": "Aprobator",
-      "approverEmployeeId": "ID angajat aprobator",
-      "approverEmployeeIdPlaceholder": "Exemplu: employee_123…",
+      "approverEmployee": "Angajat aprobator",
       "approverType": {
         "directManager": "Manager direct",
         "managerManager": "Managerul managerului",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Număr de condiții",
       "createPolicy": "Creare politică de aprobare",
+      "createPolicySubmit": "Creați o politică",
+      "deactivateConfirm": {
+        "confirm": "Dezactivați",
+        "description": "Cererile noi nu se vor mai potrivi cu această politică și vor fi direcționate conform următoarei politici active corespunzătoare sau rutei implicite de aprobare. O puteți reactiva editând-o.",
+        "title": "Dezactivați „{name}”?"
+      },
+      "deactivatePolicyNamed": "Dezactivați {name}",
       "defaultStageLabel": "Revizuire de către manager",
       "description": "Configurați lanțuri secvențiale de aprobare pentru fluxurile de lucru operaționale",
       "descriptionPlaceholder": "Exemplu: Escalează fluxurile de lucru sensibile către operațiuni…",
       "dialogDescription": "Definiți când se aplică un lanț de aprobare și ce aprobatori gestionează fiecare etapă secvențială.",
-      "editPolicy": "Editare politică",
+      "editPolicyNamed": "Editați {name}",
+      "editPolicyTitle": "Editați politica de aprobare",
       "empty": "Nu există încă politici de aprobare configurate. Creați o politică pentru a defini primul lanț de aprobare.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Administrator organizație"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Această politică se potrivește și cu # tip de aprobare mai vechi care nu poate fi selectat aici. Salvarea {count, plural, one {îl păstrează neschimbat} other {le păstrează neschimbate}}.} few {Această politică se potrivește și cu # tipuri de aprobare mai vechi care nu pot fi selectate aici. Salvarea {count, plural, one {îl păstrează neschimbat} other {le păstrează neschimbate}}.} other {Această politică se potrivește și cu # de tipuri de aprobare mai vechi care nu pot fi selectate aici. Salvarea {count, plural, one {îl păstrează neschimbat} other {le păstrează neschimbate}}.}}",
       "loadFailed": "Politicile de aprobare nu au putut fi încărcate.",
       "loading": "Se încarcă politicile…",
       "namePlaceholder": "Exemplu: Escaladare absențe…",
       "noStages": "Nu este configurată încă nicio etapă de aprobare.",
+      "preservedConditions": "{count, plural, one {Această politică are încă # condiție care nu poate fi modificată aici. Salvarea {count, plural, one {o păstrează neschimbată} other {le păstrează neschimbate}}.} few {Această politică are încă # condiții care nu pot fi modificate aici. Salvarea {count, plural, one {o păstrează neschimbată} other {le păstrează neschimbate}}.} other {Această politică are încă # de condiții care nu pot fi modificate aici. Salvarea {count, plural, one {o păstrează neschimbată} other {le păstrează neschimbate}}.}}",
       "preview": {
         "ariaLabel": "Previzualizare lanț de aprobare",
-        "badge": "Cadru de previzualizare",
-        "description": "Vedeți cum vor parcurge cererile corespunzătoare fiecare etapă de aprobare înainte de a activa o politică.",
-        "footer": "Previzualizarea completă a contextului cererii va determina aprobatorii în timp real odată ce condițiile politicii și grupurile de angajați sunt configurate în editor.",
+        "chainDescription": "Modul în care o cerere corespunzătoare parcurge etapele configurate mai sus.",
+        "chainTitle": "Previzualizare lanț de aprobare",
+        "fallback": "Dacă nu este găsit niciun aprobator: {fallback}",
+        "loadingEmployee": "Se încarcă angajatul…",
+        "noEmployeeSelected": "Niciun angajat selectat încă",
+        "noStages": "Adăugați o etapă pentru a vedea lanțul de aprobare.",
         "stage": {
           "approved": "Aprobat",
-          "directManager": "Manager direct",
-          "operationsAdmin": "Administrator operațiuni",
           "requester": "Solicitant"
-        },
-        "title": "Rezumat previzualizare lanț"
+        }
       },
       "priority": "Prioritate",
-      "removeStage": "Elimină etapa",
+      "removeStageNumber": "Eliminați etapa {number}",
+      "savePolicySubmit": "Salvați politica",
+      "selectApproverEmployee": "Selectați angajatul",
       "stageNumber": "Etapa {number}",
       "stages": "Etape de aprobare",
       "stagesCount": "Număr de etape",
@@ -322,14 +395,19 @@
       "title": "Politici de aprobare",
       "toast": {
         "created": "Politică de aprobare creată",
-        "saveFailed": "Politica de aprobare nu a putut fi salvată."
+        "deactivated": "„{name}” a fost dezactivată",
+        "reactivated": "„{name}” este din nou activă",
+        "saveFailed": "Politica de aprobare nu a putut fi salvată.",
+        "updated": "Politica de aprobare a fost salvată"
       },
+      "unknownEmployee": "Angajat necunoscut ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Politicile active necesită cel puțin o etapă de aprobare.",
-        "specificEmployeeRequiresId": "Etapele cu angajați specifici necesită ID-ul de angajat al aprobatorului."
+        "specificEmployeeRequired": "Alegeți angajatul aprobator pentru fiecare etapă specifică de angajat."
       }
     },
     "changePolicies": {
+      "actionsFor": "Acțiuni pentru {name}",
       "allManagers": "Toți managerii",
       "approvalDaysDescription": "În afara procesului de autoservire, angajații pot solicita modificări în acest interval (necesită aprobare). 0 = fără interval suplimentar.",
       "approvalDaysLabel": "Interval de aprobare (zile)",
@@ -363,6 +441,7 @@
       "deleted": "Politică ștearsă",
       "deleteDescription": "Sigur doriți să ștergeți această politică? Orice atribuire care utilizează această politică va fi, de asemenea, eliminată. Angajații care utilizau anterior această politică nu vor avea restricții până când nu li se atribuie o nouă politică.",
       "deleteFailed": "Nu s-a putut șterge politica",
+      "deleteNamedDescription": "Ștergeți politica de modificare „{name}”? Toate atribuirile care utilizează această politică vor fi, de asemenea, eliminate. Angajații care utilizau anterior această politică nu vor avea nicio restricție până când nu li se atribuie o nouă politică.",
       "deleteTitle": "Ștergeți politica de modificare",
       "description": "Controlați când pot angajații să modifice înregistrările de timp și când este necesară aprobarea managerului",
       "descriptionLabel": "Descriere",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "Politica implicită aplicată tuturor angajaților care nu au o excepție la nivel de echipă sau individuală.",
       "policySummary": "Rezumatul politicii:",
       "primaryOnly": "Doar cel principal",
+      "removeAssignmentFor": "Eliminați atribuirea pentru {name}",
       "removeAssignmentTitle": "Eliminați atribuirea politicii?",
       "removeEmployeeDescription": "Această acțiune va elimina excepția pentru „{name}”. Se va aplica politica implicită a echipei sau a organizației.",
       "removeOrgDescription": "Această acțiune va elimina politica implicită a organizației. Angajații nu vor avea restricții decât dacă au o excepție la nivel de echipă sau individuală.",
+      "removeOrgNamedDescription": "Această acțiune va elimina „{policy}” ca politică implicită a organizației. Angajații nu vor avea nicio restricție, cu excepția cazului în care au o derogare la nivel de echipă sau individuală.",
       "removeTeamDescription": "Această acțiune va elimina politica pentru echipa „{team}”. Aceasta va utiliza politica implicită a organizației.",
       "sameDay": "Doar în aceeași zi",
       "sameDayFree": "Modificările din aceeași zi sunt permise liber",
@@ -438,6 +519,13 @@
       "description": "Setați cerințele minime de personal în funcție de locație și oră",
       "editRule": "Editează regula de acoperire",
       "endTime": "Oră de sfârșit",
+      "errors": {
+        "endNotAfterStart": "Ora de sfârșit trebuie să fie după ora de început în aceeași zi.",
+        "invalidTime": "Introduceți o oră în formatul de 24 de ore HH:mm.",
+        "staffCountRange": "Introduceți un număr întreg de la 1 la 100.",
+        "subareaRequired": "Selectați o subzonă."
+      },
+      "loadFailed": "Regulile de acoperire nu au putut fi încărcate.",
       "loading": "Se încarcă regulile de acoperire...",
       "minimumStaffCount": "Număr minim de angajați",
       "minimumStaffHint": "Numărul minim de angajați necesar în acest interval orar.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Regula de acoperire a fost actualizată",
       "selectSubarea": "Selectați o subzonă",
       "settingsFailed": "Nu s-au putut salva setările",
+      "settingsLoadFailed": "Setările de publicare nu au putut fi încărcate.",
       "settingsSaved": "Setările au fost salvate",
       "startTime": "Oră de început",
       "subarea": "Locație / Subzonă",
@@ -493,6 +582,10 @@
         "colorSelection": "Selectare culoare",
         "defaultSubarea": "Subzonă implicită",
         "endTime": "Oră de sfârșit",
+        "errors": {
+          "invalidTime": "Introduceți o oră în formatul de 24 de ore HH:mm.",
+          "subareaRequired": "Selectați una dintre subzonele dvs."
+        },
         "name": "Nume",
         "namePlaceholder": "de ex., Tura de dimineață…",
         "noSubarea": "Fără subzonă implicită",
@@ -508,6 +601,7 @@
         "description": "Gestionează-ți șabloanele de tură",
         "title": "Șabloane"
       },
+      "loadError": "Șabloanele de tură nu au putut fi încărcate.",
       "table": {
         "duration": "Durată",
         "name": "Nume",
@@ -544,7 +638,7 @@
       "deleteModel": "Ștergeți modelul de suprataxă",
       "deleteModelDescription": "Această acțiune va dezactiva modelul și toate atribuirile acestuia. Această acțiune nu poate fi anulată.",
       "deleteModelTitle": "Ștergi modelul de sporuri?",
-      "deleteOrgAssignmentDescription": "Această acțiune va elimina valoarea implicită a organizației. Echipele și angajații fără atribuiri specifice nu vor avea niciun model de sporuri aplicat.",
+      "deleteOrgAssignmentNamedDescription": "Această acțiune va elimina „{model}” ca model implicit al organizației. Echipelor și angajaților fără alocări specifice nu li se va aplica niciun model de sporuri.",
       "deleteTeamAssignmentDescription": "Această acțiune va elimina modelul de sporuri pentru echipa „{team}”. Se va folosi valoarea implicită a organizației.",
       "description": "Configurează sporurile de timp pentru ore suplimentare, muncă de noapte, weekenduri și sărbători legale.",
       "descriptionLabel": "Descriere",
@@ -605,9 +699,11 @@
           "loadTitle": "Nu se pot încărca calculele"
         },
         "filters": {
+          "allEmployees": "Toți angajații",
           "apply": "Aplică filtrele",
-          "employeeId": "ID angajat",
+          "employee": "Angajat",
           "endDate": "Dată de sfârșit",
+          "showAllEmployees": "Afișează toți angajații",
           "startDate": "Dată de început"
         },
         "loading": "Se încarcă calculele…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Se afișează primele 500 de calcule care corespund. Restrângeți filtrele de dată sau de angajat pentru a rafina totalurile.",
         "summary": {
           "baseHours": "Ore de bază",
+          "calculationCount": "{count, plural, one {# calcul} few {# calcule} other {# de calcule}}",
           "calculations": "Calcule",
           "creditedHours": "Ore de spor creditate",
           "qualifyingHours": "Ore de spor eligibile"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Eliminați mai întâi din seturi",
       "categories": "Categorii",
       "categoriesDescription": "Creați și gestionați categorii de lucru care pot fi partajate în mai multe seturi",
+      "categoriesLoadError": "Categoriile de lucru nu au putut fi încărcate",
       "categoriesTitle": "Categorii de lucru",
       "categoryCreated": "Categorie creată",
       "categoryCreateFailed": "Crearea categoriei a eșuat",
@@ -709,6 +807,7 @@
       "categoryInUse": "Nu se poate șterge o categorie care este utilizată în {count} set(uri). Eliminați-o mai întâi din toate seturile.",
       "categoryName": "Nume",
       "categoryNamePlaceholder": "de ex., Deplasare pasivă",
+      "categoryNameTaken": "Există deja o categorie cu acest nume.",
       "categoryUpdated": "Categorie actualizată",
       "categoryUpdateFailed": "Actualizarea categoriei a eșuat",
       "chooseColor": "Alegeți culoarea",
@@ -722,22 +821,30 @@
       "createSetDescription": "Creați un set nou de categorii și selectați ce categorii să includeți",
       "defaultSet": "Set implicit de categorii",
       "deleteAssignmentTitle": "Eliminați atribuirea?",
+      "deleteCategoryDescription": "Categoria „{name}” va fi ștearsă definitiv.",
+      "deleteCategoryNamed": "Șterge categoria {name}",
+      "deleteCategoryTitle": "Ștergeți categoria?",
       "deleteEmployeeAssignment": "Această acțiune va elimina suprascrierea pentru „{name}”. Se va utiliza valoarea implicită a echipei sau a organizației.",
-      "deleteOrgAssignment": "Această acțiune va elimina valoarea implicită a organizației. Angajații nu vor avea categorii de lucru disponibile decât dacă sunt atribuite individual.",
+      "deleteOrgAssignmentNamed": "Această acțiune va elimina „{set}” ca set implicit al organizației. Angajații nu vor avea categorii de lucru disponibile dacă nu le sunt alocate individual.",
       "deleteSetDescription": "Această acțiune va șterge definitiv setul de categorii „{name}” și toate categoriile sale. Orice atribuiri care utilizează acest set vor fi, de asemenea, eliminate.",
+      "deleteSetNamed": "Șterge setul de categorii {name}",
       "deleteSetTitle": "Ștergeți setul de categorii?",
       "deleteTeamAssignment": "Această acțiune va elimina setul de categorii pentru echipa „{team}”. Se va utiliza valoarea implicită a organizației.",
       "description": "Definiți categorii de lucru cu factori de timp pentru calcularea timpului efectiv",
       "descriptionPlaceholder": "Descriere opțională",
       "editCategory": "Editează categoria",
       "editCategoryDescription": "Actualizați detaliile categoriei",
+      "editCategoryNamed": "Editează categoria {name}",
       "editSet": "Editează setul de categorii",
       "editSetDescription": "Actualizați detaliile setului de categorii și gestionați categoriile acestuia",
+      "editSetNamed": "Editează setul de categorii {name}",
       "employeeLevel": "Suprascrieri pentru angajați",
       "employeeLevelDescription": "Suprascrieți valorile implicite ale echipei sau ale organizației pentru anumiți angajați",
       "factor": "Factor",
       "factorExplanation": "Factorul determină timpul efectiv: 0.5 = 50% (de ex., deplasare pasivă), 1.0 = 100% (muncă normală), 1.5 = 150% (ore suplimentare)",
       "loadError": "Încărcarea seturilor de categorii a eșuat",
+      "moveCategoryDown": "Mută {name} mai jos",
+      "moveCategoryUp": "Mută {name} mai sus",
       "noCategories": "Nicio categorie încă",
       "noCategoriesAvailable": "Nicio categorie disponibilă",
       "noCategoriesHint": "Creați categorii pentru a le atribui seturilor",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Nu există echipe disponibile.",
       "orgLevel": "Valoare implicită a organizației",
       "orgLevelDescription": "Set de categorii implicit aplicat tuturor angajaților, dacă nu este suprascris",
+      "removeAssignmentFor": "Elimină alocarea pentru {name}",
+      "removeCategoryFromSet": "Elimină {name} din set",
       "selectCategories": "Selectați categoriile",
-      "selectedCategories": "Categorii selectate (trageți pentru a reordona)",
+      "selectedCategoriesOrder": "Categorii selectate (utilizați săgețile pentru a reordona)",
       "selectEmployee": "Angajat",
       "selectEmployeePlaceholder": "Selectați un angajat",
       "selectSet": "Set de categorii",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Descriere opțională pentru acest set de categorii",
       "setName": "Nume",
       "setNamePlaceholder": "de ex., Categorii de călătorie",
+      "setNameTaken": "Există deja un set de categorii cu acest nume.",
       "setUpdated": "Set de categorii actualizat",
       "setUpdateFailed": "Actualizarea setului de categorii a eșuat",
       "tab": {

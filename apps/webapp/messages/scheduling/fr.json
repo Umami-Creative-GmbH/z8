@@ -6,9 +6,13 @@
       "gapCount": "{count} manque de personnel",
       "gaps": "lacunes",
       "hideOverlay": "Masquer la superposition de couverture",
+      "lastLoaded": "Dernière couverture chargée",
+      "loading": "Chargement de la couverture…",
       "metSlots": "{count} adéquat",
       "overSlots": "{count} sureffectif",
       "overstaffed": "Sureffectif",
+      "readFailed": "Impossible de charger la couverture. Réessayez pour vérifier les effectifs.",
+      "refreshing": "Actualisation de la couverture…",
       "showOverlay": "Afficher la superposition des objectifs de couverture",
       "summary": "Résumé de la couverture :",
       "toggleLabel": "Couverture",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Vos quarts de travail publiés, semaine par semaine",
       "employeeTitle": "Mon planning",
-      "managerDescription": "Gérez et planifiez les quarts de travail des employés",
+      "planningDescription": "Planifiez et publiez des quarts de travail. Les quarts planifiés n'enregistrent pas de temps de travail.",
       "title": "Planning des quarts"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Annuler",
       "complianceAcknowledgmentRequired": "Confirmation de conformité requise",
       "complianceWarnings": "{count, plural, one {Les vérifications de conformité ont détecté # avertissement ; vous devrez le confirmer avant de publier.} other {Les vérifications de conformité ont détecté # avertissements ; vous devrez les confirmer avant de publier.}}",
+      "coverageLoading": "Chargement de la couverture en cours",
+      "coverageRulesCheckedOnPublish": "La publication appliquera les règles d'effectifs actuelles.",
+      "coverageUnavailable": "La couverture est indisponible",
+      "coverageUnloaded": "La couverture n'a pas été vérifiée",
       "coverageWarning": "Certains créneaux horaires ne respectent pas les exigences minimales d'effectif.",
       "maxHours": "Heures max. : {count}",
       "notifyEmployees": "{count, plural, one {Publier # créneau brouillon et avertir les employés} other {Publier # créneaux brouillons et avertir les employés}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Avertissements détectés avant la publication"
     },
     "scheduler": {
+      "assigned": "Assigné",
       "complianceBanner": {
         "findingsDetected": "{count} problème(s) détecté(s) avant la publication.",
         "maxHours": "Heures max : {count}",
@@ -59,18 +68,24 @@
         "employee": "Affichage des quarts de travail pour {name}",
         "showAll": "Afficher tous les quarts de travail"
       },
+      "loadFailed": "Impossible d'actualiser les quarts. Les quarts chargés sont conservés.",
       "loading": "Chargement du planning...",
+      "open": "Quart ouvert",
       "publish": {
         "failed": "Échec de la publication des quarts",
         "published": "{count} quart(s) publié(s)"
       },
+      "retry": "Réessayer",
+      "shiftList": "Liste des quarts",
       "shiftUpdate": {
         "failed": "Échec de la mise à jour du quart",
         "overlapDescription": "Ce quart chevauche {count} autre(s) quart(s)",
         "overlapWarning": "Quart enregistré avec avertissement de chevauchement",
         "skillOverrideReasonRequired": "L'employé ne dispose pas d'une compétence requise ce jour-là. Ouvrez le quart de travail pour indiquer un motif.",
         "updated": "Quart mis à jour"
-      }
+      },
+      "supportFailed": "Impossible d'actualiser les modèles ou les informations de conformité. Vérifiez à nouveau avant de publier.",
+      "templatesUnavailable": "Impossible de charger les modèles de quart."
     },
     "shiftDetails": {
       "close": "Fermer",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Faites glisser un modèle sur le calendrier pour créer un quart de travail",
       "empty": "Aucun modèle disponible. Créez des modèles dans les paramètres pour ajouter rapidement des quarts de travail.",
+      "selectHint": "Choisissez un modèle, puis définissez la date et l'attribution du quart.",
       "title": "Modèles de quarts de travail"
     }
   }

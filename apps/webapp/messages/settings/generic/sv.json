@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "Konfigurera vem som godkänner förfrågningar, när försenade godkännanden eskaleras och vilka godkännandeproblem som behöver följas upp."
+    },
     "approvalTriage": {
       "correctionError": "Ange ett heltal från 0 till 60 minuter.",
       "correctionHelp": "Noll inaktiverar snabbspåret för små korrigeringar, inklusive redigeringar med noll-delta. Använd annars 1–60 minuter; alla obligatoriska underlag måste fortfarande verifieras.",
@@ -138,6 +141,7 @@
           "defaultTax": "Standard: {treatment}",
           "description": "Koppla varje kund till dess befintliga kontakt i bokföringsverktyget före första överföringen, och åsidosätt skattehanteringen vid behov.",
           "edit": "Redigera",
+          "editAction": "Redigera bokföring för {name}",
           "empty": "Inga kunder än",
           "inactive": "Inaktiv",
           "notLinked": "Inte kopplad",
@@ -157,6 +161,8 @@
           "start": "Importera kunder"
         },
         "keyMissing": "API-nyckeln saknas i hemlighetslagringen. Ersätt anslutningen med en ny nyckel.",
+        "loadFailed": "Bokföringsinställningarna kunde inte läsas in.",
+        "loading": "Läser in bokföringsinställningar",
         "netPrices": {
           "label": "Det här sevdesk-kontot anger fakturapriser som nettopriser",
           "required": "Z8 lämnar över nettopriser. Bekräfta att sevdesk anger priser som nettopriser"
@@ -225,6 +231,7 @@
         "employeeTitle": "Kostnadstariff",
         "empty": "Ingen kostnadstariff ännu. Marginalen för den anställdes arbete visas som okänd kostnad.",
         "history": "Historik",
+        "historyAction": "Historik för kostnadssats för {name}",
         "hourly": "Per timme",
         "inactive": "Inaktiv",
         "intro": "En kostnadstariff är en anställds fullständiga interna kostnad per timme i {currency}, som används för marginal. Den är separat från lönen: en ändring av den ena påverkar aldrig den andra.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/h",
         "saved": "Kostnadstariff sparad",
         "set": "Ange kostnadstariff",
+        "setAction": "Ange kostnadssats för {name}",
         "setRateHelp": "Den nya kostnadstariffen gäller från detta datum fram till nästa ändring. Den ändrar aldrig lön, löneutbetalning eller timinkomst.",
         "startsOn": "Börjar {date}",
         "today": "Idag",
@@ -378,11 +386,14 @@
           "empty": "Inga överlämningar ännu",
           "gone": "Borttagen i verktyget",
           "open": "Öppna",
+          "openAction": "Öppna överlämning för {name}, {period}",
           "period": "Period",
           "status": "Status",
           "title": "Överlämningar",
           "total": "Nettobelopp"
         },
+        "loadFailed": "Överlämningarna kunde inte läsas in.",
+        "loading": "Läser in överlämningar",
         "marks": {
           "compare": "Jämför",
           "compareItem": "Jämför {item}",
@@ -495,6 +506,9 @@
         "customerRate": "Debiterbar taxa",
         "customerRateTitle": "Debiterbar taxa för {name}",
         "dateRequired": "Välj första dagen det gäller",
+        "deletedCustomer": "Borttagen kund",
+        "deletedEmployee": "Borttagen anställd",
+        "deletedProject": "Borttaget projekt",
         "effectiveFrom": "Gäller från",
         "employee": "Medarbetare",
         "employeeProjectRateFor": "Debiterbar taxa för {name} i detta projekt",
@@ -511,10 +525,13 @@
         "endsFrom": "Gäller inte längre från",
         "for": "För",
         "history": "Historik",
+        "historyAction": "Historik för priset för {name}",
         "hourlyRate": "Timtaxa",
         "inEffect": "Gällande",
         "inEffectTodayHint": "Gäller idag: {rate}",
         "intro": "Taxor anges i {currency} per timme. För varje arbete gäller den mest specifika taxan som var i kraft den dag det påbörjades: medarbetare på ett projekt, därefter projekt, därefter kund, därefter medarbetare.",
+        "invalidDate": "Ange ett giltigt datum.",
+        "invalidRate": "Ange ett positivt timpris med högst två decimaler.",
         "level": {
           "customer": "Kund",
           "customerDescription": "Gäller för arbete på kundens projekt utan en projekttaxa.",
@@ -542,6 +559,8 @@
         "setRate": "Ange taxa",
         "setRateHelp": "Den nya taxan gäller från detta datum fram till nästa taxeändring. Tidigare datum omprissätter arbete som ännu inte har fakturerats.",
         "startsOn": "Börjar {date}",
+        "switchedOff": "Fakturerbar tid är avstängd.",
+        "targetNotFound": "Den anställde, projektet eller kunden hittades inte.",
         "today": "Idag",
         "unchanged": "Den taxan gäller redan"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Hantera din prenumeration, betalningsmetoder och fakturor",
       "title": "Fakturering & prenumeration"
+    },
+    "breadcrumbs": {
+      "label": "Brödsmulor för inställningar"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "Ingen månad har stängts ännu.",
       "historyTitle": "Historik",
+      "loadErrorDescription": "Ladda om sidan för att försöka igen.",
+      "loadErrorTitle": "Stängda månader kunde inte läsas in",
       "locationNotFound": "Den här platsen finns inte längre.",
       "monthsDescription": "Att stänga en månad låser dess arbete, tilldelning och frånvaro för lönekörning. Anteckningar förblir redigerbara.",
       "monthsTitle": "Månader",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Granska och hantera förfrågningar om efterlevnadsundantag från teammedlemmar",
+      "metadata": {
+        "description": "Konfigurera inställningar för ArbZG-efterlevnad och hantera undantagsansökningar",
+        "title": "Efterlevnadsinställningar | ArbZG"
+      },
       "title": "ArbZG-efterlevnad"
     },
     "customDomains": {
       "title": "Domän & varumärkesprofilering"
     },
     "customers": {
+      "accountingAction": "Bokföring för {name}",
       "column": {
+        "actions": "Åtgärder",
         "contactPerson": "Kontaktperson",
         "email": "E-post",
         "name": "Företagsnamn",
@@ -643,11 +673,13 @@
       "create": "Lägg till kund",
       "created": "Kunden har skapats",
       "createFailed": "Det gick inte att skapa kunden",
-      "deleted": "Kunden har tagits bort",
+      "deleteAction": "Ta bort {name}",
       "delete": {
+        "confirm": "Ta bort {name}",
         "description": "Är du säker på att du vill ta bort \"{name}\"? Projekt som är tilldelade denna kund kommer att fortsätta fungera, men kundreferensen tas bort.",
         "title": "Ta bort kund"
       },
+      "deleted": "Kunden har tagits bort",
       "deleteFailed": "Det gick inte att ta bort kunden",
       "description": "Hantera kundkontakter för projekttilldelningar",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Redigera kund",
         "save": "Spara ändringar"
       },
+      "edit": "Redigera kund",
+      "editAction": "Redigera {name}",
       "empty": {
         "description": "Lägg till din första kund för att tilldela dem till projekt.",
         "title": "Inga kunder ännu"
@@ -680,6 +714,7 @@
         "description": "{count} kunder totalt",
         "title": "Alla kunder"
       },
+      "loadFailed": "Kunder kunde inte läsas in. Kontrollera anslutningen och försök igen.",
       "managerNoProjects": "Inga hanterade projekt tillgängliga. Skapa eller hantera ett projekt innan du lägger till kunder.",
       "projectRequired": "Välj ett projekt först",
       "title": "Kunder",
@@ -905,7 +940,7 @@
         "columnDate": "Datum",
         "columnSize": "Storlek",
         "columnStatus": "Status",
-        "deleteDialogDescription": "Är du säker på att du vill ta bort den här exporten? Denna åtgärd kan inte ångras.",
+        "deleteDialogDescriptionNamed": "Vill du ta bort exporten som skapades {date} kl. {time}? Denna åtgärd kan inte ångras.",
         "deleteDialogTitle": "Ta bort export",
         "deleteError": "Kunde inte ta bort exporten",
         "deleteSuccess": "Exporten raderades",
@@ -914,7 +949,7 @@
         "downloadError": "Kunde inte ladda ner",
         "downloadSuccess": "Nedladdningen har startat",
         "emptyDescription": "Inga exporter ännu",
-        "emptyHint": "Skapa din första export med formuläret ovan",
+        "emptyHintNewExportTab": "Skapa din första export på fliken Ny export.",
         "moreCategories": "+{count} fler",
         "statusCompleted": "Slutförd",
         "statusFailed": "Misslyckades",
@@ -935,6 +970,7 @@
         "connectionFailed": "Anslutningen misslyckades",
         "connectionSuccess": "Anslutningen lyckades",
         "deleteDialogDescription": "Är du säker på att du vill ta bort denna lagringskonfiguration?",
+        "deleteDialogDescriptionNamed": "Vill du ta bort lagringskonfigurationen för bucket \"{bucket}\"?",
         "deleteDialogTitle": "Ta bort konfiguration",
         "deleteError": "Kunde inte ta bort konfigurationen",
         "deleteSuccess": "Konfigurationen togs bort",
@@ -962,7 +998,7 @@
         "verified": "Verifierad"
       },
       "storageNotConfigured": {
-        "description": "Konfigurera S3-lagring innan du skapar exporter",
+        "descriptionWithTab": "Konfigurera S3-lagring på fliken Lagringsinställningar innan du skapar exporter.",
         "title": "Lagring ej konfigurerad"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "Tilldelad av {actor} {time}",
         "editor": "Verifierarens omfattning",
         "empty": "Inget verifieraransvar tilldelat",
+        "failed": "Kunde inte uppdatera eller få åtkomst till körkortsgranskarens ansvarsområde. Kontrollera dina behörigheter och val.",
         "formerEmployee": "Tidigare anställda kan inte läggas till. Välj anställda i den aktuella personalstyrkan.",
         "history": "Ansvarshistorik",
         "historyEntry": "Beviljades av {grantor} {granted}; återkallades av {revoker} {revoked}",
@@ -990,6 +1027,7 @@
         "myUntil": "Ditt ansvar upphör efter {date} ({timezone}).",
         "none": "Du har för närvarande inget ansvar för verifiering av körkort.",
         "noTeams": "Inga team tillgängliga",
+        "notEnabled": "Körkortskontroller är inte aktiverade för den här organisationen.",
         "person": "Verifierare",
         "revoked": "Verifieraransvar återkallat",
         "revokeDescription": "Verifieraren förlorar omedelbart åtkomst till kontroller inom denna omfattning. En ny tilldelning krävs för att återställa ansvaret.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "E-postmallar",
       "empty": "Inga e-postmallar är tillgängliga för den här organisationen.",
-      "eyebrow": "Operativ kommunikation",
       "reset": "E-postmallen har återställts till systemmallen",
+      "resetDialog": {
+        "confirm": "Återställ mall",
+        "description": "Detta tar bort din organisations anpassade ämne och brödtext för detta e-postmeddelande. E-postmeddelanden som skickas därefter använder systemmallen.",
+        "title": "Återställ ”{template}” till systemmallen?"
+      },
       "resetFailed": "Det gick inte att återställa e-postmallen",
       "saved": "E-postmallen har sparats",
       "saveFailed": "Det gick inte att spara e-postmallen",
@@ -1276,6 +1318,7 @@
       "savedPending": "Anställningsdatum har sparats. Arbetssaldon uppdateras.",
       "savedRefreshFailed": "Anställningsdatum har sparats. Ladda om sidan för att uppdatera de visade resultaten.",
       "saveFailed": "Kunde inte spara denna korrigering. Generera en ny förhandsgranskning och försök igen.",
+      "stalePreview": "Den granskade anställningen eller konfigurationen har ändrats. Skapa en ny förhandsgranskning.",
       "title": "Korrigera faktisk anställningsstart",
       "total": "Totalt före användning",
       "unknown": "Ej registrerat",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {Inga utestående returer} one {# utestående retur} other {# utestående returer}}",
         "overdue": "{count, plural, other {# försenade}}",
+        "returns": "Returer från anställda",
+        "scope": "Auktoriserad utrustning för denna medarbetare",
         "title": "Medarbetarutrustning"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Öppna utrustningsöversikt",
       "overview": {
+        "asOf": "Per den {date} ({timezone})",
         "description": "Vem som innehar varje artikel, vad som måste återlämnas och varje registrerad överlämning.",
-        "failed": "Utrustningen kunde inte läsas in. Ladda om sidan för att försöka igen."
+        "failed": "Utrustningen kunde inte läsas in. Ladda om sidan för att försöka igen.",
+        "scope": "Dina poster för auktoriserad utrustning",
+        "summaryScope": "Återlämningar och beredskap inom ditt ansvarsområde"
       },
       "personal": {
         "closed": "Återlämnat & avslutat",
@@ -1701,6 +1749,7 @@
         "failed": "Din utrustning kunde inte läsas in. Ladda om sidan för att försöka igen.",
         "keep": "Får behållas",
         "quantity": "{count} utlämnade",
+        "remaining": "{count} att återlämna",
         "title": "Min utrustning",
         "toggleHistory": "Visa överlämningshistorik",
         "toReturn": "Att återlämna"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Tillbaka till inställningar",
-        "tryAgain": "Försök igen"
+        "backToSettings": "Tillbaka till inställningar"
       },
       "description": "Ett fel inträffade när inställningssidan lästes in. Det här kan vara ett tillfälligt problem.",
-      "errorId": "Fel-ID: {digest}",
       "title": "Något gick fel"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "Det gick inte att uppdatera tilldelningen. Försök igen.",
       "noEmployees": "Inga anställdsspecifika inställningar",
       "noTeams": "Inga teamspecifika inställningar",
+      "organizationDefaultRemoved": "Organisationens standard har tagits bort",
       "orgDescription": "Standardinställning för alla anställda om den inte åsidosätts",
       "remove": "Ta bort {target}",
+      "removedFor": "Åsidosättning togs bort för {name}",
       "valueFor": "{setting} för {target}"
+    },
+    "featureOff": {
+      "askAdmin": "Be en organisationsadministratör att aktivera detta.",
+      "status": "Inaktiverat för denna organisation",
+      "turnOn": "Aktivera i organisationsinställningarna"
     },
     "group": {
       "account": "Konto",
@@ -2221,12 +2275,21 @@
       "title": "Implementeringschecklista"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "Startar verkställande…"
+      },
       "csv": {
         "acceptSelected": "Acceptera markerade giltiga rader",
         "applyMapping": "Tillämpa mappning",
         "chooseSource": "Välj ett källvärde",
         "chooseTarget": "Välj en befintlig post",
         "commit": "Verkställ accepterade rader",
+        "commitConfirm": {
+          "confirm": "Importera rader",
+          "description": "Importen skapar slutfört arbete för de matchade medarbetarna, med fordonsuppgifterna som raderna innehåller. Den körs i bakgrunden. Rader som överlappar befintligt arbete importeras inte: en import skriver aldrig över arbete.",
+          "irreversible": "En import kan inte ångras. Om du vill ändra importerat arbete i efterhand korrigerar du det i tidrapporteringen.",
+          "title": "{count, plural, one {Importera # godkänd rad?} other {Importera # godkända rader?}}"
+        },
         "committing": "Importerar accepterade rader…",
         "description": "Importera en slutförd arbetsperiod per rad. Ange raster som mellanrum mellan rader. Inget registreras förrän du granskar och accepterar det.",
         "download": "Ladda ned CSV-mall",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "Fakturerbar i Clockodo, men Clockodo-projektet är inte kopplat till ett Z8-projekt."
         },
         "commitAccepted": "Verkställ godkända rader",
+        "commitConfirm": {
+          "confirm": "Verkställ rader",
+          "description": "Genom att verkställa skapas de poster som de godkända raderna beskriver i denna organisation, såsom tidrapporter, frånvaro, medarbetare, kunder eller inställningar, eller länkar dem där du valt det. Det körs i bakgrunden. Avvisade rader importeras inte.",
+          "irreversible": "En import kan inte ångras. För att ändra verkställda poster i efterhand redigerar du dem där de hanteras.",
+          "title": "{count, plural, one {Verkställ # godkänd rad?} other {Verkställ # godkända rader?}}"
+        },
         "commitFailed": "Det gick inte att starta verkställandet av importen",
         "commitQueued": "Köade {count} godkända rader för verkställande",
         "committing": "Verkställer...",
@@ -2393,6 +2462,7 @@
         },
         "title": "Importgranskning"
       },
+      "sourceTabs": "Importkälla",
       "supportedSources": "Importera arbete från CSV-filer eller anslut leverantörer som stöds, till exempel Clockodo och Clockin.",
       "title": "Importera data"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Skapa ny kod",
       "listDescription": "Varje kiosk tillhör en plats. Parkoppla en enhet genom att öppna kiosksidan på den och ange parkopplingskoden.",
-      "listTitle": "Kiosker",
       "loadFailed": "Det gick inte att läsa in kiosker.",
       "neverSeen": "Aldrig",
       "nfcFobReaderOn": "NFC-brickläsare på",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Tilldela en medarbetare som arbetsledare för den här platsen",
       "assignEmployeeToSubarea": "Tilldela medarbetare till delområde",
       "assignEmployeeToSubareaDescription": "Tilldela en medarbetare som arbetsledare för {subareaName}",
+      "assignmentRemovedFrom": "Tog bort {name} från {place}",
+      "assignmentRestored": "Återställde {name}",
+      "assignmentRestoreFailed": "Tilldelningen kunde inte återställas",
       "backToList": "Tillbaka till platser",
       "create": "Skapa plats",
       "created": "Plats skapad",
@@ -2598,10 +2670,14 @@
       "deleted": "Plats borttagen",
       "deleteDescription": "Är du säker på att du vill ta bort den här platsen? Detta tar även bort alla delområden och medarbetartilldelningar.",
       "deleteFailed": "Det gick inte att ta bort platsen",
+      "deleteNamedTitle": "Ta bort platsen {name}?",
       "deleteSubareaDescription": "Är du säker på att du vill ta bort det här delområdet? Detta tar även bort alla medarbetartilldelningar.",
+      "deleteSubareaNamedTitle": "Ta bort delområdet {name}?",
       "deleteSubareaTitle": "Ta bort delområde",
       "deleteTitle": "Ta bort plats",
       "description": "Hantera organisationens platser och delområden",
+      "detailLoadFailed": "Den här platsen kunde inte läsas in",
+      "detailLoadFailedDescription": "Den kan ha tagits bort eller så misslyckades anslutningen. Försök igen eller gå tillbaka till platslistan.",
       "details": "Platsdetaljer",
       "dialog": {
         "create": "Skapa plats",
@@ -2614,7 +2690,6 @@
       "employee": "Medarbetare",
       "employeeAssigned": "Medarbetare tilldelad",
       "employeeAssignFailed": "Det gick inte att tilldela medarbetare",
-      "employeeRemoved": "Medarbetare borttagen",
       "employeeRemoveFailed": "Kunde inte ta bort medarbetare",
       "field": {
         "active": "Aktiv",
@@ -2635,7 +2710,10 @@
         "subareaName": "Namn",
         "subareaNamePlaceholder": "t.ex. Kassa, Lager, Bistro"
       },
+      "loadFailed": "Platser kunde inte läsas in",
+      "loadFailedDescription": "Kontrollera anslutningen och försök igen.",
       "name": "Namn",
+      "nameRequired": "Namn är obligatoriskt",
       "noAvailableEmployees": "Alla medarbetare är redan tilldelade denna plats",
       "noAvailableEmployeesSubarea": "Alla medarbetare är redan tilldelade detta delområde",
       "noLocations": "Inga platser än",
@@ -2671,6 +2749,9 @@
       "updated": "Platsen har uppdaterats",
       "updateFailed": "Kunde inte uppdatera platsen"
     },
+    "mobileNav": {
+      "open": "Inställningsmeny"
+    },
     "myData": {
       "aboutDownload": "Ladda ner den här medan du är inloggad. Filer raderas efter 7 dagar.",
       "aboutEquipment": "Innehåller sparade utrustningstilldelningar, skick, anteckningar, korrigeringar, fysiska mottaganden och förlorade eller avskrivna utfall, med återtaganden registrerade separat.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "En ZIP-fil med allt som denna organisation sparar om dig, som JSON- och CSV-filer med en förklaring. Den omfattar endast denna organisation.",
       "exportTitle": "Export av personuppgifter",
       "listLabel": "Dina exporter",
+      "loadFailed": "Dina dataexporter kunde inte läsas in. Försök igen.",
       "noEmployeeRecord": "Du har ingen anställningspost i denna organisation. Kontakta organisationens administratörer för att få en kopia av personuppgifterna som sparas om dig.",
+      "noExports": "Du har inte begärt någon export ännu. Begär en för att ladda ned en kopia av dina data.",
       "refusalDailyLimit": "Du kan begära en export av dina uppgifter per 24 timmar. Försök igen senare.",
       "refusalInProgress": "En export av dina uppgifter förbereds redan. Du aviseras när den är klar.",
       "refusalStorage": "Fillagring har inte konfigurerats för denna organisation ännu. Kontakta dess administratörer.",
@@ -2697,7 +2780,14 @@
       "title": "Mina uppgifter",
       "unavailable": "Mina uppgifter är inte tillgängliga för ditt konto i denna organisation."
     },
+    "nav": {
+      "disabledEntry": "{title} (inaktiverad)",
+      "label": "Inställningsnavigering"
+    },
     "navigation": {
+      "approval": {
+        "title": "Godkännande"
+      },
       "audit": {
         "activity": "Aktivitet",
         "description": "Granska aktivitet och konfigurera signerade granskningsexporter",
@@ -2757,7 +2847,8 @@
       "description": "Välj hur och när du vill få aviseringar",
       "digestTime": "Tid för sammanfattning",
       "discord": {
-        "description": "Konfigurera Discord-aviseringar för din organisation."
+        "description": "Konfigurera Discord-aviseringar för din organisation.",
+        "setupInstructions": "Att ansluta Discord från den här sidan är inte tillgängligt ännu. Anslutningen kräver din Discord-applikations bot-token, applikations-ID och publika nyckel."
       },
       "escalations": "Eskaleringar",
       "escalationsDescription": "Eskalera obesvarade godkännandeförfrågningar efter den konfigurerade tidsgränsen.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "Kunde inte spara aviseringsinställningar för {channelName}",
       "saveSettings": "Spara inställningar",
       "slack": {
+        "connect": "Anslut Slack",
+        "connectFailed": "Slack-anslutningen kunde inte startas. Försök igen.",
+        "connectUnavailable": "Slack är inte tillgängligt på denna Z8-installation.",
         "description": "Konfigurera Slack-aviseringar för din organisation."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Okänd status"
       },
       "teams": {
-        "description": "Konfigurera Microsoft Teams-aviseringar för din organisation."
+        "description": "Konfigurera Microsoft Teams-aviseringar för din organisation.",
+        "setupInstructions": "Om du vill ansluta Microsoft Teams lägger du till Z8-appen i din Microsoft 365-klientorganisation. Z8-boten skickar sedan en konfigurationslänk som en organisationsadministratör öppnar för att koppla klientorganisationen till denna organisation."
       },
       "timeout": "Tidsgräns",
+      "timeoutInvalid": "Ange ett heltal timmar från 1 till 168.",
       "timezone": "Tidszon",
-      "timezonePlaceholder": "Europa/Berlin…",
       "title": "Aviseringsinställningar"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "Inga lösennycklar har konfigurerats",
       "emptyDescription": "Lägg till en lösennyckel för att aktivera lösenordslös autentisering",
       "loadError": "Det gick inte att läsa in lösennycklar",
+      "loading": "Läser in lösennycklar",
       "title": "Lösennycklar",
       "unnamed": "Namnlös lösennyckel"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Välj en löneadministratör och ange om de har åtkomst till alla eller ett specifikt omfång.",
       "editTitle": "Redigera löneadministratör",
       "employees": "Anställda",
+      "loading": "Läser in inställningar för löneadministratör",
       "noGrants": "Inga löneadministratörer har lagts till ännu.",
       "noScope": "Inget löneomfång tilldelat",
       "noTeams": "Inga team tillgängliga",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "Tilldelningen sparades inte",
-      "assignmentRemoved": "Tilldelning borttagen",
       "assignmentRemoveFailed": "Tilldelningen togs inte bort",
       "assignmentSaved": "Tilldelning sparad",
       "assignmentsDescription": "Den mest specifika tilldelningen gäller: en medarbetares egen tilldelning går före dennes primära teams, och ett teams går före hela organisationens. Använd ”av” för att exkludera ett team eller en medarbetare.",
@@ -2883,6 +2979,7 @@
       "description": "Registrera positioner vid medarbetarnas egna stämplingshändelser, med deras samtycke",
       "enabled": "Registrera positioner",
       "enabledDescription": "Om du stänger av detta stoppas registreringen för alla. Registrerade positioner finns kvar fram till sitt raderingsdatum.",
+      "loadFailed": "Inställningar för positionsregistrering kunde inte läsas in",
       "noNotice": "Inget meddelande har publicerats ännu. Om du sparar en syftesförklaring publiceras version 1.",
       "noticeDescription": "Vad medarbetarna godkänner: Z8:s fasta text och din syftesförklaring. Om du redigerar syftet eller behåller positioner längre publiceras en ny version; att förkorta lagringstiden gör det inte.",
       "noticeTitle": "Positionsmeddelande",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Varje gång dina registrerade positioner visas för någon annan listas det här.",
       "accessLogEmpty": "Ingen annan har fått se dina positioner.",
       "accessLogExport": "Dataexport",
+      "accessLogLoadFailed": "Listan över vem som sett dina positioner kunde inte läsas in. Uppdatera sidan för att försöka igen.",
       "accessLogRemovedWorkPeriod": "En arbetsperiod som inte längre finns",
       "accessLogTitle": "Vem som såg dina positioner",
       "accessLogWorkPeriod": "Arbetsperiod den {date}",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "Du har inte bestämt dig ännu.",
       "consentWithdrawn": "Du återkallade ditt samtycke den {date}.",
       "description": "Huruvida din position registreras vid dina stämplingar, samt ditt samtycke",
+      "loadFailed": "Dina inställningar för positionsstämpling kunde inte läsas in.",
       "noNotice": "Din organisation har inte publicerat någon information om positionsregistrering.",
       "noticeDescription": "Detta är vad du godkänner. En ny version publiceras om syftet ändras eller om positioner sparas längre.",
       "noticeTitle": "Information om positionsregistrering",
@@ -2954,6 +3053,7 @@
       "firstName": "Förnamn",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Rensa markering",
         "female": "Kvinna",
         "label": "Kön",
         "male": "Man",
@@ -2966,6 +3066,7 @@
       "lastName": "Efternamn",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Det gick inte att läsa in profilen",
+      "loadFailedDetail": "Din profil kunde inte läsas in, så den kan inte redigeras just nu. Försök igen.",
       "personalInformation": "Personuppgifter",
       "pronouns": "Pronomen",
       "pronouns.custom": "Anpassade pronomen",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Ladda upp profilbild"
     },
     "projects": {
+      "budgetUsed": "Använd budget",
       "column": {
+        "actions": "Åtgärder",
         "budget": "Budget",
         "customer": "Kund",
         "deadline": "Deadline",
@@ -3002,6 +3105,12 @@
       "created": "Projektet har skapats",
       "createFailed": "Kunde inte skapa projektet",
       "customerDeleted": "{name} (borttagen)",
+      "deadline": {
+        "overdue": "{count, plural, one {# dag försenad} other {# dagar försenad}}",
+        "remaining": "{count, plural, one {# dag kvar} other {# dagar kvar}}",
+        "today": "Förfaller idag",
+        "tomorrow": "Förfaller imorgon"
+      },
       "description": "Hantera projekt, budgetar, deadlines och tidstilldelningar",
       "dialog": {
         "create": "Skapa projekt",
@@ -3011,6 +3120,8 @@
         "editTitle": "Redigera projekt",
         "save": "Spara ändringar"
       },
+      "edit": "Redigera projekt",
+      "editAction": "Redigera {name}",
       "empty": {
         "description": "Skapa ditt första projekt för att börja rapportera tid på det.",
         "title": "Inga projekt ännu"
@@ -3061,6 +3172,7 @@
         "description": "{count} projekt totalt",
         "title": "Alla projekt"
       },
+      "loadFailed": "Projekt kunde inte läsas in. Kontrollera din anslutning och försök igen.",
       "members": {
         "addManager": "Lägg till projektledare",
         "assignEmployee": "Tilldela anställd",
@@ -3081,7 +3193,6 @@
         "noTeams": "Inga team tilldelade",
         "remove": "Ta bort {name}",
         "removed": "{name} togs bort",
-        "removeFailed": "Kunde inte ta bort {name}",
         "selectEmployee": "Välj en anställd",
         "selectTeam": "Välj ett team",
         "teamAssigned": "Team tilldelat",
@@ -3099,6 +3210,13 @@
         "saved": "Mallen {name} har sparats",
         "submit": "Spara som mall",
         "title": "Spara som mall"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Arkiverad",
+        "completed": "Slutförd",
+        "paused": "Pausad",
+        "planned": "Planerad"
       },
       "tabs": {
         "projects": "Projekt",
@@ -3118,6 +3236,16 @@
         "edit": "Redigera {name}",
         "editAction": "Redigera {name}",
         "empty": "Inga uppgifter ännu. Uppgifter låter användare ange vad tiden i projektet lades på.",
+        "errors": {
+          "booked": "Tid har bokats på denna uppgift, så den kan inte raderas.",
+          "descriptionTooLong": "Uppgiftsbeskrivningen är för lång.",
+          "duplicateName": "En uppgift med det här namnet finns redan i det här projektet.",
+          "estimateInvalid": "Ange uppskattningen som ett positivt antal timmar.",
+          "nameRequired": "Ange ett uppgiftsnamn.",
+          "nameTooLong": "Uppgiftsnamnet är för långt.",
+          "notAllowed": "Du har inte behörighet att hantera uppgifterna i detta projekt.",
+          "notFound": "Den här uppgiften finns inte längre."
+        },
         "estimate": "Uppskattning: {hours} h",
         "field": {
           "description": "Beskrivning",
@@ -3167,7 +3295,6 @@
         "delete": "Ta bort",
         "deleteAction": "Ta bort {name}",
         "deleted": "{name} har tagits bort",
-        "deleteFailed": "Det gick inte att ta bort {name}",
         "deleteQuestion": "Vill du ta bort denna mall?",
         "description": "Ritningar för nya projekt: uppgifter, budget, tidsfrist, projektledare och medlemmar.",
         "dialogDescription": "Nya projekt som skapas från denna mall kopierar dess innehåll en gång.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, one {# mall} other {# mallar}}",
         "listTitle": "Alla mallar",
+        "loadFailed": "Projektmallar kunde inte läsas in. Kontrollera din anslutning och försök igen.",
         "managers": {
           "empty": "Inga projektledare",
           "picker": "Projektledare att lägga till",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobil",
         "tablet": "Surfplatta"
       },
+      "loadFailed": "Dina aktiva sessioner kunde inte läsas in. Försök igen.",
       "none": "Inga aktiva sessioner",
       "othersRevoked": "Alla andra sessioner har återkallats",
       "revoke": "Återkalla",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Återkalla alla andra sessioner",
       "revoked": "Sessionen har återkallats",
       "revokeFailed": "Det gick inte att återkalla sessionen",
+      "revokeOthersDescription": "{count, plural, one {Detta loggar ut dig från # annan enhet. Du förblir inloggad här.} other {Detta loggar ut dig från # andra enheter. Du förblir inloggad här.}}",
+      "revokeOthersTitle": "Återkalla alla andra sessioner?",
+      "revokeSession": "Återkalla session: {session}",
+      "revokeSessionDescription": "Detta loggar ut {session}. Alla som använder den måste logga in igen.",
+      "revokeSessionTitle": "Återkalla denna session?",
       "revoking": "Återkallar…",
       "securityTip": "Om du ser en session du inte känner igen bör du återkalla den omedelbart och ändra ditt lösenord.",
       "signedIn": "Inloggad",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Anslut",
       "connected": "Ansluten",
-      "connectedAs": "Ansluten som {accountId}",
+      "connectedOn": "Ansluten den {date}",
       "connectFailed": "Det gick inte att ansluta kontot",
       "connecting": "Ansluter…",
       "connectProvider": "Anslut ditt {provider}-konto",
@@ -3364,8 +3498,9 @@
       "disconnect": "Koppla från",
       "disconnectDescription": "Detta tar bort kopplingen till ditt sociala konto. Du kan återansluta det när som helst.",
       "disconnectFailed": "Det gick inte att koppla från kontot",
+      "disconnectProviderTitle": "Koppla från {provider}?",
       "disconnectSuccess": "Kontot har kopplats från",
-      "disconnectTitle": "Koppla från konto?",
+      "linkedForSignIn": "Länkad för inloggning",
       "loadFailed": "Det gick inte att läsa in anslutna konton",
       "title": "Sociala konton",
       "unexpectedError": "Ett oväntat fel uppstod"
@@ -3391,6 +3526,7 @@
       "description": "Visa statistik och mätvärden för din instans",
       "lastUpdated": "Senast uppdaterad",
       "loadError": "Det gick inte att läsa in statistik",
+      "loadErrorRetry": "Ladda om sidan för att försöka igen.",
       "managerDescription": "Granska skrivskyddad analys för de team du hanterar.",
       "sections": {
         "absenceBreakdown": "Frånvarofördelning",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Gäller till",
       "legacy": {
         "description": "Behålls endast som referens. Dessa poster användes aldrig för att beräkna utlägg och kan inte längre redigeras; ställ in daterade milersättningssatser ovan.",
+        "loadFailed": "Tidigare policyposter kunde inte läsas in",
         "title": "Tidigare policyposter"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Arkiverad",
       "archiveInstead": "Arkivera istället",
       "archiveNamed": "Arkivera {name}",
+      "count": "{count, plural, other {# fordon} }",
       "delete": "Ta bort",
       "deleteConfirm": "Ta bort fordon",
       "deleted": "Fordonet har tagits bort",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Alla medlemmar i ett tilldelat team får detta fordon föreslaget först."
       },
       "listDescription": "Arkiverade fordon kan inte längre väljas, men finns kvar på det arbete där de registrerades.",
-      "listTitle": "Fordon",
       "loadFailed": "Det gick inte att läsa in fordon.",
       "logbookNotice": {
         "description": "Z8 registrerar vilket fordon som kördes i arbetet och dess mätarställning. Det är inte en skattegodkänd körjournal (Fahrtenbuch): mätarställningar kan korrigeras, och varken resans syfte eller affärspartner registreras.",
         "title": "Inte en skattegodkänd körjournal"
       },
+      "noActive": "Inga aktiva fordon. Lägg till ett fordon eller återställ ett arkiverat.",
       "noDrivers": "Inga tilldelade förare",
       "photos": {
         "accessChanged": "Din åtkomst har ändrats. Öppna fordonsinställningarna igen för att kontrollera dina behörigheter.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} registrerades på ett arbete"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Tilldelning borttagen",
       "assignmentSaved": "Tilldelning sparad",
       "assignmentsDescription": "Tillfrågade medarbetare kan registrera fordonsanvändning när de stämplar. Medarbetare som förväntas använda fordon tillfrågas varje gång, och deras arbete flaggas tills uppgifterna är fullständiga. Ingen hindras någonsin från att stämpla. Den mest specifika tilldelningen gäller: en medarbetares egen går före dennes primära teams, och ett teams går före hela organisationens.",
       "enabled": "Registrera fordonsanvändning",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Välj vem tilldelningen gäller för.",
         "teamNotFound": "Det teamet finns inte längre."
       },
-      "loadFailed": "Inställningarna för fordonsanvändning kunde inte läsas in. Ladda om sidan.",
+      "loadFailedRetry": "Inställningarna för fordonsanvändning kunde inte läsas in.",
       "mode": "Läge",
       "modeAsked": "Tillfrågas",
       "modeExpected": "Fordonsanvändning förväntas",
@@ -3958,6 +4095,13 @@
       "description": "Konfigurera vattenpåminnelser och vätskespårning under dina arbetspass",
       "glasses": "glas",
       "increaseDailyGoal": "Öka dagligt mål",
+      "loadFailed": "Dina inställningar för vattenpåminnelser kunde inte läsas in. Försök igen.",
+      "presets": {
+        "active": "Aktiv",
+        "custom": "Anpassad",
+        "light": "Lätt",
+        "moderate": "Måttlig"
+      },
       "reminderFrequency": "Påminnelsefrekvens",
       "saved": "Hälsoinställningarna har sparats",
       "saveError": "Det gick inte att spara hälsoinställningarna",
@@ -4095,6 +4239,9 @@
         "hidden": "Dolda"
       },
       "absenceVisibility": "Synlighet för frånvaro",
+      "accessSectionTitle": "Få åtkomst till och granska exporter",
+      "addLocation": "Lägg till en plats",
+      "addTeam": "Lägg till ett team",
       "description": "Konfigurera integritetsskyddad åtkomst för företagsråd och granskningsexporter",
       "exportEnabled": "Aktivera granskningsexporter",
       "exportEnabledDescription": "Tillåt behöriga användare i företagsrådet att generera integritetsfiltrerade granskningspaket.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Identitetssynlighet",
       "minimumThreshold": "Minsta tröskelvärde för aggregering",
       "minimumThresholdDescription": "Grupper under denna storlek döljs för att minska risken för återidentifiering.",
+      "minimumThresholdInvalid": "Ange ett heltal på minst 5",
+      "noLocationFound": "Ingen plats hittades",
+      "noLocationsAvailable": "Inga fler platser att lägga till",
+      "noTeamFound": "Inget team hittades",
+      "noTeamsAvailable": "Inga fler team att lägga till",
+      "removeScopeItem": "Ta bort {name}",
       "save": "Spara inställningar",
       "saved": "Inställningarna för företagsrådet har sparats",
       "saveError": "Det gick inte att spara inställningarna för företagsrådet",
+      "searchLocations": "Sök platser",
+      "searchTeams": "Sök team",
+      "selectedLocations": "Valda platser",
+      "selectedTeams": "Valda team",
       "title": "Företagsrådsläge",
-      "visibleLocationIds": "Synliga plats-ID:n",
-      "visibleLocationIdsDescription": "Valfria kommaseparerade plats-ID:n. Lämna tomt för att inkludera alla platser.",
-      "visibleTeamIds": "Synliga team-ID:n",
-      "visibleTeamIdsDescription": "Valfria kommaseparerade team-ID:n. Lämna tomt för att inkludera alla team."
+      "unknownLocation": "Okänd plats ({shortId})",
+      "unknownTeam": "Okänt team ({shortId})",
+      "visibleLocations": "Synliga platser",
+      "visibleLocationsDescription": "Lämna tomt för att inkludera alla platser.",
+      "visibleTeams": "Synliga team",
+      "visibleTeamsDescription": "Lämna tomt för att inkludera alla team."
     }
   }
 }

@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Generate sample data for testing or clear existing time-related data",
+      "employeesLoadError": {
+        "description": "Demo data is generated for your employees, so generation is unavailable until they load.",
+        "retrying": "Retrying…",
+        "title": "Employees could not be loaded"
+      },
       "errors": {
-        "generationFailed": "Generation failed. Please try again.",
-        "noOrganization": "No organization selected"
+        "generationFailed": "Generation failed. Please try again."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "All employees ({count})",
+          "allCountUnavailable": "All employees",
           "label": "Employees",
           "selectSpecific": "Select specific employees"
         }

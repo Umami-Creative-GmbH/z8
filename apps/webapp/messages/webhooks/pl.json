@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Akcje dla {endpoint}",
+    "command-unknown": "Nie udało się potwierdzić polecenia. Odśwież ten punkt końcowy przed ponowną próbą.",
     "copy-failed": "Nie udało się skopiować do schowka",
     "create": "Dodaj webhook",
     "create-failed": "Nie udało się utworzyć webhooka",
     "delete-confirm": {
       "description": "To działanie trwale usunie punkt końcowy webhooka oraz całą historię dostarczania. Tej czynności nie można cofnąć.",
-      "title": "Usunąć webhook?"
+      "title-named": "Usunąć webhook {name}?"
     },
     "deleted": "Webhook usunięty",
-    "delete-failed": "Nie udało się usunąć webhooka",
     "deliveries": "Dostarczenia",
-    "description": "Skonfiguruj punkty końcowe webhooków, aby otrzymywać powiadomienia w czasie rzeczywistym o zdarzeniach w Twojej organizacji.",
     "disabled": "Webhook wyłączony",
     "empty": {
       "description": "Utwórz swój pierwszy webhook, aby zacząć otrzymywać powiadomienia o zdarzeniach.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Sukces",
       "time": "Czas",
-      "title": "Dzienniki dostarczania"
+      "title": "Dzienniki dostarczania",
+      "toggle-details": "Szczegóły dla {event} o {time}"
     },
-    "regenerate-failed": "Nie udało się wygenerować ponownie klucza",
     "regenerate-secret": "Wygeneruj ponownie klucz",
+    "retry-help": "Odśwież tę listę, aby potwierdzić aktualne punkty końcowe. Wcześniej wczytane rekordy zostaną zachowane.",
     "secret-copied": "Klucz skopiowany do schowka",
     "secret-dialog": {
       "copy-secret": "Skopiuj klucz do schowka",
@@ -78,14 +79,15 @@
       "degraded": "Obniżona wydajność",
       "failing": "Niepowodzenie",
       "healthy": "Prawidłowy",
-      "inactive": "Nieaktywny"
+      "inactive": "Nieaktywny",
+      "untried": "Brak doręczeń"
     },
     "success-rate": "Sukces",
     "test": "Wyślij test",
-    "test-failed": "Nie udało się wysłać testowego webhooka",
-    "test-sent": "Testowy webhook wysłany",
+    "test-queued": "Testowy webhook w kolejce",
     "title": "Webhooki",
-    "toggle-active": "Przełącz aktywność webhooka",
+    "toggle-active-named": "Aktywny: {endpoint}",
+    "unavailable": "Webhooki niedostępne",
     "updated": "Webhook zaktualizowany",
     "update-failed": "Nie udało się zaktualizować webhooka",
     "view-logs": "Wyświetl dzienniki"

@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Još nisu uvezeni produkcijski zapisi.",
         "openReview": "Otvori pregled",
-        "scanningDescription": "Paket za pregled {reviewBatchId} se skenira. Pregledajte i odobrite zapise prije primjene.",
+        "scanningDescriptionWithoutId": "Skeniranje za pregled je u tijeku. Pregledajte i odobrite zapise prije uvoza.",
         "startedTitle": "Pokrenuto je skeniranje za pregled uvoza",
         "starting": "Pokretanje skeniranja za pregled uvoza iz sustava Clockin…",
         "startSuccess": "Pokrenuto je skeniranje za pregled uvoza. Prije primjene zapisa potreban je pregled."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Paket za pregled {batchId} se skenira.",
         "description": "Prije primjene zapisa iz sustava Clockodo u produkciju potreban je pregled.",
         "openReview": "Otvori pregled",
+        "scanning": "Skeniranje za pregled je u tijeku. Nijedan zapis neće biti uvezen dok ga ne prihvatite u pregledu.",
         "successTitle": "Pokrenuto je skeniranje za pregled uvoza"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Vjerodajnice",
         "import": "Pregled",
         "preview": "Pretpregled",
+        "progressLabel": "Koraci uvoza",
         "projectMapping": "Povezivanje projekata",
         "selection": "Odabir",
         "userMapping": "Mapiranje korisnika"
       },
       "userMapping": {
         "action": "Radnja",
+        "actionFor": "Radnja za {name}",
         "autoMatched": "{count} automatski upareno",
         "clockodoUser": "Clockodo korisnik",
         "continue": "Nastavi",
@@ -248,14 +250,21 @@
       "linkError": "Generiranje koda za povezivanje nije uspjelo",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Kod za povezivanje kopiran",
+        "codeExpired": "Isteklo — generirajte novi kod",
+        "copyCode": "Kopiraj kod za povezivanje",
+        "copyFailed": "Kod za povezivanje nije bilo moguće kopirati. Odaberite ga i kopirajte ručno.",
         "description": "Povežite svoj Telegram račun za primanje osobnih obavijesti.",
+        "expiresIn": "{minutes, plural, one {Istječe za # minutu} few {Istječe za # minute} other {Istječe za # minuta}}",
         "generateCode": "Generiraj kod za povezivanje",
         "instructions": "Pošaljite ovu naredbu botu na Telegramu:",
         "linkedStatus": "Vaš Telegram račun je povezan",
+        "regenerateCode": "Generiraj novi kod",
         "title": "Telegram račun"
       },
       "notConfigured": "Telegram nije konfiguriran za ovu organizaciju. Obratite se svom administratoru.",
       "saved": "Postavke Telegrama spremljene",
+      "saveError": "Postavke za Telegram nije bilo moguće spremiti. Pokušajte ponovno.",
       "status": {
         "active": "Aktivno"
       },

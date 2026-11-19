@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Registra assenza per {name}"
       },
+      "allowances": "Quote annuali",
       "calendar": {
         "approved": "Approvato",
         "changeDeputy": "Cambia sostituto",
@@ -12,7 +13,6 @@
         "deputyMissing": "Sostituto mancante",
         "description": "Assenze approvate e in attesa per il team e l'anno selezionati.",
         "error": {
-          "description": "Riprova tra un momento.",
           "title": "Impossibile caricare il calendario"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Registra assenza",
         "titleForEmployee": "Registra assenza per {name}"
       },
+      "recordingUnavailable": "Impossibile caricare le opzioni di registrazione delle assenze",
+      "retained": "Vengono mostrati i dati caricati in precedenza. Riprova per ottenere i record aggiornati.",
+      "scopeChanged": "L'ambito del team è cambiato. Ricarica per continuare.",
+      "scopeLoading": "Caricamento dell'ambito del team attuale…",
+      "scopeUnavailable": "Impossibile caricare l'ambito del team attuale",
+      "sections": "Sezioni della pagina",
       "sort": {
         "ascending": "crescente",
         "by": "Ordina per {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Nessun saldo"
     },
-    "description": "Visualizza e gestisci i dipendenti che supervisioni direttamente",
+    "directory": {
+      "count": "{count, plural, one {# membro in questo ambito} other {# membri in questo ambito}}",
+      "loading": "Caricamento dei membri del team",
+      "retained": "Vengono mostrati gli ultimi membri caricati. Riprova per aggiornarli.",
+      "retry": "Riprova",
+      "retrying": "Nuovo tentativo…",
+      "scope": "Tu e i dipendenti che supervisioni direttamente nell'organizzazione attiva.",
+      "scopeChanged": "La tua organizzazione o il tuo accesso è cambiato. Aggiorna per caricare il tuo team."
+    },
     "driving": {
+      "clearFilters": "Cancella filtri",
       "columns": {
         "calendar": "Calendario",
         "date": "Data",
@@ -126,6 +141,8 @@
         "employee": "Dipendente",
         "team": "Team"
       },
+      "guidance": "Apri il calendario di un dipendente per completare l'attribuzione del periodo di lavoro. I dettagli mancanti non bloccano la timbratura e non costituiscono un'autorizzazione alla guida.",
+      "loadFailed": "Impossibile caricare i dettagli di guida.",
       "loading": "Caricamento dei dettagli di guida",
       "missing": {
         "endReading": "Nessuna lettura finale",
@@ -133,10 +150,18 @@
         "startReading": "Nessuna lettura iniziale",
         "vehicle": "Nessun veicolo"
       },
+      "noMatch": "Nessun dettaglio di guida mancante corrisponde a questi filtri.",
       "openCalendar": "Calendario",
       "openCalendarOf": "Apri il calendario di {name}",
+      "refreshFailed": "Impossibile aggiornare i dettagli di guida. Vengono mostrati i record caricati in precedenza.",
+      "restricted": "I dettagli di guida non sono disponibili nel tuo ambito attuale.",
+      "scopeAll": "Tutti i dipendenti in questa organizzazione",
+      "scopeFailed": "Impossibile caricare l'ambito di guida attuale.",
+      "scopeLoading": "Caricamento dell'ambito di guida attuale…",
+      "scopeManaged": "Dipendenti che gestisci",
       "title": "Dettagli di guida mancanti",
-      "truncated": "Visualizzazione dei {count} periodi di lavoro più recenti. Filtra per team o dipendente per vedere i restanti."
+      "truncated": "Visualizzazione dei {count} periodi di lavoro più recenti. Filtra per team o dipendente per vedere i restanti.",
+      "updating": "Aggiornamento dei dettagli di guida…"
     },
     "empty": {
       "action": "Vai alle impostazioni dipendenti",
@@ -148,9 +173,9 @@
       "title": "Qualcosa è andato storto"
     },
     "feature": "vedi il tuo team",
-    "member": "membro",
-    "members": "membri",
-    "member.you": "Tu",
+    "member": {
+      "you": "Tu"
+    },
     "noResults": {
       "action": "Cancella ricerca",
       "description": "Nessun membro del team corrisponde a \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Periodo",
         "status": "Stato"
       },
-      "descriptionAll": "Chi ha inviato il periodo selezionato. Approva o rifiuta le richieste nella posta in arrivo delle approvazioni.",
-      "descriptionManaged": "Chi tra i dipendenti che gestisci ha inviato il periodo selezionato. Approva o rifiuta le richieste nella posta in arrivo delle approvazioni.",
+      "confirmationContext": "Gli invii confermano i record senza bloccarli. I record modificati devono essere inviati nuovamente. Esamina le decisioni nella casella delle approvazioni.",
+      "contextFailed": "Impossibile verificare il tuo accesso attuale.",
       "empty": "Nessuna delle persone visibili deve inviare questo periodo.",
       "loading": "Caricamento degli invii del periodo",
       "notSubmitted": "Non inviato",
@@ -180,7 +205,12 @@
       "openInbox": "Apri la posta in arrivo delle approvazioni",
       "owing": "{count, plural, one {# dipendente non ha ancora inviato questo periodo.} other {# dipendenti non hanno ancora inviato questo periodo.}}",
       "period": "Periodo di invio",
+      "readFailed": "Impossibile caricare gli invii del periodo. I record caricati in precedenza potrebbero non essere aggiornati.",
+      "records": "Invii dei dipendenti",
+      "refresh": "Aggiorna invii",
       "running": "Questo periodo è ancora in corso. I dipendenti possono inviarlo a partire dall'ultimo giorno.",
+      "scopeAll": "Tutti i dipendenti inclusi",
+      "scopeManaged": "Dipendenti che gestisci",
       "status": {
         "approved": "Approvato",
         "awaiting": "In attesa di invio",
@@ -189,10 +219,13 @@
         "submitted": "Inviato"
       },
       "summary": "Stati",
-      "title": "Invii del periodo"
+      "title": "Invii del periodo",
+      "unavailable": "Gli invii del periodo non sono disponibili per il tuo accesso attuale. Aggiorna per verificare nuovamente l'accesso."
     },
     "presence": {
       "allLocations": "Tutte le sedi",
+      "assignmentContext": "L'assegnazione della sede non costituisce prova della posizione del dispositivo. Gli orari utilizzano il fuso acquisito all'inizio dell'attività lavorativa o della pausa. La presenza si aggiorna ogni minuto.",
+      "chooseLocation": "Scegli una sede",
       "columns": {
         "name": "Nome",
         "since": "Da",
@@ -202,9 +235,19 @@
       "descriptionAll": "Dipendenti assegnati a questa sede che hanno effettuato l'accesso o sono in pausa.",
       "descriptionManaged": "Dipendenti da te gestiti assegnati a questa sede che hanno effettuato l'accesso o sono in pausa.",
       "empty": "Nessuno tra gli utenti visibili ha effettuato l'accesso in questa sede al momento.",
+      "loadFailed": "Impossibile caricare la presenza di questa sede. Riprova o scegli nuovamente una sede.",
+      "loading": "Caricamento presenza della sede…",
+      "loadingLocations": "Caricamento sedi per l'organizzazione attuale…",
       "locationTitle": "Chi è presente: {location}",
+      "locationUnavailable": "Sede non disponibile",
+      "locationUnavailableDescription": "Questa sede non è disponibile nella tua organizzazione attuale. Scegli una sede attiva per visualizzare la presenza.",
       "noLocations": "La tua organizzazione non ha ancora sedi attive.",
-      "title": "Chi è presente"
+      "refreshFailed": "Impossibile aggiornare le sedi. Vengono mostrate le ultime sedi caricate.",
+      "refreshingLocations": "Aggiornamento sedi…",
+      "scopeChanged": "La presenza richiede un nuovo caricamento per l'account o l'organizzazione attuale.",
+      "title": "Chi è presente",
+      "unavailable": "Presenza non disponibile",
+      "viewPresence": "Visualizza presenza"
     },
     "primaryManager": "Sei il manager principale",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Dipendente",
       "position": "Posizione",
+      "region": "Tabella membri del team",
       "role": "Ruolo",
       "sort": {
         "ascending": "crescente",

@@ -96,21 +96,27 @@
       "rejectTitle": "Rejeter la demande"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Confirmation de l'organisation et de l'employé actuels…",
       "created": "Créé",
       "decisionRecorded": "Décision enregistrée",
       "destination": "Destination",
       "history": "Historique des décisions",
       "historyDescription": "Toutes les étapes de cette demande, de la plus ancienne à la plus récente. Les heures sont affichées en UTC.",
       "intermediateApproval": "Approbation enregistrée — en attente d'une autre approbation",
+      "legacyClaim": "Ancienne demande",
       "legacyReceiptIdentity": "Reçu hérité : la somme de contrôle du contenu n'a pas été enregistrée.",
       "loading": "Chargement de la demande…",
       "noReceipts": "Aucun reçu enregistré",
       "notRecorded": "Non enregistré",
       "originalAmount": "Montant d'origine",
       "receipts": "Reçus",
+      "receiptVersion": "Version enregistrée",
       "refreshing": "Actualisation de la demande…",
+      "scopeUnavailable": "Actualisez cette demande pour confirmer votre accès actuel.",
       "submitted": "Soumis",
       "title": "Demande de frais de déplacement",
+      "unavailable": "Demande introuvable ou accès désormais indisponible.",
       "unknownDates": "Contexte de la date du voyage non enregistré (ancienne demande)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Sélectionner {name}",
         "selectAll": "Sélectionner toutes les dépenses en attente de remboursement sur cette page",
         "selected": "{count} sélectionnés",
+        "selectionChanged": "Une ou plusieurs dépenses sélectionnées ont été modifiées. Fermez cette boîte de dialogue et examinez les dépenses actuelles avant de lancer un autre paiement.",
         "skipped": "Non inclus ({count})",
         "submit": "Marquer {count} comme remboursé(s)",
         "title": "Marquer comme remboursé"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Aucun gestionnaire de dépenses actif autorisé à enregistrer des remboursements ne les a dans son périmètre. Les propriétaires et administrateurs peuvent toujours les enregistrer ou élargir le périmètre d'un gestionnaire.",
         "empty": "Un gestionnaire de dépenses couvre chaque dépense approuvée en attente de remboursement.",
+        "failed": "La couverture n'a pas pu être vérifiée. Veuillez réessayer.",
         "queueFilter": "Dépenses approuvées en attente de remboursement qu'aucun gestionnaire de dépenses ne couvre.",
         "show": "Afficher ces dépenses",
         "showAll": "Afficher toutes les dépenses approuvées",
@@ -237,6 +245,7 @@
           "none": "Aucun employé trouvé.",
           "search": "Rechercher des employés…"
         },
+        "failed": "Les options de filtre n'ont pas pu être chargées. Veuillez réessayer.",
         "label": "Afficher les dépenses",
         "notExported": "Pas encore exporté",
         "open": "Ouvrir",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Ces cycles de paie contiennent des notes de frais en attente de remboursement. Une fois qu'un cycle a été payé par la paie, confirmez-le pour enregistrer les remboursements.",
+        "failed": "Les confirmations de paie n'ont pas pu être chargées. Veuillez réessayer.",
         "reports": "{count, plural, one {# note de frais que vous devez confirmer, {amount}} other {# notes de frais que vous devez confirmer, {amount}}}",
         "title": "Cycles de paie en attente de confirmation"
       },
       "queue": {
         "description": "Ouvrez une dépense pour consulter son règlement et enregistrer un remboursement.",
+        "failed": "Impossible de charger la file d'attente financière. Veuillez réessayer.",
         "title": "Dépenses approuvées"
+      },
+      "scope": {
+        "failed": "Votre accès financier actuel n'a pas pu être confirmé. Veuillez réessayer.",
+        "loading": "Confirmation de l'accès financier…"
       },
       "title": "Finances des dépenses"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kilométrage sans titre"
     },
     "legacyDraft": {
+      "checking": "Vérification de la reprise du brouillon…",
       "continue": "Poursuivre sous forme de note de frais",
       "converted": "Vous avez poursuivi ce brouillon sous la forme d'une note de frais. Cette demande reste ici inchangée à titre de référence.",
       "description": "Les brouillons de l'ancien formulaire de demande sont désormais finalisés en tant que notes de frais. Votre montant, vos dates, vos remarques et vos justificatifs sont conservés ; tous les éléments requis par le nouveau formulaire qui n'avaient pas été enregistrés dans ce brouillon restent à renseigner. Cette demande en elle-même reste inchangée.",
@@ -367,6 +383,7 @@
         "title": "Poursuivi à partir d'un ancien brouillon de demande"
       },
       "openReport": "Ouvrir la note de frais",
+      "readRefused": "La reprise du brouillon n'est pas disponible pour le lecteur actuel.",
       "receipt": {
         "mismatch": "le fichier stocké ne correspond plus à ce qui a été téléversé",
         "unreadable": "le fichier stocké ne peut pas être lu pour le moment",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Aucun montant n'est dû pour cette dépense.",
         "ownExpense": "Vous ne pouvez pas enregistrer de paiements pour vos propres dépenses.",
         "referenceRequired": "Saisissez la référence du paiement, par exemple la référence du virement bancaire.",
+        "refresh": "Le solde n'a pas pu être actualisé. Les enregistrements précédemment chargés sont affichés ; réessayez avant d'enregistrer un paiement.",
         "refused": "Ce paiement ne peut pas être enregistré pour cette dépense.",
         "staleBalance": "Le solde a changé pendant que vous saisissiez ce paiement. Vérifiez le solde actualisé et enregistrez-le à nouveau.",
         "tooLong": "Ce texte est trop long."
@@ -1149,7 +1167,13 @@
     },
     "title": "Notes de frais",
     "workspace": {
-      "description": "Rassemblez les dépenses de voyage et les dépenses individuelles, envoyez-les pour vérification et suivez leur remboursement."
+      "create": "Créer une note de frais",
+      "description": "Rassemblez les dépenses de voyage et les dépenses individuelles, envoyez-les pour vérification et suivez leur remboursement.",
+      "mileageDescription": "Enregistrer un trajet professionnel hors déplacement.",
+      "otherWork": "Examiner et financer",
+      "receiptDescription": "Enregistrer une dépense avec son justificatif.",
+      "reconciling": "Chargement de vos dépenses pour l'organisation actuelle…",
+      "tripDescription": "Regrouper des dépenses avec des détails de voyage partagés."
     }
   }
 }

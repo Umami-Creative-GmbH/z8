@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Approva",
       "approveLabel": "Approva {title}",
+      "decided": "Decisione salvata. Aggiorna per caricare la coda attuale.",
       "description": "Richieste in attesa di una decisione del manager.",
       "empty": "Nessuna approvazione in attesa.",
       "openInbox": "Apri posta in arrivo",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Approvazioni in sospeso",
       "reject": "Rifiuta",
       "rejectLabel": "Rifiuta {title}",
+      "retry": "Riprova approvazioni",
       "title": "Approvazioni",
       "toast": {
         "approved": "Richiesta approvata",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Oggi",
-      "description": "Esamina gli elementi che richiedono un'azione oggi, quindi passa direttamente al flusso di lavoro corretto.",
+      "accessUnavailable": "Questo riepilogo non è disponibile per il dipendente e l'organizzazione attuali.",
+      "contextFailed": "Impossibile verificare il tuo accesso attuale. Riprova.",
+      "drivingUnavailable": "Impossibile verificare i dettagli di guida.",
+      "incomplete": "Alcuni controlli non sono disponibili. Esamina gli errori della sezione; questi risultati sono incompleti.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Periodi di lavoro dei tuoi dipendenti privi di un veicolo o di una lettura del contachilometri.",
           "title": "Dettagli di guida mancanti ({count})"
         }
       },
+      "loadFailed": "Impossibile caricare il riepilogo. Riprova.",
       "needsAction": {
         "description": "Inizia da qui per il follow-up operativo più urgente.",
-        "empty": "Tutto a posto. Nessuna azione da parte del manager è necessaria al momento.",
+        "noExceptions": "Nessun follow-up operativo rilevato in questa istantanea. Ciò non conferma la presenza del dipendente.",
         "title": "Richiede azione"
       },
+      "partial": "Parziale",
+      "refreshFailed": "Impossibile aggiornare. Sono mostrati i risultati precedenti; riprova prima di procedere.",
+      "refreshing": "Aggiornamento del riepilogo in corso. I risultati precedenti restano visibili.",
+      "retainedSection": "Risultati precedenti mostrati. Riprova per verificare eventuali modifiche.",
+      "retry": "Riprova riepilogo",
+      "retrySection": "Riprova {title}",
+      "scope": "Follow-up operativo per i dipendenti che puoi supervisionare nell'organizzazione attiva.",
       "sections": {
         "empty": "Nessun problema rilevato."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Avviso"
       },
+      "snapshot": "Istantanea aggiornata ({time}). Usa Aggiorna dati per verificare eventuali modifiche.",
       "summaryAriaLabel": "Riepilogo di oggi",
       "supportingSectionsAriaLabel": "Sezioni di supporto",
       "title": "Briefing giornaliero del manager",
-      "updatedAt": "{date} - Aggiornato alle {time}"
+      "unavailable": "Non disponibile"
     }
   }
 }

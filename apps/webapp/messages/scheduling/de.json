@@ -6,9 +6,13 @@
       "gapCount": "{count} Personalmangel",
       "gaps": "Lücken",
       "hideOverlay": "Abdeckungseinblendung ausblenden",
+      "lastLoaded": "Zuletzt geladene Abdeckung",
+      "loading": "Abdeckung wird geladen…",
       "metSlots": "{count} angemessen",
       "overSlots": "{count} überbesetzt",
       "overstaffed": "Überbesetzt",
+      "readFailed": "Abdeckung konnte nicht geladen werden. Versuchen Sie es erneut, um die Besetzung zu prüfen.",
+      "refreshing": "Abdeckung wird aktualisiert…",
       "showOverlay": "Abdeckungsziele einblenden",
       "summary": "Abdeckungsübersicht:",
       "toggleLabel": "Abdeckung",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Ihre veröffentlichten Schichten, Woche für Woche",
       "employeeTitle": "Mein Schichtplan",
-      "managerDescription": "Mitarbeiterschichten verwalten und planen",
+      "planningDescription": "Schichten planen und veröffentlichen. Geplante Schichten erfassen keine Arbeitszeit.",
       "title": "Schichtplan"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Abbrechen",
       "complianceAcknowledgmentRequired": "Compliance-Bestätigung erforderlich",
       "complianceWarnings": "{count, plural, one {Bei den Compliance-Prüfungen wurde # Warnung gefunden; Sie müssen diese vor der Veröffentlichung bestätigen.} other {Bei den Compliance-Prüfungen wurden # Warnungen gefunden; Sie müssen diese vor der Veröffentlichung bestätigen.}}",
+      "coverageLoading": "Abdeckung wird geladen",
+      "coverageRulesCheckedOnPublish": "Beim Veröffentlichen werden die aktuellen Besetzungsregeln angewendet.",
+      "coverageUnavailable": "Abdeckung ist nicht verfügbar",
+      "coverageUnloaded": "Abdeckung wurde nicht geprüft",
       "coverageWarning": "Einige Zeitblöcke erfüllen die Mindestbesetzungsanforderungen nicht.",
       "maxHours": "Max. Stunden: {count}",
       "notifyEmployees": "{count, plural, one {# Schichtentwurf veröffentlichen und Mitarbeitende benachrichtigen} other {# Schichtentwürfe veröffentlichen und Mitarbeitende benachrichtigen}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Vor der Veröffentlichung erkannte Warnungen"
     },
     "scheduler": {
+      "assigned": "Zugewiesen",
       "complianceBanner": {
         "findingsDetected": "{count} Hinweis(e) vor Veröffentlichung erkannt.",
         "maxHours": "Max. Stunden: {count}",
@@ -59,18 +68,24 @@
         "employee": "Schichten für {name} werden angezeigt",
         "showAll": "Alle Schichten anzeigen"
       },
+      "loadFailed": "Schichten konnten nicht aktualisiert werden. Geladene Schichten bleiben erhalten.",
       "loading": "Schichtplan wird geladen...",
+      "open": "Offene Schicht",
       "publish": {
         "failed": "Veröffentlichung der Schichten fehlgeschlagen",
         "published": "{count} Schicht(en) veröffentlicht"
       },
+      "retry": "Erneut versuchen",
+      "shiftList": "Schichtliste",
       "shiftUpdate": {
         "failed": "Aktualisierung der Schicht fehlgeschlagen",
         "overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
         "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
         "skillOverrideReasonRequired": "Dem Mitarbeiter fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
         "updated": "Schicht aktualisiert"
-      }
+      },
+      "supportFailed": "Vorlagen oder Compliance-Informationen konnten nicht aktualisiert werden. Vor dem Veröffentlichen erneut prüfen.",
+      "templatesUnavailable": "Schichtvorlagen konnten nicht geladen werden."
     },
     "shiftDetails": {
       "close": "Schließen",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Ziehen Sie eine Vorlage auf den Kalender, um eine Schicht zu erstellen",
       "empty": "Keine Vorlagen verfügbar. Erstellen Sie Vorlagen in den Einstellungen, um schnell Schichten hinzuzufügen.",
+      "selectHint": "Wählen Sie eine Vorlage und legen Sie dann das Schichtdatum und die Zuweisung fest.",
       "title": "Schichtvorlagen"
     }
   }

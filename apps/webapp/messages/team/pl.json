@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Zarejestruj nieobecność dla {name}"
       },
+      "allowances": "Roczne limity",
       "calendar": {
         "approved": "Zatwierdzone",
         "changeDeputy": "Zmień zastępcę",
@@ -12,7 +13,6 @@
         "deputyMissing": "Brak zastępcy",
         "description": "Zatwierdzone i oczekujące nieobecności dla wybranego zespołu i roku.",
         "error": {
-          "description": "Spróbuj ponownie za chwilę.",
           "title": "Nie można załadować kalendarza"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Zarejestruj nieobecność",
         "titleForEmployee": "Zarejestruj nieobecność dla {name}"
       },
+      "recordingUnavailable": "Nie udało się załadować opcji rejestrowania nieobecności",
+      "retained": "Wyświetlane są wcześniej załadowane dane. Spróbuj ponownie, aby pobrać aktualne wpisy.",
+      "scopeChanged": "Zakres zespołu uległ zmianie. Odśwież stronę, aby kontynuować.",
+      "scopeLoading": "Ładowanie bieżącego zakresu zespołu…",
+      "scopeUnavailable": "Nie udało się załadować bieżącego zakresu zespołu",
+      "sections": "Sekcje strony",
       "sort": {
         "ascending": "rosnąco",
         "by": "Sortuj według {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Brak salda"
     },
-    "description": "Przeglądaj i zarządzaj pracownikami, których bezpośrednio nadzorujesz",
+    "directory": {
+      "count": "{count, plural, one {# członek w tym zakresie} other {# członków w tym zakresie}}",
+      "loading": "Ładowanie członków zespołu",
+      "retained": "Wyświetlanie ostatnio załadowanych członków. Spróbuj ponownie, aby ich zaktualizować.",
+      "retry": "Ponów próbę",
+      "retrying": "Ponawianie próby…",
+      "scope": "Ty i pracownicy, których bezpośrednio nadzorujesz w aktywnej organizacji.",
+      "scopeChanged": "Twoja organizacja lub uprawnienia uległy zmianie. Odśwież, aby załadować swój zespół."
+    },
     "driving": {
+      "clearFilters": "Wyczyść filtry",
       "columns": {
         "calendar": "Kalendarz",
         "date": "Data",
@@ -126,6 +141,8 @@
         "employee": "Pracownik",
         "team": "Zespół"
       },
+      "guidance": "Otwórz kalendarz pracownika, aby uzupełnić przypisanie okresu pracy. Brakujące informacje nie blokują rejestrowania czasu pracy i nie stanowią upoważnienia do prowadzenia pojazdów.",
+      "loadFailed": "Nie udało się załadować danych o prowadzeniu pojazdów.",
       "loading": "Ładowanie szczegółów dotyczących jazdy",
       "missing": {
         "endReading": "Brak końcowego stanu licznika",
@@ -133,10 +150,18 @@
         "startReading": "Brak początkowego stanu licznika",
         "vehicle": "Brak pojazdu"
       },
+      "noMatch": "Żadne brakujące dane dotyczące prowadzenia pojazdów nie pasują do tych filtrów.",
       "openCalendar": "Kalendarz",
       "openCalendarOf": "Otwórz kalendarz użytkownika {name}",
+      "refreshFailed": "Nie udało się odświeżyć danych o prowadzeniu pojazdów. Wyświetlane są wcześniej załadowane wpisy.",
+      "restricted": "Dane o prowadzeniu pojazdów nie są dostępne w Twoim bieżącym zakresie.",
+      "scopeAll": "Wszyscy pracownicy w tej organizacji",
+      "scopeFailed": "Nie udało się załadować bieżącego zakresu prowadzenia pojazdów.",
+      "scopeLoading": "Ładowanie bieżącego zakresu prowadzenia pojazdów…",
+      "scopeManaged": "Pracownicy, którymi zarządzasz",
       "title": "Brak szczegółów dotyczących jazdy",
-      "truncated": "Wyświetlanie najnowszych {count} okresów pracy. Przefiltruj według zespołu lub pracownika, aby zobaczyć pozostałe."
+      "truncated": "Wyświetlanie najnowszych {count} okresów pracy. Przefiltruj według zespołu lub pracownika, aby zobaczyć pozostałe.",
+      "updating": "Aktualizowanie danych o prowadzeniu pojazdów…"
     },
     "empty": {
       "action": "Przejdź do ustawień pracownika",
@@ -148,9 +173,9 @@
       "title": "Coś poszło nie tak"
     },
     "feature": "zobacz swój zespół",
-    "member": "członek",
-    "members": "członkowie",
-    "member.you": "Ty",
+    "member": {
+      "you": "Ty"
+    },
     "noResults": {
       "action": "Wyczyść wyszukiwanie",
       "description": "Brak członków zespołu pasujących do „{query}”",
@@ -169,8 +194,8 @@
         "period": "Okres",
         "status": "Status"
       },
-      "descriptionAll": "Kto przesłał wybrany okres. Zatwierdzaj lub odrzucaj zgłoszenia w skrzynce zatwierdzeń.",
-      "descriptionManaged": "Kto z zarządzanych przez Ciebie pracowników przesłał wybrany okres. Zatwierdzaj lub odrzucaj zgłoszenia w skrzynce zatwierdzeń.",
+      "confirmationContext": "Zgłoszenia potwierdzają wpisy bez ich blokowania. Zmienione wpisy wymagają ponownego przesłania. Przejrzyj decyzje w skrzynce zatwierdzeń.",
+      "contextFailed": "Nie udało się sprawdzić Twoich bieżących uprawnień.",
       "empty": "Od żadnej z widocznych dla Ciebie osób nie oczekuje się przesłania tego okresu.",
       "loading": "Wczytywanie zgłoszeń okresów",
       "notSubmitted": "Nieprzesłany",
@@ -180,7 +205,12 @@
       "openInbox": "Otwórz skrzynkę zatwierdzeń",
       "owing": "{count, plural, one {# pracownik nie przesłał jeszcze tego okresu.} other {# pracowników nie przesłało jeszcze tego okresu.}}",
       "period": "Okres przesyłania",
+      "readFailed": "Nie udało się załadować zgłoszeń za dany okres. Wcześniej załadowane wpisy mogą być nieaktualne.",
+      "records": "Zgłoszenia pracowników",
+      "refresh": "Odśwież zgłoszenia",
       "running": "Ten okres nadal trwa. Pracownicy mogą go przesłać od jego ostatniego dnia.",
+      "scopeAll": "Wszyscy objęci pracownicy",
+      "scopeManaged": "Pracownicy, którymi zarządzasz",
       "status": {
         "approved": "Zatwierdzony",
         "awaiting": "Oczekuje na przesłanie",
@@ -189,10 +219,13 @@
         "submitted": "Przesłany"
       },
       "summary": "Statusy",
-      "title": "Zgłoszenia okresów"
+      "title": "Zgłoszenia okresów",
+      "unavailable": "Przesyłanie okresów jest niedostępne dla Twojego obecnego poziomu dostępu. Odśwież, aby sprawdzić uprawnienia ponownie."
     },
     "presence": {
       "allLocations": "Wszystkie lokalizacje",
+      "assignmentContext": "Przypisanie lokalizacji nie stanowi dowodu fizycznej pozycji urządzenia. Godziny korzystają ze strefy zarejestrowanej w momencie rozpoczęcia pracy lub przerwy. Obecność odświeża się co minutę.",
+      "chooseLocation": "Wybierz lokalizację",
       "columns": {
         "name": "Imię i nazwisko",
         "since": "Od",
@@ -202,9 +235,19 @@
       "descriptionAll": "Pracownicy przypisani do tej lokalizacji, którzy zarejestrowali wejście lub mają przerwę.",
       "descriptionManaged": "Pracownicy, którymi zarządzasz, przypisani do tej lokalizacji, którzy zarejestrowali wejście lub mają przerwę.",
       "empty": "Żadna z widocznych dla Ciebie osób nie ma obecnie zarejestrowanego wejścia w tej lokalizacji.",
+      "loadFailed": "Nie udało się załadować obecności dla tej lokalizacji. Spróbuj ponownie lub wybierz lokalizację jeszcze raz.",
+      "loading": "Ładowanie obecności w lokalizacji…",
+      "loadingLocations": "Ładowanie lokalizacji dla bieżącej organizacji…",
       "locationTitle": "Kto jest w pracy: {location}",
+      "locationUnavailable": "Lokalizacja niedostępna",
+      "locationUnavailableDescription": "Ta lokalizacja nie jest dostępna w Twojej bieżącej organizacji. Wybierz aktywną lokalizację, aby wyświetlić obecność.",
       "noLocations": "Twoja organizacja nie ma jeszcze aktywnych lokalizacji.",
-      "title": "Kto jest w pracy"
+      "refreshFailed": "Nie udało się odświeżyć lokalizacji. Wyświetlanie ostatnio załadowanych lokalizacji.",
+      "refreshingLocations": "Odświeżanie lokalizacji…",
+      "scopeChanged": "Dane o obecności wymagają ponownego odczytu dla bieżącego konta lub organizacji.",
+      "title": "Kto jest w pracy",
+      "unavailable": "Obecność niedostępna",
+      "viewPresence": "Wyświetl obecność"
     },
     "primaryManager": "Jesteś głównym menedżerem",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Pracownik",
       "position": "Stanowisko",
+      "region": "Tabela członków zespołu",
       "role": "Rola",
       "sort": {
         "ascending": "rosnąco",

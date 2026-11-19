@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Os controles de acesso apenas resumem eventos sensíveis do log de auditoria que já são capturados hoje.",
         "auditEvidence": "A evidência de auditoria utiliza a configuração de exportação de auditoria ativa, solicitações de pacote de auditoria e resultados de verificação recentes.",
+        "title": "Cobertura",
         "workforceCompliance": "A conformidade da força de trabalho utiliza os últimos 7 dias de violações de política de trabalho e solicitações de exceção pendentes."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Última atualização: {time}"
+        "lastRefreshed": "Última atualização: {time}",
+        "refreshMeaning": "Atualizar recarrega os sinais registrados; não reavalia as constatações sob uma nova política."
       },
       "links": {
         "inspectCompliance": "Inspecionar conformidade",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Abrir configurações de conformidade",
         "reviewAuditExport": "Revisar exportação de auditoria"
       },
+      "loading": "Carregando sinais de conformidade",
       "overview": "Visão geral de conformidade",
       "recentEvents": {
         "empty": "Nenhum evento crítico recente foi detectado.",
-        "title": "Eventos críticos recentes"
+        "partial": "Os eventos recentes estão limitados às fontes disponíveis. Alguns sinais não puderam ser carregados.",
+        "title": "Eventos críticos recentes",
+        "unavailable": "Os eventos recentes não puderam ser confirmados porque as fontes de sinais estão indisponíveis."
       },
+      "scope": "Organização ativa",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Alterações de controle sensíveis precisam de revisão",
             "healthy": "Nenhuma alteração de controle sensível foi registrada recentemente",
             "warning": "Alterações de controle recentes foram detectadas"
-          }
+          },
+          "title": "Controles de acesso"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Evidências de auditoria precisam de atenção",
             "healthy": "Sinais de evidência de auditoria parecem saudáveis",
             "warning": "Evidências de auditoria estão apenas parcialmente prontas"
-          }
+          },
+          "title": "Evidências de auditoria"
         },
+        "title": "Seções de conformidade",
         "unavailable": {
           "headline": "Sinal temporariamente indisponível"
         },
@@ -94,7 +103,8 @@
             "critical": "Violações de política da força de trabalho precisam de revisão",
             "healthy": "Nenhum problema recente de política da força de trabalho foi detectado",
             "warning": "A conformidade da força de trabalho está se desviando"
-          }
+          },
+          "title": "Conformidade da força de trabalho"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Exceção Aprovada",
       "approvedDescription": "A exceção de conformidade foi aprovada.",
       "approveFailed": "Falha ao Aprovar",
+      "approveFor": "Aprovar exceção de {type} para {name}",
+      "loadError": "Não foi possível carregar as solicitações de exceção pendentes.",
       "plannedDuration": "Planejado",
       "plannedDurationHelp": "Estime quanto tempo adicional você espera precisar além do limite.",
       "reason": "Motivo da Exceção",
@@ -124,6 +136,7 @@
       "rejected": "Exceção Rejeitada",
       "rejectedDescription": "A exceção de conformidade foi rejeitada.",
       "rejectFailed": "Falha ao Rejeitar",
+      "rejectFor": "Rejeitar exceção de {type} para {name}",
       "rejectionPlaceholder": "Insira o motivo para rejeitar esta exceção...",
       "rejectionReason": "Motivo da rejeição",
       "rejectTitle": "Rejeitar Solicitação de Exceção",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Seu gerente será notificado e poderá aprovar ou rejeitar sua solicitação.",
       "requestTitle": "Solicitar Exceção de Conformidade",
       "submit": "Enviar Solicitação",
-      "type": "Tipo de Exceção"
+      "type": "Tipo de Exceção",
+      "types": {
+        "overtimeDaily": "Horas Extras Diárias",
+        "overtimeMonthly": "Horas Extras Mensais",
+        "overtimeWeekly": "Horas Extras Semanais",
+        "restPeriod": "Período de Descanso"
+      }
     },
     "hasApprovedException": "Você possui uma exceção aprovada. Você pode prosseguir.",
     "moreAlerts": "mais",

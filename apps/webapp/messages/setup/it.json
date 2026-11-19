@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Configurazione dello spazio di lavoro in corso...",
+    "checkFailed": "Impossibile verificare le tue organizzazioni. Riprova.",
     "checking": "Controllo sessione in corso...",
-    "clickToSelect": "Clicca per selezionare",
     "redirecting": "Reindirizzamento in corso...",
+    "retry": "Riprova",
+    "selectionHint": "L'area di lavoro si aprirà dopo la selezione.",
     "selectOrganization": "Seleziona organizzazione",
-    "selectOrganizationDescription": "Scegli l'organizzazione con cui vuoi lavorare"
+    "selectOrganizationDescription": "Scegli l'organizzazione con cui vuoi lavorare",
+    "title": "Apri la tua area di lavoro"
   },
   "setup": {
     "authorization": {

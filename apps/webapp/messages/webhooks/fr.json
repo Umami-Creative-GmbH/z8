@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Actions pour {endpoint}",
+    "command-unknown": "Impossible de confirmer la commande. Actualisez ce point de terminaison avant de réessayer.",
     "copy-failed": "Échec de la copie dans le presse-papiers",
     "create": "Ajouter un webhook",
     "create-failed": "Échec de la création du webhook",
     "delete-confirm": {
       "description": "Ceci supprimera définitivement le point de terminaison du webhook et tout l'historique de livraison. Cette action est irréversible.",
-      "title": "Supprimer le webhook ?"
+      "title-named": "Supprimer le webhook {name} ?"
     },
     "deleted": "Webhook supprimé",
-    "delete-failed": "Échec de la suppression du webhook",
     "deliveries": "Livraisons",
-    "description": "Configurez des points de terminaison de webhook pour recevoir des notifications en temps réel lorsque des événements surviennent dans votre organisation.",
     "disabled": "Webhook désactivé",
     "empty": {
       "description": "Créez votre premier webhook pour commencer à recevoir des notifications d'événements.",
@@ -57,10 +57,11 @@
       "status": "Statut",
       "success": "Succès",
       "time": "Heure",
-      "title": "Journaux de livraison"
+      "title": "Journaux de livraison",
+      "toggle-details": "Détails pour {event} à {time}"
     },
-    "regenerate-failed": "Échec de la régénération du secret",
     "regenerate-secret": "Régénérer le secret",
+    "retry-help": "Actualisez cette liste pour confirmer les points de terminaison actuels. Les enregistrements chargés précédemment sont conservés.",
     "secret-copied": "Secret copié dans le presse-papiers",
     "secret-dialog": {
       "copy-secret": "Copier le secret dans le presse-papiers",
@@ -78,14 +79,15 @@
       "degraded": "Dégradé",
       "failing": "En échec",
       "healthy": "Opérationnel",
-      "inactive": "Inactif"
+      "inactive": "Inactif",
+      "untried": "Aucune livraison pour le moment"
     },
     "success-rate": "Succès",
     "test": "Envoyer un test",
-    "test-failed": "Échec de l'envoi du webhook de test",
-    "test-sent": "Webhook de test envoyé",
+    "test-queued": "Webhook de test mis en file d'attente",
     "title": "Webhooks",
-    "toggle-active": "Activer/désactiver le webhook",
+    "toggle-active-named": "Actif : {endpoint}",
+    "unavailable": "Webhooks indisponibles",
     "updated": "Webhook mis à jour",
     "update-failed": "Échec de la mise à jour du webhook",
     "view-logs": "Voir les journaux"

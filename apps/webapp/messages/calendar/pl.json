@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Dodaj nieobecność",
     "balance": {
       "carryoverDays": "Masz {count} dni przeniesionych z poprzedniego okresu",
-      "carryoverExpiry": "które wygasną w dniu",
+      "carryoverDaysExpiring": "Liczba przeniesionych dni: {count}. Tracą ważność {date}.",
       "carryoverFrom": "Przeniesienie z {year}",
       "daysRemaining": "Pozostałe dni",
-      "description": "Twoje dni urlopowe na bieżący rok",
       "outOfTotalDays": "z {totalDays} dostępnych dni",
       "pending": "Oczekujące",
       "title": "Bilans urlopowy {year}",
       "used": "Wykorzystane"
     },
     "calendar": {
+      "currentYear": "Ten rok",
       "legend": {
         "approved": "Zatwierdzone",
-        "halfDayAm": "Pół dnia (rano)",
-        "halfDayPm": "Pół dnia (po południu)",
+        "halfDay": "Pół dnia",
         "holiday": "Święto",
         "pending": "Oczekujące",
         "rejected": "Odrzucone"
       },
       "nextYear": "Następny rok",
-      "previousYear": "Poprzedni rok"
+      "previousYear": "Poprzedni rok",
+      "requestAnotherAbsence": "Zgłoś kolejną nieobecność od tego dnia",
+      "selectDayDetailsHint": "Wybierz dzień, aby zgłosić nieobecność od tego dnia. Dzień z zatwierdzoną lub oczekującą nieobecnością wyświetla zamiast tego jej szczegóły."
     },
     "change": {
       "afternoon": "Popołudnie",
@@ -40,6 +40,7 @@
       "historyFailed": "Nie udało się załadować wniosków o zmianę.",
       "keepHours": "Zachowaj zarejestrowane godziny i wymiar",
       "morning": "Przedpołudnie",
+      "pendingCount": "Oczekujące: {count}",
       "pendingExplanation": "Zarejestrowana nieobecność pozostaje w mocy, dopóki kolejna osoba zatwierdzająca nie zaakceptuje Twojego wniosku.",
       "reason": "Powód",
       "reasonRequired": "Powód jest wymagany",
@@ -321,10 +322,10 @@
       "pending": "Oczekujące",
       "rejected": "Odrzucone"
     },
-    "subtitle": "Zarządzaj swoim czasem wolnym i dniami urlopowymi",
     "table": {
       "cancelAbsence": "Anuluj nieobecność",
       "cancelAbsenceTooltip": "Anuluj nieobecność",
+      "changePending": "Oczekujący wniosek o zmianę",
       "end": "Koniec",
       "headers": {
         "actions": "Akcje",
@@ -337,9 +338,7 @@
       "noRequests": "Nie znaleziono wniosków o nieobecność.",
       "noSearchResults": "Brak nieobecności pasujących do wyszukiwania.",
       "searchPlaceholder": "Szukaj według typu, statusu lub notatek...",
-      "start": "Start",
-      "subtitle": "Ostatnie i nadchodzące wnioski o nieobecność",
-      "title": "Twoje wnioski o nieobecność"
+      "start": "Start"
     },
     "title": "Nieobecności",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kalendarz",
       "table": "Tabela"
+    },
+    "year": {
+      "loadFailed": "Nie udało się załadować roku {year}. Nadal wyświetlany jest rok {loadedYear}.",
+      "loading": "Ładowanie roku {year}… Nadal wyświetlany jest rok {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Edytuj",
       "label": "Działania dotyczące wpisu czasu pracy"
     },
+    "context": {
+      "timezone": "Strefa czasowa kalendarza"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Wpisy czasu zablokowane",
       "category": "Kategoria",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Zastosowano usunięcie wpisu czasu pracy",
       "auditNote": "Wpisy czasu zostaną oznaczone jako usunięte do celów audytu.",
-      "confirm": "Konwertuj na przerwę",
-      "description": "To działanie trwale usunie ten okres pracy. Luka pojawi się w kalendarzu jako przerwa.",
       "failed": "Nie udało się usunąć okresu pracy",
       "reasonLabel": "Powód usunięcia",
-      "reasonRequired": "Powód jest wymagany",
-      "success": "Okres pracy przekonwertowany na przerwę",
-      "title": "Konwertować na przerwę?"
+      "reasonRequired": "Powód jest wymagany"
     },
     "details": {
       "automaticClockOut": "Automatycznie zarejestrowano wyjście",
@@ -516,10 +518,7 @@
       "holiday": "Święto",
       "missingRequiredWork": "Brak wymaganego czasu pracy",
       "requirementMetOrOver": "Wymóg spełniony/przekroczony",
-      "timeEntry": "Wpis czasu",
-      "title": "Legenda",
       "underRequirement": "Poniżej wymogu",
-      "workPeriod": "Okres pracy",
       "workPeriodPending": "Oczekuje na zatwierdzenie"
     },
     "loadEventsError": "Nie udało się załadować wydarzeń z kalendarza: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Zarejestrowany czas w porównaniu z godzinami polityki",
       "weekSum": "Suma"
     },
+    "nextMonth": "Następny miesiąc",
+    "previousMonth": "Poprzedni miesiąc",
     "requirements": {
       "dayLabel": "{date}: zarejestrowano {actual}, wymagane {required}, {delta} {status}.",
       "includesRunningWork": "Obejmuje trwającą pracę",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Rozliczalne",
+      "breakEnforcementNote": "Dostosowano automatycznie: egzekwowanie przerwy",
       "editedBy": "(edytowane przez {name}, {date})",
       "missingTask": "Brak zadania",
       "missingTaskHint": "Brak zadania: dodaj zadanie",
-      "breakEnforcementNote": "Automatycznie dostosowano: egzekwowanie przerw"
+      "runningTitle": "{name} - {duration} (w trakcie)",
+      "stop": "Zatrzymaj",
+      "stopFor": "Zatrzymaj trwający okres pracy dla: {name}"
     },
     "workStatus": {
       "overRequirement": "powyżej wymogu",

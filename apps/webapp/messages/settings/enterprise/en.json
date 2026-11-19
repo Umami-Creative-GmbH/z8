@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Active",
+      "contextRetry": "Refresh your organization context to continue.",
+      "contextUnavailable": "Organization context unavailable",
+      "copyFailed": "Could not copy the key. Try again.",
       "copyKey": "Copy API key",
       "copyPrefix": "Copy prefix",
       "create": "Create Key",
@@ -9,6 +12,7 @@
       "createdBy": "by {name}",
       "createDescription": "Create a new API key for programmatic access. The key will only be shown once.",
       "createdOn": "Created {date}",
+      "createFailed": "Could not confirm key creation. Refresh the list before trying again.",
       "createTitle": "Create API Key",
       "creatorDeparted": "Departed",
       "deleted": "API key deleted",
@@ -24,6 +28,8 @@
         "creator": "Created by",
         "creatorDeparted": "{name} (departed)",
         "ip": "IP address",
+        "kind": "API key",
+        "loading": "Loading API key",
         "noRateLimit": "Off",
         "noRequests": "No requests in the last 90 days.",
         "rateLimit": "Rate limit",
@@ -80,13 +86,19 @@
         "scopes": "Permissions",
         "scopesRequired": "Select at least one permission"
       },
+      "hideKey": "Hide key",
       "keyCopied": "API key copied to clipboard",
+      "keyHidden": "Key hidden",
       "lastUsed": "Last Used",
+      "loading": "Loading API keys",
       "name": "Name",
       "neverExpires": "Never expires",
       "noPermissions": "No permissions",
       "prefix": "Key Prefix",
       "prefixCopied": "Key prefix copied",
+      "retryHelp": "Refresh this list to confirm the current keys. Previously loaded records are retained.",
+      "revealKey": "Reveal key",
+      "revokeUnknown": "Could not confirm revocation. Refresh the list before trying again.",
       "scopeLabel": {
         "absencesRead": "Read absences",
         "absencesReadHealth": "Read absence health detail",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Important:",
       "status": "Status",
       "title": "API Keys",
+      "unavailable": "API keys unavailable",
+      "unavailableDescription": "Your settings could not be loaded. Retry to refresh this page.",
+      "unavailableTitle": "Developer Access unavailable",
       "unknownCreator": "a former admin",
       "updated": "API key updated",
+      "updateUnknown": "Could not confirm the update. Refresh this key before trying again.",
       "usage": "{count} of {max} keys used"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Default URLs",
         "defaultUrlsDescription": "These platform-managed URLs work automatically without custom DNS setup.",
         "deleteAria": "Delete custom domain {domain}",
+        "deleteConfirm": "Delete domain",
         "deleted": "Domain deleted",
         "deleteDescription": "Are you sure you want to delete \"{domain}\"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.",
         "deleteFailed": "Failed to delete domain",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Leave blank to keep existing key. Get your API key from resend.com",
         "create": "Create Configuration",
         "delete": "Delete Configuration",
-        "deleteConfirm": "Are you sure you want to delete this email configuration?",
+        "deleteConfirmNamed": "Delete the email configuration for {fromEmail}? Organization emails will use the system default sender again.",
         "deleted": "Email configuration deleted",
         "deleteFailed": "Failed to delete",
+        "deleteTitle": "Delete email configuration?",
         "description": "Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
         "fromEmail": "From Email",
         "fromName": "From Name",
@@ -356,10 +374,9 @@
           "title": "Domain"
         },
         "hero": {
-          "description": "Configure SSO, SCIM, and enforcement for organization {organizationId} with guarded activation.",
-          "eyebrow": "Enterprise identity",
           "title": "Operational command checklist"
         },
+        "progress": "{completed} of {total} steps complete",
         "provider": {
           "action": {
             "save": "Save provider"
@@ -453,7 +470,6 @@
           },
           "description": "SCIM verification updates after your identity provider sends a test user or group change.",
           "dialog": {
-            "cancel": "Cancel",
             "decommission": {
               "description": "This permanently decommissions SCIM provisioning and cannot be undone.",
               "title": "Decommission SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Failed to delete OAuth config",
         "description": "Configure your own OAuth credentials for social login. This allows your users to sign in using your organization's OAuth apps instead of shared credentials.",
         "developerConsole": "{provider} Developer Console",
+        "editAria": "Edit {provider} sign-in",
         "editDescription": "Update your OAuth credentials.",
         "editTitle": "Edit {provider} OAuth",
         "empty": "No custom social OAuth providers configured.",
@@ -616,9 +633,11 @@
         "keyId": "Key ID",
         "pasteYourP8PrivateKeyContents": "Paste your .p8 private key contents",
         "privateKey": "Private Key (.p8)",
+        "removeAria": "Remove {provider} sign-in",
         "removed": "{provider} OAuth removed",
         "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
         "removeDialogTitle": "Remove Social OAuth Provider",
+        "removeDialogTitleNamed": "Remove {provider} sign-in?",
         "teamId": "Team ID",
         "title": "Social Login Providers",
         "unverified": "Unverified",
@@ -629,8 +648,9 @@
         "addError": "Failed to add SSO provider",
         "addSuccess": "SSO provider added successfully",
         "addTitle": "Add SSO Provider",
+        "deleteConfirm": "Delete provider",
         "deleteDialogDescription": "Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
-        "deleteDialogTitle": "Delete SSO Provider",
+        "deleteDialogTitleNamed": "Delete SSO provider {provider}?",
         "deleteError": "Failed to delete SSO provider",
         "deleteProviderAria": "Delete SSO provider {provider}",
         "deleteSuccess": "SSO provider deleted",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Users with this email domain will be able to use SSO",
         "empty": "No SSO providers configured yet.",
         "emptyDescription": "Add an OIDC provider to enable enterprise single sign-on.",
+        "generateToken": "Generate TXT token",
         "guide": {
           "addDescription": "Follow your provider's setup instructions, then connect it to your organization.",
           "afterSave": "After saving, verify your email domain with the DNS TXT record in Z8. Pilot sign-in with an intended user while keeping your current administrator session open. In Guided setup, save the same provider ID and email domain shown in the provider list, then manually record the observed sign-in result before considering Require SSO. Saving and DNS verification do not prove a successful sign-in.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "A unique identifier for this provider (lowercase, no spaces)",
         "providerIdInvalid": "Provider ID must contain only lowercase letters, numbers, and hyphens",
         "title": "Identity Providers",
-        "token": "Token",
         "tokenError": "Failed to generate domain verification token",
         "tokenGenerated": "Verification token generated",
         "txtToken": "TXT token:",

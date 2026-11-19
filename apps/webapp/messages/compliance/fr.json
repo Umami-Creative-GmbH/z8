@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Les contrôles d'accès résument uniquement les événements sensibles du journal d'audit déjà capturés aujourd'hui.",
         "auditEvidence": "La preuve d'audit utilise la configuration d'exportation d'audit en direct, les demandes de pack d'audit et les résultats de vérification récents.",
+        "title": "Couverture",
         "workforceCompliance": "La conformité de la main-d'œuvre utilise les violations de politique de travail des 7 derniers jours et les demandes d'exception en attente."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Dernière actualisation : {time}"
+        "lastRefreshed": "Dernière actualisation : {time}",
+        "refreshMeaning": "L'actualisation recharge les signaux enregistrés ; elle ne réévalue pas les résultats selon une nouvelle politique."
       },
       "links": {
         "inspectCompliance": "Inspecter la conformité",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Ouvrir les paramètres de conformité",
         "reviewAuditExport": "Examiner l'exportation d'audit"
       },
+      "loading": "Chargement des signaux de conformité",
       "overview": "Aperçu de la conformité",
       "recentEvents": {
         "empty": "Aucun événement critique récent n'a été détecté.",
-        "title": "Événements critiques récents"
+        "partial": "Les événements récents sont limités aux sources disponibles. Certains signaux n'ont pas pu être chargés.",
+        "title": "Événements critiques récents",
+        "unavailable": "Les événements récents n'ont pas pu être confirmés car les sources de signaux sont indisponibles."
       },
+      "scope": "Organisation active",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Les modifications des contrôles sensibles nécessitent un examen",
             "healthy": "Aucune modification de contrôle sensible n'a été enregistrée récemment",
             "warning": "Des modifications récentes des contrôles ont été détectées"
-          }
+          },
+          "title": "Contrôles d'accès"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Les preuves d'audit nécessitent une attention particulière",
             "healthy": "Les signaux des preuves d'audit semblent sains",
             "warning": "Les preuves d'audit ne sont que partiellement prêtes"
-          }
+          },
+          "title": "Preuves d'audit"
         },
+        "title": "Sections de conformité",
         "unavailable": {
           "headline": "Signal temporairement indisponible"
         },
@@ -94,7 +103,8 @@
             "critical": "Les violations de la politique du personnel nécessitent un examen",
             "healthy": "Aucun problème récent de politique du personnel n'a été détecté",
             "warning": "La conformité du personnel dérive"
-          }
+          },
+          "title": "Conformité des effectifs"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Exception approuvée",
       "approvedDescription": "L'exception de conformité a été approuvée.",
       "approveFailed": "Échec de l'approbation",
+      "approveFor": "Approuver l'exception {type} pour {name}",
+      "loadError": "Les demandes d'exception en attente n'ont pas pu être chargées.",
       "plannedDuration": "Planifié",
       "plannedDurationHelp": "Estimez le temps supplémentaire dont vous pensez avoir besoin au-delà de la limite.",
       "reason": "Motif de l'exception",
@@ -124,6 +136,7 @@
       "rejected": "Exception rejetée",
       "rejectedDescription": "L'exception de conformité a été rejetée.",
       "rejectFailed": "Échec du rejet",
+      "rejectFor": "Rejeter l'exception {type} pour {name}",
       "rejectionPlaceholder": "Saisissez le motif du rejet de cette exception...",
       "rejectionReason": "Motif du rejet",
       "rejectTitle": "Rejeter la demande d'exception",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Votre responsable sera informé et pourra approuver ou rejeter votre demande.",
       "requestTitle": "Demander une exception de conformité",
       "submit": "Soumettre la demande",
-      "type": "Type d'exception"
+      "type": "Type d'exception",
+      "types": {
+        "overtimeDaily": "Heures supplémentaires quotidiennes",
+        "overtimeMonthly": "Heures supplémentaires mensuelles",
+        "overtimeWeekly": "Heures supplémentaires hebdomadaires",
+        "restPeriod": "Période de repos"
+      }
     },
     "hasApprovedException": "Vous disposez d'une exception approuvée. Vous pouvez continuer.",
     "moreAlerts": "plus",

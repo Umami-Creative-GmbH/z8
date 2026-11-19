@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Handlinger for {endpoint}",
+    "command-unknown": "Kunne ikke bekrefte kommandoen. Oppdater dette endepunktet før du prøver igjen.",
     "copy-failed": "Kunne ikke kopiere til utklippstavlen",
     "create": "Legg til webhook",
     "create-failed": "Kunne ikke opprette webhook",
     "delete-confirm": {
       "description": "Dette vil slette webhook-endepunktet og all leveringshistorikk permanent. Denne handlingen kan ikke angres.",
-      "title": "Slette webhook?"
+      "title-named": "Slette webhook {name}?"
     },
     "deleted": "Webhook slettet",
-    "delete-failed": "Kunne ikke slette webhook",
     "deliveries": "Leveringer",
-    "description": "Konfigurer webhook-endepunkter for å motta sanntidsvarsler når hendelser oppstår i organisasjonen din.",
     "disabled": "Webhook deaktivert",
     "empty": {
       "description": "Opprett din første webhook for å begynne å motta hendelsesvarsler.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Vellykket",
       "time": "Tidspunkt",
-      "title": "Leveringslogger"
+      "title": "Leveringslogger",
+      "toggle-details": "Detaljer for {event} kl. {time}"
     },
-    "regenerate-failed": "Kunne ikke generere hemmelighet på nytt",
     "regenerate-secret": "Generer hemmelighet på nytt",
+    "retry-help": "Oppdater denne listen for å bekrefte gjeldende endepunkter. Tidligere innlastede oppføringer beholdes.",
     "secret-copied": "Hemmelighet kopiert til utklippstavlen",
     "secret-dialog": {
       "copy-secret": "Kopier hemmelighet til utklippstavlen",
@@ -78,14 +79,15 @@
       "degraded": "Redusert",
       "failing": "Feiler",
       "healthy": "Frisk",
-      "inactive": "Inaktiv"
+      "inactive": "Inaktiv",
+      "untried": "Ingen leveringer ennå"
     },
     "success-rate": "Vellykket",
     "test": "Send test",
-    "test-failed": "Kunne ikke sende test-webhook",
-    "test-sent": "Test-webhook sendt",
+    "test-queued": "Test-webhook satt i kø",
     "title": "Webhooks",
-    "toggle-active": "Aktiver/deaktiver webhook",
+    "toggle-active-named": "Aktiv: {endpoint}",
+    "unavailable": "Webhooks utilgjengelig",
     "updated": "Webhook oppdatert",
     "update-failed": "Kunne ikke oppdatere webhook",
     "view-logs": "Vis logger"

@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Der Zugriff auf diese Organisation ist pausiert, bis die Abrechnung aktualisiert wird.",
       "adminDescription": "Ihre Testversion ist abgelaufen oder Ihr Abonnement ist nicht mehr gültig. Aktualisieren Sie Ihre Zahlungsdaten, um Z8 weiterhin zu nutzen.",
       "goToBilling": "Zur Abrechnung",
       "memberDescription": "Diese Organisation wurde deaktiviert. Wenden Sie sich an einen Organisationsadmin, um die Abrechnung zu aktualisieren.",
@@ -165,6 +166,13 @@
     "teal": "Türkis"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+      "formerEmployee": "Ehemalige Mitarbeitende können nicht ausgewählt werden. Wählen Sie jemanden aus der aktuellen Liste.",
+      "invalidInput": "Überprüfen Sie Ihre Eingabe und versuchen Sie es erneut.",
+      "notAllowed": "Sie haben keinen Zugriff auf diese Einstellung.",
+      "signInRequired": "Melden Sie sich an, um fortzufahren."
+    },
     "actions": "Aktionen",
     "active": "Aktiv",
     "add": "Hinzufügen",
@@ -174,6 +182,7 @@
     "approve": "Genehmigen",
     "assign": "Zuweisen",
     "back": "Zurück",
+    "backToDashboard": "Zurück zum Dashboard",
     "brandLogo": "{brand}-Logo",
     "breadcrumb": {
       "breadcrumb": "Breadcrumb",
@@ -195,6 +204,7 @@
     "copy": "Kopieren",
     "create": "Erstellen",
     "current": "Aktuell",
+    "date": "Datum",
     "datePicker": {
       "clearDate": "Datum löschen",
       "placeholder": "Datum auswählen"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} Min.",
     "edit": "Bearbeiten",
     "employees": "Mitarbeiter",
-    "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Ein Fehler ist aufgetreten",
     "errors": {
       "monthClosed": "{month} ist abgeschlossen. Er muss wieder geöffnet werden, bevor Arbeitszeiten oder Abwesenheiten geändert werden können."
     },
     "fieldPresets": "{label}-Voreinstellungen",
+    "filters": "Filter",
     "focusInput": "Eingabefeld fokussieren",
     "gender": {
       "female": "Weiblich",
@@ -253,6 +263,7 @@
       "application": "Anwendung wird geladen",
       "auditExportSettings": "Audit-Exporteinstellungen werden geladen",
       "authentication": "Authentifizierung wird geladen",
+      "billableTimeSettings": "Einstellungen für abrechenbare Zeiten werden geladen",
       "changePolicySettings": "Einstellungen für Änderungsrichtlinien werden geladen",
       "coverageRuleSettings": "Einstellungen für Abdeckungsregeln werden geladen",
       "customerSettings": "Kundeneinstellungen werden geladen",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Demodateneinstellungen werden geladen",
       "deploymentDiagnostics": "Bereitstellungsdiagnose wird geladen",
       "employeeReports": "Mitarbeiterberichte werden geladen",
+      "employees": "Mitarbeiter werden geladen",
+      "employeeVacationAllowance": "Urlaubsanspruch der Mitarbeiter wird geladen",
       "employeeVacationAllowances": "Urlaubsansprüche der Mitarbeiter werden geladen",
       "exportOperations": "Exportvorgänge werden geladen",
       "holidaySettings": "Feiertagseinstellungen werden geladen",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Schichtplan wird geladen",
       "shiftTemplateSettings": "Schichtvorlagen-Einstellungen werden geladen",
       "skillSettings": "Skill-Einstellungen werden geladen",
+      "statistics": "Statistiken werden geladen",
       "surchargeSettings": "Zuschlagseinstellungen werden geladen",
       "team": "Team wird geladen",
       "todaySManagerBriefing": "Heutiges Manager-Briefing wird geladen",
@@ -315,8 +329,6 @@
     },
     "more": "mehr",
     "moreActions": "Weitere Aktionen",
-    "moveDown": "Nach unten verschieben",
-    "moveUp": "Nach oben verschieben",
     "name": "Name",
     "navigation": {
       "retry": "Navigation erneut laden",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Benachrichtigungen} other {Benachrichtigungen (# ungelesen)}}"
     },
+    "offline": "Offline",
     "open": "Öffnen",
     "openEnded": "Unbegrenzt",
     "openMenu": "Menü öffnen",
@@ -389,6 +402,7 @@
     "removing": "Entfernen...",
     "reset": "Zurücksetzen",
     "retry": "Erneut versuchen",
+    "retrying": "Wird erneut versucht…",
     "revoke": "Widerrufen",
     "save": "Speichern",
     "saveChanges": "Änderungen speichern",
@@ -403,7 +417,9 @@
       "sidebar": "Seitenleiste",
       "toggleSidebar": "Seitenleiste umschalten"
     },
+    "signIn": "Anmelden",
     "skip": "Überspringen",
+    "skipToContent": "Zum Inhalt springen",
     "start": "Start",
     "status": "Status",
     "submitting": "Wird übermittelt…",
@@ -422,6 +438,9 @@
     },
     "to": "bis",
     "today": "Heute",
+    "tryAgain": "Erneut versuchen",
+    "unavailable": "Nicht verfügbar",
+    "undo": "Rückgängig",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
     "unknown": "Unbekannt",
     "unknownEmployee": "Unbekannter Mitarbeiter",
@@ -575,6 +594,7 @@
       "submit": "Originalprüfung erfassen",
       "suspensionNotice": "Eine erfolgreiche Nachprüfung stellt eine ausgesetzte Berechtigung nicht automatisch wieder her. Es sind eine erneute Prüfung und eine ausdrückliche Entscheidung über die Wiederherstellung erforderlich.",
       "title": "Original-Führerschein von {name} prüfen",
+      "transportError": "Die Prüfung konnte nicht erfasst werden. Ihre Eingabe bleibt erhalten; versuchen Sie es erneut, nachdem Sie Ihre Verbindung und Zuständigkeit überprüft haben.",
       "verifier": "Ich bestätige, dass die erfassten Angaben und individuellen Klassenergebnisse meiner Prüfung entsprechen."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Der Führerscheindatensatz konnte nicht geladen werden. Überprüfen Sie Ihre aktuelle Prüfverantwortung.",
       "loading": "Führerscheindatensatz wird geladen …",
       "notIntended": "{name} ist kein vorgesehener Fahrer. Eine Prüfung ist nur für vorgesehene Fahrer erforderlich.",
+      "retained": "Aufbewahrte Nachweise können eingesehen werden. Für ehemalige Mitarbeiter sind keine neuen Prüfungen verfügbar.",
       "title": "Führerscheinkontrolle für {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Status",
         "team": "Team"
       },
+      "customOrder": "Sortiert nach der ausgewählten Spalte und Richtung.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Prüfung jetzt fällig",
+      "dueOrder": "Jetzt fällige Prüfungen zuerst, dann die nächste Frist.",
       "empty": {
         "description": "Vorgesehene Fahrer in Ihrer Prüfverantwortung werden hier angezeigt. Wenden Sie sich an einen Administrator, falls jemand fehlt.",
         "title": "Noch niemand zu prüfen"
@@ -607,6 +630,8 @@
       "loadError": "Die Liste konnte nicht geladen werden. Überprüfen Sie Ihre aktuelle Prüfverantwortung.",
       "loading": "Vorgesehene Fahrer werden geladen …",
       "noMatches": "Keine vorgesehenen Fahrer stimmen mit der Suche oder dem Filter überein.",
+      "refresh": "Prüfungs-Arbeitsliste aktualisieren",
+      "refreshing": "Prüfungs-Arbeitsliste wird aktualisiert…",
       "search": "Nach Name suchen",
       "status": {
         "active": "Aktiv",
@@ -682,6 +707,7 @@
       "failed": "Geprüfte Klasse nicht erfolgreich",
       "field": "Korrigiertes Feld",
       "from": "Startdatum (UTC)",
+      "fromHelp": "Der Zeitraum beginnt um 00:00 UTC.",
       "globalSuspension": "Gesamte Fahrberechtigung ausgesetzt",
       "help": "Originalbestätigungen, datierte Ergänzungen und wirksame Berechtigungsentscheidungen bleiben getrennt. Frühere Nachweise, die zum Verständnis des ausgewählten Zeitraums erforderlich sind, werden als Kontext gekennzeichnet. Alle nachfolgenden Ereigniszeiten und Zeitraumbegrenzungen verwenden UTC.",
       "impedimentReported": "Fahrhindernis gemeldet",
@@ -716,6 +742,7 @@
       "suspended": "Berechtigung ausgesetzt",
       "title": "Prüfungs- und Berechtigungshistorie",
       "to": "Vor dem Datum (UTC)",
+      "toHelp": "Der Zeitraum endet vor 00:00 UTC an diesem Datum.",
       "unavailable": "Der Verlauf ist nicht verfügbar. Überprüfen Sie den Zeitraum und Ihre aktuellen Zugriffsrechte.",
       "value": "Korrigierter Wert",
       "verifierConfirmation": "Prüferbestätigung zum Zeitpunkt der Originalprüfung erfasst"
@@ -751,7 +778,6 @@
         "teamNotFound": "Dieses Team existiert nicht mehr."
       },
       "notRequired": "Nicht erforderlich (ausgeschlossen)",
-      "removed": "Zuweisung als vorgesehener Fahrer entfernt",
       "required": "Erforderlich",
       "saved": "Vorgesehene Fahrer gespeichert",
       "targetOrganization": "Gesamte Organisation",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Fahrberechtigung",
       "loading": "Fahrberechtigung wird geladen…",
+      "loadingEmployees": "Mitarbeiter für die Planung werden geladen…",
       "noEmployees": "Keine übereinstimmenden Mitarbeiter.",
       "recordingHelp": "Sie können Arbeitszeit und tatsächliche Fahrzeugnutzung jederzeit erfassen. Die Auswahl eines Fahrzeugs erteilt keine Fahrberechtigung; geprüfte Klassen begründen keine Eignung für jedes Fahrzeug.",
       "refresh": "Fahrstatus aktualisieren",
+      "refreshEmployees": "Mitarbeiter für die Planung aktualisieren",
+      "rosterUnavailable": "Mitarbeiter für die Planung sind nicht verfügbar. Prüfen Sie Ihren aktuellen Organisationszugriff und versuchen Sie es erneut.",
       "search": "Mitarbeiter suchen",
       "searchHelp": "Es werden bis zu 50 Mitarbeiter angezeigt. Grenzen Sie die Suche ein, um andere Mitarbeiter zu finden. Diese Ansicht enthält keine Prüfungsdatensätze.",
       "title": "Fahrstatus für die Planung",
       "unavailable": "Fahrberechtigungsstatus ist nicht verfügbar."
     },
     "page": {
+      "reconciling": "Führerscheinzugriff für die aktuelle Organisation wird geladen…",
+      "scope": "Fahrerlaubnis, Originalprüfungen und Planung in Ihrer aktiven Organisation. Jede Ansicht richtet sich nach Ihrem aktuellen Zugriff.",
       "title": "Führerschein"
     },
     "policyTitle": "Organisationsrichtlinie",
@@ -960,6 +991,13 @@
       "description": "Sie benötigen ein Mitarbeiterprofil, um {feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
       "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
       "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
+      "formerEmployee": {
+        "description": "Sie sind wieder Mitglied dieser Organisation, aber Ihr früheres Arbeitsverhältnis wurde beendet. Ein Administrator muss Sie wieder einstellen, bevor Sie {feature} können.",
+        "emailBody": "Hallo,nnich bin wieder Mitglied der Organisation, aber mein früheres Arbeitsverhältnis wurde beendet. Könnten Sie mich bitte wieder einstellen, damit ich auf die Plattformfunktionen zugreifen kann?nnVielen Dank!",
+        "emailSubject": "Antrag auf Wiedereinstellung",
+        "helpText": "Bitten Sie Ihren Administrator, Sie wieder einzustellen. Bis dahin können Sie diese Organisation nicht nutzen.",
+        "title": "Ihr Arbeitsverhältnis hier wurde beendet"
+      },
       "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
       "title": "Mitarbeiterprofil erforderlich"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Worker-Warteschlange wird geladen"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Bestehende Anmeldung bestätigen"
+    },
     "banner": {
       "action": "Anforderungen prüfen und verifizieren",
       "requirement": "Diese Organisation erfordert eine verifizierte Authentifizierung ab {deadline}."
     },
     "code": {
       "label": "Authenticator-Code",
+      "required": "Authenticator-Code eingeben",
       "verify": "Authenticator verifizieren"
     },
     "continue": "Nach Verifizierung fortfahren",
@@ -1056,6 +1098,8 @@
       "title": "Authenticator registrieren oder ersetzen",
       "warning": "Das Hinzufügen oder Ersetzen eines Faktors erfordert eine Verifizierung innerhalb von fünf Minuten. Verifizieren Sie den Ersatzfaktor, bevor Sie den alten Faktor entfernen. Das Widerrufen Ihres letzten Faktors ist zulässig und kann den Zugriff auf die oben aufgeführten Organisationen blockieren; es gewährt kein neues Registrierungsfenster."
     },
+    "loading": "Sicherheitsüberprüfung wird geladen",
+    "navigation": "Organisation und Konto",
     "organization": {
       "select": "Andere Organisation auswählen"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Passwortüberprüfung fehlgeschlagen",
       "label": "Aktuelles Passwort",
+      "required": "Aktuelles Passwort eingeben",
       "verified": "Passwort verifiziert. Sie können unten Ihren ersten Authenticator registrieren oder einen vorhandenen Authenticator bzw. Backup-Code verifizieren.",
       "verify": "Passwort verifizieren"
     },
@@ -1097,7 +1142,16 @@
       "description": "Bestätigen Sie zur Wiederherstellung oben Ihr Passwort und geben Sie dann einen unbenutzten Backup-Code ein. Dadurch wird die bisherige lokale Verifizierung über alle Ihre Organisationen hinweg zurückgesetzt.",
       "label": "Backup-Code",
       "lockout": "Wenn ein alleiniger Administrator alle Authentifizierungs- und Wiederherstellungswege verliert, bleibt die Organisation gesperrt. Es gibt keine Umgehung durch Administratoren oder den Support.",
-      "success": "Die Wiederherstellung erlaubt nur eine Ersatzregistrierung. Verifizieren Sie einen Authentifikator, bevor Sie zu Ihrer Organisation zurückkehren."
+      "nextSteps": "Bestätigen Sie Ihr Passwort erneut, bevor Sie einen Authenticator verifizieren.",
+      "open": "Mit einem Backup-Code wiederherstellen",
+      "required": "Unbenutzten Backup-Code eingeben",
+      "success": "Die Wiederherstellung erlaubt nur eine Ersatzregistrierung. Verifizieren Sie einen Authentifikator, bevor Sie zu Ihrer Organisation zurückkehren.",
+      "title": "Kontowiederherstellung"
+    },
+    "requirements": {
+      "empty": "Für dieses Konto sind keine Organisationsanforderungen aufgeführt.",
+      "selected": "Ausgewählte Organisation",
+      "title": "Organisationsanforderungen"
     },
     "security": {
       "factorWarning": "Das Entfernen eines Faktors kann den Zugriff auf Organisationen blockieren, die ihn erfordern. Verifizieren Sie zuerst einen Ersatz; das Entfernen des letzten Faktors gewährt keine neue Nachfrist.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Organisations-Authentifizierungsrichtlinie (Inhaber/Admins)"
     },
     "signout": "Abmelden",
+    "signout.failed": "Abmeldung fehlgeschlagen. Versuchen Sie es erneut.",
     "social": {
       "verify": "Bestehende Anmeldung mit {provider} bestätigen"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Plattform-Administrator",
     "reports": "Berichte",
     "scheduling": "Planung",
+    "secondary-label": "Einstellungen & Hilfe",
     "settings": "Einstellungen",
     "team": "Team",
     "teamAbsences": "Team-Abwesenheiten",
     "teamDriving": "Fahrtdetails",
-    "team-label": "Team",
+    "team-organization-label": "Team & Organisation",
     "teamPeriodSubmissions": "Zeitraum-Einreichungen",
     "teamPresence": "Wer ist anwesend",
     "time-tracking": "Zeiterfassung",
     "today": "Heute",
     "travel-expenses": "Reisekosten",
+    "workplace-label": "Arbeitsplatz",
     "worksCouncil": "Betriebsrat"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Ihre Schicht endete um {endTime} ({timezone}). Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben.",
         "title": "Sie sind noch eingestempelt"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} ist wieder Mitglied, aber das frühere Arbeitsverhältnis wurde beendet. Bis zur Wiedereinstellung durch Sie besteht kein Zugriff.",
+        "title": "Ein ehemaliger Mitarbeiter muss wieder eingestellt werden"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# Mitarbeiter ist weiterhin nur mit einer ehemaligen Führungskraft verknüpft: {names}. Weisen Sie eine aktuelle Führungskraft zu.} other {# Mitarbeiter sind weiterhin nur mit einer ehemaligen Führungskraft verknüpft: {names}. Weisen Sie eine aktuelle Führungskraft zu.}}",
@@ -1735,6 +1796,7 @@
         "title": "Zeit, etwas zu trinken!"
       }
     },
+    "countFailed": "Anzahl ungelesener Elemente nicht verfügbar",
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
     "empty": {
       "description": "Sie sind auf dem neuesten Stand! Neue Benachrichtigungen erscheinen hier.",
@@ -1754,6 +1816,8 @@
       "read": "Gelesen",
       "unread": "Ungelesen"
     },
+    "loading": "Benachrichtigungen werden geladen…",
+    "loadingCount": "Anzahl ungelesener Einträge wird geladen…",
     "nativePush": {
       "attention": {
         "title": "Etwas erfordert Ihre Aufmerksamkeit"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Durch Deaktivierung frei gewordene Schichten",
         "equipment_return_reminder": "Erinnerungen an Ausrüstungsrückgabe",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
+        "former_employee_needs_rehire": "Ehemalige Mitarbeitende, die wieder eingestellt werden müssen",
         "former_employee_reports_without_manager": "Mitarbeiter ohne aktuelle Führungskraft",
         "kiosk_command_refused": "Kiosk-Buchung nicht erfasst",
         "kiosk_fob_registered": "Kiosk-Transponder registriert",
@@ -1871,6 +1936,7 @@
       "placeholder": "Benachrichtigungen durchsuchen..."
     },
     "selection": {
+      "actions": "Ausgewählte Benachrichtigungen",
       "selectAll": "Alle sichtbaren auswählen",
       "selectAllAria": "Alle sichtbaren Benachrichtigungen auswählen",
       "selectNamedAria": "{title} auswählen",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "{count} Benachrichtigungen gelöscht",
       "deleteFailed": "Löschen der Benachrichtigungen fehlgeschlagen",
+      "deletePartial": "{count} gelöscht; {failed} fehlgeschlagen. Versuchen Sie es für die verbleibende Auswahl erneut.",
       "markedRead": "{count} Benachrichtigungen als gelesen markiert",
-      "markReadFailed": "Markieren der Benachrichtigungen als gelesen fehlgeschlagen"
+      "markReadFailed": "Markieren der Benachrichtigungen als gelesen fehlgeschlagen",
+      "readPartial": "{count} als gelesen markiert; {failed} fehlgeschlagen. Versuchen Sie es für die verbleibende Auswahl erneut."
     },
     "unreadBadge": "{count} ungelesen",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} sichtbar · neueste {limit} Benachrichtigungen"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours} Std.",
     "pm": "nachm."
   },
-  "userAvatar": {
-    "alt": "Benutzer-Avatar"
-  },
   "user": {
+    "account": "Konto",
     "font-size": "Schriftgröße",
     "language": "Sprache",
+    "loadingAccount": "Konto wird geladen",
     "logging-out": "Logge aus...",
     "log-out": "Abmelden",
     "log-out-failed": "Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Zeitbasiert",
     "theme-time-info": "Zeitbasiert verwendet den Modus {currentMode}. Wechselt um {time} zu {nextMode}.",
     "theme-toggle": "Design umschalten"
+  },
+  "userAvatar": {
+    "alt": "Benutzer-Avatar"
   },
   "vacationBalance": {
     "conflictingPolicies": "Widersprüchliche Urlaubsrichtlinien",

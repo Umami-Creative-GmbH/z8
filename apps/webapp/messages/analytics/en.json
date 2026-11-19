@@ -39,11 +39,13 @@
       "byCostCenter": "By Cost Center",
       "byManager": "By Manager",
       "byTeam": "By Team",
+      "chartValues": "View weekly values",
       "costCenter": "Cost Center",
       "currentOvertime": "Current Overtime",
       "description": "Track weekly overtime reduction across teams.",
       "errors": {
-        "loadData": "Failed to load overtime burn-down data"
+        "loadData": "Failed to load overtime burn-down data",
+        "retryDescription": "Overtime data could not be loaded. Retry the selected period and filters."
       },
       "filters": {
         "allCostCenters": "All cost centers",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Improving Groups",
       "improvingGroupsDescription": "Groups with decreasing overtime",
+      "loading": "Loading overtime data",
       "manager": "Manager",
       "previousOvertime": "Previous Overtime",
       "previousPeriodDescription": "Compared with previous period",
+      "refreshing": "Refreshing overtime data",
       "selectedRangeDescription": "For selected date range and filters",
       "title": "Overtime Burn-Down",
       "trendDirection": "Trend Direction",
@@ -92,6 +96,10 @@
         "title": "Approval Bottlenecks",
         "unavailable": "Approval bottlenecks could not be loaded"
       },
+      "chartValues": "View chart values",
+      "errors": {
+        "retryDescription": "Some analytics could not be loaded. Previously loaded values, if shown, may be out of date."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Of decided requests approved",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Loading analytics data",
+      "refreshing": "Refreshing analytics…",
       "workHoursByTeam": {
         "description": "Total work hours logged per team",
         "title": "Work Hours by Team"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Failed to load team performance data"
       },
+      "loading": "Loading team performance data",
       "onTrack": "On Track",
+      "refreshFailed": "Refresh failed. Showing previously loaded data for this period. Export is unavailable until retry succeeds.",
+      "refreshing": "Refreshing team performance data",
       "variance": {
         "description": "Hours variance from expected work hours",
         "empty": "No variance data available",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Allocated",
+      "allowanceMissing": "Allowance not configured",
+      "allowanceSource": "Some employees have no stored allowance. Totals use the existing stored allowances only.",
       "balance": {
         "description": "Days allocated, taken, and remaining by employee",
         "title": "Vacation Balance"
       },
-      "daysRemaining": "{count} days remaining",
-      "daysTaken": "{count} days taken",
+      "dayValue": "{count} days",
+      "description": "Compare vacation usage and employee balances for the selected organization period.",
       "errors": {
-        "loadData": "Failed to load vacation trends data"
+        "loadData": "Failed to load vacation trends data",
+        "retryDescription": "Vacation data could not be loaded. Retry the selected period."
       },
+      "loading": "Loading vacation data",
       "monthlyUsage": {
         "description": "Vacation days taken per month",
         "empty": "No monthly usage data available",
         "title": "Monthly Vacation Usage"
       },
+      "monthlyValues": "View monthly values",
       "peakMonths": {
         "description": "Months with highest vacation activity",
         "empty": "No peak month data available",
         "title": "Peak Vacation Months"
       },
+      "refreshing": "Refreshing vacation data",
       "remaining": "Remaining",
       "taken": "Taken",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "No daily hours data available",
         "title": "Daily Work Hours"
       },
+      "dailyStatus": "View daily status",
+      "dailyValues": "View daily hours",
       "distribution": {
         "description": "Employee work hours comparison (horizontal bar)",
         "empty": "No distribution data available",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Expected Hours",
       "hoursPerWeekAbbreviation": "h/wk",
+      "loading": "Loading work hours analytics data",
+      "refreshFailed": "Refresh failed. Showing previously loaded data for this period. Export is unavailable until retry succeeds.",
+      "refreshing": "Refreshing work hours analytics data",
       "variance": "Variance",
       "varianceTrend": {
         "description": "Hours variance from expected work hours over time",
         "empty": "No trend data available",
-        "title": "Overtime & Undertime Trend"
+        "title": "Overtime & Undertime Trend",
+        "unavailable": "Daily overtime and undertime hour values are unavailable from this report. Recorded daily status is shown below."
       }
     }
   }

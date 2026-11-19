@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Lägg till frånvaro",
     "balance": {
       "carryoverDays": "Du har {count} överförda dagar",
-      "carryoverExpiry": "som förfaller den",
+      "carryoverDaysExpiring": "Du har {count} sparade dagar kvar. De löper ut {date}.",
       "carryoverFrom": "Överfört från {year}",
       "daysRemaining": "Återstående dagar",
-      "description": "Dina semesterdagar för innevarande år",
       "outOfTotalDays": "av totalt {totalDays} dagar",
       "pending": "Väntande",
       "title": "Semestersaldo {year}",
       "used": "Använda"
     },
     "calendar": {
+      "currentYear": "I år",
       "legend": {
         "approved": "Godkänd",
-        "halfDayAm": "Halvdag (FM)",
-        "halfDayPm": "Halvdag (EM)",
+        "halfDay": "Halvdag",
         "holiday": "Helgdag",
         "pending": "Väntande",
         "rejected": "Avvisad"
       },
       "nextYear": "Nästa år",
-      "previousYear": "Föregående år"
+      "previousYear": "Föregående år",
+      "requestAnotherAbsence": "Ansök om en ny frånvaro från denna dag",
+      "selectDayDetailsHint": "Välj en dag för att ansöka om frånvaro. En dag med godkänd eller väntande frånvaro visar istället dess detaljer."
     },
     "change": {
       "afternoon": "Eftermiddag",
@@ -40,6 +40,7 @@
       "historyFailed": "Det gick inte att läsa in ändringsförfrågningar.",
       "keepHours": "Behåll registrerade timmar och omfattning",
       "morning": "Förmiddag",
+      "pendingCount": "{count} väntar",
       "pendingExplanation": "Den registrerade frånvaron förblir giltig tills en annan godkännare accepterar din förfrågan.",
       "reason": "Anledning",
       "reasonRequired": "En anledning krävs",
@@ -321,10 +322,10 @@
       "pending": "Väntande",
       "rejected": "Avvisad"
     },
-    "subtitle": "Hantera din ledighet och dina semesterdagar",
     "table": {
       "cancelAbsence": "Avbryt frånvaro",
       "cancelAbsenceTooltip": "Avbryt frånvaro",
+      "changePending": "Ändringsbegäran väntar",
       "end": "Slut",
       "headers": {
         "actions": "Åtgärder",
@@ -337,9 +338,7 @@
       "noRequests": "Inga frånvaroansökningar hittades.",
       "noSearchResults": "Ingen frånvaro matchar din sökning.",
       "searchPlaceholder": "Sök efter typ, status eller anteckningar...",
-      "start": "Start",
-      "subtitle": "Senaste och kommande frånvaroansökningar",
-      "title": "Dina frånvaroansökningar"
+      "start": "Start"
     },
     "title": "Frånvaro",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kalender",
       "table": "Tabell"
+    },
+    "year": {
+      "loadFailed": "Kunde inte läsa in {year}. Visar fortfarande {loadedYear}.",
+      "loading": "Läser in {year}… Visar fortfarande {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Redigera",
       "label": "Åtgärder för tidsregistrering"
     },
+    "context": {
+      "timezone": "Kalenderns tidszon"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Tidsregistreringar blockerade",
       "category": "Kategori",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Borttagning av tidsregistrering tillämpad",
       "auditNote": "Tidsregistreringar kommer att markeras som borttagna i revisionssyfte.",
-      "confirm": "Konvertera till rast",
-      "description": "Detta kommer att ta bort denna arbetsperiod permanent. Luckan kommer att visas som en rast i kalendern.",
       "failed": "Det gick inte att ta bort arbetsperioden",
       "reasonLabel": "Anledning till borttagning",
-      "reasonRequired": "Anledning krävs",
-      "success": "Arbetsperiod konverterad till rast",
-      "title": "Konvertera till rast?"
+      "reasonRequired": "Anledning krävs"
     },
     "details": {
       "automaticClockOut": "Automatiskt utstämplad",
@@ -516,10 +518,7 @@
       "holiday": "Helgdag",
       "missingRequiredWork": "Obligatoriskt arbete saknas",
       "requirementMetOrOver": "Krav uppfyllt/överskridet",
-      "timeEntry": "Tidspost",
-      "title": "Teckenförklaring",
       "underRequirement": "Under kravet",
-      "workPeriod": "Arbetsperiod",
       "workPeriodPending": "Väntar på godkännande"
     },
     "loadEventsError": "Det gick inte att läsa in kalenderhändelser: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Registrerad tid jämfört med policytimmar",
       "weekSum": "Summa"
     },
+    "nextMonth": "Nästa månad",
+    "previousMonth": "Föregående månad",
     "requirements": {
       "dayLabel": "{date}: {required} krävs, {actual} registrerat, {delta} delta, {status}",
       "includesRunningWork": "Inkluderar pågående arbete",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Debiterbar",
+      "breakEnforcementNote": "Automatiskt justerad: rastkrav",
       "editedBy": "(redigerad av {name} {date})",
       "missingTask": "Uppgift saknas",
       "missingTaskHint": "Uppgift saknas: lägg till en uppgift",
-      "breakEnforcementNote": "Automatiskt justerad: rastregler"
+      "runningTitle": "{name} - {duration} (pågår)",
+      "stop": "Stoppa",
+      "stopFor": "Avsluta pågående arbetspass för {name}"
     },
     "workStatus": {
       "overRequirement": "över kravet",

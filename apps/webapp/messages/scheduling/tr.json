@@ -6,9 +6,13 @@
       "gapCount": "{count} personel eksikliği",
       "gaps": "boşluklar",
       "hideOverlay": "Kapsam katmanını gizle",
+      "lastLoaded": "Son yüklenen kapsam",
+      "loading": "Kapsam yükleniyor…",
       "metSlots": "{count} yeterli",
       "overSlots": "{count} fazla personel",
       "overstaffed": "Fazla personel",
+      "readFailed": "Kapsam yüklenemedi. Personel durumunu kontrol etmek için tekrar deneyin.",
+      "refreshing": "Kapsam yenileniyor…",
       "showOverlay": "Kapsam hedefleri katmanını göster",
       "summary": "Kapsam Özeti:",
       "toggleLabel": "Kapsam",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Yayınlanan vardiyalarınız, hafta hafta",
       "employeeTitle": "Programım",
-      "managerDescription": "Çalışan vardiyalarını yönetin ve planlayın",
+      "planningDescription": "Vardiyaları planlayın ve yayınlayın. Planlanan vardiyalar çalışma süresini kaydetmez.",
       "title": "Vardiya Çizelgesi"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "İptal",
       "complianceAcknowledgmentRequired": "Uyumluluk Onayı Gerekiyor",
       "complianceWarnings": "{count, plural, one {Uyumluluk kontrollerinde # uyarı bulundu; yayınlamadan önce bunu onaylamanız gerekir.} other {Uyumluluk kontrollerinde # uyarı bulundu; yayınlamadan önce bunları onaylamanız gerekir.}}",
+      "coverageLoading": "Kapsam yükleniyor",
+      "coverageRulesCheckedOnPublish": "Yayınlandığında geçerli personel kuralları uygulanacaktır.",
+      "coverageUnavailable": "Kapsam kullanılamıyor",
+      "coverageUnloaded": "Kapsam kontrol edilmedi",
       "coverageWarning": "Bazı zaman blokları minimum personel gereksinimlerini karşılamıyor.",
       "maxHours": "Maksimum saat: {count}",
       "notifyEmployees": "{count, plural, other {# taslak vardiyayı yayınla ve çalışanları bilgilendir} }",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Yayınlama öncesinde uyarılar tespit edildi"
     },
     "scheduler": {
+      "assigned": "Atandı",
       "complianceBanner": {
         "findingsDetected": "Yayınlamadan önce {count} bulgu tespit edildi.",
         "maxHours": "Maksimum saat: {count}",
@@ -59,18 +68,24 @@
         "employee": "{name} için vardiyalar gösteriliyor",
         "showAll": "Tüm vardiyaları göster"
       },
+      "loadFailed": "Vardiyalar yenilenemedi. Yüklenen vardiyalar korunuyor.",
       "loading": "Çizelge yükleniyor...",
+      "open": "Açık Vardiya",
       "publish": {
         "failed": "Vardiyalar yayınlanamadı",
         "published": "{count} vardiya yayınlandı"
       },
+      "retry": "Yeniden Dene",
+      "shiftList": "Vardiya listesi",
       "shiftUpdate": {
         "failed": "Vardiya güncellenemedi",
         "overlapDescription": "Bu vardiya diğer {count} vardiya ile çakışıyor",
         "overlapWarning": "Vardiya, çakışma uyarısıyla kaydedildi",
         "skillOverrideReasonRequired": "Çalışan bu gün gerekli bir beceriye sahip değil. Bir gerekçe belirtmek için vardiyayı açın.",
         "updated": "Vardiya güncellendi"
-      }
+      },
+      "supportFailed": "Şablonlar veya uyumluluk bilgileri yenilenemedi. Yayınlamadan önce tekrar kontrol edin.",
+      "templatesUnavailable": "Vardiya şablonları yüklenemedi."
     },
     "shiftDetails": {
       "close": "Kapat",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Vardiya oluşturmak için bir şablonu takvime sürükleyin",
       "empty": "Kullanılabilir şablon yok. Vardiyaları hızlıca eklemek için Ayarlar'dan şablon oluşturun.",
+      "selectHint": "Bir şablon seçin, ardından vardiya tarihini ve atamasını belirleyin.",
       "title": "Vardiya Şablonları"
     }
   }

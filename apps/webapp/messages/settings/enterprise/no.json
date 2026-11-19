@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Aktiv",
+      "contextRetry": "Oppdater organisasjonskonteksten din for å fortsette.",
+      "contextUnavailable": "Organisasjonskontekst utilgjengelig",
+      "copyFailed": "Kunne ikke kopiere nøkkelen. Prøv igjen.",
       "copyKey": "Kopier API-nøkkel",
       "copyPrefix": "Kopier prefiks",
       "create": "Opprett nøkkel",
@@ -9,6 +12,7 @@
       "createdBy": "av {name}",
       "createDescription": "Opprett en ny API-nøkkel for programmatisk tilgang. Nøkkelen vises bare én gang.",
       "createdOn": "Opprettet {date}",
+      "createFailed": "Kunne ikke bekrefte opprettelsen av nøkkelen. Oppdater listen før du prøver igjen.",
       "createTitle": "Opprett API-nøkkel",
       "creatorDeparted": "Sluttet",
       "deleted": "API-nøkkel slettet",
@@ -24,6 +28,8 @@
         "creator": "Opprettet av",
         "creatorDeparted": "{name} (sluttet)",
         "ip": "IP-adresse",
+        "kind": "API-nøkkel",
+        "loading": "Laster inn API-nøkkel",
         "noRateLimit": "Av",
         "noRequests": "Ingen forespørsler de siste 90 dagene.",
         "rateLimit": "Hastighetsbegrensning",
@@ -80,13 +86,19 @@
         "scopes": "Tillatelser",
         "scopesRequired": "Velg minst én tillatelse"
       },
+      "hideKey": "Skjul nøkkel",
       "keyCopied": "API-nøkkel kopiert til utklippstavlen",
+      "keyHidden": "Nøkkel skjult",
       "lastUsed": "Sist brukt",
+      "loading": "Laster inn API-nøkler",
       "name": "Navn",
       "neverExpires": "Utløper aldri",
       "noPermissions": "Ingen tillatelser",
       "prefix": "Nøkkelprefiks",
       "prefixCopied": "Nøkkelprefiks kopiert",
+      "retryHelp": "Oppdater denne listen for å bekrefte gjeldende nøkler. Tidligere innlastede oppføringer beholdes.",
+      "revealKey": "Vis nøkkel",
+      "revokeUnknown": "Kunne ikke bekrefte tilbakekallingen. Oppdater listen før du prøver igjen.",
       "scopeLabel": {
         "absencesRead": "Lese fravær",
         "absencesReadHealth": "Lese helsedetaljer for fravær",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Viktig:",
       "status": "Status",
       "title": "API-nøkler",
+      "unavailable": "API-nøkler utilgjengelig",
+      "unavailableDescription": "Kunne ikke laste inn innstillingene dine. Prøv på nytt for å oppdatere denne siden.",
+      "unavailableTitle": "Utviklertilgang utilgjengelig",
       "unknownCreator": "en tidligere administrator",
       "updated": "API-nøkkel oppdatert",
+      "updateUnknown": "Kunne ikke bekrefte oppdateringen. Oppdater denne nøkkelen før du prøver igjen.",
       "usage": "{count} av {max} nøkler brukt"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Standard-URL-er",
         "defaultUrlsDescription": "Disse plattformadministrerte URL-ene fungerer automatisk uten tilpasset DNS-oppsett.",
         "deleteAria": "Slett egendefinert domene {domain}",
+        "deleteConfirm": "Slett domene",
         "deleted": "Domene slettet",
         "deleteDescription": "Er du sikker på at du vil slette «{domain}»? Denne handlingen kan ikke angres. Brukere vil ikke lenger kunne logge på via dette egendefinerte domenet.",
         "deleteFailed": "Kunne ikke slette domene",
@@ -263,9 +280,10 @@
         "apiKeyHint": "La stå tomt for å beholde eksisterende nøkkel. Hent API-nøkkelen din fra resend.com",
         "create": "Opprett konfigurasjon",
         "delete": "Slett konfigurasjon",
-        "deleteConfirm": "Er du sikker på at du vil slette denne e-postkonfigurasjonen?",
+        "deleteConfirmNamed": "Slette e-postkonfigurasjonen for {fromEmail}? E-poster fra organisasjonen vil bruke systemets standardavsender igjen.",
         "deleted": "E-postkonfigurasjon slettet",
         "deleteFailed": "Kunne ikke slette",
+        "deleteTitle": "Slette e-postkonfigurasjon?",
         "description": "Konfigurer en tilpasset e-postleverandør for organisasjonen din. All e-post fra organisasjonen vil bruke denne konfigurasjonen i stedet for systemstandarden.",
         "fromEmail": "Fra-e-post",
         "fromName": "Fra-navn",
@@ -356,10 +374,9 @@
           "title": "Domene"
         },
         "hero": {
-          "description": "Konfigurer SSO, SCIM og håndheving for organisasjon {organizationId} med beskyttet aktivering.",
-          "eyebrow": "Enterprise-identitet",
           "title": "Sjekkliste for operasjonelle kommandoer"
         },
+        "progress": "{completed} av {total} trinn fullført",
         "provider": {
           "action": {
             "save": "Lagre leverandør"
@@ -453,7 +470,6 @@
           },
           "description": "SCIM-verifisering oppdateres etter at identitetsleverandøren din sender en testbruker eller gruppeendring.",
           "dialog": {
-            "cancel": "Avbryt",
             "decommission": {
               "description": "Dette avvikler SCIM-provisjonering permanent og kan ikke angres.",
               "title": "Avvikle SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Kunne ikke slette OAuth-konfigurasjonen",
         "description": "Konfigurer dine egne OAuth-påloggingsopplysninger for sosial pålogging. Dette lar brukerne dine logge på med organisasjonens OAuth-apper i stedet for delte påloggingsopplysninger.",
         "developerConsole": "{provider} Developer Console",
+        "editAria": "Rediger pålogging med {provider}",
         "editDescription": "Oppdater OAuth-påloggingsopplysningene dine.",
         "editTitle": "Rediger {provider}-OAuth",
         "empty": "Ingen tilpassede sosiale OAuth-leverandører er konfigurert.",
@@ -616,9 +633,11 @@
         "keyId": "Nøkkel-ID",
         "pasteYourP8PrivateKeyContents": "Lim inn innholdet i den private .p8-nøkkelen din",
         "privateKey": "Privat nøkkel (.p8)",
+        "removeAria": "Fjern pålogging med {provider}",
         "removed": "{provider}-OAuth fjernet",
         "removeDialogDescription": "Er du sikker på at du vil fjerne denne OAuth-konfigurasjonen? Brukere vil falle tilbake til de delte OAuth-påloggingsopplysningene (hvis tilgjengelig).",
         "removeDialogTitle": "Fjern sosial OAuth-leverandør",
+        "removeDialogTitleNamed": "Fjerne pålogging med {provider}?",
         "teamId": "Team-ID",
         "title": "Sosiale påloggingstilbydere",
         "unverified": "Uverifisert",
@@ -629,8 +648,9 @@
         "addError": "Kunne ikke legge til SSO-tilbyder",
         "addSuccess": "SSO-tilbyder ble lagt til",
         "addTitle": "Legg til SSO-tilbyder",
+        "deleteConfirm": "Slett leverandør",
         "deleteDialogDescription": "Er du sikker på at du vil slette denne SSO-tilbyderen? Brukere vil ikke lenger kunne logge på med denne identitetstilbyderen.",
-        "deleteDialogTitle": "Slett SSO-tilbyder",
+        "deleteDialogTitleNamed": "Slette SSO-leverandøren {provider}?",
         "deleteError": "Kunne ikke slette SSO-tilbyder",
         "deleteProviderAria": "Slett SSO-leverandør {provider}",
         "deleteSuccess": "SSO-tilbyder slettet",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Brukere med dette e-postdomenet vil kunne bruke SSO",
         "empty": "Ingen SSO-tilbydere er konfigurert ennå.",
         "emptyDescription": "Legg til en OIDC-tilbyder for å aktivere enkel pålogging for bedrifter.",
+        "generateToken": "Generer TXT-token",
         "guide": {
           "addDescription": "Følg leverandørens oppsettinstruksjoner, og koble den deretter til organisasjonen din.",
           "afterSave": "Etter lagring må du verifisere e-postdomenet ditt med DNS TXT-oppføringen i Z8. Test innlogging med en tiltenkt bruker mens du holder den gjeldende administratorøkten åpen. I Veiledet oppsett lagrer du samme leverandør-ID og e-postdomene som vises i leverandørlisten, og registrerer deretter det observerte innloggingsresultatet manuelt før du vurderer Krev SSO. Lagring og DNS-verifisering beviser ikke en vellykket innlogging.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "En unik identifikator for denne leverandøren (små bokstaver, ingen mellomrom)",
         "providerIdInvalid": "Leverandør-ID kan bare inneholde små bokstaver, tall og bindestreker",
         "title": "Identitetsleverandører",
-        "token": "Token",
         "tokenError": "Kunne ikke generere token for domenebekreftelse",
         "tokenGenerated": "Bekreftelsestoken generert",
         "txtToken": "TXT-token:",

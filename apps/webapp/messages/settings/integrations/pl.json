@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Nie zaimportowano jeszcze żadnych rekordów produkcyjnych.",
         "openReview": "Otwórz przegląd",
-        "scanningDescription": "Trwa skanowanie partii przeglądu {reviewBatchId}. Sprawdź i zatwierdź rekordy przed ich zatwierdzeniem.",
+        "scanningDescriptionWithoutId": "Trwa skanowanie weryfikacyjne. Przejrzyj i zatwierdź rekordy przed ich zaimportowaniem.",
         "startedTitle": "Rozpoczęto skanowanie przeglądu importu",
         "starting": "Rozpoczynanie skanowania przeglądu importu Clockin…",
         "startSuccess": "Rozpoczęto skanowanie przeglądu importu. Przed zatwierdzeniem rekordów wymagany jest przegląd."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Trwa skanowanie partii przeglądu {batchId}.",
         "description": "Przed zatwierdzeniem rekordów Clockodo w produkcji wymagany jest przegląd.",
         "openReview": "Otwórz przegląd",
+        "scanning": "Trwa skanowanie weryfikacyjne. Żadne rekordy nie zostaną zaimportowane, dopóki nie zaakceptujesz ich podczas weryfikacji.",
         "successTitle": "Rozpoczęto skanowanie przeglądu importu"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Poświadczenia",
         "import": "Przegląd",
         "preview": "Podgląd",
+        "progressLabel": "Kroki importu",
         "projectMapping": "Mapowanie projektów",
         "selection": "Wybór",
         "userMapping": "Mapowanie użytkowników"
       },
       "userMapping": {
         "action": "Akcja",
+        "actionFor": "Działanie dla {name}",
         "autoMatched": "{count, plural, one {# automatycznie dopasowany} few {# automatycznie dopasowane} other {# automatycznie dopasowanych}}",
         "clockodoUser": "Użytkownik Clockodo",
         "continue": "Kontynuuj",
@@ -248,14 +250,21 @@
       "linkError": "Nie udało się wygenerować kodu linku",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Skopiowano kod powiązania",
+        "codeExpired": "Wygasł — wygeneruj nowy kod",
+        "copyCode": "Skopiuj kod powiązania",
+        "copyFailed": "Nie udało się skopiować kodu powiązania. Zaznacz go i skopiuj ręcznie.",
         "description": "Połącz swoje konto Telegram, aby otrzymywać osobiste powiadomienia.",
+        "expiresIn": "{minutes, plural, one {Wygasa za # minutę} few {Wygasa za # minuty} other {Wygasa za # minut} }",
         "generateCode": "Wygeneruj kod linku",
         "instructions": "Wyślij to polecenie do bota na Telegramie:",
         "linkedStatus": "Twoje konto Telegram jest połączone",
+        "regenerateCode": "Wygeneruj nowy kod",
         "title": "Konto Telegram"
       },
       "notConfigured": "Telegram nie jest skonfigurowany dla tej organizacji. Skontaktuj się z administratorem.",
       "saved": "Ustawienia Telegram zostały zapisane",
+      "saveError": "Nie udało się zapisać ustawień Telegrama. Spróbuj ponownie.",
       "status": {
         "active": "Aktywne"
       },

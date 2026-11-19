@@ -96,11 +96,12 @@
         "year": "Jahr"
       },
       "history": {
-        "description": "Frühere DATEV-Exporte ansehen und herunterladen",
+        "descriptionAllFormats": "Frühere Lohnabrechnungsexporte ansehen und herunterladen",
         "download": "Export herunterladen",
         "downloadError": "Download-URL konnte nicht abgerufen werden",
         "employees": "Mitarbeiter",
         "noExports": "Noch keine Exporte vorhanden",
+        "noExportsHint": "Starten Sie einen Lohnabrechnungsexport im Tab „Export“. Fertige Exporte erscheinen hier zum Herunterladen.",
         "payrollRun": "{count, plural, one {Abrechnungslauf: # Spesenabrechnung} other {Abrechnungslauf: # Spesenabrechnungen}}",
         "periods": "Zeiträume",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Wird verarbeitet"
         },
         "table": {
+          "actions": "Aktionen",
           "createdAt": "Erstellt",
           "dateRange": "Datumsbereich",
           "records": "Datensätze",
@@ -151,7 +153,8 @@
         "configureFirst": "Bitte konfigurieren Sie mindestens ein Lohnexportformat (DATEV, Lexware oder Sage), bevor Sie Zuordnungen einrichten.",
         "deleteDescription": "Sind Sie sicher, dass Sie diese Lohnartenzuordnung löschen möchten?",
         "deleteError": "Löschen der Zuordnung fehlgeschlagen",
-        "deleteMapping": "Zuordnung löschen",
+        "deleteMappingNamed": "Zuordnung für {name} löschen",
+        "deleteNamedDescription": "Lohnartenzuordnung für „{name}“ löschen?",
         "deleteSuccess": "Zuordnung gelöscht",
         "deleteTitle": "Zuordnung löschen",
         "description": "Beschreibung",
@@ -335,7 +338,8 @@
         "name": "Mitarbeiter",
         "noNumber": "Nicht festgelegt",
         "personnelIdentifier": "Personalkennung",
-        "personnelNumber": "Personalnummer"
+        "personnelNumber": "Personalnummer",
+        "unnamed": "Unbenannter Mitarbeiter"
       },
       "checks": {
         "count": "Anzahl",
@@ -364,6 +368,13 @@
       },
       "description": "Prüfen Sie, ob ein Lohnabrechnungszeitraum bereit ist, bevor Sie Zeit-, Abwesenheits- und Lohndaten exportieren.",
       "openPayrollExport": "Lohnabrechnungsexport öffnen",
+      "period": {
+        "currentMonth": "Aktueller Monat",
+        "navLabel": "Abrechnungszeitraum",
+        "previousMonth": "Vorheriger Monat",
+        "scope": "Abrechnungszeitraum: {period} (UTC)",
+        "showMonth": "{month} anzeigen"
+      },
       "status": {
         "blocked": "Blockiert",
         "ready": "Bereit für Lohnabrechnung",

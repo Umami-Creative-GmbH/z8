@@ -50,6 +50,7 @@
       "retry": "Réessayer {choice}",
       "unavailable": "{choice} non disponible"
     },
+    "clockedIn": "Pointé",
     "clockedOutSuccess": "Vous avez pointé votre départ !",
     "clockIn": "Pointer l'entrée",
     "clockingIn": "Pointage de l'entrée...",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Pointage de départ enregistré sur cet appareil mais non envoyé. Vérifiez les enregistrements sauvegardés.",
     "clockOutSuccess": "Sortie pointée avec succès",
     "clockStatus": {
+      "clockedOut": "Non pointé",
       "loading": "Chargement du statut de pointage",
       "retry": "Réessayer le statut de pointage",
       "unavailable": "Statut de pointage indisponible"
@@ -301,6 +303,8 @@
         "wrong": "Ce code PIN est incorrect. Réessayez."
       },
       "queue": {
+        "awaiting": "Pointages en attente de confirmation : {count}",
+        "checking": "Vérification des actions soumises : {count}",
         "dismiss": "Ignorer",
         "reason": {
           "contact": "La dernière connexion de la borne n'a pas pu être confirmée.",
@@ -311,6 +315,7 @@
           "pin": "Le code PIN n'a pas été accepté.",
           "time": "Son heure n'a pas pu être acceptée."
         },
+        "recovery": "La borne vérifie à nouveau automatiquement lorsqu'elle peut joindre Z8. Ne répétez pas une action dont le résultat est inconnu.",
         "refused": "{name} : {action} à {time}, enregistré hors ligne, n'a pas été accepté. {reason}",
         "title": "Pointages hors ligne non acceptés"
       },
@@ -335,6 +340,9 @@
         "description": "Cette borne ne peut plus être utilisée pour le pointage. Veuillez contacter votre administrateur.",
         "pairAgain": "Associer avec un nouveau code",
         "title": "Borne révoquée"
+      },
+      "scope": {
+        "zone": "Heure de la borne : {zone}"
       },
       "state": {
         "clockedIn": "Pointé depuis {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Aucune catégorie (100 %)",
     "noProject": "Aucun projet",
+    "notClockedIn": "Non pointé",
     "notesPlaceholder": "Sur quoi avez-vous travaillé ?",
     "notesSaved": "Notes enregistrées",
+    "onBreak": "En pause",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Une demande d'absence pour {dates} est en attente de décision.",
@@ -497,6 +507,14 @@
       "withdrawn": "Soumission retirée",
       "withdrawRefused": "Cette soumission a déjà fait l'objet d'une décision et ne peut plus être retirée."
     },
+    "policy": {
+      "fixedDays": "Jours fixes au bureau : {days}",
+      "flexible": "Politique de bureau flexible pour cette période",
+      "homeOfficeLeft": "Jours de télétravail restants",
+      "officeRequired": "Jours au bureau encore requis",
+      "requirementWarning": "Le nombre de jours requis au bureau dépasse les jours ouvrés restants",
+      "unavailable": "La politique de lieu de travail est indisponible."
+    },
     "project": "Projet",
     "quickBreak": {
       "addBreak": "Ajouter une pause",
@@ -535,6 +553,7 @@
       "title": "Rappels de session"
     },
     "startedAt": "Commencé à",
+    "statusUnavailable": "Le statut de pointage est indisponible. Actualisez pour réessayer.",
     "summary": {
       "dayOfRequired": "{date} : {worked} sur {required}",
       "dayWorked": "{date} : {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} de majoration",
       "thisMonth": "Ce mois-ci",
       "thisWeek": "Cette semaine",
+      "title": "Résumé du temps de travail",
       "today": "Aujourd'hui",
       "todayOfRequired": "{worked} sur {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Actuellement : {worked} travaillés sur {required} requis à ce jour. Précédemment : {previousWorked} travaillés sur {previousRequired} requis.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Mise à jour du total… Utilisez Actualiser pour réessayer s'il reste indisponible.",
       "vsLastMonth": "par rapport au mois dernier",
       "vsLastWeek": "par rapport à la semaine dernière"
     },
+    "systemNote": {
+      "breakEnforcement": "Ajustement automatique : application des pauses"
+    },
     "table": {
       "active": "Actif",
+      "allEntries": "Toutes les entrées",
       "approved": "Entrée de temps approuvée",
       "approveEntry": "Approuver l'entrée",
       "approveFailed": "Échec de l'approbation de l'entrée",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Détails de conduite manquants",
       "duration": "Durée",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
+      "entryCount": "{count, plural, one {# entrée} other {# entrées}}",
+      "groupedByDay": "Regroupé par jour",
+      "incompleteDay": "Inclut les entrées actives ou incomplètes",
       "missingTask": "Tâche manquante",
       "missingTaskHint": "Ce projet nécessite une tâche : ajoutez-en une à cette saisie dans le calendrier.",
+      "offsetContext": "Les heures de début et de fin utilisent le décalage UTC local enregistré pour chaque entrée. Les en-têtes de jour suivent le fuseau horaire de votre calendrier : {timezone}.",
       "recordedLocalTime": "Heure locale enregistrée",
       "rowActions": "Actions sur les entrées de temps",
       "title": "Entrées de temps",
@@ -586,62 +615,64 @@
       "search": "Rechercher des tâches…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Après-midi",
+        "fullDay": "Journée complète",
+        "morning": "Matin"
+      },
       "dayPicker": "Sélecteur de jour de la chronologie",
       "emptyDescription": "Il n'y a pas encore de quarts de travail, d'absences ou d'entrées de temps pour le jour sélectionné.",
       "emptyTitle": "Aucune activité enregistrée pour ce jour.",
+      "link": {
+        "reviewRequest": "Examiner la demande",
+        "viewAbsence": "Afficher l'absence"
+      },
+      "monthPicker": "Sélectionner un jour du calendrier",
       "nextDay": "Jour suivant",
       "previousDay": "Jour précédent",
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Demande d'absence"
+        },
+        "timeCorrection": {
+          "subtitle": "Correction d'une entrée de temps",
+          "title": "Demande de correction de temps"
+        }
+      },
+      "shift": {
+        "title": "Quart planifié"
+      },
+      "status": {
+        "active": "Actif",
+        "approved": "Approuvé",
+        "cancelled": "Annulé",
+        "draft": "Brouillon",
+        "pending": "En attente",
+        "published": "Publié",
+        "rejected": "Rejeté"
+      },
       "title": "Chronologie de la journée de travail",
       "today": "Aujourd'hui",
       "unavailableDescription": "Le suivi du temps fonctionne toujours. Essayez d'actualiser cette vue plus tard.",
       "unavailableTitle": "Chronologie indisponible",
-      "workPeriod": {
-        "title": "Travail enregistré"
-      },
-      "shift": {
-        "title": "Poste planifié"
-      },
-      "status": {
-        "approved": "Approuvé",
-        "pending": "En attente",
-        "rejected": "Refusé",
-        "cancelled": "Annulé",
-        "published": "Publié",
-        "draft": "Brouillon",
-        "active": "Actif"
-      },
-      "absence": {
-        "fullDay": "Journée entière",
-        "morning": "Matin",
-        "afternoon": "Après-midi"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Demande de correction de temps",
-          "subtitle": "Correction d'une saisie de temps"
-        },
-        "absence": {
-          "title": "Demande d'absence",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Voir l'absence",
-        "reviewRequest": "Examiner la demande"
-      },
       "warning": {
-        "pendingEdit": {
-          "title": "Demande de modification en attente",
-          "description": "Cette période de travail comporte des modifications en attente d'approbation."
+        "autoAdjusted": {
+          "description": "Les règles de pause ou de conformité ont ajusté cette période de travail.",
+          "title": "Enregistrement ajusté automatiquement"
         },
         "missingClockOut": {
-          "title": "Pointage de sortie manquant",
-          "description": "Cette période de travail est toujours active."
+          "description": "Cette période de travail est toujours active.",
+          "title": "Pointage de sortie manquant"
         },
-        "autoAdjusted": {
-          "title": "Saisie ajustée automatiquement",
-          "description": "Des règles de pause ou de conformité ont ajusté cette période de travail."
+        "pendingEdit": {
+          "description": "Cette période de travail comporte des modifications en attente d'approbation.",
+          "title": "Demande de modification en attente"
         }
+      },
+      "weekPicker": "Sélectionner un jour de la semaine",
+      "workPeriod": {
+        "title": "Travail enregistré"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Veuillez vérifier l'utilisation du véhicule"
       }
     },
-    "welcomeBack": "Ravi de vous revoir, {name}",
     "workCategory": "Catégorie de travail",
     "workLocation": "Lieu de travail",
     "workLocationHome": "Domicile",
     "workLocationOffice": "Bureau",
     "workLocationOther": "Autre",
-    "workLocationRemote": "À distance",
-    "systemNote": {
-      "breakEnforcement": "Ajusté automatiquement : application des pauses"
-    }
+    "workLocationRemote": "À distance"
   },
   "wellness": {
     "water": {

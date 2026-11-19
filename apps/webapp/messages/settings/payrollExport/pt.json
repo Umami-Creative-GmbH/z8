@@ -96,11 +96,12 @@
         "year": "Ano"
       },
       "history": {
-        "description": "Ver e baixar exportações DATEV anteriores",
+        "descriptionAllFormats": "Visualizar e baixar exportações de folha de pagamento anteriores",
         "download": "Baixar exportação",
         "downloadError": "Falha ao obter URL de download",
         "employees": "funcionários",
         "noExports": "Nenhuma exportação ainda",
+        "noExportsHint": "Inicie uma exportação de folha de pagamento na aba Exportar. As exportações concluídas aparecerão aqui para download.",
         "payrollRun": "{count, plural, one {Processamento da folha: # relatório de despesas} other {Processamento da folha: # relatórios de despesas}}",
         "periods": "períodos",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Processando"
         },
         "table": {
+          "actions": "Ações",
           "createdAt": "Criado",
           "dateRange": "Intervalo de datas",
           "records": "Registros",
@@ -151,7 +153,8 @@
         "configureFirst": "Configure pelo menos um formato de exportação de folha de pagamento (DATEV, Lexware ou Sage) antes de configurar os mapeamentos.",
         "deleteDescription": "Tem certeza de que deseja excluir este mapeamento de tipo de salário?",
         "deleteError": "Falha ao excluir o mapeamento",
-        "deleteMapping": "Excluir mapeamento",
+        "deleteMappingNamed": "Excluir mapeamento para {name}",
+        "deleteNamedDescription": "Excluir o mapeamento de tipo de salário para \"{name}\"?",
         "deleteSuccess": "Mapeamento excluído",
         "deleteTitle": "Excluir mapeamento",
         "description": "Descrição",
@@ -335,7 +338,8 @@
         "name": "Funcionário",
         "noNumber": "Não definido",
         "personnelIdentifier": "Identificador de pessoal",
-        "personnelNumber": "Número de pessoal"
+        "personnelNumber": "Número de pessoal",
+        "unnamed": "Funcionário sem nome"
       },
       "checks": {
         "count": "Contagem",
@@ -364,6 +368,13 @@
       },
       "description": "Verifique se um período de folha de pagamento está pronto antes de exportar dados de tempo, ausência e folha de pagamento.",
       "openPayrollExport": "Abrir exportação da folha de pagamento",
+      "period": {
+        "currentMonth": "Mês atual",
+        "navLabel": "Período da folha de pagamento",
+        "previousMonth": "Mês anterior",
+        "scope": "Período da folha de pagamento: {period} (UTC)",
+        "showMonth": "Mostrar {month}"
+      },
       "status": {
         "blocked": "Bloqueado",
         "ready": "Pronto para a folha de pagamento",

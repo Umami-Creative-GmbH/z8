@@ -35,7 +35,6 @@
         "previousWeekDesc": "Eksporto të dhënat nga java e mëparshme (Hën-Dje)"
       },
       "deleteDialog": {
-        "cancel": "Anulo",
         "confirm": "Fshi",
         "description": "Jeni të sigurt që dëshironi të fshini \"{name}\"? Ky veprim nuk mund të zhbëhet.",
         "title": "Fshi eksportin e planifikuar"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Fshirja dështoi",
         "loadFailed": "Ngarkimi i eksporteve të planifikuara dështoi",
-        "toggleFailed": "Ndryshimi i gjendjes dështoi"
+        "retry": "Provo përsëri"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Pronari i orarit, {owner}, nuk është më administrator i organizatës. Bëni fillimisht veten ose një administrator tjetër të organizatës pronar të tij."
       },
       "filters": {
         "allEmployees": "Të gjithë punonjësit",
@@ -284,8 +286,9 @@
         "paused": "Pezulluar",
         "schedule": "Planifikimi",
         "status": "Statusi",
-        "title": "Planifikimet aktive",
-        "type": "Lloji"
+        "titleAll": "Oraret",
+        "type": "Lloji",
+        "unknownOwner": "Pronar i panjohur"
       },
       "title": "Eksportet e planifikuara",
       "toast": {

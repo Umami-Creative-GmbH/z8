@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "Configure who approves requests, when overdue approvals escalate, and which approval issues need follow-up."
+    },
     "approvalTriage": {
       "correctionError": "Enter a whole number from 0 to 60 minutes.",
       "correctionHelp": "Zero disables the small-correction fast lane, including zero-delta edits. Otherwise use 1–60 minutes; all required evidence must still be verified.",
@@ -138,6 +141,7 @@
           "defaultTax": "Default: {treatment}",
           "description": "Link each customer to its existing contact in the accounting tool before its first hand-off, and override the tax treatment where needed.",
           "edit": "Edit",
+          "editAction": "Edit accounting for {name}",
           "empty": "No customers yet",
           "inactive": "Inactive",
           "notLinked": "Not linked",
@@ -157,6 +161,8 @@
           "start": "Import customers"
         },
         "keyMissing": "The API key is missing from the secret store. Replace the connection with a new key.",
+        "loadFailed": "The accounting settings could not be loaded.",
+        "loading": "Loading accounting settings",
         "netPrices": {
           "label": "This sevdesk account enters invoice prices as net prices",
           "required": "Z8 hands off net prices. Confirm that sevdesk enters prices as net prices"
@@ -225,6 +231,7 @@
         "employeeTitle": "Cost rate",
         "empty": "No cost rate yet. Margin for this employee's work shows as cost unknown.",
         "history": "History",
+        "historyAction": "History of the cost rate for {name}",
         "hourly": "Hourly",
         "inactive": "Inactive",
         "intro": "A cost rate is an employee's fully loaded internal cost per hour in {currency}, used for margin. It is separate from the wage: changing one never changes the other.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/h",
         "saved": "Cost rate saved",
         "set": "Set cost rate",
+        "setAction": "Set cost rate for {name}",
         "setRateHelp": "The new cost rate applies from this date until the next change. It never changes the wage, payroll or hourly earnings.",
         "startsOn": "Starts {date}",
         "today": "Today",
@@ -378,11 +386,14 @@
           "empty": "No hand-offs yet",
           "gone": "Deleted in the tool",
           "open": "Open",
+          "openAction": "Open hand-off for {name}, {period}",
           "period": "Period",
           "status": "Status",
           "title": "Hand-offs",
           "total": "Net total"
         },
+        "loadFailed": "The hand-offs could not be loaded.",
+        "loading": "Loading hand-offs",
         "marks": {
           "compare": "Compare",
           "compareItem": "Compare {item}",
@@ -495,6 +506,9 @@
         "customerRate": "Billable rate",
         "customerRateTitle": "Billable rate for {name}",
         "dateRequired": "Choose the first day it applies",
+        "deletedCustomer": "Deleted customer",
+        "deletedEmployee": "Deleted employee",
+        "deletedProject": "Deleted project",
         "effectiveFrom": "Applies from",
         "employee": "Employee",
         "employeeProjectRateFor": "Billable rate for {name} on this project",
@@ -511,10 +525,13 @@
         "endsFrom": "No longer applies from",
         "for": "For",
         "history": "History",
+        "historyAction": "History of the rate for {name}",
         "hourlyRate": "Hourly rate",
         "inEffect": "In effect",
         "inEffectTodayHint": "In effect today: {rate}",
         "intro": "Rates are in {currency} per hour. For each piece of work the most specific rate in effect on the day it started applies: employee on a project, then project, then customer, then employee.",
+        "invalidDate": "Enter a valid date.",
+        "invalidRate": "Enter a positive hourly rate with at most two decimals.",
         "level": {
           "customer": "Customer",
           "customerDescription": "Applies to work on the customer's projects without a project rate.",
@@ -542,6 +559,8 @@
         "setRate": "Set rate",
         "setRateHelp": "The new rate applies from this date until the next rate change. Earlier dates reprice work that is not invoiced yet.",
         "startsOn": "Starts {date}",
+        "switchedOff": "Billable Time is switched off.",
+        "targetNotFound": "The employee, project or customer was not found.",
         "today": "Today",
         "unchanged": "That rate already applies"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Manage your subscription, payment methods, and invoices",
       "title": "Billing & Subscription"
+    },
+    "breadcrumbs": {
+      "label": "Settings breadcrumb"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "No month has been closed yet.",
       "historyTitle": "History",
+      "loadErrorDescription": "Reload the page to try again.",
+      "loadErrorTitle": "Closed months could not be loaded",
       "locationNotFound": "This location no longer exists.",
       "monthsDescription": "Closing a month freezes its work, attribution and absences for payroll. Notes stay editable.",
       "monthsTitle": "Months",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Review and manage compliance exception requests from team members",
+      "metadata": {
+        "description": "Configure ArbZG compliance settings and manage exception requests",
+        "title": "Compliance Settings | ArbZG"
+      },
       "title": "ArbZG Compliance"
     },
     "customDomains": {
       "title": "Domain & Branding"
     },
     "customers": {
+      "accountingAction": "Accounting for {name}",
       "column": {
+        "actions": "Actions",
         "contactPerson": "Contact Person",
         "email": "Email",
         "name": "Company Name",
@@ -643,11 +673,13 @@
       "create": "Add Customer",
       "created": "Customer created",
       "createFailed": "Failed to create customer",
-      "deleted": "Customer deleted",
+      "deleteAction": "Delete {name}",
       "delete": {
+        "confirm": "Delete {name}",
         "description": "Are you sure you want to delete \"{name}\"? Projects assigned to this customer will keep working but the customer reference will be removed.",
         "title": "Delete Customer"
       },
+      "deleted": "Customer deleted",
       "deleteFailed": "Failed to delete customer",
       "description": "Manage customer contacts for project assignments",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Edit Customer",
         "save": "Save Changes"
       },
+      "edit": "Edit customer",
+      "editAction": "Edit {name}",
       "empty": {
         "description": "Add your first customer to assign them to projects.",
         "title": "No customers yet"
@@ -680,6 +714,7 @@
         "description": "{count} customers total",
         "title": "All Customers"
       },
+      "loadFailed": "Customers could not be loaded. Check your connection and try again.",
       "managerNoProjects": "No managed projects available. Create or manage a project before adding customers.",
       "projectRequired": "Select a project first",
       "title": "Customers",
@@ -905,7 +940,7 @@
         "columnDate": "Date",
         "columnSize": "Size",
         "columnStatus": "Status",
-        "deleteDialogDescription": "Are you sure you want to delete this export? This action cannot be undone.",
+        "deleteDialogDescriptionNamed": "Delete the export created on {date} at {time}? This action cannot be undone.",
         "deleteDialogTitle": "Delete Export",
         "deleteError": "Failed to delete export",
         "deleteSuccess": "Export deleted",
@@ -914,7 +949,7 @@
         "downloadError": "Failed to download",
         "downloadSuccess": "Download started",
         "emptyDescription": "No exports yet",
-        "emptyHint": "Create your first export using the form above",
+        "emptyHintNewExportTab": "Create your first export on the New Export tab.",
         "moreCategories": "+{count} more",
         "statusCompleted": "Completed",
         "statusFailed": "Failed",
@@ -935,6 +970,7 @@
         "connectionFailed": "Connection Failed",
         "connectionSuccess": "Connection Successful",
         "deleteDialogDescription": "Are you sure you want to delete this storage configuration?",
+        "deleteDialogDescriptionNamed": "Delete the storage configuration for bucket \"{bucket}\"?",
         "deleteDialogTitle": "Delete Configuration",
         "deleteError": "Failed to delete configuration",
         "deleteSuccess": "Configuration deleted",
@@ -962,7 +998,7 @@
         "verified": "Verified"
       },
       "storageNotConfigured": {
-        "description": "Configure S3 storage before creating exports",
+        "descriptionWithTab": "Configure S3 storage on the Storage Settings tab before creating exports.",
         "title": "Storage Not Configured"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "Granted by {actor} at {time}",
         "editor": "Verifier scope",
         "empty": "No verifier responsibilities assigned",
+        "failed": "Could not update or access driving licence verifier responsibility. Check your permissions and selections.",
         "formerEmployee": "Former employees can't be added. Choose employees on the current roster.",
         "history": "Responsibility history",
         "historyEntry": "Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
@@ -990,6 +1027,7 @@
         "myUntil": "Your responsibility ends after {date} ({timezone}).",
         "none": "You have no current driving licence verifier responsibility.",
         "noTeams": "No teams available",
+        "notEnabled": "Driving licence checks are not switched on for this organization.",
         "person": "Verifier",
         "revoked": "Verifier responsibility revoked",
         "revokeDescription": "The verifier immediately loses access to checks in this scope. A new grant is required to restore responsibility.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "Email templates",
       "empty": "No email templates are available for this organization.",
-      "eyebrow": "Operational communications",
       "reset": "Email template reset to system template",
+      "resetDialog": {
+        "confirm": "Reset template",
+        "description": "This deletes your organization's custom subject and body for this email. Emails sent afterwards use the system template.",
+        "title": "Reset “{template}” to the system template?"
+      },
       "resetFailed": "Failed to reset email template",
       "saved": "Email template saved",
       "saveFailed": "Failed to save email template",
@@ -1276,6 +1318,7 @@
       "savedPending": "Employment date saved. Work balances are being refreshed.",
       "savedRefreshFailed": "Employment date saved. Reload this page to refresh the displayed results.",
       "saveFailed": "Could not save this correction. Generate a new preview and try again.",
+      "stalePreview": "The reviewed employment or configuration changed. Generate a new preview.",
       "title": "Correct actual employment start",
       "total": "Total before usage",
       "unknown": "Not recorded",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {No outstanding returns} one {# outstanding return} other {# outstanding returns}}",
         "overdue": "{count, plural, other {# overdue}}",
+        "returns": "Employee returns",
+        "scope": "Authorized equipment for this employee",
         "title": "Employee equipment"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Open equipment overview",
       "overview": {
+        "asOf": "As of {date} ({timezone})",
         "description": "Who holds each item, what must come back, and every recorded handover.",
-        "failed": "Equipment could not be loaded. Reload the page to try again."
+        "failed": "Equipment could not be loaded. Reload the page to try again.",
+        "scope": "Your authorized equipment records",
+        "summaryScope": "Returns and readiness in your scope"
       },
       "personal": {
         "closed": "Returned & closed",
@@ -1701,6 +1749,7 @@
         "failed": "Your equipment could not be loaded. Reload the page to try again.",
         "keep": "Yours to keep",
         "quantity": "{count} issued",
+        "remaining": "{count} to return",
         "title": "My equipment",
         "toggleHistory": "Show handover history",
         "toReturn": "To return"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Back to Settings",
-        "tryAgain": "Try Again"
+        "backToSettings": "Back to Settings"
       },
       "description": "An error occurred while loading the settings page. This might be a temporary issue.",
-      "errorId": "Error ID: {digest}",
       "title": "Something went wrong"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "The assignment could not be updated. Try again.",
       "noEmployees": "No employee-specific settings",
       "noTeams": "No team-specific settings",
+      "organizationDefaultRemoved": "Organization default removed",
       "orgDescription": "Default setting for all employees unless overridden",
       "remove": "Remove {target}",
+      "removedFor": "Override removed for {name}",
       "valueFor": "{setting} for {target}"
+    },
+    "featureOff": {
+      "askAdmin": "Ask an organization admin to turn this on.",
+      "status": "Turned off for this organization",
+      "turnOn": "Turn on in Organization settings"
     },
     "group": {
       "account": "Account",
@@ -2221,12 +2275,21 @@
       "title": "Implementation checklist"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "Starting commit…"
+      },
       "csv": {
         "acceptSelected": "Accept selected valid rows",
         "applyMapping": "Apply mapping",
         "chooseSource": "Choose a source value",
         "chooseTarget": "Choose an existing record",
         "commit": "Commit accepted rows",
+        "commitConfirm": {
+          "confirm": "Import rows",
+          "description": "Importing creates completed work for the mapped employees, with the vehicle details the rows carry. It runs in the background. Rows that overlap existing work are not imported: an import never overwrites work.",
+          "irreversible": "An import cannot be undone. To change imported work afterwards, correct it in time tracking.",
+          "title": "{count, plural, one {Import # accepted row?} other {Import # accepted rows?}}"
+        },
         "committing": "Importing accepted rows…",
         "description": "Import one completed work period per row. Represent breaks as gaps between rows. Nothing is recorded until you review and accept it.",
         "download": "Download CSV template",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "Billable in Clockodo, but the Clockodo project is not mapped to a Z8 project."
         },
         "commitAccepted": "Commit accepted rows",
+        "commitConfirm": {
+          "confirm": "Commit rows",
+          "description": "Committing creates the records the accepted rows describe in this organization, such as time records, absences, employees, customers or settings, or links them where you chose to. It runs in the background. Rejected rows are not imported.",
+          "irreversible": "An import cannot be undone. To change committed records afterwards, edit them where they are managed.",
+          "title": "{count, plural, one {Commit # accepted row?} other {Commit # accepted rows?}}"
+        },
         "commitFailed": "Failed to start import commit",
         "commitQueued": "Queued {count} accepted rows for commit",
         "committing": "Committing...",
@@ -2393,6 +2462,7 @@
         },
         "title": "Import Review"
       },
+      "sourceTabs": "Import source",
       "supportedSources": "Import work from CSV files or connect supported providers such as Clockodo and Clockin.",
       "title": "Import Data"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Issue new code",
       "listDescription": "Each kiosk belongs to one location. Pair a device by opening the kiosk page on it and entering the pairing code.",
-      "listTitle": "Kiosks",
       "loadFailed": "Kiosks could not be loaded.",
       "neverSeen": "Never",
       "nfcFobReaderOn": "NFC fob reader on",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Assign an employee as a supervisor for this location",
       "assignEmployeeToSubarea": "Assign Employee to Subarea",
       "assignEmployeeToSubareaDescription": "Assign an employee as a supervisor for {subareaName}",
+      "assignmentRemovedFrom": "Removed {name} from {place}",
+      "assignmentRestored": "Restored {name}",
+      "assignmentRestoreFailed": "The assignment could not be restored",
       "backToList": "Back to Locations",
       "create": "Create Location",
       "created": "Location created",
@@ -2598,10 +2670,14 @@
       "deleted": "Location deleted",
       "deleteDescription": "Are you sure you want to delete this location? This will also delete all subareas and employee assignments.",
       "deleteFailed": "Failed to delete location",
+      "deleteNamedTitle": "Delete location {name}?",
       "deleteSubareaDescription": "Are you sure you want to delete this subarea? This will also remove all employee assignments.",
+      "deleteSubareaNamedTitle": "Delete subarea {name}?",
       "deleteSubareaTitle": "Delete Subarea",
       "deleteTitle": "Delete Location",
       "description": "Manage organization locations and subareas",
+      "detailLoadFailed": "This location could not be loaded",
+      "detailLoadFailedDescription": "It may have been deleted, or the connection failed. Try again or go back to the location list.",
       "details": "Location Details",
       "dialog": {
         "create": "Create Location",
@@ -2614,7 +2690,6 @@
       "employee": "Employee",
       "employeeAssigned": "Employee assigned",
       "employeeAssignFailed": "Failed to assign employee",
-      "employeeRemoved": "Employee removed",
       "employeeRemoveFailed": "Failed to remove employee",
       "field": {
         "active": "Active",
@@ -2635,7 +2710,10 @@
         "subareaName": "Name",
         "subareaNamePlaceholder": "e.g., Cashier, Storage, Bistro"
       },
+      "loadFailed": "Locations could not be loaded",
+      "loadFailedDescription": "Check your connection, then try again.",
       "name": "Name",
+      "nameRequired": "Name is required",
       "noAvailableEmployees": "All employees are already assigned to this location",
       "noAvailableEmployeesSubarea": "All employees are already assigned to this subarea",
       "noLocations": "No locations yet",
@@ -2671,6 +2749,9 @@
       "updated": "Location updated",
       "updateFailed": "Failed to update location"
     },
+    "mobileNav": {
+      "open": "Settings menu"
+    },
     "myData": {
       "aboutDownload": "Download it here while signed in. Files are deleted after 7 days.",
       "aboutEquipment": "Includes retained equipment assignments, conditions, notes, corrections, physical receipts, and lost or waived outcomes, with recoveries recorded separately.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "A ZIP file with everything this organization keeps about you, as JSON and CSV files with an explanation. It covers this organization only.",
       "exportTitle": "Personal data export",
       "listLabel": "Your exports",
+      "loadFailed": "Your data exports could not be loaded. Try again.",
       "noEmployeeRecord": "You have no employee record in this organization. To get a copy of the personal data it keeps about you, contact the organization's admins.",
+      "noExports": "You have not requested an export yet. Request one to download a copy of your data.",
       "refusalDailyLimit": "You can request one export of your data every 24 hours. Please try again later.",
       "refusalInProgress": "An export of your data is already being prepared. You'll be notified when it is ready.",
       "refusalStorage": "File storage is not set up for this organization yet. Please contact its admins.",
@@ -2697,7 +2780,14 @@
       "title": "My data",
       "unavailable": "My data is not available for your account in this organization."
     },
+    "nav": {
+      "disabledEntry": "{title} (disabled)",
+      "label": "Settings navigation"
+    },
     "navigation": {
+      "approval": {
+        "title": "Approval"
+      },
       "audit": {
         "activity": "Activity",
         "description": "Review activity and configure signed audit exports",
@@ -2757,7 +2847,8 @@
       "description": "Choose how and when you want to be notified",
       "digestTime": "Digest time",
       "discord": {
-        "description": "Configure Discord notifications for your organization."
+        "description": "Configure Discord notifications for your organization.",
+        "setupInstructions": "Connecting Discord from this page is not available yet. The connection needs your Discord application's bot token, application ID and public key."
       },
       "escalations": "Escalations",
       "escalationsDescription": "Escalate unanswered approval requests after the configured timeout.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "Failed to save {channelName} notification settings",
       "saveSettings": "Save Settings",
       "slack": {
+        "connect": "Connect Slack",
+        "connectFailed": "Slack connection could not be started. Try again.",
+        "connectUnavailable": "Slack is not available on this Z8 installation.",
         "description": "Configure Slack notifications for your organization."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Unknown status"
       },
       "teams": {
-        "description": "Configure Microsoft Teams notifications for your organization."
+        "description": "Configure Microsoft Teams notifications for your organization.",
+        "setupInstructions": "To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization."
       },
       "timeout": "Timeout",
+      "timeoutInvalid": "Enter a whole number of hours from 1 to 168.",
       "timezone": "Timezone",
-      "timezonePlaceholder": "Europe/Berlin…",
       "title": "Notification Settings"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "No passkeys configured",
       "emptyDescription": "Add a passkey to enable passwordless authentication",
       "loadError": "Failed to load passkeys",
+      "loading": "Loading passkeys",
       "title": "Passkeys",
       "unnamed": "Unnamed Passkey"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Choose a payroll officer and define whether they can access everyone or a specific scope.",
       "editTitle": "Edit payroll officer",
       "employees": "Employees",
+      "loading": "Loading payroll officer settings",
       "noGrants": "No payroll officers have been added yet.",
       "noScope": "No payroll scope assigned",
       "noTeams": "No teams available",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "The assignment was not saved",
-      "assignmentRemoved": "Assignment removed",
       "assignmentRemoveFailed": "The assignment was not removed",
       "assignmentSaved": "Assignment saved",
       "assignmentsDescription": "The most specific assignment wins: an employee's own assignment over their primary team's, and a team's over the whole organization's. Use “off” to exclude a team or employee.",
@@ -2883,6 +2979,7 @@
       "description": "Record positions with employees' own clock events, with their consent",
       "enabled": "Capture positions",
       "enabledDescription": "Switching this off stops capture for everyone. Recorded positions stay until their deletion date.",
+      "loadFailed": "Position capture settings could not be loaded",
       "noNotice": "No notice is published yet. Saving a purpose statement publishes version 1.",
       "noticeDescription": "What employees agree to: Z8's fixed text and your purpose statement. Editing the purpose or keeping positions longer publishes a new version; shortening retention does not.",
       "noticeTitle": "Position notice",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Every time someone else is shown your recorded positions, it is listed here.",
       "accessLogEmpty": "Nobody else has been shown your positions.",
       "accessLogExport": "Data export",
+      "accessLogLoadFailed": "The list of who saw your positions could not be loaded. Reload the page to try again.",
       "accessLogRemovedWorkPeriod": "A work period that no longer exists",
       "accessLogTitle": "Who saw your positions",
       "accessLogWorkPeriod": "Work period on {date}",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "You have not decided yet.",
       "consentWithdrawn": "You withdrew your consent on {date}.",
       "description": "Whether your position is recorded with your clock events, and your consent",
+      "loadFailed": "Your position stamp settings could not be loaded.",
       "noNotice": "Your organization has not published a position notice.",
       "noticeDescription": "This is what you agree to. A new version is published when the purpose changes or positions are kept longer.",
       "noticeTitle": "Position notice",
@@ -2954,6 +3053,7 @@
       "firstName": "First Name",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Clear selection",
         "female": "Female",
         "label": "Gender",
         "male": "Male",
@@ -2966,6 +3066,7 @@
       "lastName": "Last Name",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Failed to load profile",
+      "loadFailedDetail": "Your profile could not be loaded, so it cannot be edited right now. Try again.",
       "personalInformation": "Personal Information",
       "pronouns": "Pronouns",
       "pronouns.custom": "Custom pronouns",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Upload profile picture"
     },
     "projects": {
+      "budgetUsed": "Budget used",
       "column": {
+        "actions": "Actions",
         "budget": "Budget",
         "customer": "Customer",
         "deadline": "Deadline",
@@ -3002,6 +3105,12 @@
       "created": "Project created",
       "createFailed": "Failed to create project",
       "customerDeleted": "{name} (deleted)",
+      "deadline": {
+        "overdue": "{count, plural, one {# day overdue} other {# days overdue}}",
+        "remaining": "{count, plural, one {# day remaining} other {# days remaining}}",
+        "today": "Due today",
+        "tomorrow": "Due tomorrow"
+      },
       "description": "Manage projects, budgets, deadlines, and time assignments",
       "dialog": {
         "create": "Create Project",
@@ -3011,6 +3120,8 @@
         "editTitle": "Edit Project",
         "save": "Save Changes"
       },
+      "edit": "Edit project",
+      "editAction": "Edit {name}",
       "empty": {
         "description": "Create your first project to start tracking time against it.",
         "title": "No projects yet"
@@ -3061,6 +3172,7 @@
         "description": "{count} projects total",
         "title": "All Projects"
       },
+      "loadFailed": "Projects could not be loaded. Check your connection and try again.",
       "members": {
         "addManager": "Add project manager",
         "assignEmployee": "Assign employee",
@@ -3081,7 +3193,6 @@
         "noTeams": "No teams assigned",
         "remove": "Remove {name}",
         "removed": "{name} removed",
-        "removeFailed": "Failed to remove {name}",
         "selectEmployee": "Select an employee",
         "selectTeam": "Select a team",
         "teamAssigned": "Team assigned",
@@ -3099,6 +3210,13 @@
         "saved": "Template {name} saved",
         "submit": "Save as template",
         "title": "Save as template"
+      },
+      "status": {
+        "active": "Active",
+        "archived": "Archived",
+        "completed": "Completed",
+        "paused": "Paused",
+        "planned": "Planned"
       },
       "tabs": {
         "projects": "Projects",
@@ -3118,6 +3236,16 @@
         "edit": "Edit {name}",
         "editAction": "Edit {name}",
         "empty": "No tasks yet. Tasks let people say what in the project their time was spent on.",
+        "errors": {
+          "booked": "Time is booked to this task, so it can't be deleted.",
+          "descriptionTooLong": "The task description is too long.",
+          "duplicateName": "A task with this name already exists in this project.",
+          "estimateInvalid": "Enter the estimate as a positive number of hours.",
+          "nameRequired": "Enter a task name.",
+          "nameTooLong": "The task name is too long.",
+          "notAllowed": "You don't have access to manage the tasks of this project.",
+          "notFound": "This task no longer exists."
+        },
         "estimate": "Estimate: {hours} h",
         "field": {
           "description": "Description",
@@ -3167,7 +3295,6 @@
         "delete": "Delete",
         "deleteAction": "Delete {name}",
         "deleted": "{name} deleted",
-        "deleteFailed": "Failed to delete {name}",
         "deleteQuestion": "Delete this template?",
         "description": "Blueprints for new projects: tasks, budget, deadline, managers and members.",
         "dialogDescription": "New projects created from this template copy its contents once.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, one {# template} other {# templates}}",
         "listTitle": "All templates",
+        "loadFailed": "Project templates could not be loaded. Check your connection and try again.",
         "managers": {
           "empty": "No project managers",
           "picker": "Project manager to add",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobile",
         "tablet": "Tablet"
       },
+      "loadFailed": "Your active sessions could not be loaded. Try again.",
       "none": "No active sessions",
       "othersRevoked": "All other sessions revoked successfully",
       "revoke": "Revoke",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Revoke All Other Sessions",
       "revoked": "Session revoked successfully",
       "revokeFailed": "Failed to revoke session",
+      "revokeOthersDescription": "{count, plural, one {This signs you out on # other device. You stay signed in here.} other {This signs you out on # other devices. You stay signed in here.}}",
+      "revokeOthersTitle": "Revoke all other sessions?",
+      "revokeSession": "Revoke session: {session}",
+      "revokeSessionDescription": "This signs out {session}. Anyone using it must sign in again.",
+      "revokeSessionTitle": "Revoke this session?",
       "revoking": "Revoking…",
       "securityTip": "If you see a session you don't recognize, revoke it immediately and change your password.",
       "signedIn": "Signed in",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Connect",
       "connected": "Connected",
-      "connectedAs": "Connected as {accountId}",
+      "connectedOn": "Connected on {date}",
       "connectFailed": "Failed to connect account",
       "connecting": "Connecting…",
       "connectProvider": "Connect your {provider} account",
@@ -3364,8 +3498,9 @@
       "disconnect": "Disconnect",
       "disconnectDescription": "This will remove the link to your social account. You can reconnect it at any time.",
       "disconnectFailed": "Failed to disconnect account",
+      "disconnectProviderTitle": "Disconnect {provider}?",
       "disconnectSuccess": "Account disconnected successfully",
-      "disconnectTitle": "Disconnect Account?",
+      "linkedForSignIn": "Linked for sign-in",
       "loadFailed": "Failed to load connected accounts",
       "title": "Social Accounts",
       "unexpectedError": "An unexpected error occurred"
@@ -3391,6 +3526,7 @@
       "description": "View statistics and metrics about your instance",
       "lastUpdated": "Last updated",
       "loadError": "Failed to load statistics",
+      "loadErrorRetry": "Reload the page to try again.",
       "managerDescription": "Review read-only analytics for the teams you manage.",
       "sections": {
         "absenceBreakdown": "Absence Breakdown",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Effective To",
       "legacy": {
         "description": "Kept for reference only. These records were never used to calculate expenses and can no longer be edited; set up dated mileage rates above.",
+        "loadFailed": "Earlier policy records could not be loaded",
         "title": "Earlier policy records"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Archived",
       "archiveInstead": "Archive instead",
       "archiveNamed": "Archive {name}",
+      "count": "{count, plural, one {# vehicle} other {# vehicles}}",
       "delete": "Delete",
       "deleteConfirm": "Delete vehicle",
       "deleted": "Vehicle deleted",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Every member of an assigned team gets this vehicle suggested first."
       },
       "listDescription": "Archived vehicles can no longer be picked but stay on the work they were recorded on.",
-      "listTitle": "Vehicles",
       "loadFailed": "Vehicles could not be loaded.",
       "logbookNotice": {
         "description": "Z8 records which vehicle was driven during work and its odometer readings. It is not a tax-compliant logbook (Fahrtenbuch): readings can be corrected, and no trip purpose or business partner is recorded.",
         "title": "Not a tax logbook"
       },
+      "noActive": "No active vehicles. Add a vehicle or restore an archived one.",
       "noDrivers": "No assigned drivers",
       "photos": {
         "accessChanged": "Your access changed. Reopen vehicle settings to check your permissions.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} was recorded on work"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Assignment removed",
       "assignmentSaved": "Assignment saved",
       "assignmentsDescription": "Asked employees may record vehicle use when they clock. Employees with vehicle use expected are asked every time, and their work is flagged until the details are complete. Nobody is ever stopped from clocking. The most specific assignment wins: an employee's own over their primary team's, and a team's over the whole organization's.",
       "enabled": "Record vehicle use",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Choose who the assignment applies to.",
         "teamNotFound": "That team no longer exists."
       },
-      "loadFailed": "The vehicle use settings could not be loaded. Reload the page.",
+      "loadFailedRetry": "The vehicle use settings could not be loaded.",
       "mode": "Mode",
       "modeAsked": "Asked",
       "modeExpected": "Vehicle use expected",
@@ -3958,6 +4095,13 @@
       "description": "Configure water reminders and hydration tracking during your work sessions",
       "glasses": "glasses",
       "increaseDailyGoal": "Increase daily goal",
+      "loadFailed": "Your water reminder settings could not be loaded. Try again.",
+      "presets": {
+        "active": "Active",
+        "custom": "Custom",
+        "light": "Light",
+        "moderate": "Moderate"
+      },
       "reminderFrequency": "Reminder Frequency",
       "saved": "Wellness settings saved",
       "saveError": "Failed to save wellness settings",
@@ -4095,6 +4239,9 @@
         "hidden": "Hidden"
       },
       "absenceVisibility": "Absence visibility",
+      "accessSectionTitle": "Access and review exports",
+      "addLocation": "Add a location",
+      "addTeam": "Add a team",
       "description": "Configure privacy-safe works council access and review exports",
       "exportEnabled": "Enable review exports",
       "exportEnabledDescription": "Allow authorized works council users to generate privacy-filtered review packs.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Identity visibility",
       "minimumThreshold": "Minimum aggregation threshold",
       "minimumThresholdDescription": "Groups below this size are suppressed to reduce re-identification risk.",
+      "minimumThresholdInvalid": "Enter a whole number of at least 5",
+      "noLocationFound": "No location found",
+      "noLocationsAvailable": "No more locations to add",
+      "noTeamFound": "No team found",
+      "noTeamsAvailable": "No more teams to add",
+      "removeScopeItem": "Remove {name}",
       "save": "Save settings",
       "saved": "Works Council settings saved",
       "saveError": "Failed to save Works Council settings",
+      "searchLocations": "Search locations",
+      "searchTeams": "Search teams",
+      "selectedLocations": "Selected locations",
+      "selectedTeams": "Selected teams",
       "title": "Works Council Mode",
-      "visibleLocationIds": "Visible location IDs",
-      "visibleLocationIdsDescription": "Optional comma-separated location IDs. Leave empty to include all locations.",
-      "visibleTeamIds": "Visible team IDs",
-      "visibleTeamIdsDescription": "Optional comma-separated team IDs. Leave empty to include all teams."
+      "unknownLocation": "Unknown location ({shortId})",
+      "unknownTeam": "Unknown team ({shortId})",
+      "visibleLocations": "Visible locations",
+      "visibleLocationsDescription": "Leave empty to include all locations.",
+      "visibleTeams": "Visible teams",
+      "visibleTeamsDescription": "Leave empty to include all teams."
     }
   }
 }

@@ -75,8 +75,10 @@
         "title": "Tendencias analíticas",
         "viewFull": "Ver analíticas completas"
       },
+      "scope": "Informes de toda la plataforma",
       "sectionDescription": "Actualizado a partir de los datos actuales de la plataforma para el rango y el segmento seleccionados.",
       "sectionTitle": "Tendencias de análisis",
+      "seriesValues": "Ver valores de la serie",
       "title": "Análisis de la plataforma",
       "values": {
         "notAvailable": "No disponible"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "No se pudo confirmar el acceso a la plataforma.",
       "analytics": {
         "title": "Tendencias de análisis"
       },
-      "description": "Métricas de la plataforma y acciones rápidas",
+      "analyticsUnavailable": "Las analíticas de la plataforma no están disponibles. Inténtalo de nuevo.",
+      "confirmingAccess": "Confirmando acceso a la plataforma",
+      "groups": {
+        "access": "Gestión de accesos",
+        "billing": "Facturación y suscripciones",
+        "operations": "Operaciones de la plataforma"
+      },
+      "loadingAnalytics": "Cargando analíticas de la plataforma",
+      "loadingMetrics": "Cargando métricas de la plataforma",
       "metrics": {
         "bannedUsers": "Usuarios baneados",
         "bannedUsersDescription": "Acceso restringido",
@@ -295,6 +306,9 @@
         "totalUsers": "Usuarios totales",
         "totalUsersDescription": "Cuentas de plataforma registradas"
       },
+      "metricsUnavailable": "Las métricas de la plataforma no están disponibles. Inténtalo de nuevo.",
+      "platformDescription": "Revisa las cuentas, los espacios de trabajo y la actividad de toda la plataforma y, a continuación, abre un espacio de trabajo de administración.",
+      "platformTitle": "Resumen de la plataforma",
       "quickActions": {
         "billing": {
           "description": "Métricas de ingresos y estado de suscripción",
@@ -318,7 +332,7 @@
           "title": "Gestión de usuarios"
         }
       },
-      "title": "Resumen"
+      "refreshAccess": "Actualiza el resumen para confirmar el acceso a la plataforma antes de continuar."
     },
     "settings": {
       "actions": {

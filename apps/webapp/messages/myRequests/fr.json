@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Annuler",
+      "cancelled": "Demande annulée",
       "cancelling": "Annulation en cours…",
+      "cancelRequest": "Annuler la demande",
       "cancelRequestConfirmation": "Annuler cette demande ?",
+      "cancelRequestDescription": "Elle est retirée de l'examen et ne peut pas être rouverte. Pour redemander, soumettez une nouvelle demande.",
       "cancelRequestError": "Impossible d'annuler la demande.",
       "fix": "Corriger",
-      "notAvailable": "Non disponible",
+      "keepRequest": "Conserver la demande",
       "view": "Voir"
     },
     "all": {
-      "description": "Examinez les demandes concernant les absences, les corrections de temps et les dépenses.",
       "title": "Toutes les demandes"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Les demandes apparaîtront ici lorsqu'elles seront soumises ou chargées.",
+        "hint": "Essayez un autre terme de recherche, statut ou type.",
         "title": "Aucune demande ne correspond à vos filtres"
       },
       "none": {
         "description": "Les demandes apparaîtront ici lorsqu'elles seront soumises ou chargées.",
         "title": "Aucune demande pour le moment"
+      },
+      "unavailable": {
+        "description": "Réessayez les sources indisponibles pour vérifier vos demandes.",
+        "title": "Aucune demande chargée"
       }
     },
     "featureName": "voir vos demandes",
     "filters": {
       "allStatuses": "Tous les statuts",
       "allTypes": "Tous les types",
-      "approvedRequests": "Demandes approuvées",
-      "cancelledRequests": "Demandes annulées",
-      "description": "Filtrer chaque section de demande par texte, statut ou type de demande.",
-      "pendingRequests": "Demandes en attente",
-      "rejectedRequests": "Demandes rejetées",
+      "resultCount": "Affichage de {visible} sur {total} demandes",
       "search": "Rechercher",
-      "searchPlaceholder": "Rechercher par titre…",
+      "searchRequestsPlaceholder": "Titre, dates, montant ou motif…",
       "status": "Statut",
       "title": "Trouver des demandes",
       "type": "Type"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Cette demande n'est plus en attente ou ne peut pas être affichée ici. L'état de préparation de la période est en cours de revérification."
     },
+    "history": {
+      "request": "Demande"
+    },
     "inReview": {
-      "description": "Demandes en attente d'approbation ou de traitement.",
       "title": "En cours d'examen"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Note de frais de déplacement"
       }
     },
+    "scope": "Vos demandes d'absence, de correction de temps et d'anciennes notes de frais dans l'organisation active",
     "sourceError": {
       "absence": "Les demandes d'absence n'ont pas pu être chargées.",
       "timeCorrection": "Les demandes de correction de temps n'ont pas pu être chargées.",
       "title": "Certaines demandes n'ont pas pu être chargées.",
       "travelExpense": "Les demandes de frais de déplacement n'ont pas pu être chargées."
     },
-    "sourceTypes": {
-      "absence": "Absence",
-      "timeCorrection": "Temps",
-      "travelExpense": "Dépense"
-    },
     "status": {
       "approved": "Approuvé",
       "cancelled": "Annulé",
       "inReview": "En cours d'examen",
-      "pending": "En attente",
       "rejected": "Rejeté"
     },
-    "subtitle": "Suivez les demandes en attente, les corrections requises et les décisions récentes en un seul endroit.",
     "summary": {
       "ariaLabel": "Résumé des demandes",
-      "pending": "En attente",
       "recentDecisions": "Décisions récentes",
+      "recentWindow": "30 derniers jours",
       "requiredFixes": "Corrections requises",
       "totalLoaded": "Total chargé"
     },
     "title": "Mes demandes",
+    "types": {
+      "absence": "Absence",
+      "timeCorrection": "Correction de temps",
+      "travelExpense": "Frais de déplacement"
+    },
     "unavailableTitle": "Demandes indisponibles"
   }
 }

@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Konfigurerar din arbetsyta...",
+    "checkFailed": "Vi kunde inte kontrollera dina organisationer. Försök igen.",
     "checking": "Kontrollerar session...",
-    "clickToSelect": "Klicka för att välja",
     "redirecting": "Omdirigerar...",
+    "retry": "Försök igen",
+    "selectionHint": "Din arbetsyta öppnas efter valet.",
     "selectOrganization": "Välj organisation",
-    "selectOrganizationDescription": "Välj vilken organisation du vill arbeta med"
+    "selectOrganizationDescription": "Välj vilken organisation du vill arbeta med",
+    "title": "Öppna din arbetsyta"
   },
   "setup": {
     "authorization": {

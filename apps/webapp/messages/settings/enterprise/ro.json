@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Activ",
+      "contextRetry": "Reîmprospătați contextul organizației pentru a continua.",
+      "contextUnavailable": "Contextul organizației nu este disponibil",
+      "copyFailed": "Nu s-a putut copia cheia. Încercați din nou.",
       "copyKey": "Copiază cheia API",
       "copyPrefix": "Copiază prefixul",
       "create": "Creează cheie",
@@ -9,6 +12,7 @@
       "createdBy": "de {name}",
       "createDescription": "Creați o nouă cheie API pentru acces programatic. Cheia va fi afișată o singură dată.",
       "createdOn": "Creată la {date}",
+      "createFailed": "Nu s-a putut confirma crearea cheii. Reîmprospătați lista înainte de a încerca din nou.",
       "createTitle": "Creează cheie API",
       "creatorDeparted": "Plecat",
       "deleted": "Cheie API ștearsă",
@@ -24,6 +28,8 @@
         "creator": "Creat de",
         "creatorDeparted": "{name} (plecat)",
         "ip": "Adresă IP",
+        "kind": "Cheie API",
+        "loading": "Se încarcă cheia API",
         "noRateLimit": "Dezactivat",
         "noRequests": "Nicio cerere în ultimele 90 de zile.",
         "rateLimit": "Limitare a ratei",
@@ -80,13 +86,19 @@
         "scopes": "Permisiuni",
         "scopesRequired": "Selectați cel puțin o permisiune"
       },
+      "hideKey": "Ascundeți cheia",
       "keyCopied": "Cheia API a fost copiată în clipboard",
+      "keyHidden": "Cheie ascunsă",
       "lastUsed": "Ultima utilizare",
+      "loading": "Se încarcă cheile API",
       "name": "Nume",
       "neverExpires": "Nu expiră niciodată",
       "noPermissions": "Fără permisiuni",
       "prefix": "Prefix cheie",
       "prefixCopied": "Prefixul cheii a fost copiat",
+      "retryHelp": "Reîmprospătați această listă pentru a confirma cheile actuale. Înregistrările încărcate anterior sunt păstrate.",
+      "revealKey": "Afișați cheia",
+      "revokeUnknown": "Nu s-a putut confirma revocarea. Reîmprospătați lista înainte de a încerca din nou.",
       "scopeLabel": {
         "absencesRead": "Citire absențe",
         "absencesReadHealth": "Citire detalii medicale ale absențelor",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Important:",
       "status": "Stare",
       "title": "Chei API",
+      "unavailable": "Cheile API nu sunt disponibile",
+      "unavailableDescription": "Setările dvs. nu au putut fi încărcate. Reîncercați pentru a reîmprospăta această pagină.",
+      "unavailableTitle": "Accesul pentru dezvoltatori nu este disponibil",
       "unknownCreator": "un fost administrator",
       "updated": "Cheia API a fost actualizată",
+      "updateUnknown": "Nu s-a putut confirma actualizarea. Reîmprospătați această cheie înainte de a încerca din nou.",
       "usage": "{count} din {max} chei utilizate"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Adrese URL implicite",
         "defaultUrlsDescription": "Aceste adrese URL gestionate de platformă funcționează automat, fără configurare DNS personalizată.",
         "deleteAria": "Șterge domeniul personalizat {domain}",
+        "deleteConfirm": "Ștergeți domeniul",
         "deleted": "Domeniu șters",
         "deleteDescription": "Sigur doriți să ștergeți \"{domain}\"? Această acțiune nu poate fi anulată. Utilizatorii nu se vor mai putea conecta prin acest domeniu personalizat.",
         "deleteFailed": "Nu s-a putut șterge domeniul",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Lăsați necompletat pentru a păstra cheia existentă. Obțineți cheia API de pe resend.com",
         "create": "Creează configurația",
         "delete": "Șterge configurația",
-        "deleteConfirm": "Sigur doriți să ștergeți această configurație de e-mail?",
+        "deleteConfirmNamed": "Ștergeți configurația de e-mail pentru {fromEmail}? E-mailurile organizației vor utiliza din nou expeditorul implicit al sistemului.",
         "deleted": "Configurația de e-mail a fost ștearsă",
         "deleteFailed": "Ștergerea a eșuat",
+        "deleteTitle": "Ștergeți configurația de e-mail?",
         "description": "Configurați un furnizor de e-mail personalizat pentru organizația dvs. Toate e-mailurile organizației vor utiliza această configurație în locul celei implicite a sistemului.",
         "fromEmail": "E-mail expeditor",
         "fromName": "Nume expeditor",
@@ -356,10 +374,9 @@
           "title": "Domeniu"
         },
         "hero": {
-          "description": "Configurează SSO, SCIM și aplicarea obligatorie pentru organizația {organizationId} cu activare securizată.",
-          "eyebrow": "Identitate enterprise",
           "title": "Listă de verificare operațională"
         },
+        "progress": "{completed} din {total} pași finalizați",
         "provider": {
           "action": {
             "save": "Salvează furnizorul"
@@ -453,7 +470,6 @@
           },
           "description": "Verificarea SCIM se actualizează după ce furnizorul dvs. de identitate trimite un utilizator de test sau o modificare de grup.",
           "dialog": {
-            "cancel": "Anulează",
             "decommission": {
               "description": "Această acțiune dezafectează definitiv aprovizionarea SCIM și nu poate fi anulată.",
               "title": "Dezafectează SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Ștergerea configurației OAuth a eșuat",
         "description": "Configurați propriile date de autentificare OAuth pentru conectarea prin rețele sociale. Acest lucru permite utilizatorilor dumneavoastră să se conecteze folosind aplicațiile OAuth ale organizației în locul credențialelor partajate.",
         "developerConsole": "Consola pentru dezvoltatori {provider}",
+        "editAria": "Editați conectarea prin {provider}",
         "editDescription": "Actualizați datele de autentificare OAuth.",
         "editTitle": "Editare OAuth {provider}",
         "empty": "Nu este configurat niciun furnizor OAuth personalizat pentru rețele sociale.",
@@ -616,9 +633,11 @@
         "keyId": "ID cheie",
         "pasteYourP8PrivateKeyContents": "Lipiți conținutul cheii private .p8",
         "privateKey": "Cheie privată (.p8)",
+        "removeAria": "Eliminați conectarea prin {provider}",
         "removed": "OAuth {provider} a fost eliminat",
         "removeDialogDescription": "Sigur doriți să eliminați această configurație OAuth? Utilizatorii vor reveni la datele de autentificare OAuth partajate (dacă sunt disponibile).",
         "removeDialogTitle": "Eliminare furnizor OAuth pentru rețele sociale",
+        "removeDialogTitleNamed": "Eliminați conectarea prin {provider}?",
         "teamId": "ID echipă",
         "title": "Furnizori de autentificare prin rețele sociale",
         "unverified": "Neverificat",
@@ -629,8 +648,9 @@
         "addError": "Adăugarea furnizorului SSO a eșuat",
         "addSuccess": "Furnizorul SSO a fost adăugat cu succes",
         "addTitle": "Adăugare furnizor SSO",
+        "deleteConfirm": "Ștergeți furnizorul",
         "deleteDialogDescription": "Sigur doriți să ștergeți acest furnizor SSO? Utilizatorii nu se vor mai putea conecta folosind acest furnizor de identitate.",
-        "deleteDialogTitle": "Ștergere furnizor SSO",
+        "deleteDialogTitleNamed": "Ștergeți furnizorul SSO {provider}?",
         "deleteError": "Nu s-a putut șterge furnizorul SSO",
         "deleteProviderAria": "Ștergeți furnizorul SSO {provider}",
         "deleteSuccess": "Furnizorul SSO a fost șters",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Utilizatorii cu acest domeniu de e-mail vor putea utiliza SSO",
         "empty": "Nu există încă furnizori SSO configurați.",
         "emptyDescription": "Adăugați un furnizor OIDC pentru a activa autentificarea unică (SSO) de tip enterprise.",
+        "generateToken": "Generați token TXT",
         "guide": {
           "addDescription": "Urmați instrucțiunile de configurare ale furnizorului dvs., apoi conectați-l la organizația dvs.",
           "afterSave": "După salvare, verificați domeniul de e-mail folosind înregistrarea DNS TXT din Z8. Efectuați o conectare de test (pilot) cu un utilizator vizat, menținând deschisă sesiunea curentă de administrator. În configurarea asistată, salvați aceleași ID de furnizor și domeniu de e-mail afișate în lista furnizorilor, apoi înregistrați manual rezultatul conectării observate înainte de a lua în considerare opțiunea Solicitare SSO. Salvarea și verificarea DNS nu garantează o conectare reușită.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Un identificator unic pentru acest furnizor (litere mici, fără spații)",
         "providerIdInvalid": "ID-ul furnizorului trebuie să conțină doar litere mici, cifre și cratime",
         "title": "Furnizori de identitate",
-        "token": "Token",
         "tokenError": "Nu s-a putut genera tokenul de verificare a domeniului",
         "tokenGenerated": "Tokenul de verificare a fost generat",
         "txtToken": "Token TXT:",

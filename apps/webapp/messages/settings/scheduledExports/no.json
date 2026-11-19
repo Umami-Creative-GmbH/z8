@@ -35,7 +35,6 @@
         "previousWeekDesc": "Eksporter data fra forrige uke (man-søn)"
       },
       "deleteDialog": {
-        "cancel": "Avbryt",
         "confirm": "Slett",
         "description": "Er du sikker på at du vil slette \"{name}\"? Denne handlingen kan ikke angres.",
         "title": "Slett planlagt eksport"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Sletting mislyktes",
         "loadFailed": "Kunne ikke laste inn planlagte eksporter",
-        "toggleFailed": "Endring mislyktes"
+        "retry": "Prøv igjen"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Eieren av tidsplanen, {owner}, er ikke lenger organisasjonsadministrator. Gjør deg selv eller en annen organisasjonsadministrator til eier først."
       },
       "filters": {
         "allEmployees": "Alle ansatte",
@@ -284,8 +286,9 @@
         "paused": "Pauset",
         "schedule": "Tidsplan",
         "status": "Status",
-        "title": "Aktive tidsplaner",
-        "type": "Type"
+        "titleAll": "Tidsplaner",
+        "type": "Type",
+        "unknownOwner": "Ukjent eier"
       },
       "title": "Planlagte eksporter",
       "toast": {

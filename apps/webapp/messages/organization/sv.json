@@ -89,7 +89,13 @@
       "slugLabel": "Organisationsslug",
       "title": "Redigera organisation",
       "updateError": "Det gick inte att uppdatera organisationen",
-      "updateSuccess": "Organisationen har uppdaterats"
+      "updateSuccess": "Organisationen har uppdaterats",
+      "validation": {
+        "nameMax": "Namnet får inte innehålla fler än 100 tecken",
+        "nameMin": "Namnet måste innehålla minst 2 tecken",
+        "slugMax": "Sluggen får inte innehålla fler än 50 tecken",
+        "slugMin": "Sluggen måste innehålla minst 2 tecken"
+      }
     },
     "error": {
       "description": "Organisationsschemat kunde inte läsas in. Försök igen.",
@@ -395,6 +401,7 @@
     "switchTo": "Byt organisation",
     "teams": {
       "card": {
+        "actionsFor": "Åtgärder för {name}",
         "deleteTeam": "Ta bort team",
         "editTeam": "Redigera team",
         "fallbackManager": "Reservansvarig",
@@ -406,10 +413,10 @@
       "delete": "Ta bort team",
       "deleteDialogDescription": "Detta kommer att ta bort teamet \"{teamName}\" permanent.",
       "deleteDialogMembersWarning": "Varning: Detta team har {count} medlem(mar). De kommer att tas bort från teamet.",
+      "deleteDialogNamedTitle": "Ta bort teamet {name}?",
       "deleteDialogTitle": "Är du säker?",
       "deleteError": "Kunde inte ta bort teamet",
       "deleteSuccess": "Teamet har tagits bort",
-      "description": "Organisera dina anställda i team för bättre samarbete",
       "edit": {
         "description": "Uppdatera teamnamn och beskrivning",
         "descriptionLabel": "Beskrivning (valfritt)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Medlem har tagits bort från teamet",
         "selectEmployee": "Välj en anställd att lägga till",
         "title": "{teamName} - Teammedlemmar"
-      },
-      "title": "Team"
+      }
     },
     "timezone": {
       "balances-recalculating": "Arbetssaldon räknas om för den nya tidszonen och förblir dolda tills de är klara.",

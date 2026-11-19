@@ -39,11 +39,13 @@
       "byCostCenter": "Etter kostnadssted",
       "byManager": "Etter leder",
       "byTeam": "Etter team",
+      "chartValues": "Vis ukentlige verdier",
       "costCenter": "Kostnadssted",
       "currentOvertime": "Nåværende overtid",
       "description": "Følg ukentlig overtidsreduksjon på tvers av team.",
       "errors": {
-        "loadData": "Kunne ikke laste inn data for overtidsnedtrapping"
+        "loadData": "Kunne ikke laste inn data for overtidsnedtrapping",
+        "retryDescription": "Kunne ikke laste inn overtidsdata. Prøv den valgte perioden og filtrene på nytt."
       },
       "filters": {
         "allCostCenters": "Alle kostnadssteder",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Grupper i forbedring",
       "improvingGroupsDescription": "Grupper med synkende overtid",
+      "loading": "Laster inn overtidsdata",
       "manager": "Leder",
       "previousOvertime": "Tidligere overtid",
       "previousPeriodDescription": "Sammenlignet med forrige periode",
+      "refreshing": "Oppdaterer overtidsdata",
       "selectedRangeDescription": "For valgt datointervall og filtre",
       "title": "Burn-down for overtid",
       "trendDirection": "Trendretning",
@@ -92,6 +96,10 @@
         "title": "Flaskehalser for godkjenning",
         "unavailable": "Kunne ikke laste inn flaskehalser for godkjenning"
       },
+      "chartValues": "Vis diagramverdier",
+      "errors": {
+        "retryDescription": "Noen analysedata kunne ikke lastes inn. Tidligere innlastede verdier, hvis de vises, kan være utdaterte."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Av behandlede forespørsler godkjent",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Laster inn analysedata",
+      "refreshing": "Oppdaterer analyse…",
       "workHoursByTeam": {
         "description": "Totalt antall arbeidstimer registrert per team",
         "title": "Arbeidstimer per team"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Kunne ikke laste inn ytelsesdata for team"
       },
+      "loading": "Laster inn data for teamytelse",
       "onTrack": "I rute",
+      "refreshFailed": "Oppdatering mislyktes. Viser tidligere innlastede data for denne perioden. Eksport er utilgjengelig til et nytt forsøk lykkes.",
+      "refreshing": "Oppdaterer data for teamytelse",
       "variance": {
         "description": "Timeavvik fra forventet arbeidstid",
         "empty": "Ingen avviksdata tilgjengelig",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Allokert",
+      "allowanceMissing": "Kvote ikke konfigurert",
+      "allowanceSource": "Enkelte ansatte har ingen lagret kvote. Totaler bruker kun de eksisterende lagrede kvotene.",
       "balance": {
         "description": "Tildelte, brukte og gjenstående dager per ansatt",
         "title": "Feriesaldo"
       },
-      "daysRemaining": "{count} dager gjenstår",
-      "daysTaken": "{count} dager brukt",
+      "dayValue": "{count} dager",
+      "description": "Sammenlign feriebruk og ansattes saldoer for den valgte organisasjonsperioden.",
       "errors": {
-        "loadData": "Kunne ikke laste inn data for ferietrender"
+        "loadData": "Kunne ikke laste inn data for ferietrender",
+        "retryDescription": "Feriedata kunne ikke lastes inn. Prøv den valgte perioden på nytt."
       },
+      "loading": "Laster inn feriedata",
       "monthlyUsage": {
         "description": "Feriedager brukt per måned",
         "empty": "Ingen data for månedlig bruk tilgjengelig",
         "title": "Månedlig feriebruk"
       },
+      "monthlyValues": "Vis månedlige verdier",
       "peakMonths": {
         "description": "Måneder med høyest ferieaktivitet",
         "empty": "Ingen data for toppmåneder tilgjengelig",
         "title": "Toppmåneder for ferie"
       },
+      "refreshing": "Oppdaterer feriedata",
       "remaining": "Gjenstående",
       "taken": "Brukt",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Ingen data for daglige timer tilgjengelig",
         "title": "Daglige arbeidstimer"
       },
+      "dailyStatus": "Vis daglig status",
+      "dailyValues": "Vis daglige timer",
       "distribution": {
         "description": "Sammenligning av ansattes arbeidstimer (horisontal stolpe)",
         "empty": "Ingen fordelingsdata tilgjengelig",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Forventede timer",
       "hoursPerWeekAbbreviation": "t/uke",
+      "loading": "Laster inn analysedata for arbeidstid",
+      "refreshFailed": "Oppdatering mislyktes. Viser tidligere innlastede data for denne perioden. Eksport er utilgjengelig til et nytt forsøk lykkes.",
+      "refreshing": "Oppdaterer analysedata for arbeidstid",
       "variance": "Avvik",
       "varianceTrend": {
         "description": "Timeavvik fra forventet arbeidstid over tid",
         "empty": "Ingen trenddata tilgjengelig",
-        "title": "Trend for overtid og undertid"
+        "title": "Trend for overtid og undertid",
+        "unavailable": "Daglige timeverdier for overtid og undertid er utilgjengelige fra denne rapporten. Registrert daglig status vises nedenfor."
       }
     }
   }

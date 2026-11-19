@@ -75,8 +75,10 @@
         "title": "Analytik-Trends",
         "viewFull": "Vollständigi Analytik aaluege"
       },
+      "scope": "Plattformweites Reporting",
       "sectionDescription": "Aktualisiert mit aktuelle Plattformdate für de gwählti Ziitruum und Bereich.",
       "sectionTitle": "Analytik-Trends",
+      "seriesValues": "Reihenwerte anzeigen",
       "title": "Plattform-Analytik",
       "values": {
         "notAvailable": "Nöd verfügbar"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Der Plattformzugriff konnte nicht bestätigt werden.",
       "analytics": {
         "title": "Analytik-Trends"
       },
-      "description": "Plattform-Metrike und Schnell-Aktione",
+      "analyticsUnavailable": "Die Plattformanalysen sind nicht verfügbar. Versuchen Sie es erneut.",
+      "confirmingAccess": "Plattformzugriff wird bestätigt",
+      "groups": {
+        "access": "Zugriffsverwaltung",
+        "billing": "Abrechnung und Abonnemente",
+        "operations": "Plattformbetrieb"
+      },
+      "loadingAnalytics": "Plattformanalysen werden geladen",
+      "loadingMetrics": "Plattformkennzahlen werden geladen",
       "metrics": {
         "bannedUsers": "Gsperrti Benutzer",
         "bannedUsersDescription": "Zuegang verweigeret",
@@ -295,6 +306,9 @@
         "totalUsers": "Total Benutzer",
         "totalUsersDescription": "Registrierti Plattform-Kontene"
       },
+      "metricsUnavailable": "Plattformkennzahlen sind nicht verfügbar. Versuchen Sie es erneut.",
+      "platformDescription": "Prüfen Sie plattformweite Konten, Arbeitsbereiche und Aktivitäten und öffnen Sie anschliessend einen Administrations-Arbeitsbereich.",
+      "platformTitle": "Plattformübersicht",
       "quickActions": {
         "billing": {
           "description": "Umsatzmetrike und Abostatus",
@@ -318,7 +332,7 @@
           "title": "Benutzerverwaltig"
         }
       },
-      "title": "Übersicht"
+      "refreshAccess": "Aktualisieren Sie die Übersicht, um den Plattformzugriff zu bestätigen, bevor Sie fortfahren."
     },
     "settings": {
       "actions": {

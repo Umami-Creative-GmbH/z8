@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Godkänn",
       "approveLabel": "Godkänn {title}",
+      "decided": "Beslut sparat. Uppdatera för att läsa in den aktuella kön.",
       "description": "Förfrågningar som väntar på ett chefsbeslut.",
       "empty": "Inga godkännanden väntar.",
       "openInbox": "Öppna inkorgen",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Väntande godkännanden",
       "reject": "Avvisa",
       "rejectLabel": "Avvisa {title}",
+      "retry": "Försök godkänna igen",
       "title": "Godkännanden",
       "toast": {
         "approved": "Förfrågan godkänd",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Idag",
-      "description": "Granska de ärenden som kräver åtgärd idag och gå sedan direkt vidare till rätt arbetsflöde.",
+      "accessUnavailable": "Denna briefing är inte tillgänglig för den aktuella medarbetaren och organisationen.",
+      "contextFailed": "Det gick inte att kontrollera din nuvarande behörighet. Försök igen.",
+      "drivingUnavailable": "Körningsuppgifter kunde inte kontrolleras.",
+      "incomplete": "Vissa kontroller är inte tillgängliga. Granska felen i avsnitten; dessa resultat är ofullständiga.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Arbetsperioder för dina medarbetare som saknar ett fordon eller en mätarställning.",
           "title": "Körningsuppgifter saknas ({count})"
         }
       },
+      "loadFailed": "Det gick inte att läsa in briefingen. Försök igen.",
       "needsAction": {
         "description": "Börja här för den mest brådskande operativa uppföljningen.",
-        "empty": "Allt är klart. Ingen chefsåtgärd behövs just nu.",
+        "noExceptions": "Ingen operativ uppföljning identifierades i denna ögonblicksbild. Detta bekräftar inte medarbetares närvaro.",
         "title": "Kräver åtgärd"
       },
+      "partial": "Delvis",
+      "refreshFailed": "Det gick inte att uppdatera. Tidigare resultat visas; försök igen innan du vidtar åtgärder.",
+      "refreshing": "Uppdaterar briefingen. Tidigare resultat förblir synliga.",
+      "retainedSection": "Tidigare resultat visas. Försök igen för att söka efter ändringar.",
+      "retry": "Försök igen med briefing",
+      "retrySection": "Försök igen med {title}",
+      "scope": "Operativ uppföljning för de medarbetare du kan ha tillsyn över i den aktiva organisationen.",
       "sections": {
         "empty": "Inga problem upptäcktes."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Varning"
       },
+      "snapshot": "Ögonblicksbild uppdaterad {time}. Använd Uppdatera data för att söka efter ändringar.",
       "summaryAriaLabel": "Dagens sammanfattning",
       "supportingSectionsAriaLabel": "Stödjande avsnitt",
       "title": "Chefens dagliga genomgång",
-      "updatedAt": "{date} - Uppdaterad {time}"
+      "unavailable": "Inte tillgänglig"
     }
   }
 }

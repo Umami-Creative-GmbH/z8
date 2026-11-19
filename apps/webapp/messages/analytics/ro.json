@@ -39,11 +39,13 @@
       "byCostCenter": "După centrul de cost",
       "byManager": "După manager",
       "byTeam": "După echipă",
+      "chartValues": "Vizualizați valorile săptămânale",
       "costCenter": "Centru de cost",
       "currentOvertime": "Ore suplimentare curente",
       "description": "Urmăriți reducerea săptămânală a orelor suplimentare la nivelul echipelor.",
       "errors": {
-        "loadData": "Nu s-au putut încărca datele privind reducerea orelor suplimentare"
+        "loadData": "Nu s-au putut încărca datele privind reducerea orelor suplimentare",
+        "retryDescription": "Datele privind orele suplimentare nu au putut fi încărcate. Reîncercați perioada și filtrele selectate."
       },
       "filters": {
         "allCostCenters": "Toate centrele de cost",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Grupuri în îmbunătățire",
       "improvingGroupsDescription": "Grupuri cu ore suplimentare în scădere",
+      "loading": "Se încarcă datele privind orele suplimentare",
       "manager": "Manager",
       "previousOvertime": "Ore suplimentare anterioare",
       "previousPeriodDescription": "Comparativ cu perioada anterioară",
+      "refreshing": "Se reîmprospătează datele privind orele suplimentare",
       "selectedRangeDescription": "Pentru intervalul de date și filtrele selectate",
       "title": "Reducere ore suplimentare",
       "trendDirection": "Direcția tendinței",
@@ -92,6 +96,10 @@
         "title": "Blocaje de aprobare",
         "unavailable": "Blocajele de aprobare nu au putut fi încărcate"
       },
+      "chartValues": "Vizualizați valorile graficului",
+      "errors": {
+        "retryDescription": "Unele date de analiză nu au putut fi încărcate. Valorile încărcate anterior, dacă sunt afișate, pot fi neactualizate."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Din cererile soluționate au fost aprobate",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Se încarcă datele analitice",
+      "refreshing": "Se reîmprospătează datele de analiză…",
       "workHoursByTeam": {
         "description": "Total ore de lucru înregistrate per echipă",
         "title": "Ore de lucru după echipă"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Nu s-au putut încărca datele de performanță ale echipei"
       },
+      "loading": "Se încarcă datele privind performanța echipei",
       "onTrack": "În grafic",
+      "refreshFailed": "Reîmprospătarea a eșuat. Se afișează datele încărcate anterior pentru această perioadă. Exportul nu este disponibil până când reîncercarea nu reușește.",
+      "refreshing": "Se reîmprospătează datele privind performanța echipei",
       "variance": {
         "description": "Variația orelor față de orele de lucru prevăzute",
         "empty": "Nu sunt disponibile date despre variație",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Alocate",
+      "allowanceMissing": "Alocare neconfigurată",
+      "allowanceSource": "Unii angajați nu au nicio alocare salvată. Totalurile utilizează doar alocările salvate existente.",
       "balance": {
         "description": "Zile alocate, efectuate și rămase per angajat",
         "title": "Sold concediu"
       },
-      "daysRemaining": "{count} zile rămase",
-      "daysTaken": "{count} zile efectuate",
+      "dayValue": "{count} zile",
+      "description": "Comparați utilizarea concediilor și soldurile angajaților pentru perioada selectată a organizației.",
       "errors": {
-        "loadData": "Nu s-au putut încărca datele despre tendințele concediilor"
+        "loadData": "Nu s-au putut încărca datele despre tendințele concediilor",
+        "retryDescription": "Datele privind concediile nu au putut fi încărcate. Reîncercați perioada selectată."
       },
+      "loading": "Se încarcă datele privind concediile",
       "monthlyUsage": {
         "description": "Zile de concediu efectuate pe lună",
         "empty": "Nu sunt disponibile date despre utilizarea lunară",
         "title": "Utilizarea lunară a concediilor"
       },
+      "monthlyValues": "Vizualizați valorile lunare",
       "peakMonths": {
         "description": "Lunile cu cea mai mare activitate de concediu",
         "empty": "Nu sunt disponibile date despre lunile de vârf",
         "title": "Luni de vârf pentru concedii"
       },
+      "refreshing": "Se reîmprospătează datele privind concediile",
       "remaining": "Rămase",
       "taken": "Efectuate",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Nu sunt disponibile date privind orele zilnice",
         "title": "Ore zilnice de lucru"
       },
+      "dailyStatus": "Vizualizați starea zilnică",
+      "dailyValues": "Vizualizați orele zilnice",
       "distribution": {
         "description": "Comparația orelor de lucru ale angajaților (bară orizontală)",
         "empty": "Nu sunt disponibile date privind distribuția",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Ore preconizate",
       "hoursPerWeekAbbreviation": "h/săpt.",
+      "loading": "Se încarcă datele de analiză ale orelor de lucru",
+      "refreshFailed": "Reîmprospătarea a eșuat. Se afișează datele încărcate anterior pentru această perioadă. Exportul nu este disponibil până când reîncercarea nu reușește.",
+      "refreshing": "Se reîmprospătează datele de analiză ale orelor de lucru",
       "variance": "Variație",
       "varianceTrend": {
         "description": "Variația orelor față de orele de lucru preconizate în timp",
         "empty": "Nu sunt disponibile date privind evoluția",
-        "title": "Evoluția orelor suplimentare și deficitare"
+        "title": "Evoluția orelor suplimentare și deficitare",
+        "unavailable": "Valorile zilnice ale orelor suplimentare și deficitare nu sunt disponibile în acest raport. Starea zilnică înregistrată este afișată mai jos."
       }
     }
   }

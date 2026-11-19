@@ -89,7 +89,13 @@
       "slugLabel": "Slug de l'organisation",
       "title": "Modifier l'organisation",
       "updateError": "Échec de la mise à jour de l'organisation",
-      "updateSuccess": "Organisation mise à jour avec succès"
+      "updateSuccess": "Organisation mise à jour avec succès",
+      "validation": {
+        "nameMax": "Le nom ne peut pas dépasser 100 caractères",
+        "nameMin": "Le nom doit contenir au moins 2 caractères",
+        "slugMax": "Le slug ne peut pas dépasser 50 caractères",
+        "slugMin": "Le slug doit contenir au moins 2 caractères"
+      }
     },
     "error": {
       "description": "L'organigramme n'a pas pu être chargé. Veuillez réessayer.",
@@ -395,6 +401,7 @@
     "switchTo": "Changer d'organisation",
     "teams": {
       "card": {
+        "actionsFor": "Actions pour {name}",
         "deleteTeam": "Supprimer l'équipe",
         "editTeam": "Modifier l'équipe",
         "fallbackManager": "Responsable de secours",
@@ -406,10 +413,10 @@
       "delete": "Supprimer l'équipe",
       "deleteDialogDescription": "Ceci supprimera définitivement l'équipe « {teamName} ».",
       "deleteDialogMembersWarning": "Attention : cette équipe compte {count} membre(s). Ils seront retirés de l'équipe.",
+      "deleteDialogNamedTitle": "Supprimer l'équipe {name} ?",
       "deleteDialogTitle": "Êtes-vous sûr(e) ?",
       "deleteError": "Échec de la suppression de l'équipe",
       "deleteSuccess": "Équipe supprimée avec succès",
-      "description": "Organisez vos employés en équipes pour une meilleure collaboration",
       "edit": {
         "description": "Mettre à jour le nom et la description de l'équipe",
         "descriptionLabel": "Description (facultatif)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Membre supprimé de l'équipe",
         "selectEmployee": "Sélectionner un employé à ajouter",
         "title": "{teamName} - Membres de l'équipe"
-      },
-      "title": "Équipes"
+      }
     },
     "timezone": {
       "balances-recalculating": "Les soldes d'heures sont en cours de recalcul pour le nouveau fuseau horaire et restent masqués jusqu'à ce qu'ils soient prêts.",

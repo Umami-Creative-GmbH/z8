@@ -39,11 +39,13 @@
       "byCostCenter": "Per centro di costo",
       "byManager": "Per manager",
       "byTeam": "Per team",
+      "chartValues": "Visualizza valori settimanali",
       "costCenter": "Centro di costo",
       "currentOvertime": "Straordinario attuale",
       "description": "Traccia la riduzione settimanale degli straordinari tra i team.",
       "errors": {
-        "loadData": "Impossibile caricare i dati sulla riduzione degli straordinari"
+        "loadData": "Impossibile caricare i dati sulla riduzione degli straordinari",
+        "retryDescription": "Impossibile caricare i dati sugli straordinari. Riprova con il periodo e i filtri selezionati."
       },
       "filters": {
         "allCostCenters": "Tutti i centri di costo",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Gruppi in miglioramento",
       "improvingGroupsDescription": "Gruppi con straordinari in diminuzione",
+      "loading": "Caricamento dei dati sugli straordinari",
       "manager": "Manager",
       "previousOvertime": "Straordinario precedente",
       "previousPeriodDescription": "Rispetto al periodo precedente",
+      "refreshing": "Aggiornamento dei dati sugli straordinari",
       "selectedRangeDescription": "Per l'intervallo di date e i filtri selezionati",
       "title": "Riduzione straordinari",
       "trendDirection": "Direzione del trend",
@@ -92,6 +96,10 @@
         "title": "Colli di bottiglia nelle approvazioni",
         "unavailable": "Impossibile caricare i colli di bottiglia nelle approvazioni"
       },
+      "chartValues": "Visualizza valori del grafico",
+      "errors": {
+        "retryDescription": "Impossibile caricare alcuni dati analitici. I valori caricati in precedenza, se mostrati, potrebbero non essere aggiornati."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Delle richieste decise approvate",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Caricamento dati analitici",
+      "refreshing": "Aggiornamento dei dati analitici…",
       "workHoursByTeam": {
         "description": "Ore lavorative totali registrate per team",
         "title": "Ore lavorative per team"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Impossibile caricare i dati sulle prestazioni del team"
       },
+      "loading": "Caricamento dei dati sulle prestazioni del team",
       "onTrack": "In linea",
+      "refreshFailed": "Aggiornamento non riuscito. Vengono mostrati i dati caricati in precedenza per questo periodo. L'esportazione non è disponibile fino al buon esito di un nuovo tentativo.",
+      "refreshing": "Aggiornamento dei dati sulle prestazioni del team",
       "variance": {
         "description": "Variazione delle ore rispetto alle ore lavorative previste",
         "empty": "Dati sulla variazione non disponibili",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Assegnati",
+      "allowanceMissing": "Quota non configurata",
+      "allowanceSource": "Alcuni dipendenti non hanno una quota salvata. I totali utilizzano solo le quote salvate esistenti.",
       "balance": {
         "description": "Giorni assegnati, fruiti e rimanenti per dipendente",
         "title": "Saldo ferie"
       },
-      "daysRemaining": "{count} giorni rimanenti",
-      "daysTaken": "{count} giorni fruiti",
+      "dayValue": "{count} giorni",
+      "description": "Confronta l'utilizzo delle ferie e i saldi dei dipendenti per il periodo dell'organizzazione selezionato.",
       "errors": {
-        "loadData": "Impossibile caricare i dati sui trend delle ferie"
+        "loadData": "Impossibile caricare i dati sui trend delle ferie",
+        "retryDescription": "Impossibile caricare i dati sulle ferie. Riprova con il periodo selezionato."
       },
+      "loading": "Caricamento dei dati sulle ferie",
       "monthlyUsage": {
         "description": "Giorni di ferie fruiti al mese",
         "empty": "Dati sull'utilizzo mensile non disponibili",
         "title": "Utilizzo ferie mensile"
       },
+      "monthlyValues": "Visualizza valori mensili",
       "peakMonths": {
         "description": "Mesi con la maggiore attività di ferie",
         "empty": "Nessun dato disponibile sui mesi di picco",
         "title": "Mesi di picco delle ferie"
       },
+      "refreshing": "Aggiornamento dei dati sulle ferie",
       "remaining": "Rimanenti",
       "taken": "Usufruiti",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Nessun dato disponibile sulle ore giornaliere",
         "title": "Ore di lavoro giornaliere"
       },
+      "dailyStatus": "Visualizza stato giornaliero",
+      "dailyValues": "Visualizza ore giornaliere",
       "distribution": {
         "description": "Confronto ore di lavoro dei dipendenti (grafico a barre orizzontali)",
         "empty": "Nessun dato di distribuzione disponibile",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Ore previste",
       "hoursPerWeekAbbreviation": "h/sett.",
+      "loading": "Caricamento dei dati analitici sulle ore di lavoro",
+      "refreshFailed": "Aggiornamento non riuscito. Vengono mostrati i dati caricati in precedenza per questo periodo. L'esportazione non è disponibile fino al buon esito di un nuovo tentativo.",
+      "refreshing": "Aggiornamento dei dati analitici sulle ore di lavoro",
       "variance": "Varianza",
       "varianceTrend": {
         "description": "Varianza delle ore rispetto alle ore di lavoro previste nel tempo",
         "empty": "Nessun dato di tendenza disponibile",
-        "title": "Tendenza straordinari e ore lavorate in meno"
+        "title": "Tendenza straordinari e ore lavorate in meno",
+        "unavailable": "I valori giornalieri delle ore di straordinario e di deficit orario non sono disponibili in questo report. Lo stato giornaliero registrato è mostrato di seguito."
       }
     }
   }

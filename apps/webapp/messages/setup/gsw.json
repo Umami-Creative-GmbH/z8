@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Arbetsbereich wird iigrichtet...",
+    "checkFailed": "Mir händ dini Organisatione nöd chönne prüefe. Probier's nomol.",
     "checking": "Sitzig wird prüeft...",
-    "clickToSelect": "Zum Uswähle aachlicke",
     "redirecting": "Wird wiitergleitet...",
+    "retry": "Nomol probiere",
+    "selectionHint": "Din Arbeitsberiich gaat nach de Uuswahl uf.",
     "selectOrganization": "Organisation uswähle",
-    "selectOrganizationDescription": "Wähl us, mit welere Organisation du schaffe wotsch"
+    "selectOrganizationDescription": "Wähl us, mit welere Organisation du schaffe wotsch",
+    "title": "Din Arbeitsberiich ufmache"
   },
   "setup": {
     "authorization": {

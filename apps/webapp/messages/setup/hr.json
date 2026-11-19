@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Postavljanje vašeg radnog prostora...",
+    "checkFailed": "Nismo uspjeli provjeriti vaše organizacije. Pokušajte ponovno.",
     "checking": "Provjera sesije...",
-    "clickToSelect": "Kliknite za odabir",
     "redirecting": "Preusmjeravanje...",
+    "retry": "Pokušajte ponovno",
+    "selectionHint": "Vaš radni prostor otvara se nakon odabira.",
     "selectOrganization": "Odaberite organizaciju",
-    "selectOrganizationDescription": "Odaberite organizaciju s kojom želite raditi"
+    "selectOrganizationDescription": "Odaberite organizaciju s kojom želite raditi",
+    "title": "Otvorite svoj radni prostor"
   },
   "setup": {
     "authorization": {

@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Wygeneruj przykładowe dane do testów lub wyczyść istniejące dane związane z czasem",
+      "employeesLoadError": {
+        "description": "Dane demonstracyjne są generowane dla Twoich pracowników, więc generowanie jest niedostępne, dopóki się nie załadują.",
+        "retrying": "Ponawianie…",
+        "title": "Nie udało się załadować pracowników"
+      },
       "errors": {
-        "generationFailed": "Generowanie nie powiodło się. Spróbuj ponownie.",
-        "noOrganization": "Nie wybrano organizacji"
+        "generationFailed": "Generowanie nie powiodło się. Spróbuj ponownie."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Wszyscy pracownicy ({count})",
+          "allCountUnavailable": "Wszyscy pracownicy",
           "label": "Pracownicy",
           "selectSpecific": "Wybierz konkretnych pracowników"
         }

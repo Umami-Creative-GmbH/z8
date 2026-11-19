@@ -96,21 +96,27 @@
       "rejectTitle": "Rechazar reclamación"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Confirmando la organización y el empleado actuales…",
       "created": "Creado",
       "decisionRecorded": "Decisión registrada",
       "destination": "Destino",
       "history": "Historial de decisiones",
       "historyDescription": "Cada paso de esta solicitud, los más antiguos primero. Las horas se muestran en UTC.",
       "intermediateApproval": "Aprobación registrada — en espera de aprobación adicional",
+      "legacyClaim": "Reclamación heredada",
       "legacyReceiptIdentity": "Recibo heredado: no se registró la suma de comprobación del contenido.",
       "loading": "Cargando solicitud…",
       "noReceipts": "No hay recibos registrados",
       "notRecorded": "No registrado",
       "originalAmount": "Importe original",
       "receipts": "Recibos",
+      "receiptVersion": "Versión registrada",
       "refreshing": "Actualizando solicitud…",
+      "scopeUnavailable": "Actualice esta reclamación para confirmar su acceso actual.",
       "submitted": "Enviado",
       "title": "Solicitud de gastos de viaje",
+      "unavailable": "No se encontró la reclamación o el acceso ya no está disponible.",
       "unknownDates": "Contexto de fechas del viaje no registrado (solicitud heredada)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Seleccionar {name}",
         "selectAll": "Seleccionar todos los gastos pendientes de reembolso en esta página",
         "selected": "{count} seleccionados",
+        "selectionChanged": "Uno o más gastos seleccionados cambiaron. Cierre este cuadro de diálogo y revise los gastos actuales antes de iniciar otro pago.",
         "skipped": "No incluidos ({count})",
         "submit": "Marcar {count} como reembolsados",
         "title": "Marcar como reembolsado"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Ningún responsable de gastos activo que pueda registrar reembolsos los tiene dentro de su alcance. Los propietarios y administradores aún pueden registrarlos o ampliar el alcance de un responsable.",
         "empty": "Un responsable de gastos cubre todos los gastos aprobados pendientes de reembolso.",
+        "failed": "No se pudo comprobar la cobertura. Por favor, vuelva a intentarlo.",
         "queueFilter": "Gastos aprobados pendientes de reembolso que ningún responsable de gastos cubre.",
         "show": "Mostrar estos gastos",
         "showAll": "Mostrar todos los gastos aprobados",
@@ -237,6 +245,7 @@
           "none": "No se encontró ningún empleado.",
           "search": "Buscar empleados…"
         },
+        "failed": "No se pudieron cargar las opciones de filtro. Por favor, vuelva a intentarlo.",
         "label": "Mostrar gastos",
         "notExported": "Aún no exportado",
         "open": "Abierto",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Estos ciclos de nómina incluyen notas de gastos pendientes de reembolso. Una vez que la nómina haya pagado un ciclo, confírmelo para registrar los reembolsos.",
+        "failed": "No se pudieron cargar las confirmaciones de nómina. Por favor, vuelva a intentarlo.",
         "reports": "{count, plural, one {# nota de gastos para que la confirme, {amount}} other {# notas de gastos para que las confirme, {amount}}}",
         "title": "Ciclos de nómina pendientes de confirmación"
       },
       "queue": {
         "description": "Abra un gasto para ver su liquidación y registrar un reembolso.",
+        "failed": "No se puede cargar la cola de finanzas. Por favor, vuelva a intentarlo.",
         "title": "Gastos aprobados"
+      },
+      "scope": {
+        "failed": "No se pudo confirmar su acceso actual a finanzas. Por favor, vuelva a intentarlo.",
+        "loading": "Confirmando el acceso a finanzas…"
       },
       "title": "Finanzas de gastos"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kilometraje sin título"
     },
     "legacyDraft": {
+      "checking": "Comprobando la continuación del borrador…",
       "continue": "Continuar como informe",
       "converted": "Ha continuado este borrador como un informe de gastos. Esta solicitud se mantiene aquí sin cambios para referencia.",
       "description": "Los borradores del formulario de solicitud anterior ahora se completan como informes de gastos. Se transferirán el importe, las fechas, las notas y los recibos; cualquier dato que requiera el nuevo formulario y que no se haya registrado en este borrador quedará pendiente para que lo complete. Esta solicitud se mantendrá sin cambios.",
@@ -367,6 +383,7 @@
         "title": "Continuado a partir de un borrador de solicitud anterior"
       },
       "openReport": "Abrir el informe",
+      "readRefused": "La continuación del borrador no está disponible para el lector actual.",
       "receipt": {
         "mismatch": "el archivo almacenado ya no coincide con lo que se subió",
         "unreadable": "el archivo almacenado no se puede leer en este momento",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "No hay nada pendiente para este gasto.",
         "ownExpense": "No puede registrar pagos de sus propios gastos.",
         "referenceRequired": "Introduce la referencia del pago, p. ej., la referencia de la transferencia bancaria.",
+        "refresh": "No se pudo actualizar el saldo. Se muestran los registros cargados anteriormente; vuelva a intentarlo antes de registrar un pago.",
         "refused": "No se puede registrar este pago para este gasto.",
         "staleBalance": "El saldo ha cambiado mientras introducías este pago. Comprueba el saldo actualizado y regístralo de nuevo.",
         "tooLong": "Este texto es demasiado largo."
@@ -1149,7 +1167,13 @@
     },
     "title": "Gastos de viaje",
     "workspace": {
-      "description": "Recopile los gastos de viaje e individuales, envíelos para su revisión y realice el seguimiento de su reembolso."
+      "create": "Crear un informe de gastos",
+      "description": "Recopile los gastos de viaje e individuales, envíelos para su revisión y realice el seguimiento de su reembolso.",
+      "mileageDescription": "Registre un desplazamiento laboral fuera de un viaje.",
+      "otherWork": "Revisar y financiar",
+      "receiptDescription": "Registra un gasto con su recibo.",
+      "reconciling": "Cargando tus gastos de la organización actual…",
+      "tripDescription": "Recopila gastos con detalles de viaje compartidos."
     }
   }
 }

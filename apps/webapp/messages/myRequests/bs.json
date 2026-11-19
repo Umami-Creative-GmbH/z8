@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Otkaži",
+      "cancelled": "Zahtjev otkazan",
       "cancelling": "Otkazivanje…",
+      "cancelRequest": "Otkaži zahtjev",
       "cancelRequestConfirmation": "Otkazati ovaj zahtjev?",
+      "cancelRequestDescription": "Povučen je iz pregleda i ne može se ponovo otvoriti. Da biste ponovo zatražili, pošaljite novi zahtjev.",
       "cancelRequestError": "Zahtjev nije mogao biti otkazan.",
       "fix": "Ispravi",
-      "notAvailable": "Nije dostupno",
+      "keepRequest": "Zadrži zahtjev",
       "view": "Prikaži"
     },
     "all": {
-      "description": "Pregledajte zahtjeve za odsustva, ispravke radnog vremena i troškove.",
       "title": "Svi zahtjevi"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Zahtjevi će se pojaviti ovdje kada budu podneseni ili učitani.",
+        "hint": "Pokušajte s drugim pojmom za pretragu, statusom ili vrstom.",
         "title": "Nijedan zahtjev ne odgovara vašim filterima"
       },
       "none": {
         "description": "Zahtjevi će se pojaviti ovdje kada budu podneseni ili učitani.",
         "title": "Još nema zahtjeva"
+      },
+      "unavailable": {
+        "description": "Pokušajte ponovo za nedostupne izvore kako biste provjerili svoje zahtjeve.",
+        "title": "Nema učitanih zahtjeva"
       }
     },
     "featureName": "pregledajte svoje zahtjeve",
     "filters": {
       "allStatuses": "Svi statusi",
       "allTypes": "Sve vrste",
-      "approvedRequests": "Odobreni zahtjevi",
-      "cancelledRequests": "Otkazani zahtjevi",
-      "description": "Filtrirajte svaki odjeljak zahtjeva prema tekstu, statusu ili vrsti zahtjeva.",
-      "pendingRequests": "Zahtjevi na čekanju",
-      "rejectedRequests": "Odbijeni zahtjevi",
+      "resultCount": "Prikazano {visible} od {total} zahtjeva",
       "search": "Pretraži",
-      "searchPlaceholder": "Pretraži po naslovu…",
+      "searchRequestsPlaceholder": "Naslov, datumi, iznos ili razlog…",
       "status": "Status",
       "title": "Pronađite zahtjeve",
       "type": "Vrsta"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Ovaj zahtjev više nije na čekanju ili se ne može prikazati ovdje. Spremnost perioda se ponovo provjerava."
     },
+    "history": {
+      "request": "Zahtjev"
+    },
     "inReview": {
-      "description": "Zahtjevi koji čekaju na odobrenje ili obradu.",
       "title": "U pregledu"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Zahtjev za naknadu putnih troškova"
       }
     },
+    "scope": "Vaši zahtjevi za odsustvo, korekciju vremena i stari zahtjevi za troškove u aktivnoj organizaciji",
     "sourceError": {
       "absence": "Nije moguće učitati zahtjeve za odsustvo.",
       "timeCorrection": "Nije moguće učitati zahtjeve za ispravku radnog vremena.",
       "title": "Nije moguće učitati neke zahtjeve.",
       "travelExpense": "Nije moguće učitati zahtjeve za putne troškove."
     },
-    "sourceTypes": {
-      "absence": "Odsustvo",
-      "timeCorrection": "Radno vrijeme",
-      "travelExpense": "Trošak"
-    },
     "status": {
       "approved": "Odobreno",
       "cancelled": "Otkazano",
       "inReview": "U pregledu",
-      "pending": "Na čekanju",
       "rejected": "Odbijeno"
     },
-    "subtitle": "Pratite zahtjeve na čekanju, potrebne ispravke i nedavne odluke na jednom mjestu.",
     "summary": {
       "ariaLabel": "Sažetak zahtjeva",
-      "pending": "Na čekanju",
       "recentDecisions": "Nedavne odluke",
+      "recentWindow": "Posljednjih 30 dana",
       "requiredFixes": "Potrebne ispravke",
       "totalLoaded": "Ukupno učitano"
     },
     "title": "Moji zahtjevi",
+    "types": {
+      "absence": "Odsustvo",
+      "timeCorrection": "Korekcija vremena",
+      "travelExpense": "Putni trošak"
+    },
     "unavailableTitle": "Zahtjevi nisu dostupni"
   }
 }

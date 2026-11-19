@@ -75,8 +75,10 @@
         "title": "Tendências analíticas",
         "viewFull": "Ver análise completa"
       },
+      "scope": "Relatórios de toda a plataforma",
       "sectionDescription": "Atualizado a partir dos dados atuais da plataforma para o intervalo e grupo selecionados.",
       "sectionTitle": "Tendências de análise",
+      "seriesValues": "Ver valores da série",
       "title": "Análise da plataforma",
       "values": {
         "notAvailable": "Não disponível"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Não foi possível confirmar o acesso à plataforma.",
       "analytics": {
         "title": "Tendências de análise"
       },
-      "description": "Métricas da plataforma e ações rápidas",
+      "analyticsUnavailable": "As análises da plataforma não estão disponíveis. Tente novamente.",
+      "confirmingAccess": "Confirmando o acesso à plataforma",
+      "groups": {
+        "access": "Gerenciamento de acesso",
+        "billing": "Faturamento e assinaturas",
+        "operations": "Operações da plataforma"
+      },
+      "loadingAnalytics": "Carregando análises da plataforma",
+      "loadingMetrics": "Carregando métricas da plataforma",
       "metrics": {
         "bannedUsers": "Usuários banidos",
         "bannedUsersDescription": "Acesso restrito",
@@ -295,6 +306,9 @@
         "totalUsers": "Total de Usuários",
         "totalUsersDescription": "Contas registradas na plataforma"
       },
+      "metricsUnavailable": "As métricas da plataforma não estão disponíveis. Tente novamente.",
+      "platformDescription": "Revise contas, espaços de trabalho e atividades de toda a plataforma e, em seguida, abra um espaço de trabalho de administração.",
+      "platformTitle": "Visão geral da plataforma",
       "quickActions": {
         "billing": {
           "description": "Métricas de receita e status da assinatura",
@@ -318,7 +332,7 @@
           "title": "Gerenciamento de Usuários"
         }
       },
-      "title": "Visão Geral"
+      "refreshAccess": "Atualize a visão geral para confirmar o acesso à plataforma antes de continuar."
     },
     "settings": {
       "actions": {

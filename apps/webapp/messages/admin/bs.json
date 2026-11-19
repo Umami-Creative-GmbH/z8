@@ -75,8 +75,10 @@
         "title": "Trendovi analitike",
         "viewFull": "Prikaži kompletnu analitiku"
       },
+      "scope": "Izvještavanje na nivou cijele platforme",
       "sectionDescription": "Ažurirano na osnovu trenutnih podataka platforme za odabrani raspon i interval.",
       "sectionTitle": "Trendovi analitike",
+      "seriesValues": "Prikaži vrijednosti serije",
       "title": "Analitika platforme",
       "values": {
         "notAvailable": "Nije dostupno"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Pristup platformi nije mogao biti potvrđen.",
       "analytics": {
         "title": "Trendovi analitike"
       },
-      "description": "Metrike platforme i brze radnje",
+      "analyticsUnavailable": "Analitika platforme nije dostupna. Pokušajte ponovo.",
+      "confirmingAccess": "Potvrđivanje pristupa platformi",
+      "groups": {
+        "access": "Upravljanje pristupom",
+        "billing": "Naplata i pretplate",
+        "operations": "Operacije platforme"
+      },
+      "loadingAnalytics": "Učitavanje analitike platforme",
+      "loadingMetrics": "Učitavanje metrika platforme",
       "metrics": {
         "bannedUsers": "Blokirani korisnici",
         "bannedUsersDescription": "Ograničen pristup",
@@ -295,6 +306,9 @@
         "totalUsers": "Ukupno korisnika",
         "totalUsersDescription": "Registrovani računi na platformi"
       },
+      "metricsUnavailable": "Metrike platforme nisu dostupne. Pokušajte ponovo.",
+      "platformDescription": "Pregledajte račune, radne prostore i aktivnosti na nivou cijele platforme, zatim otvorite administrativni radni prostor.",
+      "platformTitle": "Pregled platforme",
       "quickActions": {
         "billing": {
           "description": "Metrike prihoda i status pretplate",
@@ -318,7 +332,7 @@
           "title": "Upravljanje korisnicima"
         }
       },
-      "title": "Pregled"
+      "refreshAccess": "Osvježite pregled da potvrdite pristup platformi prije nastavka."
     },
     "settings": {
       "actions": {

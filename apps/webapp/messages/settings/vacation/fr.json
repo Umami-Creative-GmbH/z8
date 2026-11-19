@@ -61,6 +61,7 @@
           "allowance": "Attribution",
           "allowanceForYear": "Allocation de congés pour {year}",
           "assignedPolicy": "Politique attribuée",
+          "backToAllowances": "Retour aux droits des employés",
           "cancel": "Annuler",
           "carryover": "Report",
           "carryoverDaysOptional": "Jours reportés (facultatif)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Par défaut : {days} jours",
           "employeeInformation": "Informations sur l'employé",
           "errors": {
+            "adjustmentReasonRequired": "Saisissez un motif pour enregistrer cet ajustement.",
             "createAdjustmentFailed": "Échec de la création de l'ajustement",
-            "unexpected": "Une erreur inattendue est survenue",
+            "loadFailed": "Le droit aux congés de l'employé n'a pas pu être chargé.",
             "updateAllowanceFailed": "Échec de la mise à jour de l'allocation",
             "updatePolicyAssignmentFailed": "Échec de la mise à jour de l'attribution de la politique"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "gérer les allocations de congés des employés",
           "managers": "Managers",
           "overrideEffectivePolicy": "Remplacer les droits alloués par la politique ({days} jours) pour cet employé",
+          "partialSave": {
+            "description": "Vos saisies sont conservées. Réessayer n'enregistre que ce qui manque encore.",
+            "failed": {
+              "adjustment": "L'ajustement manuel n'a pas pu être enregistré : {reason}",
+              "allowance": "Le droit personnalisé n'a pas pu être enregistré : {reason}",
+              "policy": "L'attribution de la politique n'a pas pu être enregistrée : {reason}"
+            },
+            "pending": {
+              "adjustment": "Ajustement manuel pas encore enregistré.",
+              "allowance": "Droit personnalisé pas encore enregistré.",
+              "policy": "Attribution de la politique pas encore enregistrée."
+            },
+            "retry": "Réessayer les modifications non enregistrées",
+            "saved": {
+              "adjustment": "Ajustement manuel enregistré.",
+              "allowance": "Droit personnalisé enregistré.",
+              "policy": "Attribution de la politique enregistrée."
+            },
+            "title": "Certaines modifications n'ont pas été enregistrées",
+            "titleNothingSaved": "Les modifications n'ont pas été enregistrées"
+          },
           "policyOptionDays": "{name} ({days} jours)",
           "position": "Poste",
           "postingsSkipped": "Les attributions automatiques de congés sont suspendues jusqu'à ce que la configuration de la politique soit résolue.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Attention : \"{name}\" est la politique par défaut de l'entreprise. Vous devez définir une autre politique par défaut avant de supprimer celle-ci.",
       "delete-description-v2": "Êtes-vous sûr de vouloir supprimer \"{name}\" ? Cela supprimera également toutes les affectations liées à cette politique.",
       "deleteFailed": "Échec de la suppression de la politique",
+      "deleteLastDefault": "Il s'agit de la seule politique par défaut de l'entreprise. Définissez d'abord une autre politique par défaut.",
       "delete-title": "Supprimer la politique de vacances",
       "header": {
         "accrual": "Acquisition",
@@ -334,6 +358,7 @@
       },
       "loadError": "Échec du chargement des politiques",
       "max-days": "{days} jours max",
+      "no-end-date": "Aucune date de fin",
       "none": "Aucun",
       "no-policies-created": "Aucune politique de congés créée pour le moment. Créez une politique pour définir les droits aux congés de votre équipe.",
       "noSearchResults": "Aucune politique ne correspond à votre recherche.",

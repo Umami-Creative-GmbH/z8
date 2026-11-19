@@ -50,6 +50,7 @@
       "retry": "Retry {choice}",
       "unavailable": "{choice} unavailable"
     },
+    "clockedIn": "Clocked in",
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records.",
     "clockOutSuccess": "Clocked out successfully",
     "clockStatus": {
+      "clockedOut": "Not clocked in",
       "loading": "Loading clock status",
       "retry": "Retry clock status",
       "unavailable": "Clock status unavailable"
@@ -301,6 +303,8 @@
         "wrong": "That PIN is not correct. Try again."
       },
       "queue": {
+        "awaiting": "Clockings awaiting confirmation: {count}",
+        "checking": "Checking submitted actions: {count}",
         "dismiss": "Dismiss",
         "reason": {
           "contact": "The kiosk's last connection could not be confirmed.",
@@ -311,6 +315,7 @@
           "pin": "The PIN was not accepted.",
           "time": "Its time could not be accepted."
         },
+        "recovery": "The kiosk checks again automatically when it can reach Z8. Do not repeat an action whose outcome is unknown.",
         "refused": "{name}: {action} at {time}, saved while offline, was not accepted. {reason}",
         "title": "Offline clockings not accepted"
       },
@@ -335,6 +340,9 @@
         "description": "This kiosk can no longer be used for clocking. Please contact your admin.",
         "pairAgain": "Pair with a new code",
         "title": "Kiosk revoked"
+      },
+      "scope": {
+        "zone": "Kiosk time: {zone}"
       },
       "state": {
         "clockedIn": "Clocked in since {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "No category (100%)",
     "noProject": "No project",
+    "notClockedIn": "Not clocked in",
     "notesPlaceholder": "What did you work on?",
     "notesSaved": "Notes saved",
+    "onBreak": "On break",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "An absence request for {dates} is undecided.",
@@ -497,6 +507,14 @@
       "withdrawn": "Submission withdrawn",
       "withdrawRefused": "This submission was already decided and can no longer be withdrawn."
     },
+    "policy": {
+      "fixedDays": "Fixed office days: {days}",
+      "flexible": "Flexible office policy for this period",
+      "homeOfficeLeft": "Home office days left",
+      "officeRequired": "Office days still required",
+      "requirementWarning": "Office requirement exceeds remaining working days",
+      "unavailable": "Workplace policy is unavailable."
+    },
     "project": "Project",
     "quickBreak": {
       "addBreak": "Add break",
@@ -535,6 +553,7 @@
       "title": "Session reminders"
     },
     "startedAt": "Started at",
+    "statusUnavailable": "Clock status is unavailable. Refresh to try again.",
     "summary": {
       "dayOfRequired": "{date}: {worked} of {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} surcharge",
       "thisMonth": "This Month",
       "thisWeek": "This Week",
+      "title": "Working time summary",
       "today": "Today",
       "todayOfRequired": "{worked} of {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Now: {worked} worked of {required} required so far. Then: {previousWorked} worked of {previousRequired} required.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Updating total… Use Refresh to retry if it remains unavailable.",
       "vsLastMonth": "vs last month",
       "vsLastWeek": "vs last week"
     },
+    "systemNote": {
+      "breakEnforcement": "Auto-adjusted: break enforcement"
+    },
     "table": {
       "active": "Active",
+      "allEntries": "All entries",
       "approved": "Time entry approved",
       "approveEntry": "Approve entry",
       "approveFailed": "Failed to approve entry",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Driving details missing",
       "duration": "Duration",
       "emptyState": "No time entries found for this week.",
+      "entryCount": "{count, plural, one {# entry} other {# entries}}",
+      "groupedByDay": "Grouped by day",
+      "incompleteDay": "Includes active or incomplete entries",
       "missingTask": "Missing task",
       "missingTaskHint": "This project requires a task: add one to this booking in the calendar.",
+      "offsetContext": "Endpoint times use each entry's captured local UTC offset. Day headings follow your calendar timezone: {timezone}.",
       "recordedLocalTime": "Recorded local time",
       "rowActions": "Time entry actions",
       "title": "Time Entries",
@@ -586,62 +615,64 @@
       "search": "Search tasks…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Afternoon",
+        "fullDay": "Full day",
+        "morning": "Morning"
+      },
       "dayPicker": "Timeline day picker",
       "emptyDescription": "There are no shifts, absences, or time entries for the selected day yet.",
       "emptyTitle": "No activity recorded for this day.",
+      "link": {
+        "reviewRequest": "Review request",
+        "viewAbsence": "View absence"
+      },
+      "monthPicker": "Select a calendar day",
       "nextDay": "Next day",
       "previousDay": "Previous day",
-      "title": "Workday timeline",
-      "today": "Today",
-      "unavailableDescription": "Clocking time still works. Try refreshing this view later.",
-      "unavailableTitle": "Timeline unavailable",
-      "workPeriod": {
-        "title": "Recorded work"
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Absence request"
+        },
+        "timeCorrection": {
+          "subtitle": "Correction for a time entry",
+          "title": "Time correction request"
+        }
       },
       "shift": {
         "title": "Scheduled shift"
       },
       "status": {
+        "active": "Active",
         "approved": "Approved",
-        "pending": "Pending",
-        "rejected": "Rejected",
         "cancelled": "Cancelled",
-        "published": "Published",
         "draft": "Draft",
-        "active": "Active"
+        "pending": "Pending",
+        "published": "Published",
+        "rejected": "Rejected"
       },
-      "absence": {
-        "fullDay": "Full day",
-        "morning": "Morning",
-        "afternoon": "Afternoon"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Time correction request",
-          "subtitle": "Correction for a time entry"
-        },
-        "absence": {
-          "title": "Absence request",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "View absence",
-        "reviewRequest": "Review request"
-      },
+      "title": "Workday timeline",
+      "today": "Today",
+      "unavailableDescription": "Clocking time still works. Try refreshing this view later.",
+      "unavailableTitle": "Timeline unavailable",
       "warning": {
-        "pendingEdit": {
-          "title": "Pending edit request",
-          "description": "This work period has changes awaiting approval."
+        "autoAdjusted": {
+          "description": "Break or compliance rules adjusted this work period.",
+          "title": "Auto-adjusted record"
         },
         "missingClockOut": {
-          "title": "Missing clock-out",
-          "description": "This work period is still active."
+          "description": "This work period is still active.",
+          "title": "Missing clock-out"
         },
-        "autoAdjusted": {
-          "title": "Auto-adjusted record",
-          "description": "Break or compliance rules adjusted this work period."
+        "pendingEdit": {
+          "description": "This work period has changes awaiting approval.",
+          "title": "Pending edit request"
         }
+      },
+      "weekPicker": "Select a day of the week",
+      "workPeriod": {
+        "title": "Recorded work"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Please check the vehicle use"
       }
     },
-    "welcomeBack": "Welcome back, {name}",
     "workCategory": "Work Category",
     "workLocation": "Work location",
     "workLocationHome": "Home",
     "workLocationOffice": "Office",
     "workLocationOther": "Other",
-    "workLocationRemote": "Remote",
-    "systemNote": {
-      "breakEnforcement": "Auto-adjusted: break enforcement"
-    }
+    "workLocationRemote": "Remote"
   },
   "wellness": {
     "water": {

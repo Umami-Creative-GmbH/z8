@@ -89,7 +89,13 @@
       "slugLabel": "Organisasjons-slug",
       "title": "Rediger organisasjon",
       "updateError": "Kunne ikke oppdatere organisasjonen",
-      "updateSuccess": "Organisasjonen ble oppdatert"
+      "updateSuccess": "Organisasjonen ble oppdatert",
+      "validation": {
+        "nameMax": "Navnet kan ikke overstige 100 tegn",
+        "nameMin": "Navnet må være på minst 2 tegn",
+        "slugMax": "Slug kan ikke overstige 50 tegn",
+        "slugMin": "Slug må være på minst 2 tegn"
+      }
     },
     "error": {
       "description": "Organisasjonskartet kunne ikke lastes inn. Vennligst prøv igjen.",
@@ -395,6 +401,7 @@
     "switchTo": "Bytt organisasjon",
     "teams": {
       "card": {
+        "actionsFor": "Handlinger for {name}",
         "deleteTeam": "Slett team",
         "editTeam": "Rediger team",
         "fallbackManager": "Reserveansvarlig",
@@ -406,10 +413,10 @@
       "delete": "Slett team",
       "deleteDialogDescription": "Dette vil slette teamet \"{teamName}\" permanent.",
       "deleteDialogMembersWarning": "Advarsel: Dette teamet har {count} medlem(mer). De vil bli fjernet fra teamet.",
+      "deleteDialogNamedTitle": "Slette teamet {name}?",
       "deleteDialogTitle": "Er du sikker?",
       "deleteError": "Kunne ikke slette teamet",
       "deleteSuccess": "Teamet ble slettet",
-      "description": "Organiser de ansatte i team for bedre samarbeid",
       "edit": {
         "description": "Oppdater teamnavn og beskrivelse",
         "descriptionLabel": "Beskrivelse (valgfritt)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Medlem fjernet fra teamet",
         "selectEmployee": "Velg en ansatt som skal legges til",
         "title": "{teamName} - Teammedlemmer"
-      },
-      "title": "Team"
+      }
     },
     "timezone": {
       "balances-recalculating": "Arbeidssaldoer beregnes på nytt for den nye tidssonen og forblir skjulte til de er klare.",

@@ -89,7 +89,13 @@
       "slugLabel": "Slug organizație",
       "title": "Editează organizația",
       "updateError": "Actualizarea organizației a eșuat",
-      "updateSuccess": "Organizația a fost actualizată cu succes"
+      "updateSuccess": "Organizația a fost actualizată cu succes",
+      "validation": {
+        "nameMax": "Numele nu poate depăși 100 de caractere",
+        "nameMin": "Numele trebuie să aibă cel puțin 2 caractere",
+        "slugMax": "Slug-ul nu poate depăși 50 de caractere",
+        "slugMin": "Slug-ul trebuie să aibă cel puțin 2 caractere"
+      }
     },
     "error": {
       "description": "Organigrama nu a putut fi încărcată. Vă rugăm să încercați din nou.",
@@ -395,6 +401,7 @@
     "switchTo": "Schimbă organizația",
     "teams": {
       "card": {
+        "actionsFor": "Acțiuni pentru {name}",
         "deleteTeam": "Șterge echipa",
         "editTeam": "Editează echipa",
         "fallbackManager": "Manager de rezervă",
@@ -406,10 +413,10 @@
       "delete": "Șterge echipa",
       "deleteDialogDescription": "Această acțiune va șterge definitiv echipa „{teamName}”.",
       "deleteDialogMembersWarning": "Avertisment: Această echipă are {count} membru/membri. Aceștia vor fi eliminați din echipă.",
+      "deleteDialogNamedTitle": "Ștergeți echipa {name}?",
       "deleteDialogTitle": "Ești sigur?",
       "deleteError": "Ștergerea echipei a eșuat",
       "deleteSuccess": "Echipă ștearsă cu succes",
-      "description": "Organizează-ți angajații în echipe pentru o mai bună colaborare",
       "edit": {
         "description": "Actualizează numele și descrierea echipei",
         "descriptionLabel": "Descriere (opțional)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Membru eliminat din echipă",
         "selectEmployee": "Selectează un angajat de adăugat",
         "title": "{teamName} - Membrii echipei"
-      },
-      "title": "Echipe"
+      }
     },
     "timezone": {
       "balances-recalculating": "Soldurile orelor de lucru sunt recalculate pentru noul fus orar și rămân ascunse până când sunt gata.",

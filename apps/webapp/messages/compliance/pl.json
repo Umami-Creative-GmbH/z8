@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Kontrola dostępu podsumowuje jedynie wrażliwe zdarzenia z dziennika audytu, które są już rejestrowane.",
         "auditEvidence": "Dowody audytu wykorzystują bieżącą konfigurację eksportu audytu, żądania pakietów audytu oraz ostatnie wyniki weryfikacji.",
+        "title": "Pokrycie",
         "workforceCompliance": "Zgodność pracowników wykorzystuje dane z ostatnich 7 dni dotyczące naruszeń polityki pracy oraz oczekujących wniosków o wyjątki."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Ostatnio odświeżono: {time}"
+        "lastRefreshed": "Ostatnio odświeżono: {time}",
+        "refreshMeaning": "Odświeżenie ponownie wczytuje zarejestrowane sygnały; nie dokonuje ponownej oceny ustaleń według nowej polityki."
       },
       "links": {
         "inspectCompliance": "Sprawdź zgodność",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Otwórz ustawienia zgodności",
         "reviewAuditExport": "Przejrzyj eksport audytu"
       },
+      "loading": "Ładowanie sygnałów zgodności",
       "overview": "Przegląd zgodności",
       "recentEvents": {
         "empty": "Nie wykryto ostatnio żadnych zdarzeń krytycznych.",
-        "title": "Ostatnie zdarzenia krytyczne"
+        "partial": "Ostatnie zdarzenia są ograniczone do dostępnych źródeł. Nie udało się załadować niektórych sygnałów.",
+        "title": "Ostatnie zdarzenia krytyczne",
+        "unavailable": "Nie można potwierdzić ostatnich zdarzeń, ponieważ źródła sygnałów są niedostępne."
       },
+      "scope": "Aktywna organizacja",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Zmiany w kontrolach wrażliwych wymagają przeglądu",
             "healthy": "Ostatnio nie zarejestrowano żadnych zmian w kontrolach wrażliwych",
             "warning": "Wykryto niedawne zmiany w kontrolach"
-          }
+          },
+          "title": "Kontrola dostępu"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Dowody audytu wymagają uwagi",
             "healthy": "Sygnały dowodów audytu są prawidłowe",
             "warning": "Dowody audytu są gotowe tylko częściowo"
-          }
+          },
+          "title": "Dowody audytowe"
         },
+        "title": "Sekcje zgodności",
         "unavailable": {
           "headline": "Sygnał chwilowo niedostępny"
         },
@@ -94,7 +103,8 @@
             "critical": "Naruszenia polityki pracowniczej wymagają przeglądu",
             "healthy": "Nie wykryto żadnych niedawnych problemów z polityką pracowniczą",
             "warning": "Zgodność pracownicza odbiega od normy"
-          }
+          },
+          "title": "Zgodność kadrowa"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Wyjątek zatwierdzony",
       "approvedDescription": "Wyjątek zgodności został zatwierdzony.",
       "approveFailed": "Nie udało się zatwierdzić",
+      "approveFor": "Zatwierdź wyjątek ({type}) dla: {name}",
+      "loadError": "Nie udało się załadować oczekujących wniosków o wyjątek.",
       "plannedDuration": "Zaplanowane",
       "plannedDurationHelp": "Oszacuj, ile dodatkowego czasu będziesz potrzebować powyżej limitu.",
       "reason": "Powód wyjątku",
@@ -124,6 +136,7 @@
       "rejected": "Wyjątek odrzucony",
       "rejectedDescription": "Wyjątek zgodności został odrzucony.",
       "rejectFailed": "Nie udało się odrzucić",
+      "rejectFor": "Odrzuć wyjątek ({type}) dla: {name}",
       "rejectionPlaceholder": "Wpisz powód odrzucenia tego wyjątku...",
       "rejectionReason": "Powód odrzucenia",
       "rejectTitle": "Odrzuć wniosek o wyjątek",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Twój menedżer otrzyma powiadomienie i będzie mógł zatwierdzić lub odrzucić Twój wniosek.",
       "requestTitle": "Zawnioskuj o wyjątek zgodności",
       "submit": "Wyślij wniosek",
-      "type": "Typ wyjątku"
+      "type": "Typ wyjątku",
+      "types": {
+        "overtimeDaily": "Dzienne nadgodziny",
+        "overtimeMonthly": "Miesięczne nadgodziny",
+        "overtimeWeekly": "Tygodniowe nadgodziny",
+        "restPeriod": "Okres odpoczynku"
+      }
     },
     "hasApprovedException": "Masz zatwierdzony wyjątek. Możesz kontynuować.",
     "moreAlerts": "więcej",
