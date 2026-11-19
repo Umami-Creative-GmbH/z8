@@ -11,7 +11,7 @@ describe("AbsencesPage calendar ranges", () => {
 		expect(source).toContain(
 			"getAbsenceEntries(employee.id, calendarStartDate, calendarEndDate)",
 		);
-		expect(source).toContain("currentYear={calendarYear}");
+		expect(source).toContain("year={recordYear}");
 		expect(source).not.toContain("fis" + "cal");
 	});
 });

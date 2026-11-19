@@ -1,3 +1,4 @@
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { connection } from "next/server";
@@ -11,6 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
+import { parseAbsencesUrlState } from "@/lib/absences/absences-url";
 import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -21,11 +23,16 @@ import {
 } from "./actions";
 import { getAbsenceCategories } from "./queries";
 
-async function AbsencesPageContent() {
+interface AbsencesPageProps {
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 	// Auth is checked in layout - session is guaranteed to exist
-	const [t, employee] = await Promise.all([
+	const [t, employee, query] = await Promise.all([
 		getTranslate(),
 		getCurrentEmployee(),
+		searchParams,
 	]);
 	if (!employee) {
 		return (
@@ -54,15 +61,18 @@ async function AbsencesPageContent() {
 	const currentDate =
 		now.toISODate() ?? DateTime.utc().toISODate() ?? "9999-12-31";
 
-	// Fetch calendar-year data for the visual year calendar/table.
+	// The record view follows the linked year; the balance stays on the current calendar year.
+	const { view: initialView, year: recordYear } = parseAbsencesUrlState(
+		query,
+		calendarYear,
+	);
 	const calendarStart = DateTime.fromObject(
-		{ year: calendarYear, month: 1, day: 1 },
+		{ year: recordYear, month: 1, day: 1 },
 		{ zone: timezone },
 	).startOf("day");
 	const calendarEnd = calendarStart.endOf("year");
-	const calendarStartDate =
-		calendarStart.toISODate() ?? `${calendarYear}-01-01`;
-	const calendarEndDate = calendarEnd.toISODate() ?? `${calendarYear}-12-31`;
+	const calendarStartDate = calendarStart.toISODate() ?? `${recordYear}-01-01`;
+	const calendarEndDate = calendarEnd.toISODate() ?? `${recordYear}-12-31`;
 
 	// Fetch all data in parallel
 	const [
@@ -81,15 +91,12 @@ async function AbsencesPageContent() {
 		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("absences.title", "Absences")}
+				// The year lives with the balance and the year navigation, which can differ.
 				scope={
 					<>
-						{org?.name} · {calendarYear} · {timezone}
+						{org?.name} · {timezone}
 					</>
 				}
-				description={t(
-					"absences.personalScope",
-					"Your absences and vacation balance for the organization calendar year.",
-				)}
 			/>
 			{vacationBalance ? (
 				<VacationBalanceCard
@@ -99,6 +106,7 @@ async function AbsencesPageContent() {
 				/>
 			) : (
 				<Alert>
+					<IconAlertTriangle aria-hidden="true" />
 					<AlertTitle>
 						{hasZeroWorkingDaysSchedule(configuration)
 							? t(
@@ -116,16 +124,17 @@ async function AbsencesPageContent() {
 									)}
 					</AlertTitle>
 					<AlertDescription>
-						{t(
-							"absences.errors.policyConfigurationMessage",
-							"Vacation policy configuration needs attention for {currentYear}.",
-							{ currentYear: calendarYear },
-						)}
-						<br />
-						{t(
-							"absences.errors.contactAdmin",
-							"Please contact your administrator to configure vacation policies.",
-						)}
+						<p>
+							{t(
+								"absences.errors.policyConfigurationMessage",
+								"Vacation policy configuration needs attention for {currentYear}.",
+								{ currentYear: calendarYear },
+							)}{" "}
+							{t(
+								"absences.errors.contactAdmin",
+								"Please contact your administrator to configure vacation policies.",
+							)}
+						</p>
 					</AlertDescription>
 				</Alert>
 			)}
@@ -135,7 +144,8 @@ async function AbsencesPageContent() {
 				holidays={holidays}
 				categories={categories}
 				organizationId={employee.organizationId}
-				currentYear={calendarYear}
+				year={recordYear}
+				initialView={initialView}
 				currentDate={currentDate}
 			/>
 		</div>
@@ -154,20 +164,21 @@ async function AbsencesPageLoading() {
 			}}
 		>
 			<PageHeader title={t("absences.title", "Absences")} />
-			<div className="space-y-2">
-				<Skeleton aria-hidden="true" className="h-8 w-44" />
-				<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />
-				<Skeleton aria-hidden="true" className="h-32 w-full" />
+			{/* Mirrors the balance strip, the year toolbar and the calendar. */}
+			<Skeleton aria-hidden="true" className="h-40 w-full rounded-xl" />
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<Skeleton aria-hidden="true" className="h-9 w-40" />
+				<Skeleton aria-hidden="true" className="h-9 w-80 max-w-full" />
 			</div>
-			<Skeleton aria-hidden="true" className="h-96 w-full" />
+			<Skeleton aria-hidden="true" className="h-96 w-full rounded-xl" />
 		</LoadingRegion>
 	);
 }
 
-export default function AbsencesPage() {
+export default function AbsencesPage(props: AbsencesPageProps) {
 	return (
 		<Suspense fallback={<AbsencesPageLoading />}>
-			<AbsencesPageContent />
+			<AbsencesPageContent {...props} />
 		</Suspense>
 	);
 }

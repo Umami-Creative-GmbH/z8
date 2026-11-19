@@ -2,6 +2,7 @@
 
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import { ABSENCES_MAX_YEAR, ABSENCES_MIN_YEAR } from "@/lib/absences/absences-url";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type {
@@ -63,7 +64,11 @@ export async function getHolidays(
 }
 
 export async function getAbsenceCalendarYearData(year: number) {
-	if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+	if (
+		!Number.isInteger(year) ||
+		year < ABSENCES_MIN_YEAR ||
+		year > ABSENCES_MAX_YEAR
+	) {
 		return { absences: [], holidays: [] };
 	}
 
