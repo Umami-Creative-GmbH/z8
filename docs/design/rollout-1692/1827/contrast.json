@@ -1,0 +1,148 @@
+[
+  {
+    "theme": "light",
+    "rootFont": "18px",
+    "width": 390,
+    "documentWidth": 390,
+    "colors": [
+      {
+        "selector": "h1",
+        "foreground": [
+          8,
+          13,
+          22,
+          255
+        ],
+        "background": [
+          252,
+          253,
+          255,
+          255
+        ],
+        "ratio": 19.114022259689076
+      },
+      {
+        "selector": "p.text-muted-foreground",
+        "foreground": [
+          105,
+          114,
+          129,
+          255
+        ],
+        "background": [
+          252,
+          253,
+          255,
+          255
+        ],
+        "ratio": 4.77115358635208
+      },
+      {
+        "selector": "a[href$=\"/init\"]",
+        "foreground": [
+          247,
+          250,
+          255,
+          255
+        ],
+        "background": [
+          37,
+          75,
+          178,
+          255
+        ],
+        "ratio": 7.358261410371626
+      },
+      {
+        "selector": "a[href$=\"/settings/holidays\"]",
+        "foreground": [
+          8,
+          13,
+          22,
+          255
+        ],
+        "background": [
+          252,
+          253,
+          255,
+          255
+        ],
+        "ratio": 19.114022259689076
+      }
+    ],
+    "continuationReachable": true
+  },
+  {
+    "theme": "dark",
+    "rootFont": "18px",
+    "width": 390,
+    "documentWidth": 390,
+    "colors": [
+      {
+        "selector": "h1",
+        "foreground": [
+          247,
+          250,
+          255,
+          255
+        ],
+        "background": [
+          17,
+          21,
+          28,
+          255
+        ],
+        "ratio": 17.487261507234752
+      },
+      {
+        "selector": "p.text-muted-foreground",
+        "foreground": [
+          134,
+          144,
+          159,
+          255
+        ],
+        "background": [
+          17,
+          21,
+          28,
+          255
+        ],
+        "ratio": 5.665815788399514
+      },
+      {
+        "selector": "a[href$=\"/init\"]",
+        "foreground": [
+          247,
+          250,
+          255,
+          255
+        ],
+        "background": [
+          60,
+          104,
+          217,
+          255
+        ],
+        "ratio": 4.808833761889485
+      },
+      {
+        "selector": "a[href$=\"/settings/holidays\"]",
+        "foreground": [
+          247,
+          250,
+          255,
+          255
+        ],
+        "background": [
+          17,
+          21,
+          28,
+          255
+        ],
+        "ratio": 17.487261507234752
+      }
+    ],
+    "continuationReachable": true
+  }
+]

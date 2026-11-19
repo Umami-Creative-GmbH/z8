@@ -1,0 +1,1069 @@
+{
+  "anchors": [
+    {
+      "id": "baseline",
+      "issue": 1689,
+      "verifiedCommit": "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+      "verification": "All four baseline commits and both merge parents are ancestors; all 82 baseline paths and concurrent dev paths remain byte-identical. Prior runtime evidence inherited; fresh scoped tests tracked in README.",
+      "ancestor": true
+    },
+    {
+      "id": "F1",
+      "issue": 1693,
+      "blockedBy": [
+        1689
+      ],
+      "status": "integrated",
+      "verifiedCommit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "integrationCommit": "b31c497bb48c873153b731ea9f7b62c8c3e0e2fe",
+      "evidence": "docs/design/rollout-1692/1693.md",
+      "integrationVerification": "27 suites / 194 tests plus 7 fixture guard/exit tests passed on final merge; exact tree and parent/implementation ancestry preserved. Live consumer/role/theme/font/drawer/refresh evidence supports F1 handoff. Native React DevTools, partial comparison, provider/device/catalog and full-build final-review limits retained in evidence. Compatible shared-server recovery correction verified at ccccad7a3: four actual wrapper regressions red before/green after,7 suites/56 tests,full types and6-file Biome/Doctor zero. Historical real reader outage/restore changes0refetch/0rows/error to1GET/3rows/recovered; only4 caller APIs and fixtures change. Other3 wrappers assembled-only; original runtime/native/build/catalog/device/provider limits retained. Compatible shared navigation correction verified at b6595389e: hidden tooltip consumed firstEscape; one root disabled prop fixes owner. Permanent assembled regression red before/green after;10 suites/97 tests,full types,two-file Biome/Doctor zero. Three real historical-consumer phone pairs now close/focus with one Escape; desktop icon tooltip/focus and fresh Next probes pass. Seven PNGs fully decoded; owned services cleaned. Current-route/domain/native/build/catalog/device/provider/transition limits retained.",
+      "handoffCommit": "ac30ff285814644b08fc918eafa1013f3ecb7897",
+      "correctionCommit": "6bdef571e61ea5c7b8a73821e77fc8c8824e3836",
+      "mobileEscapeCorrectionCommit": "4b2b76a81133e36802e99636707a21282b7a1ce3",
+      "ancestor": true
+    },
+    {
+      "id": "F2",
+      "issue": 1694,
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "evidence": "docs/design/rollout-1692/1694.md",
+      "integrationVerification": "25 unique suites / 156 tests passed, exact tree and parent/base/F1/invitation ancestry verified; evidence JSON and diff --check passed. Real local/server record, selection/bulk/export/recovery/theme/role handoff demonstrated. Maintainability warning and broader final-review limits retained. H1 still awaits F3.",
+      "ancestor": true
+    },
+    {
+      "id": "F3",
+      "issue": 1695,
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "evidence": "docs/design/rollout-1692/1695.md",
+      "integrationVerification": "36 unique suites / 260 tests, full types, nine-file Biome and reviewed Doctor warning; exact tree, 14 ancestry checks, all 138 prior rollout files, evidence and whitespace verified. Inspected 33+4 live runtime assertions, not rerun. F2 interfaces coexist; H1 compatibility checkpoint eligible. Final-review limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "H1",
+      "issue": 1853,
+      "blockedBy": [
+        1694,
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "evidence": "docs/design/rollout-1692/1853.md",
+      "integrationVerification": "Docs-only checkpoint verified: exact merge tree/parents; F2/F3 ledger and ancestry; unchanged prerequisites and all 75 joint consumers; 24 links/anchors and all 10,349 prior files preserved. Existing combined 36-suite/260-test and runtime evidence reused, not rerun. Compatible joint handoff released; final-review limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R001",
+      "issue": 1700,
+      "route": "/",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "evidence": "docs/design/rollout-1692/1700.md",
+      "integrationVerification": "38 suites / 213 fresh tests, exact tree/parents/base/foundation/analytics/billing ancestry, artifacts and whitespace passed. Approved composition/preferences and shared clock owners preserved; heading and streamed PersonalDay fixes only. The historical shared-header timezone gap is controlled, corrected and verified under #1745 at f9769a743; see its report for retained limits. Leave/offline/billing/catalog/build/device/native-React limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R002",
+      "issue": 1701,
+      "route": "/absences",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "evidence": "docs/design/rollout-1692/1701.md",
+      "integrationVerification": "27 unique suites / 193 fresh tests (24/176 affected plus 3/17 dashboard), eleven-file Biome, exact tree/parents, eleven ancestry and artifact/preservation checks passed. All 254 prior rollout files and 61 ticket paths preserved. Historical 186 not reproduced; types/Doctor/runtime inherited with later full integration types passed. Upload/revocation/policy/catalog/build/device limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R003",
+      "issue": 1820,
+      "route": "/accept-invitation/[invitationId]",
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "evidence": "docs/design/rollout-1692/1820.md",
+      "integrationVerification": "11 unique suites / 103 tests across invitation and wrapper/header/init selections; evidence assertions, exact tree/ancestry and diff --check passed. 64 PostgreSQL tests and live runtime inherited from implementer. Shared version-label contrast corrected separately; final-review limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R004",
+      "issue": 1702,
+      "route": "/analytics",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "evidence": "docs/design/rollout-1692/1702.md",
+      "integrationVerification": "26 unique suites / 124 fresh tests (16/78 analytics plus 10/46 compatibility), full types, five-file Biome, evidence/artifacts/whitespace and 19 ancestry checks passed. Exact tree/all 185 prior rollout files preserved. Prior PostgreSQL 2/18 and real runtime inherited. Transition diagnostics unclassified baseline/regression; phone fullPage heights differ; report limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R005",
+      "issue": 1703,
+      "route": "/analytics/overtime-burn-down",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "integrationCommit": "6ae6409a4c4649e93a97f07ebb16e0c412c870de",
+      "evidence": "docs/design/rollout-1692/1703.md",
+      "integrationVerification": "Initial merge 26 unique suites / 137 unit tests, full types/Biome/evidence/expected tree/preservation passed. Root fixed both authenticated visibility and service Unassigned manager queries and route-controlled analytics tabs: 14/75 unit, 3/43 PostgreSQL, full types, Doctor zero findings, targeted Biome, real authorized UI/action/soft-navigation and connected Next probes passed; exact tested fix tree preserved. Existing formatting/import/four lint findings baseline-compared. Owned runtime cleaned; native React timeout and transition/nonzero/catalog/build/device limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R006",
+      "issue": 1704,
+      "route": "/analytics/team-performance",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "evidence": "docs/design/rollout-1692/1704.md",
+      "integrationVerification": "Fresh merge 25/150 unit tests; root 6/46, four-file Doctor zero, real scope-round-trip export discard/current download and retained-data Retry. Three generic-any warnings, incoming controller warning and build/catalog/device/transition/native limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R007",
+      "issue": 1705,
+      "route": "/analytics/vacation-trends",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "evidence": "docs/design/rollout-1692/1705.md",
+      "integrationVerification": "Fresh merge 20/159 unit tests, full types, eight-file Biome and ten-file Doctor zero. All prior heading/root corrections preserved. Pinned normalized broad-file diagnostics match baseline; 4/44 PostgreSQL and full runtime inherited. Fresh root normal vacation probe passes; remaining build/catalog/device/transition/contrast limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R008",
+      "issue": 1706,
+      "route": "/analytics/work-hours",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "implementationCommit": "0d23a915a55950423a25436809686a39213bbadb",
+      "evidence": "docs/design/rollout-1692/1706.md",
+      "integrationVerification": "Fresh merge18/164 unique unit tests, seven-file Biome/Doctor zero, exact tree/preservation/evidence. Root bounded sticky identity after confirmed phone occlusion; four paired real browser comparisons at390/320 with saved18px, long names and nonzero2025 values fail before/pass after. Root4/38 tests, full types, one-file Biome/Doctor zero. Formula/export/authority unchanged; PG3/43 and broad runtime inherited. Source variance/transition/catalog/build/device/native/profile limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R009",
+      "issue": 1707,
+      "route": "/approvals",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "implementationCommit": "ee0b441d9fbe6496421636d47bc03e48b820bdfe",
+      "evidence": "docs/design/rollout-1692/1707.md",
+      "integrationVerification": "Fresh24 unique suites/303 tests, full combined types,14-file CRLF-aware Biome zero errors/eight existing warnings; Doctor zero errors/two reviewed warnings. Exact tree/parents,13 ancestry checks,all541 prior rollout paths/92 root-exclusive files,artifacts/paired scopes preserved. Root trimmed four incoming whitespace findings and checked syntax. PG228pass/1skip and real runtime/native inherited. Held org-switch mutation/mobile Escape/transition/catalog/build/device/provider limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R010",
+      "issue": 1708,
+      "route": "/approvals/deputy-decisions/[absenceId]",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "implementationCommit": "7f4e83507fb3c3222a990c79be8f58fb7c72c52d",
+      "evidence": "docs/design/rollout-1692/1708.md",
+      "integrationVerification": "Fresh34 unique suites/374 tests, full combined types, seven-file CRLF-aware Biome/scoped+explicit Doctor zero findings. Sole heading-test conflict retains both complete1707/1708 cases. Exact tree/parents,24 ancestries,all572 prior rollout/66 root-exclusive files,JSON/scripts/16PNG/four matched pairs preserved. One EOF corrected. PG3/21 and actual local retry/browser/native inherited; four shared reset wrappers remain a root correction. Catalog/build/device/provider/transition limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R011",
+      "issue": 1709,
+      "route": "/approvals/inbox",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "implementationCommit": "7c342d50640bee64aff85eced675db14659f3ac2",
+      "evidence": "docs/design/rollout-1692/1709.md",
+      "integrationVerification": "Fresh79 unique suites/981 tests (52/663 +34/375 less7files/57cases), full combined types, ten-file Biome zero; Doctor zero errors/one controller warning. Unchanged compatibility passed alone after one concurrent5s extraction timeout. Both heading additions,49 incoming non-conflict/95 root-only paths and decision owners preserved. Authorized scoped reason/exact detail/refusal reviewed;12JSON/8scripts/20PNG/3matched pairs pass. PG2/6 and actual runtime inherited; final ARIA patch exact DOM unverified. Catalog/build/device/provider/transition/covering/six-kind/R012 limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R012",
+      "issue": 1710,
+      "route": "/approvals/review/[organizationId]/[kind]/[id]",
+      "blockedBy": [
+        1709
+      ],
+      "status": "integrated",
+      "verifiedCommit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "implementationCommit": "1ae48924f54510c35c5fd9be0bdb61e120da6baf",
+      "evidence": "docs/design/rollout-1692/1710.md",
+      "integrationVerification": "134 unique suites / 1276 fresh tests (58/699 exact +95/736 compatibility less19 repeated files/159 cases), full combined types, seven-file Doctor zero. CRLF-aware Biome autodiscovery passes seven files; additional forced100-column config reports seven formatting-only files and is not passed. Exact conflict-free tree, all20 prior verified ancestors,10915 prior paths/709 rollout paths, seven-source-path scope and artifacts verified. Root removes incoming1714 report duplication only. PostgreSQL4/14 and41 runtime assertions are inherited; domain/build/catalog/provider/device/zoom/transition limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R013",
+      "issue": 1711,
+      "route": "/billing/suspended",
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "evidence": "docs/design/rollout-1692/1711.md",
+      "integrationVerification": "10 suites / 137 ticket tests and 9 suites / 43 shared compatibility tests passed; evidence, expected tree, 10 ancestry checks, prior paths, committed LF/Biome and whitespace verified. Local billing roles/states/runtime inherited from implementer. External provider completion unverified: automatic approval rejected portal POST as possible external session; catalog/build/device limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R014",
+      "issue": 1712,
+      "route": "/calendar",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "implementationCommit": "ebf4c0ce8ca59fda5934b335824628f22dd5b0e6",
+      "evidence": "docs/design/rollout-1692/1712.md",
+      "integrationVerification": "Fresh50 unique suites/438 tests,full combined types,12-file Doctor zero/Biome zero errors+7 inherited warnings. Calendar/Compliance conflict additive;43paths,42incoming exact plus prior metadata+Calendar. All678 prior rollout/six recovery files/19verified ancestors preserved;10JSON/17PNG signatures/8targets/3scripts/whitespace pass. Runtime28+12 checks inherited; manual form opened not submitted; consequential-action/scope/revocation/large-text drawer/Profile/build/catalog/provider/device limits explicit. Compatible shared CalendarView navigation correction verified at b9abdb440:override bounded to existing navigationtransition/acknowledgement,three red/green regressions,45/489 fulltypes two-fileBiomeDoctor0 and12real manager desktop/phone navigation checks. Actualoriginalcachedinstance Back corrected,other owners/interface unchanged. OriginalR014handoff/runtime limits retained;newproof selected-personnavigation,panelteardown assembled-only.",
+      "handoffCommit": "cca1977df820ef288a7910a4f9d44b464d289b3b",
+      "arrivalCorrectionCommit": "7fed18b191760826b1076de827ff9de27f026ea9",
+      "ancestor": true
+    },
+    {
+      "id": "R015",
+      "issue": 1713,
+      "route": "/calendar/[employeeId]",
+      "blockedBy": [
+        1712
+      ],
+      "status": "integrated",
+      "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "integrationCommit": "d4f4859527122f39dfda456671d48de131bab51c",
+      "implementationCommit": "4d89533232f376eee4e9c2e8f92aa38845e30cd2",
+      "correctionCommit": "7fed18b191760826b1076de827ff9de27f026ea9",
+      "evidence": "docs/design/rollout-1692/1713.md",
+      "integrationVerification": "Native merge d4f485952 exact tree/no conflicts:54/463 exact is wholly contained in143 unique suites/1175 compatibility tests;full types,14-file CRLF Biome/Doctor zero. Default14CRLF and forced13format-only findings retained. All24 verified ancestors,934 prior rollout paths and concurrent owners preserved;34PNG fully decoded,18JSON/6scripts/24links. Inherited picker override finding fixed by7fed18b19:three permanent regressions fail exactpremerge;final45suites/489,fulltypes,two-file CRLF Biome/Doctor zero. Actual same-fixture cached Back before restores Person3 route but displays/queries5;final restores3 in originalcachedinstance.12desktop/Forward/saved18pxdarkphone assertions,reader200/zeroexceptions,clean connected Next/get_routes;five new PNGs fullydecoded/hashpinned. Panelteardown assembled-only after failedgridlocator;native10060/Previewtimeouts and priorinheritedPG/build/catalog/provider/device/zoom/transition/exhaustive limits retained. Exactrootmerge equals testedfeature.",
+      "ancestor": true
+    },
+    {
+      "id": "R016",
+      "issue": 1714,
+      "route": "/compliance",
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "implementationCommit": "c58300c73830f6d3f74a877667ce458ca7a49206",
+      "evidence": "docs/design/rollout-1692/1714.md",
+      "integrationVerification": "Fresh153 unique suites/1518 tests (19/130+143/1490 less9files/102cases),full combined types and10-file Doctor zero. Incoming CRLF-aware default Biome passes; extra forced100-column config reports9 formatting-only files including prior shared metadata, explicitly retained. Exact tree/parents,10844 unaffected paths/645 prior rollout/18 root recovery paths/18 verified ancestors,23PNG/6JSON/3scripts/28links preserved. Runtime35assertions/23captures/Next inherited; all-clear assembled-only, translated partial/recovery not certified; native/catalog/build/provider/device/zoom/transition limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R017",
+      "issue": 1715,
+      "route": "/driving-licence",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "implementationCommit": "7844510f2a47671b4d90153ef805ba7642213311",
+      "evidence": "docs/design/rollout-1692/1715.md",
+      "integrationVerification": "126 unique suites /973 fresh tests:31/215 exact+99/791 compatibility-10 repeated files/75 cases+6/42 retained root fixes. Full combined types and14-file Doctor zero. Normal10-file Biome+four legacy lint/import checks pass; extra forced webapp config remains unpassed with10 formatting-only differences. Exact conflict-free merge tree equals incoming; all21 previous verified ancestors,753 rollout paths and10954 unaffected paths preserved.48 PNGs fully decoded/12JSON/7scripts/16links/seven pairs checked. Current-route3 Escape variants/native tree-inspect-render/axe31-0-0/Next and PG6/59 are inherited; build/catalog/provider/device/true-zoom/transition/domain limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R018",
+      "issue": 1716,
+      "route": "/driving-licence/checks/[employee]",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "implementationCommit": "c024c7a0f8f2b799cd54b3906c48344b84509bf0",
+      "integrationCommit": "b42187081b43ec85e1a15a53bec9064e6f2da160",
+      "evidenceCorrectionCommit": "53f7d92b710feb7f9a20128fb3d5384940aea92a",
+      "evidence": "docs/design/rollout-1692/1716.md",
+      "integrationVerification": "Fresh140 unique suites/1053 tests:exact33/249+compat138/1031 less31files/227cases with multiplicity retained. Complete combined types,eight-file Doctor zero,seven-file actual-checkoutCRLF Biome and eight-file explicit lint/import pass. Raw default reports sevenCRLF-only differences;prior explicit-config formatting remains unpassed. Independent tree and all23 verified ancestors,893 prior rollout paths,11103 unaffected existing paths preserved.23PNG fully decoded,eightJSON,seven scripts,19links,three matched pairs inspected;equipment pointer evidence/static172=153+19 inventory validate. Root removes blank EOF and qualifies drawer starting-base metadata as report-attested,not machine-pinned;raw retained and future driver reads actualGitHEAD/status. No app change in evidence correction. PG9/87,browser action/context/drawer/nativeReact/axe35-0-0 are inherited,not rerun;build/catalog/provider/device/zoom/transition/exhaustive limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R019",
+      "issue": 1717,
+      "route": "/equipment",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "integrationCommit": "4d28de653613e84311c2af36b4f91d5766d1d9a0",
+      "implementationCommit": "f043d581e481a984a54da81b967bf5e6cfdfcd5e",
+      "evidenceCorrectionCommit": "4d42a191caa3f530ebc66c596058d4cc90b43154",
+      "evidence": "docs/design/rollout-1692/1717.md",
+      "integrationVerification": "137 unique suites/1025 fresh tests includes exact34/267 with parameterized-case multiplicity retained;full combined types,ten-file actual-rootCRLF Biome and Doctor zero. Extra forced100-column and stdin config checks retain ten formatting-only failures. Independent tree equals incoming;all22 prior verified ancestors,824 rollout paths and11030 unaffected paths preserved.32 PNGs fully decoded/10JSON/7scripts/13links/three matched pairs checked. Raw artifact verifier fails before correction; pinned captured Git blobs accept only exact LF/CRLF encodings of retained hashes, and separate current canonical check passes; no app source changes in correction. PG6/47 and35 runtime observations/current-routeEscape/native/Next inherited. Toast interception/baseline inferred pending root hit-test; earlier menu/stackless transition/build/catalog/provider/device/zoom limits retained. Root consumer correction verified at ce99de607: actual current baseline settled toast intercepts enabled Submit with0requests/0saved. Inline equipment panel Alert preserves retained inputs and identical retry identity; direct actions retain toasts. Permanent regression red before;14 suites/125 tests,full types,seven-file Biome/Doctor zero. Real desktop paired0->1 and trusted repeat1->2,real saved18px darkphone2->3,one pointer request and panel closes;contrast19.1/17.5 and viewport bounds pass. Six captures fully decoded/source-pinned hashes and clean fresh Next probes pass. All23 prior verified ancestors and 11083 unchanged tracked paths preserved; exact merge tree equals tested feature. Separate Next development-indicator interception/earlier setup and menu findings retained. No freshPG/native/full-build/catalog/device/provider certification; shared F3 API/verifiedSHA unchanged.",
+      "artifactVerifiedCommit": "a82dffeb4e56b91194ed0243f677c3d1933f4de0",
+      "panelErrorCorrectionCommit": "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+      "ancestor": true
+    },
+    {
+      "id": "R020",
+      "issue": 1718,
+      "route": "/equipment/assignments/[assignmentId]",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "implementationCommit": "07d152106204c108639dfcc28590289f63f99268",
+      "integrationCommit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "evidence": "docs/design/rollout-1692/1718.md",
+      "integrationVerification": "Fresh105 unique suites/851 tests includes exact35/278+21/211,fullycontained in compatibility;full-name parameterized multiplicity retained. Complete combinedtypes,seven-file actualCRLF Biome/explicitlint-import/Doctor zero. RawLFdefault and explicit100column formatting each retain7format-only failures,no rewrite. Independentresolvedtree/parents,all26 verified ancestors,1067priorrollout/11281unaffected paths and Calendar/root/employee/assignment headings preserved.30PNG fullydecoded,35JSON,5scripts,31links,120sourcehashes/three four-file consumer-source pairs validate;root archives/static172=153+19/whitespace pass. No source/provenance/EOFblocker. PG10/129 andactual browser/native/Next inherited,not rerun;invalid recovery-pending capture replaced by dedicatedlock evidence,readswitch notmutation,foreignorg-feature combined restriction qualified. Provider/build/catalog/device/zoom/performance/exhaustive andtransition limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R021",
+      "issue": 1719,
+      "route": "/equipment/employees/[employeeId]",
+      "blockedBy": [
+        1717
+      ],
+      "status": "integrated",
+      "verifiedCommit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "implementationCommit": "63d8a75d52a1c24dabfd8c2397b76fabf8310607",
+      "integrationCommit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "evidence": "docs/design/rollout-1692/1719.md",
+      "integrationVerification": "Fresh143 unique suites/1182 tests includes exact35/277 fullycontained;multisetparameterizedmultiplicity retained. Complete combined types,eight-file actualCRLF Biome,eight-file explicitlint/import,eight-fileDoctor zero. Additionalwebappformat remainsunpassed sevenformat-only files,no rewrite. Independenttree/parents,all25 verified ancestors,1011 priorrollout/11224 unaffected paths,59nonmetadata incoming exact;onlymetadata combines.29PNG fullydecoded,13JSON,10scripts,31links,five sourcepins;equipment/Calendar archives/static172=153+19/whitespace validate. No source/EOF/provenanceblocker. R019historicalpasses,currentmetadata diagnosticfailurequalified. PG6/47,browser28+6+8/runtime switch/native/Next inherited,not rerun. Keyboardmenu/Renderinglayer/transitions/build/catalog/provider/device/zoom/performance/exhaustive limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R022",
+      "issue": 1821,
+      "route": "/forgot-password",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "implementationCommit": "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548",
+      "integrationCommit": "19c6c2adccb4ed0c13ca0fbd5cb593fb4dc82d88",
+      "evidenceCorrectionCommit": "06528b416fe555b0f793131620aee9b36e335c73",
+      "evidence": "docs/design/rollout-1692/1821.md",
+      "integrationVerification": "Nativeindependentmerge19c6c2ad:95unique suites/913tests,exact19/240+compat76/673 disjoint withfull-name multiplicityretained. Fullcombinedtypes,two-fileactualCRLF Biome/explicitlint-import/Doctorzero. Explicitwebappformattingfailsbothchangedfiles,notrewritten. All27verifiedancestors,1141priorrollout/11360unaffected/55incomingpaths preserved;35PNG fullydecoded,14JSON/3drivers/11links andLF-to-CRLFcanonicalsourcepins validate. Rootreportqualificationpreservesallrawartifacts/appsource:claimed24pxactually16px,savedLarge18px,24/truezoomunverified;genericshadowassertionweak,PNGblueedgeinspectedwithoutindependentfocusmeasurement;14rawJSONlackfinalLF retained. Rootarchives/static172=153+19/bothparentandworktreewhitespacepass. Runtime14states/5actions/neutral/CAPTCHA400->200/oneverification/native/Next inherited,notrerun. Delivery/fullreset/customdomain/build/Tolgee/devices/zoom widerlimitsretained.",
+      "ancestor": true
+    },
+    {
+      "id": "R023",
+      "issue": 1822,
+      "route": "/init",
+      "blockedBy": [],
+      "status": "integrated",
+      "verifiedCommit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "evidence": "docs/design/rollout-1692/1822.md",
+      "integrationVerification": "8 suites / 62 tests passed on merge; ancestry, exact tree preservation and diff --check passed. Live provider/device, Tolgee and full-build limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R024",
+      "issue": 1823,
+      "route": "/join/[code]",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "integrationCommit": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+      "evidenceCorrectionCommit": "af7a187418e1cdef7ab35044fb91c226d56ba7ef",
+      "evidence": "docs/design/rollout-1692/1823.md",
+      "integrationVerification": "Independent merge 1ab2a066 and evidence-only qualification verified at 65b74963. Fresh 90 unique suites/824 tests (10/73 + 80/751 disjoint; full-name multisets), full combined types, six-file default/strict CRLF Biome and explicit lint/import pass. Explicit webapp formatting differs in five files; Doctor retains one reviewed async-effect advisory. All 28 verified ancestors, 1197 prior rollout and 11412 unaffected paths preserved; 40 PNG fully decoded,12 JSON,3 scripts,24 links,5 matched metrics and final/continuation/branding/readback production pins validate. Early dirty after-form hash matches no known committed feature blob; historical observation only. CSS viewport390 and some PNG380 are separate recorded dimensions. Root removes4 blank EOF lines; application bytes/raw captures unchanged. Existing archive/static172=153+19 checks pass. PG3/78 and browser/Next are inherited; native tree/build/catalog/provider/device/truezoom and wider limits remain unpassed.",
+      "ancestor": true
+    },
+    {
+      "id": "R025",
+      "issue": 1824,
+      "route": "/kiosk",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "integrationCommit": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+      "evidenceCorrectionCommit": "e1dddc1dcaff1216f2ef5bf8d16ad25a46191ed6",
+      "evidence": "docs/design/rollout-1692/1824.md",
+      "integrationVerification": "Independent native merge ebfb7d8e and evidence-only qualification verified at fe2bed7c. Fresh129 unique suites/1144 tests (34/264+97/896 less2/16 by full-name multisets),full combined types,17-file Doctor zero and strict lint/import pass. Formatting remains unpassed:17raw,15CRLF baseline-matching file list,10explicit-webapp files. All29 prior verified ancestors,1256rollout/11462unaffected paths and shared join/session bytes preserved. Organization name is scoped optional display data; queue summary and unresolved counts read existing owners only; frozen capture/offset/sealing/status-before-replay/per-employee/revocation owner bytes preserved.35PNGfullydecoded,13JSON/10scripts/56links and35final+combined/latest pins pass. Early compiler error/five unmatched dirty pins historical only. Raw terminal whitespace230 (215trailing+15EOF) and13JSON missingLF preserved; whole-change whitespace not passed. PG16/331 and2/39 overlap and predate finaljoin; browser/Next inherited, failed discarded unsent synthetic command retained as harness failure. Accepted durable queue settled; native tree/hardware/zoom/build/catalog/provider/wider limits remain unpassed. All original raw artifacts byte-identical; app source unchanged by root qualification.",
+      "ancestor": true
+    },
+    {
+      "id": "R026",
+      "issue": 1825,
+      "route": "/licenses",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "integrationCommit": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "evidenceCorrectionCommit": "11c5c2c22568eb7126f8a06bfff00b359104320b",
+      "evidence": "docs/design/rollout-1692/1825.md",
+      "integrationVerification": "Independent native merge006aff632 plus evidence-only qualification verified at254ccef5. Fresh33 unique suites/140 tests (15/46+23/101 less5/7 by full-name multisets),full combined types,four-file Doctor zero,CRLF-aware Biome and strict lint/import pass. Default4 and explicit3 formatting findings retained. All30 prior verified ancestors,1344rollout/11564unaffected paths/19aliases and all58incoming paths preserved.38PNGdecoded,9JSON/3scripts/17links/76capture pins/12 labelled CSS-scope pairs validate. Last-record PNGs show first records; before/final duplicate link-focus hashes. Action logs separately report zustand visible; root qualifies images without app/raw artifact changes. Runtime9da645441 inherited despite source equality; two-consumer baseline only. Fonts16/18 measured,family unrecorded,CSS/PNG dimensions differ. Native selected tree usable,a11y zero evaluated rules inconclusive. Unknown assembled-only; actual125packages/12licenses/zeroUnknown.8JSON+2TXT lackLF preserved. No DB suite appropriate to static report; fullbuild/catalog/device/truezoom/provider/alllocale/wider limits remain unpassed.",
+      "ancestor": true
+    },
+    {
+      "id": "R027",
+      "issue": 1826,
+      "route": "/mfa",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "integrationCommit": "877b12279ec992cf282e0ba775ac4849579aef86",
+      "correctionCommit": "4255ef7d6565d103a4b0887812b751db5bd08ad9",
+      "evidence": "docs/design/rollout-1692/1826.md",
+      "integrationVerification": "Native merge877b1227:40unique suites/251tests,fulltypes,7-fileCRLFBiome/explicitlint,Doctor0errors2reviewedwarnings;31verified ancestors/1401rollout/11621unaffected paths and14PNG/11JSON/3scripts/25links/59pins preserved. Merger reproduces lateSSO after unmount and stale successfulTOTP after cached Activity return. Root correction4255ef7 binds requests to connected arrival identity, stages navigation/status/reset, guards stale errors/cleanup, preserves new action; social disableRedirect delegates guarded HTTP(S) navigation without provider/auth/session policy changes. Final41unique suites/257tests (16/59+29/191 less11/46+7/53),fulltypes,2-fileCRLFstrictBiome and Doctorzero new findings. Actual setup3+runtime7 checks: real heldHTTP200TOTP across org navigation causes0staleinit requests; actual invalidcode refusal after primary proof; new valid action1init/safe callback. Browser input remounted in both versions; failed baseline cached expectation retained, cachedActivity/SSO/social successful responses assembled-only. Root3PNG fullydecoded/current pins/Nextempty/anonymoussignin stable/cleanup pass. Original raw worker artifacts unchanged,8JSON missingLF retained. Worker34runtime/PG2-15/native/axe40-0-0 inherited; primary prerequisite screenshot qualified separately. Native root EOF/closeEOF,Previewfailed thenclosed; old dev output moved only afterverifiedstop. Fullbuild/catalog/provider/device/truezoom/globaltransition/wider limits retained.",
+      "ancestor": true
+    },
+    {
+      "id": "R028",
+      "issue": 1720,
+      "route": "/my-documents",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "integrationCommit": "0a8247f6517714f2f51a74aa60f81914fa61771d",
+      "evidenceCorrectionCommit": "183cb120d5798a36ca19d4e11541107540e81658",
+      "evidence": "docs/design/rollout-1692/1720.md",
+      "integrationVerification": "Independent native merge0a8247f6 plus evidence qualification verified atced09508. Fresh68 unique suites/434 tests (46/269+62/414 less40/249; original45/263 subset plus6rootMFA cases),full combined types. Explicit100columnCRLF10consumers and12-filelint/import pass with1inherited suppressionwarning; raw12/CRLF8/navigation2 formattingfailures retained;Doctor9files0errors2reviewedwarnings, nofreshscore. All32verified ancestors,1455rollout/11674unaffected/84incoming paths, MFAcorrection andheadingoptins preserved.22PNGfullydecoded,25JSON/12scripts/46links/20pins validate. Canonical desktop/wide sidebar clipping exists before/after; operational captures align, no current runtime/cause established. Retain tooling overlap/transition limits and failed supplemental scope/read/locale repeat. Earlier scope/read report-attested; German content html.lang=en, not translatedUI pass. Root trims1action-driverblank; originalcaptures/JSON preserved; remaining158archive whitespace findings, appsourcecheckpass, wholecheckunpassed. PG6/112/actions21/variants17/native/axe/Next inherited, notrerun. Ownemployee/privacy/category/immediateupload/version/storage owners preserved; no source blocker. Fullbuild/Tolgee/provider/device/truezoom/globalacceptance obligations remain.",
+      "ancestor": true
+    },
+    {
+      "id": "R029",
+      "issue": 1721,
+      "route": "/my-equipment",
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "integrationCommit": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+      "evidenceCorrectionCommit": "424fa42af3c0ef06f30b16c7ab9ed69b9386062b",
+      "evidence": "docs/design/rollout-1692/1721.md",
+      "integrationVerification": "Independent native mergefb6a2c18 plus report-only qualification verified ata068cdd9. Fresh59unique suites/418tests (25/198+50/386 less16/166 by fullName multisets); worker24/191 subset plusMFA6/documentsheading1 retained. Fulltypes,8-file Doctorzero,CRLF-awareBiome/explicitlint pass; raw8/explicit6formatting failures qualified.33verified ancestors,1532rollout/11757unaffected/70incoming paths and bothheadingoptins preserved.34PNGfull decode,19JSON/8scripts/11links/148pins/3pairs validate. Personal currentorg/user/employee/staffView=false and all handover/correction/exception/outstanding/calendardomain owners unchanged; no operational authority/source blocker. Runtime24assertions/20captures pre-workermerge, finalmatched/native/Next atb89c9e9c; all inherited, PG10/118 notrerun. Org-switchHTTP200/old-recordabsence ends in skeleton/fontsloading, no settleddestination pass. Matchedphone tail not leadcomposition; separate18px operational captures show obligations. Baselineonlydesktop/sidebarclipping, toolingoverlays and former/unassignedloginvsdomainrefusal boundaries retained. Native38passes/51inapplicable/0incomplete/0violations primaryview only. Current-parent/source whitespacepasses; incomingparent158prior documents archivefindings unchanged. Alloriginalrawartifacts/appsources unchanged by rootqualification. Fullbuild/Tolgee/device/truezoom/provider/alllocale/globalacceptance limits remain.",
+      "ancestor": true
+    },
+    {
+      "id": "R030",
+      "issue": 1722,
+      "route": "/my-requests",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "integrationCommit": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "correctionCommit": "8ba550c282727aec4548a217daa673b38137c883",
+      "evidenceCorrectionCommit": "5174ae3fe3a5b760e4a465c9263e383ebf784e03",
+      "evidence": "docs/design/rollout-1692/1722.md",
+      "integrationVerification": "Native independent merge05c66 plus root public-reader correction verified3e6402ec; exact tree4ed81f16 equals tested feature5174ae3. Native48unique/1086 units (exact11/140 wholly overlap); root repeats same48/1086,fulltypes,8-file Doctorzero and3-file lint/import on correction8ba550c28. Both final whole-file formatting profiles fail3files; no blanket pass. Root35 PostgreSQL cases through production clocking/edit/delete/list/readiness/cancel/replay across active-append legacy/shadow/canonical/complete;217 unrelated cases skipped, migration/owned cleanup pass. Foreign/malformed/replaced/ordinary/contradictory evidence and missing pending compatibility rows stay excluded; current approved corrections retained. Actual legacy non-adopted Calendar proposal: pre-fix reader unavailable, fixed same pending request focuses Cancel, native dismissal0commands/confirmation1command, persisted requester cancellation/original work unchanged, fresh unavailable arrival,zero browser exceptions/final Nextclean. Legacy endpoint deletion omits tombstone; retained Cancelled history is adopted PG only.9 named runtime checks include1fixture setup;3 accepted+2 failed PNGs decode/current pins pass. Missing-manager and wrong translated-label harness failures retained; worker original live causes remain inference. All34 prior verified ancestors and original raw artifacts retained; only3 root domain/test paths plus report intentionally change. Worker responsive/preferences/roles/native/axe/67PG remain inherited, not added. Full build/Tolgee/provider/device/zoom/native/global-transition limits remain open.",
+      "ancestor": true
+    },
+    {
+      "id": "R031",
+      "issue": 1723,
+      "route": "/notifications",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "implementationCommit": "e2d14e0bda12cb2920f7a38c8df935ae81da1b42",
+      "integrationCommit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "evidence": "docs/design/rollout-1692/1723.md",
+      "integrationVerification": "Fresh independent native mergef15492e4,tree4379dbf3.41unique suites/495tests; exact24/314 wholly overlaps. Full next/app/workflow/smoke types,8-file Doctorzero,6notification/API normalCRLF plus2metadata explicitCRLF Biome and8-file lint pass; no broad8-file formatter pass.35prior verified ancestors/1720rollout/11946unaffected/65incoming paths and all91original1722artifacts/rootcorrection/rootproof/heading opt-ins preserved.32PNG fully decoded,19JSON/5scripts/23links/10pins/four accepted pairs validated; last-record PNG actually0unread/1visible Earlier Absence approved. Six archive/static validators incl1722 --current-source pass. No blocking source finding; selection/filter/latest100vsunread,retainedretry,scoped requests,keyed remount/late feedback and server authority unchanged or tested. PG1/13 and real tasks/held401+409/nativeReact/axe30pass0violations1incomplete/finalNextclean remain inspected inherited evidence. Earlier auth/Suspense warning,prompt-open excluded3rule audit,wrongfont/intermediate captures,no live two-authorized-org switch,cachedActivity/device/truezoom/provider/catalog/build/global limits retained. No merger source/report/raw corrections or services/PG/browser rerun.",
+      "ancestor": true
+    },
+    {
+      "id": "R032",
+      "issue": 1827,
+      "route": "/onboarding/complete",
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "implementationCommit": "274170732c4bcd42a1ee48103f458f0d3722149b",
+      "integrationCommit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "evidence": "docs/design/rollout-1692/1827.md",
+      "integrationVerification": "Onboarding completion #1827 is verified at `e873311b`:143 unique files/1400 tests, full types, three-file explicit webapp CRLF/lint pass; Doctor zero errors/three reviewed warnings. Nine new lifetime probes plus nine current #1727 probes pass. Personal completion stays separate from workspace/security authority; summary retry and init continuation retain their owners. All40 prior verified ancestors and2380 rollout paths preserved;22 PNGs/19 JSON/nine scripts/84 source pins audited. Worker3PG/17 and18 browser assertions/native target remain inherited. Ordinary-profile and archive-whitespace limits retained; no new services/install. Optional prior root archive-verifier reruns and SQL membership scenario were auto-review rejected and stayed unexecuted; independent preservation passed. Production/catalog/provider/device/zoom/global limits remain open. Independent tree dbe10052bf9cbb9e5d31621aad1d1b1bc9048cc4. Original worker artifact blobs preserved; fresh runtime not claimed.",
+      "ancestor": true
+    },
+    {
+      "id": "R033",
+      "issue": 1828,
+      "route": "/onboarding/notifications",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "752c500833e751df9988a3b2434d240124b89a51",
+      "implementationCommit": "028b4c0a026419567874190ce20b019180c7f304",
+      "integrationCommit": "3c7bc534edeb355d862c3f38759444658863af20",
+      "correctionCommit": "bfbfe29c5685e2de8e981ba76fd833bf48e782bf",
+      "evidence": "docs/design/rollout-1692/1828.md",
+      "integrationVerification": "Onboarding notifications #1828 is verified at `752c5008` after the pending-account task-heading fix. Fresh43 unique files/349 tests, full types,three-file explicit webapp CRLF/lint and Doctor zero findings pass. Permanent public regression red before/green after. Actual one held session GET per phase shows baseline0 versus fixed1 heading on desktop/phone, then HTTP200 reveals the unchanged form. Six decoded source-pinned PNGs, actual native NotificationSetup and clean accepted Next probes; four earlier failed development-reload/harness runs retained. No consent, preference/default, device enrollment or domain-owner changes. All41 prior verified ancestors and58 original raw artifact paths preserved. Original18PG/earlier runtime remain inherited. Historical/config pins, ordinary formatting/raw whitespace and build/catalog/provider/device/zoom/global obligations stay qualified; all owned root services cleaned. Independent tree b516260f42617ee245a13ef1b40ee366a7c9b743; 12809 prior paths byte-identical outside two source/test paths and qualified report. Historical reload cause remains unresolved; accepted comparison uses fresh processes with unchanged config/cache. Native loaded target is fresh; held-scope/Activity and granted-permission paths remain unpassed.",
+      "ancestor": true
+    },
+    {
+      "id": "R034",
+      "issue": 1829,
+      "route": "/onboarding/organization",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "implementationCommit": "301825c0bd096b5be74e7b545aee791da6bf418e",
+      "integrationCommit": "9847f784dfcdca922fd41936493ea07d4b896675",
+      "correctionCommit": "511ecaaacf5a4d864f0968dec3537172023beb63",
+      "evidence": "docs/design/rollout-1692/1829.md",
+      "integrationVerification": "Onboarding organization #1829 is verified at `9f839b78` after reusing the existing task header during membership detection. Fresh171 unique files/1721 tests, full types,three-file ordinary CRLF/both lint profiles and Doctor zero pass. First parallel compatibility payroll-focus failure is retained; unchanged one-worker selection passes all1688. Public heading regression red before/green after. Actual one held summary POST per phase shows baseline0/fixed1 heading on desktop/phone; HTTP200 retains member auto-Skip\u2192profile URL arrival, not settled-profile acceptance. Four accepted/two aliased failed PNG records, actual pending native owner with disclosed unchanged-response delivery hold, clean accepted Next/browser probes and exact credential exclusion recorded. All42 prior verified ancestors and original artifacts preserved. Historical/config pins, original3PG/78/browser evidence, loader annotations, formatting/raw whitespace and build/catalog/provider/device/zoom/global limits remain qualified; all root services62562/three fixtures/browsers cleaned. Independent tree b3c2aa2f972dfac76153051fe957f24558a4f9b0; 12993 prior paths unchanged outside two source/test paths and qualified report, 104 original raw artifact paths byte-preserved. Root new runtime is consumer-only/default-config with cold processes; no domain/authority/date/slug owner changes.",
+      "ancestor": true
+    },
+    {
+      "id": "R035",
+      "issue": 1830,
+      "route": "/onboarding/profile",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "implementationCommit": "df375cecd17c6d28e2621ee630a8bc19edb91f09",
+      "integrationCommit": "25865312d95c68ec1eaed75363e953745f168802",
+      "correctionCommit": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+      "evidence": "docs/design/rollout-1692/1830.md",
+      "integrationVerification": "Onboarding profile #1830 is verified at `63a5e6ff` after binding Save and Retry to their requesting lifetime before TanStack validation. Four permanent queued-scope/reconnect/Activity regressions fail on the exact old client and pass after correction. Fresh 176 unique files / 1,775 tests, full types, four-file explicit CRLF/lint and Doctor zero pass. Actual normal Enter, retained transport failure, one pending Retry, duplicate refusal and canonical persisted profile/defaults/admin continuation pass nine checks per consumer phase. Four decoded default-text desktop/phone captures and a fresh loaded native ProfileStep target are source-pinned; no cookie/state transfer. Browser continuity is separate from component-seam race proof. All 43 prior verified ancestors and original incoming artifacts are preserved. Seven previously normalized worker logs are qualified, correcting the reported eight. Intermediate Doctor warning and failed launcher are retained; final source preserves the React form action. Original 3-suite/84-test PostgreSQL and broader role/calendar/theme evidence remain inherited. Formatting/raw whitespace, full build/catalog/provider/device/zoom/global limits remain open; root port 50542, browsers and three services are cleaned. Independent tree 7216c36d4837aabbe88c9a64394e6b842aab360a; 13152 prior paths unchanged outside two source/test paths and qualified report, 44 original incoming artifact paths byte-preserved. No root action/service/schema/authority/date/preference changes.",
+      "ancestor": true
+    },
+    {
+      "id": "R036",
+      "issue": 1831,
+      "route": "/onboarding/vacation-policy",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "implementationCommit": "5c083d2a4301672ec610d96b08be6ebc0d0f7588",
+      "integrationCommit": "699a1a782ca8f0ab2def50b31e4921fd6d17a073",
+      "correctionCommit": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+      "evidence": "docs/design/rollout-1692/1831.md",
+      "integrationVerification": "Vacation policy #1831 is verified at `059ddd58`. Root corrected eight authority/admission failures and two missing loading headings using existing canonical settings access; Save/Skip also bind the requesting actor/organization before server writes. Old-service member writes and old026 dual-admin scope drift fail real PostgreSQL regressions and pass after correction. Final 178 unique unit files / 1,822 cases plus three PostgreSQL files / 99 cases, full types, scoped CRLF/lint and Doctor zero diagnostics pass; two existing Doctor exceptions and dirty-revision provenance remain qualified. Real current-source Save/retry/one-command/default readback passes nine checks, then a network-idle harness timeout is retained; a separate four-check continuation proves settled member redirect, actual typed create/skip refusals and no writes. Five old-client comparison checks, four source-pinned desktop/phone PNGs, fresh native pending-owner inspection and clean connected Next arrays pass. Current runtime uses normal ephemeral sign-in without cookie/state transfer. Both root fixture generations, six services and owned browsers/Next trees are cleaned. Existing calculations/history/default constraints remain; no atomic concurrent revocation or default replacement claim. Original source-hash/formatting/raw-log and wider production/catalog/provider/device/zoom/transition limits remain explicit. Independent tree 09d8596bf38810d0f5da492463b1238116bd268e; all44 prior verified ancestors and 13294 prior paths preserved outside eight source/test paths and qualified report; 67 original incoming artifact paths byte-preserved.",
+      "ancestor": true
+    },
+    {
+      "id": "R037",
+      "issue": 1832,
+      "route": "/onboarding/welcome",
+      "blockedBy": [
+        1693
+      ],
+      "status": "integrated",
+      "verifiedCommit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "implementationCommit": "5a96bbad942c4fd29deb31dbce77a08002d4011b",
+      "integrationCommit": "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+      "correctionCommit": "9894ea4e9718ea3188388d80a90d25cc51e10047",
+      "evidence": "docs/design/rollout-1692/1832.md",
+      "integrationVerification": "Onboarding welcome #1832 is verified at `5646e7b3` after correcting immediate Activity-return stale-summary continuation and pending-session continuation with retained identity. Both permanent public regressions fail before and pass after; a lifetime owns its fresh summary/retry generation, while unresolved session removes action controls. Final 180 unique unit files / 1,885 cases, fresh three-file PostgreSQL / 78 cases, full types, explicit two-file CRLF/lint and Doctor zero diagnostics/exceptions pass. Exact committed-source runtime passes nine real initialization/summary/step Retry, one-command and persisted-profile checks; four current desktop/phone captures, actual native WelcomeArrival/WelcomeFrame and clean connected Next arrays are pinned. Activity/session race proof remains assembled, not physical-browser timing. Normal transient sign-in uses no cookie/state transfer. Intermediate lint/dependency-tag and historical formatter/raw-archive/source provenance qualifications are retained. All 45 prior verified ancestors and original incoming artifacts survive. Root Next port49627, browsers and three labeled services are cleaned. Existing actions/services/permissions/time calculations remain unchanged; wider production/catalog/provider/device/zoom/transition limits stay open. Independent merge tree 0a3231fe2ee20ba96d5f4bf7d5094932bfa5b209; 13598 prior paths preserved outside two owned source/test files and qualified report, 145 original artifact paths byte-preserved.",
+      "ancestor": true
+    },
+    {
+      "id": "R038",
+      "issue": 1833,
+      "route": "/onboarding/wellness",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "implementationCommit": "aeb655393c1d02aeb9ef67b8a53e860f87b3403c",
+      "integrationCommit": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+      "correctionCommit": "13b4c571e0716837b589438c3686eccc12f94de5",
+      "combinedCorrectionCommit": "5c0a304a4348dc3939099ca725834e2d6de2fbc3",
+      "evidence": "docs/design/rollout-1692/1833.md",
+      "integrationVerification": "Wellness #1833 is verified at `0e5c9c31` after binding Continue to its activation arrival before TanStack dispatch. The permanent old queued Activity Save fails before and passes after; retained goal20 and fresh Continue remain. Two broad runs also exposed a native-disabled Payroll focus timing defect; controlled public refusal/removal reds and a deliberate-focus-move control now pass after separate isolated focus correction. Final177 unique unit files/1,876 cases, fresh2-file/98-test PostgreSQL, full types, explicit4-file CRLF/lint and Doctor zero pass. Exact wellness13b source passes nine real non-admin personal Save/retry/one-command/Skip/disabled/readback checks with four current PNGs and native WellnessStep/Header; both wellness blobs are unchanged in combined5c. Fresh admitted Payroll native tree/Next diagnostics pass, but live dismissal/focus remains unpassed because the configured fixture exposed zero eligible rows. Original two failed broad runs, harness failures and complete snapshot distinctions are retained. No server action, permission, calculation or date change; normal transient sign-in/no cookie-state transfer. Both root fixtures, six labeled services, browsers and ports49211/63245 are cleaned. Build/catalog/provider/device/zoom/global limits remain. Independent tree 9b68d16881d21ad0450ad0b1234f5af09428a16b; all46 prior verified ancestors, 13837 prior paths outside four source/test files/two qualified reports, and 112 original incoming artifact paths preserved.",
+      "ancestor": true
+    },
+    {
+      "id": "R039",
+      "issue": 1834,
+      "route": "/onboarding/work-schedule",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "implementationCommit": "f38255ab9ee57f37e72cd76368855d3c3233abee",
+      "integrationCommit": "bd160d9af22214d473ea603870cdc161572bbcad",
+      "correctionCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+      "combinedCorrectionCommit": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+      "evidence": "docs/design/rollout-1692/1834.md",
+      "integrationVerification": "Work-schedule #1834 is verified at `ca6f607d` after retaining the task heading during pending session and admin admission. Two public heading reds pass after correction; separate Payroll focus settlement red is corrected on its own branch. Final178 unique physical files/1900 cases, full types, five-file explicit CRLF/lint and Doctor0errors/2retained onboarding warnings pass. Actual original session/admission requests show baseline0/current1 pending heading with no editable fields; six before/14after checks and12accepted captures. Real admin Save/Skip and member autoSkip persist progress only with scoped policy counts unchanged. Native settled form/heading passes; two native pending-gate attempts and two action-harness failures remain retained/unpassed. No fresh standalone PG count, policy writer/authority/calculation/date change, live Payroll focus or full-build/catalog/provider/device/zoom/global acceptance claim. Owned browsers, verified Next trees/port61505 and three labeled services cleaned. All47 prior verified ancestors and original137 incoming artifact paths preserved.",
+      "ancestor": true
+    },
+    {
+      "id": "R040",
+      "issue": 1835,
+      "route": "/onboarding/work-templates",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "implementationCommit": "64b1d9aba8100607826e80ec6e3c4e6b1154fc69",
+      "verifiedTree": "0d5b70853d7e3e86264e06c89b7d2777490f9e0f",
+      "integrationCommit": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "correctionCommit": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+      "evidence": "docs/design/rollout-1692/1835.md",
+      "integrationVerification": "Work templates #1835 verified at `16443982de929de4f885a6cfb6de5b377374cb3e`: activation-time Save reservation retires queued Activity/session/account/org commands and blocks Save/Skip races. Canonical settings admission, existing schema, complete graph and progress now share the existing guarded user-settings transaction; default/range/invalid/former/explicit-arrival refusal leaves no partial writes. No default replacement, idempotency or organization-configuration guard was introduced. Current383unit/30files+13PG/1file=396distinct cases, full3type projects, nine-file lint, seven-file targeted formatting and seven-file Doctor0/0 pass. Whole-service formatting and two inherited directives are qualified. Actual isolated normal development login reproduces historical partial graph3/3/14/1->4/4/21/1, corrected default unchanged4/4/21/1, one pointer retry->5/5/28/1; default/time-entry/preferences preserved. Initial progress already wellness; notifications navigation is observed, not fresh progress transition. Six canonical bounded-wait captures plus six qualified operational images, native target and precise per-route Next probes are retained. All50 ancestors,14824 unchanged paths,96 original artifacts,211 prior1737paths,158links/6hashes preserved. Owned browsers/Next/62642/3services cleaned. Some intermediate filenames overwritten, global progress class and partial-application source boundaries disclosed. Full production/catalog/provider/device/zoom/live-revocation/global-transition limits remain.",
+      "ancestor": true
+    },
+    {
+      "id": "R041",
+      "issue": 1724,
+      "route": "/organization",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "implementationCommit": "796f49b212ec9688a9d89186cb7c59d0c427c781",
+      "integrationCommit": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+      "correctionCommit": "89c7f3816988b33496165e9ee63c839aede4a364",
+      "evidence": "docs/design/rollout-1692/1724.md",
+      "integrationVerification": "Organization view #1724 is verified at `8d3006a5`, including three root lifecycle regressions. Fresh 50 unique suites/576 tests, 18 PostgreSQL tests with migration recovery, full types, 11-file Doctor zero, normal CRLF Biome and lint pass. Alternate formatting profiles remain unpassed. Both read-loss defects reproduce with real server responses before and resolve after; cached phone Retry uses actual pointer input, while modal-blocked header Refresh uses disclosed synthetic DOM activation. Seven accepted/two failed captures decode with source pins; final connected Next arrays clear, historical overlays remain. Original artifacts and all 36 verified ancestors survive. Build/catalog/provider/device/zoom/global acceptance remains open. Independent tree 0b08d15c3caa555e4cfbc483bd02d87e3cb438db; 12042 prior paths and all 28 original ticket artifact blobs unchanged outside three corrected source/test files and appended report. Native 50/573 is superseded by root 50/576, not additive; root client37 includes three new cases. All owned browsers/verified Next60423/three containers cleaned. Worker native/axe/25 runtime observations inherited, separate from root live proof.",
+      "ancestor": true
+    },
+    {
+      "id": "R042",
+      "issue": 1725,
+      "route": "/payroll",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "implementationCommit": "165681372d1950bdb846eb43774dd2d4b429f6f8",
+      "integrationCommit": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+      "correctionCommit": "6bded15a8d0221b670d4957275aa738eae06202c",
+      "evidence": "docs/design/rollout-1692/1725.md",
+      "integrationVerification": "Payroll #1725 is verified at `807fcc63` after organization/actor/covered-roster lifetime correction. Fresh 94 unique suites/1,027 tests, full types and 11-file Doctor zero pass; accepted six-file explicit/two-file normal formatters and all-11 explicit lint pass, with remaining profiles/import findings retained. PostgreSQL combined49pass/1fail/1skip plus fresh isolated grant7/7 gives50 distinct passing cases/1skip, not a green combined run. Actual B props leave baseline A8 rows stale; correction shows B1 and returns A8, preserves draft through completed header Refresh and downloads PDF without a job. Late effects are assembled-only. Five accepted/five failed PNGs decode with pins; final Next clear, large-fixture legacy absence-backfill stack overflow remains. Original raw archives and all37 verified ancestors preserved; build/catalog/provider/device/zoom/global limits remain open. Independent tree6fe328d2016a35a97d4424c3165e6108fad6523a. 12213 prior paths and 128 original raw ticket artifact paths unchanged outside seven source/test edits and appended report. Root introduces required organizationId in the read projection only; no query/grant/calculation/UTC/delivery owner changed. Both PG containers, verified Next49196 and three browser-fixture containers cleaned. Automatic review rejected credential-output command; user approved private-file Chromium alternative, which passed without returning credentials.",
+      "focusCorrectionCommit": "014166f8331c34f5be4c027b6b164615c7505ad7",
+      "focusCompatibilityCommit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "focusEvidence": "docs/design/rollout-1692/1725.md#root-pending-clear-focus-correction",
+      "focusVerification": "Three permanent pending-native-focus controls plus all72 Payroll component cases and final177/1876 combined selection pass. Actual admitted native Payroll/Next checked; live dismissal/focus unpassed with zero eligible fixture rows. Existing verifiedCommit and original domain/runtime limits retained.",
+      "focusSettlementCorrectionCommit": "4ba74f9910208242cb283e2461f78d15cbb807d0",
+      "focusSettlementCompatibilityCommit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "focusSettlementEvidence": "docs/design/rollout-1692/1725.md#follow-up-refusal-settlement-before-the-enabled-commit",
+      "focusSettlementVerification": "A controlled native-blur-before-enabled-commit public regression fails before/passes after; original focus precondition added, all73 Payroll and combined178/1900 cases pass. Deliberate focus changes remain. Prior live focus limitation and original verifiedCommit stay unchanged.",
+      "ancestor": true
+    },
+    {
+      "id": "R043",
+      "issue": 1726,
+      "route": "/payroll/work-balances",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "implementationCommit": "28ea28fa4026d0798d218c6cf9de89317b99ed00",
+      "integrationCommit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+      "correctionCommit": "4cb26d6e0408c33ee8f89ded3fcd1f73a2976292",
+      "evidence": "docs/design/rollout-1692/1726.md",
+      "integrationVerification": "Payroll work-balances #1726 is verified at `0012c8bb` after cached upload recovery and heading-test reconciliation. Fresh 107 unique files/1,141 tests, full types, nine-file explicit CRLF/lint profiles pass; Doctor zero errors/three reviewed warnings. Five new cases fail on the exact old component. Actual produced-preview response held across navigation/Back freezes the same baseline control; the correction unlocks it, one pointer Retry previews, and one pointer commit stores 150 minutes. Seven accepted/two failed PNG records decode; original clipped desktop pair, raw-log whitespace, formatter differences, non-target native tree and expected destination authorization diagnostics remain qualified. No server/domain/time/grant changes; original artifacts/all38 verified ancestors preserved. Build/catalog/provider/device/zoom/global limits remain open. Independent tree ca202f142274855554c06b23a3e220ee51388392; 12387 prior paths unchanged outside three source/test paths and qualified report, 100 original raw artifact paths unchanged. Source/prose/script whitespace passes; literal log whitespace fails and remains archived. Two-suite/18-case PG is inherited; fresh actual UI commit has scoped DB readback. Verified owned Next62511, private browsers and three label-owned services cleaned.",
+      "ancestor": true
+    },
+    {
+      "id": "R044",
+      "issue": 1727,
+      "route": "/payroll/work-balances/[employeeId]",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "implementationCommit": "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf",
+      "integrationCommit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "correctionCommit": "b4cef3a126fd16563cb0bbddfd5872a2aeb4e530",
+      "evidence": "docs/design/rollout-1692/1727.md",
+      "integrationVerification": "Employee work balance #1727 is verified at `c6b9cdef` after safe server/client loading headings and the independent directory-heading assertion reconciliation. Four new cases fail on exact old consumers; fresh116 unique files/1213 tests, full types,17-file explicit CRLF/lint profiles pass. Doctor zero errors/one reviewed complexity warning; precommit dirty-byte scan is canonically pinned. Actual held coverage read shows zero baseline main headings and one safe heading after correction, then the unchanged employee heading/action. Four decoded PNGs, clean accepted Next/browser probes and actual loaded native React target are recorded. All39 prior verified ancestors and83 original raw artifact paths survive. Dependency-link incident repaired with isolated physical copy install; lock/config unchanged, deeper prior postinstall integrity unproven. Formatter/raw-log/snapshot whitespace and production/catalog/provider/device/zoom/global acceptance limits remain open. Independent tree51c0624a57604f31f39f90019e38402e3215e936; 12550 prior paths unchanged outside six source/test paths and qualified report. Worker35 PostgreSQL tests remain inherited; root performed actual disposable streaming read acceptance only. Scope mismatch regressions assembled-only. Owned Next53965, private browsers and three label-owned services cleaned.",
+      "ancestor": true
+    },
+    {
+      "id": "R045",
+      "issue": 1728,
+      "route": "/personnel-files",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "implementationCommit": "a146813a73b12c443f59c56727b7f5b33557b740",
+      "verifiedTree": "c3a2f3affeeb07ebcae8283a56e92a98303fe0fe",
+      "integrationCommit": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+      "correctionCommit": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "evidence": "docs/design/rollout-1692/1728.md",
+      "integrationVerification": "Personnel directory #1728 verified at `e50692c3bc5194ab1c16d2fe8d12664ab11aafd7`: current/former marking uses canonical employee access at the departure cutoff while retaining managed files; directory and expiry share one captured instant. Permanent real canonical schedule/cutoff/execution/rehire and deactivated/own/foreign controls pass. Completed server-read nonce and local client/session retirement prevent the reproduced old-scope/pending-session revival and retain safe heading/Retry;12assembled workspace cases pass without fresh-read-on-Activity or shared queued-command claims. Final327unit pass/1known unchanged broad-guard failure in26files +149/149PG in11files =477unique/37files,476pass1fail. Four implicated guard blobs exactly match previous verified/provisional/source; guard not relaxed. Full3types,12-filelint andDoctor0/0 pass;5formatfailures remain. Real expiry lock/cancel/pointerRetry retains directory. Actual public certificate-only one-target grant/own+nonofficer denial/PUBLIC revoke/settled renewal refusal preserves correct Title,note,Certificate,Nov20deadline and0->0 scoped request rows; reload denial and saved18px/reload pass. Runtime08 accepted;07 BUTTON.value/setup hydration qualified. Native03 actual owner tree/close passes, permission API unavailable. Three partial-consumer before/current viewport pairs,19source pins,33decodedPNGs;109sealed artifacts/108public plus private-log hash-only exclusion. Persistent progress/dev/Pets/initial clipping and historical2h1 qualified; dark/16px comparison emulated, savedLarge18 separate. All51ancestors,15038 unaffected paths,original artifacts and1835sources/proof preserved;158links/6hashes unchanged. Owned Next56769/native/3services cleaned. Reverse directory/live cutoff/account-org/queued shared-dialog/firstEscape/a11y/binary/build/catalog/provider/device/zoom/global limits remain.",
+      "ancestor": true
+    },
+    {
+      "id": "R046",
+      "issue": 1729,
+      "route": "/personnel-files/[employeeId]",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "implementationCommit": "8e14fcb945ccc6d0e5075407b00def0ed1050391",
+      "verifiedTree": "8ad92a5f0154c2f155bdfb123c13f8f416a333c1",
+      "integrationCommit": "e1e25677696ad9dce26b77e1fcb7047db8b2fe1c",
+      "correctionCommit": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+      "correctionCommits": [
+        "ed1841d161a448561b329fae43903b0a2e606dfa",
+        "e4d08accbee9b37b2f7bc5068a197f62f74c47a1"
+      ],
+      "evidence": "docs/design/rollout-1692/1729.md",
+      "integrationVerification": "Selected personnel file #1729 verified at e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9: completed RSC read identity and the unchanged verified directory retirement guard keep old actor/org/pending-session records and tasks hidden until a new admitted read; local Retry retains a safe heading. Delete confirmation now reserves activation before TanStack validation and refuses queued obsolete commands after parent removal or Activity, with retained reason and exact duplicate/retry counts. Fresh175unit/25files plus163PG/9files=338distinct cases; focused reruns overlap. Full3type projects/typegen pass against identical production source; final test-only submit-cancellation assertion passes focused5. Six correction-file CRLF checks pass; full14 lint/import passes with one inherited unused suppression warning, full14 format has8 preserved failures. Doctor14 has0errors/1 reviewed preventDefault false positive, actual cancelable-event proof retained. Normal isolated development sign-in: actual reader cancellation/Retry and retained refresh failure; public certificate-only specific grant/own+nonofficer+category denial/PUBLIC revoke/open metadata/settled Enter Save refusal retains exact visible fields, zero matching scoped writes and reload denial. Real Tus/protected native68byte download/parsed native274byte ZIP with exact extracted bytes/metadata edit/skill cancel/reasoned deletion pass. Saved18 reload and officer/self phone bounds, actual React target and exact connected Next probes pass. Seven exact historical consumers form a stopped-server partial comparison, restored byte exactly; six matched images/31 decoded PNGs. Officer long title is offscreen in its PNG, DOM proof separate; lower developer/Pets overlays are not occlusion-certified. All52 predecessor handoffs, prior proof groups and158links/6configs preserved; owned browser/Next/3services cleaned. Broad roster guard remains unresolved/unrun here. No expectedRevision API, hidden Activity fresh-read/all-ABA/shared late-callback, actual skill assignment/sick-note linking, provider/build/catalog/device/truezoom/global readiness claim.",
+      "ancestor": true
+    },
+    {
+      "id": "R047",
+      "issue": 1730,
+      "route": "/personnel-files/document-requests",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "implementationCommit": "b3ba1c5ce8ac9dafd108feef560695ec462dce3b",
+      "verifiedTree": "5cdcf159419000b42077d5fcfba7fb08bef34ced",
+      "integrationCommit": "7d7d333e685cb9ce0aae3b08bc24394ad1dda1b0",
+      "correctionCommit": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+      "evidence": "docs/design/rollout-1692/1730.md",
+      "integrationVerification": "Verified #1730 at 8e3876c39725b7a8ef5218439766395401d64b80. Bulk captures activation before validation; failed queue arrivals retain Retry. Shared Return/Cancel capture request ID/version, lock pending dismissal and duplicates, suppress retired completions and retain reasons with transport retry. Existing payload, authority and version contracts remain unchanged. Fresh 335 unit cases in 52 files plus 99 PostgreSQL cases in six files give 434 distinct cases; all three type projects pass. Eight correction files pass explicit CRLF checks and all 13 files pass lint/import; two metadata formatting failures and three reviewed Doctor warnings remain. Fresh functional groups cover 35 action, eight recovery, 11 public grant/revoke and 15 genuine upload assertions. Protected 68-byte files survive Return/Cancel; linked renewal remains PG-only. Five matched current/historical states, restored-source React/Next checks and cleanup pass with partial-application/overlay/native permission qualifications. All 53 prior verified handoffs, scoped raw files, configs and dependencies survive. The public archive preserves failures and labels privacy clones. Broad roster, exhaustive races/roles, full build, catalogs, providers, devices and true zoom remain unpassed. See the report for exact evidence and boundaries.",
+      "ancestor": true
+    },
+    {
+      "id": "R048",
+      "issue": 1731,
+      "route": "/personnel-files/due-for-deletion",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "implementationCommit": "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf",
+      "verifiedTree": "93b5ffee12a3421a999d8cc5e76190e515fd7c9b",
+      "integrationCommit": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
+      "correctionCommit": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
+      "correctionIntegrationCommit": "4769c5f1a5daba7e87f81b6cc3f8cdffd865732c",
+      "evidence": "docs/design/rollout-1692/1731.md",
+      "integrationVerification": "Verified #1731 at b1e9a95c02374118deb9bba789f3aa8291b5e932. Active selection and capacity derive from current due/unknown records; selection events intersect prior IDs with current records, so hidden stale IDs cannot block the 500-document limit. Current and cross-page selections remain; unknown-start records require explicit review. Fresh 346 unit cases in 51 files plus 83 PostgreSQL cases in five files give 429 distinct cases. Typegen/all three type projects, two correction-file CRLF checks and nine-file lint pass. Two metadata formatting failures and one inherited Activity Doctor warning remain. Actual canonical policy changes exercise the 500-selection refresh; real held purge, retry/partial outcome, read Retry and public revoke/refusal evidence are preserved with failed terminal attempts and successful continuations distinguished. A genuine 68-byte uploaded object changes protected GET and original object HEAD from 200 to 404 after purge; audit descriptions are removed. Existing-preview deletion is unpassed. Six matched historical/current states use a stopped-server three-consumer partial comparison and exact restore; actual React/Next probes and cleanup pass with overlay/native failure qualifications. All 54 prior handoffs and evidence survive; source/configs/158 dependency links remain unchanged. Broad roster, exhaustive races/roles, full production generation, catalogs, providers, devices and true zoom remain unpassed.",
+      "ancestor": true
+    },
+    {
+      "id": "R049",
+      "issue": 1732,
+      "route": "/personnel-files/payslip-batches",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "implementationCommit": "df20c5d11bda382ccbe9104398600c6278a5038e",
+      "verifiedTree": "365e46b433269575a1b4a3845a126d89a52533c7",
+      "integrationCommit": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+      "reconciliationCommit": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+      "correctionCommit": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+      "correctionIntegrationCommit": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+      "evidence": "docs/design/rollout-1692/1732.md",
+      "integrationVerification": "Verified #1732 at 7cfbab79e202fffc17661f8eaefb8e5cce958834. Safe task headings remain in the actual route Suspense fallback and unconfirmed client scope, with local organization Retry through its existing refetch owner. Fresh source checks pass 440 unit case instances in 62 files, typegen and all three type projects; fresh final-source PostgreSQL passes 20 cases in one file, nonadditive with earlier PG20: 460 cases across 63 physical files. Ten-file lint and three correction-file CRLF checks pass; six full-format boundaries and two reviewed Doctor warnings remain. Real blocked Suspense, context GET failure/Retry, history SELECT failure/Retry with retained period/visibility, predispatch abort and one deliberate held Start with duplicate prevention pass. Exactly one open HR-only batch persists with no files, documents or notifications. Existing unsettled Activity commands stay locked until settlement; no server idempotency claim. Manager/restricted denials pass; optional saved-officer/held-revocation remains unpassed after bounded attempts. Native target ancestry, connected final Next probes, saved Large/dark/reload, collapse/refresh draft, first Escape/focus and three matched historical/current partial-consumer pairs pass. All 14 completed and 11 failed command attempts, source boundaries and visible overlays remain explicit. Previous 55 verified ancestors and all existing proofs survive. Broad roster guard, actual account/org ABA, exhaustive matrices, full generation, catalogs, providers, devices and true zoom remain unpassed.",
+      "ancestor": true
+    },
+    {
+      "id": "R050",
+      "issue": 1733,
+      "route": "/personnel-files/payslip-batches/[batchId]",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "implementationCommit": "258c18d2f7f87658f816f5276301297e9eaa60da",
+      "provisionalIntegrationCommit": "5f46459f553b8c4a0d5fb112de46aabe1b1cda71",
+      "provisionalReconciliationCommit": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
+      "provisionalCorrectionCommit": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+      "provisionalCorrectionIntegrationCommit": "0c96db4ed2ecc072688bba0a02d9661b3846d7a8",
+      "provisionalCommandCorrectionCommit": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
+      "provisionalCommandCorrectionIntegrationCommit": "a076560ff3fbf7d857c4258cee08e6c22f19609e",
+      "provisionalUploadCorrectionCommit": "c0480cfd33e579d807264ff4c2017a66b799ae36",
+      "provisionalUploadCorrectionIntegrationCommit": "32c91479c1184a0080bf82db6a6bfc6731b57c6f",
+      "provisionalBatchUploadCorrectionCommit": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+      "provisionalBatchUploadCorrectionIntegrationCommit": "6a114d85684004d9ca9bdc3cb08f313316f4e12a",
+      "integrationCommit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "verificationProofCommit": "5778c2280afcc11cfc99e0a6e549f81d9cfff89c",
+      "evidence": "docs/design/rollout-1692/1733.md",
+      "correctionCommit": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+      "integrationVerification": "Fresh READY with qualifications on166975f3, source/application tree unchanged through verified proof merge. Root460 selected unit cases/65files plus fresh canonicalPG20/1 gives480/66 selection union; independent62/6 (public39/4,PG20/1,browser3/1) is separate/nonadditive. All3types/typegen and scoped lint pass; Doctor9files0errors/3reviewedwarnings, formatter boundaries unpassed. Actual same-PDF ordinary batches and historical-client/current-hook reuse use fresh distinct keys/exact bytes without state clearing; ZIP/manual/drop/duplicate, Cancel/Escape, held one confirmation persisted2docs/1notice, protected598bytePDF download/parse, role/grant/self/revoke refusal0newdocs, context/preview Retry pass. Three matched partial4consumer pairs, saved18/sidebar/Escape, nativeReact/axe0violations1incomplete and restoredNext clean.280proof files/266payload; original112/24/71allowlists and14source/36configpins verified;30PNGs fullydecoded; rootGitblob seal exact. No source blocker; livepartialretry/expiry/allABA/assistivetech/errorcontrast/reducedmotion/translations/devices/truezoom/fullbuild/catalog/providers/globalguard/formatter limits remain explicit.",
+      "ancestor": true
+    },
+    {
+      "id": "R051",
+      "issue": 1734,
+      "route": "/personnel-files/sick-leave",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "implementationCommit": "e194f9f367ff747ecab779ebd47c2ba34c684b84",
+      "provisionalIntegrationCommit": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+      "provisionalCorrectionCommit": "81a94f940b7b7fbd13a823665b993b616973b2ae",
+      "provisionalCorrectionIntegrationCommit": "a5b0f7d8ff912c30197b81ba6ffe574ef68d6215",
+      "integrationCommit": "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "verificationProofCommit": "0778a51b8d58c8203943f394e43b0535147a683d",
+      "evidence": "docs/design/rollout-1692/1734.md",
+      "correctionCommit": "81a94f940b7b7fbd13a823665b993b616973b2ae",
+      "integrationVerification": "Fresh bounded verification on3d64886, application tree unchanged through verified proof merge. Root509selected unit cases/70files plus fresh canonicalPG65/3 and protectedPG20/1 give594/74 selection union; independent new9/1 plus overlapping protected40/5 andPG85/4 gives134/10 separately, not additive. Seven attempted runs198instances197pass/1initial fake-fixture sequencing failure retained. All3types/typegen/scopedlint pass; Doctor9files0errors0warnings; full100format7 and ordinary3 boundaries remain unpassed. Real one held cross-view unlink refreshes actual selected documents, self markers and employee counts without retired feedback; synthetic note intake/protected68byte exact download/relink with unchanged12absences/history, actual public all-scope officer grant/self exclusion/revoke/refused retaineddraft0writes/foreign404 pass. Two-consumer partial historical pairs1600/390/2400dark and18px reload, bounded native/current Next pass. Safe36runtime+30STOP payloads byte-exact; selected static provenance, source/config pins and root staged Git blobs verified in root-unlink-lifetime proof. Successful captures96px bottom-cropped/phonepartial/sharedoverlays, historical desktop record widths/named picker/liveallABA/truezoom/device/providers/Tolgee/fullgeneration/globalroster and formatting remain explicit limits. Reservation covers oneQueryClient only; no backend authority/time/storage/idempotency/cross-tab policy change. Staged archive whitespace check retains22 space-before-tab diagnostics in exact historical heading-resolution.patch context; payload unchanged, no whole-proof whitespace pass.",
+      "ancestor": true
+    },
+    {
+      "id": "R061",
+      "issue": 1735,
+      "route": "/reports",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+      "implementationCommit": "7fc82645ae809bf4ee28d3c5edc32766703fc0cc",
+      "provisionalIntegrationCommit": "1513a20116706380dd65a93b35104ca4eeea6066",
+      "provisionalCorrectionCommit": "9870df191c6b686106b38dcfa1bf6590ed611541",
+      "provisionalCorrectionIntegrationCommit": "931c3f41d7a75a4b03d13f3dbad2e6de4eac4260",
+      "provisionalRosterCorrectionCommit": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
+      "provisionalRosterCorrectionIntegrationCommit": "9f9df79f46f203f7aaa75d3f39ceb1f94dac7f7c",
+      "provisionalPDFCorrectionCommit": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+      "provisionalPDFCorrectionIntegrationCommit": "9284956219792bc328f24137ae5a17856f2dd999",
+      "integrationCommit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+      "verificationProofCommit": "56537aaf903e683591d429e5132868c4b67809f0",
+      "evidence": "docs/design/rollout-1692/1735.md",
+      "correctionCommit": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+      "integrationVerification": "Bounded acceptance on1d328a1b; app tree unchanged through proof merge. Current294unit cases/52files plus unchanged canonicalPG14/2 inherited from241a give mixed-snapshot selection union308/54. Independent9public cases are separate; fresh2compiled cases overlap294 and are nonadditive. All3types/typegen/15filelint and owned2explicit100CRLF pass; Doctor0errors/1unchanged roster-readiness warning, broad100format5/ordinary10 remain unpassed. Actual current normalUI PDF9344bytes/3pages,CSV1706,XLSX10605 completed and parsed; scoped canonical125280minutes/261days/all12months/52home dates24960minutes,absence values and originalPDFfooter/display context match. Live retained-generation commandRetry, rosterRetry, fourroles,keyboard/Escape,refresh/vehiclesnavigation,saved18/sidebarreload pass. Twelve reviewed images include nine-file partial historical consumer/hook overlay restored byte-exact. Corrected exactReportsContainer native inspection and connectedNext arrays[] pass; original wrong-target/parser/count/capture failures preserved. Public202-file archive contains74exact safe runtime entries plus selected history/source/config; private exportbytes omitted, parsedreceipts and hashes declared. RootGit-blobaudit verifies202archivepaths,15source/11configpins,raw+canonicalreportprefix and noappchange. All3STOP histories remain explicit; initial settings intermediate raw-output overwrite gap and one synthetic-email tool-output exposure qualified, noauthsecrets. Livecontextrefusal/customfieldprivacy/hourlyterms/cross-tabrevocation/actororgABA/heldbrowserexports/fullgeneration/Tolgee/providers/device/truezoom/exhaustivematrices/globalroster remain unpassed. Issues remainOPEN pendingfinalreview.",
+      "ancestor": true
+    },
+    {
+      "id": "R062",
+      "issue": 1736,
+      "route": "/reports/projects",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "implementationCommit": "16e4597833181cf411138d24e5116dded09ecc3b",
+      "integrationCommit": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+      "correctionCommit": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+      "headingCorrectionCommit": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+      "evidence": "docs/design/rollout-1692/1736.md",
+      "integrationVerification": "Project reports #1736 is verified at `c9a56648` with local organization-scope Retry for report/settings consumers, stable same-link revoke lifetime, current revoke-rights guards and exact settings heading adoption. Four permanent scope/revoke controls plus heading regression have archived reds; final58 unique physical files/560cases, all3types, eighteen-file explicit100CRLF/lint, Doctor0errors/4retained effects pass. Real compiled PDF/rendered multipage/vehicle/invoice/frozen boundaries pass. Canonical original context-failure/local-pointer-Retry HTTP200 recovery in both consumers passes6checks per phase with20accepted desktop/phone captures; fresh native settled owners pass. Exact preexisting settings uncached-auth/Suspense session diagnostic remains in both phases; no clean settings probe claim. Prior nine completed downloads/6PG36 stay at actual snapshots; merger freshly parsed5/6/5 hours and root hashes all9files. All48 prior verified ancestors, original60artifacts and263 prior1834paths preserved;158links/6config hashes unchanged. Browsers/Next/port53808/3services cleaned. No authority/calculation/date/schema change, live revoke race or full build/catalog/provider/device/zoom/global claim.",
+      "ancestor": true
+    },
+    {
+      "id": "R063",
+      "issue": 1737,
+      "route": "/reports/vehicles",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "implementationCommit": "6175e84f63208e234ac55c7c3933620072d0fb3c",
+      "verifiedTree": "8e3c4302eef4b5b6d2b41e3b7330b0f6cd38e5be",
+      "integrationCommit": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+      "correctionCommit": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+      "evidence": "docs/design/rollout-1692/1737.md",
+      "integrationVerification": "Vehicle reports #1737 is verified at `90a7e5bd`: initial organization-context failure now exposes local Retry, with a real-provider transport regression red before/green after. Route-local export helpers compile successfully with zero actual React Compiler errors and retain arrival/revision/duplicate guards and canonical serializers. Final66 unique files/607cases, all3type projects, nine-file explicit100CRLF/lint and Doctor0errors/6retained warnings pass. Actual context failure/recovery passes5checks per phase with10captures; actual completed3554byte PDF parses Jan101/Feb46/tenzero months,total147,archived118/own29,identities/period/generation. Three PDF captures and native actual generated owner tree2checks are archived. Phone PDF operational image is scrolled, not matched top composition. Prior CSV/XLSX and PG1/6 remain inherited, not new root all-format/standalonePG runs. All49 prior verified ancestors,14603 unaffected paths,85 original artifacts and266 prior1736paths preserved;158links/6hashes unchanged. Browsers/Next/64135/3services cleaned. Vehicle Next probes clear; retained settings/global findings and production/catalog/provider/device/zoom/live-revocation limits remain.",
+      "ancestor": true
+    },
+    {
+      "id": "R065",
+      "issue": 1738,
+      "route": "/scheduling",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "implementationCommit": "6744b09d2bc3e8df7de9fa5683f8b30214770838",
+      "handoffLimitation": "Bounded handoff verified; formatting, partial historical captures, stale-ack/readback and failed-attempt qualifications remain. Full production generation, remote catalogs/providers, physical devices/true zoom, broad roster and exhaustive live authority/transition matrices remain unpassed.",
+      "integrationCommit": "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
+      "correctionCommit": "55e1fee84317b4239efeb1f419c8b9cfce53512f",
+      "correctionIntegrationCommit": "c41f1fcfb9b581b0f746b01ca68a079449f5a831",
+      "integrationVerification": "PROVISIONAL. Merger reproduced unknown coverage presented as healthy-empty with no Retry. Root public red/green adds explicit coverage read state/local recovery, planner-scoped key suffix, retained-data labeling and supporting Retry pending/coalescing. 47 files/298 unit cases pass; final message-only followup reruns same8cases nonadditively, all3type projects pass,6owned explicit100CRLF Biome pass. Doctor21files0errors/2inherited scheduler warnings;ordinary6formatting differences retained. Independent merge tree matches,all59verifiedticket anchors plus baseline and17277 prior paths preserved. No fresh PG/browser/roles/actions/matched visual acceptance yet. verifiedCommit remains null; normal development auth required. Original failed/partial harness outputs preserved privately. Fresh independent8public/1file+45canonicalPG/7files pass. Actual normal dev Chromium coverage/supporting Retry and1create/1edit scoped readback passed; recorded work unchanged. STOP: expanded Shift list occludes enabled Publish, actualpointeropens unrelated Person2 Edit Shift with0publish calls; collapse restores hit target, expansion repeats. Safe28-file STOP immutable seal a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9. Narrow candidate8491 movesFaboutside calendarisolate, z30belowdialogs; fresh30unit/5files,all3types,2explicitCRLFlint,Doctor2changedfiles0diagnostics pass. Integrated8a9cbcc7 matchesindependenttree and17281priorpaths+all59anchors preserved. Browser hit-target/publish/remainingroles/visual/native acceptance stillPENDING;verifiedCommitnull. Fresh second browser check confirms layering atdesktop/phone/widedark anddialog layering, butactualpublishfailsSQLSTATE42809ANYrequiresarray;0publications. Immutable29fileSTOPseal54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae. RootactualShiftServicePGregressionreproduceserror, thenboundinArraypredicatefix569355869 passes. Fresh73units/13files+48PG/8files=121distinct/21files;afterimport-onlysortsame3PG+12unitsnonadditivelypass. All3typespass;2pathlint/import/newtestexplicit100CRLFpass;ordinary2/explicitlegacyservice1formatfindingretained. NoReactchange. Integrated17fde76bmatchesindependenttree;17282priorpaths+59anchors+baselinepreserved. Actualsuccessfulbrowserpublication/remainingschedulingacceptancepending;verifiedCommitnull. Actual7e5browserpublicationPASS:2inrangedrafts correctactor/time,foreign/adjacent/published/recordedworkunchanged,freshemployeevisibility. New immutable30payloadSTOPseale4ed0ede248c77399706e504078d3d9299a99c66f8bcaa53d6ad5118daaab2d1: readmapperdropsdatekeys,displayedweek/countincludesboundarydrafts;disabledPublishingpointeropensunderlyingunsavedEdit,1publishonly. RootpublicactionrealPGred/greenmaps service startDate/endDateExclusive andpreservesunbounded/employeeprojection/refusal. Routeonlydisabled:pointer-events-auto candidate keepsnativecontrolsurfaceabove records. Fresh297unit46files+6PG2files=303distinct48files,all3types/3pathlint/newtestFabexplicitformat/Doctor3changedfiles0diagnosticspass;ordinary3/legacyactionexplicit1formatdifferencesretained. Integrated8e7165c7 exactpredictedtree;17282priorpaths+59anchors+baselinepreserved. Currentweek/countandpendingpointerbrowserrecheck+remainingboundedacceptancePENDING;verifiedCommitnull. Fresh 3f22 normal-development verification PASSES selected-week/count, native disabled Publish second trusted pointer, actual publication/current actor audit/scoped readback/recorded-work preservation and fresh employee visibility/Retry. Immutable 29-safe-file STOP seal84d6047e7b9193dc249b169fa290e8d582305a16bb5ed8dbaf1f9358557472f1: standard manager repeatedly returns to dashboard. Root real scheduler+QueryProvider public red confirms optional template refusal triggers sign-in; localized supporting-read failure keeps existing local Retry and permissions, true transport401 redirect control passes. Correction7b26c7b4f integratedb600c7f8; fresh311unit48files, all3types, 2explicit100CRLF/lint, Doctor2files0diagnostics pass; ordinary2format differences retained. Six unchanged PG cases remain inherited, mixed snapshot317/50. Independent merge tree exact,17283 other prior paths+59anchors+baseline preserved. Initial unprivileged merge-tree and PowerShell tree-expression harness failures retained; tree independently recalculated after successful authorized merge. Fresh normal-development manager/remainingbounded acceptance pending; verifiedCommit stays null. Fresh manager check at a85 repeats dashboard return twice, 12shift and recorded-work digests unchanged, 0newunitPG. Immutable23-safe-fileSTOP sealbb2d4f9c27d0c4502b2280c4df0e70b7ed3fcfb47a58b76865b6acbbc1f03e17 supports remaining coverage AuthorizationError/Unauthorized misclassification path; private response body not captured. Root combined coverage+template realQueryProvider public red reproduces sign-in; typed403 authorization versus401 authentication plus existing translated action messages preserve canonical refusal and localRetry. Correction0c65dc6f9 integrateda2a3f633 exactpredictedtree; all59anchors+baseline/17283otherpriorpaths preserved. Fresh313unit48files/all3types/2ownedexplicitCRLFlint/Doctor2files0diagnostics pass; ordinary2format findings remain. Unchanged6PG2files inherited, mixed319/50. Manager and remaining bounded acceptance still require fresh check; verifiedCommitnull. Fresh d18 manager check PASSES admitted manager after all retries, current localcoverage/templatewarnings, realcreate/edit/delete+Cancel and recordedwork/scoped12shiftpreservation, fourroles, coverageRetry/nativeexactPlanner/finalexactSchedulingNext. Immutable50safe seal163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637. SupportingRetrypending/write-refusal/settledsidebar/policyack/historicalcomparison remain unpassed. Auto-review rejected eightfile roottrackedoverlay under immutablesource constraint;neverran. Separate T3comparisoncheckout selectedcommits alternative stopped at unprivilegedpnpmenginelock,7safe blockersealdcc7f5ac477fb4e9eee920d733928fb4465b491794229fe3d1c21cc51e120bf6;0runtime. Root normal approvedescalation versionprobe succeeds exact12.16.1, fresh isolated recheck2045 continuing with ordinary store access. No readinessadvancement;verifiedCommitnull. Isolated d18 follow-up completed: normal dev save refusal/retained draft/held retry/duplicate protection and public delete, hydrated sidebar reload, coverage refusal, bounded stale-ack nonpublication plus current acknowledgment/2-publication audit and protected recorded-work checks. Exact safe57 payload seal f2c1bb6305c3ec9a140ca7c727db2e95e52f499ecc4374b15a58ea0186e2ddcb; independent intake verifies57hashes/46JSON/8decodedPNG/16anchors. Nine readbacks reported but7safe receipts supplied. Two exact Week layout pairs; Day detail scroll/focus and historicalDay/currentWeek phone qualified. Stale6to5 ack attempt timed out, finally6restored, no definitive private response-code claim. Supporting Retry initially disappears while refetching with no data;2new public reds corrected with a read-task React transition, no canonical/key/policy/write change. Source01771c65 integrated512ac6f7, predictedtree exact/17,402 unaffected paths/59anchors+baseline preserved. Final joint392units/60physicalfiles,types3,8file explicitCRLF/lint/Doctor0 pass; ordinary8differences. Unchanged12PGcases/3files across scheduling+team inherited, mixed404/63 not fresh union. Current live Retry/root combined acceptance still due, verifiedCommit null. FINAL BOUNDED HANDOFF at e7089f663f6f7b388472794f211fcb6e49e7911f: fresh joint33/4 public cases pass nonadditively to root392/60; unchanged12PG/3 remains inherited (mixed404/63). Current live serialized supporting Retry, directory context/history recovery, exact native consumer and connected Next pass. Scheduling manager/publication/audit/employee/four-role/save/pending/sidebar/current acknowledgment and qualified historical Week comparisons retain snapshot provenance. Team manager/admin/self/employee, fresh per-opening empty/nonempty history and pending Retry passed. Public445-file archive plus2report appends and sibling Git-blob audit committed after independent447-path staged verification:432approved copies,23source/config pins,36fully decoded PNGs,336JSON,16syntax checks,72links;17404 prior paths unchanged. Both verifier modes and independent native decoder pass. Separate auditor agrees; no application source change in proof commit. Original rejected/failed attempts and all wider limits preserved; issues stayOPEN, PRdraft.",
+      "stackingCorrectionCommit": "8491e46aaac7e4e4b4b26d4dacd19d963580610a",
+      "stackingIntegrationCommit": "8a9cbcc7f1f78b0da6371d7e0a5b4e57215b484a",
+      "publicationCorrectionCommit": "5693558691721321796c91ac941166c30d74c677",
+      "publicationIntegrationCommit": "17fde76bf77bb72606d101d39e28c30f527dcbf4",
+      "rangeAndPendingCorrectionCommit": "fe738e786f635dc6c3fe6124cc04fea598485a25",
+      "rangeAndPendingIntegrationCommit": "8e7165c7fe6b41101a2cdcb10b55edc01575b83b",
+      "optionalTemplateCorrectionCommit": "7b26c7b4f8a85e26476c3897e19e0910577cff15",
+      "optionalTemplateIntegrationCommit": "b600c7f83cb810627a54e893c8221e3ffdd13cc4",
+      "coverageRefusalCorrectionCommit": "0c65dc6f93c88a4c6d98e99185ecd2c1e9391072",
+      "coverageRefusalIntegrationCommit": "a2a3f633c8dabf27a3dea8ee09bd586abfe947db",
+      "supportingRetryCorrectionCommit": "01771c655e179797b852adf217b684794e3266f7",
+      "supportingRetryIntegrationCommit": "512ac6f7b39bcf028c3c3a555ddfb140589b0796",
+      "evidence": "docs/design/rollout-1692/1738.md",
+      "proofCommit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "proofArchive": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery",
+      "ancestor": true
+    },
+    {
+      "id": "R157",
+      "issue": 1739,
+      "route": "/team",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "implementationCommit": "1ea5804a0d7f6125406b2eecec121fa1949ded90",
+      "handoffLimitation": "Bounded handoff verified; formatting, partial historical captures, stale-ack/readback and failed-attempt qualifications remain. Full production generation, remote catalogs/providers, physical devices/true zoom, broad roster and exhaustive live authority/transition matrices remain unpassed.",
+      "integrationCommit": "31625ce088b22f27fbff338b09867d4a7883d35d",
+      "correctionCommit": "fecaa3ceb5a9b20e9d34b0107411da69349a98a8",
+      "correctionIntegrationCommit": "b2679fd0134de97a323d9b4e3e4488635e379a2d",
+      "evidence": "docs/design/rollout-1692/1739.md",
+      "integrationVerification": "Provisional merge tree independently matched; all59 verified ticket anchors plus baseline and17,399 unaffected prior paths retained. Public real-provider Retry red corrected by awaiting canonical context refetch then RSC refresh; shared history unexpected-read Retry and direct native badge trigger corrected without provider/auth/action/cache-key changes. Fresh114unit/13files+6canonicalPG/1file=120distinct/14files pass, all3types, explicitCRLF/lint6 and Doctor6files0/0 pass. Ordinary formatting6 differences remain. Worker Next session archive has3nativeButton notices, now public regression green; historical runtime not relabeled. Current independent review/runtime/history/cache-arrival/permission-narrowing and wider acceptance remain due; verifiedCommit null. Fresh independent 23-case selection passed22/failed1: retained directory recovery reopens cached history after simulated relationship narrowing; forced canonical reread refuses. No live exploit or historical regression claimed. Root permanent red/green adds distinct history-opening key suffix, cancellation check, fresh loading and unchanged default section/employee-prefix invalidation. Source00614f12 integrated03f1a8d0, predicted tree exact;17,400 unaffected prior paths and59anchors+baseline preserved. Final124unit/13files,types3,5file explicitCRLF/lint/Doctor0 pass; ordinary5differences. Joint final392unit/60files at the supporting-Retry correction includes these controls, no additive count. Six unchanged team PG cases inherited; no fresh runtime yet. verifiedCommit remains null. FINAL BOUNDED HANDOFF at e7089f663f6f7b388472794f211fcb6e49e7911f: fresh joint33/4 public cases pass nonadditively to root392/60; unchanged12PG/3 remains inherited (mixed404/63). Current live serialized supporting Retry, directory context/history recovery, exact native consumer and connected Next pass. Scheduling manager/publication/audit/employee/four-role/save/pending/sidebar/current acknowledgment and qualified historical Week comparisons retain snapshot provenance. Team manager/admin/self/employee, fresh per-opening empty/nonempty history and pending Retry passed. Public445-file archive plus2report appends and sibling Git-blob audit committed after independent447-path staged verification:432approved copies,23source/config pins,36fully decoded PNGs,336JSON,16syntax checks,72links;17404 prior paths unchanged. Both verifier modes and independent native decoder pass. Separate auditor agrees; no application source change in proof commit. Original rejected/failed attempts and all wider limits preserved; issues stayOPEN, PRdraft.",
+      "historyOpeningCorrectionCommit": "00614f12ab899fca05b4b3096d194d4a2fa10979",
+      "historyOpeningIntegrationCommit": "03f1a8d0df8fcb2d8c73901fa6efe8e114310765",
+      "proofCommit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "proofArchive": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery",
+      "ancestor": true
+    },
+    {
+      "id": "R158",
+      "issue": 1740,
+      "route": "/team/absences",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e59610bb265ef973c3df61f3d4de7ddf9e561833",
+      "implementationCommit": "6473c5b41f387f9bfe1798b91be415c0f43dec02",
+      "handoffLimitation": "Bounded handoff verified. Native React introspection, live sick-note bucket/upload/privacy/grant and deputy/partial/former variants, full browser authority/Activity/revocation matrix, historical capture, formatter/raw-archive whitespace, production/catalog/provider/device/true-zoom and broad roster limits remain unpassed/qualified.",
+      "integrationCommit": "2bb9640064f141965697a6abf339a8843669d6b8",
+      "correctionCommit": "047e89193fbafa34ba7a9a3d3a1fee992ccd84bd",
+      "correctionIntegrationCommit": "c5ffcb2240bc825b05c6a28c1efaa8514ff36d8b",
+      "evidence": "docs/design/rollout-1692/1740.md",
+      "integrationVerification": "Isolated candidate084049d3 imported at2bb9640064 matches independently calculated tree87f74c19 and exact candidateappTree3fa5114f,31incomingpaths only. Published scheduling/team proof and61verifiedticket anchors retained. Independent merger public probe confirms inherited queuedcommand afterActivity; pinnedpremerge control identical. Root permanent actualform/provider/QueryClient regressions red before, green after activation captured at publicsubmit and passed through onSubmitMeta. Activity,employeeA-B-A,availabilityoff-on retire obsolete dispatch+feedback, retaindraft and permit1freshcommand. Final141unit/9physicalfiles pass; typegen+all3types;2owned explicit100CRLF/lint;boundedDoctor12files0diagnostics. Source import-order-only test followup afterDoctor recorded. Setup/no-test,Sonnerstore isolation and importsort failures retained. No canonical action/writer/time/privacy changes, no fresh rootPG/runtime or readiness advancement. Fresh recheck owns acceptance; verifiedCommit remains null. Fresh independent e597 review passes13public controls thenSTOPs on inherited interrupted realUppy/TUSupload: Activityretainsdraft/file butnewsubmitcannotstartreplacement,0commands. Pinnedpremerge recovery alsofails withdifferentdisabledpresentation. Root realbrowserdistribution/HTTP and permanentstageAPI reds reproduced. Source55b79c472 releasesdisposedrun via typedcancellation, silentcallerhandling, guardedqueuednextfile, exactunattachedcompletedkeycleanup and preservedprocessednotes. Furtherreds catcholdprocessing success/rejection settlingreplacement andcompleted-before-callback cleanup; sharedTus disposedresourceguards+knownprocessingkey tracking correctthem. Fresh589passingunit/73passingfiles plus3optionalpayslipbrowser cases skippedin1unchangedfile (Z8_TEST_CHROME_PATH unset);6newpermanentcases included/nonadditive. Separate2actualbrowserTUSdistribution/syntheticHTTP cases complete replacementPOST/PATCH and1exacttargetrecordingrefusalaction/newkey. All3types/typegen,5ownedexplicit100CRLFlint,Doctor5files0diagnostics pass. Canonicalstorage/auth/action/domain/timeowners unchanged;oldharnessfails retained. No freshPG/livefixture/Next/browser/native/matched acceptance yet; verifiedCommitnull. Fresh independente42review passes13surrounding+normal/Activityupload controls, thenSTOPs on retained employee-list fail/recover withpendingPOST:availabilityretiresexistingcommandbutnotmountedstaginglock,1HTTP/0commands/blankuploaderror. Sameassembledcontractfailsone597, inheritedrelativetouploadfix. RootassembledrealHTTP+publicstageAPIreds thenoptional lifetimeKey wiredtoRecordAbsence open/actionAvailable/employee/sickNotesEnabled andbothstaginglayoutcleanup/Tusresourceeffects. Defaultsothercallersunchanged. NewnonunmountABAretryandlateprocessingoutcomespass;ninepermanentstagingcasesincluded in592unitpasses/73passingfiles,3optionalpayslipbrowsercases skippedin1unchangedfile. Separate2assembledbrowserTUS/syntheticHTTPcasescomplete replacementand1exactcommand. Freshcanonicalmigrationverifier+83PG/5files(all61originalplus22sicknotes-requestownership)pass,zeroPGskips. Exactlabelcontainerremoved/independentabsenceconfirmed. All3types/typegen,5explicit100CRLFlint/Doctorzero pass. Source6757981b integrated60359a6e4bd346239811dc45a59137243ae25f06 with exactpredictedtree. No canonicaldomain/auth/storage/time/action changes. Freshindependent currentpublic/live/runtime acceptance pending;verifiedCommitnull. FINAL BOUNDED HANDOFF at e59610bb265ef973c3df61f3d4de7ddf9e561833: Source6757981b and frozen review3f775988 match all17 source/configuration pins at published D28. Root592 unit cases pass in73 files;3 unchanged optional payslip-browser cases remain skipped in1 additional file. Canonical PostgreSQL83/5, migration recovery and exact owned-container cleanup pass. Independent32 cases across2 discovery paths include9 overlapping staging cases; repeats and live assertions are not added to unit counts. The17 live assertions cover manager8, preferences5 and roles4, with exactly3 approved home-office records and unchanged foreign-organization absence and both organizations\u2019 work/time-entry digests. Actual command failure, retained draft/retry, pending guards, roles, saved18px, theme/sidebar and mobile Escape/focus pass. Phone main axe reports34 passes and0 violations/incomplete; connected Next route/issues/config/session checks pass. Native React introspection and live sick-note storage remain unpassed. Six current operational captures are not historical matched pairs. Three type projects/typegen, five-file explicit CRLF/lint and Doctor zero remain root receipts. The127-file archive contains117 exact allowlisted payloads (6,716,079 bytes), alongside the report appendix and separate Git-blob audit. Root and a separate auditor agree on all128 staged paths:105 raw-exact and23 CRLF-to-LF-only;17 pins,6 full PNG decodes,54 JSONs,40 copied syntax checks,20 fresh syntax checks and54 links pass. Both read-only verifier modes pass; common staged path/blob digests agree and the original32,701-byte report prefix is unchanged. Historical whitespace retains exit2; new report/controls pass. Earlier STOPs and null values remain immutable. Proof changes no application source, prior proof, configuration or dependency. Issues stay open and PR draft; broader limits remain explicit.",
+      "uploadLifecycleCorrectionCommit": "55b79c4720a689395e58c8b459a47e394656b6e0",
+      "uploadLifecycleIntegrationCommit": "eb7c01b8690dd8812886355601ef18d6f8a86f08",
+      "availabilityLifetimeCorrectionCommit": "6757981b6844a2e497c055a1fa5cebd021987675",
+      "availabilityLifetimeIntegrationCommit": "60359a6e4bd346239811dc45a59137243ae25f06",
+      "proofCommit": "e59610bb265ef973c3df61f3d4de7ddf9e561833",
+      "proofArchive": "docs/design/rollout-1692/1740/root-activation-and-upload-recovery",
+      "ancestor": true
+    },
+    {
+      "id": "R160",
+      "issue": 1742,
+      "route": "/team/period-submissions",
+      "blockedBy": [
+        1694
+      ],
+      "status": "integrated",
+      "verifiedCommit": "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
+      "implementationCommit": "cfa34ce7ed2ea0d2df23929f4656b7fefdcd8e29",
+      "evidence": "docs/design/rollout-1692/1742.md",
+      "handoffLimitation": "Bounded handoff verified. Live owner-without-employee, exhaustive authority/ABA/Activity/revocation and all five live outcomes remain unpassed; public/canonical owner coverage retained. Historical comparison/phone overlay/controlled fixture-clock and two metadata-format qualifications remain. Full generation/catalog/providers/devices/true zoom, broad roster and whole-branch review remain open.",
+      "provisionalMerge": "1578b6c8d52c23839ec405e7dc0a370d30877169",
+      "correctionCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424",
+      "proofCommit": "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
+      "proofArchive": "docs/design/rollout-1692/1742/root-provider-arrival-and-recovery",
+      "integrationVerification": "Root provisional import1c8cff67 and provider arrival correction989968d6a merged1578b6c8, exact predicted trees and preserved unrelated paths/61 anchors. FINAL BOUNDED HANDOFF at 69c9ed3a86410848885f78f5a7bcdf5f468c4323: all20 historical source/config pins match correction989968d6a, frozen reviewD28 and publication root11cd; optional current-source mode checks18 and excludes only2 shared metadata blobs. Root546 unit occurrences/44files have537 unique file/fullname labels plus9 intentional duplicate-name parameterized occurrences; canonical PG35/6, migration recovery and exact cleanup pass. Independent33 cases/3files ran43 executions including10 reruns;22 permanent cases overlap root,11 are new. No unit/live/axe count inflation or fresh independent PG/type claim. Admin/all8rows, manager/managed3rows, restricted denial, actual read failure/retained rows, coalesced Retry/header Refresh, period/picker/destination navigation, responsive preferences and exact native target pass at frozenD28. Phone main axe30passes/0violations/0incomplete; connected Next arrays empty. Controlled canonical cadence fixture clock2026-10-01 is explicit; no live settings-save proof. Live owner-without-employee and all5 live outcomes remain unpassed, with public/provider and canonical PG coverage. Public72-file archive contains60 exact approved payloads (6,792,696bytes); reportappend and separate Git-blob audit commit after root and independent73path audits:48raw-exact/25CRLFtoLFonly; original22,325byte raw and22,217byte Gitprefix unchanged. Both readonlyverifier modes,49JSON,4fullPNGdecodes,5TS/TSX syntax receipts,1newverifier syntax and65links pass;4archivedPython drivers remain inert/unexecuted. Source/dependencies/priorproofs unchanged; historicalfailures/nulls/whitespace preserved. Newderived/report whitespace passes. Wider limits retained; issuesOPEN/PRdraft.",
+      "ancestor": true
+    },
+    {
+      "id": "R163",
+      "issue": 1745,
+      "route": "/time-tracking",
+      "blockedBy": [
+        1853
+      ],
+      "status": "integrated",
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "evidence": "docs/design/rollout-1692/1745.md",
+      "integrationVerification": "Fresh merge 56 unique suites/606 tests and full types; root lifetime correction 8/148, two-file Biome/Doctor zero. Real Berlin/New York Cancel/Continue/Update and duplicate checks persist UTC/+60/-300 offsets. Prior 3/83 PostgreSQL inherited. Dialog aria-hidden notices/native/DST/offline/phone/build/catalog/device limits retained; fresh normal contexts clean.",
+      "ancestor": true
+    },
+    {
+      "id": "R166",
+      "issue": 1748,
+      "route": "/travel-expenses/[claimId]",
+      "blockedBy": [
+        1695
+      ],
+      "status": "integrated",
+      "verifiedCommit": "e3957741a7f0f1aeeba748cce3af27a42870fcf1",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1748#issuecomment-6909502620",
+      "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+      "integrationCommit": "df0fafc4d827969d37482df69cfe2abb92fee599",
+      "correctionCommit": "4cab7a5b594db3bc7e4dfdf56026d25737a2b2f4",
+      "correctionIntegrationCommit": "a043fd9af51465e608bb6d00f5568e72f11d8300",
+      "evidence": "docs/design/rollout-1692/1748.md",
+      "integrationVerification": "Bounded handoff verified at e3957741a7f0f1aeeba748cce3af27a42870fcf1; app1f82885d unchanged. Both withdrawal fixes pass independent545unit/48files(root518+27controls) and51canonicalPG/4 defaulttimeouts; root full3types separate,isolatedmainTSmissinglicensequalified. Ten-filelint/Doctor0/0. Core own/denied reads,receiptpreview/completeddownload,missing-objectrefusal0partial,canonicalconversion/provenance,actualreportopening/reload,localpartialreimbursement,Retry/preferences/keyboard/layouts/connectedNext observed. Raw generationA140records remain qualified(old42unsupported,16narrowed);focused29/32pass withordering13/14 andaxe28unpassed. ActualCDPnames proved,notnativeextension. Proof202files/172exactpayloads/14clones;203initialstagedpaths independently audited,Gitbytes/prefixes/verifierbothmodes pass. Rawwhitespace18103diagnostics/61paths andformat/capture/emptyforeign/overwrittenrawgap preserved. No combinedcoverage/fullglobalacceptance;issueopen/PRdraft. See1748/root-handoff.json and sealedarchive.",
+      "conversionWithdrawalCorrectionCommit": "4a6eaaa2f3f2ee5ac25055b0fdc11722028b3186",
+      "conversionWithdrawalIntegrationCommit": "c696178cac11641eff69ce0cd3045204eb91059a",
+      "independentReviewCommit": "16a914f4a4e9ef022552ff53d938b2c1f883517f",
+      "independentReviewAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+      "independentReviewEvidence": "docs/design/rollout-1692/1748/root-independent-recheck.json",
+      "proofCommit": "e3957741a7f0f1aeeba748cce3af27a42870fcf1",
+      "handoffEvidence": "docs/design/rollout-1692/1748/root-handoff.json",
+      "ancestor": true
+    }
+  ],
+  "nodes": 157,
+  "edges": 159,
+  "statusCounts": {
+    "integrated": 64,
+    "awaiting-integration": 40,
+    "pending": 53
+  }
+}

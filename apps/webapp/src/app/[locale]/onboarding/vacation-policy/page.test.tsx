@@ -1,22 +1,36 @@
 /* @vitest-environment jsdom */
 
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
-import { StrictMode } from "react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { Activity, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	session: { user: { id: "account-a" }, session: { activeOrganizationId: "org-a" } },
+	pending: false,
+	listeners: new Set<(value: unknown) => void>(),
 	checkIsAdmin: vi.fn(),
 	createVacationPolicyOnboarding: vi.fn(),
 	push: vi.fn(),
 	skipVacationPolicySetup: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({ data: mocks.session, isPending: mocks.pending }),
+	authClient: {
+		$store: {
+			atoms: {
+				session: {
+					get: () => ({ data: mocks.session }),
+					subscribe: (listener: (value: unknown) => void) => {
+						mocks.listeners.add(listener);
+						return () => mocks.listeners.delete(listener);
+					},
+				},
+			},
+		},
+	},
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -57,10 +71,268 @@ function deferred<T>() {
 
 describe("VacationPolicyPage load effect", () => {
 	beforeEach(() => {
+		mocks.session = { user: { id: "account-a" }, session: { activeOrganizationId: "org-a" } };
+		mocks.pending = false;
 		vi.clearAllMocks();
 		mocks.checkIsAdmin.mockReset();
 		mocks.createVacationPolicyOnboarding.mockReset();
 		mocks.skipVacationPolicySetup.mockReset();
+	});
+
+	it.each(["pending-session", "held-access"])(
+		"keeps one task heading and no policy controls during %s",
+		async (boundary) => {
+			mocks.pending = boundary === "pending-session";
+			mocks.checkIsAdmin.mockReturnValue(new Promise(() => {}));
+			render(
+				<main>
+					<VacationPolicyPage />
+				</main>,
+			);
+			await act(async () => {});
+			const main = within(screen.getByRole("main"));
+			expect(main.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+			expect(main.getByRole("heading", { level: 1 }).textContent).toBe("Set up vacation policy");
+			expect(main.queryByLabelText("Policy Name")).toBeNull();
+			expect(main.queryByRole("button", { name: "Save and continue" })).toBeNull();
+		},
+	);
+
+	it.each(["save", "skip"])(
+		"sends the requesting account and organization with %s",
+		async (action) => {
+			mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+			mocks.createVacationPolicyOnboarding.mockResolvedValue({ success: true });
+			mocks.skipVacationPolicySetup.mockResolvedValue({ success: true });
+			render(<VacationPolicyPage />);
+			fireEvent.click(
+				await screen.findByRole("button", {
+					name: action === "save" ? "Save and continue" : "Skip for now",
+				}),
+			);
+			await waitFor(() => {
+				const command =
+					action === "save" ? mocks.createVacationPolicyOnboarding : mocks.skipVacationPolicySetup;
+				expect(command).toHaveBeenCalledOnce();
+				expect(command.mock.calls[0][action === "save" ? 1 : 0]).toEqual({
+					userId: "account-a",
+					organizationId: "org-a",
+				});
+			});
+		},
+	);
+
+	it("retires held saves through an organization A to B to A arrival", async () => {
+		const held = deferred<{ success: true }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockReturnValue(held.promise);
+		const view = render(<VacationPolicyPage />);
+		fireEvent.click(await screen.findByRole("button", { name: "Save and continue" }));
+		await waitFor(() => expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledOnce());
+		mocks.session = { ...mocks.session, session: { activeOrganizationId: "org-b" } };
+		view.rerender(<VacationPolicyPage />);
+		await screen.findByLabelText("Policy Name");
+		mocks.session = { ...mocks.session, session: { activeOrganizationId: "org-a" } };
+		view.rerender(<VacationPolicyPage />);
+		const draft = await screen.findByLabelText("Policy Name");
+		fireEvent.change(draft, { target: { value: "New arrival" } });
+		await act(async () => held.resolve({ success: true }));
+		expect(mocks.push).not.toHaveBeenCalled();
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(draft).toHaveProperty("value", "New arrival");
+	});
+
+	it.each([
+		["save", "account", true],
+		["save", "account", false],
+		["save", "organization", true],
+		["save", "organization", false],
+		["skip", "account", true],
+		["skip", "account", false],
+		["skip", "organization", true],
+		["skip", "organization", false],
+	] as const)(
+		"retires held %s after batched %s A→B→A (success=%s)",
+		async (action, scope, success) => {
+			const held = deferred<{ success: boolean; error?: string }>();
+			mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+			const operation =
+				action === "save" ? mocks.createVacationPolicyOnboarding : mocks.skipVacationPolicySetup;
+			operation.mockReturnValue(held.promise);
+			render(<VacationPolicyPage />);
+			fireEvent.click(
+				await screen.findByRole("button", {
+					name: action === "save" ? "Save and continue" : "Skip for now",
+				}),
+			);
+			await waitFor(() => expect(operation).toHaveBeenCalledOnce());
+			await act(async () => {
+				for (const suffix of ["b", "a"]) {
+					mocks.session =
+						scope === "account"
+							? { ...mocks.session, user: { id: `account-${suffix}` } }
+							: { ...mocks.session, session: { activeOrganizationId: `org-${suffix}` } };
+					for (const listener of mocks.listeners) listener({ data: mocks.session });
+				}
+			});
+			const draft = await screen.findByLabelText("Policy Name");
+			fireEvent.change(draft, { target: { value: "Current arrival draft" } });
+			await act(async () => held.resolve({ success, error: "Retired refusal" }));
+			expect(mocks.push).not.toHaveBeenCalled();
+			expect(mocks.toastError).not.toHaveBeenCalled();
+			expect(mocks.toastSuccess).not.toHaveBeenCalled();
+			expect(draft).toHaveProperty("value", "Current arrival draft");
+		},
+	);
+
+	it.each(["account", "organization"] as const)(
+		"retires held access through batched %s A→B→A",
+		async (scope) => {
+			const held = deferred<{ success: true; data: false }>();
+			mocks.checkIsAdmin
+				.mockReturnValueOnce(held.promise)
+				.mockResolvedValue({ success: true, data: true });
+			render(<VacationPolicyPage />);
+			await act(async () => {
+				for (const suffix of ["b", "a"]) {
+					mocks.session =
+						scope === "account"
+							? { ...mocks.session, user: { id: `account-${suffix}` } }
+							: { ...mocks.session, session: { activeOrganizationId: `org-${suffix}` } };
+					for (const listener of mocks.listeners) listener({ data: mocks.session });
+				}
+			});
+			await screen.findByLabelText("Policy Name");
+			await act(async () => held.resolve({ success: true, data: false }));
+			expect(mocks.push).not.toHaveBeenCalled();
+		},
+	);
+
+	it("observes batched account A to B to A changes before a held skip refusal", async () => {
+		const held = deferred<{ success: false; error: string }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.skipVacationPolicySetup.mockReturnValue(held.promise);
+		render(<VacationPolicyPage />);
+		fireEvent.click(await screen.findByRole("button", { name: "Skip for now" }));
+		await act(async () => {
+			for (const id of ["account-b", "account-a"]) {
+				mocks.session = { ...mocks.session, user: { id } };
+				for (const listener of mocks.listeners) listener({ data: mocks.session });
+			}
+			held.resolve({ success: false, error: "Old refusal" });
+		});
+		expect(await screen.findByLabelText("Policy Name")).toHaveProperty("value", "Standard");
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalled();
+	});
+
+	it("does not admit or redirect from a retired access read", async () => {
+		const held = deferred<{ success: true; data: false }>();
+		mocks.checkIsAdmin
+			.mockReturnValueOnce(held.promise)
+			.mockResolvedValue({ success: true, data: true });
+		const view = render(<VacationPolicyPage />);
+		expect(screen.queryByLabelText("Policy Name")).toBeNull();
+		mocks.session = { ...mocks.session, session: { activeOrganizationId: "org-b" } };
+		view.rerender(<VacationPolicyPage />);
+		await screen.findByLabelText("Policy Name");
+		await act(async () => held.resolve({ success: true, data: false }));
+		expect(mocks.push).not.toHaveBeenCalled();
+	});
+
+	it("retains a draft after save refusal and permits an intentional retry", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding
+			.mockResolvedValueOnce({ success: false, error: "Save refused" })
+			.mockResolvedValue({ success: true });
+		render(<VacationPolicyPage />);
+		const name = await screen.findByLabelText("Policy Name");
+		fireEvent.change(name, { target: { value: "Retained policy" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
+		await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Save refused"));
+		expect(name).toHaveProperty("value", "Retained policy");
+		expect(mocks.push).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"));
+		expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledTimes(2);
+	});
+
+	it("retains skip refusal instead of forcing continuation", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.skipVacationPolicySetup.mockResolvedValue({ success: false, error: "Skip refused" });
+		render(<VacationPolicyPage />);
+		fireEvent.click(await screen.findByRole("button", { name: "Skip for now" }));
+		await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Skip refused"));
+		expect(mocks.push).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "Save and continue" })).toHaveProperty(
+			"disabled",
+			false,
+		);
+	});
+
+	it("guards duplicate native submissions and skip clicks during a save", async () => {
+		const held = deferred<{ success: true }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockReturnValue(held.promise);
+		render(<VacationPolicyPage />);
+		const name = await screen.findByLabelText("Policy Name");
+		const form = name.closest("form")!;
+		fireEvent.submit(form);
+		fireEvent.submit(form);
+		fireEvent.click(screen.getByRole("button", { name: "Skip for now" }));
+		await waitFor(() => expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledOnce());
+		expect(mocks.skipVacationPolicySetup).not.toHaveBeenCalled();
+		await act(async () => held.resolve({ success: true }));
+	});
+
+	it("retires a save while cached Activity is hidden, then rechecks access", async () => {
+		const held = deferred<{ success: true }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockReturnValue(held.promise);
+		const view = render(
+			<Activity mode="visible">
+				<VacationPolicyPage />
+			</Activity>,
+		);
+		fireEvent.click(await screen.findByRole("button", { name: "Save and continue" }));
+		await waitFor(() => expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledOnce());
+		view.rerender(
+			<Activity mode="hidden">
+				<VacationPolicyPage />
+			</Activity>,
+		);
+		view.rerender(
+			<Activity mode="visible">
+				<VacationPolicyPage />
+			</Activity>,
+		);
+		await screen.findByLabelText("Policy Name");
+		await act(async () => held.resolve({ success: true }));
+		expect(mocks.push).not.toHaveBeenCalled();
+		expect(mocks.checkIsAdmin).toHaveBeenCalledTimes(2);
+	});
+
+	it("routes a non-admin to notifications without exposing policy controls", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: false });
+		render(<VacationPolicyPage />);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		expect(screen.queryByLabelText("Policy Name")).toBeNull();
+	});
+
+	it("associates day validation with the input and names each policy decision", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<VacationPolicyPage />);
+		const days = await screen.findByLabelText("Annual Vacation Days");
+		fireEvent.change(days, { target: { value: "400" } });
+		const error = await screen.findByRole("alert");
+		expect(days.getAttribute("aria-describedby")).toContain(error.id);
+		expect(days.getAttribute("aria-invalid")).toBe("true");
+		for (const name of [
+			"Policy and annual allowance",
+			"When days are granted",
+			"Unused days at year end",
+		])
+			expect(screen.getByRole("group", { name })).toBeTruthy();
 	});
 
 	it("keeps submit disabled after successful creation navigation", async () => {
@@ -69,13 +341,11 @@ describe("VacationPolicyPage load effect", () => {
 		render(<VacationPolicyPage />);
 
 		const continueButton = await screen.findByRole("button", {
-			name: "Continue",
+			name: "Save and continue",
 		});
 		fireEvent.click(continueButton);
 
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"));
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
 	});
@@ -90,33 +360,30 @@ describe("VacationPolicyPage load effect", () => {
 		const carryoverInput = screen.getByPlaceholderText("5");
 		fireEvent.change(carryoverInput, { target: { value: "7" } });
 		fireEvent.click(carryoverSwitch);
-		await waitFor(() =>
-			expect(screen.queryByPlaceholderText("5")).toBeNull(),
-		);
+		await waitFor(() => expect(screen.queryByPlaceholderText("5")).toBeNull());
 		fireEvent.click(carryoverSwitch);
-		await waitFor(() =>
-			expect(screen.getByPlaceholderText("5")).toHaveProperty("value", "7"),
-		);
+		await waitFor(() => expect(screen.getByPlaceholderText("5")).toHaveProperty("value", "7"));
 
-		const continueButton = screen.getByRole("button", { name: "Continue" });
+		const continueButton = screen.getByRole("button", { name: "Save and continue" });
 		fireEvent.click(continueButton);
 
 		await waitFor(() => {
-			expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledWith({
-				name: "Standard",
-				defaultAnnualDays: 25,
-				accrualType: "annual",
-				allowCarryover: true,
-				maxCarryoverDays: 7,
-			});
+			expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledWith(
+				{
+					name: "Standard",
+					defaultAnnualDays: 25,
+					accrualType: "annual",
+					allowCarryover: true,
+					maxCarryoverDays: 7,
+				},
+				{ userId: "account-a", organizationId: "org-a" },
+			);
 			expect(continueButton).toHaveProperty("disabled", true);
 			expect(carryoverSwitch).toHaveProperty("disabled", true);
 		});
 
 		request.resolve({ success: true });
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"));
 	});
 
 	it("keeps invalid policy state on screen and blocks submission", async () => {
@@ -124,14 +391,13 @@ describe("VacationPolicyPage load effect", () => {
 		mocks.createVacationPolicyOnboarding.mockResolvedValue({ success: true });
 		render(<VacationPolicyPage />);
 
-		const nameInput = await screen.findByPlaceholderText(
-			"e.g., Standard, Senior",
-		);
+		const nameInput = await screen.findByPlaceholderText("e.g., Standard, Senior");
 		fireEvent.change(nameInput, { target: { value: "" } });
 		fireEvent.blur(nameInput);
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
 
 		expect(await screen.findByText("Policy name is required")).toBeTruthy();
+		await waitFor(() => expect(document.activeElement).toBe(nameInput));
 		expect(nameInput).toHaveProperty("value", "");
 		expect(mocks.createVacationPolicyOnboarding).not.toHaveBeenCalled();
 		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/work-templates");
@@ -168,9 +434,7 @@ describe("VacationPolicyPage load effect", () => {
 		});
 		fireEvent.click(skipButton);
 
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/work-templates"));
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(skipButton).toHaveProperty("disabled", true);
 	});
@@ -182,23 +446,15 @@ describe("VacationPolicyPage load effect", () => {
 		render(<VacationPolicyPage />);
 
 		const continueButton = await screen.findByRole("button", {
-			name: "Continue",
+			name: "Save and continue",
 		});
 		fireEvent.click(continueButton);
-		await waitFor(() =>
-			expect(continueButton).toHaveProperty("disabled", true),
-		);
+		await waitFor(() => expect(continueButton).toHaveProperty("disabled", true));
 
-		await act(async () =>
-			request.reject(new Error("private creation failure")),
-		);
+		await act(async () => request.reject(new Error("private creation failure")));
 
-		await waitFor(() =>
-			expect(continueButton).toHaveProperty("disabled", false),
-		);
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"Failed to create vacation policy",
-		);
+		await waitFor(() => expect(continueButton).toHaveProperty("disabled", false));
+		expect(mocks.toastError).toHaveBeenCalledWith("Failed to create vacation policy");
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(mocks.push).not.toHaveBeenCalled();
 	});
@@ -218,9 +474,7 @@ describe("VacationPolicyPage load effect", () => {
 		await act(async () => request.reject(new Error("private skip failure")));
 
 		await waitFor(() => expect(skipButton).toHaveProperty("disabled", false));
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"Failed to skip vacation policy setup",
-		);
+		expect(mocks.toastError).toHaveBeenCalledWith("Failed to skip vacation policy setup");
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(mocks.push).not.toHaveBeenCalled();
 	});
@@ -249,9 +503,7 @@ describe("VacationPolicyPage load effect", () => {
 			request.reject(new Error("private admin failure"));
 		});
 
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
 	});
 
 	it("keeps a live admin request during StrictMode replay", async () => {
@@ -269,9 +521,7 @@ describe("VacationPolicyPage load effect", () => {
 	});
 
 	it("ignores an admin check that resolves after unmount", async () => {
-		let resolveAdminCheck: (
-			value: { success: true; data: false },
-		) => void = () => undefined;
+		let resolveAdminCheck: (value: { success: true; data: false }) => void = () => undefined;
 		mocks.checkIsAdmin.mockReturnValue(
 			new Promise((resolve) => {
 				resolveAdminCheck = resolve;

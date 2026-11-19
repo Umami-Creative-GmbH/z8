@@ -1,0 +1,68 @@
+{
+  "verdict": "STOP_SOURCE_BLOCKER",
+  "candidate": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "tree": "22ed16c8a4612714cb3f8ab7e81d272282ca7edf",
+  "source": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
+  "settingsSource": "9870df191c6b686106b38dcfa1bf6590ed611541",
+  "latestVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "verifiedCommit1735": null,
+  "publicRecovery": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "physicalFiles": 1,
+    "seam": "actual provider/store/QueryClient/report components/hooks; synthetic identity and transport boundaries"
+  },
+  "canonicalPg": {
+    "passed": 14,
+    "physicalFiles": 2,
+    "skipped": 0
+  },
+  "runtime": {
+    "ownCanonicalFixture": true,
+    "normalCurrentDevelopmentSignIn": true,
+    "publicDummyTurnstile": true,
+    "notificationPermission": "denied",
+    "admittedRole": "admin",
+    "report": "nonzero fixed 2025",
+    "actualNativeDownloadsCompleted": {
+      "csv": 1,
+      "xlsx": 1,
+      "pdf": 0
+    },
+    "actualFilesParsed": {
+      "csv": 1,
+      "xlsx": 1,
+      "pdf": 0
+    },
+    "downloadParity": "CSV/XLSX match preview and scoped canonical records; PDF unavailable"
+  },
+  "blocker": {
+    "boundary": "actual current UI Export PDF → actual pdf-exporter.tsx:384 → @react-pdf render/toBlob",
+    "visibleError": "Export failed / Cannot read properties of null (reading 'props')",
+    "repeatedVisibleFailures": 2,
+    "initialWatchedPdfAttempt": "no native file within unchanged 30 seconds",
+    "controls": [
+      "completed parsed actual CSV",
+      "completed parsed actual XLSX"
+    ],
+    "cause": "Not established. Nested EmployeeReportPDF is a source inspection lead, not a proved compiler diagnosis."
+  },
+  "stopped": [
+    "broader live context/roster/generate failure injection",
+    "live self/manager/restricted role variants and grant/revoke",
+    "matched historical/current layouts and actual pixel review",
+    "saved18 reload and shell preference/keyboard/focus checks",
+    "native admitted React target and connected current Next probes",
+    "full generation, Tolgee catalog synchronization, provider/device/true zoom/exhaustive A-B-A/global roster guard review"
+  ],
+  "unchangedPriorLimits": [
+    "global formatter differences: explicit100 five / ordinary eight",
+    "previous-phase overwritten raw intermediate history unavailable; summaries only",
+    "root Doctor zero errors / one incoming readiness advisory"
+  ],
+  "noProductFix": true,
+  "noReadinessOrTrackerOrRemoteOrLedgerMutation": true,
+  "cleanup": "all owned processes/listeners/three services absent",
+  "release": "RELEASE ALL root checkout/index/Git/package/runtime/process ownership after final seal"
+}

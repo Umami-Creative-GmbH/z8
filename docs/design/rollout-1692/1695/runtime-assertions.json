@@ -1,0 +1,147 @@
+{
+  "results": [
+    {
+      "name": "ordinary invalid field is focused",
+      "passed": true
+    },
+    {
+      "name": "Create Location disables duplicate submission",
+      "passed": true
+    },
+    {
+      "name": "Create Location keeps pending overlay on Escape",
+      "passed": true
+    },
+    {
+      "name": "Create Location sends one pending action",
+      "passed": true
+    },
+    {
+      "name": "ordinary failure retains typed values",
+      "passed": true
+    },
+    {
+      "name": "invalid country was entered",
+      "passed": true
+    },
+    {
+      "name": "server validation refusal retains form",
+      "passed": true
+    },
+    {
+      "name": "created location persists through reload",
+      "passed": true
+    },
+    {
+      "name": "edit uses authoritative saved name",
+      "passed": true
+    },
+    {
+      "name": "saved inactive status persists",
+      "passed": true
+    },
+    {
+      "name": "ordinary cancellation preserves existing mounted draft lifetime",
+      "passed": true
+    },
+    {
+      "name": "phone panel fits viewport",
+      "passed": true
+    },
+    {
+      "name": "large preference produces 18px text",
+      "passed": true
+    },
+    {
+      "name": "saved dark theme is active",
+      "passed": true
+    },
+    {
+      "name": "short viewport field body scrolls independently",
+      "passed": true
+    },
+    {
+      "name": "phone save remains reachable",
+      "passed": true
+    },
+    {
+      "name": "wide dark panel fits",
+      "passed": true
+    },
+    {
+      "name": "consequential required reason receives focus",
+      "passed": true
+    },
+    {
+      "name": "consequential record evidence remains visible",
+      "passed": true
+    },
+    {
+      "name": "Delete entry disables duplicate submission",
+      "passed": true
+    },
+    {
+      "name": "Delete entry keeps pending overlay on Escape",
+      "passed": true
+    },
+    {
+      "name": "Delete entry sends one pending action",
+      "passed": true
+    },
+    {
+      "name": "deletion transport failure retains reason",
+      "passed": true
+    },
+    {
+      "name": "server enforces the target employee permission",
+      "passed": true
+    },
+    {
+      "name": "real permission refusal keeps evidence and input",
+      "passed": true
+    },
+    {
+      "name": "phone large dark confirmation fits",
+      "passed": true
+    },
+    {
+      "name": "consequential cancellation discards reason per existing lifetime",
+      "passed": true
+    },
+    {
+      "name": "missing manager remains a truthful refusal",
+      "passed": true
+    },
+    {
+      "name": "request awaits approval without hiding recorded work",
+      "passed": true
+    },
+    {
+      "name": "nested real Select returns focus to its panel control",
+      "passed": true
+    },
+    {
+      "name": "real panel returns focus to its create action",
+      "passed": true
+    },
+    {
+      "name": "restricted actor has no location create control",
+      "passed": true
+    },
+    {
+      "name": "no uncaught browser errors",
+      "passed": true
+    }
+  ],
+  "scroll": {
+    "scrollHeight": 506,
+    "clientHeight": 270,
+    "scrollTop": 236
+  },
+  "errors": [],
+  "limits": [
+    "Phone and large text are browser emulation; no physical mobile keyboard/safe-area certification.",
+    "Transport failure aborts a real server-action request without replacing application reads or action results.",
+    "Permission refusal uses another real authenticated actor against the already-open admin form."
+  ]
+}

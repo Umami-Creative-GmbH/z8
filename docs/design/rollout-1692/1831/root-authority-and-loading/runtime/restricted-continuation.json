@@ -1,0 +1,67 @@
+{
+  "head": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "canonicalSha256": "1f89982636c3666ac0d19020104db084e12529c6b8fe1a0547cbec86dca6418d"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+    }
+  ],
+  "checks": [
+    "Real member page admission redirects to the settled notifications task without policy controls",
+    "Both real direct member commands return typed authority refusal",
+    "Refused member commands make no policy or progress writes",
+    "No browser exceptions"
+  ],
+  "errors": [],
+  "qualification": "Separate continuation after the preceding run passed nine Save/readback checks but timed out only in member-page waitForNetworkIdle. This continuation uses a fresh normal member sign-in and explicit settled route/control assertions; no persisted browser state or cookies transferred.",
+  "restrictedActions": [
+    {
+      "name": "createVacationPolicyOnboarding",
+      "http": 200,
+      "success": false,
+      "code": "AuthorizationError"
+    },
+    {
+      "name": "skipVacationPolicySetup",
+      "http": 200,
+      "success": false,
+      "code": "AuthorizationError"
+    }
+  ],
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

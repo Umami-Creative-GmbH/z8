@@ -13,9 +13,11 @@
       "yes": "Sì"
     },
     "description": "Genera report completi su ore lavorative e assenze con dati su smart working rilevanti ai fini fiscali",
+    "employeeNumber": "Numero dipendente",
     "employeeSelector": {
       "error": "Impossibile caricare i membri del team",
       "label": "Dipendente",
+      "loading": "Caricamento membri del team",
       "placeholder": "Seleziona dipendente..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Caricamento delle impostazioni dell'organizzazione prima di abilitare i preset.",
       "period": "Periodo",
-      "selectPeriod": "Seleziona periodo"
+      "selectPeriod": "Seleziona periodo",
+      "settingsError": "Impostazioni organizzazione non disponibili",
+      "settingsRequired": "Le impostazioni dell'organizzazione sono necessarie per utilizzare le preimpostazioni.",
+      "title": "Genera un report dipendente"
     },
     "generate": "Genera report",
     "generating": "Generazione report in corso…",
@@ -62,6 +67,7 @@
       "month": "Mese",
       "noHomeOfficeDays": "Nessun giorno di lavoro da casa registrato in questo periodo.",
       "overtime": "Straordinari",
+      "title": "Anteprima report",
       "total": "Totale",
       "totalHomeOfficeDays": "Totale giorni di lavoro da casa",
       "totalHomeOfficeHours": "Totale ore lavorate da casa",
@@ -266,6 +272,9 @@
         "noPermission": "Non hai il permesso di visualizzare i report dei progetti.",
         "title": "Report progetti"
       },
+      "refreshFailed": "Impossibile aggiornare i report di progetto",
+      "scopeLoading": "Caricamento dell'ambito report attuale…",
+      "scopeUnavailable": "Impossibile caricare l'ambito report attuale.",
       "status": {
         "active": "Attivo",
         "archived": "Archiviato",
@@ -324,7 +333,6 @@
         "failedGenerate": "Impossibile generare report",
         "failedPortfolio": "Impossibile generare report portafoglio",
         "failedProject": "Impossibile generare report progetto",
-        "failedProjectReport": "Impossibile generare report progetto",
         "portfolioGenerated": "Report portafoglio generato",
         "projectGenerated": "Report generato per {name}",
         "unexpectedError": "Si è verificato un errore imprevisto"
@@ -376,6 +384,8 @@
         "loading": "Caricamento dei link di condivisione…",
         "revokedAutomatically": "Revocato automaticamente il {date}: il creatore non vede più tutti i progetti inclusi",
         "revokedBy": "Revocato da {name} il {date}",
+        "scopeLoading": "Caricamento dell'ambito link di condivisione attuale…",
+        "scopeUnavailable": "Impossibile caricare l'ambito link di condivisione attuale.",
         "someone": "qualcuno",
         "title": "Link a questo report",
         "views": "{count, plural, one {# visualizzazione} other {# visualizzazioni}}",
@@ -398,7 +408,8 @@
         "description": "Il link smette immediatamente di funzionare e la relativa istantanea viene eliminata. Il record e il registro delle visualizzazioni vengono conservati.",
         "done": "Link revocato",
         "failed": "Impossibile revocare il link",
-        "title": "Revocare questo link?"
+        "titleDeletedReport": "Revocare il link di condivisione per un report eliminato, {period}?",
+        "titleNamed": "Revocare il link di condivisione per {report}, {period}?"
       },
       "status": {
         "active": "Attivo",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "archiviato",
       "archivedBadge": "Archiviato",
+      "comparison": "Distanza mensile per veicolo e dipendente",
       "empty": {
         "description": "In questo periodo non è stato registrato alcun lavoro completato con distanza percorsa.",
         "title": "Nessuna guida in questo periodo"
@@ -457,6 +469,7 @@
         "period": "Periodo"
       },
       "generate": "Genera report",
+      "generated": "Generato il {time}",
       "generating": "Generazione report in corso…",
       "kilometres": "{distance} km",
       "noReportYet": "Nessun report ancora generato",
@@ -465,7 +478,11 @@
         "description": "Chilometri percorsi per lavoro per veicolo e dipendente, per mese",
         "feature": "visualizza il report sulla distanza per veicolo"
       },
+      "scope": "Dipendenti disponibili per te in questa organizzazione",
+      "scopeLoading": "Conferma dell'organizzazione e del dipendente attuali…",
+      "scopeUnavailable": "Impossibile caricare l'ambito report veicoli attuale.",
       "selectPeriod": "Scegli un periodo e genera il report.",
+      "staged": "Periodo modificato. Genera il report per aggiornare i risultati e i download.",
       "table": {
         "employee": "Dipendente",
         "licencePlate": "Targa",
@@ -473,8 +490,7 @@
         "vehicle": "Veicolo",
         "vehicleAndEmployee": "Veicolo / dipendente"
       },
-      "title": "Distanza per veicolo",
-      "totalDriven": "{distance} percorsi"
+      "title": "Distanza per veicolo"
     }
   }
 }

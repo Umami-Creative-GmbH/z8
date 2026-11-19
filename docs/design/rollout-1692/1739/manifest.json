@@ -1,0 +1,677 @@
+{
+  "base": "58ea18603a936d102f0625e3303f4c05689a9961",
+  "artifacts": [
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\after-18px-phone-dark.png",
+      "bytes": 57074,
+      "sha256": "cd56e4d5acc521c1d5896363740a2cb4797eb4eb60568ec82444b75df455fe1a",
+      "canonicalSha256": "1dea9b68c7d029fdbbd4be845742523842c82a587ef5a22892dfcc0bb25d6d98"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\after-18px-phone-table.png",
+      "bytes": 44197,
+      "sha256": "231860cba609c9bc5a1d11c7dbdde12b2d0241fb39dcd7d9c3ca34f087aa4c60",
+      "canonicalSha256": "23086964d20b7776030c533dc292f538c0818cecdaa02f4a591b84b2e59ebf3e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\after-desktop.png",
+      "bytes": 108545,
+      "sha256": "865f1fc5ca41eb06cdc13a99060c3211eecc869ac196a9220c87ece151331717",
+      "canonicalSha256": "490f71a5c3fd31938f3ee78e6d33d806a470821bff6c3e9b282f71d7748513ae"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\after-phone.png",
+      "bytes": 55152,
+      "sha256": "c12f7583b9d8f038ee8a575b8f076170a6eb6bfe7fbc8c0e1f4666c5e5ef6d5c",
+      "canonicalSha256": "70a462237a658b42595023ca323daf7088e2432c04fa60bfd590889b588aa844"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\after-snapshot.txt",
+      "bytes": 2207,
+      "sha256": "59b0cbbb23038b850a3729f6a1218820e9467312f1e2d46bbeeeb843ee64c984",
+      "canonicalSha256": "59b0cbbb23038b850a3729f6a1218820e9467312f1e2d46bbeeeb843ee64c984"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\after-wide-dark.png",
+      "bytes": 110934,
+      "sha256": "f6feb1a336c8fbf59bc009b4f778bc8cc55b9fd55461e88dda73033febefb08f",
+      "canonicalSha256": "95b1c00d09b43786f997f24235dc0fb3787e35ed1fcb97d76ff4f37dbe008831"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\before-desktop.png",
+      "bytes": 103167,
+      "sha256": "6f91b17227cafb1a26de3570a319e3147a9c1544b17d5f93bda69ac5c0efb9f3",
+      "canonicalSha256": "73407d0746367a824537489356650163f4fb25294533540a636e30b05857b413"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\before-phone.png",
+      "bytes": 64622,
+      "sha256": "4bc9af0bc55527d57978a1b3cf768602d484ffa4e1279c90f1194893bfb46667",
+      "canonicalSha256": "c9c290ea3e7d708a6272be2c2382fe9d43824e9bff2c3336b97d876191707bb7"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\before-snapshot.txt",
+      "bytes": 2202,
+      "sha256": "0860aec930ff8a99ec94ba95ef513142dc30d298a9ab6617afd6b8a730aa1a38",
+      "canonicalSha256": "0860aec930ff8a99ec94ba95ef513142dc30d298a9ab6617afd6b8a730aa1a38"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\before-source.json",
+      "bytes": 7587,
+      "sha256": "34b68bc40b779e7f388909348a73beca86d36c0cbd8c63e5907748ec0cfac945",
+      "canonicalSha256": "34b68bc40b779e7f388909348a73beca86d36c0cbd8c63e5907748ec0cfac945"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\before-wide-dark.png",
+      "bytes": 108358,
+      "sha256": "7e10d7e55bd62355d5351815b0631e3f3ceefaef9eb72f0458460af74cc332ed",
+      "canonicalSha256": "de685c61fd86870acfbb885e76ea00bcbabc2db1d77c0cb0c4d941d675e6061b"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\browser-lifecycle.json",
+      "bytes": 1130,
+      "sha256": "0734f6d94237c3aca5a845c46a6d8b5e7b750a3ad556336768d616e759112c7c",
+      "canonicalSha256": "0734f6d94237c3aca5a845c46a6d8b5e7b750a3ad556336768d616e759112c7c"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\cleanup-absence-final.json",
+      "bytes": 481,
+      "sha256": "c27f6baa4be3e7caca0e824b07f65d204142ae7bd79b47d96e32903697f5f222",
+      "canonicalSha256": "f86a5983ab67b3abf04ebc11a51a8f73e1494b0c19c7569b7bc210506a0aae6a"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\cleanup-first-fixture.json",
+      "bytes": 956,
+      "sha256": "d081919c77003172ed35983b16a7fb2f83d67f7df526fe9605b8bed2e3a0bd53",
+      "canonicalSha256": "d081919c77003172ed35983b16a7fb2f83d67f7df526fe9605b8bed2e3a0bd53"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\cleanup.json",
+      "bytes": 1382,
+      "sha256": "f558b5ae555571c3dd475322cea2e8ad8eaadbe85b5cde706771752d24a4f5f8",
+      "canonicalSha256": "f558b5ae555571c3dd475322cea2e8ad8eaadbe85b5cde706771752d24a4f5f8"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\commands.md",
+      "bytes": 5788,
+      "sha256": "cee0a62bf62b5fa700914ee3e4ee07e3de015fa7c9380551855d6bb96b246acc",
+      "canonicalSha256": "cee0a62bf62b5fa700914ee3e4ee07e3de015fa7c9380551855d6bb96b246acc"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\dependencies.json",
+      "bytes": 29698,
+      "sha256": "57fb6fdb234ae71aaf361e5713dbfc1eea075c26394386be976dedb26f8f2999",
+      "canonicalSha256": "57fb6fdb234ae71aaf361e5713dbfc1eea075c26394386be976dedb26f8f2999"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\doctor-before-fix.json",
+      "bytes": 6846,
+      "sha256": "cc9f7984a606ac07ca8553020fbcab2a9f7da9d98aebdceff7dd77aa93540c64",
+      "canonicalSha256": "a9cd351e13d26db3baf97ffb1a805f9e5c112983e6be47addb69890559492990"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\doctor-complexity.json",
+      "bytes": 6837,
+      "sha256": "639be5c7703b76f05cbbe960dd1ebe9eb905e47ba18e957bc762b1964ce61d89",
+      "canonicalSha256": "97f2ea6bfa38aad884ed65b0bbe1ee72ee2a0d4a6a92a583f5d23d3f1d1688d7"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\doctor.json",
+      "bytes": 4262,
+      "sha256": "083dce7d45f0801446883a55b442fb8ee205888c1d979f0e3b76342ce28cc9ad",
+      "canonicalSha256": "f90c91cc4ffb4a09e9294c88e5105419bca3d17b533e02f685f280493f8f271b"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\check.mjs",
+      "bytes": 2376,
+      "sha256": "d1dbf1547efc3d0c252dcad8427d26a92a28a2af208c30885be382be58516fce",
+      "canonicalSha256": "d1dbf1547efc3d0c252dcad8427d26a92a28a2af208c30885be382be58516fce"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\dev.mjs",
+      "bytes": 3733,
+      "sha256": "ae4d8f84e785f56b368ee7a5b1624966f29fcca9b6bd4b21cf8c9440f6aa1157",
+      "canonicalSha256": "2bf3026cdeb1ff16efc4b3f5d6505212720e329cb670f9b2316359f64b73aa2f"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\final-setup.mjs",
+      "bytes": 655,
+      "sha256": "545e5dc16cba91b3163737342d4fc6e0554029c8c5d93b07af7274a13420bca9",
+      "canonicalSha256": "545e5dc16cba91b3163737342d4fc6e0554029c8c5d93b07af7274a13420bca9"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\login-final.mjs",
+      "bytes": 1840,
+      "sha256": "97019628f2eadc4ffb74df9e336d27e52de1e92171d10ecaa7728471cea0338e",
+      "canonicalSha256": "97019628f2eadc4ffb74df9e336d27e52de1e92171d10ecaa7728471cea0338e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\login.mjs",
+      "bytes": 1844,
+      "sha256": "e0b282c90faa84367158f293000df9eaa5b6ff23ced0f826f25f6b82d1686c18",
+      "canonicalSha256": "e0b282c90faa84367158f293000df9eaa5b6ff23ced0f826f25f6b82d1686c18"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\mcp.mjs",
+      "bytes": 1306,
+      "sha256": "1a289aa5c661921bb238798d1b8449ba38221f8083809b2d69b8f3eb43d8fb5a",
+      "canonicalSha256": "1a289aa5c661921bb238798d1b8449ba38221f8083809b2d69b8f3eb43d8fb5a"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\native-final.mjs",
+      "bytes": 923,
+      "sha256": "a8f62d020d8a08d043d34b6b155e83a06f8638ee1ab54db6c2081d736af6c503",
+      "canonicalSha256": "a8f62d020d8a08d043d34b6b155e83a06f8638ee1ab54db6c2081d736af6c503"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\native.mjs",
+      "bytes": 931,
+      "sha256": "ea74919032a58a1be75c856a28137021fcf0cef50478ed71d05962822dff1cb6",
+      "canonicalSha256": "ea74919032a58a1be75c856a28137021fcf0cef50478ed71d05962822dff1cb6"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\package-evidence.mjs",
+      "bytes": 7013,
+      "sha256": "6aca082155c56e4afbf85bb43e07c3b6a18a4ba580cf987ef3724b2c7f6e6983",
+      "canonicalSha256": "6aca082155c56e4afbf85bb43e07c3b6a18a4ba580cf987ef3724b2c7f6e6983"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\prepare-final-drivers.mjs",
+      "bytes": 1004,
+      "sha256": "4acd8376dda2c9a498fc36c04c0e5e5cf6735486bd24ffd8b3e04fca83e175e6",
+      "canonicalSha256": "4acd8376dda2c9a498fc36c04c0e5e5cf6735486bd24ffd8b3e04fca83e175e6"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\runtime-extra-continuation.mjs",
+      "bytes": 2288,
+      "sha256": "ff640da579f3b53ecb98732e403fde60e20e6f904ef457a9462fbb44cc9a6d7b",
+      "canonicalSha256": "ff640da579f3b53ecb98732e403fde60e20e6f904ef457a9462fbb44cc9a6d7b"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\runtime-extra.mjs",
+      "bytes": 4549,
+      "sha256": "69ac4990047e3bc037c37086bbab86334ef2b2b9271ad3a99b9ad5796f40e79c",
+      "canonicalSha256": "69ac4990047e3bc037c37086bbab86334ef2b2b9271ad3a99b9ad5796f40e79c"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\runtime-final.mjs",
+      "bytes": 5560,
+      "sha256": "7c7d3e4e5e07b8e710519336bc342280afd9e13730e669c542ae25b67836bd27",
+      "canonicalSha256": "7c7d3e4e5e07b8e710519336bc342280afd9e13730e669c542ae25b67836bd27"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\drivers\\runtime.mjs",
+      "bytes": 5326,
+      "sha256": "7199e57d904432d1f4e6914ee73bb7f2f3df38c4761546c1b2fd847681033346",
+      "canonicalSha256": "7199e57d904432d1f4e6914ee73bb7f2f3df38c4761546c1b2fd847681033346"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\final-types.json",
+      "bytes": 420,
+      "sha256": "438fa9886f06124e3d92c4b47b4d0ba269b349f1b43294cb5fdf3f59d527022f",
+      "canonicalSha256": "7ffbb19e876223cb860b7199a03a525b4dc8414428d9d14623829d0c168fb73a"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\historical-consumer.diff",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\historical-source.json",
+      "bytes": 741,
+      "sha256": "706ec747532c5062bcf2215b212895481df265756e6fc9e6b630a6483e354858",
+      "canonicalSha256": "706ec747532c5062bcf2215b212895481df265756e6fc9e6b630a6483e354858"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\history-failed-read.png",
+      "bytes": 111050,
+      "sha256": "0c46b7f35ecabda32bab23bcde12685135a137bc5a1a802242a3fc4e9a4f6473",
+      "canonicalSha256": "65a5210ce08c1c32f6494896dff31a5fc6473f1b3288f3bcb940f20fac591895"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\history-phone.png",
+      "bytes": 53254,
+      "sha256": "091145b4a10ab8e2ebd9d7642b5969c3bcc6d7d3b6d645acafc6ff63d2b776b0",
+      "canonicalSha256": "d22c5af0e3666aa4066a8388068eeae0f480a0f835cdad22dfa7be1fd319ed0e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\inventory.md",
+      "bytes": 5023,
+      "sha256": "b8e2dd7b0ded17baede1328924fab2e9552431016f616b2e5e9441b5b77c2919",
+      "canonicalSha256": "b8e2dd7b0ded17baede1328924fab2e9552431016f616b2e5e9441b5b77c2919"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\issue-readback-final.json",
+      "bytes": 140,
+      "sha256": "27f80c5c8556f44d385be9a7c8c1a5deb3c5096fe33e4595f88ce98c27d12937",
+      "canonicalSha256": "27f80c5c8556f44d385be9a7c8c1a5deb3c5096fe33e4595f88ce98c27d12937"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\activity-harness-failed.log.gz",
+      "bytes": 936,
+      "sha256": "35fba4b53564f5d2ebf32cb15588a7c2e729d083ba8f3d2d5946fbd0d2b910cc",
+      "canonicalSha256": "f33553755d4927e438121a3e185a6abe07829ea823ddb622f7a7937a5d9f0de1"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\arrival-tests.log.gz",
+      "bytes": 457,
+      "sha256": "7bc715867bda0d78a47a13cf3da49ea1e51414b0c7fc6dd62c2f019ba904c69a",
+      "canonicalSha256": "bd1856fe899963b4c9f16675bd4564c69507e72659f5f17d71e4591597c93067"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-controller.log.gz",
+      "bytes": 51,
+      "sha256": "8f4e99afbac43eea51cb4564764519469674e5b0e94397a4ced3598968950058",
+      "canonicalSha256": "441d3f7326bf5017223dd924bba09903a09962101f5f974889d5f7030d76558e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-explicit-final.log.gz",
+      "bytes": 64,
+      "sha256": "9fe4ff6b295e3a1c4cee0a2ce435058acbce1aef5116c7f4032751de4c63925e",
+      "canonicalSha256": "7dbcc0cb3459a406fddc5cae69c402b1769356ab8456dfcf9e75677f04dc55e2"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-explicit.log.gz",
+      "bytes": 63,
+      "sha256": "d8b1fbbd12cc6d32f30843e84ab43debd4f0c36782e19eda5bab4924e6fe8b15",
+      "canonicalSha256": "801b77914e3f69917c8f13ef19e27af8fd2eb8b0b1779178e382d189e0593ea2"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-final-format.log.gz",
+      "bytes": 683,
+      "sha256": "45ff7cf62814aa19972fcc5a12a4bf9c207c27b4636e08d0850f3577a7be0692",
+      "canonicalSha256": "e851277478cc76a7c828c93a4415a3c843e7c39d0853b1fbf56f41da9a907e5d"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-format.log.gz",
+      "bytes": 57,
+      "sha256": "d6bb1141b08232dd1212f14500f67824aee5f7c8f125186bbd53bd4813ce9b80",
+      "canonicalSha256": "55de5a857774300fb7b814499dcc8658e85744db29d176cbdf6c1a0096d91c87"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-lint-final.log.gz",
+      "bytes": 64,
+      "sha256": "0174be2ed1895e3a346868508d9042572fb2c3c32f744ef925d3348485eca9f2",
+      "canonicalSha256": "d892a161203ba1aa1a8e01ed780a4c32ae3f4fd7d7b1bad1241a8dd0cc450f57"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-ordinary-final.log.gz",
+      "bytes": 13343,
+      "sha256": "abf09bd535111f93f9fcec232341619e50de49ea3e595242595f82f72c62441a",
+      "canonicalSha256": "339431ced72c4b3327e9c0d201cd59925175cd66f54a3da4c2c801b31d186406"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-session.log.gz",
+      "bytes": 56,
+      "sha256": "ac7b56c89dce7273945059b429405b92592d5ad8abf9047b98c1849d195d7cd5",
+      "canonicalSha256": "09c0e99f834bd6eccb62654a45ed2a400847fa4db5da086474f53665346ab07a"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\biome-test-format.log.gz",
+      "bytes": 51,
+      "sha256": "d6cd5f0bfaba4824f74c664c068add35f52e7b56c969584627f3eb5ea015196c",
+      "canonicalSha256": "8f95c649fb70d2f83e59d332d85ababec510c10521016ed19dc525c0bd5697f4"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\build-launch-final.log.gz",
+      "bytes": 49,
+      "sha256": "e68cc8c6a8f9ba5aa4a7ebf590f5e83da540dfde27b5df4f8e117c234af9b85d",
+      "canonicalSha256": "3247bf95da804ba61a096a04fc6cfcb01c0d7a7db6ae53efea8e137ffd61ac0e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\build-launch.log.gz",
+      "bytes": 49,
+      "sha256": "e68cc8c6a8f9ba5aa4a7ebf590f5e83da540dfde27b5df4f8e117c234af9b85d",
+      "canonicalSha256": "3247bf95da804ba61a096a04fc6cfcb01c0d7a7db6ae53efea8e137ffd61ac0e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\build-with-dev-present.log.gz",
+      "bytes": 2884,
+      "sha256": "f37d18e326902ea05cfdbe519aa1bca2ab785e9cdd91a6378267df5e8a6403ea",
+      "canonicalSha256": "ac2f2b8ffb6eaba45ffb931303a01bc3c3eb2430440272cc8a85a84889453820"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\build.log.gz",
+      "bytes": 2636,
+      "sha256": "5d734042fdc08969dc31ce73fb28e23475c3e21b299ceef9daafc00489c90dca",
+      "canonicalSha256": "9e88e500fe913eb8466b0bb1f7f88191e7508e6097b6c47eb5ee0df470bc5c78"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\controller-tests.log.gz",
+      "bytes": 461,
+      "sha256": "0a9702e214b8b8a5d1e01b7eb72e1dab31eac88c6a70cae42a68fbd7838948a1",
+      "canonicalSha256": "dc85a7df94dafb5f763c67f83bb4cdca63c51873c5989b19628d77c8a9bd1006"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\doctor-help.log.gz",
+      "bytes": 2331,
+      "sha256": "7b99c22e3f11833c7bc8a0a1b994298a2539f66f84a7b60a5ca8877694aa0b66",
+      "canonicalSha256": "e97854a526ace0337ab3e8c0ce5c3d16ad3379753b3f75a095fc9b2dcf8e61e0"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\final-tsconfig.smoke.json.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\final-tsconfig.typecheck.json.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\final-tsconfig.workflow-contracts.json.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\fixture-cleanup-final.log.gz",
+      "bytes": 102,
+      "sha256": "a9d3a13145209e746ec42ab35afa61072155e8618df7d7234fbcb992556656fe",
+      "canonicalSha256": "3b48a722288b4a43b5b3df0dda285213da80822e7afb838e436686ee3d2f14bc"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\fixture-cleanup.log.gz",
+      "bytes": 102,
+      "sha256": "a9d3a13145209e746ec42ab35afa61072155e8618df7d7234fbcb992556656fe",
+      "canonicalSha256": "3b48a722288b4a43b5b3df0dda285213da80822e7afb838e436686ee3d2f14bc"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\fixture-prepare-final.log.gz",
+      "bytes": 125,
+      "sha256": "f203d52c01b421addd29a60238d1d7ae65e71444715369d5b3e2a65d647d9811",
+      "canonicalSha256": "c4c5f9dfa9165458d60e0dd12873d745e3cf9816b91e6656970fae9b615c8a89"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\fixture-prepare.log.gz",
+      "bytes": 125,
+      "sha256": "f203d52c01b421addd29a60238d1d7ae65e71444715369d5b3e2a65d647d9811",
+      "canonicalSha256": "c4c5f9dfa9165458d60e0dd12873d745e3cf9816b91e6656970fae9b615c8a89"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\green-controls-heading.log.gz",
+      "bytes": 470,
+      "sha256": "98aa2a4f56e16a12f901c87b87371d774661a7b3ac110a4be3359316e9c9dc11",
+      "canonicalSha256": "7a15576d14b7f32b182d86e197ac937ace45436cee6d8027f0541a8b29965c84"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\green-retained-read.log.gz",
+      "bytes": 462,
+      "sha256": "b6fbb196133774a8cf975011548ec277648735eb2d47479ac76603078b609036",
+      "canonicalSha256": "e0c3fbc2398f859ffa9c3baa1272829ddc18fe80bf620ca36d20832619d30a2f"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\green-retained-session.log.gz",
+      "bytes": 463,
+      "sha256": "99d03cb8f700fdb1460cc11c0da7ca2ed921cd0300d2bfbd33fceb7d4e33f8c3",
+      "canonicalSha256": "7ee3ec5e993332d408699477e54f00436d36d32633189840cc517f3d2a8fb657"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\install-denied.log.gz",
+      "bytes": 494,
+      "sha256": "55188f891b8fd3d5b1aba1e39888655f1460b376c5a9270981d063caff1866fd",
+      "canonicalSha256": "bed56183bc1c7a4654fb56435a37c4d2ac3968e7b2e5f23a98822f594f6966ba"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\install-success.log.gz",
+      "bytes": 1849,
+      "sha256": "b08a7cb979db99161b39075017b409b3d3dc40212c58d00c2a6bf9260f754f0f",
+      "canonicalSha256": "6ad70f8b50e92cf28135d751bc87d67dd445cb1a2385db9830f868b94a793ad0"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\integration-launch-failed.log.gz",
+      "bytes": 534,
+      "sha256": "e5c79586370cfa30c74b734a017598183c2680ee6fbe4ddb13d2c63782f70363",
+      "canonicalSha256": "6aad033b10b4b2bd609d725d68a1e4a72befe83b3d0b06bfa85b2395cd6213d0"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\integration.log.gz",
+      "bytes": 773,
+      "sha256": "920e6f0000c0c05154e9737fa8734fd889a6b596df1e53a9e1657f67bf5e0476",
+      "canonicalSha256": "8c7d03784911c115f175f6518362e2b0dff6718f45bc6d8135ad236dd4a62e6d"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\licenses.log.gz",
+      "bytes": 73,
+      "sha256": "57510955ccf49217177f44f49ef332ec65bdd0fa6f165fb394b4ee9473fc14c4",
+      "canonicalSha256": "c3ef4a465f9a137bcad66026ba77fdb559485e0c47462051e5c2f5b4fbe5c571"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\mcp-1.raw.gz",
+      "bytes": 1473,
+      "sha256": "5142f7b1e350c0cc240bc4e2a15b9584eeae15b07e14d415610a3893c4a453cc",
+      "canonicalSha256": "d324b3f1d548b6545245d9f54d4a71e6ad27f231be2be513cbdf2044863adce0"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\mcp-2.raw.gz",
+      "bytes": 114,
+      "sha256": "ef17ae636e6dfa369978610c2ef79594aad7d4e55f32513f14bad8f8cc253f78",
+      "canonicalSha256": "85c567121ef5263dd9a5f020332e0f9053589b82046902d4f40a6abd06ff0a08"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\mcp-3.raw.gz",
+      "bytes": 2325,
+      "sha256": "d7ed82e34c10c9946176de22dac45cb9e214dcf4d9d4b33db184f25fd961f69e",
+      "canonicalSha256": "fbbef92a18e43d4d9a80fd6b0ec60394949dd571c367c9d2f438a73cdc19c96d"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\mcp-4.raw.gz",
+      "bytes": 1601,
+      "sha256": "398db4c321e0d07a9586b184b11590dc29e22f4ba4e68e0e9debfcaea44ce4ee",
+      "canonicalSha256": "da183f02851b17362b669890cebbcdfb6250ad9ab46a55a1ccead1caac3d9a93"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\mcp-5.raw.gz",
+      "bytes": 308,
+      "sha256": "5677325ed2f46923e975b225d402da2de72a26bec82ebac43ec76d76b22d405e",
+      "canonicalSha256": "7f04562504a747c083c219e5e56c0baefe969a6e26636bb41db1dff76b74e7ba"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\postgres-launch.log.gz",
+      "bytes": 55,
+      "sha256": "5e18a85d85b6ecb51a9da203ac2b8aef1f201e2af2dea2e96fb10ac923d835d2",
+      "canonicalSha256": "d7bca5972291ad01f5f678ea626adf165e5aa53fc346b32eab334b03d6e115fb"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\race-harness-timeout.log.gz",
+      "bytes": 809,
+      "sha256": "43462f3179b599dcf38d38472af01acbde7559b44cb7e77c360dca0395411437",
+      "canonicalSha256": "30f486c5286df6e2101bf32c08bad0cd55bbbaa900d041e918de69e8735adf84"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\race-tests.log.gz",
+      "bytes": 809,
+      "sha256": "43462f3179b599dcf38d38472af01acbde7559b44cb7e77c360dca0395411437",
+      "canonicalSha256": "30f486c5286df6e2101bf32c08bad0cd55bbbaa900d041e918de69e8735adf84"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\red-controls-heading.log.gz",
+      "bytes": 2377,
+      "sha256": "58cfe72cf2cff2745ff8a66eb7652af0bafbbcad554f241fcfde69529046a3c9",
+      "canonicalSha256": "a39aa6b9e9d34570e4fdadc8033e3ebc1fd929a4d34c82d1e3662aa95dcfab19"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\red-engine-lock-failed.log.gz",
+      "bytes": 503,
+      "sha256": "7daafa120d621a451fc944c3f4dab66778b1468a542f4a3e0d2987520d556366",
+      "canonicalSha256": "777676f1f0425e32337f52788036a62bf84612de4053c495e3918463c5a4517e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\red-retained-read.log.gz",
+      "bytes": 2301,
+      "sha256": "3b8ac8a06c6f095f017b53554609e9f30d6abc316f4cddb884aa8f06e0ff45a0",
+      "canonicalSha256": "71732f07139b69bc62722782702c1c34afc18f4110bb369ecb5aeacacbf5c44e"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\red-retained-session.log.gz",
+      "bytes": 992,
+      "sha256": "891159b10ba49ab7708e1e82cf2ae56c27b3844e51dfda1b160f32b970b40daa",
+      "canonicalSha256": "6eb54b8de007f6e817316381621122f54e3ad60392049ece5e5345b943186f15"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-driver.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-extra-continuation.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-extra-incomplete.log.gz",
+      "bytes": 781,
+      "sha256": "57f79c65ddf58de3879496242c6744c905f2c15fa27643389f5cc8fac6df0073",
+      "canonicalSha256": "144c3dab7491a5f0fe6042b56fee8560379b87daa73010839db2af8c714d180d"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-extra.log.gz",
+      "bytes": 781,
+      "sha256": "57f79c65ddf58de3879496242c6744c905f2c15fa27643389f5cc8fac6df0073",
+      "canonicalSha256": "144c3dab7491a5f0fe6042b56fee8560379b87daa73010839db2af8c714d180d"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-final-session.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-final.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\runtime-incomplete-overlay.log.gz",
+      "bytes": 755,
+      "sha256": "c69e86690816092dec80f36ca9df3d272cc1dbc7512e642a931592620da5d8af",
+      "canonicalSha256": "5ac477fe2948784ab2c21e9c65a401dfc3d51b81f0b90a6043de1e17c9e24858"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\stop-final-next.log.gz",
+      "bytes": 136,
+      "sha256": "fae12e2f258590b6cc43aa150ce987e0fa57a658458d63c86cb48d15c186ca5a",
+      "canonicalSha256": "237f6ebefe305bbcddf19390cec39929015c43a45b82b51e20e171cece32d0a3"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\typegen.log.gz",
+      "bytes": 75,
+      "sha256": "339431af8ae96f2988854039a2c28545abaef164ba3faf11d4c738d5985a0c25",
+      "canonicalSha256": "1608ad33b15389ef0430dc0b97ba2a0741498d1217f42c12e69796e4aee8c095"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\types-app-final.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\types-app.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\types-smoke.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\types-workflow.log.gz",
+      "bytes": 20,
+      "sha256": "9e72928e7a01615b4cf090daa617b4ca9d68531748f887f323f695eb4ca3ef63",
+      "canonicalSha256": "d4098c8560d18f4145478c1f64449b8a53d7cc52a3362b132f5b4f0d134105fa"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\logs\\unit-final.log.gz",
+      "bytes": 381,
+      "sha256": "b39910da2dde9ee3676226e9d1e95327069adbf6febc7b4f6694f478e2984c55",
+      "canonicalSha256": "6b1fde6733c9c856c1e7f2260cb02ac322e2edf54cdadc2cde3f96ef5b60cd94"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\next-tools.json",
+      "bytes": 5571,
+      "sha256": "25136da996cbcb6e7c3064f8bfe99fb9e2926b4b0fe7c32df0014b9408b02495",
+      "canonicalSha256": "25136da996cbcb6e7c3064f8bfe99fb9e2926b4b0fe7c32df0014b9408b02495"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\next.json",
+      "bytes": 29720,
+      "sha256": "8321ff535f556a2bafbfe8d53dda4e089c67adcaf1ead4d903070705b1c3037b",
+      "canonicalSha256": "8321ff535f556a2bafbfe8d53dda4e089c67adcaf1ead4d903070705b1c3037b"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\owned-next-process-final.json",
+      "bytes": 1006,
+      "sha256": "501ca40091c126c390ef31b1d2405cddc34ef5eef27635d0983671e264ccffd6",
+      "canonicalSha256": "906deaf3dd871e611cdfb032be188cebd4d109773fa4bf9f711e8ebb52401e8d"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\owned-next-process.json",
+      "bytes": 1006,
+      "sha256": "fdb8ad083b9ad7926e4513ed73d686b51589319af816ebda0a33c64c27fdffda",
+      "canonicalSha256": "bcb09c4aecbf0651181082303ddbdc1e4a62d6f6ef7f833150a06a8a2a79c8a4"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\runtime-before-session-tightening.json",
+      "bytes": 126082,
+      "sha256": "0db099ad556ef5d0636c93d93c999fc06ab6eab4b276ea37e982f68aafee095c",
+      "canonicalSha256": "0db099ad556ef5d0636c93d93c999fc06ab6eab4b276ea37e982f68aafee095c"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\runtime-extra-incomplete.json",
+      "bytes": 10860,
+      "sha256": "7ffd5c70a8e40e5ac7d5bec144dff1e04635d4dc93642a902a621fcc03cd1b28",
+      "canonicalSha256": "7ffd5c70a8e40e5ac7d5bec144dff1e04635d4dc93642a902a621fcc03cd1b28"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\runtime-extra.json",
+      "bytes": 17508,
+      "sha256": "23020def3e48d1944931530774c95b664c00ef8135f1239479592b121ba645c6",
+      "canonicalSha256": "23020def3e48d1944931530774c95b664c00ef8135f1239479592b121ba645c6"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\runtime-incomplete-overlay.json",
+      "bytes": 33748,
+      "sha256": "d205dd57a2ac2b6433a61665aaf19451b9b45a6f75d3fbbbda90fa3cca8d6181",
+      "canonicalSha256": "d205dd57a2ac2b6433a61665aaf19451b9b45a6f75d3fbbbda90fa3cca8d6181"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\runtime.json",
+      "bytes": 126323,
+      "sha256": "5c7d860b689fe01e496e02f2da7994cdc55ee1a290fe019d0a120eded1c6ff74",
+      "canonicalSha256": "5c7d860b689fe01e496e02f2da7994cdc55ee1a290fe019d0a120eded1c6ff74"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\source.json",
+      "bytes": 40720,
+      "sha256": "0ef3fabfa27186696cb4b747cbb84d3a412b04adb82f79c3d9461febf2223cb7",
+      "canonicalSha256": "0ef3fabfa27186696cb4b747cbb84d3a412b04adb82f79c3d9461febf2223cb7"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\unit-results.json",
+      "bytes": 27524,
+      "sha256": "f3b6f13ca3c06d77ac4a3b5905ca6e0911e8eafc192babe6c471d5ca3433df21",
+      "canonicalSha256": "f3b6f13ca3c06d77ac4a3b5905ca6e0911e8eafc192babe6c471d5ca3433df21"
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1739\\verify-evidence.mjs",
+      "bytes": 2038,
+      "sha256": "6a72faa2cd0723c40f603d56a922c577236a43ad25a3a9f8c1510528b34cf56a",
+      "canonicalSha256": "6a72faa2cd0723c40f603d56a922c577236a43ad25a3a9f8c1510528b34cf56a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1739.md",
+      "bytes": 11908,
+      "sha256": "5ddeec600b240d013618ae63bda30a20853759f8c7fdefed9d7a38e99660c4ec",
+      "canonicalSha256": "5ddeec600b240d013618ae63bda30a20853759f8c7fdefed9d7a38e99660c4ec"
+    }
+  ]
+}

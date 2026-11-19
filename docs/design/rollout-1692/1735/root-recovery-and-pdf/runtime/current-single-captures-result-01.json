@@ -1,0 +1,49 @@
+{
+  "states": [
+    {
+      "name": "current-single-desktop-1600-01",
+      "width": 1600,
+      "height": 1100,
+      "tail": false,
+      "notifications": "denied"
+    },
+    {
+      "name": "current-single-desktop-tail-01",
+      "width": 1600,
+      "height": 1100,
+      "tail": true,
+      "notifications": "denied"
+    },
+    {
+      "name": "current-single-phone-390-01",
+      "width": 390,
+      "height": 844,
+      "tail": false,
+      "notifications": "denied"
+    },
+    {
+      "name": "current-single-phone-tail-01",
+      "width": 390,
+      "height": 844,
+      "tail": true,
+      "notifications": "denied"
+    },
+    {
+      "name": "current-single-wide-2400-dark-01",
+      "width": 2400,
+      "height": 1350,
+      "tail": false,
+      "notifications": "denied"
+    }
+  ],
+  "fixture": "Same fresh disposable small-admin Person0 fixed2025 report",
+  "reportTotals": {
+    "hours": 2088,
+    "days": 261,
+    "homeDays": 52,
+    "homeHours": 416
+  },
+  "notificationPermission": "denied",
+  "sourceQualified": "Current candidate",
+  "pixelsReviewed": false
+}

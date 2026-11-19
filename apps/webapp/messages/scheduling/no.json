@@ -6,9 +6,13 @@
       "gapCount": "{count} bemanningsmangel",
       "gaps": "hull",
       "hideOverlay": "Skjul dekningsoverlegg",
+      "lastLoaded": "Sist innlastede dekning",
+      "loading": "Laster inn dekning…",
       "metSlots": "{count} tilstrekkelig",
       "overSlots": "{count} overbemannet",
       "overstaffed": "Overbemannet",
+      "readFailed": "Dekning kunne ikke lastes inn. Prøv på nytt for å sjekke bemanningen.",
+      "refreshing": "Oppdaterer dekning…",
       "showOverlay": "Vis overlegg for dekningsmål",
       "summary": "Dekningsoversikt:",
       "toggleLabel": "Dekning",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Dine publiserte vakter, uke for uke",
       "employeeTitle": "Min vaktplan",
-      "managerDescription": "Administrer og planlegg ansattes vakter",
+      "planningDescription": "Planlegg og publiser vakter. Planlagte vakter registrerer ikke arbeidstid.",
       "title": "Vaktplan"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Avbryt",
       "complianceAcknowledgmentRequired": "Bekreftelse på samsvar kreves",
       "complianceWarnings": "{count, plural, one {Samsvarskontrollen fant # advarsel; du må bekrefte den før publisering.} other {Samsvarskontrollen fant # advarsler; du må bekrefte dem før publisering.}}",
+      "coverageLoading": "Dekning lastes inn",
+      "coverageRulesCheckedOnPublish": "Publisering vil bruke gjeldende bemanningsregler.",
+      "coverageUnavailable": "Dekning er ikke tilgjengelig",
+      "coverageUnloaded": "Dekning er ikke kontrollert",
       "coverageWarning": "Noen tidsblokker oppfyller ikke kravene til minimumsbemanning.",
       "maxHours": "Maks. timer: {count}",
       "notifyEmployees": "{count, plural, one {Publiser # utkast til vakt og varsle ansatte} other {Publiser # utkast til vakter og varsle ansatte}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Advarsler oppdaget før publisering"
     },
     "scheduler": {
+      "assigned": "Tildelt",
       "complianceBanner": {
         "findingsDetected": "{count} funn oppdaget før publisering.",
         "maxHours": "Maks timer: {count}",
@@ -59,18 +68,24 @@
         "employee": "Viser skift for {name}",
         "showAll": "Vis alle skift"
       },
+      "loadFailed": "Vakter kunne ikke oppdateres. Innlastede vakter beholdes.",
       "loading": "Laster vaktplan...",
+      "open": "Åpen vakt",
       "publish": {
         "failed": "Kunne ikke publisere vakter",
         "published": "Publiserte {count} vakt(er)"
       },
+      "retry": "Prøv på nytt",
+      "shiftList": "Vaktliste",
       "shiftUpdate": {
         "failed": "Kunne ikke oppdatere vakt",
         "overlapDescription": "Denne vakten overlapper med {count} annen/andre vakt(er)",
         "overlapWarning": "Vakt lagret med overlappsvarsel",
         "skillOverrideReasonRequired": "Den ansatte mangler en nødvendig ferdighet denne dagen. Åpne vakten for å oppgi en årsak.",
         "updated": "Vakt oppdatert"
-      }
+      },
+      "supportFailed": "Maler eller samsvarsinformasjon kunne ikke oppdateres. Kontroller på nytt før publisering.",
+      "templatesUnavailable": "Vaktmaler kunne ikke lastes inn."
     },
     "shiftDetails": {
       "close": "Lukk",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Dra en mal til kalenderen for å opprette en vakt",
       "empty": "Ingen maler tilgjengelig. Opprett maler i Innstillinger for å legge til vakter raskt.",
+      "selectHint": "Velg en mal, og angi deretter vaktdato og tildeling.",
       "title": "Vaktmaler"
     }
   }

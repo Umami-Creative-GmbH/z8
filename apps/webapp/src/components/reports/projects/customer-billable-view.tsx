@@ -42,7 +42,11 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 	const showMargin = report.access === "full";
 	// Customers, then projects without an (active) customer as a group of their own.
 	const groups = [
-		...report.customers.map((row) => ({ key: row.customer.id, name: row.customer.name, ...row })),
+		...report.customers.map((row) => ({
+			key: row.customer.id,
+			name: row.customer.name,
+			...row,
+		})),
 		...(report.withoutCustomer
 			? [
 					{
@@ -66,6 +70,7 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 		<div className="space-y-6">
 			<div className="flex justify-end">
 				<ReportDocumentExportButtons
+					source={report}
 					buildDocument={(context) => buildCustomerReportDocument(report, context)}
 				/>
 			</div>
@@ -136,7 +141,10 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 														{/* One customer per share link (#806); never the without-customer group. */}
 														{row.key !== WITHOUT_CUSTOMER_KEY && (
 															<ReportShareDialog
-																target={{ kind: "customer", customerId: row.key }}
+																target={{
+																	kind: "customer",
+																	customerId: row.key,
+																}}
 																reportName={row.name}
 																period={{
 																	fromDay: report.period.startDate,
@@ -152,7 +160,9 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 															{t(
 																"reports.projects.customers.withoutCustomerHint",
 																"{hours} billable without customer, cannot be handed off",
-																{ hours: format.hours(row.billable.withoutCustomerHours) },
+																{
+																	hours: format.hours(row.billable.withoutCustomerHours),
+																},
 															)}
 														</div>
 													)}

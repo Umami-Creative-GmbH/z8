@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Nieobecność",
-      "all-caught-up": "Wszystko załatwione!",
-      "approved-recently": "{count} {request, plural, one {wniosek} few {wnioski} other {wniosków}} zatwierdzono ostatnio",
       "by": "przez {name}",
       "description": "Ostatnio zatwierdzone wnioski",
       "description-count": "Ostatnie {count} zatwierdzone {request, plural, one {wnioski} other {wnioski}}",
@@ -123,11 +121,27 @@
       "title": "Ostatnio zatwierdzone",
       "view-all": "Zobacz wszystkie wnioski"
     },
+    "refresh": {
+      "activity": "Ostatnia aktywność",
+      "attention": "Dzisiejszy przegląd",
+      "balanceRetry": "Odśwież, aby ponownie spróbować załadować saldo.",
+      "balanceUnavailable": "Saldo niedostępne",
+      "currentSession": "Bieżąca sesja",
+      "dayUnavailable": "Dzisiejsza suma jest niedostępna. Odśwież, aby spróbować ponownie.",
+      "employee": "Pracownik",
+      "greeting": "Dzień dobry, {name}.",
+      "noAbsences": "Brak zarejestrowanych nieobecności na dziś.",
+      "openTimeTracking": "Przejdź do ewidencji czasu pracy",
+      "overview": "Przegląd Twojej pracy",
+      "personalDay": "Twój dzień pracy",
+      "status": "Status",
+      "summary": "Podsumowanie",
+      "team": "Zespół",
+      "todayTarget": "Dziś · wymagane: {target}"
+    },
     "team-overview": {
       "avg-hours": "Śr. liczba godzin",
       "current-employees": "Aktualni pracownicy",
-      "current-employees-description": "Wszyscy, którzy obecnie tutaj pracują",
-      "description": "Statystyki zespołu w skrócie",
       "employees-button": "Pracownicy",
       "per-week": "/tydzień",
       "teams": "Zespoły",
@@ -175,9 +189,6 @@
       "used": "{days} wykorzystane"
     },
     "whos-out": {
-      "everyone-in": "Wszyscy są dzisiaj w biurze",
-      "everyones-in": "Wszyscy są na miejscu!",
-      "full-team": "Cały zespół jest dostępny!",
       "member": "członek",
       "members": "członkowie",
       "members-out": "{count} {member, select, one {członek zespołu} other {członków zespołu}} nieobecnych",

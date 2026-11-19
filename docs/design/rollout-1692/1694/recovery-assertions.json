@@ -1,0 +1,5 @@
+{
+  "pending": "Actual delayed server read retains rows with aria-busy=true",
+  "failure": "Transport failure retains records and original search DOM; visible Retry recovers through actual read",
+  "rowsAfterRecovery": 19
+}

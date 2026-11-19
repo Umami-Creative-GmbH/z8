@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "{name} için izin kaydı oluştur"
       },
+      "allowances": "Yıllık izin hakları",
       "calendar": {
         "approved": "Onaylandı",
         "changeDeputy": "Vekili değiştir",
@@ -12,7 +13,6 @@
         "deputyMissing": "Vekil eksik",
         "description": "Seçili ekip ve yıl için onaylanmış ve beklemede olan izinler.",
         "error": {
-          "description": "Lütfen birazdan tekrar deneyin.",
           "title": "Takvim yüklenemedi"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "İzin kaydet",
         "titleForEmployee": "{name} için devamsızlık kaydet"
       },
+      "recordingUnavailable": "Devamsızlık kaydetme seçenekleri yüklenemedi",
+      "retained": "Daha önce yüklenen veriler gösteriliyor. Güncel kayıtları almak için tekrar deneyin.",
+      "scopeChanged": "Ekip kapsamı değişti. Devam etmek için yeniden yükleyin.",
+      "scopeLoading": "Mevcut ekip kapsamı yükleniyor…",
+      "scopeUnavailable": "Mevcut ekip kapsamı yüklenemedi",
+      "sections": "Sayfa bölümleri",
       "sort": {
         "ascending": "artan",
         "by": "{label} ile sırala",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Bakiye yok"
     },
-    "description": "Doğrudan yönettiğiniz çalışanları görüntüleyin ve yönetin",
+    "directory": {
+      "count": "{count, plural, other {Bu kapsamda # üye} }",
+      "loading": "Ekip üyeleri yükleniyor",
+      "retained": "Son yüklenen üyeler gösteriliyor. Güncellemek için tekrar deneyin.",
+      "retry": "Tekrar dene",
+      "retrying": "Tekrar deneniyor…",
+      "scope": "Siz ve etkin kuruluştaki doğrudan denetlediğiniz çalışanlar.",
+      "scopeChanged": "Kuruluşunuz veya erişiminiz değişti. Ekibinizi yüklemek için yenileyin."
+    },
     "driving": {
+      "clearFilters": "Filtreleri temizle",
       "columns": {
         "calendar": "Takvim",
         "date": "Tarih",
@@ -126,6 +141,8 @@
         "employee": "Çalışan",
         "team": "Ekip"
       },
+      "guidance": "Çalışma dönemi ilişkilendirmesini tamamlamak için bir çalışanın takvimini açın. Eksik ayrıntılar giriş/çıkış yapmayı engellemez ve sürüş yetkisi oluşturmaz.",
+      "loadFailed": "Sürüş ayrıntıları yüklenemedi.",
       "loading": "Sürüş ayrıntıları yükleniyor",
       "missing": {
         "endReading": "Bitiş değeri yok",
@@ -133,10 +150,18 @@
         "startReading": "Başlangıç değeri yok",
         "vehicle": "Araç yok"
       },
+      "noMatch": "Bu filtrelerle eşleşen eksik sürüş ayrıntısı yok.",
       "openCalendar": "Takvim",
       "openCalendarOf": "{name} adlı kullanıcının takvimini aç",
+      "refreshFailed": "Sürüş ayrıntıları yenilenemedi. Daha önce yüklenen kayıtlar gösteriliyor.",
+      "restricted": "Mevcut kapsamınızda sürüş ayrıntıları bulunmuyor.",
+      "scopeAll": "Bu kuruluştaki tüm çalışanlar",
+      "scopeFailed": "Mevcut sürüş kapsamı yüklenemedi.",
+      "scopeLoading": "Mevcut sürüş kapsamı yükleniyor…",
+      "scopeManaged": "Yönettiğiniz çalışanlar",
       "title": "Sürüş ayrıntıları eksik",
-      "truncated": "En yeni {count} çalışma dönemi gösteriliyor. Kalanları görmek için ekibe veya çalışana göre filtreleyin."
+      "truncated": "En yeni {count} çalışma dönemi gösteriliyor. Kalanları görmek için ekibe veya çalışana göre filtreleyin.",
+      "updating": "Sürüş ayrıntıları güncelleniyor…"
     },
     "empty": {
       "action": "Çalışan Ayarlarına Git",
@@ -148,9 +173,9 @@
       "title": "Bir şeyler yanlış gitti"
     },
     "feature": "ekibinizi görüntüleyin",
-    "member": "üye",
-    "members": "üye",
-    "member.you": "Siz",
+    "member": {
+      "you": "Siz"
+    },
     "noResults": {
       "action": "Aramayı temizle",
       "description": "\"{query}\" ile eşleşen ekip üyesi bulunamadı",
@@ -169,8 +194,8 @@
         "period": "Dönem",
         "status": "Durum"
       },
-      "descriptionAll": "Seçilen dönemi kimlerin gönderdiği. Gönderimleri onay gelen kutusunda onaylayın veya reddedin.",
-      "descriptionManaged": "Yönettiğiniz çalışanlardan kimlerin seçilen dönemi gönderdiği. Gönderimleri onay gelen kutusunda onaylayın veya reddedin.",
+      "confirmationContext": "Gönderimler, kayıtları dondurmadan onaylar. Değiştirilen kayıtların yeniden gönderilmesi gerekir. Kararları onay gelen kutusunda inceleyin.",
+      "contextFailed": "Mevcut erişiminiz kontrol edilemedi.",
       "empty": "Görüntüleyebildiğiniz hiç kimseden bu dönemi göndermesi beklenmiyor.",
       "loading": "Dönem gönderimleri yükleniyor",
       "notSubmitted": "Gönderilmedi",
@@ -180,7 +205,12 @@
       "openInbox": "Onay gelen kutusunu aç",
       "owing": "{count, plural, other {# çalışan bu dönemi henüz göndermedi.} }",
       "period": "Gönderim dönemi",
+      "readFailed": "Dönem gönderimleri yüklenemedi. Daha önce yüklenen kayıtlar güncel olmayabilir.",
+      "records": "Çalışan gönderimleri",
+      "refresh": "Gönderimleri yenile",
       "running": "Bu dönem hâlâ devam ediyor. Çalışanlar dönemi son gününden itibaren gönderebilir.",
+      "scopeAll": "Kapsamdaki tüm çalışanlar",
+      "scopeManaged": "Yönettiğiniz çalışanlar",
       "status": {
         "approved": "Onaylandı",
         "awaiting": "Gönderim bekleniyor",
@@ -189,10 +219,13 @@
         "submitted": "Gönderildi"
       },
       "summary": "Durumlar",
-      "title": "Dönem gönderimleri"
+      "title": "Dönem gönderimleri",
+      "unavailable": "Dönem gönderimleri mevcut erişiminiz için kullanılamıyor. Erişimi tekrar kontrol etmek için yenileyin."
     },
     "presence": {
       "allLocations": "Tüm konumlar",
+      "assignmentContext": "Konum ataması, cihazın konumunun kanıtı değildir. Saatler, iş veya mola başladığında kaydedilen saat dilimini kullanır. Mevcudiyet bilgisi her dakika yenilenir.",
+      "chooseLocation": "Bir konum seçin",
       "columns": {
         "name": "Ad",
         "since": "Başlangıç",
@@ -202,9 +235,19 @@
       "descriptionAll": "Bu konuma atanmış, giriş yapmış veya molada olan çalışanlar.",
       "descriptionManaged": "Yönettiğiniz, bu konuma atanmış ve giriş yapmış veya molada olan çalışanlar.",
       "empty": "Şu anda bu konumda görebileceğiniz kimse giriş yapmamış.",
+      "loadFailed": "Bu konumun mevcudiyet bilgisi yüklenemedi. Tekrar deneyin veya yeniden bir konum seçin.",
+      "loading": "Konum mevcudiyet bilgisi yükleniyor…",
+      "loadingLocations": "Mevcut kuruluş için konumlar yükleniyor…",
       "locationTitle": "Kimler işte: {location}",
+      "locationUnavailable": "Konum kullanılamıyor",
+      "locationUnavailableDescription": "Bu konum mevcut kuruluşunuzda mevcut değil. Mevcudiyet durumunu görüntülemek için etkin bir konum seçin.",
       "noLocations": "Kuruluşunuzun henüz etkin bir konumu yok.",
-      "title": "Kimler işte"
+      "refreshFailed": "Konumlar yenilenemedi. Son yüklenen konumlar gösteriliyor.",
+      "refreshingLocations": "Konumlar yenileniyor…",
+      "scopeChanged": "Mevcut hesap veya kuruluş için mevcudiyet bilgisinin yeniden okunması gerekiyor.",
+      "title": "Kimler işte",
+      "unavailable": "Mevcudiyet bilgisi kullanılamıyor",
+      "viewPresence": "Mevcudiyet durumunu görüntüle"
     },
     "primaryManager": "Birincil yöneticisiniz",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Çalışan",
       "position": "Pozisyon",
+      "region": "Ekip üyeleri tablosu",
       "role": "Rol",
       "sort": {
         "ascending": "artan",

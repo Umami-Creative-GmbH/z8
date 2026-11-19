@@ -1,0 +1,70 @@
+{
+  "checks": [
+    {
+      "name": "disposable employee-specific approval policy and primary manager are fixture setup, not product actions",
+      "passed": true
+    },
+    {
+      "name": "real calendar form creates a pending owned correction with the production inactive endpoint shape",
+      "passed": true
+    },
+    {
+      "name": "exact pre-fix reader fails to list this actual pending correction",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "before-unavailable.png",
+      "sha256": "b3e6f329fd85afdf12c2bc5336ace801c0215f68b1492ffaba292aa96be21c5b",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "readerSha256": "23f6a400b104823b3f87b9eccd1c036a55a7cb40a76705bb6590d8c5c3ffcd27",
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "pathname": "/en/my-requests",
+      "headings": [
+        "My Requests"
+      ],
+      "focusedTag": "DIV"
+    }
+  ],
+  "pageErrors": [],
+  "sourceCommit": "8ba550c282727aec4548a217daa673b38137c883",
+  "comparison": "Only the owned server reader is replaced with exact 05c66 source; all other integrated code stays current.",
+  "reader": {
+    "path": "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+    "beforeCommit": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+    "beforeSha256": "23f6a400b104823b3f87b9eccd1c036a55a7cb40a76705bb6590d8c5c3ffcd27",
+    "afterSha256": "787070718b966a832b394f6b4e0a361d997ca475921748a15f69e0d6397fcce3"
+  },
+  "submission": {
+    "periodId": "5768d29f-8095-4bb3-a92a-ffe66a47e752",
+    "requestId": "c411f711-45fe-4c8b-a7a1-c9b3d9cfe584",
+    "entries": [
+      {
+        "id": "6fb7eb18-f344-5bcd-ba71-2aef5e05d91a",
+        "type": "correction",
+        "is_superseded": true,
+        "superseded_by_id": null,
+        "replaces_entry_id": "1df2cb47-4754-45e5-81e7-1e647ee319cb"
+      }
+    ],
+    "rollout": [
+      {
+        "lifecycle_mode": "legacy",
+        "side_effect_mode": "legacy"
+      }
+    ],
+    "admission": []
+  },
+  "failure": "The expression evaluated to a falsy value:\n\n  assert.ok(await page.evaluate(id=>document.getElementById(id).innerText.includes('Pending'),articleId))\n"
+}

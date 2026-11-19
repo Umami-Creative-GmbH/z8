@@ -1,0 +1,21 @@
+# Independent R051 / #1734 verification
+
+Candidate `3d64886be72c8935eb9dffff51d042bb426ff8dd`, tree `8c3a3993377ebde26099a95c55a2f31855791364`. No reproduced source blocker in this bounded verification. Latest VERIFIED remains `a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0`; R051 verifiedCommit remains null. Root owns readiness and publication.
+
+Fresh accepted evidence is **new public9/1**, **protected rechecks40/5**, **canonical PostgreSQL65/3**, and **protected PostgreSQL20/1**. That is134 distinct cases across10 physical files. All attempts form198 case instances over18 file executions (197 pass,1 initial fixture failure); the redundant protected40 run is retained. Do not add protected40 to inherited root509/70. [Exact accounting](test-accounting.json) and [case results](test-results.json).
+
+The new public probes use the actual organization provider, QueryClient, both public panels and real self-marker/employee-count/document hooks with auth/action transport fakes. They check reverse selected-to-shared actor ABA, refusal/rejection release, accepted target/unmount reader refresh, pending retained/no-session bootstrap, separate-client boundary, local Retry/retired read and safe loading heading. Fresh protected controls include organization/document identities, Activity retirement and R049/R050 local context Retry/queued locks.
+
+[Actual application observations](runtime-observations.json) include normal synthetic sign-in, shared note intake, exact protected68-byte download, self marker1, selected visible refresh after one held cross-view unlink, actual relink, officer grant/revoke through settings, refused retained draft, and foreign/self overview refusal. [Persisted readbacks](readbacks.json) retain the premature unconfirmed link attempt and show the final same linked document, unchanged12 absence records/history hashes, and zero refused-draft documents. Held/failed transports are labeled synthetic.
+
+[Connected restored-current Next](next-current.json) has one visible h1,10 rows,18px preference and empty compilation/config/session error arrays. [Native0.39.1](native-current.json) captured the actual admitted target's React owner tree after correcting tab/hook attempts. No browser auth state was copied, restored, exported or minted; native restore was unconfigured and save disabled.
+
+Matched [current layouts](current-layouts.json) and [historical consumer layouts](historical-layouts.json) cover1600/390/2400dark and saved18px reload, with expanded/collapsed navigation. Current phone checks include first Escape/focus return and named-region keyboard scrolling. Images are96px bottom crops, with raw full viewports private; phone top/tail views are partial, and shared Pets/dev/Rendering/clock overlays remain explicit. Historical desktop local-record width was not correctly measured by the helper and is left uncertified. Pixel inspection, rather than scrollWidth alone, checked the final captures.
+
+Only the exact a904 page and overview consumers were temporarily overlaid, on stopped owned Next, with [raw source pins](overlay-pins.json). Shared shell, both payslip heading opt-ins, children, auth/domain owners and configuration stayed current. This is a partial historical-consumer comparison, not a historical whole app. Both files were restored byte-exact, then current Next was restarted and checked.
+
+[Preservation](preservation.json):13,577 raw tracked paths unchanged; all57 verified ancestors; original STOP30 hashes and seal unchanged; frozen manifests/lock/config,3 physical dependency parents/158 internal links unchanged;125 licenses inherited. [Cleanup](resource-cleanup.json): three own bridges removed and zero owned browser/native/controller/listener/service resources. No source fix, commit, push, tracker/ledger change, dev merge or readiness advancement.
+
+[Failed attempts and limits](failed-attempts.json) remain explicit. Named-scope picker UI, full generation/catalogs/providers/devices/wrapper/true zoom/exhaustive ABA/global roster and inherited formatting failures are not certified. Client reservations cover one QueryClient; no cross-tab/full-reload mutex or server idempotency/auth-race claim.
+
+**RELEASE ALL checkout/index/Git/package/runtime/process ownership to root.**

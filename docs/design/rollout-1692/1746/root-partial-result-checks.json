@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "verifiedCommit": null,
+  "status": "provisional",
+  "correctionCommit": "caeffe008245793a7f6a8e51ef109bd0effffcdb",
+  "integrationCommit": "1139d3887d42e73b56a407e76b8d8e247339af8d",
+  "appTree": "2cc569361241e54e62bdc800616e379e659ae0de",
+  "independentStop": {
+    "candidate": "c4b13baea5b3d4df8cd6b45e2e0121dac71d13e1",
+    "cases": 14,
+    "files": 2,
+    "passed": 13,
+    "failed": 1,
+    "providerCasesIncluded": 11,
+    "populationCases": 3,
+    "repeatNonadditive": true,
+    "safeAllowlistSha256": "45b55c90fe1361b90e22510447a8393ca3aa14e06b00da6c1d8acd994f38b30c",
+    "safeFiles": 25,
+    "safeBytes": 11130483,
+    "probeSha256": "522d36e8594d59e60f118e6653275a95e7748fdc80bc6e93dd9266aa3c168df8",
+    "classification": "Synthetic presentation/confidentiality gap with actual provider/controller/builder and external source adapters; no live authorization bypass or persisted command."
+  },
+  "rootExactRed": {
+    "cases": 3,
+    "passed": 2,
+    "failed": 1
+  },
+  "changes": [
+    "Fresh structured partial results are rendered as returned by the canonical builder, without merging prior failed-section rows or Needs Action categories.",
+    "Whole-read transport failure still retains the current snapshot and disables decisions as before.",
+    "Fresh successful sections and local Retry remain available.",
+    "No population stamp or client authorization authority invented; canonical reads/actions/permissions/timekeeping unchanged."
+  ],
+  "controlAdjustment": "The old same-population retention control now requires no prior private row. The client receives no proof that a failed section has the same authorized population, so it cannot safely restore those rows. A new control proves successful fresh sections and Retry survive.",
+  "checks": {
+    "units": {
+      "passed": 183,
+      "physicalFiles": 12,
+      "failed": 0,
+      "skipped": 0,
+      "newPopulationCases": 4,
+      "providerCases": 11,
+      "subsetsIncluded": true
+    },
+    "types": "Static Next typegen and all3 full projects pass on the combined source",
+    "lintImports": "3files pass",
+    "explicitFormatting": "100column CRLF3files pass",
+    "ordinaryFormatting": "3findings, failed",
+    "doctor": {
+      "errorCount": 0,
+      "warningCount": 0,
+      "affectedFileCount": 0,
+      "totalDiagnosticCount": 0,
+      "score": null,
+      "scoreLabel": null
+    },
+    "postgresFresh": 0,
+    "runtimeFresh": 0
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.tsx",
+      "sha256": "9dcccbb7406edad514f015d008a6724e0e493cd516481518d0d7f436745bdc6f",
+      "gitBlob": "cfbd0bc6b5fa9cf85bd963f73aceda0ccc1585b7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.test.tsx",
+      "sha256": "722dd182c5ad7081d7f3b9faf711b14412db2ff07725ca247d1b726468664909",
+      "gitBlob": "df87de7fd41ca2a60f263e163fd59a64e17c8ed0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-population-arrival.test.tsx",
+      "sha256": "72db35fb8b7716adbfb88a43cc420f56a010b8a0224545ad29eab972092bf84d",
+      "gitBlob": "a9034ed5179abc909f5f6e6d4c262b2227d0a5a2"
+    }
+  ],
+  "preservation": {
+    "outside3SourcePaths": 18487,
+    "all63AnchorsPlusBaseline": true,
+    "developerAccess3SourcePinsUnchanged": true,
+    "originalReportAndPreviousProofsUnchanged": true,
+    "noDependencyOrCanonicalOwnerMutation": true
+  },
+  "remaining": [
+    "Independent correction recheck and remaining page/read provenance, actor/orgABA and decision-settlement remount controls.",
+    "Canonical PostgreSQL and current browser/native/Next acceptance remain unpassed.",
+    "Worker156unit/12PG and earlier179root counts stay historical/nonadditive.",
+    "Production/catalog/provider/device/truezoom/globaltransition limits."
+  ],
+  "cleanup": "Temporary exact probe removed only after matching SHA; all commands exited, no runtime/PG fixture created."
+}

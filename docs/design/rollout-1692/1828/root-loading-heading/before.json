@@ -1,0 +1,266 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+    "sha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7",
+    "canonicalSha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7"
+  },
+  "checks": [
+    {
+      "name": "Actual account session request is held while the route retains its safe task heading",
+      "headings": [],
+      "noPreferenceControls": true,
+      "heldSessionRequests": 1
+    },
+    {
+      "name": "Releasing the unchanged real session read reveals the existing preference form with one task heading",
+      "headings": [
+        "Set up notifications"
+      ],
+      "sessionHTTP200": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "before-pending-desktop.png",
+      "path": "/en/onboarding/notifications",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [],
+      "switches": 0,
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "275e1c8ccafca3c4b75089c409484af046f9c78902fbe786ba02b1482c42df0d"
+      },
+      "source": {
+        "path": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "sha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7",
+        "canonicalSha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7"
+      }
+    },
+    {
+      "name": "before-pending-phone.png",
+      "path": "/en/onboarding/notifications",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [],
+      "switches": 0,
+      "png": {
+        "width": 390,
+        "height": 844,
+        "sha256": "2d307f98d54ab2e3a0337a16a3e1dc66bfa8cc708a8fe5a186deccdeff6e1d02"
+      },
+      "source": {
+        "path": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "sha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7",
+        "canonicalSha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7"
+      }
+    },
+    {
+      "name": "before-settled-phone.png",
+      "path": "/en/onboarding/notifications",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Set up notifications"
+      ],
+      "switches": 5,
+      "png": {
+        "width": 390,
+        "height": 844,
+        "sha256": "e2bdd2e16b7cc7881b24281f3c8ad12d26b9322f6d448151213041fec8b9ea53"
+      },
+      "source": {
+        "path": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "sha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7",
+        "canonicalSha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7"
+      }
+    }
+  ],
+  "sessionResponses": [
+    {
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "heldSessionRequests": 1,
+  "navigations": [
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications"
+  ],
+  "tools": {
+    "result": {
+      "tools": [
+        {
+          "name": "get_project_metadata",
+          "description": "Returns the the metadata of this Next.js project, including project path, dev server URL, etc.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_errors",
+          "description": "Get the current error state from the Next.js dev server, including Next.js global errors (e.g., next.config validation), browser runtime errors, and build errors with source-mapped stack traces",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_page_metadata",
+          "description": "Get runtime metadata about what contributes to the current page render from active browser sessions.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_logs",
+          "description": "Get the path to the Next.js development log file. Returns the file path so the agent can read the logs directly.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        {
+          "name": "get_server_action_by_id",
+          "description": "Locates a Server Action by its ID in the server-reference-manifest.json. Returns the filename and export name for the action.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "actionId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "actionId"
+            ],
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_routes",
+          "description": "Get all routes that will become entry points in the Next.js application by scanning the filesystem. Returns routes grouped by router type (appRouter, pagesRouter). Dynamic segments appear as [param] or [...slug] patterns. API routes are included in their respective routers (e.g., /api/* routes from pages/ are in pagesRouter). Optional parameter: routerType (\"app\" | \"pages\") - filter by specific router type, omit to get all routes.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "routerType": {
+                "type": "string",
+                "enum": [
+                  "app",
+                  "pages"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_request_insights",
+          "description": "Get recent App Router request insights captured by the local Next.js span recorder. Useful for debugging slow renders, server fetches, cache behavior, and request timelines without an external OTEL collector. Requires experimental.requestInsights.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "requestId": {
+                "type": "string"
+              },
+              "htmlRequestId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_compilation_issues",
+          "description": "Build the module graph for all routes and return all compilation issues (resolve errors, missing modules, transform errors, etc.). Does not require a browser session. Covers all routes proactively.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "compile_route",
+          "description": "Compile a specific route (page or API route) without making an HTTP request. Triggers the same on-demand compilation the dev server uses when a route is first visited. Useful for warming up the module graph, measuring compile time, or pre-compiling routes for memory benchmarking. Returns { routeSpecifier, issues } on success where routeSpecifier is the resolved route and issues contains any compilation warnings or errors. Returns an error if no matching route exists.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "routeSpecifier": {
+                "type": "string",
+                "description": "A route specifier as returned by the get_routes tool (e.g. \"/\", \"/blog/[slug]\", \"/api/users/[id]\"). Mutually exclusive with `path`; provide exactly one."
+              },
+              "path": {
+                "type": "string",
+                "description": "A URL path on this site (e.g. \"/blog/hello-world\", \"/docs/a/b/c\"). Query strings are allowed and ignored. Do not include scheme/host/port. The path is resolved to its matching route specifier using the dev router's live route table. Mutually exclusive with `routeSpecifier`; provide exactly one."
+              }
+            },
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 1
+  },
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

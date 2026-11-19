@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EquipmentRefreshButton } from "@/components/equipment/equipment-header-actions";
 import { equipmentReturnPath } from "@/components/equipment/equipment-list-state";
 import { EquipmentLoading } from "@/components/equipment/equipment-loading";
 import { EquipmentAssignmentDetail } from "@/components/equipment/equipment-workspace";
+import { PageHeader } from "@/components/ui/page-header";
 import { getEquipmentAssignment } from "@/lib/organization/equipment/actions";
 import { getTranslate } from "@/tolgee/server";
 
@@ -28,23 +30,24 @@ async function AssignmentContent({ params, searchParams }: Props) {
 	)
 		notFound();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{result.success ? (
 				<EquipmentAssignmentDetail
 					data={result.data}
 					back={equipmentReturnPath(query.back)}
 				/>
 			) : (
-				<div className="space-y-2 px-4 lg:px-6">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.equipment.title", "Equipment")}
-					</h1>
+				<div className="space-y-2">
+					<PageHeader title={t("settings.equipment.title", "Equipment")} />
 					<p role="alert" className="text-sm text-destructive">
 						{t(
 							"settings.equipment.overview.failed",
 							"Equipment could not be loaded. Reload the page to try again.",
 						)}
 					</p>
+					<EquipmentRefreshButton>
+						{t("settings.equipment.custody.reload", "Reload equipment")}
+					</EquipmentRefreshButton>
 				</div>
 			)}
 		</div>

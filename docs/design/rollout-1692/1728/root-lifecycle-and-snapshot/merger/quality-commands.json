@@ -1,0 +1,42 @@
+[
+  {
+    "name": "biome-ordinary",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check src/app/[locale]/(app)/personnel-files/page.tsx src/components/personnel-file/personnel-files-workspace.tsx src/components/personnel-file/personnel-files-workspace.test.tsx src/components/personnel-file/expiring-documents.tsx src/components/personnel-file/expiring-documents.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+    "started": "2026-11-16T05:51:14.3846184+00:00",
+    "ended": "2026-11-16T05:51:15.4530204+00:00",
+    "exit": 1
+  },
+  {
+    "name": "biome-explicit-crlf",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --config-path=biome.jsonc --line-ending=crlf src/app/[locale]/(app)/personnel-files/page.tsx src/components/personnel-file/personnel-files-workspace.tsx src/components/personnel-file/personnel-files-workspace.test.tsx src/components/personnel-file/expiring-documents.tsx src/components/personnel-file/expiring-documents.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+    "started": "2026-11-16T05:51:15.4677333+00:00",
+    "ended": "2026-11-16T05:51:16.7332234+00:00",
+    "exit": 1
+  },
+  {
+    "name": "biome-ordinary-lint",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --formatter-enabled=false src/app/[locale]/(app)/personnel-files/page.tsx src/components/personnel-file/personnel-files-workspace.tsx src/components/personnel-file/personnel-files-workspace.test.tsx src/components/personnel-file/expiring-documents.tsx src/components/personnel-file/expiring-documents.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+    "started": "2026-11-16T05:51:16.7347603+00:00",
+    "ended": "2026-11-16T05:51:17.2678445+00:00",
+    "exit": 0
+  },
+  {
+    "name": "biome-explicit-lint",
+    "command": "pnpm --config.verify-deps-before-run=false exec biome check --config-path=biome.jsonc --formatter-enabled=false src/app/[locale]/(app)/personnel-files/page.tsx src/components/personnel-file/personnel-files-workspace.tsx src/components/personnel-file/personnel-files-workspace.test.tsx src/components/personnel-file/expiring-documents.tsx src/components/personnel-file/expiring-documents.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+    "started": "2026-11-16T05:51:17.2689169+00:00",
+    "ended": "2026-11-16T05:51:17.7651584+00:00",
+    "exit": 0
+  },
+  {
+    "name": "doctor",
+    "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --verbose --scope changed --base 16443982de929de4f885a6cfb6de5b377374cb3e --json --json-out .tmp/merge1728-audit/doctor.json --no-parallel --no-score --no-telemetry --no-supply-chain --output-dir .tmp/merge1728-audit/doctor-files --max-duration 90",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "started": "2026-11-16T05:51:17.7665438+00:00",
+    "ended": "2026-11-16T05:51:43.3781610+00:00",
+    "exit": 0
+  }
+]

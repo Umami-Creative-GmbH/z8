@@ -61,6 +61,7 @@
           "allowance": "Wymiar urlopu",
           "allowanceForYear": "Wymiar urlopu na rok {year}",
           "assignedPolicy": "Przypisana polityka",
+          "backToAllowances": "Wróć do wymiarów urlopów pracowników",
           "cancel": "Anuluj",
           "carryover": "Przeniesienie",
           "carryoverDaysOptional": "Dni przeniesione (opcjonalnie)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Domyślnie: {days} dni",
           "employeeInformation": "Informacje o pracowniku",
           "errors": {
+            "adjustmentReasonRequired": "Podaj powód, aby zarejestrować tę korektę.",
             "createAdjustmentFailed": "Nie udało się utworzyć korekty",
-            "unexpected": "Wystąpił nieoczekiwany błąd",
+            "loadFailed": "Nie udało się załadować wymiaru urlopu pracownika.",
             "updateAllowanceFailed": "Nie udało się zaktualizować wymiaru urlopu",
             "updatePolicyAssignmentFailed": "Nie udało się zaktualizować przypisania polityki"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "zarządzaj wymiarami urlopów pracowników",
           "managers": "Menedżerowie",
           "overrideEffectivePolicy": "Zastąp limit z przypisanych zasad ({days} dni) dla tego pracownika",
+          "partialSave": {
+            "description": "Wprowadzone dane zostały zachowane. Ponowna próba zapisze tylko to, czego nadal brakuje.",
+            "failed": {
+              "adjustment": "Nie udało się zapisać ręcznej korekty: {reason}",
+              "allowance": "Nie udało się zapisać niestandardowego wymiaru urlopu: {reason}",
+              "policy": "Nie udało się zapisać przypisania zasad: {reason}"
+            },
+            "pending": {
+              "adjustment": "Ręczna korekta nie została jeszcze zapisana.",
+              "allowance": "Niestandardowy wymiar urlopu nie został jeszcze zapisany.",
+              "policy": "Przypisanie zasad nie zostało jeszcze zapisane."
+            },
+            "retry": "Ponów zapisywanie zmian",
+            "saved": {
+              "adjustment": "Zapisano ręczną korektę.",
+              "allowance": "Zapisano niestandardowy wymiar urlopu.",
+              "policy": "Zapisano przypisanie zasad."
+            },
+            "title": "Niektóre zmiany nie zostały zapisane",
+            "titleNothingSaved": "Zmiany nie zostały zapisane"
+          },
           "policyOptionDays": "{name} ({days} dni)",
           "position": "Stanowisko",
           "postingsSkipped": "Automatyczne naliczenia urlopu są pomijane do czasu rozwiązania konfiguracji zasad.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Uwaga: \"{name}\" jest domyślną polityką firmy. Przed usunięciem tej polityki musisz ustawić inną jako domyślną.",
       "delete-description-v2": "Czy na pewno chcesz usunąć \"{name}\"? Spowoduje to również usunięcie wszystkich przypisań dla tej polityki.",
       "deleteFailed": "Nie udało się usunąć polityki",
+      "deleteLastDefault": "To jedyne domyślne zasady firmy. Najpierw ustaw inne zasady jako domyślne.",
       "delete-title": "Usuń politykę urlopową",
       "header": {
         "accrual": "Naliczanie",
@@ -334,6 +358,7 @@
       },
       "loadError": "Nie udało się załadować polityk",
       "max-days": "Maks. {days} dni",
+      "no-end-date": "Bez daty zakończenia",
       "none": "Brak",
       "no-policies-created": "Nie utworzono jeszcze żadnych polityk urlopowych. Utwórz politykę, aby zdefiniować wymiar urlopu dla swojego zespołu.",
       "noSearchResults": "Brak polityk pasujących do wyszukiwania.",

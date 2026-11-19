@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Azioni per {endpoint}",
+    "command-unknown": "Impossibile confermare il comando. Aggiorna questo endpoint prima di riprovare.",
     "copy-failed": "Impossibile copiare negli appunti",
     "create": "Aggiungi webhook",
     "create-failed": "Impossibile creare il webhook",
     "delete-confirm": {
       "description": "Questa operazione eliminerà definitivamente l'endpoint del webhook e tutta la cronologia delle consegne. Questa azione non può essere annullata.",
-      "title": "Eliminare il webhook?"
+      "title-named": "Eliminare il webhook {name}?"
     },
     "deleted": "Webhook eliminato",
-    "delete-failed": "Impossibile eliminare il webhook",
     "deliveries": "Consegne",
-    "description": "Configura gli endpoint dei webhook per ricevere notifiche in tempo reale quando si verificano eventi nella tua organizzazione.",
     "disabled": "Webhook disabilitato",
     "empty": {
       "description": "Crea il tuo primo webhook per iniziare a ricevere notifiche sugli eventi.",
@@ -57,10 +57,11 @@
       "status": "Stato",
       "success": "Riuscito",
       "time": "Ora",
-      "title": "Registri di invio"
+      "title": "Registri di invio",
+      "toggle-details": "Dettagli per {event} alle {time}"
     },
-    "regenerate-failed": "Impossibile rigenerare il segreto",
     "regenerate-secret": "Rigenera segreto",
+    "retry-help": "Aggiorna questo elenco per confermare gli endpoint correnti. I record caricati in precedenza vengono mantenuti.",
     "secret-copied": "Segreto copiato negli appunti",
     "secret-dialog": {
       "copy-secret": "Copia il segreto negli appunti",
@@ -78,14 +79,15 @@
       "degraded": "Degradato",
       "failing": "In errore",
       "healthy": "Integro",
-      "inactive": "Inattivo"
+      "inactive": "Inattivo",
+      "untried": "Ancora nessuna consegna"
     },
     "success-rate": "Operazione riuscita",
     "test": "Invia test",
-    "test-failed": "Invio del webhook di test non riuscito",
-    "test-sent": "Webhook di test inviato",
+    "test-queued": "Webhook di test in coda",
     "title": "Webhook",
-    "toggle-active": "Attiva/disattiva webhook",
+    "toggle-active-named": "Attivo: {endpoint}",
+    "unavailable": "Webhook non disponibili",
     "updated": "Webhook aggiornato",
     "update-failed": "Aggiornamento del webhook non riuscito",
     "view-logs": "Visualizza log"

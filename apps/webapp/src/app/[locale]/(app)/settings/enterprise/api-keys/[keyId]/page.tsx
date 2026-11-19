@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ApiKeyDetailView } from "@/components/enterprise/api-key-detail-view";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getApiKeyDetail } from "../actions";
@@ -18,13 +19,20 @@ async function ApiKeyDetailPageContent({ params }: ApiKeyDetailPageProps) {
 
 function ApiKeyDetailPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-40 w-full" />
-				<Skeleton className="h-[320px] w-full" />
+		<LoadingRegion
+			className="page-frame"
+			label={{ labelKey: "settings.apiKeys.detail.loading", labelDefault: "Loading API key" }}
+		>
+			<div className="page-measure space-y-6">
+				<div className="space-y-2">
+					<Skeleton aria-hidden="true" className="h-8 w-32" />
+					<Skeleton aria-hidden="true" className="h-9 w-56 max-w-full" />
+					<Skeleton aria-hidden="true" className="h-5 w-40 max-w-full" />
+				</div>
+				<Skeleton aria-hidden="true" className="h-40 w-full rounded-xl" />
+				<Skeleton aria-hidden="true" className="h-[320px] w-full rounded-xl" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

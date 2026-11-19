@@ -1,0 +1,69 @@
+{
+  "status": "STOP_CURRENT_ACCEPTANCE_BLOCKED",
+  "verifiedCommit": null,
+  "issues": "OPEN; no tracker mutations",
+  "candidate": "e597efc34bc2bdc1fa5369496781fe6bb0105888",
+  "fix": "047e89193fbafa34ba7a9a3d3a1fee992ccd84bd",
+  "premerge": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "classification": "Inherited failed upload recovery; premerge disabled after return, current enabled retry errors and starts no upload",
+  "fresh": {
+    "surroundingPublic": {
+      "passed": 13,
+      "failed": 0,
+      "physicalBridgePaths": 1,
+      "run": "public-03.log"
+    },
+    "minimalCurrentUpload": {
+      "passed": 1,
+      "failed": 1,
+      "physicalBridgePaths": 1,
+      "run": "final-candidate-upload.log"
+    },
+    "premergeSameContract": {
+      "passed": 1,
+      "failed": 1,
+      "physicalBridgePaths": 1,
+      "run": "premerge-upload-control.log",
+      "overlap": "same two behavioral identities; not additive"
+    },
+    "pg": 0,
+    "nextRuntime": false,
+    "browser": false,
+    "typegen": false,
+    "threeTypes": false,
+    "lint": false,
+    "doctor": false
+  },
+  "candidateObservation": {
+    "uploadRequestsTotal": 1,
+    "newUploadRequests": 0,
+    "recordingCommandCalls": 0,
+    "errorNotifications": 1,
+    "submitEnabledOnReturn": true,
+    "notesRetained": true,
+    "fileRetained": true
+  },
+  "premergeObservation": {
+    "uploadRequestsTotal": 1,
+    "newUploadRequests": 0,
+    "recordingCommandCalls": 0,
+    "errorNotifications": 0,
+    "submitEnabledOnReturn": false,
+    "notesRetained": true,
+    "fileRetained": true
+  },
+  "transportControl": "same actual File/Uppy/TUS browser build completes POST/PATCH and dispatches exactly one synthetic refusal command on both commits",
+  "noServerWrites": true,
+  "noAuthStateArtifacts": true,
+  "cleanup": {
+    "ownedProcessCount": 0,
+    "ownedNextServersStarted": 0,
+    "ownedBrowserContextsStarted": 0,
+    "ownedFixturesStarted": 0,
+    "ownedContainersStarted": 0,
+    "remainingBridges": false,
+    "processInspection": "CIM read-only, command path restricted to own absolute checkout",
+    "cleanupScope": "OWN ONLY; no other process/container/worktree/dependency cleanup",
+    "verifiedCommit": null
+  }
+}

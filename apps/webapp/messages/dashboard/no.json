@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Fravær",
-      "all-caught-up": "Alt er ajour!",
-      "approved-recently": "{count} {request} godkjent nylig",
       "by": "av {name}",
       "description": "Siste godkjente forespørsler",
       "description-count": "Siste {count} godkjente {request}",
@@ -123,11 +121,27 @@
       "title": "Nylig godkjent",
       "view-all": "Se alle godkjenninger"
     },
+    "refresh": {
+      "activity": "Siste aktivitet",
+      "attention": "Dagen i korthet",
+      "balanceRetry": "Oppdater for å prøve å laste inn saldoen på nytt.",
+      "balanceUnavailable": "Saldo utilgjengelig",
+      "currentSession": "Gjeldende økt",
+      "dayUnavailable": "Dagens total er utilgjengelig. Oppdater for å prøve på nytt.",
+      "employee": "Ansatt",
+      "greeting": "God dag, {name}.",
+      "noAbsences": "Ingen fravær registrert for i dag.",
+      "openTimeTracking": "Gå til timeregistrering",
+      "overview": "Arbeidet ditt i korthet",
+      "personalDay": "Arbeidsdagen din",
+      "status": "Status",
+      "summary": "Sammendrag",
+      "team": "Team",
+      "todayTarget": "I dag · {target} påkrevd"
+    },
     "team-overview": {
       "avg-hours": "Gj.snittstimer",
       "current-employees": "Nåværende ansatte",
-      "current-employees-description": "Alle som jobber her nå",
-      "description": "Teamstatistikk på et øyeblikk",
       "employees-button": "Ansatte",
       "per-week": "/uke",
       "teams": "Team",
@@ -175,9 +189,6 @@
       "used": "{days} brukt"
     },
     "whos-out": {
-      "everyone-in": "Alle er på kontoret i dag",
-      "everyones-in": "Alle er på plass!",
-      "full-team": "Hele teamet er tilgjengelig!",
       "member": "medlem",
       "members": "medlemmer",
       "members-out": "{count} team {member} borte",

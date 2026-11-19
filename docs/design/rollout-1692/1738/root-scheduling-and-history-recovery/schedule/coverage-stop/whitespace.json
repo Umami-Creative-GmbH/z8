@@ -1,0 +1,26 @@
+{
+    "fullExit":  2,
+    "fullFindingLines":  108,
+    "fullFindingPaths":  [
+                             "docs/design/rollout-1692/1738/checks/activity.log",
+                             "docs/design/rollout-1692/1738/checks/biome-explicit.log",
+                             "docs/design/rollout-1692/1738/checks/build-compile.log",
+                             "docs/design/rollout-1692/1738/checks/doctor.log",
+                             "docs/design/rollout-1692/1738/checks/doctor-corrected.log",
+                             "docs/design/rollout-1692/1738/checks/doctor-help.log",
+                             "docs/design/rollout-1692/1738/checks/final-biome-ordinary.log",
+                             "docs/design/rollout-1692/1738/checks/final-build-compile.log",
+                             "docs/design/rollout-1692/1738/checks/final-doctor.log",
+                             "docs/design/rollout-1692/1738/checks/red-notes-label.log",
+                             "docs/design/rollout-1692/1738/checks/red-planner-labels.log",
+                             "docs/design/rollout-1692/1738/checks/unit-final.log",
+                             "docs/design/rollout-1692/1738/harness/browser.mjs",
+                             "docs/design/rollout-1692/1738/harness/check.mjs",
+                             "docs/design/rollout-1692/1738/harness/fixture.mjs",
+                             "docs/design/rollout-1692/1738/mcp-get_compilation_issues.txt",
+                             "docs/design/rollout-1692/1738/mcp-get_errors.txt",
+                             "docs/design/rollout-1692/1738/mcp-get_routes.txt",
+                             "docs/design/rollout-1692/1738/mcp-tools-list.txt"
+                         ],
+    "productExit":  0
+}

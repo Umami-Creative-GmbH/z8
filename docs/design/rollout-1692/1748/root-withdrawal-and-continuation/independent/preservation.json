@@ -1,0 +1,888 @@
+{
+  "unchangedTrackedFiles": 101,
+  "sourceAndConfigBytesEqual": true,
+  "indexSha256": "4d3f6be501c9fb1228c6556c68fe8072a0eba04f4459b7213bea534c925b7388",
+  "indexUnchanged": true,
+  "head": "16a914f4a4e9ef022552ff53d938b2c1f883517f",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "gitStatus": "",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "blob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "blob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "blob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "blob": "b6b904215b1d9801f0768d35eed520b7454b923a",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "blob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "blob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "blob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "blob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "blob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "blob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+      "blob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+      "blob": "502b9aa3e6336e7cef0885734c947170a15f5197",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+      "blob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+      "blob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751",
+      "match": true
+    }
+  ],
+  "reportPrefixes": [
+    {
+      "bytes": 19422,
+      "expectedSha256": "6c6b9e7ec408c6a683923c5a18a6c277fb47ecdf9b1acd0d89350c1d4bafa00b",
+      "rawMaterializedPrefixMatch": true
+    },
+    {
+      "bytes": 22126,
+      "expectedSha256": "acba4965d16261f8472d92327eefd627a4cd82d40b290561c4b42a476a5a022c",
+      "rawMaterializedPrefixMatch": true
+    }
+  ],
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "dependencyTopology": [
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@esbuild+win32-x64@0.28.2\\node_modules\\@esbuild\\win32-x64",
+      "internal": true
+    },
+    {
+      "path": "node_modules/puppeteer-core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\puppeteer-core@25.17.0_yauzl@2.10.0\\node_modules\\puppeteer-core",
+      "internal": true
+    },
+    {
+      "path": "node_modules/react-doctor",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor",
+      "internal": true
+    },
+    {
+      "path": "node_modules/shadcn",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn",
+      "internal": true
+    },
+    {
+      "path": "node_modules/turbo",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\turbo@2.11.11\\node_modules\\turbo",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/client-s3",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@aws-sdk+client-s3@3.1167.0\\node_modules\\@aws-sdk\\client-s3",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/s3-request-presigner",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@aws-sdk+s3-request-presigner@3.1167.0\\node_modules\\@aws-sdk\\s3-request-presigner",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@base-ui/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea\\node_modules\\@base-ui\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/api-key",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523\\node_modules\\@better-auth\\api-key",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766\\node_modules\\@better-auth\\core",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/drizzle-adapter",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278\\node_modules\\@better-auth\\drizzle-adapter",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/passkey",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24\\node_modules\\@better-auth\\passkey",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/scim",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599\\node_modules\\@better-auth\\scim",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/sso",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d\\node_modules\\@better-auth\\sso",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@biomejs/biome",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@bprogress/core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@bprogress+core@1.3.4\\node_modules\\@bprogress\\core",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@capacitor/core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@capacitor+core@8.6.0\\node_modules\\@capacitor\\core",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@casl/ability",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@casl+ability@7.1.2\\node_modules\\@casl\\ability",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dagrejs/dagre",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dagrejs+dagre@3.1.3\\node_modules\\@dagrejs\\dagre",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@daypicker/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1\\node_modules\\@daypicker\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dicebear+core@10.7.0\\node_modules\\@dicebear\\core",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/styles",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dicebear+styles@10.6.0\\node_modules\\@dicebear\\styles",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7\\node_modules\\@dnd-kit\\core",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/modifiers",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5\\node_modules\\@dnd-kit\\modifiers",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/sortable",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632\\node_modules\\@dnd-kit\\sortable",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/utilities",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@dnd-kit+utilities@3.2.2_react@19.3.1\\node_modules\\@dnd-kit\\utilities",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@faker-js/faker",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@faker-js+faker@10.6.0\\node_modules\\@faker-js\\faker",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@marsidev/react-turnstile",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef\\node_modules\\@marsidev\\react-turnstile",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/client",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@modelcontextprotocol+client@2.4.0\\node_modules\\@modelcontextprotocol\\client",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/server",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@modelcontextprotocol+server@2.4.0\\node_modules\\@modelcontextprotocol\\server",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/api",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\api",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/auto-instrumentations-node",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a\\node_modules\\@opentelemetry\\auto-instrumentations-node",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-metrics-otlp-http",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-trace-otlp-http",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3\\node_modules\\@opentelemetry\\exporter-trace-otlp-http",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/resources",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\resources",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-node",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f\\node_modules\\@opentelemetry\\sdk-node",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-trace",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\sdk-trace",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/semantic-conventions",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@opentelemetry+semantic-conventions@1.45.0\\node_modules\\@opentelemetry\\semantic-conventions",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@posthog/nextjs-config",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511\\node_modules\\@posthog\\nextjs-config",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/editor",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b\\node_modules\\@react-email\\editor",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/ui",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe\\node_modules\\@react-email\\ui",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-pdf/renderer",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@react-pdf+renderer@4.9.0_react@19.3.1\\node_modules\\@react-pdf\\renderer",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00\\node_modules\\@schedule-x\\calendar",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar-controls",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@schedule-x+calendar-controls@4.9.1\\node_modules\\@schedule-x\\calendar-controls",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/drag-and-drop",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@schedule-x+drag-and-drop@3.7.3\\node_modules\\@schedule-x\\drag-and-drop",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/event-modal",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c\\node_modules\\@schedule-x\\event-modal",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168\\node_modules\\@schedule-x\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/theme-default",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@schedule-x+theme-default@4.9.1\\node_modules\\@schedule-x\\theme-default",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@slack/web-api",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@slack+web-api@8.3.0\\node_modules\\@slack\\web-api",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@t3-oss/env-nextjs",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7\\node_modules\\@t3-oss\\env-nextjs",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tabler/icons-react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tabler+icons-react@3.51.0_react@19.3.1\\node_modules\\@tabler\\icons-react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tailwindcss/postcss",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tailwindcss+postcss@4.3.5\\node_modules\\@tailwindcss\\postcss",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-form",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-hotkeys",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6\\node_modules\\@tanstack\\react-hotkeys",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query-devtools",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402\\node_modules\\@tanstack\\react-query-devtools",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-store",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c\\node_modules\\@tanstack\\react-store",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-table",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0\\node_modules\\@tanstack\\react-table",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-virtual",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01\\node_modules\\@tanstack\\react-virtual",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8\\node_modules\\@testing-library\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/user-event",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6\\node_modules\\@testing-library\\user-event",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/format-icu",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tolgee+format-icu@7.3.0\\node_modules\\@tolgee\\format-icu",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tolgee+react@7.3.0_react@19.3.1\\node_modules\\@tolgee\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/web",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tolgee+web@7.3.0\\node_modules\\@tolgee\\web",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/file-store",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9\\node_modules\\@tus\\file-store",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/s3-store",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tus+s3-store@2.1.0_supports-color@8.1.1\\node_modules\\@tus\\s3-store",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/server",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5\\node_modules\\@tus\\server",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/canvas-confetti",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+canvas-confetti@1.9.0\\node_modules\\@types\\canvas-confetti",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/luxon",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+luxon@3.7.6\\node_modules\\@types\\luxon",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/node",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+node@26.6.6\\node_modules\\@types\\node",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/nodemailer",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+nodemailer@8.0.2\\node_modules\\@types\\nodemailer",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/papaparse",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+papaparse@5.5.2\\node_modules\\@types\\papaparse",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/pg",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+pg@8.23.1\\node_modules\\@types\\pg",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/qrcode",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+qrcode@1.5.6\\node_modules\\@types\\qrcode",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+react@19.3.0\\node_modules\\@types\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react-dom",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+react-dom@19.3.0_@types+react@19.3.0\\node_modules\\@types\\react-dom",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/sanitize-html",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+sanitize-html@2.16.2\\node_modules\\@types\\sanitize-html",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/web-push",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@types+web-push@3.6.4\\node_modules\\@types\\web-push",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/core",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@uppy+core@6.3.1\\node_modules\\@uppy\\core",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/locales",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@uppy+locales@5.3.2\\node_modules\\@uppy\\locales",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/tus",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@uppy+tus@6.0.1_@uppy+core@6.3.1\\node_modules\\@uppy\\tus",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@upstash/ratelimit",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0\\node_modules\\@upstash\\ratelimit",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@vitest/coverage-v8",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@vitest+coverage-v8@5.1.0_vitest@5.1.0\\node_modules\\@vitest\\coverage-v8",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@xyflow/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b\\node_modules\\@xyflow\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/babel-plugin-react-compiler",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/better-auth",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0\\node_modules\\better-auth",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/botbuilder",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905\\node_modules\\botbuilder",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/bullmq",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1\\node_modules\\bullmq",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/canvas-confetti",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\canvas-confetti@1.9.4\\node_modules\\canvas-confetti",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/class-variance-authority",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\class-variance-authority@0.7.1\\node_modules\\class-variance-authority",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/clsx",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\clsx@2.1.1\\node_modules\\clsx",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/cmdk",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0\\node_modules\\cmdk",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/country-flag-icons",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\country-flag-icons@1.6.20\\node_modules\\country-flag-icons",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/cron-parser",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\cron-parser@5.10.4\\node_modules\\cron-parser",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/date-holidays",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\date-holidays@3.39.1\\node_modules\\date-holidays",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\dotenv@18.0.10\\node_modules\\dotenv",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv-cli",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\dotenv-cli@11.1.0\\node_modules\\dotenv-cli",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-kit",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5\\node_modules\\drizzle-kit",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-orm",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\node_modules\\drizzle-orm",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/effect",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\effect@4.1.4\\node_modules\\effect",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/embla-carousel-react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\embla-carousel-react@8.6.0_react@19.3.1\\node_modules\\embla-carousel-react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/exceljs",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\exceljs@4.4.0\\node_modules\\exceljs",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/fast-xml-parser",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\fast-xml-parser@5.12.0\\node_modules\\fast-xml-parser",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/file-type",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\file-type@22.3.0_supports-color@8.1.1\\node_modules\\file-type",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/input-otp",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1\\node_modules\\input-otp",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/ioredis",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\ioredis@6.0.0_supports-color@8.1.1\\node_modules\\ioredis",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/jsdom",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0\\node_modules\\jsdom",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/jsqr",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\jsqr@1.4.0\\node_modules\\jsqr",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/jszip",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\jszip@3.10.2\\node_modules\\jszip",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/luxon",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\luxon@3.7.2\\node_modules\\luxon",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/nanoid",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\nanoid@6.0.2\\node_modules\\nanoid",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/next",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/next-intl",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb\\node_modules\\next-intl",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/node-vault",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\node-vault@0.13.0_supports-color@8.1.1\\node_modules\\node-vault",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/nodemailer",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\nodemailer@10.5.0\\node_modules\\nodemailer",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/papaparse",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\papaparse@5.7.1\\node_modules\\papaparse",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pdfjs-dist",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\pdfjs-dist@6.5.438\\node_modules\\pdfjs-dist",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pg",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\pg@8.23.1\\node_modules\\pg",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pino",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\pino@10.4.0\\node_modules\\pino",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-opentelemetry-transport",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\pino-opentelemetry-transport@4.0.2_pino@10.4.0\\node_modules\\pino-opentelemetry-transport",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-pretty",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\pino-pretty@13.2.0\\node_modules\\pino-pretty",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/portless",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\portless@0.17.0\\node_modules\\portless",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/postcss",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\postcss@8.5.32\\node_modules\\postcss",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-js",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1\\node_modules\\posthog-js",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-node",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883\\node_modules\\posthog-node",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/preact",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\preact@11.2.0\\node_modules\\preact",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\qrcode@1.5.4\\node_modules\\qrcode",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode.react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\qrcode.react@4.2.0_react@19.3.1\\node_modules\\qrcode.react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-dom",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-email",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d\\node_modules\\react-email",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-resizable-panels",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd\\node_modules\\react-resizable-panels",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/recharts",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508\\node_modules\\recharts",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/resend",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991\\node_modules\\resend",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/sanitize-html",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\sanitize-html@2.18.2\\node_modules\\sanitize-html",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/server-only",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\server-only@0.0.1\\node_modules\\server-only",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/shadcn",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/sharp",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\sharp@0.35.5_@types+node@26.6.6\\node_modules\\sharp",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/sonner",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1\\node_modules\\sonner",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/streamdown",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39\\node_modules\\streamdown",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/stripe",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\stripe@23.1.0_@types+node@26.6.6\\node_modules\\stripe",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/suncalc",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\suncalc@2.1.4\\node_modules\\suncalc",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/superjson",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\superjson@2.2.6\\node_modules\\superjson",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/swr",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\swr@2.5.1_react@19.3.1\\node_modules\\swr",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwind-merge",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\tailwind-merge@3.7.0\\node_modules\\tailwind-merge",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwindcss",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\tailwindcss@4.3.5\\node_modules\\tailwindcss",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/temporal-polyfill",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\temporal-polyfill@1.0.8\\node_modules\\temporal-polyfill",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/timepicker-ui",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\timepicker-ui@4.7.0\\node_modules\\timepicker-ui",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tsx",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\tsx@4.23.15\\node_modules\\tsx",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tw-animate-css",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\tw-animate-css@1.4.0\\node_modules\\tw-animate-css",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/typescript",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/ultracite",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb\\node_modules\\ultracite",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/undici",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\undici@8.12.4\\node_modules\\undici",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/vaul",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908\\node_modules\\vaul",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/vitest",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/web-push",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\web-push@4.0.0_supports-color@8.1.1\\node_modules\\web-push",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/zod",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\zod@4.6.7\\node_modules\\zod",
+      "internal": true
+    },
+    {
+      "path": "apps/webapp/node_modules/zustand",
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm\\zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f\\node_modules\\zustand",
+      "internal": true
+    }
+  ],
+  "dependencies": "Owned physical offline install only; no linked peer/root dependencies. Before snapshot records installed physical roots during installation; package-link audit is after-only, not a reconstructed pre-test topology.",
+  "canonicalOwners": "Four frozen owner blobs match producer receipt. No source, canonical writer, permissions, schema or metadata edits."
+}

@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Nenhum registro de produção foi importado ainda.",
         "openReview": "Abrir revisão",
-        "scanningDescription": "O lote de revisão {reviewBatchId} está sendo verificado. Revise e aprove os registros antes de confirmar.",
+        "scanningDescriptionWithoutId": "A verificação de revisão está em execução. Revise e aprove os registros antes que sejam importados.",
         "startedTitle": "Verificação de revisão de importação iniciada",
         "starting": "Iniciando verificação de revisão de importação do Clockin…",
         "startSuccess": "A verificação de revisão de importação foi iniciada. A revisão é necessária antes que os registros sejam confirmados."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "O lote de revisão {batchId} está sendo verificado.",
         "description": "A revisão é necessária antes que os registros do Clockodo sejam confirmados na produção.",
         "openReview": "Abrir revisão",
+        "scanning": "A verificação de revisão está em execução. Nenhum registro será importado até que você o aprove na revisão.",
         "successTitle": "Verificação de revisão de importação iniciada"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Credenciais",
         "import": "Revisão",
         "preview": "Visualização",
+        "progressLabel": "Etapas de importação",
         "projectMapping": "Mapeamento de Projetos",
         "selection": "Seleção",
         "userMapping": "Mapeamento de usuário"
       },
       "userMapping": {
         "action": "Ação",
+        "actionFor": "Ação para {name}",
         "autoMatched": "{count} correspondência automática",
         "clockodoUser": "Usuário do Clockodo",
         "continue": "Continuar",
@@ -248,14 +250,21 @@
       "linkError": "Falha ao gerar código de vínculo",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Código do link copiado",
+        "codeExpired": "Expirado — gere um novo código",
+        "copyCode": "Copiar código do link",
+        "copyFailed": "Não foi possível copiar o código de vinculação. Selecione-o e copie-o manualmente.",
         "description": "Vincule sua conta do Telegram para receber notificações pessoais.",
+        "expiresIn": "{minutes, plural, one {Expira em # minuto} other {Expira em # minutos}}",
         "generateCode": "Gerar Código de Vínculo",
         "instructions": "Envie este comando para o bot no Telegram:",
         "linkedStatus": "Sua conta do Telegram está vinculada",
+        "regenerateCode": "Gerar novo código",
         "title": "Conta do Telegram"
       },
       "notConfigured": "O Telegram não está configurado para esta organização. Entre em contato com seu administrador.",
       "saved": "Configurações do Telegram salvas",
+      "saveError": "Não foi possível salvar as configurações do Telegram. Tente novamente.",
       "status": {
         "active": "Ativo"
       },

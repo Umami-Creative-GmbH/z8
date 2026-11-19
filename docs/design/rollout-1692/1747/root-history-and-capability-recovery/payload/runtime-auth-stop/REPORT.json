@@ -1,0 +1,64 @@
+{
+  "result": "BOUNDED CURRENT-SOURCE RUNTIME ACCEPTANCE UNPASSED AT AUTH BOUNDARY",
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "verifiedCommit": null,
+  "scope": "R165/#1747 continuing #1692 rollout; root retains fixes, intake, publication and readiness",
+  "confirmedScopedP1": 0,
+  "productUniqueFinalPredicates": {
+    "total": 22,
+    "PASS": 0,
+    "FAIL": 0,
+    "UNPASSED": 22
+  },
+  "runtimeProductChecksExecuted": 0,
+  "inheritedTestsRerun": 0,
+  "toolAndAuthBoundaryFailures": true,
+  "authObservation": "Two normal fresh-credential form submissions remained sign-in with Verification failed; exact field controls passed; no private bodies/headers captured, no bypass or auth changes.",
+  "next": "Route-only compile issues empty; config/session errors empty for sign-in session; global compile unpassed",
+  "preservation": {
+    "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "trackedHashesChecked": 18871,
+    "dependencyAndPriorArchiveHashesChecked": 184696,
+    "trackedAndProtectedChanges": 0,
+    "allProtectedFilesStillPresentAndNoAdditions": true,
+    "allDependencyAndPriorArchiveLinksUnchanged": true,
+    "dependencyAndArchiveLinksChecked": 5898,
+    "indexHashUnchanged": true,
+    "headUnchanged": true,
+    "appTreeUnchanged": true,
+    "branchUnchanged": true,
+    "trackedAndIndexClean": true,
+    "ownOutputIgnored": true,
+    "pins": {
+      "pnpm-lock.yaml": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "apps/webapp/src/data/licenses.json": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+      ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+      "scripts/performance/fixture.mjs": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+    },
+    "verifiedCommit": null,
+    "priorEvidenceQualification": "Full byte checks include prior 1748,1746,1773 namespaces except browser profiles and generated cache directories. Other ignored archives were never opened for mutation and are not independently fully rehashed. All tracked documentation/evidence is covered."
+  },
+  "resources": {
+    "ownedBrowserContexts": 0,
+    "exactFixtureAndRuntimePortsListening": 0,
+    "exactOwnedContainersRemaining": 0,
+    "ownedProcesses": 0,
+    "exactOwnedContainersVerifiedAbsent": 3,
+    "zeroExactOwnedResources": true,
+    "ownedProfiles": 0
+  },
+  "readinessClaimed": false,
+  "trackerPublicationGitMutation": false,
+  "sourceFix": false,
+  "limitations": [
+    "All full-build/catalog/provider/device/truezoom/exhaustive matrices remain unpassed",
+    "No in-flight authority race or live revocation proof",
+    "No current authenticated layout capture",
+    "No native React extension or axe audit",
+    "No matched historical comparison",
+    "Other ignored old archives outside recorded baseline not exhaustively independently rehashed"
+  ]
+}

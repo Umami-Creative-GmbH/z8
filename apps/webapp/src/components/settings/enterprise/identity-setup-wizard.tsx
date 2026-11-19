@@ -1,6 +1,7 @@
 "use client";
 
 import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
@@ -626,42 +627,38 @@ function IdentitySetupView({
 }: {
 	controller: IdentitySetupController;
 }) {
-	const { organizationId, setup, t } = controller;
+	const { setup, t } = controller;
+	const completedSteps = setup.activatedAt
+		? STEPS.length
+		: (STEP_INDEX.get(setup.currentStep) ?? 0);
 
 	return (
 		<section className="space-y-4">
-			<div className="rounded-xl border bg-card/60 p-4 text-card-foreground">
-				<div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-					<div className="min-w-0">
-						<p className="font-medium text-primary text-sm">
-							{t(
-								"settings.enterprise.identity.hero.eyebrow",
-								"Enterprise identity",
-							)}
-						</p>
-						<h2 className="text-xl font-semibold tracking-tight">
-							{t(
-								"settings.enterprise.identity.hero.title",
-								"Operational command checklist",
-							)}
-						</h2>
-						<p className="mt-1 text-muted-foreground text-sm">
-							{t(
-								"settings.enterprise.identity.hero.description",
-								"Configure SSO and enforcement for organization {organizationId} with guarded activation.",
-								{ organizationId },
-							)}
-						</p>
-					</div>
-					<Badge
-						variant={setup.activatedAt ? "default" : "outline"}
-						className="w-fit"
-					>
-						{setup.activatedAt
-							? t("settings.enterprise.identity.status.activated", "Activated")
-							: t("settings.enterprise.identity.status.draft", "Draft")}
-					</Badge>
+			{/* The page heading names the area; this row only states where the setup stands. */}
+			<div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+				<div className="min-w-0">
+					<h2 className="font-semibold text-base">
+						{t(
+							"settings.enterprise.identity.hero.title",
+							"Operational command checklist",
+						)}
+					</h2>
+					<p className="text-muted-foreground text-sm tabular-nums">
+						{t(
+							"settings.enterprise.identity.progress",
+							"{completed} of {total} steps complete",
+							{ completed: completedSteps, total: STEPS.length },
+						)}
+					</p>
 				</div>
+				<Badge
+					variant={setup.activatedAt ? "success" : "outline"}
+					className="w-fit"
+				>
+					{setup.activatedAt
+						? t("settings.enterprise.identity.status.activated", "Activated")
+						: t("settings.enterprise.identity.status.draft", "Draft")}
+				</Badge>
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-[220px_1fr]">
@@ -1481,19 +1478,28 @@ function ReviewStep({ controller }: { controller: IdentitySetupController }) {
 					</p>
 				)}
 			</div>
-			<div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-				<p className="font-medium">
-					{t(
-						"settings.enterprise.identity.review.lockoutWarning",
-						"Current-admin lockout warning",
-					)}
-				</p>
-				<p className="mt-1 text-muted-foreground">
-					{t(
-						"settings.enterprise.identity.review.lockoutWarningHelp",
-						"Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain.",
-					)}
-				</p>
+			<div
+				role="note"
+				className="flex gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm"
+			>
+				<IconAlertTriangle
+					className="mt-0.5 size-4 shrink-0 text-warning"
+					aria-hidden="true"
+				/>
+				<div className="min-w-0">
+					<p className="font-medium">
+						{t(
+							"settings.enterprise.identity.review.lockoutWarning",
+							"Current-admin lockout warning",
+						)}
+					</p>
+					<p className="mt-1 text-muted-foreground">
+						{t(
+							"settings.enterprise.identity.review.lockoutWarningHelp",
+							"Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain.",
+						)}
+					</p>
+				</div>
 			</div>
 			<Button
 				type="button"

@@ -11,17 +11,7 @@ import {
 	updateDomainAuthConfigAction,
 	verifyDomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
-import { actionData } from "@/components/settings/enterprise/action-data";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useServerDataState } from "@/hooks/use-server-data-state";
@@ -30,6 +20,10 @@ import { type CustomDomain, CustomDomainSummary } from "./custom-domain-summary"
 import { DomainAddDialog } from "./domain-add-dialog";
 import { DomainAuthConfigDialog } from "./domain-auth-config-dialog";
 import { DomainVerificationDialog } from "./domain-verification-dialog";
+import {
+	EnterpriseDeleteConfirmDialog,
+	useConfirmedRemoval,
+} from "./enterprise-delete-confirm-dialog";
 
 type Domain = CustomDomain;
 
@@ -58,10 +52,7 @@ export function DomainManagement({
 		isOpen: boolean;
 		domain: Domain | null;
 	}>({ isOpen: false, domain: null });
-	const [deleteDialog, setDeleteDialog] = useState<{
-		isOpen: boolean;
-		domain: Domain | null;
-	}>({ isOpen: false, domain: null });
+	const removal = useConfirmedRemoval<Domain>();
 	const [isVerifying, setIsVerifying] = useState(false);
 
 	const handleDomainAdded = (newDomain: Domain) => {
@@ -154,20 +145,19 @@ export function DomainManagement({
 		setAuthConfigDialog({ isOpen: false, domain: null });
 	};
 
-	const handleDelete = async () => {
-		if (!deleteDialog.domain) return;
-
-		const deleted = await actionData(deleteDomainAction({ domainId: deleteDialog.domain.id }))
-			.then(() => true)
-			.catch(() => false);
-		if (deleted) {
-			setDomain(null);
-			toast.success(t("settings.enterprise.domains.deleted", "Domain deleted"));
-		} else {
-			toast.error(t("settings.enterprise.domains.deleteFailed", `Failed to delete domain`));
-		}
-		setDeleteDialog({ isOpen: false, domain: null });
-	};
+	const handleDelete = () =>
+		removal.confirm(
+			async (selectedDomain) => {
+				await actionData(deleteDomainAction({ domainId: selectedDomain.id }));
+				setDomain(null);
+				toast.success(t("settings.enterprise.domains.deleted", "Domain deleted"));
+			},
+			(error) =>
+				enterpriseErrorMessage(t, error, [
+					"settings.enterprise.domains.deleteFailed",
+					"Failed to delete domain",
+				]),
+		);
 
 	return (
 		<>
@@ -224,7 +214,7 @@ export function DomainManagement({
 						onConfigure={(selectedDomain) =>
 							setAuthConfigDialog({ isOpen: true, domain: selectedDomain })
 						}
-						onDelete={(selectedDomain) => setDeleteDialog({ isOpen: true, domain: selectedDomain })}
+						onDelete={removal.request}
 						onVerify={(selectedDomain) =>
 							setVerificationDialog({ isOpen: true, domain: selectedDomain })
 						}
@@ -259,34 +249,20 @@ export function DomainManagement({
 				onSave={handleUpdateAuthConfig}
 			/>
 
-			<AlertDialog
-				open={deleteDialog.isOpen}
-				onOpenChange={(open) => setDeleteDialog({ isOpen: open, domain: deleteDialog.domain })}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.enterprise.domains.deleteTitle", "Delete Domain")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.enterprise.domains.deleteDescription",
-								'Are you sure you want to delete "{domain}"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.',
-								{ domain: deleteDialog.domain?.domain ?? "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<EnterpriseDeleteConfirmDialog
+				open={removal.open}
+				onOpenChange={removal.onOpenChange}
+				title={t("settings.enterprise.domains.deleteTitle", "Delete Domain")}
+				description={t(
+					"settings.enterprise.domains.deleteDescription",
+					'Are you sure you want to delete "{domain}"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.',
+					{ domain: removal.target?.domain ?? "" },
+				)}
+				confirmLabel={t("settings.enterprise.domains.deleteConfirm", "Delete domain")}
+				isPending={removal.isPending}
+				error={removal.error}
+				onConfirm={handleDelete}
+			/>
 		</>
 	);
 }

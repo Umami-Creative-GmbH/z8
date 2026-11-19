@@ -1,0 +1,13 @@
+{
+  "allOwnedPortsClosed": true,
+  "mainBrowserExplicitlyClosed": true,
+  "privateIdentitiesPreserved": ".tmp/1736-fixture/cleanup-identities-private.json",
+  "secondBrowserAlreadyInactive": true,
+  "verification": "PID + original Next manifest creation + command path + session name + descendant listener + exact three service labels",
+  "nextProcessTreeStopped": true,
+  "privateManifestsAndRawFailuresPreserved": true,
+  "ownedBrowserSessionsVerifiedInactive": 2,
+  "peerOrRootCleanup": false,
+  "verifiedOwnedListenerCount": 29,
+  "exactLabeledServicesRemoved": 3
+}

@@ -20,10 +20,20 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { AbsenceChangeKind } from "@/lib/absences/change-request-types";
-import type { AbsenceWithCategory, AbsenceWithDays } from "@/lib/absences/types";
-import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import type {
+	AbsenceWithCategory,
+	AbsenceWithDays,
+} from "@/lib/absences/types";
+import {
+	comparePlainDates,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import type { useOwnAbsenceChanges } from "./use-own-absence-changes";
 
 interface AbsenceEntryActionsProps {
@@ -39,6 +49,19 @@ interface AbsenceEntryActionsProps {
 	onCancel: () => void;
 }
 
+/** A pending change request holds back further change requests on its absence. */
+export function hasPendingChangeRequest(
+	changeRequests: AbsenceEntryActionsProps["changeRequests"],
+	absenceId: string,
+): boolean {
+	return (
+		changeRequests?.some(
+			(request) =>
+				request.absenceId === absenceId && request.status === "pending",
+		) ?? false
+	);
+}
+
 function canShowCancelAction(absence: AbsenceWithDays): boolean {
 	return absence.status === "pending";
 }
@@ -47,7 +70,8 @@ function canShowCancelAction(absence: AbsenceWithDays): boolean {
 function canChangeDeputy(absence: AbsenceWithCategory, today: string): boolean {
 	return (
 		(absence.status === "pending" || absence.status === "approved") &&
-		comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(today)) >= 0
+		comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(today)) >=
+			0
 	);
 }
 
@@ -67,20 +91,25 @@ export function AbsenceEntryActions({
 	const { t } = useTranslate();
 	const canCancel = canShowCancelAction(absence);
 	const canRequestChange = absence.status === "approved";
-	const pendingChange = changeRequests?.some(
-		(request) => request.absenceId === absence.id && request.status === "pending",
-	);
+	const pendingChange = hasPendingChangeRequest(changeRequests, absence.id);
 	const canChange = canChangeDeputy(absence, currentDate);
-	if (!canCancel && !canAttachSickNote && !canChange && !canRequestChange) return null;
+	if (!canCancel && !canAttachSickNote && !canChange && !canRequestChange)
+		return null;
 	const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
-	const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
+	const cancelTooltip = t(
+		"absences.table.cancelAbsenceTooltip",
+		"Cancel absence",
+	);
 	const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
 	const changeDeputyLabel = t("absences.deputy.changeAction", "Change deputy");
 	const requestChangeLabel = t("absences.change.request", "Request change");
-	const requestCancellationLabel = t("absences.change.requestCancellation", "Request cancellation");
+	const requestCancellationLabel = t(
+		"absences.change.requestCancellation",
+		"Request cancellation",
+	);
 
 	return (
-		<div className="flex justify-end gap-1">
+		<div className="flex flex-wrap justify-end gap-1">
 			{canRequestChange ? (
 				<>
 					<Tooltip>
@@ -116,24 +145,49 @@ export function AbsenceEntryActions({
 				</>
 			) : null}
 			{canChange ? (
-				<Button variant="ghost" size="sm" onClick={onChangeDeputy} aria-label={changeDeputyLabel}>
-					<IconUserShare aria-hidden="true" className="size-4" />
-					<span className="sm:sr-only">{changeDeputyLabel}</span>
-				</Button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onChangeDeputy}
+							aria-label={changeDeputyLabel}
+						>
+							<IconUserShare aria-hidden="true" className="size-4" />
+							<span className="sm:sr-only">{changeDeputyLabel}</span>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{changeDeputyLabel}</TooltipContent>
+				</Tooltip>
 			) : null}
 			{canAttachSickNote ? (
-				<Button variant="ghost" size="sm" onClick={onAttachSickNote} aria-label={attachLabel}>
-					<IconPaperclip aria-hidden="true" className="size-4" />
-					<span className="sm:sr-only">{attachLabel}</span>
-				</Button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onAttachSickNote}
+							aria-label={attachLabel}
+						>
+							<IconPaperclip aria-hidden="true" className="size-4" />
+							<span className="sm:sr-only">{attachLabel}</span>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{attachLabel}</TooltipContent>
+				</Tooltip>
 			) : null}
 			{canCancel ? (
 				<Tooltip>
 					<AlertDialog>
 						<TooltipTrigger asChild>
 							<AlertDialogTrigger asChild>
-								<Button variant="ghost" size="sm" disabled={isCanceling} aria-label={cancelLabel}>
-									<IconX className="size-4" />
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={isCanceling}
+									aria-label={cancelLabel}
+								>
+									<IconX aria-hidden="true" className="size-4" />
 									{/* Touch screens cannot show the tooltip (#846). */}
 									<span className="sm:sr-only">{cancelLabel}</span>
 								</Button>
@@ -153,7 +207,9 @@ export function AbsenceEntryActions({
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>
-								<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+								<AlertDialogCancel>
+									{t("common.cancel", "Cancel")}
+								</AlertDialogCancel>
 								<AlertDialogAction
 									onClick={onCancel}
 									className="bg-destructive text-white hover:bg-destructive/90"

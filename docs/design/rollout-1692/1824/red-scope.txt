@@ -1,0 +1,139 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-dbeec437-4b86e5438cc205a1/apps/webapp
+
+ ❯ |unit| src/components/kiosk/kiosk-clocking.test.tsx (14 tests | 1 failed) 774ms
+   ❯ kiosk clocking screen (#862) (14)
+     × keeps the paired location and device visible during identification and the employee's action 31ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/kiosk/kiosk-clocking.test.tsx > kiosk clocking screen (#862) > keeps the paired location and device visible during identification and the employee's action
+TestingLibraryElementError: Unable to find an element with the text: Front door. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <main
+      class="flex min-h-svh flex-col bg-background p-4 text-foreground sm:p-8"
+    >
+      <div
+        class="flex flex-1 flex-col gap-4"
+      >
+        <div
+          class="mx-auto flex w-full max-w-md flex-col gap-6"
+        >
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 rounded-md px-6 has-[>svg]:px-4 h-14 self-start text-lg"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-arrow-left size-6"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 12l14 0"
+              />
+              <path
+                d="M5 12l6 6"
+              />
+              <path
+                d="M5 12l6 -6"
+              />
+            </svg>
+            Not you? Back
+          </button>
+          <div
+            class="space-y-2 text-center"
+          >
+            <h1
+              class="text-3xl font-semibold break-words"
+            >
+              Anna Berger
+            </h1>
+            <p
+              class="text-lg text-muted-foreground"
+            >
+              Enter your kiosk PIN
+            </p>
+          </div>
+          <output
+            aria-label="0 digits entered"
+            class="flex h-8 items-center justify-center gap-4"
+          >
+            <span
+              aria-hidden="true"
+              class="size-5 rounded-full border-2 border-foreground"
+            />
+            <span
+              aria-hidden="true"
+              class="size-5 rounded-full border-2 border-foreground"
+            />
+            <span
+              aria-hidden="true"
+              class="size-5 rounded-full border-2 border-foreground"
+            />
+            <span
+              aria-hidden="true"
+              class="size-5 rounded-full border-2 border-foreground"
+            />
+          </output>
+          <div
+            class="grid grid-cols-3 gap-3"
+          >
+            <button
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 px-4 py-2 has-[>svg]:px-3 h-16 text-3xl font-semibold [@media(min-height:860px)]:h-20"
+              data-slot="button"
+            >
+              1
+            </button>
+            <button
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 px-4 py-2 has-[>svg]:px-3 h-16 text-3xl font-semibold [@media(min-height:860px)]:h-20"
+              data-slot="button"
+            >
+              2
+            </button>
+            <button
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 px-4 py-2 has-[>svg]:px-3 h-16 text-3xl font-semibold [@media(min-height:860px)]:h-20"
+              data-slot="button"
+            >
+              3
+            </button>
+            <button
+              class=...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/kiosk/kiosk-clocking.test.tsx:131:17
+    129|   fireEvent.click(await openHome());
+    130|   await screen.findByRole("heading", { name: "Anna Berger" });
+    131|   expect(screen.getByText("Front door")).toBeTruthy();
+       |                 ^
+    132|   expect(screen.getByText("Store")).toBeTruthy();
+    133|   await enterPin("2468");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  08:18:42
+   Duration  2.51s (tests 32%, environment 30%, import 23%, transform 13%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-dbeec437-
+  │ 4b86e5438cc205a1\apps\webapp
+

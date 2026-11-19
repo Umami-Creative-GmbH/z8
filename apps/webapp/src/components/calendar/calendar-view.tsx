@@ -3,17 +3,31 @@
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useEffect,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
-import { useTimeFormat, useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import {
+	useTimeFormat,
+	useWeekStartDay,
+} from "@/components/providers/user-preferences-provider";
+import { Button } from "@/components/ui/button";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useLiveWorkNow } from "@/hooks/use-live-work-now";
 import { useOrganization } from "@/hooks/use-organization";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { calendarWeekDateKeyRange, todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import {
+	calendarWeekDateKeyRange,
+	todayCalendarDateKey,
+} from "@/lib/calendar/date-keys";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
@@ -29,6 +43,7 @@ interface CalendarViewProps {
 	organizationId: string;
 	currentEmployeeId?: string;
 	initialSelectedEmployeeId?: string;
+	initialEmployeeName?: string;
 	initialDateKey?: string;
 	initialTimezone?: string;
 }
@@ -65,7 +80,8 @@ function useClockOutOnBehalf({
 	refetch: () => unknown;
 }) {
 	const { t } = useTranslate();
-	const [pendingClockOutEvent, setPendingClockOutEvent] = useState<CalendarEvent | null>(null);
+	const [pendingClockOutEvent, setPendingClockOutEvent] =
+		useState<CalendarEvent | null>(null);
 	const [isClockOutPending, setIsClockOutPending] = useState(false);
 	// One identity per intended closure, resent on every retry until it succeeds,
 	// so a lost response replays the committed clock-out instead of failing (#276).
@@ -102,7 +118,8 @@ function useClockOutOnBehalf({
 		const billable = choice?.billable;
 		// Task and billability are part of the intended closure: another choice is another closure.
 		const closureKey = `${workPeriodId}:${taskId === undefined ? "keep" : (taskId ?? "clear")}:${billable ?? "keep"}`;
-		const operationId = operationIdsRef.current.get(closureKey) ?? globalThis.crypto.randomUUID();
+		const operationId =
+			operationIdsRef.current.get(closureKey) ?? globalThis.crypto.randomUUID();
 		operationIdsRef.current.set(closureKey, operationId);
 
 		await (async () => {
@@ -119,16 +136,25 @@ function useClockOutOnBehalf({
 				});
 
 				if (!response.ok) {
-					let message = t("calendar.clockOutOnBehalf.error", "Failed to clock out employee");
+					let message = t(
+						"calendar.clockOutOnBehalf.error",
+						"Failed to clock out employee",
+					);
 
 					try {
-						const body = (await response.json()) as { error?: unknown; reason?: unknown };
+						const body = (await response.json()) as {
+							error?: unknown;
+							reason?: unknown;
+						};
 						const taskRefusal = projectTaskRefusalMessage(
 							typeof body.reason === "string" ? body.reason : null,
 						);
 						if (taskRefusal) {
 							message = t(taskRefusal[0], taskRefusal[1]);
-						} else if (typeof body.error === "string" && body.error.length > 0) {
+						} else if (
+							typeof body.error === "string" &&
+							body.error.length > 0
+						) {
 							message = body.error;
 						}
 					} catch {
@@ -140,11 +166,18 @@ function useClockOutOnBehalf({
 				}
 
 				operationIdsRef.current.delete(closureKey);
-				toast.success(t("calendar.clockOutOnBehalf.success", "Employee clocked out successfully"));
+				toast.success(
+					t(
+						"calendar.clockOutOnBehalf.success",
+						"Employee clocked out successfully",
+					),
+				);
 				setPendingClockOutEvent(null);
 				refetch();
 			} catch {
-				toast.error(t("calendar.clockOutOnBehalf.error", "Failed to clock out employee"));
+				toast.error(
+					t("calendar.clockOutOnBehalf.error", "Failed to clock out employee"),
+				);
 			}
 		})().finally(() => {
 			setIsClockOutPending(false);
@@ -161,68 +194,152 @@ function useClockOutOnBehalf({
 	};
 }
 
-export function CalendarView({
+export function CalendarView(props: CalendarViewProps) {
+	const timezone = props.initialTimezone ?? "UTC";
+	const dateKey = props.initialDateKey ?? todayCalendarDateKey(timezone);
+	return (
+		<CalendarScope
+			key={`${props.organizationId}:${props.currentEmployeeId}:${dateKey}:${timezone}`}
+			{...props}
+			initialDateKey={dateKey}
+			initialTimezone={timezone}
+		/>
+	);
+}
+
+function CalendarScope({
 	organizationId,
 	currentEmployeeId,
 	initialSelectedEmployeeId,
+	initialEmployeeName,
 	initialDateKey,
 	initialTimezone,
 }: CalendarViewProps) {
 	const calendarTimezone = initialTimezone ?? "UTC";
-	const calendarDateKey = initialDateKey ?? todayCalendarDateKey(calendarTimezone);
+	const calendarDateKey =
+		initialDateKey ?? todayCalendarDateKey(calendarTimezone);
+	const routeEmployeeId =
+		initialSelectedEmployeeId ?? currentEmployeeId ?? null;
+	const [selection, setSelection] = useState<
+		| (EmployeeSelectionOverride & {
+				organizationId: string;
+				routeEmployeeId: string | null;
+		  })
+		| null
+	>(null);
+	const [navigationPending, startNavigation] = useTransition();
+	const activeSelection =
+		navigationPending && selection?.organizationId === organizationId
+			? selection
+			: null;
+	if (activeSelection && activeSelection.routeEmployeeId !== routeEmployeeId) {
+		// Acknowledge the chosen route without letting an older arrival win.
+		// Later Back/direct arrivals then belong to the route again.
+		setSelection(
+			activeSelection.id === routeEmployeeId
+				? null
+				: { ...activeSelection, routeEmployeeId },
+		);
+	}
+	const selectedEmployeeId =
+		activeSelection?.id ?? initialSelectedEmployeeId ?? currentEmployeeId;
+	const selectedEmployeeName = activeSelection
+		? activeSelection.name
+		: initialEmployeeName;
+	const [viewMode, setViewMode] = useState<ViewMode>("week");
+	const [currentDateKey, setCurrentDateKey] = useState(calendarDateKey);
+	const [filters, setFilters] = useState<CalendarFilters>({
+		showHolidays: true,
+		showAbsences: true,
+		showTimeEntries: false,
+		showWorkPeriods: true,
+	});
+	useEffect(() => {
+		const timeoutId = window.setTimeout(() => {
+			if (window.matchMedia("(max-width: 767px)").matches) setViewMode("day");
+		}, 0);
+		return () => window.clearTimeout(timeoutId);
+	}, []);
 
 	return (
 		<CalendarViewContent
-			key={`${calendarDateKey}:${calendarTimezone}`}
+			key={`${organizationId}:${selectedEmployeeId}:${calendarDateKey}:${calendarTimezone}`}
 			organizationId={organizationId}
 			currentEmployeeId={currentEmployeeId}
-			initialSelectedEmployeeId={initialSelectedEmployeeId}
+			initialSelectedEmployeeId={selectedEmployeeId ?? undefined}
+			initialEmployeeName={selectedEmployeeName ?? undefined}
+			onEmployeeSelectionChange={(next, navigate) => {
+				setSelection({ ...next, organizationId, routeEmployeeId });
+				startNavigation(async () => {
+					await navigate();
+				});
+			}}
+			navigationState={{
+				viewMode,
+				setViewMode,
+				currentDateKey,
+				setCurrentDateKey,
+				filters,
+				setFilters,
+			}}
 			initialDateKey={calendarDateKey}
 			initialTimezone={calendarTimezone}
 		/>
 	);
 }
 
+interface CalendarViewContentProps extends CalendarViewProps {
+	onEmployeeSelectionChange: (
+		selection: EmployeeSelectionOverride,
+		navigate: () => void | Promise<void>,
+	) => void;
+	navigationState: {
+		viewMode: ViewMode;
+		setViewMode: Dispatch<SetStateAction<ViewMode>>;
+		currentDateKey: string;
+		setCurrentDateKey: Dispatch<SetStateAction<string>>;
+		filters: CalendarFilters;
+		setFilters: Dispatch<SetStateAction<CalendarFilters>>;
+	};
+}
+
 function useCalendarViewController({
 	organizationId,
 	currentEmployeeId,
 	initialSelectedEmployeeId,
-	initialDateKey,
+	initialEmployeeName,
+	onEmployeeSelectionChange,
+	navigationState,
 	initialTimezone,
-}: CalendarViewProps) {
+}: CalendarViewContentProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const locale = useLocale();
 	const timeFormat = useTimeFormat();
 	const weekStartDay = useWeekStartDay();
 	const { isManagerOrAbove } = useOrganization();
-	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
+	const initialEmployeeId =
+		initialSelectedEmployeeId ?? currentEmployeeId ?? null;
 	const initialCalendarTimezone = initialTimezone ?? "UTC";
-	const [viewMode, setViewMode] = useState<ViewMode>("week");
-
-	useEffect(() => {
-		const timeoutId = window.setTimeout(() => {
-			if (window.matchMedia("(max-width: 767px)").matches) {
-				setViewMode("day");
-			}
-		}, 0);
-		return () => window.clearTimeout(timeoutId);
-	}, []);
-	const [employeeSelectionOverride, setEmployeeSelectionOverride] =
-		useState<EmployeeSelectionOverride | null>(null);
-	const activeEmployeeSelectionOverride =
-		employeeSelectionOverride && employeeSelectionOverride.id !== initialEmployeeId
-			? employeeSelectionOverride
-			: null;
-	const selectedEmployeeId = activeEmployeeSelectionOverride?.id ?? initialEmployeeId;
-	const selectedEmployeeName = activeEmployeeSelectionOverride?.name ?? null;
-	const [currentDateKey, setCurrentDateKey] = useState(
-		() => initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone),
+	const {
+		viewMode,
+		setViewMode,
+		currentDateKey,
+		setCurrentDateKey,
+		filters,
+		setFilters,
+	} = navigationState;
+	const selectedEmployeeId = initialEmployeeId;
+	const selectedEmployeeName = initialEmployeeName ?? null;
+	const visibleDateRange = calendarWeekDateKeyRange(
+		currentDateKey,
+		weekStartDay,
 	);
-	const visibleDateRange = calendarWeekDateKeyRange(currentDateKey, weekStartDay);
 	const currentCalendarDate = Temporal.PlainDate.from(currentDateKey);
 	const currentYear = currentCalendarDate.year;
-	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+		null,
+	);
 
 	const [showSplitDialog, setShowSplitDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -231,32 +348,31 @@ function useCalendarViewController({
 	const [initialTimeEditing, setInitialTimeEditing] = useState(false);
 	const deleteFromContextMenu = useRef(false);
 	const [manualEntryOpen, setManualEntryOpen] = useState(false);
-	const [manualEntryDefaults, setManualEntryDefaults] = useState<ManualEntryDefaults | null>(null);
-	const [filters, setFilters] = useState<CalendarFilters>({
-		showHolidays: true,
-		showAbsences: true,
-		showTimeEntries: false,
-		showWorkPeriods: true,
-	});
+	const [manualEntryDefaults, setManualEntryDefaults] =
+		useState<ManualEntryDefaults | null>(null);
 	const effectiveFilters: CalendarFilters = {
 		...filters,
 		// Calendar pages pass the authenticated employee, keeping this scoped by default.
 		employeeId: selectedEmployeeId ?? undefined,
 	};
 	// Handle employee selection change
-	const handleEmployeeChange = (employeeId: string | null, employee?: SelectableEmployee) => {
+	const handleEmployeeChange = (
+		employeeId: string | null,
+		employee?: SelectableEmployee,
+	) => {
 		const nextEmployeeId = employeeId ?? currentEmployeeId ?? null;
-		setEmployeeSelectionOverride({
-			id: nextEmployeeId,
-			name: getEmployeeDisplayName(employee),
-		});
-
-		if (!employeeId || employeeId === currentEmployeeId) {
-			router.push("/calendar");
-			return;
-		}
-
-		router.push(`/calendar/${employeeId}`);
+		onEmployeeSelectionChange(
+			{
+				id: nextEmployeeId,
+				name: getEmployeeDisplayName(employee),
+			},
+			() =>
+				router.push(
+					!employeeId || employeeId === currentEmployeeId
+						? "/calendar"
+						: `/calendar/${employeeId}`,
+				),
+		);
 	};
 
 	// Fetch calendar events
@@ -322,7 +438,8 @@ function useCalendarViewController({
 	// Own entries follow the change policy; managers, admins and owners change
 	// their employees' entries through the approval chain. The server decides.
 	const workPeriodActions: WorkPeriodActions = {
-		canManage: (event) => event.metadata.employeeId === currentEmployeeId || isManagerOrAbove,
+		canManage: (event) =>
+			event.metadata.employeeId === currentEmployeeId || isManagerOrAbove,
 		onEdit: (event) => {
 			setShowSplitDialog(false);
 			setShowDeleteDialog(false);
@@ -340,7 +457,10 @@ function useCalendarViewController({
 	};
 
 	// Handle date range change from schedule-x
-	const handleRangeChange = (range: { startDateKey: string; endDateKey: string }) => {
+	const handleRangeChange = (range: {
+		startDateKey: string;
+		endDateKey: string;
+	}) => {
 		try {
 			const start = Temporal.PlainDate.from(range.startDateKey);
 			const end = Temporal.PlainDate.from(range.endDateKey);
@@ -493,9 +613,12 @@ function CalendarViewContent({
 	organizationId,
 	currentEmployeeId,
 	initialSelectedEmployeeId,
+	initialEmployeeName,
+	onEmployeeSelectionChange,
+	navigationState,
 	initialDateKey,
 	initialTimezone,
-}: CalendarViewProps) {
+}: CalendarViewContentProps) {
 	const {
 		manualEntry: { manualEntryOpen, manualEntryDefaults, setManualEntryOpen },
 		clockOut: {
@@ -557,17 +680,32 @@ function CalendarViewContent({
 		organizationId,
 		currentEmployeeId,
 		initialSelectedEmployeeId,
+		initialEmployeeName,
+		onEmployeeSelectionChange,
+		navigationState,
 		initialDateKey,
 		initialTimezone,
 	});
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden min-h-0">
+		<div className="flex flex-1 flex-col gap-4 overflow-hidden min-h-0">
 			{/* Error message */}
 			{error && (
-				<div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md text-sm shrink-0">
-					{t("calendar.loadEventsError", "Failed to load calendar events: {message}", {
-						message: error.message,
-					})}
+				<div
+					role="alert"
+					className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive"
+				>
+					<p>
+						{t(
+							"calendar.loadEventsError",
+							"Failed to load calendar events: {message}",
+							{
+								message: error.message,
+							},
+						)}
+					</p>
+					<Button type="button" variant="outline" size="sm" onClick={refetch}>
+						{t("common.retry", "Retry")}
+					</Button>
 				</div>
 			)}
 
@@ -608,6 +746,7 @@ function CalendarViewContent({
 				onViewModeChange={setViewMode}
 				currentEmployeeId={currentEmployeeId}
 				selectedEmployeeId={selectedEmployeeId}
+				selectedEmployeeName={selectedEmployeeName}
 				onEmployeeChange={handleEmployeeChange}
 				isManagerOrAbove={isManagerOrAbove}
 				workBalance={workBalance}
@@ -622,7 +761,9 @@ function CalendarViewContent({
 				timeZone={calendarTimeZone}
 				isLoading={isLoading}
 				isSummaryLoading={isFetching}
-				onYearChange={(year) => setCurrentDateKey(currentCalendarDate.with({ year }).toString())}
+				onYearChange={(year) =>
+					setCurrentDateKey(currentCalendarDate.with({ year }).toString())
+				}
 				onDayClick={handleDayClick}
 				onMonthChange={setCurrentDateKey}
 				onEventClick={handleEventClick}

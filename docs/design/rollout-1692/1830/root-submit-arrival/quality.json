@@ -1,0 +1,49 @@
+{
+  "sourceCommit": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+  "initialCorrection": "17173c35dbfae2b0e4a11c5037108d0873f0a938",
+  "base": "25865312d95c68ec1eaed75363e953745f168802",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx": "de922fed4f8ca595b170552e2f5408ff9dc4544a6967edba8bbe49ba170f2b5d",
+    "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx": "7a5a5b7dd9a0f0e154e1ae504558507c14cc34a5a4bfc48ed51127d75a4a997c"
+  },
+  "runs": [
+    {
+      "name": "compatibility",
+      "physicalFiles": 174,
+      "tests": 1752
+    },
+    {
+      "name": "independent",
+      "physicalFiles": 2,
+      "tests": 23
+    }
+  ],
+  "uniqueFiles": 176,
+  "uniqueTests": 1775,
+  "redCases": 4,
+  "doctor": {
+    "scannedRevision": "17173c35dbfae2b0e4a11c5037108d0873f0a938",
+    "dirtyBytesCanonicallyMatch": "587e567ed78461dd3b587c30fd4d51b8a1c07a03",
+    "errors": 0,
+    "warnings": 0
+  },
+  "runtime": {
+    "before": {
+      "checks": 9,
+      "captures": 2
+    },
+    "after": {
+      "checks": 9,
+      "captures": 2
+    },
+    "qualification": "Normal Enter/retry/duplicate/save/readback continuity only; queued arrival is component-seam evidence. Cold default-config processes; exact old profile consumer over current shared infrastructure, not full historical application. Random shared photos/tooling overlays remain. Default16px/light/LA browser; wider role/theme/large/calendar/84PG observations remain inherited."
+  },
+  "rawQualifications": [
+    "Native merger passed1748 tests and22 independent probes with one queued scope failure; exact253case selection retained extractor5s timeout, same assertion passes in broad selection.",
+    "Seven worker logs, not the reported eight, differ raw after whitespace normalization; canonical text matches. Original incoming evidence remains untouched.",
+    "Intermediate preventDefault wiring produced one new Doctor warning; final existing form action retains event metadata and has zero findings.",
+    "First old-source audit launcher incorrectly passed native pnpm.exe to Node; no tests ran and fixed source was restored in finally. Corrected launcher yields four intended assertion failures.",
+    "First stopped-server caller ended early after successful stop because PowerShell LASTEXITCODE was unset; no overlay occurred until the next guarded call.",
+    "Other four merger formatter/lint profiles remain unpassed and were not repeated by root; no blanket archive whitespace assertion."
+  ]
+}

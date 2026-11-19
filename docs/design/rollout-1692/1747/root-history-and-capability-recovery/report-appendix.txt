@@ -1,0 +1,69 @@
+
+## Root bounded history and capability recovery proof
+
+This is a bounded archival handoff for #1747, not a readiness decision or a new test run. `verifiedCommit` remains `null`. The immutable [root summary](1747/root-history-and-capability-recovery/payload/root/bounded-summary.json) supplies the accepted counts and qualifications. Earlier producer conclusions remain raw evidence and are narrowed here where necessary.
+
+The frozen source is `cab95aa79d6b0ece4de541fa60c9d99805918a57`, with app tree `52a1d43790178ca6794fd5b682e3cad4bb0cb19c`. Root retains staging, Git-blob audit, commit, tracker, readiness, PR and integration decisions. No future integration SHA is asserted.
+
+### Inventory and verification
+
+The [input contract](1747/root-history-and-capability-recovery/input-contract.json) admits exactly 288 byte-exact payloads (8,002,638 bytes): inherited-stop 56; independent 60; runtime-auth-stop 28; runtime-network 51; focused 52; native intake 16; root 25. The [payload index](1747/root-history-and-capability-recovery/payload-index.json) contains only these explicit destinations. Five original primary indexes are separately preserved in `input-indexes/`, with their raw hashes checked against `primaryInputs`. Excluded metadata and private references authorize no further reads.
+
+The [source pins](1747/root-history-and-capability-recovery/source-pins.json) describe 20 inert `.txt` clones of raw UTF-8 Git blobs from the frozen commit. They match size, SHA-256 and Git SHA-1 identity. Windows worktree CRLF materializations have different raw hashes; only optional current-source comparison canonicalizes CRLF to LF. No config-content claim follows from source-only pins, and no ignored license, dependency, environment or authentication state was copied.
+
+The [closed allowlist](1747/root-history-and-capability-recovery/closed-allowlist.json) names every archive file. The [file index](1747/root-history-and-capability-recovery/file-index.json) hashes every file except itself and the [seal](1747/root-history-and-capability-recovery/seal.json); the seal hashes the file index and closed allowlist. The allowlist includes both control files by name, avoiding any self-hash cycle. Archive-local `.gitattributes` marks all descendants `-text` so raw evidence survives staging unchanged. Root must independently audit staged Git blobs.
+
+Run from the repository root, using Node alone:
+
+```text
+node docs/design/rollout-1692/1747/root-history-and-capability-recovery/verify.cjs
+node docs/design/rollout-1692/1747/root-history-and-capability-recovery/verify.cjs --current-source
+```
+
+The [standalone verifier](1747/root-history-and-capability-recovery/verify.cjs) imports only `fs`, `path` and `crypto`. Default mode reads only the closed archive: no source SAFE directory, private reference, application import, subprocess, network, evaluation, file write or archived driver execution. Optional mode additionally reads exactly the 20 materialized TS/TSX paths. It does not require current HEAD equality: metadata commits can pass, and legitimate later source evolution can fail optional mode without invalidating this archive. Stable output contains neither timestamps nor a seal hash; final validation receipts live outside the archive to avoid verification-result cycles.
+
+The [encoding inventory](1747/root-history-and-capability-recovery/encoding-inventory.json) classifies all 191 JSON payloads, including three JSON documents with `.log` extensions and three UTF-16LE BOM receipts. Parsing decodes BOMs/encodings without modifying raw bytes; the verifier also supports UTF-8 BOM JSON. A log extension alone does not rule out JSON (including producer `stdout-json.log` references, which are not extra admitted payloads).
+
+The [PNG validation](1747/root-history-and-capability-recovery/png-validation.json) records complete CRC checks, decompression and row-filter decoding of all five admitted PNGs, plus visual review. Four runtime-v2 images are accepted current **main-region** crops only. They do not show an entire window or establish a matched historical comparison; sidebar claims rest on geometry. The focused PNG decodes but its left title, action and content edge are clipped. It remains diagnostic and pixel-UNPASSED; visual review supersedes its raw settled-capture wording. Older worker expanded images remain unsettled.
+
+Historical scripts, fixtures, probes and drivers are inert evidence, not tools for this publication. In particular, `prepare-attempt3.py` intentionally remains a failed parse at line 60; the preserved native reconciliation records that failure and the final preparation script's parse result. There is no blanket archive syntax pass or raw-archive whitespace pass. Only the new verifier receives a fresh Node syntax check. [Historical code classification](1747/root-history-and-capability-recovery/historical-code-classification.json) distinguishes preserved syntax receipts from fresh execution.
+
+### History finding and correction
+
+R165 normal merge `c70858bfe507eb99f844a455230e312cc8247b61` joined root `bceb0ee32ca64e1d0fcf36906e89b0509665c479` and implementation `4460bc433f99a7e9b3dc84862e9efedf72cbcf8a`. It preserved the root union/claim UUID model and the exact listing scope. Root correction `20a7481f08b6156e912442492f8181ffe2650134`, merged as `0a1048d64ae2a54292b454d757b4a1de306360c9`, stores durable Unauthorized withdrawal: canonical refusal replaces available rows; later transient failures retain withdrawal until fresh successful rows or a healthy empty result.
+
+The original eight public cases (5 pass, 3 fail) represent **one inherited presentation finding**, reproduced in incoming and pinned premerge consumers. They do not demonstrate a live authorization bypass. The exact after-fix root run has seven passing current cases plus one unchanged failing baseline control: overall **NOT green**. The historical `green-exact` filename is misleading because the requested name filter did not exclude that control. See [root checks](1747/root-history-and-capability-recovery/payload/root/root-history-withdrawal-checks.json) and [original native reconciliation](1747/root-history-and-capability-recovery/payload/native/inherited-stop/reconciliation.json).
+
+All 72 original fixture assertions remain; one enabled-button expectation was added, with unchanged test names. Initial root selection was 178 pass/5 fixture failures out of 183. Actor/provider/session-store fixture reconciliation produces the same final 183/183 selection in 13 files. This is fixture repair, not deletion of assertions or a new production authority path.
+
+### Independent and quality accounting
+
+The [independent case multiset](1747/root-history-and-capability-recovery/payload/independent/case-multiset.json) contains **253 distinct cases in 20 files**: 203 unit cases/14 files (183 root plus 20 independent public probes), and 50 canonical PostgreSQL cases/6 files. There are 172 overlapping identities with frozen #1748; they are nonadditive. Reruns, attempts, commands and runtime predicates are never added to these totals. Publication reads the prepared independent audit and does not rerun acceptance.
+
+Root's three type checks passed with the existing genuine 125-entry license. Isolated main TypeScript failed only because ignored `licenses.json` was absent; it was not copied or generated. Workflow/smoke types, typegen, lint, explicit 100-column CRLF formatting and React Doctor 0.9.22 (0 errors/0 warnings, score disabled) passed at their documented scopes. Ordinary formatting retains four unpassed findings. These receipts do not establish a blanket formatting or whitespace pass.
+
+The original STOP command note attributes metadata copying differently from the actual commit script; independent tree reconstruction still matches. The failed Python preparation attempt remains. Independent `commands-extra.json` cites an unindexed `docker-release.log`; that citation is qualified. Sealed `pg6.log` proves removal, while the later empty readback is a summary receipt.
+
+### Runtime generations stay separate
+
+Runtime auth STOP v1 remains **0 pass/0 fail/22 unpassed** product predicates. Two public-form submissions failed verification. Source, preservation and tooling checks are separate counts. Root's newer credential/token-free HEAD diagnosis saw sandbox `EACCES` and approved-transport HTTP 405: transport reachability, not authentication proof. Normal network permission then allowed unchanged real-widget verification on the canonical development server; both v2 public-form logins succeeded. There was no API login, authentication-state copy, config change, token substitution or provider bypass.
+
+Runtime v2's producer ledger remains **15 PASS/0 FAIL/7 UNPASSED of 22 named predicates**. It supports the three creation controls and editor graphs, filters, deletion, header-read Refresh/Retry, employee/manager scope, preferences, current settled main-region captures, CDP component names and connected Next diagnostics. Its real unmodified held creation completed only after a separate pre-release away-URL receipt. R10 records busy/disabled state, one POST and one graph; it lacks a separately indexed second trusted pointer. Focused F7 supplies that narrower observation. Cached editor/list DOM heading arrays do not prove a single visible h1; use geometry/final visible-heading receipts. See [v2 ledger](1747/root-history-and-capability-recovery/payload/runtime-network/assertion-ledger.json) and [native intake](1747/root-history-and-capability-recovery/payload/native/runtime-network/audit.json).
+
+The [focused ledger](1747/root-history-and-capability-recovery/payload/focused/predicate-ledger.json) records seven **narrow** F1–F7 passes, optional F8 unpassed, and six broader/tooling/pixel unpassed predicates. Do not add 15+7 or describe this as 22/22 acceptance. Root qualifications below narrow producer wording without rewriting its bytes:
+
+- F1 proves client history loading after route commitment, not the earliest shared-shell fallback. F2 scopes current-route non-auth POST failures; shared reads can overlap, so it is not an exactly-one-reader claim.
+- F3 uses an actual UI read-only grant (`can_export=false`, `can_record_reimbursements=false`), a Finance-only destination without approval, and an actual queue click. Missing settlement controls overlap own-expense exclusion; this does not separately establish another person's API settlement admission.
+- F4 normal revoke sets `is_active=false`. A direct fresh reload renders not-found denial with an **HTTP 200 stream**. Raw `pass:false` expected HTTP 404 and remains a harness-predicate failure, not a product failure. No HTTP 404 claim is made. The `destinations=[]` snapshot was already on the finance pathname; it lacks a separately timestamped personal-listing-path receipt for Finance-entry disappearance. Direct rendered denial remains supported.
+- F5 shows normal foreign-org and same-org peer arrivals with their own populated rows and listing privacy, not exhaustive direct-object authority. F6 proves synthetic pre-dispatch create **network** failure, actual Retry and one graph, not a naturally rejected business command.
+- F7 records a second separate trusted CDP pointer at the same measured button center while busy, then one POST/one graph before unmodified completion. It closes v2 R10's pointer traceability gap, not another full runtime run.
+
+Runtime v2 has five original alias groups; five UI creates minus one deletion leave +4 reports/+2 items. Focused seeding has four original groups: three small-org claim/attachment pairs plus one decision log, and one large-org claim/attachment pair. Focused UI work leaves +2 reports/+2 items and one normal-UI grant now inactive. All four focused original groups, the full foreign postseed namespace, and six **populated** timekeeping digests remain unchanged. Keep those generations separate. Business seeds are synthetic legacy claims/receipt objects, not UI claim creation. Empty tables do not establish populated preservation, and no external money moved.
+
+### Remaining scope and preservation
+
+There is zero native React-extension, axe or new-build acceptance. CDP resolved component names through DOM fiber ancestry only, without props/state inspection; it is not native extension proof. Optional live exported/payroll-included-but-unpaid state, full accounting, natural business-refusal recovery, exhaustive authority/direct-object/provider/catalog/full-generation matrices, actual devices, true zoom, global 157-node review and final user review remain unpassed. Public component/model/canonical PostgreSQL coverage distinguishes some of these states without promoting live claims.
+
+Source/index/dependencies/lock/license, 65 anchor occurrences (zero missing), and prior proof remained unchanged in the documented checks. The older 202-file #1748 archive was not resealed or given a current-pin update; its recorded current-source 12/14 result reflects expected source evolution. Cleanup and full OS inventory are historical producer receipts. Native intakes freshly check source/pins/Git/lease; they do not turn old OS inventories into fresh ones. All three runtime leases are released, ownership false/resources 0. Publication launches no application, tests, archived harnesses, fixture, browser or persistent process.
+
+This publication does not close an issue, merge to dev, deploy, run final whole-branch review or promote readiness. Root's separate staged-blob audit and proof commit remain required before any bounded verified dependency commit can be recorded.

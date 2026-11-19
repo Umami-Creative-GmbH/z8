@@ -1,0 +1,12 @@
+{
+  "ownedPortListenersRemaining": 0,
+  "previewOwnedTabClosed": true,
+  "nativeNamedSessionClosed": true,
+  "head": "9da64544197944f40481095b8c05636b2875490c",
+  "ownedNextProcessTreeStopped": true,
+  "ownedNextSourceVerified": true,
+  "ownedContainersRemaining": 0,
+  "containersRemoved": 3,
+  "puppeteerContextsClosedInFinally": true,
+  "otherWorkerStateChanged": false
+}

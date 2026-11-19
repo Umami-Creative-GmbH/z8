@@ -274,6 +274,7 @@
       "formatAccessCheck": "Verificação de acesso ao formato",
       "nobodyEmployedInPeriod": "Nenhum colaborador sob seu acesso à folha de pagamento esteve contratado neste período.",
       "noConfiguredTarget": "Nenhum destino de exportação da folha de pagamento configurado",
+      "notPayment": "A exportação prepara os dados da folha de pagamento. Ela não realiza pagamentos.",
       "queued": "Exportação da folha de pagamento na fila",
       "selectFormat": "Selecionar formato",
       "target": "Destino de exportação da folha de pagamento",
@@ -374,6 +375,7 @@
       "blockers": "Bloqueios",
       "employees": "Funcionários",
       "ready": "Pronto",
+      "title": "Resumo de prontidão da folha de pagamento",
       "workedHours": "Horas trabalhadas"
     },
     "title": "Folha de pagamento",
@@ -383,6 +385,7 @@
       "title": "Folha de pagamento temporariamente indisponível"
     },
     "workBalances": {
+      "accessChanged": "Este saldo de trabalho não está mais disponível no escopo da sua folha de pagamento.",
       "back": "Saldos de trabalho",
       "backToPayroll": "Folha de pagamento",
       "description": "Registe e cancele pagamentos de horas extraordinárias para os colaboradores abrangidos pelo seu acesso à folha de pagamento, incluindo colaboradores cessantes.",
@@ -391,6 +394,13 @@
       "loading": "A carregar saldos de trabalho",
       "loadingEmployee": "A carregar o saldo de trabalho",
       "open": "Saldos de trabalho",
+      "openEmployee": "Abrir saldo do funcionário",
+      "projectionUnavailable": "A projeção do saldo não está disponível. Os registros de ajuste permanecem abaixo.",
+      "refresh": "Atualizar saldo de trabalho",
+      "refreshing": "Atualizando saldo de trabalho…",
+      "retry": "Tentar novamente o saldo de trabalho",
+      "scopeChanged": "Carregando o escopo atual da folha de pagamento…",
+      "stale": "Não foi possível atualizar. Os registros carregados anteriormente estão sendo exibidos; atualize antes de fazer alterações.",
       "title": "Saldos de trabalho"
     }
   }

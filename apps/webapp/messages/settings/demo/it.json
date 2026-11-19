@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Genera dati di esempio per i test o cancella i dati esistenti relativi al tempo",
+      "employeesLoadError": {
+        "description": "I dati demo vengono generati per i tuoi dipendenti, quindi la generazione non è disponibile finché non vengono caricati.",
+        "retrying": "Nuovo tentativo…",
+        "title": "Impossibile caricare i dipendenti"
+      },
       "errors": {
-        "generationFailed": "Generazione non riuscita. Riprova.",
-        "noOrganization": "Nessuna organizzazione selezionata"
+        "generationFailed": "Generazione non riuscita. Riprova."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Tutti i dipendenti ({count})",
+          "allCountUnavailable": "Tutti i dipendenti",
           "label": "Dipendenti",
           "selectSpecific": "Seleziona dipendenti specifici"
         }

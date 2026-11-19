@@ -6,7 +6,13 @@ import { useState } from "react";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { formatDateOnly } from "@/components/ui/date-picker-utils";
 import type { ExpiryDescription } from "@/lib/expiry-reminders/expiry";
 import { isDocumentRequestCategory } from "@/lib/personnel-file/document-request.types";
@@ -50,7 +56,11 @@ function ExpiryBadge({ expiry }: { expiry: ExpiryDescription }) {
 }
 
 function renewalOf(document: ExpiringDocument): RenewedDocumentPrefill | null {
-	if (document.renewalRequested || !isDocumentRequestCategory(document.category)) return null;
+	if (
+		document.renewalRequested ||
+		!isDocumentRequestCategory(document.category)
+	)
+		return null;
 	return {
 		documentId: document.documentId,
 		title: document.title,
@@ -90,9 +100,17 @@ export function ExpiringDocumentsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<IconCalendarExclamation aria-hidden="true" className="size-5 text-muted-foreground" />
-					{t("settings.personnelFiles.expiring.title", "Expiring documents")}
+				<CardTitle>
+					<h2 className="flex flex-wrap items-center gap-2">
+						<IconCalendarExclamation
+							aria-hidden="true"
+							className="size-5 text-muted-foreground"
+						/>
+						{t("settings.personnelFiles.expiring.title", "Expiring documents")}
+						<Badge variant="secondary" className="tabular-nums">
+							{documents.length}
+						</Badge>
+					</h2>
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -105,7 +123,10 @@ export function ExpiringDocumentsCard({
 			<CardContent>
 				{documents.length === 0 ? (
 					<p className="text-sm text-muted-foreground">
-						{t("settings.personnelFiles.expiring.empty", "No documents are expiring.")}
+						{t(
+							"settings.personnelFiles.expiring.empty",
+							"No documents are expiring.",
+						)}
 					</p>
 				) : (
 					<ul className="divide-y rounded-md border">
@@ -117,12 +138,16 @@ export function ExpiringDocumentsCard({
 									className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 sm:flex-nowrap"
 								>
 									<Link
-										href={`/personnel-files/${document.employeeId}`}
-										className="min-w-0 flex-1 space-y-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+										href={`/personnel-files/${document.employeeId}?category=${document.category}`}
+										className="min-w-0 flex-[1_1_100%] space-y-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-1"
 									>
 										<span className="flex flex-wrap items-center gap-2">
-											<span className="truncate font-medium">{document.title}</span>
-											<Badge variant="secondary">{labels.categories[document.category]}</Badge>
+											<span className="truncate font-medium">
+												{document.title}
+											</span>
+											<Badge variant="secondary">
+												{labels.categories[document.category]}
+											</Badge>
 										</span>
 										<span className="block text-sm text-muted-foreground">
 											{`${document.employeeName} · ${t(
@@ -135,7 +160,10 @@ export function ExpiringDocumentsCard({
 									<ExpiryBadge expiry={document.expiry} />
 									{document.renewalRequested ? (
 										<Badge variant="outline">
-											{t("settings.personnelFiles.expiring.renewalRequested", "Renewal requested")}
+											{t(
+												"settings.personnelFiles.expiring.renewalRequested",
+												"Renewal requested",
+											)}
 										</Badge>
 									) : renewal ? (
 										<Button
@@ -145,12 +173,23 @@ export function ExpiringDocumentsCard({
 											aria-label={t(
 												"settings.personnelFiles.expiring.requestRenewalFor",
 												"Request a renewal of {title} ({employee})",
-												{ title: document.title, employee: document.employeeName },
+												{
+													title: document.title,
+													employee: document.employeeName,
+												},
 											)}
-											onClick={() => setRenewing({ employeeId: document.employeeId, renewal })}
+											onClick={() =>
+												setRenewing({
+													employeeId: document.employeeId,
+													renewal,
+												})
+											}
 										>
 											<IconFileImport aria-hidden="true" className="size-4" />
-											{t("settings.personnelFiles.expiring.requestRenewal", "Request renewal")}
+											{t(
+												"settings.personnelFiles.expiring.requestRenewal",
+												"Request renewal",
+											)}
 										</Button>
 									) : null}
 								</li>

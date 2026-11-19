@@ -1,0 +1,17 @@
+{
+  "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx": {
+    "sha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+    "crlf": 0,
+    "bareLf": 529
+  },
+  "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx": {
+    "sha256": "db3fdbb97d327e48ced6712cadcf6b6ecc60cfb6d81595253681b0c4b84478df",
+    "crlf": 0,
+    "bareLf": 490
+  },
+  "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts": {
+    "sha256": "076494fc4190b5df193ccbc8663e90b78f24d24de599e4443fecf1711d32640d",
+    "crlf": 0,
+    "bareLf": 33
+  }
+}

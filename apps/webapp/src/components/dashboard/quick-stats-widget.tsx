@@ -1,14 +1,11 @@
 "use client";
 
-import {
-	IconCalendarWeek,
-	IconClock,
-	IconFlame,
-	IconTrendingDown,
-	IconTrendingUp,
-} from "@tabler/icons-react";
+import { IconClock } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { cn } from "@/lib/utils";
+import { useLocale } from "next-intl";
+import { useMemo } from "react";
+import { Progress } from "@/components/ui/progress";
+import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import type {
 	DashboardWidgetData,
 	DashboardWidgetSnapshot,
@@ -19,189 +16,61 @@ import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
 import { WidgetReadError } from "./widget-read-error";
 
-function HoursLabel() {
-	const { t } = useTranslate();
-	return (
-		<span className="text-[10px] text-muted-foreground">
-			{t("dashboard.quick-stats.hours", "hours")}
-		</span>
-	);
-}
-
-const CIRCULAR_PROGRESS_COLOR_CLASSES = {
-	blue: "stroke-blue-500",
-	purple: "stroke-purple-500",
-	green: "stroke-emerald-500",
-	orange: "stroke-orange-500",
-};
-
-const CIRCULAR_PROGRESS_GLOW_CLASSES = {
-	blue: "stroke-blue-400/50",
-	purple: "stroke-purple-400/50",
-	green: "stroke-emerald-400/50",
-	orange: "stroke-orange-400/50",
-};
-
-function CircularProgress({
-	progress,
-	size = 80,
-	strokeWidth = 6,
-	children,
-	color = "blue",
-}: {
-	progress: number;
-	size?: number;
-	strokeWidth?: number;
-	children: React.ReactNode;
-	color?: "blue" | "purple" | "green" | "orange";
-}) {
-	const radius = (size - strokeWidth) / 2;
-	const circumference = 2 * Math.PI * radius;
-	const strokeDashoffset =
-		circumference - (Math.min(progress, 100) / 100) * circumference;
-
-	return (
-		<div className="relative inline-flex items-center justify-center">
-			<svg
-				aria-hidden="true"
-				className="-rotate-90"
-				width={size}
-				height={size}
-				viewBox={`0 0 ${size} ${size}`}
-			>
-				{/* Background circle */}
-				<circle
-					cx={size / 2}
-					cy={size / 2}
-					r={radius}
-					fill="none"
-					strokeWidth={strokeWidth}
-					className="stroke-muted"
-				/>
-				{/* Progress circle */}
-				<circle
-					cx={size / 2}
-					cy={size / 2}
-					r={radius}
-					fill="none"
-					strokeWidth={strokeWidth}
-					strokeLinecap="round"
-					className={cn(
-						"transition-[stroke-dashoffset] duration-500 ease-out motion-reduce:transition-none",
-						CIRCULAR_PROGRESS_COLOR_CLASSES[color],
-					)}
-					style={{
-						strokeDasharray: circumference,
-						strokeDashoffset,
-					}}
-				/>
-				{/* Glow effect when near/over target */}
-				{progress >= 90 && (
-					<circle
-						cx={size / 2}
-						cy={size / 2}
-						r={radius}
-						fill="none"
-						strokeWidth={strokeWidth}
-						strokeLinecap="round"
-						className={cn("blur-sm", CIRCULAR_PROGRESS_GLOW_CLASSES[color])}
-						style={{
-							strokeDasharray: circumference,
-							strokeDashoffset,
-						}}
-					/>
-				)}
-			</svg>
-			<div className="absolute inset-0 flex flex-col items-center justify-center">
-				{children}
-			</div>
-		</div>
-	);
-}
-
-function StatCard({
+function PeriodSummary({
 	title,
-	icon: Icon,
 	actual,
 	expected,
 	expectedToDate,
-	color,
 }: {
 	title: string;
-	icon: React.ElementType;
 	actual: number;
 	expected: number;
 	expectedToDate: number;
-	color: "blue" | "purple";
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const percentage = expected > 0 ? (actual / expected) * 100 : 0;
 	const status = getQuickStatsStatus({ actual, expectedToDate });
-	const isOnTrack = status === "on-track";
-	const isBehind = status === "behind";
-
+	const number = useMemo(
+		() =>
+			new Intl.NumberFormat(locale, {
+				minimumFractionDigits: 1,
+				maximumFractionDigits: 1,
+			}),
+		[locale],
+	);
 	return (
-		<div className="flex items-center gap-4 rounded-xl border bg-card p-4">
-			<CircularProgress
-				progress={percentage}
-				color={isOnTrack ? "green" : isBehind ? "orange" : color}
-			>
-				<div className="flex flex-col items-center">
-					<span className="text-lg font-bold tabular-nums">
-						{actual.toFixed(1)}
-					</span>
-					<HoursLabel />
-				</div>
-			</CircularProgress>
-
-			<div className="flex-1 space-y-1">
-				<div className="flex items-center gap-2">
-					<Icon className="size-4 text-muted-foreground" />
-					<span className="text-sm font-medium">{title}</span>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<div
-						className={cn(
-							"flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-							isOnTrack
-								? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-								: isBehind
-									? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300"
-									: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
-						)}
-					>
-						{isOnTrack ? (
-							<>
-								<IconTrendingUp className="size-3" aria-hidden="true" />
-								{t("dashboard.quick-stats.on-track", "On track")}
-							</>
-						) : isBehind ? (
-							<>
-								<IconTrendingDown className="size-3" aria-hidden="true" />
-								{t("dashboard.quick-stats.behind", "Behind")}
-							</>
-						) : (
-							<>
-								<IconFlame className="size-3" aria-hidden="true" />
-								{t("dashboard.quick-stats.good-pace", "Good pace")}
-							</>
-						)}
-					</div>
-				</div>
-
-				<p className="text-xs text-muted-foreground">
-					{t(
-						"dashboard.quick-stats.progress",
-						"{actual}h of {expected}h ({percent}%)",
-						{
-							actual: actual.toFixed(1),
-							expected: expected.toFixed(1),
-							percent: percentage.toFixed(0),
-						},
-					)}
-				</p>
-			</div>
+		<div className="min-w-0 space-y-2 px-5 py-4 first:pt-0 last:pb-0 @xl/main:py-0">
+			<p className="text-sm text-muted-foreground">{title}</p>
+			<p className="text-2xl font-semibold tabular-nums">
+				{number.format(actual)}{" "}
+				<span className="text-sm font-normal text-muted-foreground">
+					{t("dashboard.quick-stats.hours", "hours")}
+				</span>
+			</p>
+			<p className="text-sm text-muted-foreground">
+				{t(
+					"dashboard.quick-stats.progress",
+					"{actual}h of {expected}h ({percent}%)",
+					{
+						actual: number.format(actual),
+						expected: number.format(expected),
+						percent: Math.round(percentage).toLocaleString(locale),
+					},
+				)}
+			</p>
+			<Progress
+				aria-label={title}
+				value={Math.min(100, Math.max(0, percentage))}
+				className="h-1.5"
+			/>
+			<p className="text-sm text-muted-foreground">
+				{status === "on-track"
+					? t("dashboard.quick-stats.on-track", "On track")
+					: status === "behind"
+						? t("dashboard.quick-stats.behind", "Behind")
+						: t("dashboard.quick-stats.good-pace", "Good pace")}
+			</p>
 		</div>
 	);
 }
@@ -219,9 +88,7 @@ export function QuickStatsWidget({
 		refetch,
 		error,
 	} = useDashboardWidget("quick-stats", initialSnapshot);
-
 	if (!stats && !loading && !error) return null;
-
 	return (
 		<DashboardWidget id="quick-stats">
 			<WidgetCard
@@ -245,29 +112,55 @@ export function QuickStatsWidget({
 						retry={refetch}
 						refreshing={refreshing}
 					/>
-				) : (
-					stats && (
-						<div className="space-y-3">
-							<StatCard
-								title={t("dashboard.quick-stats.this-week", "This Week")}
-								icon={IconCalendarWeek}
-								actual={stats.thisWeek.actual}
-								expected={stats.thisWeek.expected}
-								expectedToDate={stats.thisWeek.expectedToDate}
-								color="blue"
-							/>
-							<StatCard
-								title={t("dashboard.quick-stats.this-month", "This Month")}
-								icon={IconClock}
-								actual={stats.thisMonth.actual}
-								expected={stats.thisMonth.expected}
-								expectedToDate={stats.thisMonth.expectedToDate}
-								color="purple"
-							/>
-						</div>
-					)
-				)}
+				) : stats ? (
+					<div className="-mx-5 grid divide-y @xl/main:grid-cols-3 @xl/main:divide-x @xl/main:divide-y-0">
+						<PeriodSummary
+							title={t("dashboard.quick-stats.this-week", "This Week")}
+							{...stats.thisWeek}
+						/>
+						<PeriodSummary
+							title={t("dashboard.quick-stats.this-month", "This Month")}
+							{...stats.thisMonth}
+						/>
+						<BalanceSummary stats={stats} />
+					</div>
+				) : null}
 			</WidgetCard>
 		</DashboardWidget>
+	);
+}
+
+function BalanceSummary({
+	stats,
+}: {
+	stats: DashboardWidgetData["quick-stats"];
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="min-w-0 space-y-2 px-5 py-4 first:pt-0 last:pb-0 @xl/main:py-0">
+			<p className="text-sm text-muted-foreground">
+				{t("workBalance.label", "All-time balance")}
+			</p>
+			<p className="text-2xl font-semibold tabular-nums">
+				{stats.workBalanceUnavailable
+					? t("dashboard.refresh.balanceUnavailable", "Balance unavailable")
+					: stats.workBalance
+						? formatSignedWorkBalance(stats.workBalance.balanceMinutes)
+						: t("workBalance.notCalculated", "Not calculated yet")}
+			</p>
+			<p className="text-sm text-muted-foreground">
+				{stats.workBalanceUnavailable
+					? t(
+							"dashboard.refresh.balanceRetry",
+							"Refresh to try loading the balance again.",
+						)
+					: stats.workBalance?.computedAt
+						? t("workBalance.updatedEveryThreeHours", "Updated every 3 hours")
+						: t(
+								"workBalance.pendingDescription",
+								"The worker will calculate this balance soon.",
+							)}
+			</p>
+		</div>
 	);
 }

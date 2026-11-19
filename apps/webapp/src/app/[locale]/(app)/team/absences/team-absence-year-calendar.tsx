@@ -22,6 +22,7 @@ import type {
 
 type TeamAbsenceYearCalendarProps = {
 	data: ManagerAbsenceCalendarResult;
+	allowActions?: boolean;
 };
 
 const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
@@ -148,7 +149,7 @@ function TeamAbsenceMonth({
 	daysByDate: Map<string, ManagerAbsenceCalendarDay>;
 	todayDateKey: string | null;
 	locale: string;
-	onChangeDeputy: (entry: ManagerAbsenceCalendarEntry) => void;
+	onChangeDeputy?: (entry: ManagerAbsenceCalendarEntry) => void;
 }) {
 	const days = getMonthDays(year, month);
 	const paddingDays = Array.from(
@@ -157,11 +158,11 @@ function TeamAbsenceMonth({
 	);
 
 	return (
-		<section className="rounded-lg border bg-card p-2" aria-label={monthName}>
+		<section className="min-w-0 p-2" aria-label={monthName}>
 			<h3 className="mb-2 text-center font-medium text-sm">{monthName}</h3>
 			<div className="mb-1 grid grid-cols-7 gap-0.5 text-center">
 				{weekdays.map((weekday) => (
-					<div key={weekday} className="font-medium text-[10px] text-muted-foreground">
+					<div key={weekday} className="font-medium text-xs text-muted-foreground">
 						{weekday}
 					</div>
 				))}
@@ -180,8 +181,8 @@ function TeamAbsenceMonth({
 						<button
 							type="button"
 							className={cn(
-								"relative flex aspect-square w-full flex-col items-center justify-center rounded-sm text-[10px] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-								hasApproved && "bg-blue-100 text-blue-950 dark:bg-blue-900/30 dark:text-blue-100",
+								"relative flex aspect-square w-full flex-col items-center justify-center rounded-sm text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+								hasApproved && "bg-primary/10 text-foreground",
 								isToday &&
 									"bg-primary/10 font-semibold outline outline-2 outline-primary outline-offset-1",
 								hasPending && "ring-1 ring-yellow-500",
@@ -228,7 +229,10 @@ function TeamAbsenceMonth({
 	);
 }
 
-export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) {
+export function TeamAbsenceYearCalendar({
+	data,
+	allowActions = true,
+}: TeamAbsenceYearCalendarProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
@@ -278,7 +282,7 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 		>
 			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 				<div>
-					<h2 id="team-absence-year-calendar-title" className="font-semibold text-lg">
+					<h2 id="team-absence-year-calendar-title" className="scroll-mt-20 font-semibold text-lg">
 						{t("team.absences.calendar.title", "Year calendar")}
 					</h2>
 					<p className="text-muted-foreground text-sm">
@@ -288,8 +292,8 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 						)}
 					</p>
 				</div>
-				<div className="flex gap-2 text-left sm:text-right">
-					<div className="rounded-md border bg-background px-3 py-2">
+				<div className="flex flex-wrap gap-4 divide-x text-left sm:text-right">
+					<div className="pr-4">
 						<p className="font-semibold tabular-nums">{data.year}</p>
 						<p className="text-muted-foreground text-xs">
 							{t("team.absences.calendar.totalDays", "{count} absent", {
@@ -297,7 +301,7 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 							})}
 						</p>
 					</div>
-					<div className="rounded-md border bg-background px-3 py-2">
+					<div>
 						<p className="font-semibold tabular-nums">{pendingAbsenceDays}</p>
 						<p className="text-muted-foreground text-xs">
 							{t("team.absences.calendar.pendingDays", "{count} pending", {
@@ -310,7 +314,7 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 
 			<div className="mb-4 flex flex-wrap items-center gap-4 text-xs">
 				<div className="flex items-center gap-1">
-					<div className="size-3 rounded border border-blue-500 bg-blue-100 dark:bg-blue-900/30" />
+					<div className="size-3 rounded border border-primary bg-primary/10" />
 					<span>{t("team.absences.calendar.legend.approved", "Approved")}</span>
 				</div>
 				<div className="flex items-center gap-1">
@@ -331,11 +335,11 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 						daysByDate={daysByDate}
 						todayDateKey={todayDateKey}
 						locale={locale}
-						onChangeDeputy={setChangingDeputyOf}
+						onChangeDeputy={allowActions ? setChangingDeputyOf : undefined}
 					/>
 				))}
 			</div>
-			{changingDeputyOf ? (
+			{changingDeputyOf && allowActions ? (
 				<ChangeDeputyDialog
 					absence={{
 						id: changingDeputyOf.id,

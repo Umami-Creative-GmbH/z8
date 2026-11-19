@@ -35,7 +35,6 @@
         "previousWeekDesc": "Exportar datos de la semana anterior (lun-dom)"
       },
       "deleteDialog": {
-        "cancel": "Cancelar",
         "confirm": "Eliminar",
         "description": "¿Estás seguro de que deseas eliminar \"{name}\"? Esta acción no se puede deshacer.",
         "title": "Eliminar exportación programada"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Error al eliminar",
         "loadFailed": "Error al cargar las exportaciones programadas",
-        "toggleFailed": "Error al cambiar el estado"
+        "retry": "Intentar de nuevo"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "El propietario de la programación, {owner}, ya no es administrador de la organización. Conviértase en propietario o asigne a otro administrador de la organización primero."
       },
       "filters": {
         "allEmployees": "Todos los empleados",
@@ -284,8 +286,9 @@
         "paused": "Pausado",
         "schedule": "Programación",
         "status": "Estado",
-        "title": "Programaciones activas",
-        "type": "Tipo"
+        "titleAll": "Programaciones",
+        "type": "Tipo",
+        "unknownOwner": "Propietario desconocido"
       },
       "title": "Exportaciones programadas",
       "toast": {

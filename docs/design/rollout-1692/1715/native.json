@@ -1,0 +1,34 @@
+{
+  "treeComponents": [
+    "170 3828 3827 Forget(DrivingLicencePageScope)",
+    "171 3829 3828 Forget(DrivingLicenceRoleTabs)",
+    "182 3863 3862 Forget(MyDrivingLicence)",
+    "185 3866 3865 Forget(DrivingLicenceStatusSummary)",
+    "185 3914 3865 Forget(ReportDrivingImpediment)"
+  ],
+  "actor": "small-admin with explicit verifier and planning grants",
+  "renderRecording": {
+    "report": "# Render Profile - 17.02s recording\n# 10587 renders (2042 mounts + 8545 re-renders) across 188 components\n# FPS: avg 59, min 52, max 909, drops (<30fps): 0",
+    "success": true
+  },
+  "inspect": {
+    "success": true,
+    "source": [
+      "http://localhost:62591/_next/static/chunks/apps_webapp_src_1is78m5dno6tm._.js?dpl=cca1977df820ef288a7910a4f9d44b464d289b3b",
+      4763,
+      1
+    ]
+  },
+  "route": "/en/driving-licence",
+  "accessibility": {
+    "originalFinding": "Two missing history date descriptions; fixed locally and regressed at the form seam.",
+    "incomplete": [],
+    "violations": [],
+    "counts": {
+      "inapplicable": 57,
+      "incomplete": 0,
+      "passes": 31,
+      "violations": 0
+    }
+  }
+}

@@ -274,6 +274,7 @@
       "formatAccessCheck": "Controllo accesso formato",
       "nobodyEmployedInPeriod": "Nessun dipendente per cui disponi dell'accesso alle buste paga risultava assunto in questo periodo.",
       "noConfiguredTarget": "Nessuna destinazione di esportazione buste paga configurata",
+      "notPayment": "L'esportazione prepara i dati per le buste paga. Non effettua alcun pagamento.",
       "queued": "Esportazione buste paga in coda",
       "selectFormat": "Seleziona formato",
       "target": "Destinazione esportazione buste paga",
@@ -374,6 +375,7 @@
       "blockers": "Blocchi",
       "employees": "Dipendenti",
       "ready": "Pronto",
+      "title": "Riepilogo preparazione paghe",
       "workedHours": "Ore lavorate"
     },
     "title": "Buste paga",
@@ -383,6 +385,7 @@
       "title": "Buste paga temporaneamente non disponibili"
     },
     "workBalances": {
+      "accessChanged": "Questo saldo lavorativo non è più disponibile nel tuo ambito paghe.",
       "back": "Saldi orari",
       "backToPayroll": "Buste paga",
       "description": "Registra e annulla le liquidazioni degli straordinari per i dipendenti inclusi nel tuo ambito di accesso alle buste paga, compresi i dipendenti cessati.",
@@ -391,6 +394,13 @@
       "loading": "Caricamento dei saldi ore lavorative",
       "loadingEmployee": "Caricamento del saldo ore lavorative",
       "open": "Saldi ore lavorative",
+      "openEmployee": "Apri saldo dipendente",
+      "projectionUnavailable": "La proiezione del saldo non è disponibile. I record di rettifica restano visibili qui sotto.",
+      "refresh": "Aggiorna saldo ore di lavoro",
+      "refreshing": "Aggiornamento saldo ore di lavoro…",
+      "retry": "Riprova saldo ore di lavoro",
+      "scopeChanged": "Caricamento dell'ambito paghe attuale…",
+      "stale": "Impossibile aggiornare. Vengono mostrati i record caricati in precedenza; aggiorna prima di apportare modifiche.",
       "title": "Saldi ore lavorative"
     }
   }

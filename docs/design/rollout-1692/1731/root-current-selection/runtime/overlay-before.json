@@ -1,0 +1,24 @@
+{
+  "appliedWithOwnNextStopped": true,
+  "rows": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "rawCurrent": "a441d7b061dd28eae958da7ec446b85a133886b1141f8d74e0009e1eab96fdd5",
+      "rawHistorical": "63076fda7565215f6531aea059a8b5613801ece1deee206cd389879eb59f7553",
+      "historicalPin": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+      "rawCurrent": "08826aa7372c010f070dc7f73b27c9b0d4780cb54443b672b1cb2e17c81de086",
+      "rawHistorical": "33bc842be601bfb38f91e2704379be05b639e2cb43b05b721a0123de8591d492",
+      "historicalPin": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rawCurrent": "ccbddb866cc559fade83fa503c8315d50f4fcd7eafe568b6288579a6c236cc8f",
+      "rawHistorical": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce",
+      "historicalPin": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72"
+    }
+  ],
+  "qualification": "Partial application comparison: exact historical three existing consumers only. Newly unused helper and rest of application remain current."
+}

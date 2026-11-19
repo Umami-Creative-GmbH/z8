@@ -1,0 +1,1 @@
+{"exit":1,"stage":"first goto after normal login","diagnosis":"Normal /init workspace redirect raced with goto /reports and aborted it. Settled authenticated /en dashboard had no errors. Resume with same in-memory context, no auth transfer or source change."}

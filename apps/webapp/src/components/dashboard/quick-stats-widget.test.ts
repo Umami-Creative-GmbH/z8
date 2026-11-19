@@ -1,9 +1,11 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
-import { createElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -28,6 +30,11 @@ vi.mock("./dashboard-widget", () => ({
 }));
 vi.mock("./widget-card", () => ({
 	WidgetCard: ({ children }: { children: unknown }) => children,
+}));
+
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: ReactNode; href: string }) =>
+		createElement("a", { href }, children),
 }));
 
 import { getQuickStatsStatus } from "./quick-stats-status";
@@ -60,6 +67,33 @@ describe("getQuickStatsStatus", () => {
 });
 
 describe("QuickStatsWidget", () => {
+	afterEach(cleanup);
+	it("keeps successful period totals visible when only the cached balance read fails", () => {
+		const initialSnapshot = {
+			scope: { userId: "user-a", organizationId: "org-a" },
+			updatedAt: Date.now(),
+			result: {
+				success: true as const,
+				data: {
+					thisWeek: { actual: 4, expected: 40, expectedToDate: 4 },
+					thisMonth: { actual: 10, expected: 160, expectedToDate: 20 },
+					workBalance: null,
+					workBalanceUnavailable: true,
+				},
+			},
+		};
+		render(
+			createElement(
+				QueryClientProvider,
+				{ client: new QueryClient() },
+				createElement(QuickStatsWidget, { initialSnapshot }),
+			),
+		);
+		expect(screen.getByText("4.0h of 40.0h (10%)")).toBeTruthy();
+		expect(screen.getByText("10.0h of 160.0h (6%)")).toBeTruthy();
+		expect(screen.getByText("Balance unavailable")).toBeTruthy();
+		expect(screen.queryByText("Not calculated yet")).toBeNull();
+	});
 	it("uses expected-to-date for status while showing full-period progress", () => {
 		const initialSnapshot = {
 			scope: { userId: "user-a", organizationId: "org-a" },

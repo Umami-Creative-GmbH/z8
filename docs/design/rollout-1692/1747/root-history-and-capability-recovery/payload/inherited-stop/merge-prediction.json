@@ -1,0 +1,21 @@
+{
+  "root": "bceb0ee32ca64e1d0fcf36906e89b0509665c479",
+  "incoming": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
+  "base": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+  "rootTree": "fd5820196b334fa9b370d67e53ed3b4ab3af2525",
+  "rootEntries": 18791,
+  "incomingChanged": 86,
+  "rootChanged": 3715,
+  "overlap": [
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "compositionBlob": "af46342d736672775d7b9f49116991231a2863e0",
+  "predictedTree": "52914144178afccc17f7093ee588817be99d6180",
+  "predictedAppTree": "887eab4a441b413763f93588dfe5d874ebfffb75",
+  "orderedParents": [
+    "bceb0ee32ca64e1d0fcf36906e89b0509665c479",
+    "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a"
+  ],
+  "entries": 18869,
+  "nativeMergeNotYetRun": true
+}

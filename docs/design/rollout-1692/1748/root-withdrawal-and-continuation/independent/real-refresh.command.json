@@ -1,0 +1,28 @@
+{
+  "label": "real-refresh",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "src/test/review1748-real-refresh.test.tsx",
+    "--maxWorkers=1",
+    "--bail=1",
+    "--reporter=json",
+    "--outputFile",
+    "../../.tmp/review1748-both/real-refresh.json"
+  ],
+  "exit": 0,
+  "seconds": 4.073,
+  "logBytes": 490,
+  "logSha256": "3079c9864c418fb5eea92f8a4531cb3a1cd0e174c501694e9f59e3ac2287fae7"
+}

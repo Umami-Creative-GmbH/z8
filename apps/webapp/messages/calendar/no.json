@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Legg til fravær",
     "balance": {
       "carryoverDays": "Du har {count} overførte dager",
-      "carryoverExpiry": "som utløper",
+      "carryoverDaysExpiring": "Du har {count} overførte dager. De utløper {date}.",
       "carryoverFrom": "Overført fra {year}",
       "daysRemaining": "Gjenværende dager",
-      "description": "Dine feriedager for inneværende år",
       "outOfTotalDays": "av totalt {totalDays} dager",
       "pending": "Avventer",
       "title": "Feriesaldo {year}",
       "used": "Brukt"
     },
     "calendar": {
+      "currentYear": "I år",
       "legend": {
         "approved": "Godkjent",
-        "halfDayAm": "Halv dag (formiddag)",
-        "halfDayPm": "Halv dag (ettermiddag)",
+        "halfDay": "Halv dag",
         "holiday": "Helligdag",
         "pending": "Avventer",
         "rejected": "Avvist"
       },
       "nextYear": "Neste år",
-      "previousYear": "Forrige år"
+      "previousYear": "Forrige år",
+      "requestAnotherAbsence": "Be om et nytt fravær fra denne dagen",
+      "selectDayDetailsHint": "Velg en dag for å be om fravær fra den. En dag med et godkjent eller ventende fravær viser i stedet detaljene for fraværet."
     },
     "change": {
       "afternoon": "Ettermiddag",
@@ -40,6 +40,7 @@
       "historyFailed": "Kunne ikke laste inn endringsforespørsler.",
       "keepHours": "Behold registrerte timer og dekning",
       "morning": "Formiddag",
+      "pendingCount": "{count} ventende",
       "pendingExplanation": "Det registrerte fraværet forblir gjeldende frem til en annen godkjenner godtar forespørselen din.",
       "reason": "Begrunnelse",
       "reasonRequired": "En begrunnelse er påkrevd",
@@ -321,10 +322,10 @@
       "pending": "Til behandling",
       "rejected": "Avvist"
     },
-    "subtitle": "Administrer fravær og feriedager",
     "table": {
       "cancelAbsence": "Avbryt fravær",
       "cancelAbsenceTooltip": "Avbryt fravær",
+      "changePending": "Endringsforespørsel venter",
       "end": "Slutt",
       "headers": {
         "actions": "Handlinger",
@@ -337,9 +338,7 @@
       "noRequests": "Ingen fraværsforespørsler funnet.",
       "noSearchResults": "Ingen fravær samsvarer med søket ditt.",
       "searchPlaceholder": "Søk etter type, status eller notater...",
-      "start": "Start",
-      "subtitle": "Nylige og kommende fraværsforespørsler",
-      "title": "Dine fraværsforespørsler"
+      "start": "Start"
     },
     "title": "Fravær",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kalender",
       "table": "Tabell"
+    },
+    "year": {
+      "loadFailed": "Kunne ikke laste {year}. Viser fortsatt {loadedYear}.",
+      "loading": "Laster {year}… Viser fortsatt {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Rediger",
       "label": "Handlinger for timeregistrering"
     },
+    "context": {
+      "timezone": "Tidssone for kalender"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Timeføringer blokkert",
       "category": "Kategori",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Sletting av timeregistrering utført",
       "auditNote": "Tidsregistreringer vil bli merket som slettet av revisjonshensyn.",
-      "confirm": "Konverter til pause",
-      "description": "Dette vil slette denne arbeidsperioden permanent. Oppholdet vil vises som en pause i kalenderen.",
       "failed": "Kunne ikke slette arbeidsperiode",
       "reasonLabel": "Årsak til sletting",
-      "reasonRequired": "Årsak er påkrevd",
-      "success": "Arbeidsperiode konvertert til pause",
-      "title": "Konverter til pause?"
+      "reasonRequired": "Årsak er påkrevd"
     },
     "details": {
       "automaticClockOut": "Automatisk stemplet ut",
@@ -516,10 +518,7 @@
       "holiday": "Helligdag",
       "missingRequiredWork": "Mangler påkrevd arbeid",
       "requirementMetOrOver": "Krav oppfylt/overskredet",
-      "timeEntry": "Timeregistrering",
-      "title": "Tegnforklaring",
       "underRequirement": "Under krav",
-      "workPeriod": "Arbeidsperiode",
       "workPeriodPending": "Venter på godkjenning"
     },
     "loadEventsError": "Kunne ikke laste inn kalenderhendelser: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Registrert tid sammenlignet med retningslinjetimer",
       "weekSum": "Sum"
     },
+    "nextMonth": "Neste måned",
+    "previousMonth": "Forrige måned",
     "requirements": {
       "dayLabel": "{date}: {required} påkrevd, {actual} registrert, {delta} differanse, {status}",
       "includesRunningWork": "Inkluderer pågående arbeid",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Fakturerbar",
+      "breakEnforcementNote": "Automatisk justert: håndheving av pause",
       "editedBy": "(redigert av {name} {date})",
       "missingTask": "Mangler oppgave",
       "missingTaskHint": "Mangler oppgave: legg til en oppgave",
-      "breakEnforcementNote": "Automatisk justert: pauseregler"
+      "runningTitle": "{name} - {duration} (pågår)",
+      "stop": "Stopp",
+      "stopFor": "Stopp pågående arbeidsperiode for {name}"
     },
     "workStatus": {
       "overRequirement": "over kravet",

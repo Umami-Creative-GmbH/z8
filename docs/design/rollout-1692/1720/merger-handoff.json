@@ -1,0 +1,778 @@
+{
+  "status": "Merged locally; root readiness decision retains listed acceptance limits",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+  "incoming": "6bdb48cfb90421f45d6e2da2dc9182f8a2a0ba24",
+  "merge": "0a8247f6517714f2f51a74aa60f81914fa61771d",
+  "parents": [
+    "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+    "6bdb48cfb90421f45d6e2da2dc9182f8a2a0ba24"
+  ],
+  "tree": "a0bfa5d62d57254bff7c34b169908d2e250ee3d1",
+  "independentTreeMatches": true,
+  "clean": true,
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 46,
+        "cases": 269,
+        "passed": 269,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 62,
+        "cases": 414,
+        "passed": 414,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 40,
+        "overlapCases": 249
+      }
+    ],
+    "uniqueFiles": 68,
+    "uniqueCases": 434,
+    "workerSelectionSubset": {
+      "files": 45,
+      "cases": 263
+    },
+    "rootCorrectionAddition": {
+      "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/organization-mfa/verification-lifetime.test.tsx",
+      "cases": 6
+    },
+    "method": "File path plus fullName multisets; parameterized multiplicity preserved. Overlap must match exactly; repeated tests never add coverage.",
+    "inheritedComparison": "Worker exact45files/263tests remains a passing subset; current same command46files/269tests includes the new verification-lifetime.test.tsx file with6 permanent root MFA correction cases. No PG rerun."
+  },
+  "types": {
+    "passed": true,
+    "scope": "Full next typegen; application tsconfig.typecheck; workflow-contracts;smoke. Fresh on exact merged source."
+  },
+  "biome": {
+    "changedFiles": 12,
+    "rawDefault": {
+      "passed": false,
+      "formattingFiles": 12
+    },
+    "crlfDefault": {
+      "passed": false,
+      "formattingFiles": 8
+    },
+    "explicitWebapp100column10files": {
+      "passed": true,
+      "warnings": 1
+    },
+    "explicitNavigation100column2files": {
+      "passed": false,
+      "formattingFiles": 2
+    },
+    "explicitLintImport12files": {
+      "passed": true,
+      "warnings": 1
+    },
+    "noFixesApplied": true
+  },
+  "doctor": {
+    "files": 9,
+    "errors": 0,
+    "warnings": 2,
+    "score": null,
+    "inheritedWorkerScore": 92,
+    "noSuppressionOrConfigEdits": true
+  },
+  "preservation": {
+    "priorVerifiedAncestors": 32,
+    "verifiedAncestors": [
+      {
+        "issue": 1693,
+        "verifiedCommit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5"
+      },
+      {
+        "issue": 1694,
+        "verifiedCommit": "382b8f5be837dad724d3a54274d3050b0104881f"
+      },
+      {
+        "issue": 1695,
+        "verifiedCommit": "bfacad421ffe77f50729ea5895c546698ef28383"
+      },
+      {
+        "issue": 1853,
+        "verifiedCommit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211"
+      },
+      {
+        "issue": 1700,
+        "verifiedCommit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde"
+      },
+      {
+        "issue": 1701,
+        "verifiedCommit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc"
+      },
+      {
+        "issue": 1820,
+        "verifiedCommit": "996074d9fcbbaeb956a1b7316f914052d8c24733"
+      },
+      {
+        "issue": 1702,
+        "verifiedCommit": "416c04fc1b65f798422ddeecb8413249b064f715"
+      },
+      {
+        "issue": 1703,
+        "verifiedCommit": "2bc30e88f63d9db3d547353f49077db0c0ee7805"
+      },
+      {
+        "issue": 1704,
+        "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+      },
+      {
+        "issue": 1705,
+        "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+      },
+      {
+        "issue": 1706,
+        "verifiedCommit": "62f92f0447a35b30b9806bca0a480f03a8f3c896"
+      },
+      {
+        "issue": 1707,
+        "verifiedCommit": "6fa8147fae492939056a76e83e327e520d921ae1"
+      },
+      {
+        "issue": 1708,
+        "verifiedCommit": "3f86b1d7e17025e89f314638a042aa1eed378ed1"
+      },
+      {
+        "issue": 1709,
+        "verifiedCommit": "97ecd83ca05ad1bab75fee84beed57f23e74c007"
+      },
+      {
+        "issue": 1710,
+        "verifiedCommit": "273320a9376b4deb60b57ba3882fc17b37ae308a"
+      },
+      {
+        "issue": 1711,
+        "verifiedCommit": "3a0274c800d218689dbe3f235184e40ab15ebbeb"
+      },
+      {
+        "issue": 1712,
+        "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+      },
+      {
+        "issue": 1713,
+        "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+      },
+      {
+        "issue": 1714,
+        "verifiedCommit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10"
+      },
+      {
+        "issue": 1715,
+        "verifiedCommit": "ad51efc8e2d39e062c8486b4ead15732c67acb30"
+      },
+      {
+        "issue": 1716,
+        "verifiedCommit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741"
+      },
+      {
+        "issue": 1717,
+        "verifiedCommit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784"
+      },
+      {
+        "issue": 1718,
+        "verifiedCommit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd"
+      },
+      {
+        "issue": 1719,
+        "verifiedCommit": "a9b472e5864f386d881604605d593cffc189d61a"
+      },
+      {
+        "issue": 1821,
+        "verifiedCommit": "f53de8d531fa49b70afe72a722ce3588a477d0d8"
+      },
+      {
+        "issue": 1822,
+        "verifiedCommit": "984436c44a2c44bbe99e22fb23c4dbb108534e83"
+      },
+      {
+        "issue": 1823,
+        "verifiedCommit": "65b74963b69e9536af5e862199fa43a8583473cc"
+      },
+      {
+        "issue": 1824,
+        "verifiedCommit": "fe2bed7cdcd268b59727f04fd8496730cdd21179"
+      },
+      {
+        "issue": 1825,
+        "verifiedCommit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c"
+      },
+      {
+        "issue": 1826,
+        "verifiedCommit": "40492f6233feecfac214813f28e2f1f26b3175b2"
+      },
+      {
+        "issue": 1745,
+        "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+      }
+    ],
+    "criticalAncestors": [
+      "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "4255ef7d6565d103a4b0887812b751db5bd08ad9",
+      "7fed18b191760826b1076de827ff9de27f026ea9",
+      "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+      "ccccad7a3512924e01941054f01283057dd62f00",
+      "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+      "6bdb48cfb90421f45d6e2da2dc9182f8a2a0ba24",
+      "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f"
+    ],
+    "priorRolloutPathsUnchanged": 1455,
+    "unaffectedPriorPathsUnchanged": 11674,
+    "incomingChangedPathsMatch": 84,
+    "noDeletion": true,
+    "sourcePaths": [
+      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx",
+      "apps/webapp/src/components/personnel-file/document-dialog.tsx",
+      "apps/webapp/src/components/personnel-file/document-list.tsx",
+      "apps/webapp/src/components/personnel-file/document-request-list.tsx",
+      "apps/webapp/src/components/personnel-file/my-documents-list.tsx",
+      "apps/webapp/src/components/personnel-file/my-documents-retry.tsx",
+      "apps/webapp/src/components/personnel-file/my-documents-scope.tsx",
+      "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "apps/webapp/src/components/personnel-file/requested-documents.tsx",
+      "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "serverAuthStorageSchemaSharedAndMfaSourcesUnchanged": true,
+    "bothHeadingOptinsPreserved": true,
+    "staticInventory": {
+      "persistentPages": 153,
+      "aliases": 19,
+      "sourceTemplates": 172,
+      "aliasesUnchangedFromInitialDev": 19
+    },
+    "archives": "Archive/static source inspection only; MFA source pins/threePNG/41-257 proof preserved, no fresh runtime or alias behavior pass.",
+    "allMfaCorrectionSourcesAndEvidencePreserved": true
+  },
+  "artifacts": {
+    "jsons": 25,
+    "scripts": 12,
+    "pngs": 22,
+    "links": 46,
+    "sourcePins": 20
+  },
+  "sourceReview": {
+    "admission": "Current personnel-file access and own-upload capability independently resolved with current employee/self id; own records and requests filter active organization+employee; no manager/officer implicit employee/officer authority.",
+    "visibility": "Shared own records only; HR-only renewed documents/content still filtered by unchanged domain visibility owner; download/preview remain private,no-store,nosniff,sandbox and storage checksum/size checked.",
+    "upload": "Only certificate/other for ordinary own upload; fixed shared visibility; request category locked/defaulted; existing PDF/JPEG/PNG/WebP20MB validation and metadata rules; native duplicate/pending close guard, retained file/error and retry. Uploaded documents enter personnel file immediately; no cancellation/return deletion.",
+    "requests": "Open requests sorted by Temporal.PlainDate deadline; remaining statuses, pending records, submissions,note,full history retained; no accept/return/cancel officer controls. Optional note2000chars and requestID/version preserved; inline refusal/throw retains input; conflict refresh uses fresh version.",
+    "staleScope": "Client boundary removes old user/org/employee subtree/tasks; unchanged server active-organization/target authorization refuses stale payloads. Worker actually held old read across real organization switch and revoked feature while upload panel open; those observations are inherited.",
+    "composition": "Parallel page reads, stable record IDs, F1PageHeader, F2toolbar actions/filter slots, complete existing records, F3ActionPanel/TanStack/shortconfirmation. Local immediate category filter semantics retained; no new query/search/sort/paging/storage owner.",
+    "heading": "Incoming exact/my-documents heading opt-in retained; every baseline app heading opt-in byte-preserved. Standalone license and MFA heading sources unchanged.",
+    "qualitySkills": [
+      "vercel-react-best-practices",
+      "vercel-composition-patterns",
+      "web-design-guidelines current official source",
+      "react-doctor",
+      "security-review"
+    ]
+  },
+  "findings": [
+    {
+      "kind": "source-review",
+      "severity": "none",
+      "finding": "No new blocking application-code defect found in the reviewed12-file delta. Own current employee admission, shared-only own records, category-scoped officer rules, org/target authorization, request locks/version checks and storage identity verification remain unchanged server owners."
+    },
+    {
+      "kind": "archived-layout",
+      "severity": "acceptance-limit",
+      "files": [
+        "before-desktop.png",
+        "after-desktop.png",
+        "final-desktop.png",
+        "before-wide-dark.png",
+        "after-wide-dark.png",
+        "final-wide-dark.png"
+      ],
+      "finding": "Canonical desktop/wide images visibly obscure the first letters/left edge of headings and request content beneath the expanded sidebar. Present before and after; no fresh current runtime or cause established. Operational upload/conflict captures align content correctly. Do not accept these canonical images as unconditional settled desktop-layout proof."
+    },
+    {
+      "kind": "archived-tooling",
+      "severity": "acceptance-limit",
+      "finding": "Floating development/Pets controls overlap bottom-right content/actions in some phone/panel captures. Rendering/progress layers remain visible. PNG completeness, no document overflow and source pins do not establish transition completion or physical-device pointer accessibility."
+    },
+    {
+      "kind": "supplemental-repeat",
+      "severity": "retained-failure",
+      "finding": "Supplemental scope/read/locale source-pinned capture repeat failed at navigation/screenshot/context boundaries. Earlier successful scope/read JSON is byte-identical to implementation commit and report-attested source provenance. locale.json is failed with empty captures; German-content PNGs had English html.lang and are not translated-UI acceptance."
+    },
+    {
+      "kind": "formatting",
+      "severity": "qualification",
+      "finding": "Raw default profile fails12 formatting files; CRLF-aware default fails8 formatting files. Explicit webapp100column CRLF10consumer/test files pass with one inherited unused private-image suppression warning; explicit100column CRLF2navigation files fail formatting. Explicit lint/import across12files passes with same warning. No files normalized or fixed."
+    },
+    {
+      "kind": "whitespace",
+      "severity": "qualification",
+      "finding": "Application-source diff --check passes. Whole merge diff --check exits2 with159 archived trailing-whitespace/new-EOF diagnostics across9incoming evidence paths (including actions.mjs:40). Raw source/evidence bytes preserved."
+    },
+    {
+      "kind": "doctor",
+      "severity": "qualification",
+      "finding": "Fresh9production-file scan:0errors/2warnings, numeric score null in JSON. no-prevent-default is required by client TanStack/TUS upload; submit confirmation explicitly prevents default before handleSubmit, so detector warning is false positive. Worker92/100 remains historical, not a fresh numeric pass."
+    }
+  ],
+  "blockers": [],
+  "limitations": [
+    "No fresh browser/Next/nativeReact/PostgreSQL/services/provider requests,full production build,remote catalogs,deployment by merger.",
+    "Worker PG6/112 and real upload/download/submission/action21+variant17 are inherited. Do not add overlap or call them fresh.",
+    "Archived canonical desktop/wide clipping and developer-control overlap prevent unqualified settled layout/pointer acceptance.",
+    "Supplemental scope/read/locale repeat remains failed; earlier scope/read observations report-attested; German content wrapping not translated UI acceptance.",
+    "Maxfile20MBboundary/former/noemployee paths remain existing domain/PG evidence; no fresh exhaustive live-file/lifecycle exercise.",
+    "True browser zoom,24px,physical/store wrappers,exhaustive screen-reader/highcontrast,full provider flows,transition completion,remote Tolgee sync remain unpassed."
+  ],
+  "commands": {
+    "exact": [
+      {
+        "name": "exact",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/personnel-file",
+          "src/lib/personnel-file",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/alert-dialog.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/data-table-server/data-table-toolbar.test.tsx",
+          "src/components/licenses",
+          "src/components/organization-mfa",
+          "src/app/[locale]/(auth)/licenses/report.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1720-audit/exact.json"
+        ],
+        "startedAt": "2026-11-15T10:36:17.584Z",
+        "finishedAt": "2026-11-15T10:36:32.638Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1720-audit/exact.log"
+      }
+    ],
+    "compatibility": [
+      {
+        "name": "compatibility",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/personnel-file",
+          "src/lib/personnel-file",
+          "src/app/[locale]/(app)/personnel-files/actions.prerender.test.ts",
+          "src/app/[locale]/(app)/settings/personnel-files/actions.test.ts",
+          "src/components/absences/sick-notes/use-staged-sick-note-uploads.test.ts",
+          "src/app/[locale]/(app)/team/absences/record-absence-dialog.sick-notes.test.tsx",
+          "src/lib/upload/tus-url.test.ts",
+          "src/lib/upload/tus-ownership.test.ts",
+          "src/app/api/tenant-mutation-scope.test.ts",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/alert-dialog.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/ui/loading-region.test.tsx",
+          "src/components/data-table-server",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/sidebar-feedback.test.tsx",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/ui/sidebar-hydration.test.tsx",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "src/components/font-size-preference.test.tsx",
+          "src/components/font-size-toggle.test.tsx",
+          "src/components/theme-provider.test.tsx",
+          "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "src/components/shells/app-frame-loading.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1720-audit/compatibility.json"
+        ],
+        "startedAt": "2026-11-15T10:36:35.278Z",
+        "finishedAt": "2026-11-15T10:36:57.922Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1720-audit/compatibility.log"
+      }
+    ],
+    "types": [
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "startedAt": "2026-11-15T10:36:35.275Z",
+        "finishedAt": "2026-11-15T10:37:13.443Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1720-audit/types.log"
+      }
+    ],
+    "biome": [
+      {
+        "name": "biome-default",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "src/app/[locale]/(app)/my-documents/page.tsx",
+          "src/components/personnel-file/document-dialog.tsx",
+          "src/components/personnel-file/document-list.tsx",
+          "src/components/personnel-file/document-request-list.tsx",
+          "src/components/personnel-file/my-documents-list.tsx",
+          "src/components/personnel-file/my-documents-retry.tsx",
+          "src/components/personnel-file/my-documents-scope.tsx",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/components/personnel-file/requested-documents.tsx",
+          "src/components/personnel-file/submit-document-request-dialog.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:36:35.275Z",
+        "finishedAt": "2026-11-15T10:36:35.521Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1720-audit/biome-default.log"
+      },
+      {
+        "name": "biome-current-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/my-documents/page.tsx",
+          "src/components/personnel-file/document-dialog.tsx",
+          "src/components/personnel-file/document-list.tsx",
+          "src/components/personnel-file/document-request-list.tsx",
+          "src/components/personnel-file/my-documents-list.tsx",
+          "src/components/personnel-file/my-documents-retry.tsx",
+          "src/components/personnel-file/my-documents-scope.tsx",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/components/personnel-file/requested-documents.tsx",
+          "src/components/personnel-file/submit-document-request-dialog.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:36:35.522Z",
+        "finishedAt": "2026-11-15T10:36:35.699Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1720-audit/biome-current-crlf.log"
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/my-documents/page.tsx",
+          "src/components/personnel-file/document-dialog.tsx",
+          "src/components/personnel-file/document-list.tsx",
+          "src/components/personnel-file/document-request-list.tsx",
+          "src/components/personnel-file/my-documents-list.tsx",
+          "src/components/personnel-file/my-documents-retry.tsx",
+          "src/components/personnel-file/my-documents-scope.tsx",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/components/personnel-file/requested-documents.tsx",
+          "src/components/personnel-file/submit-document-request-dialog.tsx"
+        ],
+        "startedAt": "2026-11-15T10:36:35.700Z",
+        "finishedAt": "2026-11-15T10:36:35.861Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1720-audit/biome-explicit-webapp.log"
+      },
+      {
+        "name": "biome-explicit-navigation",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:36:35.861Z",
+        "finishedAt": "2026-11-15T10:36:36.086Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1720-audit/biome-explicit-navigation.log"
+      },
+      {
+        "name": "biome-explicit-lint-import",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--formatter-enabled=false",
+          "src/app/[locale]/(app)/my-documents/page.tsx",
+          "src/components/personnel-file/document-dialog.tsx",
+          "src/components/personnel-file/document-list.tsx",
+          "src/components/personnel-file/document-request-list.tsx",
+          "src/components/personnel-file/my-documents-list.tsx",
+          "src/components/personnel-file/my-documents-retry.tsx",
+          "src/components/personnel-file/my-documents-scope.tsx",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/components/personnel-file/requested-documents.tsx",
+          "src/components/personnel-file/submit-document-request-dialog.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:36:36.087Z",
+        "finishedAt": "2026-11-15T10:36:36.272Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1720-audit/biome-explicit-lint-import.log"
+      }
+    ],
+    "doctor": [
+      {
+        "name": "doctor",
+        "command": [
+          "pnpm",
+          "exec",
+          "react-doctor",
+          "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx",
+          "apps/webapp/src/components/personnel-file/document-dialog.tsx",
+          "apps/webapp/src/components/personnel-file/document-list.tsx",
+          "apps/webapp/src/components/personnel-file/document-request-list.tsx",
+          "apps/webapp/src/components/personnel-file/my-documents-list.tsx",
+          "apps/webapp/src/components/personnel-file/my-documents-retry.tsx",
+          "apps/webapp/src/components/personnel-file/my-documents-scope.tsx",
+          "apps/webapp/src/components/personnel-file/requested-documents.tsx",
+          "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx",
+          "--verbose",
+          "--no-supply-chain",
+          "--no-cache",
+          "--no-telemetry",
+          "--json",
+          "--json-out",
+          ".tmp/merge1720-audit/doctor.json"
+        ],
+        "startedAt": "2026-11-15T10:37:05.678Z",
+        "finishedAt": "2026-11-15T10:37:07.686Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1720-audit/doctor.log"
+      }
+    ],
+    "merge": [
+      {
+        "command": [
+          "git",
+          "merge-tree",
+          "--write-tree",
+          "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+          "6bdb48cfb90421f45d6e2da2dc9182f8a2a0ba24"
+        ],
+        "exitCode": 0,
+        "tree": "a0bfa5d62d57254bff7c34b169908d2e250ee3d1"
+      },
+      {
+        "command": [
+          "git",
+          "merge",
+          "--no-ff",
+          "6bdb48cfb90421f45d6e2da2dc9182f8a2a0ba24",
+          "-m",
+          "Merge employee documents refresh (#1720)"
+        ],
+        "exitCode": 0,
+        "commit": "0a8247f6517714f2f51a74aa60f81914fa61771d",
+        "parents": [
+          "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+          "6bdb48cfb90421f45d6e2da2dc9182f8a2a0ba24"
+        ]
+      }
+    ],
+    "audits": [
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1720-audit/audit.mjs"
+        ],
+        "exitCode": 0,
+        "scope": "Read-only source/archive JSON/script/link/20sourcepin/22fullPNGdecode/fontdimension checks; output ignored only."
+      },
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1720-audit/test-summary.mjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1720-audit/check-archives.mjs"
+        ],
+        "exitCode": 0,
+        "checks": [
+          {
+            "name": "r019-historical",
+            "exitCode": 0,
+            "command": [
+              "pnpm",
+              "node",
+              "docs/design/rollout-1692/1717/verify-evidence.mjs"
+            ],
+            "output": "Verified matched scope/viewport/row/title evidence, retained raw hashes against captured source f043d581e481a984a54da81b967bf5e6cfdfcd5e, 24 core + 11 final variant assertions, retained historical messages, native tree and Next diagnostics. This does not constitute a fresh browser run."
+          },
+          {
+            "name": "r021-current",
+            "exitCode": 0,
+            "command": [
+              "pnpm",
+              "node",
+              "docs/design/rollout-1692/1719/verify-evidence.mjs",
+              "--current-source"
+            ],
+            "output": "{\"matchedPairs\":3,\"retainedRows\":3,\"runtimeAssertions\":28,\"preferenceAssertions\":6,\"pinnedSource\":\"412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150\",\"currentSource\":true}"
+          },
+          {
+            "name": "equipment-recovery",
+            "exitCode": 0,
+            "command": [
+              "pnpm",
+              "node",
+              "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+            ],
+            "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+          },
+          {
+            "name": "calendar-route-arrivals",
+            "exitCode": 0,
+            "command": [
+              "pnpm",
+              "node",
+              "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+            ],
+            "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+          },
+          {
+            "name": "mfa-continuations-preservation",
+            "exitCode": 0,
+            "command": [
+              "pnpm",
+              "node",
+              "docs/design/rollout-1692/1826/root-continuations/verify-evidence.mjs",
+              "--current-source"
+            ],
+            "output": "Verified MFA lifetime/social red cases,41/257 final tests,actual held-success/current-action/invalid-code observations,source pins,three fully decoded captures and cleanup. Cached Activity is assembled-only; this archive check is not a new runtime run."
+          },
+          {
+            "name": "route-inventory",
+            "exitCode": 0,
+            "command": [
+              "pnpm",
+              "node",
+              "docs/design/rollout-1692/verify-route-inventory.mjs",
+              ".",
+              "HEAD",
+              ".tmp/merge1720-audit/route-inventory.json"
+            ],
+            "output": "{\"commit\":\"0a8247f6517714f2f51a74aa60f81914fa61771d\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+          }
+        ]
+      },
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1720-audit/whitespace.mjs"
+        ],
+        "exitCode": 0,
+        "checks": [
+          {
+            "scope": "whole-diff",
+            "command": [
+              "git",
+              "diff",
+              "--check",
+              "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+              "HEAD"
+            ],
+            "exitCode": 2,
+            "files": {
+              "docs/design/rollout-1692/1720/actions.mjs": 1,
+              "docs/design/rollout-1692/1720/biome-crlf-default.txt": 63,
+              "docs/design/rollout-1692/1720/biome-default.txt": 75,
+              "docs/design/rollout-1692/1720/biome-explicit-crlf.txt": 13,
+              "docs/design/rollout-1692/1720/biome-explicit-lint-import.txt": 2,
+              "docs/design/rollout-1692/1720/biome-explicit.txt": 2,
+              "docs/design/rollout-1692/1720/combined-postgres.txt": 1,
+              "docs/design/rollout-1692/1720/combined-unit.txt": 1,
+              "docs/design/rollout-1692/1720/unit.txt": 1
+            },
+            "diagnosticLines": 159
+          },
+          {
+            "scope": "application-source",
+            "command": [
+              "git",
+              "diff",
+              "--check",
+              "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+              "HEAD",
+              "--",
+              "apps/webapp/src"
+            ],
+            "exitCode": 0,
+            "files": {},
+            "diagnosticLines": 0
+          }
+        ]
+      }
+    ]
+  },
+  "harnessNotes": [
+    "Initial sandboxed merge-tree could not write shared Git objects; authorized escalation succeeded.",
+    "First ignored audit assumed /licenses used app-shell heading metadata; corrected validator to verify incoming/my-documents and byte-preserve every baseline app heading. Standalone/license/MFA sources unchanged.",
+    "First ignored test-summary expected original45files; actual46includes new root verification-lifetime test file6cases. Corrected summary explicitly verifies original45/263 subset plus6root regressions.",
+    "Late pnpm audit invocation hit shared engine-store lock restriction; authorized existing-install execution succeeded. No dependencies/manifests/lockfiles changed."
+  ],
+  "ownership": {
+    "trackedSourceReportLedgerEvidenceEditsByMerger": 0,
+    "servicesOrBrowserContextsStarted": 0,
+    "packageProcessesRemaining": 0,
+    "rootRetains": "Source fixes/reports/ledger/README/remote publication/readiness. No push/PR/tracker/devmerge/deployment by merger.",
+    "release": "RELEASE exclusive root checkout mutation and package-process ownership to root."
+  }
+}

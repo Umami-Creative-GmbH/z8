@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Aktivan",
+      "contextRetry": "Osvježite kontekst organizacije da biste nastavili.",
+      "contextUnavailable": "Kontekst organizacije nije dostupan",
+      "copyFailed": "Nije moguće kopirati ključ. Pokušajte ponovno.",
       "copyKey": "Kopiraj API ključ",
       "copyPrefix": "Kopiraj prefiks",
       "create": "Stvori ključ",
@@ -9,6 +12,7 @@
       "createdBy": "od {name}",
       "createDescription": "Stvorite novi API ključ za programski pristup. Ključ će biti prikazan samo jednom.",
       "createdOn": "Stvoreno {date}",
+      "createFailed": "Nije moguće potvrditi stvaranje ključa. Osvježite popis prije ponovnog pokušaja.",
       "createTitle": "Stvori API ključ",
       "creatorDeparted": "Bivši zaposlenik",
       "deleted": "API ključ je izbrisan",
@@ -24,6 +28,8 @@
         "creator": "Izradio/la",
         "creatorDeparted": "{name} (bivši zaposlenik)",
         "ip": "IP adresa",
+        "kind": "API ključ",
+        "loading": "Učitavanje API ključa",
         "noRateLimit": "Isključeno",
         "noRequests": "Nema zahtjeva u posljednjih 90 dana.",
         "rateLimit": "Ograničenje broja zahtjeva",
@@ -80,13 +86,19 @@
         "scopes": "Dozvole",
         "scopesRequired": "Odaberite barem jednu dozvolu"
       },
+      "hideKey": "Sakrij ključ",
       "keyCopied": "API ključ kopiran je u međuspremnik",
+      "keyHidden": "Ključ je skriven",
       "lastUsed": "Zadnje korišteno",
+      "loading": "Učitavanje API ključeva",
       "name": "Naziv",
       "neverExpires": "Nikada ne istječe",
       "noPermissions": "Nema dopuštenja",
       "prefix": "Prefiks ključa",
       "prefixCopied": "Prefiks ključa kopiran",
+      "retryHelp": "Osvježite ovaj popis da biste potvrdili trenutačne ključeve. Prethodno učitani zapisi ostaju sačuvani.",
+      "revealKey": "Otkrij ključ",
+      "revokeUnknown": "Nije moguće potvrditi opoziv. Osvježite popis prije ponovnog pokušaja.",
       "scopeLabel": {
         "absencesRead": "Čitanje odsutnosti",
         "absencesReadHealth": "Čitanje zdravstvenih pojedinosti odsutnosti",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Važno:",
       "status": "Status",
       "title": "API ključevi",
+      "unavailable": "API ključevi nisu dostupni",
+      "unavailableDescription": "Nije moguće učitati vaše postavke. Pokušajte ponovno da biste osvježili ovu stranicu.",
+      "unavailableTitle": "Pristup za razvojne programere nije dostupan",
       "unknownCreator": "bivši administrator",
       "updated": "API ključ je ažuriran",
+      "updateUnknown": "Nije moguće potvrditi ažuriranje. Osvježite ovaj ključ prije ponovnog pokušaja.",
       "usage": "Iskorišteno {count} od {max} ključeva"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Zadani URL-ovi",
         "defaultUrlsDescription": "Ovi URL-ovi kojima upravlja platforma rade automatski bez prilagođenog postavljanja DNS-a.",
         "deleteAria": "Izbriši prilagođenu domenu {domain}",
+        "deleteConfirm": "Izbriši domenu",
         "deleted": "Domena je izbrisana",
         "deleteDescription": "Jeste li sigurni da želite izbrisati „{domain}”? Ova se radnja ne može poništiti. Korisnici se više neće moći prijaviti putem ove prilagođene domene.",
         "deleteFailed": "Brisanje domene nije uspjelo",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Ostavite prazno kako biste zadržali postojeći ključ. Preuzmite svoj API ključ s resend.com",
         "create": "Izradi konfiguraciju",
         "delete": "Izbriši konfiguraciju",
-        "deleteConfirm": "Jeste li sigurni da želite izbrisati ovu konfiguraciju e-pošte?",
+        "deleteConfirmNamed": "Izbrisati konfiguraciju e-pošte za {fromEmail}? E-pošta organizacije ponovno će upotrebljavati zadanog pošiljatelja sustava.",
         "deleted": "Konfiguracija e-pošte je izbrisana",
         "deleteFailed": "Brisanje nije uspjelo",
+        "deleteTitle": "Izbrisati konfiguraciju e-pošte?",
         "description": "Konfigurirajte prilagođenog pružatelja usluga e-pošte za svoju organizaciju. Sve poruke e-pošte organizacije koristit će ovu konfiguraciju umjesto zadane postavke sustava.",
         "fromEmail": "E-pošta pošiljatelja",
         "fromName": "Ime pošiljatelja",
@@ -356,10 +374,9 @@
           "title": "Domena"
         },
         "hero": {
-          "description": "Konfigurirajte SSO, SCIM i obaveznu primjenu za organizaciju {organizationId} uz zaštićenu aktivaciju.",
-          "eyebrow": "Poslovni identitet",
           "title": "Kontrolni popis operativnih naredbi"
         },
+        "progress": "{completed} od {total} koraka dovršeno",
         "provider": {
           "action": {
             "save": "Spremi davatelja"
@@ -453,7 +470,6 @@
           },
           "description": "SCIM provjera ažurira se nakon što vaš davatelj identiteta pošalje testnog korisnika ili promjenu grupe.",
           "dialog": {
-            "cancel": "Odustani",
             "decommission": {
               "description": "Ovo trajno stavlja izvan pogona SCIM dodjelu resursa i ne može se poništiti.",
               "title": "Stavi SCIM izvan pogona"
@@ -602,6 +618,7 @@
         "deleteError": "Brisanje OAuth konfiguracije nije uspjelo",
         "description": "Konfigurirajte vlastite OAuth vjerodajnice za prijavu putem društvenih mreža. To omogućuje vašim korisnicima prijavu putem OAuth aplikacija vaše organizacije umjesto dijeljenih vjerodajnica.",
         "developerConsole": "{provider} razvojna konzola",
+        "editAria": "Uredi prijavu za {provider}",
         "editDescription": "Ažurirajte svoje OAuth vjerodajnice.",
         "editTitle": "Uredi {provider} OAuth",
         "empty": "Nema konfiguriranih prilagođenih društvenih OAuth pružatelja.",
@@ -616,9 +633,11 @@
         "keyId": "ID ključa",
         "pasteYourP8PrivateKeyContents": "Zalijepite sadržaj svog privatnog .p8 ključa",
         "privateKey": "Privatni ključ (.p8)",
+        "removeAria": "Ukloni prijavu za {provider}",
         "removed": "{provider} OAuth je uklonjen",
         "removeDialogDescription": "Jeste li sigurni da želite ukloniti ovu OAuth konfiguraciju? Korisnici će se vratiti na dijeljene OAuth vjerodajnice (ako su dostupne).",
         "removeDialogTitle": "Ukloni društvenog OAuth pružatelja",
+        "removeDialogTitleNamed": "Ukloniti prijavu za {provider}?",
         "teamId": "ID tima",
         "title": "Pružatelji prijave putem društvenih mreža",
         "unverified": "Nepotvrđeno",
@@ -629,8 +648,9 @@
         "addError": "Dodavanje SSO pružatelja nije uspjelo",
         "addSuccess": "SSO pružatelj je uspješno dodan",
         "addTitle": "Dodaj SSO pružatelja",
+        "deleteConfirm": "Izbriši davatelja",
         "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovog SSO pružatelja? Korisnici se više neće moći prijaviti putem ovog pružatelja identiteta.",
-        "deleteDialogTitle": "Izbriši SSO pružatelja",
+        "deleteDialogTitleNamed": "Izbrisati SSO davatelja {provider}?",
         "deleteError": "Brisanje SSO pružatelja nije uspjelo",
         "deleteProviderAria": "Izbriši SSO pružatelja {provider}",
         "deleteSuccess": "SSO pružatelj je izbrisan",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Korisnici s ovom domenom e-pošte moći će koristiti SSO",
         "empty": "Još nema konfiguriranih SSO pružatelja.",
         "emptyDescription": "Dodajte OIDC pružatelja kako biste omogućili poslovnu jednokratnu prijavu (SSO).",
+        "generateToken": "Generiraj TXT token",
         "guide": {
           "addDescription": "Slijedite upute za postavljanje davatelja usluge, a zatim ga povežite sa svojom organizacijom.",
           "afterSave": "Nakon spremanja potvrdite svoju domenu e-pošte pomoću DNS TXT zapisa u Z8. Isprobajte prijavu s predviđenim korisnikom dok vam je trenutna administratorska sesija otvorena. U vođenom postavljanju spremite isti ID davatelja usluge i domenu e-pošte koji su prikazani na popisu davatelja usluga, a zatim ručno zabilježite uočeni rezultat prijave prije nego što razmotrite opciju Obavezan SSO. Spremanje i DNS provjera ne jamče uspješnu prijavu.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Jedinstveni identifikator za ovog pružatelja (mala slova, bez razmaka)",
         "providerIdInvalid": "ID pružatelja smije sadržavati samo mala slova, brojeve i spojnice",
         "title": "Pružatelji identiteta",
-        "token": "Token",
         "tokenError": "Generiranje tokena za verifikaciju domene nije uspjelo",
         "tokenGenerated": "Verifikacijski token je generiran",
         "txtToken": "TXT token:",

@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Aktionen für {endpoint}",
+    "command-unknown": "Der Befehl konnte nicht bestätigt werden. Aktualisieren Sie diesen Endpunkt, bevor Sie es erneut versuchen.",
     "copy-failed": "Kopieren in die Zwischenablage fehlgeschlagen",
     "create": "Webhook hinzufügen",
     "create-failed": "Erstellen des Webhooks fehlgeschlagen",
     "delete-confirm": {
       "description": "Dies löscht den Webhook-Endpunkt und den gesamten Zustellungsverlauf dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "title": "Webhook löschen?"
+      "title-named": "Webhook {name} löschen?"
     },
     "deleted": "Webhook gelöscht",
-    "delete-failed": "Löschen des Webhooks fehlgeschlagen",
     "deliveries": "Zustellungen",
-    "description": "Konfigurieren Sie Webhook-Endpunkte, um Echtzeit-Benachrichtigungen zu erhalten, wenn Ereignisse in Ihrer Organisation auftreten.",
     "disabled": "Webhook deaktiviert",
     "empty": {
       "description": "Erstellen Sie Ihren ersten Webhook, um Ereignisbenachrichtigungen zu erhalten.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Erfolgreich",
       "time": "Zeit",
-      "title": "Zustellungsprotokolle"
+      "title": "Zustellungsprotokolle",
+      "toggle-details": "Details zu {event} um {time}"
     },
-    "regenerate-failed": "Geheimnis konnte nicht neu generiert werden",
     "regenerate-secret": "Geheimnis neu generieren",
+    "retry-help": "Aktualisieren Sie diese Liste, um die aktuellen Endpunkte zu bestätigen. Zuvor geladene Datensätze bleiben erhalten.",
     "secret-copied": "Geheimnis in die Zwischenablage kopiert",
     "secret-dialog": {
       "copy-secret": "Geheimnis in die Zwischenablage kopieren",
@@ -78,14 +79,15 @@
       "degraded": "Eingeschränkt",
       "failing": "Fehlerhaft",
       "healthy": "Fehlerfrei",
-      "inactive": "Inaktiv"
+      "inactive": "Inaktiv",
+      "untried": "Noch keine Zustellungen"
     },
     "success-rate": "Erfolgreich",
     "test": "Test senden",
-    "test-failed": "Test-Webhook konnte nicht gesendet werden",
-    "test-sent": "Test-Webhook gesendet",
+    "test-queued": "Test-Webhook in die Warteschlange eingereiht",
     "title": "Webhooks",
-    "toggle-active": "Webhook-Aktivierung umschalten",
+    "toggle-active-named": "Aktiv: {endpoint}",
+    "unavailable": "Webhooks nicht verfügbar",
     "updated": "Webhook aktualisiert",
     "update-failed": "Webhook konnte nicht aktualisiert werden",
     "view-logs": "Protokolle anzeigen"

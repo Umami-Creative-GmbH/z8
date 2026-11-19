@@ -1,0 +1,155 @@
+{
+  "identity": {
+    "head": "6f0d1079cb950c694699d71afd41628514bda495",
+    "integration": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "files": [
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+        "raw": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a",
+        "normalized": "e1f8cd9160686766e246a24975fc5d7cc82ff2a6045628c70115e692e024464a"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+        "raw": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e",
+        "normalized": "4ec21f454fecc51e5dc20444bf2b15d43ef49ed73f249a7bc0d74c1c5ed55b6e"
+      },
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+        "raw": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4",
+        "normalized": "cfd9dc8aba8379b5dfe3a011670c27dff84d6fa7f141e5b6fb255fa2b45b88b4"
+      },
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+        "raw": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0",
+        "normalized": "685596380175fa53bf361582b4a0aefa2a891f464664e8f5e6a1652d4c7959c0"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+        "raw": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9",
+        "normalized": "995916455eb8f1141e8ca2ddeeb7cdb613e16b4d1119939ba1ee0d5ac18846b9"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+        "raw": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2",
+        "normalized": "ee290de4f544ed48bdd4b8aac905c5c26eb8c9ad8a644ce93c7fc7bd5aa793b2"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+        "raw": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c",
+        "normalized": "8230cf875a718eca4afcebc711d2a4610cda4747adbf6b3f8dedad1a0831de8c"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+        "raw": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16",
+        "normalized": "bc904a8939fbc1815a44a392ebe3c49caf9792ec68b0aa097808ce79d4fdcd16"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+        "raw": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc",
+        "normalized": "2bb67b2c9b2d85cebdd25ca769dbf98180d1cfd3b6ee9f67426a2a6cc745d6fc"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+        "raw": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934",
+        "normalized": "6c1eeec2b77e4b2c54f16f4db918ff2c14c65d551f76bb2067635bf74888e934"
+      },
+      {
+        "file": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+        "raw": "1ce36fed2fc1aa4f7b66a90eeca0d074200ea2f7c1b8e2eb6abffc9a24b35d77",
+        "normalized": "214d416718a042b219542c5dd6d9f8c5c5d4413da5cf912375351e6e219bd32e"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/work-balance-actions.ts",
+        "raw": "5fe9d5bb482bb1f3320b353cda32db76aef78676199cdebd9b7eaca000227e6e",
+        "normalized": "f7dad3aebc63aa988ab13a5868e8dd8ca25e104407f34d47eac64965b5debdd2"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+        "raw": "2059589415f4ea05cf091d1a49626318ee27ac9615e5c1154638adf1d02fe031",
+        "normalized": "b5656bca1ebe06356d212f00ef4b1cf49327c1a39e35e91ad7ac238137ed71fd"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/store.ts",
+        "raw": "c490ccc7d2434b497c9383bb15f2e6e1a2d42f7ae63c8d7c164027e733f17128",
+        "normalized": "75112e8a7957febd8d98a0fa3d555e7907e09dd88c27a4c1c5a8eb185fa5acf7"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/authorization.ts",
+        "raw": "a537764cc7efaa39984ecb9114a120b52ece2fc68fc86be1d7c439c4bfa741e1",
+        "normalized": "f0ec3ff94819c3e9bfefcbe12afb7fc8de465d6e7673b2e6096de6e6f7ef091e"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/adjustments/rules.ts",
+        "raw": "ca899221459df11a6ef2a169b0a4d4ec78228bcd2dcc1a4ab9525e1d8115c4fe",
+        "normalized": "41bb468729109c197fd61abb847901c5076e5da84596ed0d4613a703cd1d1b88"
+      },
+      {
+        "file": "apps/webapp/src/lib/work-balance/service.ts",
+        "raw": "b86599fc2556c0805e890e22d91713cdbf7b65721158a013d6160d50d42ff66a",
+        "normalized": "38f369a260bca1e83d7b38d72d057235b678db0bb91eca1477339e1e0530cc07"
+      },
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa",
+        "normalized": "913ee9781f0611f7841aa40fd1e80b83ed024b0b3c37c8baf46994ac59f7fcfa"
+      }
+    ]
+  },
+  "checks": [
+    "exact before source overlay restored",
+    "desktop-light matched viewport and theme",
+    "desktop-light matched real ledger evidence count",
+    "desktop-light actual loaded fonts",
+    "desktop-light same app font family",
+    "matched-before desktop-light fully decoded PNG agrees with CSS viewport",
+    "matched-after desktop-light fully decoded PNG agrees with CSS viewport",
+    "phone-light matched viewport and theme",
+    "phone-light matched real ledger evidence count",
+    "phone-light actual loaded fonts",
+    "phone-light same app font family",
+    "matched-before phone-light fully decoded PNG agrees with CSS viewport",
+    "matched-after phone-light fully decoded PNG agrees with CSS viewport",
+    "wide-dark matched viewport and theme",
+    "wide-dark matched real ledger evidence count",
+    "wide-dark actual loaded fonts",
+    "wide-dark same app font family",
+    "matched-before wide-dark fully decoded PNG agrees with CSS viewport",
+    "matched-after wide-dark fully decoded PNG agrees with CSS viewport",
+    "phone-dark-large matched viewport and theme",
+    "phone-dark-large matched real ledger evidence count",
+    "phone-dark-large actual loaded fonts",
+    "phone-dark-large same app font family",
+    "matched-before phone-dark-large fully decoded PNG agrees with CSS viewport",
+    "matched-after phone-dark-large fully decoded PNG agrees with CSS viewport",
+    "real persisted large preference is 18px in both phases",
+    "final unit selection 154/0",
+    "final PostgreSQL 35/0",
+    "actual browser operations 14 plus recovery 8",
+    "native usable component tree and inspected target",
+    "preserved authoritative owner apps/webapp/src/app/[locale]/(app)/settings/employees/work-balance-actions.ts",
+    "preserved authoritative owner apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+    "preserved authoritative owner apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+    "preserved authoritative owner apps/webapp/src/lib/work-balance/service.ts",
+    "preserved authoritative owner apps/webapp/src/lib/work-balance/adjustments/store.ts",
+    "preserved authoritative owner apps/webapp/src/lib/work-balance/adjustments/rules.ts",
+    "preserved authoritative owner apps/webapp/src/lib/work-balance/adjustments/authorization.ts"
+  ],
+  "counts": {
+    "freshR044Client": 8,
+    "freshR044Page": 3,
+    "freshR044Postgres": 3,
+    "existingCompatibilityRerun": 143,
+    "existingPostgresRerun": 32,
+    "unitCombined": 154,
+    "postgresCombined": 35,
+    "browserOperations": 14,
+    "browserRecovery": 8
+  },
+  "limits": [
+    "Combined reruns overlap prior runs; never sum them.",
+    "Native tree is distinct from DOM and generic Done.",
+    "The fixture dev deployment ID remains its preparation commit; actual source commits/hashes above identify the tested code.",
+    "Before-overlay unused new modules remain on disk; baseline page does not import them.",
+    "Physical devices, true zoom, global transitions, providers, full static generation and remote catalogs remain unpassed."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "axeVersion": "4.12.1",
+  "counts": {
+    "inapplicable": 54,
+    "incomplete": 0,
+    "passes": 34,
+    "violations": 0
+  },
+  "scope": "main; manager /en/team/absences; phone390x844; saved18px; actual existing tab",
+  "violationIds": [],
+  "incompleteIds": [],
+  "nativeReact": "UNPASSED; original real native tree request timed out, daemon exited"
+}

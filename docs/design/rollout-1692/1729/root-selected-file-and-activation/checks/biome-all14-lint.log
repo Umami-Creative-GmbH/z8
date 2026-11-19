@@ -1,0 +1,14 @@
+src\components\personnel-file\document-list.tsx:37:3 suppressions/unused ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Suppression comment has no effect. Remove the suppression or make sure you are suppressing the correct rule.
+  
+    35 │ 	}
+    36 │ 	return (
+  > 37 │ 		// biome-ignore lint/performance/noImgElement: a private, access-checked preview, not an optimizable asset.
+       │ 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    38 │ 		<img
+    39 │ 			src={personnelDocumentUrl(document.id, { thumb: true })}
+  
+
+Checked 14 files in 7ms. No fixes applied.
+Found 1 warning.

@@ -1,0 +1,110 @@
+{
+  "mode": "parse only; never executing archived source",
+  "checks": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\baseline-legacy-draft-conversion.tsx.txt",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\baseline-travel-expense-claim-detail.tsx.txt",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\conversion-review.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\objections-attempt1.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\objections-attempt2.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\review1748-actual-consumers.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\review1748-assembled-objections.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\review1748-independent-baseline-conversion.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\review1748-independent-baseline-detail.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\review1748-original-conversion.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    },
+    {
+      "path": ".tmp\\review1748-both\\SAFE\\review1748-original-detail.test.tsx",
+      "parser": "@babel/parser 7.29.2",
+      "diagnostics": []
+    }
+  ]
+}

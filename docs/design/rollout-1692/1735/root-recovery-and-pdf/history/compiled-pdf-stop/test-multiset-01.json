@@ -1,0 +1,235 @@
+{
+  "freshPublicUniqueCases": 9,
+  "attempts": [
+    {
+      "attempt": "02",
+      "physicalFiles": 1,
+      "passed": 5,
+      "failed": 4,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+          "status": "failed",
+          "failureFirstLine": "TestingLibraryElementError: Unable to find an accessible element with the role \"button\" and name \"Retryingâ€¦\""
+        },
+        {
+          "name": "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "failed",
+          "failureFirstLine": "TestingLibraryElementError: Unable to find an accessible element with the role \"combobox\" and name \"Employee\""
+        },
+        {
+          "name": "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "failed",
+          "failureFirstLine": "TestingLibraryElementError: Unable to find an accessible element with the role \"combobox\" and name \"Employee\""
+        },
+        {
+          "name": "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry success and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+          "status": "failed",
+          "failureFirstLine": "Error: Test timed out in 5000ms."
+        },
+        {
+          "name": "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects",
+          "status": "passed",
+          "failureFirstLine": null
+        }
+      ]
+    },
+    {
+      "attempt": "03",
+      "physicalFiles": 1,
+      "passed": 8,
+      "failed": 1,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry success and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+          "status": "failed",
+          "failureFirstLine": "Error: Test timed out in 5000ms."
+        },
+        {
+          "name": "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects",
+          "status": "passed",
+          "failureFirstLine": null
+        }
+      ]
+    },
+    {
+      "attempt": "04",
+      "physicalFiles": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 8,
+      "cases": [
+        {
+          "name": "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry success and preserves exact peer cache",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+          "status": "skipped",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+          "status": "failed",
+          "failureFirstLine": "Error: Test timed out in 5000ms."
+        },
+        {
+          "name": "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects",
+          "status": "skipped",
+          "failureFirstLine": null
+        }
+      ]
+    },
+    {
+      "attempt": "05",
+      "physicalFiles": 1,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry success and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+          "status": "passed",
+          "failureFirstLine": null
+        },
+        {
+          "name": "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects",
+          "status": "passed",
+          "failureFirstLine": null
+        }
+      ]
+    }
+  ],
+  "declaredSlots": 36,
+  "executedOccurrences": 28,
+  "passedOccurrences": 22,
+  "failedHarnessOccurrences": 6,
+  "skippedFilterOccurrences": 8,
+  "finalAttempt": {
+    "attempt": "05",
+    "physicalFiles": 1,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nonadditiveToParentUnitSuite": true,
+  "defaultTimeoutMs": 5000
+}

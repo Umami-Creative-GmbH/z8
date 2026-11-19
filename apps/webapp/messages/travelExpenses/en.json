@@ -96,21 +96,27 @@
       "rejectTitle": "Reject Claim"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Confirming the current organization and employee…",
       "created": "Created",
       "decisionRecorded": "Decision recorded",
       "destination": "Destination",
       "history": "Decision history",
       "historyDescription": "Every step of this claim, oldest first. Times are shown in UTC.",
       "intermediateApproval": "Approval recorded — awaiting further approval",
+      "legacyClaim": "Legacy claim",
       "legacyReceiptIdentity": "Legacy receipt: content checksum was not recorded.",
       "loading": "Loading claim…",
       "noReceipts": "No receipts recorded",
       "notRecorded": "Not recorded",
       "originalAmount": "Original amount",
       "receipts": "Receipts",
+      "receiptVersion": "Recorded version",
       "refreshing": "Refreshing claim…",
+      "scopeUnavailable": "Refresh this claim to confirm your current access.",
       "submitted": "Submitted",
       "title": "Travel expense claim",
+      "unavailable": "Claim not found or access is no longer available.",
       "unknownDates": "Trip date context not recorded (legacy claim)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Select {name}",
         "selectAll": "Select all expenses awaiting reimbursement on this page",
         "selected": "{count} selected",
+        "selectionChanged": "One or more selected expenses changed. Close this dialog and review the current expenses before starting another payment.",
         "skipped": "Not included ({count})",
         "submit": "Mark {count} as reimbursed",
         "title": "Mark as reimbursed"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "No active expense officer who can record reimbursements has them in scope. Owners and admins can still record them, or widen an officer's scope.",
         "empty": "An expense officer covers every approved expense awaiting reimbursement.",
+        "failed": "Coverage could not be checked. Please retry.",
         "queueFilter": "Approved expenses awaiting reimbursement that no expense officer covers.",
         "show": "Show these expenses",
         "showAll": "Show all approved expenses",
@@ -237,6 +245,7 @@
           "none": "No employee found.",
           "search": "Search employees…"
         },
+        "failed": "Filter options could not be loaded. Please retry.",
         "label": "Show expenses",
         "notExported": "Not yet exported",
         "open": "Open",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "These payroll runs carry expense reports awaiting reimbursement. Once payroll has paid a run, confirm it to record the reimbursements.",
+        "failed": "Payroll confirmations could not be loaded. Please retry.",
         "reports": "{count, plural, one {# expense report for you to confirm, {amount}} other {# expense reports for you to confirm, {amount}}}",
         "title": "Payroll runs awaiting confirmation"
       },
       "queue": {
         "description": "Open an expense to see its settlement and record a reimbursement.",
+        "failed": "Unable to load the finance queue. Please retry.",
         "title": "Approved expenses"
+      },
+      "scope": {
+        "failed": "Your current finance access could not be confirmed. Please retry.",
+        "loading": "Confirming finance access…"
       },
       "title": "Expense finance"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Untitled mileage"
     },
     "legacyDraft": {
+      "checking": "Checking draft continuation…",
       "continue": "Continue as report",
       "converted": "You continued this draft as an expense report. This claim stays here unchanged for reference.",
       "description": "Drafts from the earlier claim form are now finished as expense reports. Your amount, dates, notes and receipts are carried over; anything the new form needs that this draft never recorded is left for you to complete. This claim itself stays unchanged.",
@@ -367,6 +383,7 @@
         "title": "Continued from an earlier claim draft"
       },
       "openReport": "Open the report",
+      "readRefused": "Draft continuation is not available for the current reader.",
       "receipt": {
         "mismatch": "the stored file no longer matches what was uploaded",
         "unreadable": "the stored file cannot be read right now",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Nothing is outstanding for this expense.",
         "ownExpense": "You cannot record payments for your own expenses.",
         "referenceRequired": "Enter the payment reference, e.g. the bank transfer reference.",
+        "refresh": "The balance could not be refreshed. Previously loaded records are shown; retry before recording a payment.",
         "refused": "This payment cannot be recorded for this expense.",
         "staleBalance": "The balance changed while you were entering this payment. Check the updated balance and record it again.",
         "tooLong": "This text is too long."
@@ -1149,7 +1167,13 @@
     },
     "title": "Travel Expenses",
     "workspace": {
-      "description": "Collect trip and standalone expenses, send them for review and follow their reimbursement."
+      "create": "Create an expense report",
+      "description": "Collect trip and standalone expenses, send them for review and follow their reimbursement.",
+      "mileageDescription": "Record a business drive outside a trip.",
+      "otherWork": "Review and finance",
+      "receiptDescription": "Record one expense with its receipt.",
+      "reconciling": "Loading your expenses for the current organization…",
+      "tripDescription": "Collect expenses with shared travel details."
     }
   }
 }

@@ -97,6 +97,7 @@ export interface PayrollEmployeeSummary extends PayrollSummaryEmployeeSource {
 }
 
 export interface PayrollWorkspaceSummary {
+	organizationId: string;
 	organizationName: string;
 	period: PayrollPeriod;
 	generatedAt: string;

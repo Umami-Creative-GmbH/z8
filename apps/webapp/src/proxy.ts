@@ -4,17 +4,10 @@ import createMiddleware from "next-intl/middleware";
 import { pickAcceptLanguage } from "@/i18n/accept-language";
 import { splitRouteLocale } from "@/i18n/route-locale";
 import { routing } from "@/i18n/routing";
-import {
-	classifyDomainHost,
-	resolvePlatformOrganization,
-} from "@/lib/domain/platform-domain";
+import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
 import { resolvePublicRedirectOrigin } from "@/lib/domain/request-origin";
-import {
-	checkRateLimit,
-	createRateLimitResponse,
-	getClientIp,
-} from "@/lib/rate-limit";
 import { applyShareResponseHeaders } from "@/lib/projects/report-share/http";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
 import { applySetupResponseHeaders } from "@/lib/setup/http";
 import { DEFAULT_LANGUAGE } from "@/tolgee/catalog-config";
@@ -26,6 +19,7 @@ export const DOMAIN_HEADERS = {
 	AUTH_CONFIG: "x-z8-auth-config",
 	BRANDING: "x-z8-branding",
 	PATHNAME: "x-pathname",
+	SEARCH: "x-z8-request-search",
 } as const;
 
 // Routes that don't require authentication
@@ -62,18 +56,12 @@ const SESSION_COOKIE_NAMES = [
 
 // Next 16 builds the proxy's request.url from its listening address, so browser
 // redirects resolve against the validated public origin instead.
-async function publicRedirectUrl(
-	path: string,
-	request: NextRequest,
-): Promise<URL> {
+async function publicRedirectUrl(path: string, request: NextRequest): Promise<URL> {
 	return new URL(path, await resolvePublicRedirectOrigin(request));
 }
 
 // next-intl resolves its locale-prefix redirect against request.url too.
-async function rebaseLocaleRedirect(
-	response: NextResponse,
-	request: NextRequest,
-): Promise<void> {
+async function rebaseLocaleRedirect(response: NextResponse, request: NextRequest): Promise<void> {
 	const location = response.headers.get("location");
 	if (!location) return;
 	const target = new URL(location, request.url);
@@ -85,17 +73,29 @@ async function rebaseLocaleRedirect(
 	response.headers.set("location", publicUrl.toString());
 }
 
+/** Keep the query in Next's private request context, preserving intl overrides. */
+function forwardRequestSearch(response: NextResponse, request: NextRequest) {
+	const overrideList = response.headers.get("x-middleware-override-headers");
+	const requestHeaders = new Headers(overrideList === null ? request.headers : undefined);
+	for (const name of overrideList?.split(",") ?? []) {
+		const value = response.headers.get(`x-middleware-request-${name.trim()}`);
+		if (value !== null) requestHeaders.set(name.trim(), value);
+	}
+	// Always replace client input, including when this URL has no query.
+	requestHeaders.set(DOMAIN_HEADERS.SEARCH, request.nextUrl.search);
+	const forwarded = NextResponse.next({ request: { headers: requestHeaders } });
+	for (const [name, value] of forwarded.headers) {
+		if (name === "x-middleware-override-headers" || name.startsWith("x-middleware-request-"))
+			response.headers.set(name, value);
+	}
+}
+
 // `/share/<token>`, or with an explicit language prefix such as `/de/share/<token>`.
 const SHARE_PAGE_PATH = /^\/(?:([a-z]{2,3})\/)?share\/([^/]+)\/?$/;
 
 async function sha256Hex(value: string): Promise<string> {
-	const digest = await crypto.subtle.digest(
-		"SHA-256",
-		new TextEncoder().encode(value),
-	);
-	return Array.from(new Uint8Array(digest), (byte) =>
-		byte.toString(16).padStart(2, "0"),
-	).join("");
+	const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+	return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 /**
@@ -121,9 +121,7 @@ async function handleSharePage(
 	] as const) {
 		const rateLimit = await checkRateLimit(identifier, endpoint);
 		if (!rateLimit.allowed) {
-			return applyShareResponseHeaders(
-				createRateLimitResponse(rateLimit, request),
-			);
+			return applyShareResponseHeaders(createRateLimitResponse(rateLimit, request));
 		}
 	}
 
@@ -132,17 +130,12 @@ async function handleSharePage(
 		response = NextResponse.next();
 	} else {
 		const locale =
-			pickAcceptLanguage(
-				request.headers.get("accept-language"),
-				routing.locales,
-			) ??
+			pickAcceptLanguage(request.headers.get("accept-language"), routing.locales) ??
 			(await (
 				await import("@/lib/projects/report-share/creator-locale")
 			).shareLinkCreatorLocaleForToken(token)) ??
 			DEFAULT_LANGUAGE;
-		response = NextResponse.rewrite(
-			new URL(`/${locale}/share/${token}`, request.url),
-		);
+		response = NextResponse.rewrite(new URL(`/${locale}/share/${token}`, request.url));
 	}
 	applySecurityHeaders(response);
 	return applyShareResponseHeaders(response);
@@ -160,8 +153,7 @@ export async function proxy(request: NextRequest) {
 		return NextResponse.next();
 	}
 
-	const isSetupPage =
-		pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
+	const isSetupPage = pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
 	const domainClassification = classifyDomainHost(request.headers.get("host"));
 	if (domainClassification?.type === "unknownPlatform") {
 		const response = new NextResponse("Not found", { status: 404 });
@@ -170,9 +162,7 @@ export async function proxy(request: NextRequest) {
 		return response;
 	}
 	if (domainClassification?.type === "platformOrganization") {
-		const platformOrganization = await resolvePlatformOrganization(
-			domainClassification.label,
-		);
+		const platformOrganization = await resolvePlatformOrganization(domainClassification.label);
 		if (!platformOrganization) {
 			const response = new NextResponse("Not found", { status: 404 });
 			applySecurityHeaders(response);
@@ -207,10 +197,7 @@ export async function proxy(request: NextRequest) {
 		const { isPlatformConfigured } = await import("@/lib/setup/config-cache");
 		const configured = await isPlatformConfigured();
 		if (configured) {
-			const homeUrl = await publicRedirectUrl(
-				`/${locale}/`,
-				request,
-			);
+			const homeUrl = await publicRedirectUrl(`/${locale}/`, request);
 			const response = NextResponse.redirect(homeUrl);
 			applySetupResponseHeaders(response);
 			return response;
@@ -259,15 +246,12 @@ export async function proxy(request: NextRequest) {
 	const isPublicRoute =
 		isSetupPage ||
 		PUBLIC_ROUTES.some(
-			(route) =>
-				pathWithoutLocale === route ||
-				pathWithoutLocale.startsWith(`${route}/`),
+			(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 		);
 
 	// Check if this is an auth route (sign-in, sign-up, etc.)
 	const isAuthRoute = AUTH_ROUTES.some(
-		(route) =>
-			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
+		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check for session cookie presence
@@ -296,6 +280,7 @@ export async function proxy(request: NextRequest) {
 
 	// Set pathname header for server components (used for callback URLs)
 	response.headers.set(DOMAIN_HEADERS.PATHNAME, pathname);
+	forwardRequestSearch(response, request);
 
 	// Apply enterprise security headers (HSTS, frame/referrer/content type policies); the
 	// kiosk page alone may use the camera, to read badges (#1367).

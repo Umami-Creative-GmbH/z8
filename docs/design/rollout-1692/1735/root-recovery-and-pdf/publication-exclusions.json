@@ -1,0 +1,38 @@
+{
+  "privatePayloadsNeverCopiedOrRead": [
+    "Private inputs, fixtures, exports, auth/session/cookie/cache state",
+    "Runtime logs, native props/hooks, raw decoded diagnostics and unredacted captures",
+    "Current and earlier downloaded PDF/CSV/XLSX bytes and raw parser output"
+  ],
+  "historicalSelectionsOmitted": [
+    {
+      "source": ".tmp/1735-independent-checks/HANDOFF.md",
+      "reason": "Original handoff omitted to avoid broken private/local links; metadata preserved separately"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/HANDOFF.md",
+      "reason": "Original handoff omitted to avoid broken private/local links; metadata preserved separately"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/exports/current-admin-2025.csv",
+      "reason": "Unredacted original export bytes remain private; older allowlist is not authorization to republish them"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/exports/current-admin-2025.xlsx",
+      "reason": "Unredacted original export bytes remain private; older allowlist is not authorization to republish them"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/safe-public-allowlist-final.json",
+      "reason": "Original handoff omitted to avoid broken private/local links; metadata preserved separately"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/seal-final.json",
+      "reason": "Original handoff omitted to avoid broken private/local links; metadata preserved separately"
+    }
+  ],
+  "excludedOldReceiptReferences": [
+    "history/compiled-pdf-stop/public-export-csv-01.json -> exports/current-admin-2025.csv",
+    "history/compiled-pdf-stop/public-export-xlsx-01.json -> exports/current-admin-2025.xlsx"
+  ],
+  "qualification": "Old allowlists/seals are provenance, not the public payload list. Historical handoffs are represented by a labeled derived summary rather than replacement originals. Private omissions are intentional."
+}

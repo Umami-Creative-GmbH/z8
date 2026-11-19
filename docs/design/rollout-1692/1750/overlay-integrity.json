@@ -1,0 +1,114 @@
+{
+  "base": "87b431bd6116ab90aed9d822db835dc78107bffb",
+  "head": "7abdd84e8adc22ae113697621eb0d60742c7a8e8",
+  "partialExistingConsumerOverlay": true,
+  "files": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/reports/[reportId]/page.tsx",
+      "sha256": "35f2bee7174f9b705836a23e6ea45e1cad7b7431d38531b48404d3baac6db799",
+      "historicalSha256": "298a3fe1152936187e15e0f659e257f37f6aa73a7f27fb7c9d9f1973b5234e87"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx",
+      "sha256": "c7ed9786dd52555d537d4e94c7a25e5458fa1110f8baa1ed6bbcd72258e7eee3",
+      "historicalSha256": "8faa26860c5564d4528140c82e53885de62cb839af4fcb32f192c084ee1fddd8"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/mileage-item-editor.tsx",
+      "sha256": "7668732263b461d8359e627fb8dcb3b1bc6bc3c83870c4bb52a9e9a503ec500b",
+      "historicalSha256": "3ef624b45dd905bebd8a24823ddfe1310da5ebaab1b1aacbd50665a94c4778a9"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/per-diem-item-editor.tsx",
+      "sha256": "d35b462878bb629613d6a09040f4b111a706e194c7d064101acdfe9c3802a8f4",
+      "historicalSha256": "66bb3ffe9f4e2b112df2629ff4635e2a2b8c5c6858f3e9c879a8f7dda08a5ad1"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/project-picker.tsx",
+      "sha256": "4541e83a9ecd3c9742532dd7360d9703a41b782d592252a130b7d1689a7a0e1c",
+      "historicalSha256": "c2a2710674d89b94035403edf8ee1a6f37f219c3e7d392b016ee49345273f780"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/receipt-item-editor.tsx",
+      "sha256": "7214d46a0a75161b3d62e884c4c3ad5d22d073ff30a02e0aa8e6ed0f91d5de5c",
+      "historicalSha256": "9604a74cd11f101f789243cb5b54d36dd77161ba9a492ba3c6da942bb05030a2"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx",
+      "sha256": "a7b545fad24e90ac0fedde3343c03f12ae66339ff05039795ea51f59f5840d88",
+      "historicalSha256": "42c1a35c7716c4fd0ac6264166b4d56192413dec601608f2066d96af64c9caf5"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/report-header.tsx",
+      "sha256": "a1524d4da53745abce9fe79fc3349fd1a1534a9b6a156efb9407c011dbe21ee1",
+      "historicalSha256": "11849b50b789820d44faffcbd40dfcdc744f46c6b4468443ad0d0d42693259e3"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/report-reopen.tsx",
+      "sha256": "ad14233684f3569da88f6b5b4119c618684eae77a3d633240e3c1fbe651b20e8",
+      "historicalSha256": "3350adb5f3780c3f3518d6405c68412ede67cd7ee94505af56aba4f74ed16e17"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/report-review-cycle.tsx",
+      "sha256": "9316d8155fc66e87c0a5b37215a1b0c9aa84aabb9cbbbf097a4391ecfcbc2d80",
+      "historicalSha256": "408114634f51806578714a5330ed501851147ec3b6d141c3cb6f19e34e8e854a"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submit-report-panel.tsx",
+      "sha256": "da451893f993e11a7b43ad99db09d77f5993b74169cbcc4955b7f364b278cf45",
+      "historicalSha256": "fdc205dbcbaece5863bb96c2a59771b6cf4ed725055cd624a645f84c706f0451"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.tsx",
+      "sha256": "f45548ae6127bde2bd33bc0178d8658d8e5ec44a0a26872177fe8a1204b73629",
+      "historicalSha256": "7fe43385e1ad3b7fd53a12cbf78483ae89c7680eb511f92c1008bafd48431b8a"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report.tsx",
+      "sha256": "c81212c998b69a65a5095b9f9035e9dc5d65871f288f9ccc6f7a924a0948c670",
+      "historicalSha256": "bcb4539b3fee938678321737a759ea987937ae0c7532fc7c2ff4e6d8d307ac01"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.tsx",
+      "sha256": "9816792a34b521facec6f256fbb858779f3ff47e7b6f8b8eff4dfa576d1f3021",
+      "historicalSha256": "129cbb35048cb9ce2c4c8e3d11156e8c56dd40ede2fd0c0a6eae385f6b08a134"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/trip-details-editor.tsx",
+      "sha256": "cbd5369f2cf85bc9cc26a96ef093d46b69a075fbc660584a35a14abb7c0e4cea",
+      "historicalSha256": "84dafd680af0b9af3d384d66f97df772056a27784e0104b819e23207f5b178aa"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/use-draft-saver.ts",
+      "sha256": "4e1a50c93cb40e110537b95e164e53a93c8a545dc1227ed04ce8aa0b0b5f11bf",
+      "historicalSha256": "ea736685e44b2b4e69b5dfdc2e2d362668e3caa5d2d380ad05bfcb8aa8d034bd"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/use-mileage-item-draft.ts",
+      "sha256": "ef6cfe80127a8aea503d1581e31c60d9fee83cdacb5b0c2b14e8386b1e03d912",
+      "historicalSha256": "bfcbfaa10b9b5dbb03a4de5704474a111f21edeee368e91214fed30fb8e77207"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/use-per-diem-item-draft.ts",
+      "sha256": "7ae0ab1df602742ee806a205d253ae19812d9cf7c48e7026303d9e5f284058c4",
+      "historicalSha256": "697f460faf58077d0ebbdc0e109f84dc81af5c3cca2c8aae8c0879b6d7067005"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/use-report-project-issues.ts",
+      "sha256": "50ce4f9f894ad10d1838993d651c1f041a0ea11e16213c022d20265bf73c0835",
+      "historicalSha256": "0c3ca5a6cb2d42eaba0a00b0b3c3ccf81b3bfc041535396f9dffb29d2968a33d"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/use-trip-details-draft.ts",
+      "sha256": "450fede116cdaa33a30085dff6359f5ada7e6005b6884bd9b1fed39994356a90",
+      "historicalSha256": "8af3fcd2df835c5e90f84fd7121c9cc439158bb46c0f82772637b435f2d4cca9"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "c6c2c6aa9f2888f33fd49bd4fe88f519d1de8387efbfaa6c9fb2fffe0f9006b7",
+      "historicalSha256": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6"
+    }
+  ],
+  "byteExactRestore": true,
+  "stoppedBeforeApplyAndRestore": true
+}

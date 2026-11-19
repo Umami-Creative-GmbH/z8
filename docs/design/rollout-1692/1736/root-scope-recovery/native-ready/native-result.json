@@ -1,0 +1,206 @@
+{
+  "status": "accepted",
+  "checks": [
+    "project: actual settled owner tree and one heading",
+    "settings: actual settled owner tree and one heading"
+  ],
+  "qualification": "Actual settled project workspace and settings share-link list after private-stdin normal authentication in a unique transient browser. No cookie/state copy, restore or persistence. Failure/Retry comes from the independent original-transport Chromium run; this native run does not substitute for pending revoke or failure-owner inspection.",
+  "source": {
+    "head": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+    "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+    "expectedAfterRef": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+    "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+    "source": [
+      {
+        "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+        "bytesSha256": "45ab0c5a03dc98aaa8607e4c5233ba2f1169e2583f0698062108a0051366fdcc",
+        "canonicalSha256": "f5fce1eaa79e48263dcf54bf9f5e408f8ae404a1964684eb7cea09f5f343c078",
+        "gitBlob": "1999c84949a645d9feb69c0dd7e2f18b5270a548",
+        "expectedRef": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+        "expectedCanonicalSha256": "f5fce1eaa79e48263dcf54bf9f5e408f8ae404a1964684eb7cea09f5f343c078"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+        "bytesSha256": "61136678cb9abb1db71e2035699704a12c016a03fe15b5c41f35cd2157c7985b",
+        "canonicalSha256": "9b81924c5aabd80bfa78409b5ddad58db1f8cab8d963380884436d7fc0e09f53",
+        "gitBlob": "14e93972c6c2af6991d4424c4c3f5c2a4b7cf75a",
+        "expectedRef": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+        "expectedCanonicalSha256": "9b81924c5aabd80bfa78409b5ddad58db1f8cab8d963380884436d7fc0e09f53"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "bytesSha256": "8c944448813a99fde4a09223fdfccc3970ecaccb19c3482b3e6151baeaf1b490",
+        "canonicalSha256": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d",
+        "gitBlob": "0eee3e641d9d5b7675fbbf1a7d57704d361ea6c9"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+        "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+        "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+        "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+        "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+        "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+        "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+        "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+        "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+        "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+        "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+        "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+        "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+        "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+        "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+      }
+    ]
+  },
+  "auth": {
+    "active": 200,
+    "signIn": 200
+  },
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/settings/report-share-links\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/settings/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/settings/report-share-links/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/settings/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/settings/report-share-links/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[{\"url\":\"/en/settings/report-share-links\",\"buildError\":null,\"runtimeErrors\":[{\"type\":\"console\",\"errorName\":\"Error\",\"message\":\"Route \\\"/[locale]/settings/report-share-links\\\": Next.js encountered uncached data during prerendering or a navigation.\\n\\n`fetch(...)` or `connection()` accessed outside of `<Suspense>` prevents the route from being prerendered or the navigation from being instant, leading to a slower user experience.\\n\\nWays to fix this:\\n  - [stream] Provide a placeholder with `<Suspense fallback={...}>` around the data access\\n  - [cache] Cache the data access with `\\\"use cache\\\"` (does not apply to `connection()`)\\n  - [block] Set `export const instant = false` to allow a blocking route\\n\\nLearn more: https://nextjs.org/docs/messages/blocking-prerender-dynamic\",\"stack\":[{\"file\":\"src\\\\lib\\\\auth\\\\request-session.ts\",\"methodName\":\"getRequestSession\",\"line\":20,\"column\":18},{\"file\":\"src\\\\lib\\\\auth-helpers.ts\",\"methodName\":\"<anonymous>\",\"line\":84,\"column\":41},{\"file\":\"src\\\\lib\\\\auth-helpers.ts\",\"methodName\":\"requireUser\",\"line\":156,\"column\":24},{\"file\":\"src\\\\lib\\\\auth-helpers.ts\",\"methodName\":\"requireOrgAdminSettingsAccess\",\"line\":804,\"column\":28},{\"file\":\"src\\\\app\\\\[locale]\\\\(app)\\\\settings\\\\report-share-links\\\\page.tsx\",\"methodName\":\"ReportShareLinksPage\",\"line\":7,\"column\":64}]}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ],
+    "qualification": "Recorded while this driver's browser page is alive. Inspect get_page_metadata/get_errors response for its actual connected session; absence is unpassed."
+  },
+  "sourceAtEnd": {
+    "head": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+    "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+    "expectedAfterRef": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+    "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+    "source": [
+      {
+        "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+        "bytesSha256": "45ab0c5a03dc98aaa8607e4c5233ba2f1169e2583f0698062108a0051366fdcc",
+        "canonicalSha256": "f5fce1eaa79e48263dcf54bf9f5e408f8ae404a1964684eb7cea09f5f343c078",
+        "gitBlob": "1999c84949a645d9feb69c0dd7e2f18b5270a548",
+        "expectedRef": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+        "expectedCanonicalSha256": "f5fce1eaa79e48263dcf54bf9f5e408f8ae404a1964684eb7cea09f5f343c078"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+        "bytesSha256": "61136678cb9abb1db71e2035699704a12c016a03fe15b5c41f35cd2157c7985b",
+        "canonicalSha256": "9b81924c5aabd80bfa78409b5ddad58db1f8cab8d963380884436d7fc0e09f53",
+        "gitBlob": "14e93972c6c2af6991d4424c4c3f5c2a4b7cf75a",
+        "expectedRef": "e0d252240ca9f9c2096555d31b31cd4e5dff852a",
+        "expectedCanonicalSha256": "9b81924c5aabd80bfa78409b5ddad58db1f8cab8d963380884436d7fc0e09f53"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "bytesSha256": "8c944448813a99fde4a09223fdfccc3970ecaccb19c3482b3e6151baeaf1b490",
+        "canonicalSha256": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d",
+        "gitBlob": "0eee3e641d9d5b7675fbbf1a7d57704d361ea6c9"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+        "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+        "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+        "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+        "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+        "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+        "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+        "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+        "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+        "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+        "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+        "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+        "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+        "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+        "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+      }
+    ]
+  },
+  "closed": true
+}

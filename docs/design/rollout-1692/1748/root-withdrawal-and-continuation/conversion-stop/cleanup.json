@@ -1,0 +1,15 @@
+{
+  "trackedDiffExit": 0,
+  "indexDiffExit": 0,
+  "porcelain": "clean",
+  "temporaryBridgesRemoved": 3,
+  "dockerServicesCreated": 0,
+  "serversCreated": 0,
+  "browsersCreated": 0,
+  "nativeSessionsCreated": 0,
+  "runtimeDownloads": 0,
+  "rootOrPeerMutations": 0,
+  "dependencyCopyRetainedLocally": true,
+  "packageProcesses": "All own foreground install/test commands exited; final process count recorded separately",
+  "ownership": "Review integration/Git/index/package/runtime ownership released; no changes committed or published"
+}

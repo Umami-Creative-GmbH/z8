@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "25865312d95c68ec1eaed75363e953745f168802",
+  "changedSourceFiles": 4,
+  "reviews": {
+    "reactPerformance": "No new fetching waterfall, resize listener, shared business controller or broad package surface. Local fields use actual TanStack owner. Session subscription is presentation lifetime only.",
+    "composition": "One page form, draft and action owner; local ProfileHeader/Actions/fields compose existing primitives. Existing auth/init/onboarding service authority is retained. Main heading is present for initial, signed-out, known-pending and admitted states in actual route-client + progress composition.",
+    "design": "Inspected actual inherited desktop light and phone dark large captures, plus source inventory. Identity/display/product choice sections and save/skip remain reachable; real Calendar probe selects leap date. Tool badges visibly overlap right phone edge in captures; they are development tooling, retained and qualified. No physical-device/zoom/contrast certification follows.",
+    "webGuidelinesSource": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "webGuidelinesRetrieved": "2026-11-15",
+    "accessibility": "Label/error/focus behavior passes public probes. Group div role=group versus native fieldset is reported by ordinary Biome lint; explicit webapp config disables that diagnostic and passes. Required-name autocomplete, gender names/pressed state, linked errors and safe refusal remain. Existing mounted-draft/navigation behavior is preserved; no new beforeunload policy inferred.",
+    "dateAndPrivacy": "Birthday is date-only through Calendar adapter and validated UTC DB boundary. UI default Monday/schema legacy missing-payload Sunday, 24h and explicit checked product choice remain. No saved timezone field existed or was removed. No captured event-offset/compliance boundary or birthday visibility owner changes.",
+    "authority": "Existing public actions and OnboardingService remain byte-identical to prior root; approved membership/joining and session authority remain server-owned. The queued save defect can nevertheless send an old-org draft after a new-org arrival before validation finishes, so source verification is blocked."
+  },
+  "finding": {
+    "priority": "P1",
+    "file": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "lines": [498, 501, 613],
+    "title": "Bind save intent to the arrival before asynchronous form validation",
+    "reproduction": "Fill Retained/Profile under account-a/org-a. Within one act, click Save then flush a rerender with account-a/org-b. Real TanStack validation completes and onSubmit samples the new lifetime; updateProfileOnboarding is called once with the old draft and success can navigate using the new generation.",
+    "tests": ".tmp/merge1830-audit/profile-public.test.tsx",
+    "observed": "22 of 23 independent public probes pass. Only queued organization-arrival save fails, reproduced on two accepted harness runs. Ready-pending/hide/unmount queued events are correctly suppressed; one-action lock, last-invalid focus, real leap calendar, org ABA rejected response recovery, account draft separation and eight public birthday action boundaries pass.",
+    "mergerAction": "No source fixes. Root owns correction and further proof. Provisional merge is not marked verified."
+  },
+  "evidenceQualification": "Worker report says eight copied logs were normalized. Actual df375cecd changes seven log paths plus the report. Independent hashes show those seven differ raw and match after whitespace normalization. PNG manifest hashes remain valid. No tracked evidence changed by merger.",
+  "inheritedRuntime": "3 PostgreSQL suites/84 tests, 30 browser assertions, four held scope cases and final clean Next arrays remain worker evidence on their recorded older source. Native React target was unpassed. No fresh runtime or DB was necessary solely to inherit these observations.",
+  "retainedLimits": ["Full production static generation", "Remote catalog sync and complete translations", "Native React target review", "Physical devices and true zoom", "Exhaustive contrast/assistive technology", "External providers", "Global transition acceptance"]
+}

@@ -1,0 +1,157 @@
+{
+  "candidate": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "rootProductIntegration": "17fde76bf77bb72606d101d39e28c30f527dcbf4",
+  "applicationTreeIdenticalToRootIntegration": true,
+  "inheritedUnion": {
+    "unitCases": 73,
+    "unitFiles": 13,
+    "postgresCases": 48,
+    "postgresFiles": 8,
+    "distinctCases": 121,
+    "distinctPhysicalFiles": 21
+  },
+  "afterImportOnlySort": {
+    "unitCases": 12,
+    "unitFiles": 3,
+    "postgresCases": 3,
+    "postgresFiles": 1,
+    "nonadditive": true
+  },
+  "rootReports": [
+    {
+      "path": ".tmp/1738-publication-query-checks/units-final-01.json",
+      "bytes": 26499,
+      "sha256": "01d73303fc0bcab3812ef07c3eab32f6cea701012c316a3a4168d4416d01d299",
+      "cases": 73,
+      "passed": 73,
+      "files": 13,
+      "sourceFiles": [
+        "src/lib/effect/runtime-rule-guard.test.ts",
+        "src/components/scheduling/scheduler/employee-schedule-utils.test.ts",
+        "src/components/scheduling/scheduler/employee-shift-agenda.test.tsx",
+        "src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+        "src/components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
+        "src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+        "src/components/scheduling/scheduler/shift-scheduler-utils.test.ts",
+        "src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+        "src/components/scheduling/scheduler/template-sidebar.test.tsx",
+        "src/lib/effect/services/database-error-sites.test.ts",
+        "src/components/scheduling/scheduler/__tests__/publish-compliance-dialog-state.test.ts",
+        "src/lib/effect/services/__tests__/shift.service.test.ts",
+        "src/app/[locale]/(app)/scheduling/__tests__/publish-compliance-handshake.test.ts"
+      ]
+    },
+    {
+      "path": ".tmp/1738-publication-query-checks/postgres-final-01.json",
+      "bytes": 18958,
+      "sha256": "40a6d0bb4bddb58e785b2a247105922708ab865a35e7e5167036685f50e666d2",
+      "cases": 48,
+      "passed": 48,
+      "files": 8,
+      "sourceFiles": [
+        "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+        "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+        "src/lib/effect/services/coverage.service.integration.test.ts",
+        "src/lib/effect/services/open-shifts.service.integration.test.ts",
+        "src/lib/effect/services/shift-publication.integration.test.ts",
+        "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+        "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+        "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts"
+      ]
+    },
+    {
+      "path": ".tmp/1738-publication-query-checks/units-owned-final-02.json",
+      "bytes": 4930,
+      "sha256": "6642630386690f5f8965c63355e5a0ae37a37e683613668608f4bc89758ca604",
+      "cases": 12,
+      "passed": 12,
+      "files": 3,
+      "sourceFiles": [
+        "src/lib/effect/runtime-rule-guard.test.ts",
+        "src/lib/effect/services/database-error-sites.test.ts",
+        "src/lib/effect/services/__tests__/shift.service.test.ts"
+      ]
+    },
+    {
+      "path": ".tmp/1738-publication-query-checks/postgres-owned-final-02.json",
+      "bytes": 1865,
+      "sha256": "f72ed375e128dc289c5b8fa2e771d48e3953e582ba038efb79ce1846b2733afb",
+      "cases": 3,
+      "passed": 3,
+      "files": 1,
+      "sourceFiles": [
+        "src/lib/effect/services/shift-publication.integration.test.ts"
+      ]
+    }
+  ],
+  "rootReceipts": [
+    {
+      "path": ".tmp/1738-publication-query-checks/checks-final-01.json",
+      "bytes": 3563,
+      "sha256": "20a580047722c47a5a73c5400ca69d05a6c6928801aa1561ac80b9a813066514"
+    },
+    {
+      "path": ".tmp/1738-publication-query-checks/integration.json",
+      "bytes": 290,
+      "sha256": "e8137fe797a8e7d3e7df02328b87d80f45933414447415816b82d45170f58137"
+    },
+    {
+      "path": ".tmp/1738-publication-query-checks/published-provisional.json",
+      "bytes": 440,
+      "sha256": "43f21e08e24bad15a38e81156d8fa941fdb28d7ea149597dae4b7767936ec357"
+    },
+    {
+      "path": ".tmp/1738-publication-query-checks/cleanup-final.json",
+      "bytes": 590,
+      "sha256": "c6a2af6d38a0a612f2d90df29f6280223cebaa55e1db15da04b7e1c70b1e3a97"
+    }
+  ],
+  "types": "typegen/all3 passed before import-only ordering; inherited, no fresh type run",
+  "lint": "2paths lint/import/newtest explicit100CRLF pass; ordinary2 and legacy explicit service1 formatting findings retained",
+  "reactDoctor": "No React change from query fix; prior qualified evidence inherited, not rerun",
+  "ownerPins": [
+    {
+      "path": "apps/webapp/src/lib/effect/services/shift.service.ts",
+      "bytes": 27195,
+      "sha256": "25b732991ba1a0c3126c275cc6754699775a0952df7d9552ee02230b816e6e88",
+      "headBlob": "9d73d9bcab0506c0b62a7571cfc4c0096ab8c717",
+      "prior08cBlob": "d225de026604e22673aebff7e27148edbc53583d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "bytes": 12975,
+      "sha256": "a4f6fad6a04f775436224dfff3a0ac8e2e629a5ef484323a0d7a07dfec9250d1",
+      "headBlob": "8b7895278fe181ad5c7f115b99d58e2747ef0d6f",
+      "prior08cBlob": "8b7895278fe181ad5c7f115b99d58e2747ef0d6f"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+      "bytes": 3967,
+      "sha256": "e5f44e6992f347ba05d80487ecadc7cd89871293d3885af6692ec05e7c024a3e",
+      "headBlob": "6766507623a34da3ecbdb4e0a4fd9bf3e1570679",
+      "prior08cBlob": "6766507623a34da3ecbdb4e0a4fd9bf3e1570679"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "bytes": 5588,
+      "sha256": "181fceda5d4e47f454e2dc881a250129d21b30c637306994455f91811849b851",
+      "headBlob": "1d35178af1764619c777e5b4f2382367deec4526",
+      "prior08cBlob": "1d35178af1764619c777e5b4f2382367deec4526"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-publish-flow.ts",
+      "bytes": 2580,
+      "sha256": "e704398d44ba8f46eb29cdfe71ef400b16ebe1a39c18d0512420ae337cc8ffe6",
+      "headBlob": "5a9f85c61111f3007e3ca3feb6fbaecd42a1f5fb",
+      "prior08cBlob": "5a9f85c61111f3007e3ca3feb6fbaecd42a1f5fb"
+    },
+    {
+      "path": "apps/webapp/src/components/ui/button-variants.ts",
+      "bytes": 2065,
+      "sha256": "625745fcb672e5a86b88e07102a1ef361eb49f304d9c2cf51bc357a4ecf3bdcc",
+      "headBlob": "d91e2f7231f712ded33524c60d37e98741a794f7",
+      "prior08cBlob": "d91e2f7231f712ded33524c60d37e98741a794f7"
+    }
+  ],
+  "freshUnitOrPostgresCases": 0
+}

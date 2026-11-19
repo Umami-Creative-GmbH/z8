@@ -1,0 +1,20 @@
+{
+  "outcome": "refusal",
+  "contextCalls": 1,
+  "rosterCalls": 1,
+  "buttons": [
+    "Generate Report"
+  ],
+  "contextStates": [
+    "success"
+  ],
+  "rosterStates": [
+    "error"
+  ],
+  "errorVisible": true,
+  "colleagueVisible": false,
+  "transportNowHealthy": true,
+  "callsAfterSameArrivalRerender": 1,
+  "retryAvailable": false,
+  "stillFailedAfterRerender": true
+}

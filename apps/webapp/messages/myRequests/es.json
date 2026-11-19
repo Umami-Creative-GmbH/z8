@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Cancelar",
+      "cancelled": "Solicitud cancelada",
       "cancelling": "Cancelando…",
+      "cancelRequest": "Cancelar solicitud",
       "cancelRequestConfirmation": "¿Cancelar esta solicitud?",
+      "cancelRequestDescription": "Se retira de la revisión y no se puede volver a abrir. Para volver a solicitarlo, envía una nueva solicitud.",
       "cancelRequestError": "No se pudo cancelar la solicitud.",
       "fix": "Corregir",
-      "notAvailable": "No disponible",
+      "keepRequest": "Mantener solicitud",
       "view": "Ver"
     },
     "all": {
-      "description": "Revise las solicitudes de ausencias, correcciones de tiempo y gastos.",
       "title": "Todas las solicitudes"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Las solicitudes aparecerán aquí cuando se envíen o carguen.",
+        "hint": "Prueba con otro término de búsqueda, estado o tipo.",
         "title": "No hay solicitudes que coincidan con sus filtros"
       },
       "none": {
         "description": "Las solicitudes aparecerán aquí cuando se envíen o carguen.",
         "title": "Aún no hay solicitudes"
+      },
+      "unavailable": {
+        "description": "Reintenta con las fuentes no disponibles para consultar tus solicitudes.",
+        "title": "No hay solicitudes cargadas"
       }
     },
     "featureName": "ver sus solicitudes",
     "filters": {
       "allStatuses": "Todos los estados",
       "allTypes": "Todos los tipos",
-      "approvedRequests": "Solicitudes aprobadas",
-      "cancelledRequests": "Solicitudes canceladas",
-      "description": "Filtre cada sección de solicitudes por texto, estado o tipo de solicitud.",
-      "pendingRequests": "Solicitudes pendientes",
-      "rejectedRequests": "Solicitudes rechazadas",
+      "resultCount": "Mostrando {visible} de {total} solicitudes",
       "search": "Buscar",
-      "searchPlaceholder": "Buscar por título…",
+      "searchRequestsPlaceholder": "Título, fechas, importe o motivo…",
       "status": "Estado",
       "title": "Buscar solicitudes",
       "type": "Tipo"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Esta solicitud ya no está pendiente o no se puede mostrar aquí. Se está comprobando de nuevo la preparación del período."
     },
+    "history": {
+      "request": "Solicitud"
+    },
     "inReview": {
-      "description": "Solicitudes a la espera de aprobación o procesamiento.",
       "title": "En revisión"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Reclamación de gastos de viaje"
       }
     },
+    "scope": "Tus solicitudes de ausencia, corrección de horario y gastos heredados en la organización activa",
     "sourceError": {
       "absence": "No se pudieron cargar las solicitudes de ausencia.",
       "timeCorrection": "No se pudieron cargar las solicitudes de corrección de tiempo.",
       "title": "No se pudieron cargar algunas solicitudes.",
       "travelExpense": "No se pudieron cargar las solicitudes de gastos de viaje."
     },
-    "sourceTypes": {
-      "absence": "Ausencia",
-      "timeCorrection": "Tiempo",
-      "travelExpense": "Gastos"
-    },
     "status": {
       "approved": "Aprobado",
       "cancelled": "Cancelado",
       "inReview": "En revisión",
-      "pending": "Pendiente",
       "rejected": "Rechazado"
     },
-    "subtitle": "Realice un seguimiento de las solicitudes pendientes, las correcciones necesarias y las decisiones recientes en un solo lugar.",
     "summary": {
       "ariaLabel": "Resumen de solicitudes",
-      "pending": "Pendiente",
       "recentDecisions": "Decisiones recientes",
+      "recentWindow": "Últimos 30 días",
       "requiredFixes": "Correcciones necesarias",
       "totalLoaded": "Total cargado"
     },
     "title": "Mis solicitudes",
+    "types": {
+      "absence": "Ausencia",
+      "timeCorrection": "Corrección de horario",
+      "travelExpense": "Gasto de viaje"
+    },
     "unavailableTitle": "Solicitudes no disponibles"
   }
 }

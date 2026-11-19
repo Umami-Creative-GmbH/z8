@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "OBRIŠI"
       },
       "description": "Generišite uzorke podataka za testiranje ili očistite postojeće podatke o vremenu",
+      "employeesLoadError": {
+        "description": "Demo podaci se generišu za vaše zaposlenike, pa generisanje nije dostupno dok se oni ne učitaju.",
+        "retrying": "Ponovni pokušaj…",
+        "title": "Zaposlenici se nisu mogli učitati"
+      },
       "errors": {
-        "generationFailed": "Generisanje nije uspjelo. Pokušajte ponovo.",
-        "noOrganization": "Nijedna organizacija nije odabrana"
+        "generationFailed": "Generisanje nije uspjelo. Pokušajte ponovo."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Svi zaposlenici ({count})",
+          "allCountUnavailable": "Svi zaposlenici",
           "label": "Zaposlenici",
           "selectSpecific": "Odaberite određene zaposlenike"
         }

@@ -1,0 +1,28 @@
+{
+  "at": "2026-11-18T04:24:16.846Z",
+  "alias": "large-employee",
+  "view": {
+    "path": "/en/travel-expenses",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 280,
+        "y": 89,
+        "w": 1296,
+        "h": 36
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": false,
+    "noMatch": false,
+    "rows": 1
+  },
+  "ownSeededClaimVisible": true,
+  "creatorSeededClaimsAbsent": true,
+  "creatorCurrentDraftsAbsent": true,
+  "ownScopePositive": true,
+  "pass": true,
+  "qualification": "Actual authenticated arrival; scoped own rows required for success"
+}

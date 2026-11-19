@@ -1,0 +1,17 @@
+{
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "originalAndFinalNextConfigSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+  "attempts": [
+    {"command":"pnpm --filter webapp exec vitest run --project unit src/app/[locale]/onboarding/organization/page.test.tsx --reporter=json --outputFile=../../docs/design/rollout-1692/1829/first-red.json","result":"sandbox pnpm store lock inaccessible; no tests executed"},
+    {"command":"pnpm install --offline --frozen-lockfile --ignore-scripts","result":"Windows os error 1453: Nicht genügend Quoten, um den angeforderten Dienst auszuführen; importing Next, no cause diagnosed"},
+    {"command":"pnpm install --offline --frozen-lockfile --ignore-scripts --filter webapp... --child-concurrency=1 --network-concurrency=1 --package-import-method=hardlink","result":"Windows os error 1453 importing Stripe; no cause diagnosed"},
+    {"command":"read-only owned app/node_modules junction to established identical-lock root dependencies","result":"unit tests execute; default Turbopack rejects package outside workspace root"},
+    {"command":"temporary turbopack.root parent overlay with original workspaceRoot unchanged","result":"runtime works; broad-root-attempt contains provisional captures; config restored, no committed overlay"},
+    {"command":"temporary development-only experimental.turbopackAdditionalRoots for borrowed app/root dependencies","result":"TurbopackInternalError: failed to resolve relative path for react compiler plugin; config restored byte-for-byte"},
+    {"command":"pnpm install --offline --frozen-lockfile --ignore-scripts --filter webapp... --package-import-method=copy --child-concurrency=1 --network-concurrency=1","result":"1668 packages installed successfully; own whole-directory dependency junction was detached first; borrowed trees unchanged"},
+    {"command":"agent-browser --version","result":"PowerShell refused loading agent-browser.ps1 because script execution is disabled; native React-tree check remains unpassed"},
+    {"command":"pnpm exec react-doctor <two-file-paths> --scope changed ...","result":"CLI rejected combining file paths and changed scope; corrected to apps/webapp directory and recorded final zero-diagnostic scan"}
+  ],
+  "finalRuntime": "default committed Next config; workspace-local packages; no dependency topology overlay",
+  "privateLogs": "retained only in private fixture directory; never published or printed with credentials"
+}

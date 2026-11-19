@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "issue": 1839,
+  "readiness": null,
+  "verifiedCommit": null,
+  "previousCorrection": "d30948fac5e82838715f131e05cf69ea63a5e98e",
+  "correctionCommit": "e8ba771e8ac43ab1a09740a6fa538a6f12ee7461",
+  "integrationCommit": "e5582c5682276ef941fb23ca80197e64acac4dd9",
+  "tree": "623c8ec4307da0b9dba805ed10f3582ef2141e61",
+  "appTree": "31eb3098b5e86baa32178e06d54ac39fd2cb6fe0",
+  "classification": "Root follow-up preserves browser navigation pending behavior while keeping unresolved authentication requests reserved. No auth/server/CAPTCHA bypass or live provider claim.",
+  "red": {
+    "cases": 9,
+    "passed": 8,
+    "failed": 1,
+    "exactSymptom": "Organization OAuth handoff re-enabled its button immediately after location.assign returned, before browser departure."
+  },
+  "change": [
+    "Track the matching browser-navigation epoch separately after successful location.assign.",
+    "Keep a successful browser handoff pending until departure; Activity resume restores a usable arrival.",
+    "Thrown navigation retains credentials and permits retry. Unsettled passkey, SSO and social client requests remain reserved until their actual promises settle."
+  ],
+  "currentChecks": {
+    "unit": {
+      "cases": 285,
+      "passed": 285,
+      "failed": 0,
+      "skipped": 0,
+      "physicalFiles": 30,
+      "uniqueFileFullNameLabels": 283,
+      "caseMultisetSHA256": "15b53f35317382fac30e6aab2362ab72e6bde45d5ca85cf11fa19f0f6d9c76fe"
+    },
+    "methodSubset": {
+      "cases": 10,
+      "physicalFiles": 1,
+      "additive": false
+    },
+    "publicProviderAndMethodSubset": {
+      "cases": 39,
+      "physicalFiles": 3,
+      "additive": false,
+      "note": "The prior 29 provider/form/widget cases plus all ten current method cases are included in the 285-case selection."
+    },
+    "typegen": "passed",
+    "fullTypeProjects": 3,
+    "lintImport": {
+      "files": 2,
+      "result": "passed"
+    },
+    "explicit100CRLF": {
+      "files": 2,
+      "result": "passed"
+    },
+    "ordinaryProfile": "failed; retained",
+    "doctor": {
+      "version": "0.9.22",
+      "base": "d672f5a4087ebaf36e104eba5d48c53f6736e6fa",
+      "files": 2,
+      "errors": 0,
+      "warnings": 0,
+      "score": null,
+      "complete": true
+    }
+  },
+  "priorPostgres": {
+    "cases": 43,
+    "physicalFiles": 4,
+    "result": "passed on d30948fa; not rerun for this UI-only follow-up; canonical backend files unchanged",
+    "additiveToPrior": false
+  },
+  "preservation": {
+    "integrationTreeMatchesFeature": true,
+    "sealedOriginalPaths": 38,
+    "originalReportAndEvidenceUnchanged": true,
+    "changedApplicationPaths": [
+      "apps/webapp/src/components/login/login-method-lifetime.test.tsx",
+      "apps/webapp/src/components/login/use-login-auth.ts"
+    ],
+    "lockSHA256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "sourcePins": [
+    {
+      "file": "apps/webapp/src/components/login/login-method-lifetime.test.tsx",
+      "gitBlob": "e5c025afb4ad851a32cfecf390e19e5b306c8368",
+      "gitLfSHA256": "acb17d0efa27556cc29898e72642bc624311d35926aded6ad502e24c98654557",
+      "filesystemSHA256": "d1f7251dce9c1580359b32f62c52eae47582ab457825a5348759c13820ad87b1"
+    },
+    {
+      "file": "apps/webapp/src/components/login/use-login-auth.ts",
+      "gitBlob": "5c0be9afb68699dbbc9cdc5626791edf75802bab",
+      "gitLfSHA256": "f30c618b9fc64ff02b706dc34ba86e233e82f4d5d490b1ee79be6e551f7f7489",
+      "filesystemSHA256": "6f0aed33c9b0580c015a405f73cdd853e02cc534b7420ad5885df914b88c1aad"
+    }
+  ],
+  "selection": [
+    "src/components/auth-form-wrapper.test.tsx",
+    "src/lib/auth-domain-config.test.ts",
+    "src/tolgee/extracted-key-defaults.test.ts",
+    "src/components/login/login-client-arrival.test.tsx",
+    "src/components/login/login-form-content.test.tsx",
+    "src/components/login/login-method-lifetime.test.tsx",
+    "src/components/login/login-state.test.ts",
+    "src/components/login/login-ui.test.tsx",
+    "src/components/login/store-app-sign-in-form.test.tsx",
+    "src/lib/auth/callback-url.test.ts",
+    "src/lib/auth/load-auth-page-client.test.ts",
+    "src/lib/auth/store-app-session.test.ts",
+    "src/lib/enterprise-identity/session-sso-store.test.ts",
+    "src/lib/enterprise-identity/session-sso.test.ts",
+    "src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+    "src/lib/enterprise-identity/sso-reauthentication.test.ts",
+    "src/lib/hooks/use-enabled-providers.test.tsx",
+    "src/lib/store-app/app-banner.test.ts",
+    "src/lib/store-app/native-auth-session.test.ts",
+    "src/lib/store-app/native-push.test.ts",
+    "src/lib/store-app/shell.test.ts",
+    "src/lib/store-app/sign-in-domain.test.ts",
+    "src/lib/store-app/sign-out.test.ts",
+    "src/lib/store-app/store-app-sign-in.test.ts",
+    "src/lib/turnstile/auth-plugin.test.ts",
+    "src/lib/turnstile/development-keys.test.ts",
+    "src/lib/turnstile/service.test.ts",
+    "src/lib/turnstile/verify.test.ts",
+    "src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+    "src/app/api/auth/verify-turnstile/route.test.ts"
+  ],
+  "commands": {
+    "unit": "$env:pnpm_config_verify_deps_before_run='false'\npnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 1 src/components/auth-form-wrapper.test.tsx src/lib/auth-domain-config.test.ts src/tolgee/extracted-key-defaults.test.ts src/components/login/login-client-arrival.test.tsx src/components/login/login-form-content.test.tsx src/components/login/login-method-lifetime.test.tsx src/components/login/login-state.test.ts src/components/login/login-ui.test.tsx src/components/login/store-app-sign-in-form.test.tsx src/lib/auth/callback-url.test.ts src/lib/auth/load-auth-page-client.test.ts src/lib/auth/store-app-session.test.ts src/lib/enterprise-identity/session-sso-store.test.ts src/lib/enterprise-identity/session-sso.test.ts src/lib/enterprise-identity/sso-enforcement-plugin.test.ts src/lib/enterprise-identity/sso-reauthentication.test.ts src/lib/hooks/use-enabled-providers.test.tsx src/lib/store-app/app-banner.test.ts src/lib/store-app/native-auth-session.test.ts src/lib/store-app/native-push.test.ts src/lib/store-app/shell.test.ts src/lib/store-app/sign-in-domain.test.ts src/lib/store-app/sign-out.test.ts src/lib/store-app/store-app-sign-in.test.ts src/lib/turnstile/auth-plugin.test.ts src/lib/turnstile/development-keys.test.ts src/lib/turnstile/service.test.ts src/lib/turnstile/verify.test.ts src/app/[locale]/(auth)/layout-turnstile.test.tsx src/app/api/auth/verify-turnstile/route.test.ts --reporter=json --outputFile=../../.tmp/1839-navigation-root-checks/unit.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "explicit": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf src/components/login/use-login-auth.ts src/components/login/login-method-lifetime.test.tsx",
+    "lint": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --formatter-enabled=false src/components/login/use-login-auth.ts src/components/login/login-method-lifetime.test.tsx",
+    "ordinary": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check src/components/login/use-login-auth.ts src/components/login/login-method-lifetime.test.tsx",
+    "doctor": "REACT_DOCTOR_PARALLEL=1 pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base d672f5a4087ebaf36e104eba5d48c53f6736e6fa --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1839-navigation-root-checks/doctor.json"
+  },
+  "attempts": [
+    "Initial two pinned pnpm calls failed at the engine-store access lock; identical escalated commands succeeded. No store, package, lock, configuration or policy repair was attempted.",
+    "The interrupted red test completed once: eight controls passed, the browser pending assertion failed. It was inspected before any repeat or mutation.",
+    "Readonly peer audit agreed on separate navigation settlement and matching Activity reset."
+  ],
+  "resources": {
+    "next": false,
+    "browser": false,
+    "native": false,
+    "postgres": false,
+    "provider": false,
+    "ownedLive": 0
+  },
+  "limits": [
+    "Fresh independent recheck and authenticated runtime acceptance remain pending.",
+    "Original worker fixture sign-in/session readback remains inherited; no cause is established for historical empty widget tokens.",
+    "Ordinary formatting, native/provider/device/true zoom/full generation/catalog and exhaustive authority/lifecycle matrices remain unpassed."
+  ]
+}

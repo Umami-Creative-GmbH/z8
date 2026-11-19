@@ -35,7 +35,6 @@
         "previousWeekDesc": "Esporta i dati dalla settimana precedente (lun-dom)"
       },
       "deleteDialog": {
-        "cancel": "Annulla",
         "confirm": "Elimina",
         "description": "Sei sicuro di voler eliminare \"{name}\"? Questa azione non può essere annullata.",
         "title": "Elimina esportazione pianificata"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Eliminazione non riuscita",
         "loadFailed": "Impossibile caricare le esportazioni pianificate",
-        "toggleFailed": "Attivazione/disattivazione non riuscita"
+        "retry": "Riprova"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Il proprietario della pianificazione, {owner}, non è più un amministratore dell'organizzazione. Imposta prima te stesso o un altro amministratore dell'organizzazione come proprietario."
       },
       "filters": {
         "allEmployees": "Tutti i dipendenti",
@@ -284,8 +286,9 @@
         "paused": "In pausa",
         "schedule": "Pianificazione",
         "status": "Stato",
-        "title": "Pianificazioni attive",
-        "type": "Tipo"
+        "titleAll": "Pianificazioni",
+        "type": "Tipo",
+        "unknownOwner": "Proprietario sconosciuto"
       },
       "title": "Esportazioni pianificate",
       "toast": {

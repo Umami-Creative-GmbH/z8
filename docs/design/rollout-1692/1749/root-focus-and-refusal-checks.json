@@ -1,0 +1,171 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional",
+  "verifiedCommit": null,
+  "previousPublishedCheckpoint": "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+  "correctionCommit": "296469aeb76e161255fe6c81b104b596afe3801f",
+  "correctionIntegrationCommit": "358e1a35d9101f66e459365542287ca62deb4ba5",
+  "tree": "e7cd3a93f5eb73eddd053c6d9fd8754958f75513",
+  "appTree": "c1793e032e7fa6e4561195a84604fdb256d36d6b",
+  "orderedParents": [
+    "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+    "296469aeb76e161255fe6c81b104b596afe3801f"
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+      "gitBlob": "17570874cecb4ad1d9726e6af23b1318c8cbd5c7"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx",
+      "gitBlob": "b1b01d6a88b26f761f94decf4765fb5e8db9adcb"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.tsx",
+      "gitBlob": "3efc023116656f61b73588acae97c44c4877095e"
+    }
+  ],
+  "independentPrevious": {
+    "head": "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+    "unitCases": 374,
+    "canonicalPostgresCases": 84,
+    "migrationVerification": "passed",
+    "allowlistSha256": "ba01dfd72643efedb35d65507dbfee4f10e2f288747e011140a9b5f7f7d6c280",
+    "allowlistedPayloads": 12,
+    "allowlistedBytes": 348821,
+    "findings": {
+      "standards": "One confirmed focus P2 and a test naming observation.",
+      "spec": "The same focus P2 and a source-based grant-narrowing observation. The live grant-change sequence was not exercised.",
+      "overlap": 1
+    },
+    "mainTypeScript": "The isolated checkout lacked the ignored generated license file."
+  },
+  "behavior": {
+    "focus": "Closing the retained reimbursement dialog sends focus to the enabled opener if connected and otherwise to the Approved expenses heading. The heading has tabIndex -1.",
+    "refusedResult": "The dialog keeps the count and reason for an explicit out_of_scope result while withholding the captured report and employee label. Successful results and separately loaded export preview labels remain available.",
+    "scopeLimit": "A paginated or filtered omission and a narrowed grant can produce the same queue response. Per-target authorization is resolved by the existing settlement action. The mixed-result reproduction uses a synthetic action response. Live grant changes and browser keyboard behavior remain unverified."
+  },
+  "root": {
+    "units": {
+      "passed": 377,
+      "distinct": 377,
+      "physicalFiles": 30,
+      "priorCasesPreserved": 374,
+      "newCases": 3,
+      "unchangedFocusProbe": {
+        "before": {
+          "passed": 19,
+          "failed": 1
+        },
+        "after": {
+          "passed": 20,
+          "failed": 0
+        }
+      },
+      "refusalProbe": {
+        "before": {
+          "passed": 24,
+          "failed": 1,
+          "failedCase": "keeps the mixed reimbursement outcome while withholding the label of a refused report"
+        },
+        "after": "Included in the 377 passing cases."
+      },
+      "selection": [
+        "src/components/site-header.test.tsx",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/travel-expenses/finance-queue-paging.test.ts",
+        "src/lib/travel-expenses/finance-queue-params.test.ts",
+        "src/lib/travel-expenses/officer-scope.test.ts",
+        "src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+        "src/components/travel-expenses/finance/finance-exports.test.tsx",
+        "src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+        "src/components/travel-expenses/finance/finance-queue.test.tsx",
+        "src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+        "src/components/travel-expenses/finance/settlement-status.test.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+        "src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+        "src/lib/travel-expenses/__tests__/settlement.test.ts",
+        "src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+        "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "src/components/travel-expenses/travel-expenses-heading.test.ts",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel-provider.test.tsx",
+        "src/components/travel-expenses/finance/finance-reader-provider.test.tsx",
+        "src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx"
+      ],
+      "caseMultisetSha256": "d0d519f201d16ffa6fb1cb19eca99ffa19184a051816fb550e3aa02156b67a8b"
+    },
+    "types": {
+      "nextTypegen": 0,
+      "application": 0,
+      "workflowContracts": 0,
+      "smoke": 0
+    },
+    "quality": {
+      "ownedFiles": 3,
+      "explicitCRLF": 0,
+      "scopedLint": 0,
+      "ordinaryFormat": 1,
+      "ordinaryDifferences": 3,
+      "sourceWhitespace": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+      "files": 3,
+      "errors": 0,
+      "warnings": [
+        {
+          "file": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+          "rule": "only-export-components"
+        },
+        {
+          "file": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+          "rule": "only-export-components"
+        },
+        {
+          "file": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+          "rule": "tanstack-form-on-submit-requires-prevent-default"
+        },
+        {
+          "file": "src/components/travel-expenses/finance/finance-queue.tsx",
+          "rule": "no-high-complexity-react-function"
+        }
+      ],
+      "score": null
+    },
+    "freshPostgres": 0,
+    "freshBrowserRuntime": 0,
+    "probeSha256": "1b7e12cd64835c98b5ec2dcf4884f8ceaa55d2a34898f30501fe683773525388"
+  },
+  "custody": {
+    "anchors": 66,
+    "uniqueAncestorCommits": 62,
+    "immutableArchivePaths": {
+      "1747": 327,
+      "1748": 202
+    },
+    "lockfileSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "temporaryBridgesRemoved": 1,
+    "servicesStarted": 0
+  },
+  "frontier": {
+    "integrated": 65,
+    "awaitingIntegration": 39,
+    "pending": 53,
+    "total": 157
+  },
+  "pullRequest": "draft",
+  "issueState": "OPEN"
+}

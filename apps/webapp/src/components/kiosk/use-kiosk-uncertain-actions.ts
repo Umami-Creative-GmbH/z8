@@ -154,5 +154,5 @@ export function useKioskUncertainActions(input: {
 		};
 	}, [pending, input.online]); // oxlint-disable-line react-hooks/exhaustive-deps -- coming back online restarts the wait
 
-	return { pendingFor, hold, track };
+	return { pendingFor, hold, track, unresolvedCount: pending.filter(entry => !entry.attempt.resolved).length };
 }

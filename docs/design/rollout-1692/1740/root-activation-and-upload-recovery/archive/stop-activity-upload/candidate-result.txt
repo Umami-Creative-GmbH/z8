@@ -1,0 +1,6 @@
+1740 safe upload positive control: POST and PATCH completed; exactly one synthetic refusal command with staged evidence.
+ ✓ |unit| src/test/1740-activation-independent-bridge.test.tsx > real staged-note recovery: steady 875ms
+1740 safe upload Activity observation {"requests":1,"commandCalls":0,"errorNotifications":1,"disabledBeforeRetry":false,"draftRetained":true,"fileRetained":true}
+ × |unit| src/test/1740-activation-independent-bridge.test.tsx > real staged-note recovery: Activity 1988ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)

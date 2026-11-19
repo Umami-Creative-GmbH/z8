@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Devamsızlık ekle",
     "balance": {
       "carryoverDays": "{count} gün devreden izniniz var",
-      "carryoverExpiry": "son kullanma tarihi",
+      "carryoverDaysExpiring": "Devreden {count} gününüz var. Süreleri {date} tarihinde doluyor.",
       "carryoverFrom": "{year} yılından devreden",
       "daysRemaining": "Kalan Günler",
-      "description": "Mevcut yıl için tatil günleriniz",
       "outOfTotalDays": "toplam {totalDays} gün içinden",
       "pending": "Beklemede",
       "title": "Tatil Bakiyesi {year}",
       "used": "Kullanılan"
     },
     "calendar": {
+      "currentYear": "Bu yıl",
       "legend": {
         "approved": "Onaylandı",
-        "halfDayAm": "Yarım gün (ÖÖ)",
-        "halfDayPm": "Yarım gün (ÖS)",
+        "halfDay": "Yarım gün",
         "holiday": "Tatil",
         "pending": "Beklemede",
         "rejected": "Reddedildi"
       },
       "nextYear": "Gelecek yıl",
-      "previousYear": "Geçen yıl"
+      "previousYear": "Geçen yıl",
+      "requestAnotherAbsence": "Bu gün için başka bir izin talep et",
+      "selectDayDetailsHint": "İzin talep etmek için bir gün seçin. Onaylanmış veya bekleyen bir iznin bulunduğu gün seçilirse bunun yerine izin ayrıntıları gösterilir."
     },
     "change": {
       "afternoon": "Öğleden sonra",
@@ -40,6 +40,7 @@
       "historyFailed": "Değişiklik talepleri yüklenemedi.",
       "keepHours": "Kayıtlı saatleri ve kapsamı koru",
       "morning": "Sabah",
+      "pendingCount": "{count} beklemede",
       "pendingExplanation": "Kayıtlı izin, başka bir onaylayıcı talebinizi kabul edene kadar geçerliliğini korur.",
       "reason": "Neden",
       "reasonRequired": "Bir neden gereklidir",
@@ -321,10 +322,10 @@
       "pending": "Beklemede",
       "rejected": "Reddedildi"
     },
-    "subtitle": "İzin ve tatil günlerinizi yönetin",
     "table": {
       "cancelAbsence": "İzni iptal et",
       "cancelAbsenceTooltip": "İzni iptal et",
+      "changePending": "Değişiklik talebi beklemede",
       "end": "Bitiş",
       "headers": {
         "actions": "İşlemler",
@@ -337,9 +338,7 @@
       "noRequests": "İzin talebi bulunamadı.",
       "noSearchResults": "Aramanızla eşleşen devamsızlık bulunamadı.",
       "searchPlaceholder": "Türe, duruma veya notlara göre ara...",
-      "start": "Başlangıç",
-      "subtitle": "Son ve yaklaşan izin talepleri",
-      "title": "İzin Talepleriniz"
+      "start": "Başlangıç"
     },
     "title": "İzinler",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Takvim",
       "table": "Tablo"
+    },
+    "year": {
+      "loadFailed": "{year} yüklenemedi. Hâlâ {loadedYear} gösteriliyor.",
+      "loading": "{year} yükleniyor… Hâlâ {loadedYear} gösteriliyor."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Düzenle",
       "label": "Zaman girişi işlemleri"
     },
+    "context": {
+      "timezone": "Takvim saat dilimi"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Zaman kayıtları engellendi",
       "category": "Kategori",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Zaman girişi silme işlemi uygulandı",
       "auditNote": "Zaman kayıtları denetim amacıyla silinmiş olarak işaretlenecektir.",
-      "confirm": "Molaya Dönüştür",
-      "description": "Bu işlem çalışma dönemini kalıcı olarak silecektir. Boşluk takvimde mola olarak görünecektir.",
       "failed": "Çalışma dönemi silinemedi",
       "reasonLabel": "Silme nedeni",
-      "reasonRequired": "Neden belirtilmesi zorunludur",
-      "success": "Çalışma dönemi molaya dönüştürüldü",
-      "title": "Molaya Dönüştürülsün mü?"
+      "reasonRequired": "Neden belirtilmesi zorunludur"
     },
     "details": {
       "automaticClockOut": "Otomatik olarak çıkış yapıldı",
@@ -516,10 +518,7 @@
       "holiday": "Tatil",
       "missingRequiredWork": "Gerekli çalışma eksik",
       "requirementMetOrOver": "Gereksinim karşılandı/aşıldı",
-      "timeEntry": "Zaman Kaydı",
-      "title": "Gösterge",
       "underRequirement": "Gereksinimin altında",
-      "workPeriod": "Çalışma Dönemi",
       "workPeriodPending": "Onay Bekliyor"
     },
     "loadEventsError": "Takvim etkinlikleri yüklenemedi: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Politika saatleri ile karşılaştırılan kaydedilmiş zaman",
       "weekSum": "Toplam"
     },
+    "nextMonth": "Sonraki ay",
+    "previousMonth": "Önceki ay",
     "requirements": {
       "dayLabel": "{date}: {actual} kaydedildi, {required} gerekli, {delta} {status}.",
       "includesRunningWork": "Devam eden çalışmaları içerir",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Faturalandırılabilir",
+      "breakEnforcementNote": "Otomatik ayarlandı: mola zorunluluğu",
       "editedBy": "({name} tarafından {date} tarihinde düzenlendi)",
       "missingTask": "Eksik görev",
       "missingTaskHint": "Eksik görev: bir görev ekleyin",
-      "breakEnforcementNote": "Otomatik düzeltildi: mola uygulaması"
+      "runningTitle": "{name} - {duration} (devam ediyor)",
+      "stop": "Durdur",
+      "stopFor": "{name} için devam eden çalışma dönemini durdur"
     },
     "workStatus": {
       "overRequirement": "gereksinimin üzerinde",

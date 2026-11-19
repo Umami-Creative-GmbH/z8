@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Abbrechen",
+      "cancelled": "Antrag storniert",
       "cancelling": "Wird abgebrochen…",
+      "cancelRequest": "Antrag stornieren",
       "cancelRequestConfirmation": "Diese Anfrage abbrechen?",
+      "cancelRequestDescription": "Er wird aus der Prüfung zurückgezogen und kann nicht wieder geöffnet werden. Um erneut anzufragen, reichen Sie einen neuen Antrag ein.",
       "cancelRequestError": "Anfrage konnte nicht abgebrochen werden.",
       "fix": "Korrigieren",
-      "notAvailable": "Nicht verfügbar",
+      "keepRequest": "Antrag behalten",
       "view": "Ansehen"
     },
     "all": {
-      "description": "Überprüfen Sie Anträge für Abwesenheiten, Zeitkorrekturen und Auslagen.",
       "title": "Alle Anträge"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Aaträg erschined do, sobald si igreichd oder glade worde sind.",
+        "hint": "Versuchen Sie einen anderen Suchbegriff, Status oder Typ.",
         "title": "Kei Aaträg für die Filter gfunde"
       },
       "none": {
         "description": "Aaträg erschined do, sobald si igreichd oder glade worde sind.",
         "title": "No kei Aaträg"
+      },
+      "unavailable": {
+        "description": "Versuchen Sie es bei den nicht verfügbaren Quellen erneut, um Ihre Anträge zu prüfen.",
+        "title": "Keine Anträge geladen"
       }
     },
     "featureName": "Dini Aaträg aaluege",
     "filters": {
       "allStatuses": "Alli Status",
       "allTypes": "Alli Arte",
-      "approvedRequests": "Gnehmigti Aaträg",
-      "cancelledRequests": "Stornierti Aaträg",
-      "description": "Filtere jede Aatrag-Abschnitt noch Text, Status oder Aatragsart.",
-      "pendingRequests": "Hängigi Aaträg",
-      "rejectedRequests": "Abglehnti Aaträg",
+      "resultCount": "{visible} von {total} Anträgen werden angezeigt",
       "search": "Sueche",
-      "searchPlaceholder": "Nach Titel sueche…",
+      "searchRequestsPlaceholder": "Titel, Daten, Betrag oder Grund…",
       "status": "Status",
       "title": "Aaträg finde",
       "type": "Art"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Die Aafraag isch nüme hängig oder cha da nöd aazeigt werde. D'Bereitschaft vode Periode wird nomal prüeft."
     },
+    "history": {
+      "request": "Antrag"
+    },
     "inReview": {
-      "description": "Aaträg, wo uf Gnehmigung oder Bearbeitig warted.",
       "title": "In Überprüfig"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Speseaatrag"
       }
     },
+    "scope": "Ihre Abwesenheits-, Zeitkorrektur- und früheren Spesenanträge in der aktiven Organisation",
     "sourceError": {
       "absence": "Abweseheitsaaträg händ nöd chöne glade werde.",
       "timeCorrection": "Ziitkorrektur-Aaträg händ nöd chöne glade werde.",
       "title": "Einigi Aaträg händ nöd chöne glade werde.",
       "travelExpense": "Speseaaträg händ nöd chöne glade werde."
     },
-    "sourceTypes": {
-      "absence": "Abweseheit",
-      "timeCorrection": "Ziit",
-      "travelExpense": "Spese"
-    },
     "status": {
       "approved": "Gnehmigt",
       "cancelled": "Storniert",
       "inReview": "In Überprüfig",
-      "pending": "Hängig",
       "rejected": "Abglehnt"
     },
-    "subtitle": "Verfolg hängigi Aaträg, notwendigi Korrekture und chürzlichi Entscheidige a eim Ort.",
     "summary": {
       "ariaLabel": "Aatragsübersicht",
-      "pending": "Hängig",
       "recentDecisions": "Chürzlichi Entscheidige",
+      "recentWindow": "Letzte 30 Tage",
       "requiredFixes": "Notwendigi Korrekture",
       "totalLoaded": "Total glade"
     },
     "title": "Mini Aaträg",
+    "types": {
+      "absence": "Abwesenheit",
+      "timeCorrection": "Zeitkorrektur",
+      "travelExpense": "Reisespesen"
+    },
     "unavailableTitle": "Aaträg nöd verfügbar"
   }
 }

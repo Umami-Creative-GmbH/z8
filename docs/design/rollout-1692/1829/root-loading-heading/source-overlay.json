@@ -1,0 +1,7 @@
+{
+  "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+  "base": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "before": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6",
+  "after": "9394166f216588f07b5a740c16299c59c9e4658d518f2e2d4b8d29c78aa9488d",
+  "scope": "One exact organization consumer over current infrastructure and identical fixture"
+}

@@ -1,0 +1,26 @@
+{
+  "base": "a9b472e5864f386d881604605d593cffc189d61a",
+  "files": [
+    "apps/webapp/src/components/kiosk/kiosk-app.test.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-app.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-clocking.test.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-confirmation.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-employee-panel.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-home.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-language.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-offline-clocking.test.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-paired-screen.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-pairing-form.tsx",
+    "apps/webapp/src/components/kiosk/kiosk-pin-pad.tsx",
+    "apps/webapp/src/components/kiosk/use-kiosk-uncertain-actions.ts",
+    "apps/webapp/src/lib/time-tracking/kiosk/kiosk-enrolment.integration.test.ts",
+    "apps/webapp/src/lib/time-tracking/kiosk/kiosk-store.ts",
+    "apps/webapp/src/lib/time-tracking/kiosk/protocol.ts"
+  ],
+  "exit": 1,
+  "formatDiagnostics": 15,
+  "errorSummary": [
+    "Found 15 errors."
+  ],
+  "method": "Actual baseline sources copied into owned ignored fixture directory; no source modification. Earlier stdin attempt was invalid and is not counted."
+}

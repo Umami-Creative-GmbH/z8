@@ -1,0 +1,44 @@
+[
+  {
+    "localSearchAndDrilldown": "Immediate search opens the matching real project; Generate remained explicit"
+  },
+  {
+    "csvExport": "Downloaded real domain report contains only the selected Project 12 scope; portfolio has no generic CSV export"
+  },
+  {
+    "comparisonLocalScroll": {
+      "width": 306,
+      "scrollWidth": 743
+    }
+  },
+  {
+    "serverPagingSortSelection": "Descending sort; page select-all selected three on page 2; adding page-1 row retained four stable IDs"
+  },
+  {
+    "phoneSingleMountedControls": true,
+    "detailLabels": [
+      "Name",
+      "Category",
+      "Date",
+      "Recurrence",
+      "Actions"
+    ],
+    "phoneLayout": {
+      "viewport": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "dark": true
+    }
+  },
+  {
+    "savedLargeTextDark": {
+      "viewport": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "dark": true
+    }
+  },
+  {
+    "bulkDelete": "Cancel retained selection; real confirmed action removed precisely four synthetic records, 19 remain"
+  }
+]

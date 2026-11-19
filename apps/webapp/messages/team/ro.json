@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Înregistrează absența pentru {name}"
       },
+      "allowances": "Alocări anuale",
       "calendar": {
         "approved": "Aprobat",
         "changeDeputy": "Schimbă înlocuitorul",
@@ -12,7 +13,6 @@
         "deputyMissing": "Lipsește înlocuitorul",
         "description": "Absențe aprobate și în așteptare pentru echipa și anul selectate.",
         "error": {
-          "description": "Vă rugăm să încercați din nou peste câteva momente.",
           "title": "Nu se poate încărca calendarul"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Înregistrează absența",
         "titleForEmployee": "Înregistrează absența pentru {name}"
       },
+      "recordingUnavailable": "Nu s-au putut încărca opțiunile de înregistrare a absențelor",
+      "retained": "Sunt afișate datele încărcate anterior. Reîncercați pentru a obține înregistrările curente.",
+      "scopeChanged": "Domeniul echipei s-a modificat. Reîncărcați pentru a continua.",
+      "scopeLoading": "Se încarcă domeniul curent al echipei…",
+      "scopeUnavailable": "Nu se poate încărca domeniul curent al echipei",
+      "sections": "Secțiunile paginii",
       "sort": {
         "ascending": "crescător",
         "by": "Sortează după {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Fără sold"
     },
-    "description": "Vizualizați și gestionați angajații pe care îi coordonați direct",
+    "directory": {
+      "count": "{count, plural, one {# membru în acest domeniu} few {# membri în acest domeniu} other {# de membri în acest domeniu}}",
+      "loading": "Se încarcă membrii echipei",
+      "retained": "Se afișează ultimii membri încărcați. Reîncercați pentru a-i actualiza.",
+      "retry": "Reîncercați",
+      "retrying": "Se reîncearcă…",
+      "scope": "Dvs. și angajații pe care îi supravegheați direct în organizația activă.",
+      "scopeChanged": "Organizația sau accesul dvs. s-a modificat. Reîmprospătați pentru a vă încărca echipa."
+    },
     "driving": {
+      "clearFilters": "Golește filtrele",
       "columns": {
         "calendar": "Calendar",
         "date": "Dată",
@@ -126,6 +141,8 @@
         "employee": "Angajat",
         "team": "Echipă"
       },
+      "guidance": "Deschideți calendarul unui angajat pentru a finaliza atribuirea perioadei de lucru. Detaliile lipsă nu blochează pontarea și nu conferă autorizație de conducere.",
+      "loadFailed": "Detaliile de conducere nu au putut fi încărcate.",
       "loading": "Se încarcă detaliile despre deplasare",
       "missing": {
         "endReading": "Fără citire finală",
@@ -133,10 +150,18 @@
         "startReading": "Fără citire inițială",
         "vehicle": "Niciun vehicul"
       },
+      "noMatch": "Niciun detaliu lipsă privind conducerea nu corespunde acestor filtre.",
       "openCalendar": "Calendar",
       "openCalendarOf": "Deschideți calendarul pentru {name}",
+      "refreshFailed": "Detaliile de conducere nu au putut fi reîmprospătate. Sunt afișate înregistrările încărcate anterior.",
+      "restricted": "Detaliile de conducere nu sunt disponibile în domeniul dvs. curent.",
+      "scopeAll": "Toți angajații din această organizație",
+      "scopeFailed": "Domeniul curent de conducere nu a putut fi încărcat.",
+      "scopeLoading": "Se încarcă domeniul curent de conducere…",
+      "scopeManaged": "Angajații pe care îi gestionați",
       "title": "Lipsesc detalii despre deplasare",
-      "truncated": "Se afișează cele mai recente {count} perioade de lucru. Filtrați după echipă sau angajat pentru a le vedea pe restul."
+      "truncated": "Se afișează cele mai recente {count} perioade de lucru. Filtrați după echipă sau angajat pentru a le vedea pe restul.",
+      "updating": "Se actualizează detaliile de conducere…"
     },
     "empty": {
       "action": "Accesați setările angajaților",
@@ -148,9 +173,9 @@
       "title": "Ceva nu a funcționat"
     },
     "feature": "vizualizați echipa",
-    "member": "membru",
-    "members": "membri",
-    "member.you": "Tu",
+    "member": {
+      "you": "Tu"
+    },
     "noResults": {
       "action": "Șterge căutarea",
       "description": "Niciun membru al echipei nu corespunde „{query}”",
@@ -169,8 +194,8 @@
         "period": "Perioadă",
         "status": "Stare"
       },
-      "descriptionAll": "Cine a trimis perioada selectată. Aprobați sau respingeți trimiterile în inboxul de aprobare.",
-      "descriptionManaged": "Cine dintre angajații gestionați de dvs. a trimis perioada selectată. Aprobați sau respingeți trimiterile în inboxul de aprobare.",
+      "confirmationContext": "Trimiterile confirmă înregistrările fără a le bloca. Înregistrările modificate necesită retrimitere. Examinați deciziile în dosarul de aprobări.",
+      "contextFailed": "Nu s-a putut verifica accesul dvs. curent.",
       "empty": "Nicio persoană pe care o puteți vedea nu trebuie să trimită această perioadă.",
       "loading": "Se încarcă trimiterile de perioadă",
       "notSubmitted": "Netrimis",
@@ -180,7 +205,12 @@
       "openInbox": "Deschideți inboxul de aprobare",
       "owing": "{count, plural, one {# angajat nu a trimis încă această perioadă.} other {# angajați nu au trimis încă această perioadă.}}",
       "period": "Perioadă de trimitere",
+      "readFailed": "Nu s-au putut încărca trimiterile pentru perioadă. Înregistrările încărcate anterior pot fi neactualizate.",
+      "records": "Trimiteri ale angajaților",
+      "refresh": "Reîmprospătează trimiterile",
       "running": "Această perioadă este încă în desfășurare. Angajații o pot trimite începând cu ultima sa zi.",
+      "scopeAll": "Toți angajații vizați",
+      "scopeManaged": "Angajații pe care îi gestionezi",
       "status": {
         "approved": "Aprobat",
         "awaiting": "În așteptarea trimiterii",
@@ -189,10 +219,13 @@
         "submitted": "Trimis"
       },
       "summary": "Stări",
-      "title": "Trimiteri de perioadă"
+      "title": "Trimiteri de perioadă",
+      "unavailable": "Trimiterile pentru perioadă nu sunt disponibile pentru accesul tău actual. Reîmprospătează pentru a verifica din nou accesul."
     },
     "presence": {
       "allLocations": "Toate locațiile",
+      "assignmentContext": "Alocarea locației nu constituie o dovadă a poziției dispozitivului. Orele utilizează fusul orar înregistrat la începutul activității sau al pauzei. Prezența se reîmprospătează la fiecare minut.",
+      "chooseLocation": "Alege o locație",
       "columns": {
         "name": "Nume",
         "since": "De la",
@@ -202,9 +235,19 @@
       "descriptionAll": "Angajații alocați acestei locații care sunt pontați sau în pauză.",
       "descriptionManaged": "Angajații pe care îi gestionezi alocați acestei locații care sunt pontați sau în pauză.",
       "empty": "Nicio persoană vizibilă pentru tine nu este pontată în această locație în acest moment.",
+      "loadFailed": "Nu am putut încărca prezența pentru această locație. Reîncearcă sau alege din nou o locație.",
+      "loading": "Se încarcă prezența în locație…",
+      "loadingLocations": "Se încarcă locațiile pentru organizația actuală…",
       "locationTitle": "Cine este prezent: {location}",
+      "locationUnavailable": "Locație indisponibilă",
+      "locationUnavailableDescription": "Această locație nu este disponibilă în organizația ta actuală. Alege o locație activă pentru a vizualiza prezența.",
       "noLocations": "Organizația ta nu are încă locații active.",
-      "title": "Cine este prezent"
+      "refreshFailed": "Locațiile nu au putut fi reîmprospătate. Se afișează ultimele locații încărcate.",
+      "refreshingLocations": "Se reîmprospătează locațiile…",
+      "scopeChanged": "Prezența necesită o nouă citire pentru contul sau organizația curentă.",
+      "title": "Cine este prezent",
+      "unavailable": "Prezență indisponibilă",
+      "viewPresence": "Vizualizează prezența"
     },
     "primaryManager": "Sunteți managerul principal",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Angajat",
       "position": "Funcție",
+      "region": "Tabelul membrilor echipei",
       "role": "Rol",
       "sort": {
         "ascending": "crescător",

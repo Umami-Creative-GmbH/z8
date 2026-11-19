@@ -13,9 +13,11 @@
       "yes": "Sim"
     },
     "description": "Gere relatórios completos de horas de trabalho e ausências com dados de teletrabalho relevantes para impostos",
+    "employeeNumber": "Número do funcionário",
     "employeeSelector": {
       "error": "Não foi possível carregar os membros da equipe",
       "label": "Funcionário",
+      "loading": "Carregando membros da equipe",
       "placeholder": "Selecionar funcionário..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Carregando configurações da organização antes de habilitar as predefinições.",
       "period": "Período",
-      "selectPeriod": "Selecionar período"
+      "selectPeriod": "Selecionar período",
+      "settingsError": "Configurações da organização indisponíveis",
+      "settingsRequired": "As configurações da organização são necessárias para usar predefinições.",
+      "title": "Gerar um relatório de funcionário"
     },
     "generate": "Gerar Relatório",
     "generating": "Gerando Relatório…",
@@ -62,6 +67,7 @@
       "month": "Mês",
       "noHomeOfficeDays": "Nenhum dia de home office registrado neste período.",
       "overtime": "Horas Extras",
+      "title": "Pré-visualização do relatório",
       "total": "Total",
       "totalHomeOfficeDays": "Total de Dias em Home Office",
       "totalHomeOfficeHours": "Total de Horas Trabalhadas em Casa",
@@ -266,6 +272,9 @@
         "noPermission": "Não tem permissão para ver relatórios de projeto.",
         "title": "Relatórios de projeto"
       },
+      "refreshFailed": "Não foi possível atualizar os relatórios do projeto",
+      "scopeLoading": "Carregando o escopo atual do relatório…",
+      "scopeUnavailable": "Não foi possível carregar o escopo atual do relatório.",
       "status": {
         "active": "Ativo",
         "archived": "Arquivado",
@@ -324,7 +333,6 @@
         "failedGenerate": "Falha ao gerar relatório",
         "failedPortfolio": "Falha ao gerar relatório de portefólio",
         "failedProject": "Falha ao gerar relatório do projeto",
-        "failedProjectReport": "Falha ao gerar relatório do projeto",
         "portfolioGenerated": "Relatório de portefólio gerado",
         "projectGenerated": "Relatório gerado para {name}",
         "unexpectedError": "Ocorreu um erro inesperado"
@@ -376,6 +384,8 @@
         "loading": "Carregando links de compartilhamento…",
         "revokedAutomatically": "Revogado automaticamente em {date}: o criador não vê mais todos os projetos nele",
         "revokedBy": "Revogado por {name} em {date}",
+        "scopeLoading": "Carregando o escopo atual do link de compartilhamento…",
+        "scopeUnavailable": "Não foi possível carregar o escopo atual do link de compartilhamento.",
         "someone": "alguém",
         "title": "Links para este relatório",
         "views": "{count, plural, one {# visualização} other {# visualizações}}",
@@ -398,7 +408,8 @@
         "description": "O link deixará de funcionar imediatamente e seu instantâneo será excluído. Seu registro e histórico de visualizações serão mantidos.",
         "done": "Link revogado",
         "failed": "Não foi possível revogar o link",
-        "title": "Revogar este link?"
+        "titleDeletedReport": "Revogar o link de compartilhamento de um relatório excluído, {period}?",
+        "titleNamed": "Revogar o link de compartilhamento de {report}, {period}?"
       },
       "status": {
         "active": "Ativo",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arquivado",
       "archivedBadge": "Arquivado",
+      "comparison": "Distância mensal por veículo e funcionário",
       "empty": {
         "description": "Nenhum trabalho concluído com distância percorrida foi registrado neste período.",
         "title": "Nenhum deslocamento neste período"
@@ -457,6 +469,7 @@
         "period": "Período"
       },
       "generate": "Gerar relatório",
+      "generated": "Gerado em {time}",
       "generating": "Gerando relatório…",
       "kilometres": "{distance} km",
       "noReportYet": "Nenhum relatório gerado ainda",
@@ -465,7 +478,11 @@
         "description": "Quilômetros rodados a trabalho por veículo e funcionário, por mês",
         "feature": "ver o relatório de distância por veículo"
       },
+      "scope": "Funcionários disponíveis para você nesta organização",
+      "scopeLoading": "Confirmando a organização e o funcionário atuais…",
+      "scopeUnavailable": "Não foi possível carregar o escopo atual do relatório de veículos.",
       "selectPeriod": "Escolha um período e gere o relatório.",
+      "staged": "O período foi alterado. Gere o relatório para atualizar os resultados e downloads.",
       "table": {
         "employee": "Funcionário",
         "licencePlate": "Placa",
@@ -473,8 +490,7 @@
         "vehicle": "Veículo",
         "vehicleAndEmployee": "Veículo / funcionário"
       },
-      "title": "Distância por Veículo",
-      "totalDriven": "{distance} percorridos"
+      "title": "Distância por Veículo"
     }
   }
 }

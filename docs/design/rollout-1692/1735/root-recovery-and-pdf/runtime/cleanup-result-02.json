@@ -1,0 +1,9 @@
+{
+  "exactServicesAbsent": 3,
+  "capturedOwnProcessIdentities": 9,
+  "privateManifestsPreserved": true,
+  "ownedControllerAndBrowserProcessesRemaining": 0,
+  "ownedNativeSessionProcessesRemaining": 0,
+  "authStateCopiedSavedRestoredOrMinted": false,
+  "ownedListenersRemaining": 0
+}

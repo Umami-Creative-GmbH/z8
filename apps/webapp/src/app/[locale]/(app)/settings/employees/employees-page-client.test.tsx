@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 import { EmployeesPageClient } from "./employees-page-client";
 
@@ -21,6 +22,14 @@ vi.mock("@tolgee/react", () => ({
 			),
 	}),
 }));
+
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } },
+		isPending: false,
+	}),
+}));
+vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }) }));
 
 vi.mock("@/lib/query", () => ({
 	queryKeys: {
@@ -51,7 +60,7 @@ vi.mock("./columns", () => ({
 
 // The directory tests exercise pagination and actor props; bulk review has its own public-action suite.
 vi.mock("@/components/settings/employment-date-upload-dialog", () => ({
- EmploymentDateUploadDialog: () => null,
+	EmploymentDateUploadDialog: () => null,
 }));
 
 vi.mock("@/components/errors/no-employee-error", () => ({
@@ -118,12 +127,23 @@ function renderEmployeeDirectory() {
 
 	return render(
 		<QueryClientProvider client={queryClient}>
-			<EmployeesPageClient
-				accessTier="member"
-				organizationId="org-1"
-				currentUserId="user-1"
-				settingsAccess="member"
-			/>
+			<OrganizationContextProvider
+				initialContext={{
+					userId: "user-1",
+					organizationId: "org-1",
+					employee: { employeeId: "employee-1", organizationId: "org-1", role: "employee" },
+					organizationSettings: null,
+					updatedAt: Date.now(),
+				}}
+			>
+				<EmployeesPageClient
+					accessTier="member"
+					organizationId="org-1"
+					currentUserId="user-1"
+					currentEmployee={{ id: "employee-1", role: "employee" }}
+					settingsAccess="member"
+				/>
+			</OrganizationContextProvider>
 		</QueryClientProvider>,
 	);
 }
@@ -165,9 +185,7 @@ describe("EmployeesPageClient people-management tabs", () => {
 	});
 
 	it("gates the people tabs on the viewer's settings access", () => {
-		expect(source).toContain(
-			'meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people',
-		);
+		expect(source).toContain('meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people');
 		expect(source).not.toContain('props.accessTier === "orgAdmin"');
 	});
 
@@ -186,7 +204,7 @@ describe("EmployeesPageClient people-management tabs", () => {
 
 	it("filters the directory by Current, Former, Draft or All (#1438)", () => {
 		for (const status of ["current", "former", "draft", "all"]) {
-			expect(source).toContain(`<SelectItem value="${status}">`);
+			expect(source).toContain(`value: "${status}"`);
 		}
 		expect(source).not.toContain('<SelectItem value="active">');
 		expect(source).not.toContain('<SelectItem value="inactive">');

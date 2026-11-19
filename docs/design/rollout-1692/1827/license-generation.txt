@@ -1,0 +1,11 @@
+$ node -e "require('node:fs').mkdirSync('./src/data', { recursive: true })" && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json
+.../mwhvitha-oos                         | Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: X:\PackageStores\pnpm\v11
+  Virtual store is at:             ../../../../../../../C:/Users/KaiHentschel/AppData/Local/pnpm-cache/dlx/b9b04f882a6f74581e9c453de851f3a1/mwhvitha-oos/node_modules/.pnpm
+.../mwhvitha-oos                         | Progress: resolved 47, reused 47, downloaded 0, added 47, done
+
+dependencies:
++ license-report 6.8.6
+
+Done in 10.2s using pnpm v12.18.0

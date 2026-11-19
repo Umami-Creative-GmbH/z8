@@ -1,0 +1,226 @@
+{
+  "pngs": [
+    {
+      "path": "current-desktop-expanded-light-18px.png",
+      "width": 1600,
+      "height": 904,
+      "channels": 3,
+      "decodedBytes": 4339200,
+      "sha256": "232eef94437ef0291915f0e8105d426a3abc07b46b87f5c11139adba4c3d0bab"
+    },
+    {
+      "path": "current-desktop-collapsed-light-18px.png",
+      "width": 1600,
+      "height": 904,
+      "channels": 3,
+      "decodedBytes": 4339200,
+      "sha256": "dbeb59ec67ea50e6ebcedc905208ac0920ba034b509edd59f25c2415273bd697"
+    },
+    {
+      "path": "current-phone-light-18px.png",
+      "width": 390,
+      "height": 748,
+      "channels": 3,
+      "decodedBytes": 875160,
+      "sha256": "af73205e79e46e91048740f29b4f3a97f76aaa3867bb86de69bbfc15e4381a69"
+    },
+    {
+      "path": "current-phone-nav-open-light-18px.png",
+      "width": 390,
+      "height": 748,
+      "channels": 3,
+      "decodedBytes": 875160,
+      "sha256": "83893ae22850def34bce03679c6b7cffe81d3717fdd06c5d2d39848389117f3e"
+    },
+    {
+      "path": "current-phone-record-right-18px.png",
+      "width": 390,
+      "height": 748,
+      "channels": 3,
+      "decodedBytes": 875160,
+      "sha256": "673959f203ce22fdb15c3cc29aa417e23d146ead9d8a64e775792fc776bb48ff"
+    },
+    {
+      "path": "current-wide-expanded-dark-18px.png",
+      "width": 2400,
+      "height": 1004,
+      "channels": 3,
+      "decodedBytes": 7228800,
+      "sha256": "7cd84338fb75236b5593837b6a144792e4b3c7653fe96f5da7981bf665f6f600"
+    },
+    {
+      "path": "historical-desktop-expanded-light-18px.png",
+      "width": 1600,
+      "height": 904,
+      "channels": 3,
+      "decodedBytes": 4339200,
+      "sha256": "035c19ecbcf22ed01763bd2a893f3808d2c00eeefed1d1e94b4f2ff20c60d9c6"
+    },
+    {
+      "path": "historical-desktop-collapsed-light-18px.png",
+      "width": 1600,
+      "height": 904,
+      "channels": 3,
+      "decodedBytes": 4339200,
+      "sha256": "c851692105c193e983f3122bc7cc357a7580359da8a29d7140a3c90b3c0c1edb"
+    },
+    {
+      "path": "historical-phone-light-18px.png",
+      "width": 390,
+      "height": 748,
+      "channels": 3,
+      "decodedBytes": 875160,
+      "sha256": "39fd38c01a5a66444eaaa011803e5d43f2574ae43e9619428c6ab903fd924c53"
+    },
+    {
+      "path": "historical-phone-record-right-18px.png",
+      "width": 390,
+      "height": 748,
+      "channels": 3,
+      "decodedBytes": 875160,
+      "sha256": "dbd117f8e67dd90a3f6c1bed65cfde4c8eda74c8d56a10926e6dd3d28edc1042"
+    },
+    {
+      "path": "historical-wide-expanded-dark-18px.png",
+      "width": 2400,
+      "height": 1004,
+      "channels": 3,
+      "decodedBytes": 7228800,
+      "sha256": "7d2b6a94b2d6e8ca87cc059efbd4aa54d921a65db66744c290b026213793f52b"
+    }
+  ],
+  "scriptSyntax": [
+    {
+      "path": "capture-layouts.mjs",
+      "status": 0,
+      "executed": false
+    },
+    {
+      "path": "late-read-journey.mjs",
+      "status": 0,
+      "executed": false
+    },
+    {
+      "path": "post-restore.mjs",
+      "status": 0,
+      "executed": false
+    },
+    {
+      "path": "overlay.mjs",
+      "status": 0,
+      "executed": false
+    },
+    {
+      "path": "run-units.mjs",
+      "status": 0,
+      "executed": false
+    },
+    {
+      "path": "audit.mjs",
+      "status": 0,
+      "executed": false
+    }
+  ],
+  "typedSyntax": [
+    {
+      "path": "independent-public-probes.test.tsx",
+      "parsed": true,
+      "warnings": 0,
+      "parser": "Existing tsx-owned esbuild, normal package resolution",
+      "typeCheckClaim": false
+    },
+    {
+      "path": "fixture-domain-seed.ts",
+      "parsed": true,
+      "warnings": 0,
+      "parser": "Existing tsx-owned esbuild, normal package resolution",
+      "typeCheckClaim": false
+    },
+    {
+      "path": "fixture-readback.ts",
+      "parsed": true,
+      "warnings": 0,
+      "parser": "Existing tsx-owned esbuild, normal package resolution",
+      "typeCheckClaim": false
+    }
+  ],
+  "json": [
+    "current-layouts.json",
+    "historical-layouts.json",
+    "preservation.json",
+    "resource-cleanup.json",
+    "late-read-confirmed.json",
+    "overlay-pins.json",
+    "test-accounting.json",
+    "test-results.json",
+    "readbacks.json",
+    "runtime-observations.json",
+    "next-current.json",
+    "native-current.json",
+    "failed-attempts.json",
+    "HANDOFF.json"
+  ],
+  "relativeLinks": [
+    {
+      "source": "HANDOFF.md",
+      "target": "test-accounting.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "test-results.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "runtime-observations.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "readbacks.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "next-current.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "native-current.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "current-layouts.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "historical-layouts.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "overlay-pins.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "preservation.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "resource-cleanup.json",
+      "valid": true
+    },
+    {
+      "source": "HANDOFF.md",
+      "target": "failed-attempts.json",
+      "valid": true
+    }
+  ],
+  "validators": "Decode PNG pixels, JSON.parse, existing tsx-owned esbuild syntax parser, Node --check only. No archived runtime driver executed."
+}

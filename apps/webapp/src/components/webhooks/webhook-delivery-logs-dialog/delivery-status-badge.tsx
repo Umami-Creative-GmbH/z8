@@ -10,7 +10,7 @@ export function DeliveryStatusBadge({ status }: { status: string }) {
 	switch (status) {
 		case "success":
 			return (
-				<Badge variant="default" className="bg-green-600">
+				<Badge variant="success">
 					<IconCheck className="mr-1 size-3" aria-hidden="true" />
 					{t("webhooks:webhooks.logs.success", "Success")}
 				</Badge>
@@ -24,7 +24,7 @@ export function DeliveryStatusBadge({ status }: { status: string }) {
 			);
 		case "retrying":
 			return (
-				<Badge variant="outline" className="border-yellow-500 text-yellow-600">
+				<Badge variant="warning">
 					<IconRefresh className="mr-1 size-3" aria-hidden="true" />
 					{t("webhooks:webhooks.logs.retrying", "Retrying")}
 				</Badge>

@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Setting up your workspace...",
+    "checkFailed": "We couldn't check your organizations. Try again.",
     "checking": "Checking session...",
-    "clickToSelect": "Click to select",
     "redirecting": "Redirecting...",
+    "retry": "Try again",
+    "selectionHint": "Your workspace opens after selection.",
     "selectOrganization": "Select Organization",
-    "selectOrganizationDescription": "Choose which organization you want to work with"
+    "selectOrganizationDescription": "Choose which organization you want to work with",
+    "title": "Open your workspace"
   },
   "setup": {
     "authorization": {

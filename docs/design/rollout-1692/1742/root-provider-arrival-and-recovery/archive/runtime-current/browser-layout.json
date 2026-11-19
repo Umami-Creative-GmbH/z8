@@ -1,0 +1,55 @@
+{
+  "source": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+  "results": [
+    {
+      "check": "desktop-light",
+      "width": 1600,
+      "height": 1000,
+      "h1": 1,
+      "rows": 8,
+      "overflow": false,
+      "mainRight": 1600,
+      "theme": "light",
+      "font": "16px",
+      "dialogs": 0
+    },
+    {
+      "check": "saved-theme-font-sidebar-reload",
+      "dark": true,
+      "font": "18px",
+      "collapsed": true
+    },
+    {
+      "check": "wide-dark-large-collapsed",
+      "width": 2400,
+      "height": 1200,
+      "h1": 1,
+      "rows": 8,
+      "overflow": false,
+      "mainRight": 2400,
+      "theme": "dark",
+      "font": "18px",
+      "dialogs": 0
+    },
+    {
+      "check": "phone-drawer-first-escape",
+      "focusReturned": true
+    },
+    {
+      "check": "phone-dark-large",
+      "width": 390,
+      "height": 844,
+      "h1": 1,
+      "rows": 8,
+      "overflow": false,
+      "mainRight": 390,
+      "theme": "dark",
+      "font": "18px",
+      "dialogs": 0
+    },
+    {
+      "check": "phone-record-labels",
+      "allVisibleCellsLabeled": true
+    }
+  ]
+}

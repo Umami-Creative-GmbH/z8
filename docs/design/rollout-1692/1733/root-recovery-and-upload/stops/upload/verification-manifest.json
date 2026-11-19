@@ -1,0 +1,20 @@
+{
+  "status": "STOP / preserved upload failure",
+  "candidate": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+  "source": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
+  "overallGreen": false,
+  "acceptanceComplete": false,
+  "summary": "HANDOFF-runtime.md",
+  "stop": "public/STOP.json",
+  "sourcePins": "public/preservation.json",
+  "commands": "public/attempts.json",
+  "testOccurrences": "public/test-accounting.json",
+  "publicAllowlist": "public-allowlist.json",
+  "hashes": "artifact-hashes.json",
+  "resourcesClean": true,
+  "releaseAll": true,
+  "publicClonePolicy": "Sanitized helpers are provenance only; no archived clone executed. Private inputs/raw failures/diagnostics are excluded and unhashed.",
+  "cleanup": "public/cleanup.json",
+  "artifactValidation": "public/artifact-validation.json",
+  "powershellValidation": "public/powershell-validation.json"
+}

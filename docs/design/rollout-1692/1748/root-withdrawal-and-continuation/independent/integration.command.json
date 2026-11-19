@@ -1,0 +1,27 @@
+{
+  "label": "integration",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "run",
+    "test:integration",
+    "src/lib/travel-expenses/claim-read.integration.test.ts",
+    "src/lib/travel-expenses/legacy-draft-conversion.integration.test.ts",
+    "src/lib/travel-expenses/finance-settlement.integration.test.ts",
+    "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+    "--maxWorkers=1",
+    "--reporter=json",
+    "--outputFile",
+    "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\integration.json"
+  ],
+  "exit": 0,
+  "seconds": 40.21,
+  "logBytes": 63560,
+  "logSha256": "f8394ed4a8b0ca372f9ac597c7f29b59c5ea63d204cf6c650022677778d48bff"
+}

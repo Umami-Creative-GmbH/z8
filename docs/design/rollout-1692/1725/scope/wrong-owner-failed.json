@@ -1,0 +1,31 @@
+{
+  "message": "The input did not match the regular expression /startScopedPayrollExportAction/. Input:\n\n'{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\\\n  \\\\\"actionId\\\\\": \\\\\"7f8d082c6621dff774b92ddeffa637a3aff5701e7b\\\\\",\\\\n  \\\\\"runtime\\\\\": \\\\\"node\\\\\",\\\\n  \\\\\"filename\\\\\": \\\\\"apps/webapp/src/app/[locale]/(app)/settings/closed-months/actions.ts\\\\\",\\\\n  \\\\\"functionName\\\\\": \\\\\"getMonthCloseContext\\\\\",\\\\n  \\\\\"workers\\\\\": {\\\\n    \\\\\"app/[locale]/(app)/payroll/page\\\\\": {\\\\n      \\\\\"moduleId\\\\\": \\\\\"[project]/apps/webapp/.next-internal/server/app/[locale]/(app)/payroll/page/actions.js { ACTIONS_MODULE0 => \\\\\\\\\\\\\"[project]/apps/webapp/src/tolgee/load-translations.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE1 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/settings/position-stamps/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE2 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/settings/profile/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE3 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE4 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE5 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/time-tracking/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE6 => \\\\\\\\\\\\\"[project]/apps/webapp/src/components/dashboard/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE7 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/settings/work-categories/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE8 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/settings/notifications/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE9 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/search/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE10 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/settings/employees/employee-clock-status.actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE11 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/organization-actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE12 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/create-organization-action.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE13 => \\\\\\\\\\\\\"[project]/apps/webapp/src/tolgee/language.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE14 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE15 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/payroll/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE16 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/payroll/comparison-actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE17 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/payroll/baseline-actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE18 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/settings/closed-months/actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\", ACTIONS_MODULE19 => \\\\\\\\\\\\\"[project]/apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-recovery-actions.ts [app-rsc] (ecmascript)\\\\\\\\\\\\\" } [app-rsc] (server actions loader, ecmascript)\\\\\",\\\\n      \\\\\"async\\\\\": true\\\\n    }\\\\n  }\\\\n}\"}]},\"jsonrpc\":\"2.0\",\"id\":1}'\n",
+  "checks": [
+    {
+      "name": "held actual payroll action before delivery",
+      "actual": true
+    }
+  ],
+  "requests": [
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    }
+  ]
+}

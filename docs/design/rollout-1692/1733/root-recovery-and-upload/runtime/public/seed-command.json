@@ -1,0 +1,13 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "tsx",
+    "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1733-final-runtime-checks\\runtime\\seed.ts",
+    "<owned-private-fixture>"
+  ],
+  "exit": 0,
+  "initialDomainPrerequisitesOnly": true,
+  "canonicalGuard": true
+}

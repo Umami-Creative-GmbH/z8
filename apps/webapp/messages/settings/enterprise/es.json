@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Activo",
+      "contextRetry": "Actualiza el contexto de tu organización para continuar.",
+      "contextUnavailable": "Contexto de la organización no disponible",
+      "copyFailed": "No se pudo copiar la clave. Inténtalo de nuevo.",
       "copyKey": "Copiar clave API",
       "copyPrefix": "Copiar prefijo",
       "create": "Crear clave",
@@ -9,6 +12,7 @@
       "createdBy": "por {name}",
       "createDescription": "Cree una nueva clave API para acceso programático. La clave solo se mostrará una vez.",
       "createdOn": "Creado el {date}",
+      "createFailed": "No se pudo confirmar la creación de la clave. Actualiza la lista antes de volver a intentarlo.",
       "createTitle": "Crear clave API",
       "creatorDeparted": "Desvinculado",
       "deleted": "Clave API eliminada",
@@ -24,6 +28,8 @@
         "creator": "Creado por",
         "creatorDeparted": "{name} (desvinculado)",
         "ip": "Dirección IP",
+        "kind": "Clave de API",
+        "loading": "Cargando clave de API",
         "noRateLimit": "Desactivado",
         "noRequests": "No hay solicitudes en los últimos 90 días.",
         "rateLimit": "Límite de frecuencia",
@@ -80,13 +86,19 @@
         "scopes": "Permisos",
         "scopesRequired": "Seleccione al menos un permiso"
       },
+      "hideKey": "Ocultar clave",
       "keyCopied": "Clave API copiada al portapapeles",
+      "keyHidden": "Clave oculta",
       "lastUsed": "Último uso",
+      "loading": "Cargando claves de API",
       "name": "Nombre",
       "neverExpires": "Nunca caduca",
       "noPermissions": "Sin permisos",
       "prefix": "Prefijo de clave",
       "prefixCopied": "Prefijo de clave copiado",
+      "retryHelp": "Actualiza esta lista para confirmar las claves actuales. Los registros cargados previamente se conservan.",
+      "revealKey": "Mostrar clave",
+      "revokeUnknown": "No se pudo confirmar la revocación. Actualiza la lista antes de volver a intentarlo.",
       "scopeLabel": {
         "absencesRead": "Leer ausencias",
         "absencesReadHealth": "Leer detalles de salud de las ausencias",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Importante:",
       "status": "Estado",
       "title": "Claves de API",
+      "unavailable": "Claves de API no disponibles",
+      "unavailableDescription": "No se pudo cargar tu configuración. Vuelve a intentarlo para actualizar esta página.",
+      "unavailableTitle": "Acceso para desarrolladores no disponible",
       "unknownCreator": "un antiguo administrador",
       "updated": "Clave de API actualizada",
+      "updateUnknown": "No se pudo confirmar la actualización. Actualiza esta clave antes de volver a intentarlo.",
       "usage": "{count} de {max} claves utilizadas"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "URLs predeterminadas",
         "defaultUrlsDescription": "Estas URLs gestionadas por la plataforma funcionan automáticamente sin necesidad de configurar DNS personalizados.",
         "deleteAria": "Eliminar dominio personalizado {domain}",
+        "deleteConfirm": "Eliminar dominio",
         "deleted": "Dominio eliminado",
         "deleteDescription": "¿Está seguro de que desea eliminar \"{domain}\"? Esta acción no se puede deshacer. Los usuarios ya no podrán iniciar sesión a través de este dominio personalizado.",
         "deleteFailed": "Error al eliminar el dominio",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Dejar en blanco para mantener la clave existente. Obtenga su clave de API en resend.com",
         "create": "Crear configuración",
         "delete": "Eliminar configuración",
-        "deleteConfirm": "¿Está seguro de que desea eliminar esta configuración de correo electrónico?",
+        "deleteConfirmNamed": "¿Eliminar la configuración de correo electrónico para {fromEmail}? Los correos electrónicos de la organización volverán a usar el remitente predeterminado del sistema.",
         "deleted": "Configuración de correo electrónico eliminada",
         "deleteFailed": "Error al eliminar",
+        "deleteTitle": "¿Eliminar configuración de correo electrónico?",
         "description": "Configure un proveedor de correo electrónico personalizado para su organización. Todos los correos electrónicos de la organización utilizarán esta configuración en lugar de la predeterminada del sistema.",
         "fromEmail": "Correo electrónico del remitente",
         "fromName": "Nombre del remitente",
@@ -356,10 +374,9 @@
           "title": "Dominio"
         },
         "hero": {
-          "description": "Configure SSO, SCIM y la aplicación para la organización {organizationId} con activación protegida.",
-          "eyebrow": "Identidad empresarial",
           "title": "Lista de verificación de comandos operativos"
         },
+        "progress": "{completed} de {total} pasos completados",
         "provider": {
           "action": {
             "save": "Guardar proveedor"
@@ -453,7 +470,6 @@
           },
           "description": "La verificación SCIM se actualiza después de que su proveedor de identidad envía un cambio de usuario o grupo de prueba.",
           "dialog": {
-            "cancel": "Cancelar",
             "decommission": {
               "description": "Esto da de baja permanentemente el aprovisionamiento SCIM y no se puede deshacer.",
               "title": "Dar de baja SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Error al eliminar la configuración de OAuth",
         "description": "Configura tus propias credenciales OAuth para el inicio de sesión social. Esto permite a tus usuarios iniciar sesión utilizando las aplicaciones OAuth de tu organización en lugar de credenciales compartidas.",
         "developerConsole": "Consola de desarrollador de {provider}",
+        "editAria": "Editar inicio de sesión con {provider}",
         "editDescription": "Actualiza tus credenciales OAuth.",
         "editTitle": "Editar OAuth de {provider}",
         "empty": "No hay proveedores OAuth sociales personalizados configurados.",
@@ -616,9 +633,11 @@
         "keyId": "ID de clave",
         "pasteYourP8PrivateKeyContents": "Pegue el contenido de su clave privada .p8",
         "privateKey": "Clave privada (.p8)",
+        "removeAria": "Quitar inicio de sesión con {provider}",
         "removed": "OAuth de {provider} eliminado",
         "removeDialogDescription": "¿Estás seguro de que quieres eliminar esta configuración de OAuth? Los usuarios volverán a utilizar las credenciales OAuth compartidas (si están disponibles).",
         "removeDialogTitle": "Eliminar proveedor OAuth social",
+        "removeDialogTitleNamed": "¿Quitar inicio de sesión con {provider}?",
         "teamId": "ID de equipo",
         "title": "Proveedores de inicio de sesión social",
         "unverified": "No verificado",
@@ -629,8 +648,9 @@
         "addError": "Error al añadir el proveedor de SSO",
         "addSuccess": "Proveedor de SSO añadido correctamente",
         "addTitle": "Añadir proveedor de SSO",
+        "deleteConfirm": "Eliminar proveedor",
         "deleteDialogDescription": "¿Estás seguro de que quieres eliminar este proveedor de SSO? Los usuarios ya no podrán iniciar sesión utilizando este proveedor de identidad.",
-        "deleteDialogTitle": "Eliminar proveedor de SSO",
+        "deleteDialogTitleNamed": "¿Eliminar el proveedor de SSO {provider}?",
         "deleteError": "Error al eliminar el proveedor de SSO",
         "deleteProviderAria": "Eliminar proveedor de SSO {provider}",
         "deleteSuccess": "Proveedor de SSO eliminado",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Los usuarios con este dominio de correo electrónico podrán usar SSO",
         "empty": "No hay proveedores de SSO configurados todavía.",
         "emptyDescription": "Añade un proveedor OIDC para habilitar el inicio de sesión único empresarial.",
+        "generateToken": "Generar token TXT",
         "guide": {
           "addDescription": "Siga las instrucciones de configuración de su proveedor y luego conéctelo a su organización.",
           "afterSave": "Después de guardar, verifique su dominio de correo electrónico con el registro DNS TXT en Z8. Realice un inicio de sesión piloto con un usuario previsto mientras mantiene abierta su sesión de administrador actual. En Configuración guiada, guarde el mismo ID de proveedor y dominio de correo electrónico que se muestran en la lista de proveedores; después, registre manualmente el resultado del inicio de sesión observado antes de considerar Exigir SSO. El guardado y la verificación de DNS no garantizan un inicio de sesión correcto.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Un identificador único para este proveedor (minúsculas, sin espacios)",
         "providerIdInvalid": "El ID del proveedor solo debe contener letras minúsculas, números y guiones",
         "title": "Proveedores de identidad",
-        "token": "Token",
         "tokenError": "Error al generar el token de verificación de dominio",
         "tokenGenerated": "Token de verificación generado",
         "txtToken": "Token TXT:",

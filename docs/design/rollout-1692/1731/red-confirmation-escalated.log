@@ -1,0 +1,205 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-fd7b5280-0a9cc97a274c2847/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/due-for-deletion-list.test.tsx (1 test | 1 failed) 1103ms
+   × retains confirmation and selection with an inline failed-command retry 1102ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/due-for-deletion-list.test.tsx > retains confirmation and selection with an inline failed-command retry
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<div
+  aria-describedby="base-ui-_r_c_"
+  aria-labelledby="base-ui-_r_b_"
+  class="bg-background motion-safe:data-[starting-style]:animate-in motion-safe:data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[starting-style]:fade-in-0 data-[ending-style]:zoom-out-95 data-[starting-style]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg"
+  data-base-ui-focusable=""
+  data-open=""
+  data-slot="alert-dialog-content"
+  id="_r_9_"
+  role="alertdialog"
+  style="--nested-dialogs: 0;"
+  tabindex="-1"
+>
+  <div
+    class="flex flex-col gap-2 text-center sm:text-left"
+    data-slot="alert-dialog-header"
+  >
+    <h2
+      class="text-lg font-semibold"
+      data-slot="alert-dialog-title"
+      id="base-ui-_r_b_"
+    >
+      {count, plural, one {Purge # document?} other {Purge # documents?}}
+    </h2>
+    <p
+      class="text-muted-foreground text-sm"
+      data-slot="alert-dialog-description"
+      id="base-ui-_r_c_"
+    >
+      The documents and their files are deleted for good. The audit log keeps who purged them, the employee, category, document date and pay period. Titles and file names are also removed from the documents' earlier audit records.
+    </p>
+  </div>
+  <div
+    class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+    data-slot="alert-dialog-footer"
+  >
+    <button
+      class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+      tabindex="0"
+      type="button"
+    >
+      Cancel
+    </button>
+    <button
+      class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 h-9 px-4 py-2 has-[>svg]:px-3"
+      data-slot="button"
+      type="button"
+    >
+      Purge
+    </button>
+  </div>
+</div>
+
+Ignored nodes: comments, script, style
+<html
+  style="scrollbar-gutter: stable;"
+>
+  <head />
+  <body
+    style="overflow: hidden;"
+  >
+    <div
+      aria-hidden="true"
+      data-base-ui-inert=""
+    >
+      <div
+        class="flex flex-col gap-3"
+      >
+        <div
+          class="flex flex-wrap items-center justify-between gap-3"
+        >
+          <div
+            class="flex items-center gap-2"
+          >
+            <span
+              aria-checked="true"
+              aria-labelledby="due-select-all-label"
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] peer inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-shadow focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary dark:aria-invalid:ring-destructive/40"
+              data-checked=""
+              data-slot="checkbox"
+              id="base-ui-_r_0_"
+              role="checkbox"
+              tabindex="0"
+            >
+              <span
+                class="flex items-center justify-center text-current transition-none"
+                data-checked=""
+                data-slot="checkbox-indicator"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-3.5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </span>
+            </span>
+            <input
+              aria-hidden="true"
+              id="due-select-all"
+              style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+              tabindex="-1"
+              type="checkbox"
+            />
+            <label
+              class="text-sm"
+              for="due-select-all"
+              id="due-select-all-label"
+            >
+              Select all
+            </label>
+          </div>
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-trash size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7l16 0"
+              />
+              <path
+                d="M10 11l0 6"
+              />
+              <path
+                d="M14 11l0 6"
+              />
+              <path
+                d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"
+              />
+              <path
+                d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"
+              />
+            </svg>
+            {count, plural, =0 {Purge selected} one {Purge # document} other {Purge # documents}}
+          </button>
+        </div>
+        <ul
+          class="divide-y rounded-md border"
+        >
+          <li
+            class="flex items-center gap-3 p-3"
+          >
+            <span
+              aria-checked="true"
+              aria-labelledby="due-due-label"
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] peer inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-shadow focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-inp...
+ ❯ Proxy.waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ src/components/personnel-file/due-for-deletion-list.test.tsx:41:8
+     39|  const dialog = await screen.findByRole("alertdialog");
+     40|  fireEvent.click(within(dialog).getByRole("button", { name: "Purge" })…
+     41|  await waitFor(() => expect(within(dialog).getByRole("alert").textCont…
+       |        ^
+     42|  expect(boundary.purge).toHaveBeenCalledWith({ documentIds: ["due"] });
+     43| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  19:19:50
+   Duration  2.00s (tests 59%, environment 19%, import 15%, transform 5%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-fd7b5280-
+  │ 0a9cc97a274c2847\apps\webapp
+

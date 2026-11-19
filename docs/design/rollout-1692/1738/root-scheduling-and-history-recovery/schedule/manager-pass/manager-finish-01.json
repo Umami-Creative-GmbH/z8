@@ -1,0 +1,23 @@
+{
+  "actor": "standard manager",
+  "steps": [
+    {
+      "name": "keyboard row open, delete confirmation Cancel",
+      "retained": true
+    },
+    {
+      "name": "confirmed public delete",
+      "list": "Shift list (4)"
+    },
+    {
+      "name": "sidebar collapsed + reload",
+      "collapsed": false,
+      "fontSize": "18px",
+      "dark": true
+    },
+    {
+      "name": "real settings navigation/back",
+      "path": "/en/scheduling"
+    }
+  ]
+}

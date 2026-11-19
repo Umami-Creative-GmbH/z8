@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-18T03:30:54.182Z",
+  "emailMatches": true,
+  "passwordMatches": true,
+  "pathname": "/en/sign-in",
+  "verificationFailed": true,
+  "widgetIframePresent": false,
+  "hiddenWidgetTokenPresent": true,
+  "loginButtonEnabled": true,
+  "correctFreshCredentialFormAttempts": 2,
+  "authenticatedRouteObserved": false,
+  "productFinding": false,
+  "classification": "Auth/development-widget runtime boundary blocked current acceptance; no scoped R165 product finding established; bounded two public-form attempts only",
+  "credentialsPrinted": false,
+  "authConfigChanged": false,
+  "authApiCalledByHarness": false
+}

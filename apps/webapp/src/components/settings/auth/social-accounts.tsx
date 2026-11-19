@@ -1,32 +1,48 @@
 "use client";
 
+import { IconCheck, IconRefresh } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query/keys";
 import { SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-providers";
 
+/**
+ * A linked sign-in account of the current user. The provider's subject id
+ * (`accountId`) is deliberately not read: it is an opaque identifier, not
+ * something the user recognizes, and it stays out of the UI.
+ */
 interface ConnectedAccount {
 	id: string;
 	providerId: string;
-	accountId: string;
-	createdAt: Date;
+	createdAt: Date | string | null | undefined;
+}
+
+/** The day an account was linked, in the reader's language and time zone; null when unknown. */
+function formatConnectedOn(
+	createdAt: ConnectedAccount["createdAt"],
+	locale: string,
+	timezone: string,
+): string | null {
+	if (!createdAt) return null;
+	try {
+		// The auth client hands back a Date or an ISO string; convert at this boundary.
+		const instant = instantFromDate(createdAt instanceof Date ? createdAt : new Date(createdAt));
+		return formatInstant(instant, { locale, timezone, timeFormat: "24h" }, "dateMedium");
+	} catch {
+		return null;
+	}
 }
 
 interface SocialAccountsProps {
@@ -35,10 +51,13 @@ interface SocialAccountsProps {
 
 export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
+	const timezone = useUserTimezone();
 	const queryClient = useQueryClient();
 	const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
-	const accountToUnlinkRef = useRef<{
+	const [accountToUnlink, setAccountToUnlink] = useState<{
 		accountRowId: string;
+		providerName: string;
 	} | null>(null);
 	const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
 
@@ -79,17 +98,9 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 				t("settings.socialAccounts.disconnectSuccess", "Account disconnected successfully"),
 			);
 			setUnlinkDialogOpen(false);
-			accountToUnlinkRef.current = null;
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.accounts() });
 		},
-		onError: (error) => {
-			toast.error(t("settings.socialAccounts.disconnectFailed", "Failed to disconnect account"), {
-				description:
-					error instanceof Error
-						? error.message
-						: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
-			});
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	const handleConnect = (providerId: SocialProviderId) => {
@@ -122,12 +133,14 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 	};
 
 	const handleUnlink = () => {
-		if (!accountToUnlinkRef.current) return;
-		unlinkMutation.mutate(accountToUnlinkRef.current);
+		if (!accountToUnlink || unlinkMutation.isPending) return;
+		unlinkMutation.mutate({ accountRowId: accountToUnlink.accountRowId });
 	};
 
-	const confirmUnlink = (accountRowId: string) => {
-		accountToUnlinkRef.current = { accountRowId };
+	const confirmUnlink = (accountRowId: string, providerName: string) => {
+		if (unlinkMutation.isPending) return;
+		unlinkMutation.reset();
+		setAccountToUnlink({ accountRowId, providerName });
 		setUnlinkDialogOpen(true);
 	};
 
@@ -145,58 +158,83 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 		return accounts.find((account) => account.providerId === providerId);
 	};
 
+	// Nothing to link or unlink: no provider is configured and none is connected.
+	if (visibleProviders.length === 0 && !accountsQuery.isError) return null;
+
 	return (
-		<div className="space-y-4">
-			<div>
-				<h3 className="text-lg font-medium">
-					{t("settings.socialAccounts.title", "Social Accounts")}
-				</h3>
-				<p className="text-sm text-muted-foreground">
+		<Card>
+			<CardHeader>
+				<CardTitle as="h2">{t("settings.socialAccounts.title", "Social Accounts")}</CardTitle>
+				<CardDescription>
 					{t("settings.socialAccounts.description", "Link your social accounts for easier sign-in")}
-				</p>
-			</div>
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{accountsQuery.isError && !accountsQuery.data ? (
+					<div className="flex flex-col items-start gap-3">
+						<p className="text-sm" role="alert">
+							{t("settings.socialAccounts.loadFailed", "Failed to load connected accounts")}
+						</p>
+						<Button
+							variant="outline"
+							onClick={() => void accountsQuery.refetch()}
+							disabled={accountsQuery.isFetching}
+						>
+							<IconRefresh className="size-4" aria-hidden="true" />
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
+				) : (
+					<ul className="divide-y rounded-lg border">
+						{visibleProviders.map((provider) => {
+							const connectedAccount = getConnectedAccount(provider.id);
+							const isConnected = Boolean(connectedAccount);
+							const Icon = provider.icon;
+							const connectedOn = connectedAccount
+								? formatConnectedOn(connectedAccount.createdAt, locale, timezone)
+								: null;
+							const statusText =
+								isConnected && connectedAccount
+									? connectedOn
+										? t("settings.socialAccounts.connectedOn", "Connected on {date}", {
+												date: connectedOn,
+											})
+										: t("settings.socialAccounts.linkedForSignIn", "Linked for sign-in")
+									: t(
+											"settings.socialAccounts.connectProvider",
+											"Connect your {provider} account",
+											{
+												provider: provider.name,
+											},
+										);
 
-			<div className="space-y-2">
-				{visibleProviders.map((provider) => {
-					const connectedAccount = getConnectedAccount(provider.id);
-					const isConnected = Boolean(connectedAccount);
-					const Icon = provider.icon;
-
-					return (
-						<Card key={provider.id}>
-							<CardHeader className="pb-3">
-								<div className="flex items-center justify-between">
-									<div className="flex min-w-0 items-center gap-3">
-										<div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+							return (
+								<li
+									key={provider.id}
+									className="flex flex-wrap items-center justify-between gap-3 p-4"
+								>
+									<div className="flex min-w-0 flex-[1_1_14rem] items-center gap-3">
+										<div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
 											<Icon aria-hidden="true" className="size-5" />
 										</div>
 										<div className="min-w-0">
-											<CardTitle className="truncate text-base">{provider.name}</CardTitle>
-											<CardDescription className="truncate">
-												{isConnected && connectedAccount
-													? t("settings.socialAccounts.connectedAs", "Connected as {accountId}", {
-															accountId: connectedAccount.accountId,
-														})
-													: t(
-															"settings.socialAccounts.connectProvider",
-															"Connect your {provider} account",
-															{
-																provider: provider.name,
-															},
-														)}
-											</CardDescription>
+											<p className="truncate font-medium">{provider.name}</p>
+											<p className="truncate text-sm text-muted-foreground" title={statusText}>
+												{statusText}
+											</p>
 										</div>
 									</div>
-									<div className="flex items-center gap-2">
+									<div className="flex flex-wrap items-center gap-2">
 										{isConnected && connectedAccount ? (
 											<>
-												<Badge variant="default">
+												<Badge variant="secondary">
+													<IconCheck aria-hidden="true" />
 													{t("settings.socialAccounts.connected", "Connected")}
 												</Badge>
 												<Button
 													variant="outline"
 													size="sm"
-													onClick={() => confirmUnlink(connectedAccount.id)}
+													onClick={() => confirmUnlink(connectedAccount.id, provider.name)}
 													disabled={isPending}
 												>
 													{t("settings.socialAccounts.disconnect", "Disconnect")}
@@ -215,41 +253,34 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 											</Button>
 										)}
 									</div>
-								</div>
-							</CardHeader>
-						</Card>
-					);
-				})}
-			</div>
+								</li>
+							);
+						})}
+					</ul>
+				)}
+			</CardContent>
 
 			{/* Unlink Confirmation Dialog */}
-			<AlertDialog open={unlinkDialogOpen} onOpenChange={setUnlinkDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.socialAccounts.disconnectTitle", "Disconnect Account?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.socialAccounts.disconnectDescription",
-								"This will remove the link to your social account. You can reconnect it at any time.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={unlinkMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleUnlink}
-							disabled={unlinkMutation.isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("settings.socialAccounts.disconnect", "Disconnect")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		</div>
+			<ConfirmActionDialog
+				open={unlinkDialogOpen}
+				onOpenChange={setUnlinkDialogOpen}
+				title={t("settings.socialAccounts.disconnectProviderTitle", "Disconnect {provider}?", {
+					provider: accountToUnlink?.providerName ?? "",
+				})}
+				description={t(
+					"settings.socialAccounts.disconnectDescription",
+					"This will remove the link to your social account. You can reconnect it at any time.",
+				)}
+				confirmLabel={t("settings.socialAccounts.disconnect", "Disconnect")}
+				isPending={unlinkMutation.isPending}
+				error={
+					unlinkMutation.isError
+						? unlinkMutation.error.message ||
+							t("settings.socialAccounts.disconnectFailed", "Failed to disconnect account")
+						: null
+				}
+				onConfirm={handleUnlink}
+			/>
+		</Card>
 	);
 }

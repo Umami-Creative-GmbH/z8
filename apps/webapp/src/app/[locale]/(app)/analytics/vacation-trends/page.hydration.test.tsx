@@ -1,6 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { Settings } from "luxon";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DateRange } from "@/lib/analytics/types";
@@ -14,8 +20,12 @@ vi.mock("next/dynamic", () => ({
 	default: () => () => null,
 }));
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string) => fallback ?? _key,
+	}),
 }));
 
 vi.mock("@/components/analytics/export-button", () => ({
@@ -102,11 +112,15 @@ describe("VacationTrendsPage range hydration", () => {
 		hydrateOrganizationSettings();
 
 		await waitFor(() => {
-			expect(screen.getByTestId("date-range-start").textContent).toBe("2026-01-01T00:00:00.000Z");
+			expect(screen.getByTestId("date-range-start").textContent).toBe(
+				"2026-01-01T00:00:00.000Z",
+			);
 		});
 		await waitFor(() => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(
-				expect.objectContaining({ start: new Date("2026-01-01T00:00:00.000Z") }),
+				expect.objectContaining({
+					start: new Date("2026-01-01T00:00:00.000Z"),
+				}),
 			);
 		});
 	});
@@ -117,7 +131,9 @@ describe("VacationTrendsPage range hydration", () => {
 		hydrateOrganizationSettings("Europe/Berlin");
 
 		await waitFor(() => {
-			expect(screen.getByTestId("date-range-start").textContent).toBe("2025-12-31T23:00:00.000Z");
+			expect(screen.getByTestId("date-range-start").textContent).toBe(
+				"2025-12-31T23:00:00.000Z",
+			);
 		});
 		await waitFor(() => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(
@@ -151,13 +167,19 @@ describe("VacationTrendsPage range hydration", () => {
 
 		await screen.findByTestId("date-range-start");
 
-		fireEvent.click(screen.getByRole("button", { name: "Choose Custom Range" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Choose Custom Range" }),
+		);
 		await waitFor(() => {
-			expect(screen.getByTestId("date-range-start").textContent).toBe("2026-06-01T00:00:00.000Z");
+			expect(screen.getByTestId("date-range-start").textContent).toBe(
+				"2026-06-01T00:00:00.000Z",
+			);
 		});
 
 		hydrateOrganizationSettings("Europe/Berlin");
 
-		expect(screen.getByTestId("date-range-start").textContent).toBe("2026-06-01T00:00:00.000Z");
+		expect(screen.getByTestId("date-range-start").textContent).toBe(
+			"2026-06-01T00:00:00.000Z",
+		);
 	});
 });

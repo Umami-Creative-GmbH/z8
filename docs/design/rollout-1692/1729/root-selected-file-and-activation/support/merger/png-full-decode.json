@@ -1,0 +1,321 @@
+{
+  "head": "e1e25677696ad9dce26b77e1fcb7047db8b2fe1c",
+  "count": 45,
+  "decoded": [
+    {
+      "path": "docs/design/rollout-1692/1729/actions-upload-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "33dded56306fd7b0412661a069183d81c3d34aae67e3877fea469555273e8d3b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/actual-deletion.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "c116f70419a28849e8e3571eac4f28350147cbfd72862a2d15930d4634849248"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/actual-upload.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "f4ed27745a5901b68d504ed78028b22a8ff963717c0dcd1cdc34956f495bb21f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-actual-document-read-failure.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "55a6586ff6dd055569d6cc350af4662bca6f66b4ecb595566656382114371bd6"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-actual-pending-read.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "5799bd2a03dc5381d8d041edbfb9d5d962c7d7a24ada980a9fc67cf8ce6dccf2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-actual-read-recovered.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "c6e97461f90284daaede0005ae88f52feaae656336e5aea0adf2b110c2c30f3d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "260ae6c0cce6fc2ceefd23ad56305cc3f88e3a3ea75d08e5af5a492cd1badbd3"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-failed-held-read.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "1a0abab8324745c1b49206dd206f94d9e508bab49d30fbc26c6aeadf6b07e2de"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "ad7a1185f4064e04340d720c690e8b9fac97f46fd34a3adab5943a4ab53e4d41"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "ee7e7ed454807ca04fd8fe3f4712a66952d9012b2565d4fb13da33c15a89d7fc"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-roles-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "01121d3829c0c4223be2c89158a2803fdc293e812430b00d58101dde00feb57d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-small-admin-saved18-dark.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "6bc11fcd36e97301bacaef0062b2d12a69b8d2355eb8e89a6ac48bdec81d9dd8"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-small-admin-saved18-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "1aea5f7475a7f9ecd6bc21342a6ecef26dadf785c9a67d2521dadda5be8da50f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-small-employee-saved18-dark.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "4deda9df8ce8bcdcbf2d63d0d24b2590775e5ec579b45cb0646d0f6ea6265e3d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-small-employee-saved18-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "0b1844e206a7bd680dff98fe286f6f38607afb938383b32d01da85b8adf6af98"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/after-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "channels": 3,
+      "sha256": "479e4168310f587ddde2a32133fefb0bce69da12c122b38295283addf6d8c152"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/authority-lost.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "62ff1ea632ed3947ce5b0548d572b4d3db4fc6833a1797ab8d6eeddaf65f6b6e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/before-attempt1.png",
+      "width": 800,
+      "height": 600,
+      "channels": 3,
+      "sha256": "14ed7b1bbe84b28c49ebf7e4ee311218a59d8c2aad930fa683cc79743942e119"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/before-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "325319a8fe8d1b301bf9be924282f60fe7a7ba6c1653844ae5cacc8fccc95af4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/before-failure.png",
+      "width": 800,
+      "height": 600,
+      "channels": 3,
+      "sha256": "14ed7b1bbe84b28c49ebf7e4ee311218a59d8c2aad930fa683cc79743942e119"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/before-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "19131e6ae7f6c33020960c40c7af2a46f2fb5d190318b9b3cba2a75eb8b7c6c8"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/before-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "007a0e25c76a46586085d6bdeae2790db8c911a151e01d869ed2ac9e5c26c562"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/before-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "channels": 3,
+      "sha256": "da7865b6a2295af7c04acabea74cab9f796db8f6732cb0dac4699fae078fb128"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-current-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "089fa9c19586e76f989588a188762a54a2bbef29e373363b75e6e77a95e4593e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-current-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "2df0b43506b7ff3b1c2b6fdffaf88d2c442d938123986c15331a525f9d3dd735"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-current-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "cb1370d4100c1c60b27bebd6432cfd235611d225793b6fd1951b782b42bcb598"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-current-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "channels": 3,
+      "sha256": "28f760493dd7097eb70d28cf48eceb2036bda023441503b1ce2f995351fe79a4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "19f9f20af38d313610c7eb3073885d91f2266e873b6468d4456b6a308ba6aa72"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "212a18c37821716f464fab739b132e2e3f16ddd0ca2e119e8ec516dc94d9c711"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "abde55bee5a478143eeb0e6255bbed5cbb1e7f9be9808c9d77da06df5993b62c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-shipped-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "0dd07835b5e1136071f30b0949fa19e4e379d85a7d1bea78e6496190beb80172"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-shipped-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "d383338cb99687794a07fe1347186508b533fc289a05823b4098b3d9b3e64c27"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-shipped-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "3b3f079880e25b865ac6b5cbeeb7983a6be1f0bad01319016002af77a4c0f540"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-shipped-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "channels": 3,
+      "sha256": "9a0f3c6b55cecb12cacdd872dbf89d9dd00e5b4d72d3fce3aa2bf05937000ae1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/final-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "channels": 3,
+      "sha256": "0214bfb846fc73514a49250bfdad7c06f2c0a51b884bef64759df405baebad90"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/manager-denied.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "964be089a5e88cc42fb00991ebde5884e4b5066ab877784e527c6de1c8da7cc5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/own-file-denied.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "3b210de87f0c0e51ee16a653570757a85c5a2c239eef9d0f85165b9f7c47d502"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/recovery-attempt1-pending.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "c982a2110459d650ed28192fbfd6f9efbd776997be50ecdc18c6f97006945bf9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/restricted-officer.png",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "sha256": "9f93133c0fecadf46c1f8ac0978526792bda9c936d6829a38baa39630b2a2e0f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/skill-picker.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "f288fd0de8ad52851184cf0323dd3102abf877fe6c5df8fd2f0118a81562d890"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/zip-actual-deletion.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "237d2c0fc8357b5d9121d292d9b3b40f2e101bb0903b9965492225c6867d8c6a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/zip-actual-upload.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "e5cc3d40126bb773c1e9ae551b210f1a1f79583078419d2f2f9727b4ddd8eb3d"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/zip-manager-denied.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "fe7ee1fa10a92d7f8b13ed070dd8debf5ef857561bed470981b5ee75c38bf49f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/zip-own-file-denied.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "7e840f55e2476dbc227c0b7f69c5e123d352988643d2cc8452b24238e83dbf2e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1729/zip-skill-picker.png",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3,
+      "sha256": "1fc8d318d0e3f0f0d8011a44769555e3095cee500bfdf40367f3491909d1f1fc"
+    }
+  ]
+}

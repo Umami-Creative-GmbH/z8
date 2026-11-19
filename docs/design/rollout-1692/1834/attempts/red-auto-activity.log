@@ -1,0 +1,110 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx (23 tests | 1 failed) 2095ms
+   ❯ WorkSchedulePage load effect (23)
+     × does not repeat a held automatic skip when Activity reconnects 1090ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx > WorkSchedulePage load effect > does not repeat a held automatic skip when Activity reconnects
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      aria-label="Checking work schedule access"
+      class="flex min-h-[50vh] items-center justify-center"
+      role="status"
+      style=""
+    >
+      <div
+        class="text-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="tabler-icon tabler-icon-loader-2 mx-auto size-8 animate-spin motion-reduce:animate-none"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 3a9 9 0 1 0 9 9"
+          />
+        </svg>
+        <p
+          class="mt-4 text-muted-foreground"
+        >
+          Loading...
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      aria-label="Checking work schedule access"
+      class="flex min-h-[50vh] items-center justify-center"
+      role="status"
+      style=""
+    >
+      <div
+        class="text-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="tabler-icon tabler-icon-loader-2 mx-auto size-8 animate-spin motion-reduce:animate-none"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 3a9 9 0 1 0 9 9"
+          />
+        </svg>
+        <p
+          class="mt-4 text-muted-foreground"
+        >
+          Loading...
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/[locale]/onboarding/work-schedule/page.test.tsx:458:23
+    456|   view.rerender(<Activity mode="hidden"><WorkSchedulePage /></Activity…
+    457|   view.rerender(<Activity mode="visible"><WorkSchedulePage /></Activit…
+    458|   expect(await screen.findByRole("alert")).toBeTruthy();
+       |                       ^
+    459|   expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce();
+    460|   await act(async () => request.resolve({ success: true, data: { nextS…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  17:05:39
+   Duration  3.09s (tests 74%, environment 12%, import 11%, transform 2%, setup 1%)
+

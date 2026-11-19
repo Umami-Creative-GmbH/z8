@@ -1,0 +1,30 @@
+{
+  "checks": [
+    {
+      "name": "one semantic route heading",
+      "actual": 1
+    },
+    {
+      "name": "organization calendar explicitly shown",
+      "actual": true
+    },
+    {
+      "name": "first server page has ten request records",
+      "actual": 10
+    },
+    {
+      "name": "next page retains filters",
+      "actual": "all"
+    },
+    {
+      "name": "overdue filter resets page",
+      "actual": null
+    },
+    {
+      "name": "overdue rows keep open distinction",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "failure": "Waiting failed: 30000ms exceeded"
+}

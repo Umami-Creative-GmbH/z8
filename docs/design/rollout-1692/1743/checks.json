@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-16",
+  "branch": "feat/team-presence",
+  "implementationCommit": "5bc50e5cd81d1f45f527180fa376b0b672abbfb3",
+  "captureCommit": "de8fd32215902a10e8866ebe66c230cf0942e517",
+  "formatOnlyFollowup": "One indentation change after capture; no render semantics changed.",
+  "uniqueUnitTests": 60,
+  "unitFiles": 4,
+  "uniquePostgresTests": 9,
+  "postgresFiles": 2,
+  "appTypes": 0,
+  "workflowTypes": 0,
+  "smokeTypes": 0,
+  "explicit100ColumnCRLF": "5 route files pass",
+  "lint": "7 changed source/test files pass",
+  "ordinaryBiome": "5 formatting errors; no whole-file baseline restyle",
+  "doctor": "changed scope, base90a7e5b, 7 files, no issues; score disabled",
+  "axe": {
+    "dark": {
+      "violations": 0,
+      "incomplete": 0
+    },
+    "light": {
+      "violations": 0,
+      "incomplete": 0
+    }
+  },
+  "dependencies": {
+    "next": "node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\next.js",
+    "react": "node_modules\\.pnpm\\react@19.3.1\\node_modules\\react\\index.js",
+    "vitest": "node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest\\index.cjs",
+    "babel-plugin-react-compiler": "node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler\\dist\\index.js"
+  },
+  "servicesRemoved": [
+    "z8_perf_47b83ec55c50_postgres",
+    "z8_perf_47b83ec55c50_redis",
+    "z8_perf_47b83ec55c50_storage"
+  ],
+  "browserClosed": true,
+  "ownedNextStopped": true
+}

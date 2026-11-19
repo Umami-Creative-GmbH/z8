@@ -1,0 +1,45 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+ ❯ |unit| src/components/travel-expenses/report/travel-expense-report-editor.test.tsx (17 tests | 1 failed | 16 skipped) 916ms
+   × does not deliver a retired receipt save into a later editor 915ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/components/travel-expenses/report/travel-expense-report-editor.test.tsx > does not deliver a retired receipt save into a later editor
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+  1st vi.fn() call:
+    Array [
+      Object {
+        "accountingReference": null,
+        "amount": "129.90",
+        "category": "accommodation",
+        "currency": "EUR",
+        "description": "Hotel Hamburg",
+        "expenseDate": "2026-09-14",
+        "id": "6a000000-0000-4000-8000-000000000002",
+        "paidBy": "employee",
+        "receiptException": Object {
+          "reason": null,
+          "version": 0,
+        },
+        "receipts": Array [],
+        "type": "receipt",
+        "updatedAt": "2026-10-05T10:00:00.000Z",
+        "version": 4,
+      },
+    ]
+Number of calls: 1
+ ❯ src/components/travel-expenses/report/travel-expense-report-editor.test.tsx:162:20
+    160|  rendered.unmount();
+    161|  await act(async () => complete({ success: true, data: { status: "save…
+    162|  expect(saved).not.toHaveBeenCalled();
+       |                    ^
+    163| });
+    164| afterEach(() => {
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 skipped (17)
+   Start at  12:22:10
+   Duration  4.30s (import 48%, tests 23%, transform 21%, environment 8%, setup 1%)

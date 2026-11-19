@@ -1,0 +1,22 @@
+{
+  "head": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "status": "BOUNDED_RECHECK_COMPLETE_RELEASE_ALL",
+  "ownedLiveResources": 0,
+  "verifiedCommit1738": null,
+  "verifiedCommit1739": null,
+  "safeFiles": 55,
+  "safeJson": 37,
+  "safePng": 7,
+  "filesSealSha256": "405294e9263db67332570367a9826c85abae0f44da3a2a7804dfb0814645fe72",
+  "safeAllowlistSha256": "7612c3a98fdfb2b105053224fd39319c4f566d8b1c7812128ae7d4846633962a",
+  "handoff": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1738-1739-joint-independent-checks/HANDOFF.md",
+  "allowlist": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1738-1739-joint-independent-checks/safe-allowlist.json",
+  "freshUnitCases": 33,
+  "freshPhysicalFiles": 4,
+  "inheritedRootUnitCases": 392,
+  "inheritedRootUnitFiles": 60,
+  "inheritedPgCases": 12,
+  "inheritedPgFiles": 3,
+  "countsNonadditive": true
+}

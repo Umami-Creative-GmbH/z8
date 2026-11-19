@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "state": "VERIFIED_ARCHIVE_WITH_QUALIFIED_PRODUCT_LIMITS",
+  "candidate": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "environmentGuard": "pnpm_config_verify_deps_before_run=false; every pnpm invocation includes --config.verify-deps-before-run=false",
+  "checks": [
+    {
+      "mode": "syntax",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node --check docs/design/rollout-1692/1732/root-loading-and-retry/verify-evidence.mjs",
+      "exit": 0,
+      "outputFile": null,
+      "result": {
+        "syntaxValid": true
+      }
+    },
+    {
+      "mode": "default",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node docs/design/rollout-1692/1732/root-loading-and-retry/verify-evidence.mjs",
+      "exit": 0,
+      "outputFile": "verification-default.log",
+      "result": {
+        "status": "verified",
+        "source": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+        "currentSourceChecked": false,
+        "publicArtifacts": 96,
+        "artifactBytes": 2246775,
+        "indexDigest": "a9ca6c651e428768dcd57577690a7201509510c27f92ac6920eb911505876901",
+        "jsonFiles": 34,
+        "fullyDecodedPngs": 19,
+        "sourcePins": 12,
+        "rootChangedPaths": 5,
+        "configurationPins": 36,
+        "unitCaseInstances": 440,
+        "unitPhysicalFiles": 62,
+        "postgresCaseInstances": 20,
+        "postgresPhysicalFiles": 1,
+        "distinctCaseInstances": 460,
+        "distinctPhysicalFiles": 63,
+        "syntaxCheckedModules": 7,
+        "syntaxParsedAsyncCommandBodies": 26,
+        "syntaxParsedPublicTsx": 3,
+        "syntaxParsedPowershell": 1,
+        "captureReferences": 19,
+        "localProseLinks": 25,
+        "completedCommandAttempts": 14,
+        "failedCommandAttempts": 11,
+        "formattingBoundariesUnpassed": 6,
+        "doctorReviewedWarnings": 2,
+        "officerGrantRevocationAccepted": false,
+        "privateInputsRead": false,
+        "archivedHarnessesExecuted": 0,
+        "applicationTestsRerun": false,
+        "servicesStarted": 0,
+        "trackedWrites": 0,
+        "wholeRolloutVerified": false
+      }
+    },
+    {
+      "mode": "current",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false exec node docs/design/rollout-1692/1732/root-loading-and-retry/verify-evidence.mjs --current-source",
+      "exit": 0,
+      "outputFile": "verification-current-source.log",
+      "result": {
+        "status": "verified",
+        "source": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+        "currentSourceChecked": true,
+        "publicArtifacts": 96,
+        "artifactBytes": 2246775,
+        "indexDigest": "a9ca6c651e428768dcd57577690a7201509510c27f92ac6920eb911505876901",
+        "jsonFiles": 34,
+        "fullyDecodedPngs": 19,
+        "sourcePins": 12,
+        "rootChangedPaths": 5,
+        "configurationPins": 36,
+        "unitCaseInstances": 440,
+        "unitPhysicalFiles": 62,
+        "postgresCaseInstances": 20,
+        "postgresPhysicalFiles": 1,
+        "distinctCaseInstances": 460,
+        "distinctPhysicalFiles": 63,
+        "syntaxCheckedModules": 7,
+        "syntaxParsedAsyncCommandBodies": 26,
+        "syntaxParsedPublicTsx": 3,
+        "syntaxParsedPowershell": 1,
+        "captureReferences": 19,
+        "localProseLinks": 25,
+        "completedCommandAttempts": 14,
+        "failedCommandAttempts": 11,
+        "formattingBoundariesUnpassed": 6,
+        "doctorReviewedWarnings": 2,
+        "officerGrantRevocationAccepted": false,
+        "privateInputsRead": false,
+        "archivedHarnessesExecuted": 0,
+        "applicationTestsRerun": false,
+        "servicesStarted": 0,
+        "trackedWrites": 0,
+        "wholeRolloutVerified": false
+      }
+    }
+  ],
+  "publicationFailuresPreservedPrivately": [
+    {
+      "operation": "Initial pnpm public-artifact inspector",
+      "exit": 1,
+      "reason": "Ordinary sandbox package-engine store lock refusal before inspector execution; normal escalation succeeded.",
+      "automaticPolicyReviewRejection": false
+    },
+    {
+      "operation": "First new verifier default run",
+      "exit": 1,
+      "reason": "Final README link check found publication-seal.json had not yet been created. All preceding artifact/source/count/PNG/syntax checks completed. The outer seal was then created and both documented modes passed. Failed output remains ignored; no failing source/runtime evidence was rewritten."
+    }
+  ],
+  "rawReportPrefix": {
+    "bytes": 19583,
+    "sha256": "3bd5e4a199e5dba2c7f0fddff67b9473fb53bb4eb4ffb752e938e80b61f92ef9",
+    "preserved": true
+  },
+  "validation": {
+    "payloadJsonFiles": 34,
+    "fullyDecodedPngs": 19,
+    "moduleSyntaxChecks": 7,
+    "asyncCommandBodiesParsed": 26,
+    "publicTsxParsed": 3,
+    "powershellClonesParsed": 1,
+    "archivedHarnessesExecuted": 0,
+    "applicationTestsRun": 0,
+    "servicesStarted": 0,
+    "publicationOwnedProcessesRemaining": 0
+  },
+  "limits": [
+    "Six existing full-file formatting boundaries remain unpassed.",
+    "Two contradictory Doctor warnings reviewed without suppression; only a clearly labeled diagnostics-path-sanitized clone is published.",
+    "Fresh saved officer grant/revocation unpassed; zero saved active grants observed.",
+    "No live all-ABA/RSC freshness, broad global guard, full generation/catalog/provider/device/true-zoom or exhaustive matrix acceptance."
+  ],
+  "readOnlyContract": "The verifier prints results to stdout and writes no tracked output; publication-seal.json seals the saved results and both logs. Root records the final verified integration commit after publication."
+}

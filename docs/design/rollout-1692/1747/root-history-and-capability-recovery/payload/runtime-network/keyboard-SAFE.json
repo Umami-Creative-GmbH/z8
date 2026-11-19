@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-18T03:54:36.701Z",
+  "focusOrder": [
+    "New receipt",
+    "New mileage",
+    "New trip"
+  ],
+  "actualKeyboardCreation": true,
+  "createdCanonicalGraph": [
+    {
+      "kind": "trip",
+      "status": "draft"
+    }
+  ],
+  "actualKeyboardBackLink": true,
+  "keyboardFilterZeroRows": "Your expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n7\nTo finish\n5\nIn review\n1\nApproved\n1\nAwaiting reimbursement\n1\nRejected\n0\nNo expenses with this status.\nShow all expenses",
+  "keyboardShowAll": true,
+  "restoredRowCount": 7,
+  "correctedDesktop": true,
+  "correctedWide": true
+}

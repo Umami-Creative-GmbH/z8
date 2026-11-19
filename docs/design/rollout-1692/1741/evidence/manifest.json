@@ -1,0 +1,490 @@
+{
+  "base": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+  "product": "582b92bdca712a4aca19c3c40203d536e4d888c9",
+  "verifiedProduct": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+  "h1": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+  "f2": "382b8f5be837dad724d3a54274d3050b0104881f",
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "fixture": "own standard disposable small fixture; admin, manager and restricted normal development auth; expected vehicle-use business configuration only",
+  "sources": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/actions.ts",
+      "beforeSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "afterSha256": "b89f8117392b7d458ecde992d5ad6f56f97d89b26baf389224ce901215969a1e"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-data.ts",
+      "beforeSha256": "a53c221424db2accc592fff26c30afe504e064c43d190b5849084debf1c239ea",
+      "afterSha256": "827aefec93f91b309e6a7a73f6f3aa81fc14474537f187659d4d61bb3d3c1d5a"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-details-controller.test.tsx",
+      "beforeSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "afterSha256": "8a86fcd584e10339a58a12596afab1605f1aca135e5aed867143772e7048610b"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-details-controller.tsx",
+      "beforeSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "afterSha256": "6194bcbabace0ba43ac1d449a3215655aa51dfb1772fbbdb7366ebd55b0cfa12"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-details-list.test.tsx",
+      "beforeSha256": "73b84d71e83066e2879853c3339947df06162df65d1043e2bd5961ace4eec77b",
+      "afterSha256": "79c20b82cd02a8785dc9652e53042df1a69e077d563196dc9bcaecda033234f0"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/driving-details-list.tsx",
+      "beforeSha256": "05f8b03d84b1c244b61e04e6da413f93c61f4a40c1661ee263f1dc725cee077a",
+      "afterSha256": "6d9de010d0d5a814cca9b46a6f155e3e95c23cca0c076669716073d4900a81b5"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/page.tsx",
+      "beforeSha256": "f087d81ee158c19637940808acbdda0fc1a5d3fd1021c1d7070cf8335de77297",
+      "afterSha256": "cce530aece883413e4fa060b36e6411a4d51bfbccec19ee5a4452055c5dfcc64"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "beforeSha256": "fbed43def474c6b2a2160c74eaae1822230e9ade7ee493bd41a3dbac3f421a2b",
+      "afterSha256": "99698b19096d66060c58e925d6f8b6babb14ec87416b306d8209d51de5b1e8c2"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "beforeSha256": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d",
+      "afterSha256": "d6c007317af8e8dcfeefdf6f7c596cd0a0521f431c25eef4c07492d8a37f3b20"
+    }
+  ],
+  "tools": [
+    {
+      "file": ".tmp/1741/dev.mjs",
+      "sha256": "cfefb2e55052131b4d6b20c02b2b01c5a97e2ce1f092d54ade6ae2678213066a"
+    },
+    {
+      "file": ".tmp/1741/stop-next.ps1",
+      "sha256": "9d599537ff797b8e6c20de879eb0237aaf85caa7f7cf85720a3126bedad9bd2b"
+    },
+    {
+      "file": ".tmp/1741/capture.mjs",
+      "sha256": "9ea1fc1f612d091256cec4c5fba3d578b1b5d5c8d3c1fe3277f7a375e8c1ac00"
+    },
+    {
+      "file": ".tmp/1741/capture2.mjs",
+      "sha256": "0466d414ea9a41e936d8cbd5b493c07ba60f089485a0eafc76c0d1d64d947f01"
+    },
+    {
+      "file": ".tmp/1741/runtime.mjs",
+      "sha256": "4df02470d696b29cb2c06635955dcb262b36deb8b9eff9c3c3fb37da5ab16622"
+    },
+    {
+      "file": "scripts/performance/journey-steps.mjs",
+      "sha256": "101f9d3d12c76e846b68ea14467681bcb468726cdef3eb69a674df670eab1e2d"
+    },
+    {
+      "file": "scripts/performance/fixture.mjs",
+      "sha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+    }
+  ],
+  "captures": [
+    {
+      "file": "before-desktop-light.png",
+      "phase": "before",
+      "sha256": "a9c491cbebaa48ab8453c6dc6c8c4660ddd25123eb293949f6ff83370ddfca63",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "geometry": {
+        "width": 1600,
+        "scrollWidth": 1600,
+        "font": "16px",
+        "headings": [
+          "Driving Details",
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "light bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "before-desktop-dark.png",
+      "phase": "before",
+      "sha256": "6442017a2f1574bfb07c26a1f064b0b83774a9e7ca59469f73173d5f6d3f80d8",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "geometry": {
+        "width": 1600,
+        "scrollWidth": 1600,
+        "font": "16px",
+        "headings": [
+          "Driving Details",
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "dark bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "before-wide-light.png",
+      "phase": "before",
+      "sha256": "03f61cdffb34113d94404d9c1f8ea9bfea40a8678213b6223d8047471b03da40",
+      "decoded": {
+        "format": "raw",
+        "width": 2100,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 6930000
+      },
+      "geometry": {
+        "width": 2100,
+        "scrollWidth": 2100,
+        "font": "16px",
+        "headings": [
+          "Driving Details",
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "light bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "before-wide-dark.png",
+      "phase": "before",
+      "sha256": "e0d9a41d79eadbcb8e4eb56e78b2e79a2faeeb2739c83453894acd85e4aa7596",
+      "decoded": {
+        "format": "raw",
+        "width": 2100,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 6930000
+      },
+      "geometry": {
+        "width": 2100,
+        "scrollWidth": 2100,
+        "font": "16px",
+        "headings": [
+          "Driving Details",
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "dark bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "before-phone-light.png",
+      "phase": "before",
+      "sha256": "d6acae79e8726fb014daf61c8d719a2b0b6d2417a9bdcc39aa1bd7038682a5cd",
+      "decoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480
+      },
+      "geometry": {
+        "width": 390,
+        "scrollWidth": 390,
+        "font": "16px",
+        "headings": [
+          "Driving Details",
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "light bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "before-phone-dark.png",
+      "phase": "before",
+      "sha256": "b6cd50e88dc5e3a85705d10ca07e5a796e60b78b0977faef1d88e1e9061107eb",
+      "decoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480
+      },
+      "geometry": {
+        "width": 390,
+        "scrollWidth": 390,
+        "font": "16px",
+        "headings": [
+          "Driving Details",
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "dark bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "after-desktop-light.png",
+      "phase": "after",
+      "sha256": "df2fa151dd4e4e4ddcc395f612b08707031be6ab212331eb0d0de6fa8bb85f04",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "geometry": {
+        "width": 1600,
+        "scrollWidth": 1600,
+        "font": "16px",
+        "headings": [
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "light bprogress-busy",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "after-desktop-dark.png",
+      "phase": "after",
+      "sha256": "65828bc94e78f86132e13c7fc73dc771947f871a00b852aff86af769814efa85",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "geometry": {
+        "width": 1600,
+        "scrollWidth": 1600,
+        "font": "16px",
+        "headings": [
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "bprogress-busy dark",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "after-wide-light.png",
+      "phase": "after",
+      "sha256": "962906e02c8ca683e8c3d41ce53f7520d74e4d117607cd53b6dd86ee6409c5b5",
+      "decoded": {
+        "format": "raw",
+        "width": 2100,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 6930000
+      },
+      "geometry": {
+        "width": 2100,
+        "scrollWidth": 2100,
+        "font": "16px",
+        "headings": [
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "bprogress-busy light",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "after-wide-dark.png",
+      "phase": "after",
+      "sha256": "3c33683129d06251e68abfa9a3f05c558aa473b313b07a52ecafaf3b230612f4",
+      "decoded": {
+        "format": "raw",
+        "width": 2100,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 6930000
+      },
+      "geometry": {
+        "width": 2100,
+        "scrollWidth": 2100,
+        "font": "16px",
+        "headings": [
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "bprogress-busy dark",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "after-phone-light.png",
+      "phase": "after",
+      "sha256": "562148f6b5f173880c12cdfa24134c6356ba28efa28c0f3d1e1eb7ba28a2e0ad",
+      "decoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480
+      },
+      "geometry": {
+        "width": 390,
+        "scrollWidth": 390,
+        "font": "16px",
+        "headings": [
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "bprogress-busy light",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "after-phone-dark.png",
+      "phase": "after",
+      "sha256": "60de494d509a9954ad87f6b14aa18a09abcae7c1b475d8d397b2c89ece3af9b3",
+      "decoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480
+      },
+      "geometry": {
+        "width": 390,
+        "scrollWidth": 390,
+        "font": "16px",
+        "headings": [
+          "Driving details missing"
+        ],
+        "records": 200,
+        "dialogs": 0,
+        "theme": "bprogress-busy dark",
+        "permission": "denied"
+      },
+      "browserPolicy": "notifications-denied-for-fixture-origin"
+    },
+    {
+      "file": "retained-failure.png",
+      "sha256": "d636507389fee9319c27ae4bd6b319eec4b0b70489a951135b84afd82749d5bb",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "phase": "runtime"
+    },
+    {
+      "file": "desktop-18px.png",
+      "sha256": "1efb68e9cd354c82e3572335778f7eeb762b2b1e6e6d1e70c6b08d7423218d92",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "phase": "runtime"
+    },
+    {
+      "file": "phone-18px.png",
+      "sha256": "5904d7060264edd446d3e27cfbd73934e88553334df8045e59e592dd7d3183ee",
+      "decoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480
+      },
+      "phase": "runtime"
+    },
+    {
+      "file": "collapsed-18px.png",
+      "sha256": "edd571cf3e3081e0d1f872a01c039d5bf97bee6dd35d77ec67a9eb13ae3e6461",
+      "decoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000
+      },
+      "phase": "runtime"
+    }
+  ]
+}

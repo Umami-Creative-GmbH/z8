@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Absence",
-      "all-caught-up": "Tout est à jour !",
-      "approved-recently": "{count} {request} approuvées récemment",
       "by": "par {name}",
       "description": "Dernières demandes approuvées",
       "description-count": "{count} dernières {request} approuvées",
@@ -123,11 +121,27 @@
       "title": "Récemment approuvé",
       "view-all": "Voir toutes les approbations"
     },
+    "refresh": {
+      "activity": "Activité récente",
+      "attention": "Aperçu du jour",
+      "balanceRetry": "Actualisez pour réessayer de charger le solde.",
+      "balanceUnavailable": "Solde indisponible",
+      "currentSession": "Session en cours",
+      "dayUnavailable": "Le total du jour est indisponible. Actualisez pour réessayer.",
+      "employee": "Employé",
+      "greeting": "Bonjour, {name}.",
+      "noAbsences": "Aucune absence enregistrée pour aujourd'hui.",
+      "openTimeTracking": "Aller au suivi du temps",
+      "overview": "Votre travail en un coup d'œil",
+      "personalDay": "Votre journée de travail",
+      "status": "Statut",
+      "summary": "Résumé",
+      "team": "Équipe",
+      "todayTarget": "Aujourd'hui · {target} requis"
+    },
     "team-overview": {
       "avg-hours": "Heures moy.",
       "current-employees": "Employés actuels",
-      "current-employees-description": "Toutes les personnes qui travaillent ici actuellement",
-      "description": "Statistiques de l'équipe en un coup d'œil",
       "employees-button": "Employés",
       "per-week": "/semaine",
       "teams": "Équipes",
@@ -175,9 +189,6 @@
       "used": "{days} utilisés"
     },
     "whos-out": {
-      "everyone-in": "Tout le monde est au bureau aujourd'hui",
-      "everyones-in": "Tout le monde est là !",
-      "full-team": "Équipe au complet disponible !",
       "member": "membre",
       "members": "membres",
       "members-out": "{count} membres de l'équipe absents",

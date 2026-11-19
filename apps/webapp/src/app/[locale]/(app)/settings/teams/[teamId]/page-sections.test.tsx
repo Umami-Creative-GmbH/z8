@@ -152,6 +152,26 @@ const team = {
 	employees: [],
 };
 
+const selectableEmployee = {
+	id: "employee-9",
+	userId: "user-9",
+	firstName: "Nia",
+	lastName: "New",
+	pronouns: null,
+	position: null,
+	role: "employee" as const,
+	isActive: true,
+	teamId: null,
+	user: {
+		id: "user-9",
+		firstName: "Nia",
+		lastName: "New",
+		name: "Nia New",
+		email: "nia@example.test",
+		image: null,
+	},
+};
+
 const form = {
 	Field: ({ children }: { children: (field: unknown) => ReactNode }) =>
 		children({
@@ -178,7 +198,7 @@ describe("team detail page sections", () => {
 				<AddMemberDialog
 					open={true}
 					onOpenChange={vi.fn()}
-					availableEmployees={[]}
+					availableEmployees={[selectableEmployee]}
 					selectedEmployee=""
 					onSelectedEmployeeChange={vi.fn()}
 					onAddMember={vi.fn()}
@@ -214,7 +234,7 @@ describe("team detail page sections", () => {
 				<AddMemberDialog
 					open={true}
 					onOpenChange={vi.fn()}
-					availableEmployees={[]}
+					availableEmployees={[selectableEmployee]}
 					selectedEmployee=""
 					onSelectedEmployeeChange={vi.fn()}
 					onAddMember={vi.fn()}
@@ -245,6 +265,44 @@ describe("team detail page sections", () => {
 		expect(screen.queryByText("Team Members")).toBeNull();
 		expect(screen.queryByText("Employees assigned to this team")).toBeNull();
 		expect(screen.queryByText("No members in this team")).toBeNull();
+	});
+
+	it("tells loading, failed and empty Add Member pickers apart", () => {
+		const onRetry = vi.fn();
+		const dialog = (props: {
+			isLoadingEmployees?: boolean;
+			employeesError?: string | null;
+		}) => (
+			<AddMemberDialog
+				open={true}
+				onOpenChange={vi.fn()}
+				availableEmployees={[]}
+				selectedEmployee=""
+				onSelectedEmployeeChange={vi.fn()}
+				onAddMember={vi.fn()}
+				loading={false}
+				onRetryLoadEmployees={onRetry}
+				{...props}
+			/>
+		);
+		const addButton = () => screen.getByRole("button", { name: "Mitglied hinzufügen" });
+
+		const { rerender } = render(dialog({ isLoadingEmployees: true }));
+		expect(screen.getByRole("status").textContent).toContain("Loading employees…");
+		expect(screen.queryByText("No employees available to add")).toBeNull();
+		expect(addButton().hasAttribute("disabled")).toBe(true);
+
+		rerender(dialog({ employeesError: "Could not load employees to add" }));
+		expect(screen.getByRole("alert").textContent).toContain("Could not load employees to add");
+		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+		expect(onRetry).toHaveBeenCalledTimes(1);
+		expect(addButton().hasAttribute("disabled")).toBe(true);
+
+		rerender(dialog({}));
+		expect(screen.getByText("No employees available to add")).toBeTruthy();
+		expect(screen.queryByRole("status")).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(addButton().hasAttribute("disabled")).toBe(true);
 	});
 
 	it("hides former members until asked for, then marks them with the date they left (#1438, #1439)", async () => {

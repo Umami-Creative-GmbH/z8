@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Access to this organization is paused until billing is updated.",
       "adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
       "goToBilling": "Go to billing",
       "memberDescription": "This organization is suspended. Contact an organization admin to update billing.",
@@ -165,6 +166,13 @@
     "teal": "Teal"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Something went wrong. Try again.",
+      "formerEmployee": "Former employees can't be chosen. Choose someone on the current roster.",
+      "invalidInput": "Check your input and try again.",
+      "notAllowed": "You do not have access to this setting.",
+      "signInRequired": "Sign in to continue."
+    },
     "actions": "Actions",
     "active": "Active",
     "add": "Add",
@@ -174,6 +182,7 @@
     "approve": "Approve",
     "assign": "Assign",
     "back": "Back",
+    "backToDashboard": "Back to dashboard",
     "brandLogo": "{brand} logo",
     "breadcrumb": {
       "breadcrumb": "breadcrumb",
@@ -195,6 +204,7 @@
     "copy": "Copy",
     "create": "Create",
     "current": "Current",
+    "date": "Date",
     "datePicker": {
       "clearDate": "Clear date",
       "placeholder": "Pick a date"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Edit",
     "employees": "Employees",
-    "enabled": "Enabled",
     "error": "Error",
     "error-occurred": "An error occurred",
     "errors": {
       "monthClosed": "{month} is closed. It must be reopened before its work or absences can change."
     },
     "fieldPresets": "{label} presets",
+    "filters": "Filters",
     "focusInput": "Focus input",
     "gender": {
       "female": "Female",
@@ -253,6 +263,7 @@
       "application": "Loading application",
       "auditExportSettings": "Loading audit export settings",
       "authentication": "Loading authentication",
+      "billableTimeSettings": "Loading billable time settings",
       "changePolicySettings": "Loading change policy settings",
       "coverageRuleSettings": "Loading coverage rule settings",
       "customerSettings": "Loading customer settings",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Loading demo data settings",
       "deploymentDiagnostics": "Loading deployment diagnostics",
       "employeeReports": "Loading employee reports",
+      "employees": "Loading employees",
+      "employeeVacationAllowance": "Loading employee vacation allowance",
       "employeeVacationAllowances": "Loading employee vacation allowances",
       "exportOperations": "Loading export operations",
       "holidaySettings": "Loading holiday settings",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Loading shift schedule",
       "shiftTemplateSettings": "Loading shift template settings",
       "skillSettings": "Loading skill settings",
+      "statistics": "Loading statistics",
       "surchargeSettings": "Loading surcharge settings",
       "team": "Loading team",
       "todaySManagerBriefing": "Loading today's manager briefing",
@@ -315,8 +329,6 @@
     },
     "more": "more",
     "moreActions": "More actions",
-    "moveDown": "Move down",
-    "moveUp": "Move up",
     "name": "Name",
     "navigation": {
       "retry": "Retry navigation",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# unread)}}"
     },
+    "offline": "Offline",
     "open": "Open",
     "openEnded": "Open ended",
     "openMenu": "Open menu",
@@ -389,6 +402,7 @@
     "removing": "Removing...",
     "reset": "Reset",
     "retry": "Retry",
+    "retrying": "Retrying…",
     "revoke": "Revoke",
     "save": "Save",
     "saveChanges": "Save Changes",
@@ -403,7 +417,9 @@
       "sidebar": "Sidebar",
       "toggleSidebar": "Toggle Sidebar"
     },
+    "signIn": "Sign in",
     "skip": "Skip",
+    "skipToContent": "Skip to content",
     "start": "Start",
     "status": "Status",
     "submitting": "Submitting…",
@@ -422,6 +438,9 @@
     },
     "to": "to",
     "today": "Today",
+    "tryAgain": "Try again",
+    "unavailable": "Unavailable",
+    "undo": "Undo",
     "unexpectedError": "An unexpected error occurred",
     "unknown": "Unknown",
     "unknownEmployee": "Unknown Employee",
@@ -575,6 +594,7 @@
       "submit": "Record original check",
       "suspensionNotice": "A successful recheck does not automatically reinstate a suspended authorization. A new check and an explicit reinstatement decision are required.",
       "title": "Inspect {name}'s original licence",
+      "transportError": "The check could not be recorded. Your input is kept; retry after checking your connection and responsibility.",
       "verifier": "I confirm that the recorded facts and individual class results reflect my inspection."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "The driving licence record could not be loaded. Check your current verifier responsibility.",
       "loading": "Loading the driving licence record…",
       "notIntended": "{name} is not an intended driver. A check is needed only for intended drivers.",
+      "retained": "Retained evidence is available to review. New checks are unavailable for former employees.",
       "title": "Driving licence check for {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Status",
         "team": "Team"
       },
+      "customOrder": "Sorted by the selected column and direction.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Check due now",
+      "dueOrder": "Checks due now first, then the next deadline.",
       "empty": {
         "description": "Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
         "title": "Nobody to check yet"
@@ -607,6 +630,8 @@
       "loadError": "The list could not be loaded. Check your current verifier responsibility.",
       "loading": "Loading intended drivers…",
       "noMatches": "No intended drivers match the search or filter.",
+      "refresh": "Refresh check worklist",
+      "refreshing": "Updating check worklist…",
       "search": "Search by name",
       "status": {
         "active": "Active",
@@ -682,6 +707,7 @@
       "failed": "Inspected class unsuccessful",
       "field": "Corrected field",
       "from": "From date (UTC)",
+      "fromHelp": "Period starts at 00:00 UTC.",
       "globalSuspension": "All driving authorization suspended",
       "help": "Original confirmations, dated supplements and effective authorization decisions remain separate. Earlier evidence needed to understand the selected period is labeled as context. All event times and period boundaries below use UTC.",
       "impedimentReported": "Driving impediment reported",
@@ -716,6 +742,7 @@
       "suspended": "Authorization suspended",
       "title": "Check and authorization history",
       "to": "Before date (UTC)",
+      "toHelp": "Period ends before 00:00 UTC on this date.",
       "unavailable": "History is unavailable. Check the period and your current access.",
       "value": "Corrected value",
       "verifierConfirmation": "Verifier confirmation recorded at the original check time"
@@ -751,7 +778,6 @@
         "teamNotFound": "That team no longer exists."
       },
       "notRequired": "Not required (excluded)",
-      "removed": "Intended driver assignment removed",
       "required": "Required",
       "saved": "Intended drivers saved",
       "targetOrganization": "Whole organization",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Driving authorization",
       "loading": "Loading driving authorization…",
+      "loadingEmployees": "Loading employees for planning…",
       "noEmployees": "No matching employees.",
       "recordingHelp": "You can always record working time and actual vehicle use. Selecting a vehicle grants no driving authorization; checked classes do not establish suitability for every vehicle.",
       "refresh": "Refresh driving status",
+      "refreshEmployees": "Refresh planning employees",
+      "rosterUnavailable": "Planning employees are unavailable. Check your current organization access and retry.",
       "search": "Find employee",
       "searchHelp": "Up to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.",
       "title": "Driving status for planning",
       "unavailable": "Driving authorization status is unavailable."
     },
     "page": {
+      "reconciling": "Loading driving licence access for the current organization…",
+      "scope": "Driving authorization, original checks and planning in your active organization. Each view follows your current access.",
       "title": "Driving licence"
     },
     "policyTitle": "Organization policy",
@@ -960,6 +991,13 @@
       "description": "You need an employee profile to {feature}. Please create an organization or contact your administrator.",
       "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
       "emailSubject": "Employee Profile Setup Required",
+      "formerEmployee": {
+        "description": "You are a member of this organization again, but your earlier employment ended. An administrator needs to rehire you before you can {feature}.",
+        "emailBody": "Hi,nnI am a member of the organization again, but my earlier employment ended. Could you please rehire me so I can access the platform features?nnThank you!",
+        "emailSubject": "Rehire Request",
+        "helpText": "Ask your administrator to rehire you. Until then, you cannot use this organization.",
+        "title": "Your employment here has ended"
+      },
       "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
       "title": "Employee Profile Required"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Loading worker queue"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Verify an existing sign-in"
+    },
     "banner": {
       "action": "Review requirements and verify",
       "requirement": "This organization requires verified authentication from {deadline}."
     },
     "code": {
       "label": "Authenticator code",
+      "required": "Enter an authenticator code",
       "verify": "Verify authenticator"
     },
     "continue": "Continue after verification",
@@ -1056,6 +1098,8 @@
       "title": "Enroll or replace an authenticator",
       "warning": "Adding or replacing a factor needs verification within five minutes. Verify the replacement before removing the old factor. Revoking your last factor is allowed and can block access to the organizations listed above; it does not grant a new enrollment window."
     },
+    "loading": "Loading security verification",
+    "navigation": "Organization and account",
     "organization": {
       "select": "Select another organization"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Password verification failed",
       "label": "Current password",
+      "required": "Enter your current password",
       "verified": "Password verified. You can enroll your first authenticator, or verify an existing authenticator or backup code below.",
       "verify": "Verify password"
     },
@@ -1097,7 +1142,16 @@
       "description": "For recovery, verify your password above and then enter one unused backup code. This clears prior local verification across your organizations.",
       "label": "Backup code",
       "lockout": "If a sole administrator loses every authentication and recovery route, the organization stays locked. There is no administrator or support bypass.",
-      "success": "Recovery permits replacement enrollment only. Verify an authenticator before returning to your organization."
+      "nextSteps": "Verify your password again before verifying an authenticator.",
+      "open": "Recover with a backup code",
+      "required": "Enter an unused backup code",
+      "success": "Recovery permits replacement enrollment only. Verify an authenticator before returning to your organization.",
+      "title": "Account recovery"
+    },
+    "requirements": {
+      "empty": "No organization requirements are listed for this account.",
+      "selected": "Selected organization",
+      "title": "Organization requirements"
     },
     "security": {
       "factorWarning": "Removing a factor can block access to organizations that require it. Verify a replacement first; removing the last factor does not grant new grace.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Organization authentication policy (owners/admins)"
     },
     "signout": "Sign out",
+    "signout.failed": "Sign-out failed. Try again.",
     "social": {
       "verify": "Verify existing sign-in with {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Platform Admin",
     "reports": "Reports",
     "scheduling": "Scheduling",
+    "secondary-label": "Settings & help",
     "settings": "Settings",
     "team": "Team",
     "teamAbsences": "Team Absences",
     "teamDriving": "Driving Details",
-    "team-label": "Team",
+    "team-organization-label": "Team & organization",
     "teamPeriodSubmissions": "Period Submissions",
     "teamPresence": "Who Is In",
     "time-tracking": "Time Tracking",
     "today": "Today",
     "travel-expenses": "Travel Expenses",
+    "workplace-label": "Workplace",
     "worksCouncil": "Works Council"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Your shift ended at {endTime} ({timezone}). Clock out if you have finished working.",
         "title": "You are still clocked in"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} is a member again, but their earlier employment ended. They have no access until you rehire them.",
+        "title": "A former employee needs a rehire"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# employee is still linked only to a former manager: {names}. Assign a current manager.} other {# employees are still linked only to a former manager: {names}. Assign a current manager.}}",
@@ -1735,6 +1796,7 @@
         "title": "Time to hydrate!"
       }
     },
+    "countFailed": "Unread count unavailable",
     "description": "Review updates, approvals, and system alerts in one timeline.",
     "empty": {
       "description": "You're all caught up! New notifications will appear here.",
@@ -1754,6 +1816,8 @@
       "read": "Read",
       "unread": "Unread"
     },
+    "loading": "Loading notifications…",
+    "loadingCount": "Loading unread count…",
     "nativePush": {
       "attention": {
         "title": "Something needs your attention"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Shifts opened by a deactivation",
         "equipment_return_reminder": "Equipment return reminders",
         "forgotten_clock_out_reminder": "Forgotten clock-out",
+        "former_employee_needs_rehire": "Former employees who need a rehire",
         "former_employee_reports_without_manager": "Employees without a current manager",
         "kiosk_command_refused": "Kiosk clocking not recorded",
         "kiosk_fob_registered": "Kiosk fob registered",
@@ -1871,6 +1936,7 @@
       "placeholder": "Search notifications..."
     },
     "selection": {
+      "actions": "Selected notifications",
       "selectAll": "Select all visible",
       "selectAllAria": "Select all visible notifications",
       "selectNamedAria": "Select {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "Deleted {count} notifications",
       "deleteFailed": "Failed to delete notifications",
+      "deletePartial": "{count} deleted; {failed} failed. Retry the remaining selection.",
       "markedRead": "Marked {count} notifications as read",
-      "markReadFailed": "Failed to mark notifications as read"
+      "markReadFailed": "Failed to mark notifications as read",
+      "readPartial": "{count} marked read; {failed} failed. Retry the remaining selection."
     },
     "unreadBadge": "{count} unread",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} visible · latest {limit} notifications"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "User avatar"
-  },
   "user": {
+    "account": "Account",
     "font-size": "Font size",
     "language": "Language",
+    "loadingAccount": "Loading account",
     "logging-out": "Logging out...",
     "log-out": "Log out",
     "log-out-failed": "Could not log out. Please try again.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Time based",
     "theme-time-info": "Time based is using {currentMode} mode. Switches to {nextMode} at {time}.",
     "theme-toggle": "Toggle theme"
+  },
+  "userAvatar": {
+    "alt": "User avatar"
   },
   "vacationBalance": {
     "conflictingPolicies": "Conflicting vacation policies",

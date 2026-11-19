@@ -9,8 +9,9 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import { useTransition } from "react";
+import { useLocale } from "next-intl";
+import { useMemo, useTransition } from "react";
+import { Temporal } from "temporal-polyfill";
 import { toast } from "sonner";
 import {
 	discardPayrollRunAction,
@@ -34,21 +35,65 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate, formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import type { PayrollExportJobSummary } from "@/lib/payroll-export/types";
 
 interface ExportHistoryProps {
 	exports: PayrollExportJobSummary[];
+	/** The organization's resolved IANA time zone: export times are shown in it. */
+	organizationTimezone: string;
 }
 
-function formatDateRange(filters: PayrollExportJobSummary["filters"]) {
-	const start = DateTime.fromISO(filters.dateRange.start);
-	const end = DateTime.fromISO(filters.dateRange.end);
-
-	if (start.month === end.month && start.year === end.year) {
-		return start.toFormat("LLLL yyyy");
+/**
+ * An export's range is logical payroll dates (the first ten characters of each
+ * stored bound), not instants: a whole calendar month shows as that month, any
+ * other range as its dates, both in the reader's locale.
+ */
+export function formatPayrollExportRange(
+	filters: PayrollExportJobSummary["filters"],
+	locale: string,
+): string {
+	const startValue = String(filters.dateRange.start).slice(0, 10);
+	const endValue = String(filters.dateRange.end).slice(0, 10);
+	let start: Temporal.PlainDate;
+	let end: Temporal.PlainDate;
+	try {
+		start = Temporal.PlainDate.from(startValue);
+		end = Temporal.PlainDate.from(endValue);
+	} catch {
+		return `${startValue} – ${endValue}`;
 	}
 
-	return `${start.toFormat("dd.MM.yyyy")} - ${end.toFormat("dd.MM.yyyy")}`;
+	const month = start.toPlainYearMonth();
+	if (start.day === 1 && end.equals(month.toPlainDate({ day: month.daysInMonth }))) {
+		return formatPlainDate(start, locale, "monthYear");
+	}
+	if (Temporal.PlainDate.compare(start, end) > 0) {
+		return `${formatPlainDate(start, locale, "dateMedium")} – ${formatPlainDate(end, locale, "dateMedium")}`;
+	}
+	return formatPlainDateRange(start, end, locale, "dateMedium");
+}
+
+/** When an export was requested: an audit instant, in the organization's zone, zone named. */
+export function createPayrollExportTimeFormatter(locale: string, timeZone: string) {
+	const options: Intl.DateTimeFormatOptions = {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+		timeZone,
+		timeZoneName: "short",
+	};
+	let formatter: Intl.DateTimeFormat;
+	try {
+		formatter = new Intl.DateTimeFormat(locale, options);
+	} catch {
+		formatter = new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" });
+	}
+	return (createdAt: Date | string) =>
+		formatter.format(instantFromDate(new Date(createdAt)).epochMilliseconds);
 }
 
 function formatFileSize(bytes: number | null) {
@@ -58,8 +103,13 @@ function formatFileSize(bytes: number | null) {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ExportHistory({ exports }: ExportHistoryProps) {
+export function ExportHistory({ exports, organizationTimezone }: ExportHistoryProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const formatCreatedAt = useMemo(
+		() => createPayrollExportTimeFormatter(locale, organizationTimezone),
+		[locale, organizationTimezone],
+	);
 	const [isPending, startTransition] = useTransition();
 
 	const handleDownload = async (jobId: string) => {
@@ -83,20 +133,14 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 		switch (status) {
 			case "completed":
 				return (
-					<Badge
-						variant="secondary"
-						className="gap-1 bg-green-100 text-green-700"
-					>
+					<Badge className="gap-1">
 						<IconCheck className="size-3" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.completed", "Completed")}
 					</Badge>
 				);
 			case "processing":
 				return (
-					<Badge
-						variant="secondary"
-						className="gap-1 bg-blue-100 text-blue-700"
-					>
+					<Badge variant="secondary" className="gap-1">
 						<IconLoader2 className="size-3 animate-spin" aria-hidden="true" />
 						{t(
 							"settings.payrollExport.history.status.processing",
@@ -106,7 +150,7 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 				);
 			case "pending":
 				return (
-					<Badge variant="secondary" className="gap-1">
+					<Badge variant="outline" className="gap-1">
 						<IconClock className="size-3" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.pending", "Pending")}
 					</Badge>
@@ -131,15 +175,23 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 				</CardTitle>
 				<CardDescription>
 					{t(
-						"settings.payrollExport.history.description",
-						"View and download previous DATEV exports",
+						"settings.payrollExport.history.descriptionAllFormats",
+						"View and download previous payroll exports",
 					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				{exports.length === 0 ? (
-					<div className="py-8 text-center text-muted-foreground">
-						{t("settings.payrollExport.history.noExports", "No exports yet")}
+					<div className="space-y-1 py-8 text-center text-sm">
+						<p className="font-medium">
+							{t("settings.payrollExport.history.noExports", "No exports yet")}
+						</p>
+						<p className="text-muted-foreground">
+							{t(
+								"settings.payrollExport.history.noExportsHint",
+								"Start a payroll export on the Export tab. Finished exports appear here for download.",
+							)}
+						</p>
 					</div>
 				) : (
 					<Table>
@@ -166,17 +218,21 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 										"Created",
 									)}
 								</TableHead>
-								<TableHead className="w-[100px]" />
+								<TableHead className="w-[100px]">
+									<span className="sr-only">
+										{t("settings.payrollExport.history.table.actions", "Actions")}
+									</span>
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{exports.map((exp) => (
 								<TableRow key={exp.id}>
 									<TableCell className="font-medium">
-										{formatDateRange(exp.filters)}
+										{formatPayrollExportRange(exp.filters, locale)}
 									</TableCell>
 									<TableCell>{getStatusBadge(exp.status)}</TableCell>
-									<TableCell>
+									<TableCell className="tabular-nums">
 										{exp.workPeriodCount !== null ? (
 											<span>
 												{exp.workPeriodCount}{" "}
@@ -208,7 +264,7 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 										{exp.unmappedOvertimePayoutCount > 0 && (
 											<Badge
 												variant="outline"
-												className="ml-2 gap-1 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+												className="ml-2 gap-1 border-warning/50 text-warning"
 											>
 												<IconAlertTriangle className="size-3" aria-hidden="true" />
 												{t(
@@ -219,11 +275,13 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 											</Badge>
 										)}
 									</TableCell>
-									<TableCell>{formatFileSize(exp.fileSizeBytes)}</TableCell>
-									<TableCell className="text-muted-foreground">
-										{DateTime.fromJSDate(new Date(exp.createdAt)).toFormat(
-											"dd.MM.yyyy HH:mm",
-										)}
+									<TableCell className="tabular-nums">
+										{formatFileSize(exp.fileSizeBytes)}
+									</TableCell>
+									<TableCell className="tabular-nums text-muted-foreground">
+										<time dateTime={new Date(exp.createdAt).toISOString()}>
+											{formatCreatedAt(exp.createdAt)}
+										</time>
 									</TableCell>
 									<TableCell>
 										<div className="flex items-center gap-1">

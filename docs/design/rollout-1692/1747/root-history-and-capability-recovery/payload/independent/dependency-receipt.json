@@ -1,0 +1,46 @@
+{
+  "manager": "pnpm@12.16.1",
+  "install": "offline frozen ignore-scripts package-import-method=copy",
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "store": "X:/PackageStores/pnpm/v11",
+  "virtualStore": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\node_modules\\.pnpm",
+  "physical": [
+    {
+      "package": "react",
+      "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react",
+      "manifestBytes": 1242,
+      "manifestSha256": "9cc9c3de5441a2eea7f41f52f3f2a15a4fc51f90c0b72741f0d7638643a85e67",
+      "hardlinks": 1
+    },
+    {
+      "package": "react-dom",
+      "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom",
+      "manifestBytes": 3054,
+      "manifestSha256": "89d54f11575c9b0f7819962d9d72a31970dfb4d103f07e8b1d1b37e6d1fc3258",
+      "hardlinks": 1
+    },
+    {
+      "package": "@tanstack/react-query",
+      "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query",
+      "manifestBytes": 3728,
+      "manifestSha256": "2a2d66d46321b0a124a3ad5f8d6378ec08621bcc18f91ab3128b4fc884d51cbe",
+      "hardlinks": 1
+    },
+    {
+      "package": "vitest",
+      "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest",
+      "manifestBytes": 5736,
+      "manifestSha256": "cc2979885d9d149c8456128e7ae48038d815352cf1e6d1932eb631057a99f973",
+      "hardlinks": 1
+    },
+    {
+      "package": "@biomejs/biome",
+      "physicalPath": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome",
+      "manifestBytes": 1455,
+      "manifestSha256": "20f2cd848b66825d9cee2ac2c44a5a958a3df933b72be1c1ba78740d6ad450ab",
+      "hardlinks": 1
+    }
+  ],
+  "licenseCopiedOrGenerated": false,
+  "bootstrapQualification": "First non-escalated --version reported launcher fallback 12.21.0 with engine-lock denial; install attempt refused before dependency work. Authorized retry selected 12.16.1; all installs/test/quality runner executions used that pinned version. No dependency upgrade or postinstall."
+}

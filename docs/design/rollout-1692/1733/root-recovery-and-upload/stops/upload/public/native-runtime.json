@@ -1,0 +1,244 @@
+{
+  "version": "0.39.1",
+  "auth": {
+    "exit": 0,
+    "signIn": 200,
+    "active": 200
+  },
+  "transientNoRestore": true,
+  "normalDevelopmentLogin": true,
+  "tree": {
+    "exit": 0,
+    "output": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"tree\":\"# React component tree\\n# Columns: depth id parent name [key=...]\\n# Use `react inspect <id>` for props/hooks/state. IDs valid until next navigation.\\n0 1554 - Root\\n1 1555 1554 HeadManagerContext.Provider\\n2 1556 1555 Root\\n3 1557 1556 ServerRoot\\n4 1558 1557 Context.Provider\\n5 1559 1558 AppRouter\\n6 1560 1559 RootErrorBoundary\\n7 1561 1560 ErrorBoundary\\n8 1562 1561 ErrorBoundaryHandler\\n9 1563 1562 Router\\n10 1564 1563 HistoryUpdater\\n10 1565 1563 NavigationPromisesContext.Provider\\n11 1566 1565 PathParamsContext.Provider\\n12 1567 1566 PathnameContext.Provider\\n13 1568 1567 SearchParamsContext.Provider\\n14 1569 1568 GlobalLayoutRouterContext.Provider\\n15 1570 1569 AppRouterContext.Provider\\n16 1571 1570 LayoutRouterContext.Provider\\n17 1572 1571 HotReload\\n18 1573 1572 AppDevOverlayErrorBoundary\\n19 1574 1573 ReplaySsrOnlyErrors\\n19 1575 1573 DevRootHTTPAccessFallbackBoundary\\n20 1576 1575 HTTPAccessFallbackBoundary\\n21 1577 1576 HTTPAccessFallbackErrorBoundary\\n22 1578 1577 RedirectBoundary\\n23 1579 1578 RedirectErrorBoundary\\n24 1580 1579 Head key=\\\"[\\\\\\\"/$d$locale/!KGFwcCk/personnel-files/payslip-batches/$d$batchId/__PAGE__/_head\\\\\\\",\\\\\\\"\\\\\\\",\\\\\\\"4186fabc-629e-4f6e-ab55-93836a541f7e\\\\\\\",\\\\\\\"en\\\\\\\"]\\\"\\n25 1581 1580 Fragment key=\\\"h\\\"\\n26 1582 1581 Prerender(ViewportWrapper)\\n27 1583 1582 __next_viewport_boundary__\\n28 1584 1583 meta key=\\\"0\\\"\\n28 1585 1583 meta key=\\\"1\\\"\\n26 1586 1581 Prerender(MetadataWrapper)\\n27 1587 1586 __next_metadata_boundary__\\n28 1588 1587 div\\n29 1589 1588 Suspense\\n24 1590 1579 __next_root_layout_boundary__\\n25 1591 1590 Fragment key=\\\"c\\\"\\n26 1592 1591 OuterLayoutRouter\\n27 1593 1592 Activity key=\\\"locale|en|d\\\"\\n28 1595 1593 SegmentStateProvider key=\\\"locale|en|d\\\"\\n29 1596 1595 Context.Provider key=\\\"0\\\"\\n30 1597 1596 TemplateContext.Provider key=\\\"locale|en|d\\\"\\n31 1598 1597 RenderFromTemplateContext\\n32 1599 1598 ScrollHandler\\n33 1600 1599 InnerScrollHandler\\n34 1601 1600 ErrorBoundary\\n35 1602 1601 LoadingBoundary\\n36 1603 1602 HTTPAccessFallbackBoundary\\n37 1604 1603 HTTPAccessFallbackErrorBoundary\\n38 1605 1604 RedirectBoundary\\n39 1606 1605 RedirectErrorBoundary\\n40 1607 1606 InnerLayoutRouter\\n41 1608 1607 LayoutRouterContext.Provider\\n42 1609 1608 NavigationPromisesContext.Provider\\n43 1610 1609 SegmentViewNode key=\\\"layout\\\"\\n44 1611 1610 SegmentTrieNode key=\\\"layout\\\"\\n44 1612 1610 Fragment key=\\\"c\\\"\\n45 1613 1612 link key=\\\"0\\\"\\n45 1614 1612 script key=\\\"script-0\\\"\\n45 1615 1612 script key=\\\"script-1\\\"\\n45 1616 1612 script key=\\\"script-2\\\"\\n45 1617 1612 script key=\\\"script-3\\\"\\n45 1618 1612 script key=\\\"script-4\\\"\\n45 1619 1612 script key=\\\"script-5\\\"\\n45 1620 1612 script key=\\\"script-6\\\"\\n45 1621 1612 script key=\\\"script-7\\\"\\n45 1622 1612 Prerender(LocaleLayout)\\n46 1623 1622 html\\n47 1624 1623 head\\n48 1625 1624 meta\\n48 1626 1624 meta\\n48 1627 1624 meta\\n48 1628 1624 meta\\n48 1629 1624 link\\n48 1630 1624 link\\n48 1631 1624 link\\n48 1632 1624 link\\n48 1633 1624 link\\n48 1634 1624 link\\n48 1635 1624 meta\\n48 1636 1624 meta\\n48 1637 1624 meta\\n48 1638 1624 meta\\n48 1639 1624 meta\\n48 1640 1624 meta\\n48 1641 1624 Prerender(TranslatedMeta)\\n49 1642 1641 title\\n49 1643 1641 meta\\n49 1644 1641 meta\\n47 1645 1623 body\\n48 1646 1645 Prerender(AppProviders)\\n49 1647 1646 ThemeProvider\\n50 1648 1647 Context.Provider\\n51 1649 1648 Forget(FontSizeProvider)\\n52 1650 1649 Context.Provider\\n53 1651 1650 Suspense\\n54 1658 1651 Prerender(TranslationProvider)\\n55 1659 1658 Forget(TranslationProviders)\\n56 1660 1659 Forget(TolgeeNextProvider)\\n57 1661 1660 Context.Provider\\n58 1662 1661 TolgeeProvider key=\\\"en\\\"\\n59 1663 1662 Context.Provider\\n60 1664 1663 NextIntlClientProvider\\n61 1665 1664 IntlProvider\\n62 1666 1665 Context.Provider\\n63 1667 1666 Forget(AppLocaleProvider)\\n64 1668 1667 Context.Provider\\n65 1669 1668 Prerender(ApplicationContent)\\n66 1670 1669 Forget(QueryProvider)\\n67 1671 1670 QueryClientProvider\\n68 1672 1671 Context.Provider\\n69 1673 1672 Forget(ViewRefreshProvider)\\n70 1674 1673 Context.Provider\\n71 1675 1674 Context.Provider\\n72 1676 1675 Forget(BProgressBar)\\n72 1677 1675 Forget(TooltipProvider)\\n73 1678 1677 Context.Provider\\n74 1679 1678 TooltipProvider\\n75 1680 1679 TooltipProviderContext.Provider\\n76 1681 1680 FloatingDelayGroup\\n77 1682 1681 FloatingDelayGroupContext.Provider\\n78 1683 1682 Forget(SWUpdatePrompt)\\n78 1684 1682 Suspense\\n78 1685 1682 OuterLayoutRouter\\n79 1686 1685 Activity key=\\\"(app)\\\"\\n80 1692 1686 SegmentStateProvider key=\\\"(app)\\\"\\n81 1693 1692 Context.Provider key=\\\"0\\\"\\n82 1694 1693 TemplateContext.Provider key=\\\"(app)\\\"\\n83 1695 1694 RenderFromTemplateContext\\n84 1696 1695 ScrollHandler\\n85 1697 1696 InnerScrollHandler\\n86 1698 1697 ErrorBoundary\\n87 1699 1698 ErrorBoundaryHandler\\n88 1700 1699 LoadingBoundary\\n89 1701 1700 HTTPAccessFallbackBoundary\\n90 1702 1701 HTTPAccessFallbackErrorBoundary\\n91 1703 1702 RedirectBoundary\\n92 1704 1703 RedirectErrorBoundary\\n93 1705 1704 InnerLayoutRouter\\n94 1706 1705 LayoutRouterContext.Provider\\n95 1707 1706 NavigationPromisesContext.Provider\\n96 1708 1707 SegmentViewNode key=\\\"layout\\\"\\n97 1709 1708 SegmentTrieNode key=\\\"layout\\\"\\n97 1710 1708 Fragment key=\\\"c\\\"\\n98 1711 1710 link key=\\\"0\\\"\\n98 1712 1710 script key=\\\"script-0\\\"\\n98 1713 1710 script key=\\\"script-1\\\"\\n98 1714 1710 script key=\\\"script-2\\\"\\n98 1715 1710 script key=\\\"script-3\\\"\\n98 1716 1710 script key=\\\"script-4\\\"\\n98 1717 1710 script key=\\\"script-5\\\"\\n98 1718 1710 script key=\\\"script-6\\\"\\n98 1719 1710 script key=\\\"script-7\\\"\\n98 1720 1710 script key=\\\"script-8\\\"\\n98 1721 1710 script key=\\\"script-9\\\"\\n98 1722 1710 script key=\\\"script-10\\\"\\n98 1723 1710 script key=\\\"script-11\\\"\\n98 1724 1710 script key=\\\"script-12\\\"\\n98 1725 1710 script key=\\\"script-13\\\"\\n98 1726 1710 script key=\\\"script-14\\\"\\n98 1727 1710 script key=\\\"script-15\\\"\\n98 1728 1710 script key=\\\"script-16\\\"\\n98 1729 1710 script key=\\\"script-17\\\"\\n98 1730 1710 script key=\\\"script-18\\\"\\n98 1731 1710 script key=\\\"script-19\\\"\\n98 1732 1710 script key=\\\"script-20\\\"\\n98 1733 1710 script key=\\\"script-21\\\"\\n98 1734 1710 script key=\\\"script-22\\\"\\n98 1735 1710 script key=\\\"script-23\\\"\\n98 1736 1710 script key=\\\"script-24\\\"\\n98 1737 1710 script key=\\\"script-25\\\"\\n98 1738 1710 script key=\\\"script-26\\\"\\n98 1739 1710 script key=\\\"script-27\\\"\\n98 1740 1710 Prerender(AppLayout)\\n99 1741 1740 Suspense\\n100 1748 1741 Prerender(Server(AuthenticatedAppContent))\\n101 1749 1748 Forget(PostHogProvider)\\n102 1750 1749 Forget(PushPermissionProvider)\\n103 1751 1750 Forget(UserPreferencesProvider)\\n104 1752 1751 Context.Provider\\n105 1753 1752 Forget(OrganizationSettingsProvider)\\n106 1754 1753 Forget(OrganizationContextProvider)\\n107 1755 1754 Forget(OrganizationSettingsStoreProvider) key=\\\"[\\\\\\\"perf-small-0-e7f98ad3ebad\\\\\\\",\\\\\\\"perf-small-e7f98ad3ebad\\\\\\\"]\\\"\\n108 1756 1755 Context.Provider\\n109 1757 1756 Context.Provider\\n110 1758 1757 Forget(SynchronizeOrganization)\\n110 1759 1757 Forget(SidebarProvider)\\n111 1760 1759 Context.Provider\\n112 1761 1760 Forget(TooltipProvider)\\n113 1762 1761 Context.Provider\\n114 1763 1762 TooltipProvider\\n115 1764 1763 TooltipProviderContext.Provider\\n116 1765 1764 FloatingDelayGroup\\n117 1766 1765 FloatingDelayGroupContext.Provider\\n118 1767 1766 div\\n119 1768 1767 Forget(AppSkipLink)\\n120 1769 1768 a\\n119 1770 1767 Server(ServerSidebarRegion)\\n120 1771 1770 Suspense\\n121 2225 1771 Server(ServerAppSidebar)\\n122 2226 2225 Forget(AppSidebar)\\n123 2227 2226 Forget(Sidebar)\\n124 2228 2227 div\\n125 2229 2228 div\\n125 2230 2228 div\\n126 2231 2230 div\\n127 2232 2231 Forget(SidebarHeader)\\n128 2233 2232 div\\n129 2234 2233 Forget(OrganizationSwitcher)\\n130 2235 2234 Forget(SidebarMenu)\\n131 2236 2235 ul\\n132 2237 2236 Forget(SidebarMenuItem)\\n133 2238 2237 li\\n134 2239 2238 Forget(DropdownMenu)\\n135 2240 2239 MenuRoot\\n136 2241 2240 MenuRootInternal\\n137 2242 2241 FloatingTree\\n138 2243 2242 FloatingTreeContext.Provider\\n139 2244 2243 MenuRootContext.Provider\\n140 2245 2244 Forget(DropdownMenuTrigger)\\n141 2246 2245 MenuTrigger\\n142 2247 2246 Fragment key=\\\"base-ui-_R_3ajad5red9etb_\\\"\\n143 2248 2247 Forget(SidebarMenuButton)\\n144 2249 2248 Forget(Tooltip)\\n145 2250 2249 TooltipRoot\\n146 2251 2250 TooltipRootContext.Provider\\n147 2252 2251 Forget(TooltipTrigger)\\n148 2253 2252 TooltipTrigger\\n149 2254 2253 button\\n150 2255 2254 div\\n151 2256 2255 Forget(OrganizationLogo)\\n152 2257 2256 Forget(Avatar)\\n153 2258 2257 AvatarRoot\\n154 2259 2258 AvatarRootContext.Provider\\n155 2260 2259 span\\n156 2261 2260 Forget(AvatarFallback)\\n157 2262 2261 AvatarFallback\\n158 2263 2262 span\\n159 2264 2263 Building\\n160 2265 2264 svg\\n161 2266 2265 path key=\\\"svg-0\\\"\\n161 2267 2265 path key=\\\"svg-1\\\"\\n161 2268 2265 path key=\\\"svg-2\\\"\\n161 2269 2265 path key=\\\"svg-3\\\"\\n161 2270 2265 path key=\\\"svg-4\\\"\\n161 2271 2265 path key=\\\"svg-5\\\"\\n161 2272 2265 path key=\\\"svg-6\\\"\\n161 2273 2265 path key=\\\"svg-7\\\"\\n150 2274 2254 div\\n151 2275 2274 span\\n151 2276 2274 span\\n150 2277 2254 ChevronDown\\n151 2278 2277 svg\\n152 2279 2278 path key=\\\"svg-0\\\"\\n147 2280 2251 Forget(TooltipContent)\\n148 2281 2280 TooltipPortal\\n140 2282 2244 Forget(DropdownMenuContent)\\n141 2283 2282 MenuPortal\\n134 2284 2238 Forget(CreateOrganizationDialog)\\n135 2285 2284 Forget(ActionPanel)\\n136 2286 2285 Forget(Sheet)\\n137 2287 2286 Context.Provider\\n138 2288 2287 DialogRoot\\n139 2289 2288 DialogRootContext.Provider\\n140 2290 2289 Forget(ActionPanelContent)\\n141 2291 2290 Forget(SheetContent)\\n142 2292 2291 Forget(SheetPortal)\\n143 2293 2292 DialogPortal\\n127 2294 2231 Forget(SidebarContent)\\n128 2295 2294 div\\n129 2296 2295 Forget(AppSearch)\\n130 2297 2296 Forget(SidebarGroup)\\n131 2298 2297 div\\n132 2299 2298 Forget(SidebarGroupContent)\\n133 2300 2299 div\\n134 2301 2300 Forget(SidebarMenu)\\n135 2302 2301 ul\\n136 2303 2302 Forget(SidebarMenuItem)\\n137 2304 2303 li\\n138 2305 2304 Forget(SidebarMenuButton)\\n139 2306 2305 Forget(Tooltip)\\n140 2307 2306 TooltipRoot\\n141 2308 2307 TooltipRootContext.Provider\\n142 2309 2308 Forget(TooltipTrigger)\\n143 2310 2309 TooltipTrigger\\n144 2311 2310 button\\n145 2312 2311 Search\\n146 2313 2312 svg\\n147 2314 2313 path key=\\\"svg-0\\\"\\n147 2315 2313 path key=\\\"svg-1\\\"\\n145 2316 2311 span\\n145 2317 2311 Forget(Kbd)\\n146 2318 2317 kbd\\n142 2319 2308 Forget(TooltipContent)\\n143 2320 2319 TooltipPortal\\n130 2321 2296 Forget(CommandDialog)\\n131 2322 2321 Forget(Dialog)\\n132 2323 2322 Context.Provider\\n133 2324 2323 DialogRoot\\n134 2325 2324 DialogRootContext.Provider\\n135 2326 2325 Forget(DialogPortal)\\n136 2327 2326 DialogPortal\\n129 2328 2295 Suspense\\n130 2398 2328 Forget(NavMain)\\n131 2399 2398 Forget(SidebarGroup)\\n132 2400 2399 div\\n133 2401 2400 nav\\n134 2402 2401 Forget(SidebarGroupLabel)\\n135 2403 2402 div\\n134 2404 2401 Forget(SidebarGroupContent)\\n135 2405 2404 div\\n136 2406 2405 Forget(SidebarMenu)\\n137 2407 2406 ul\\n138 2408 2407 Forget(SidebarMenuItem) key=\\\"Dashboard\\\"\\n139 2409 2408 li\\n140 2410 2409 Forget(SidebarMenuButton)\\n141 2411 2410 Forget(Tooltip)\\n142 2412 2411 TooltipRoot\\n143 2413 2412 TooltipRootContext.Provider\\n144 2414 2413 Forget(TooltipTrigger)\\n145 2415 2414 TooltipTrigger\\n146 2416 2415 Slot\\n147 2417 2416 ForwardRef(Link)\\n148 2418 2417 ForwardRef(BaseLink)\\n149 2419 2418 LinkComponent\\n150 2420 2419 Context.Provider\\n151 2421 2420 a\\n152 2422 2421 Dashboard\\n153 2423 2422 svg\\n154 2424 2423 path key=\\\"svg-0\\\"\\n154 2425 2423 path key=\\\"svg-1\\\"\\n154 2426 2423 path key=\\\"svg-2\\\"\\n152 2427 2421 span\\n144 2428 2413 Forget(TooltipContent)\\n145 2429 2428 TooltipPortal\\n138 2430 2407 Forget(SidebarMenuItem) key=\\\"Time Tracking\\\"\\n139 2431 2430 li\\n140 2432 2431 Forget(SidebarMenuButton)\\n141 2433 2432 Forget(Tooltip)\\n142 2434 2433 TooltipRoot\\n143 2435 2434 TooltipRootContext.Provider\\n144 2436 2435 Forget(TooltipTrigger)\\n145 2437 2436 TooltipTrigger\\n146 2438 2437 Slot\\n147 2439 2438 ForwardRef(Link)\\n148 2440 2439 ForwardRef(BaseLink)\\n149 2441 2440 LinkComponent\\n150 2442 2441 Context.Provider\\n151 2443 2442 a\\n152 2444 2443 Clock\\n153 2445 2444 svg\\n154 2446 2445 path key=\\\"svg-0\\\"\\n154 2447 2445 path key=\\\"svg-1\\\"\\n152 2448 2443 span\\n144 2449 2435 Forget(TooltipContent)\\n145 2450 2449 TooltipPortal\\n138 2451 2407 Forget(SidebarMenuItem) key=\\\"Calendar\\\"\\n139 2452 2451 li\\n140 2453 2452 Forget(SidebarMenuButton)\\n141 2454 2453 Forget(Tooltip)\\n142 2455 2454 TooltipRoot\\n143 2456 2455 TooltipRootContext.Provider\\n144 2457 2456 Forget(TooltipTrigger)\\n145 2458 2457 TooltipTrigger\\n146 2459 2458 Slot\\n147 2460 2459 ForwardRef(Link)\\n148 2461 2460 ForwardRef(BaseLink)\\n149 2462 2461 LinkComponent\\n150 2463 2462 Context.Provider\\n151 2464 2463 a\\n152 2465 2464 CalendarEvent\\n153 2466 2465 svg\\n154 2467 2466 path key=\\\"svg-0\\\"\\n154 2468 2466 path key=\\\"svg-1\\\"\\n154 2469 2466 path key=\\\"svg-2\\\"\\n154 2470 2466 path key=\\\"svg-3\\\"\\n154 2471 2466 path key=\\\"svg-4\\\"\\n152 2472 2464 span\\n144 2473 2456 Forget(TooltipContent)\\n145 2474 2473 TooltipPortal\\n138 2475 2407 Forget(SidebarMenuItem) key=\\\"Absences\\\"\\n139 2476 2475 li\\n140 2477 2476 Forget(SidebarMenuButton)\\n141 2478 2477 Forget(Tooltip)\\n142 2479 2478 TooltipRoot\\n143 2480 2479 TooltipRootContext.Provider\\n144 2481 2480 Forget(TooltipTrigger)\\n145 2482 2481 TooltipTrigger\\n146 2483 2482 Slot\\n147 2484 2483 ForwardRef(Link)\\n148 2485 2484 ForwardRef(BaseLink)\\n149 2486 2485 LinkComponent\\n150 2487 2486 Context.Provider\\n151 2488 2487 a\\n152 2489 2488 Beach\\n153 2490 2489 svg\\n154 2491 2490 path key=\\\"svg-0\\\"\\n154 2492 2490 path key=\\\"svg-1\\\"\\n154 2493 2490 path key=\\\"svg-2\\\"\\n154 2494 2490 path key=\\\"svg-3\\\"\\n154 2495 2490 path key=\\\"svg-4\\\"\\n152 2496 2488 span\\n144 2497 2480 Forget(TooltipContent)\\n145 2498 2497 TooltipPortal\\n138 2499 2407 Forget(SidebarMenuItem) key=\\\"Travel Expenses\\\"\\n139 2500 2499 li\\n140 2501 2500 Forget(SidebarMenuButton)\\n141 2502 2501 Forget(Tooltip)\\n142 2503 2502 TooltipRoot\\n143 2504 2503 TooltipRootContext.Provider\\n144 2505 2504 Forget(TooltipTrigger)\\n145 2506 2505 TooltipTrigger\\n146 2507 2506 Slot\\n147 2508 2507 ForwardRef(Link)\\n148 2509 2508 ForwardRef(BaseLink)\\n149 2510 2509 LinkComponent\\n150 2511 2510 Context.Provider\\n151 2512 2511 a\\n152 2513 2512 Receipt\\n153 2514 2513 svg\\n154 2515 2514 path key=\\\"svg-0\\\"\\n152 2516 2512 span\\n144 2517 2504 Forget(TooltipContent)\\n145 2518 2517 TooltipPortal\\n138 2519 2407 Forget(SidebarMenuItem) key=\\\"Finance\\\"\\n139 2520 2519 li\\n140 2521 2520 Forget(SidebarMenuButton)\\n141 2522 2521 Forget(Tooltip)\\n142 2523 2522 TooltipRoot\\n143 2524 2523 TooltipRootContext.Provider\\n144 2525 2524 Forget(TooltipTrigger)\\n145 2526 2525 TooltipTrigger\\n146 2527 2526 Slot\\n147 2528 2527 ForwardRef(Link)\\n148 2529 2528 ForwardRef(BaseLink)\\n149 2530 2529 LinkComponent\\n150 2531 2530 Context.Provider\\n151 2532 2531 a\\n152 2533 2532 ReportMoney\\n153 2534 2533 svg\\n154 2535 2534 path key=\\\"svg-0\\\"\\n154 2536 2534 path key=\\\"svg-1\\\"\\n154 2537 2534 path key=\\\"svg-2\\\"\\n154 2538 2534 path key=\\\"svg-3\\\"\\n152 2539 2532 span\\n144 2540 2524 Forget(TooltipContent)\\n145 2541 2540 TooltipPortal\\n140 2542 2520 Forget(FinanceNavBadge)\\n138 2543 2407 Forget(SidebarMenuItem) key=\\\"My Requests\\\"\\n139 2544 2543 li\\n140 2545 2544 Forget(SidebarMenuButton)\\n141 2546 2545 Forget(Tooltip)\\n142 2547 2546 TooltipRoot\\n143 2548 2547 TooltipRootContext.Provider\\n144 2549 2548 Forget(TooltipTrigger)\\n145 2550 2549 TooltipTrigger\\n146 2551 2550 Slot\\n147 2552 2551 ForwardRef(Link)\\n148 2553 2552 ForwardRef(BaseLink)\\n149 2554 2553 LinkComponent\\n150 2555 2554 Context.Provider\\n151 2556 2555 a\\n152 2557 2556 FileDescription\\n153 2558 2557 svg\\n154 2559 2558 path key=\\\"svg-0\\\"\\n154 2560 2558 path key=\\\"svg-1\\\"\\n154 2561 2558 path key=\\\"svg-2\\\"\\n154 2562 2558 path key=\\\"svg-3\\\"\\n152 2563 2556 span\\n144 2564 2548 Forget(TooltipContent)\\n145 2565 2564 TooltipPortal\\n138 2566 2407 Forget(SidebarMenuItem) key=\\\"My Documents\\\"\\n139 2567 2566 li\\n140 2568 2567 Forget(SidebarMenuButton)\\n141 2569 2568 Forget(Tooltip)\\n142 2570 2569 TooltipRoot\\n143 2571 2570 TooltipRootContext.Provider\\n144 2572 2571 Forget(TooltipTrigger)\\n145 2573 2572 TooltipTrigger\\n146 2574 2573 Slot\\n147 2575 2574 ForwardRef(Link)\\n148 2576 2575 ForwardRef(BaseLink)\\n149 2577 2576 LinkComponent\\n150 2578 2577 Context.Provider\\n151 2579 2578 a\\n152 2580 2579 Folder\\n153 2581 2580 svg\\n154 2582 2581 path key=\\\"svg-0\\\"\\n152 2583 2579 span\\n144 2584 2571 Forget(TooltipContent)\\n145 2585 2584 TooltipPortal\\n138 2586 2407 Forget(SidebarMenuItem) key=\\\"Personnel Files\\\"\\n139 2587 2586 li\\n140 2588 2587 Forget(SidebarMenuButton)\\n141 2589 2588 Forget(Tooltip)\\n142 2590 2589 TooltipRoot\\n143 2591 2590 TooltipRootContext.Provider\\n144 2592 2591 Forget(TooltipTrigger)\\n145 2593 2592 TooltipTrigger\\n146 2594 2593 Slot\\n147 2595 2594 ForwardRef(Link)\\n148 2596 2595 ForwardRef(BaseLink)\\n149 2597 2596 LinkComponent\\n150 2598 2597 Context.Provider\\n151 2599 2598 a\\n152 2600 2599 Folders\\n153 2601 2600 svg\\n154 2602 2601 path key=\\\"svg-0\\\"\\n154 2603 2601 path key=\\\"svg-1\\\"\\n152 2604 2599 span\\n144 2605 2591 Forget(TooltipContent)\\n145 2606 2605 TooltipPortal\\n138 2607 2407 Forget(SidebarMenuItem) key=\\\"Reports\\\"\\n139 2608 2607 li\\n140 2609 2608 Forget(SidebarMenuButton)\\n141 2610 2609 Forget(Tooltip)\\n142 2611 2610 TooltipRoot\\n143 2612 2611 TooltipRootContext.Provider\\n144 2613 2612 Forget(TooltipTrigger)\\n145 2614 2613 TooltipTrigger\\n146 2615 2614 Slot\\n147 2616 2615 ForwardRef(Link)\\n148 2617 2616 ForwardRef(BaseLink)\\n149 2618 2617 LinkComponent\\n150 2619 2618 Context.Provider\\n151 2620 2619 a\\n152 2621 2620 Report\\n153 2622 2621 svg\\n154 2623 2622 path key=\\\"svg-0\\\"\\n154 2624 2622 path key=\\\"svg-1\\\"\\n154 2625 2622 path key=\\\"svg-2\\\"\\n154 2626 2622 path key=\\\"svg-3\\\"\\n154 2627 2622 path key=\\\"svg-4\\\"\\n154 2628 2622 path key=\\\"svg-5\\\"\\n154 2629 2622 path key=\\\"svg-6\\\"\\n152 2630 2620 span\\n144 2631 2612 Forget(TooltipContent)\\n145 2632 2631 TooltipPortal\\n138 2633 2407 Forget(SidebarMenuItem) key=\\\"Org Explorer\\\"\\n139 2634 2633 li\\n140 2635 2634 Forget(SidebarMenuButton)\\n141 2636 2635 Forget(Tooltip)\\n142 2637 2636 TooltipRoot\\n143 2638 2637 TooltipRootContext.Provider\\n144 2639 2638 Forget(TooltipTrigger)\\n145 2640 2639 TooltipTrigger\\n146 2641 2640 Slot\\n147 2642 2641 ForwardRef(Link)\\n148 2643 2642 ForwardRef(BaseLink)\\n149 2644 2643 LinkComponent\\n150 2645 2644 Context.Provider\\n151 2646 2645 a\\n152 2647 2646 Hierarchy\\n153 2648 2647 svg\\n154 2649 2648 path key=\\\"svg-0\\\"\\n154 2650 2648 path key=\\\"svg-1\\\"\\n154 2651 2648 path key=\\\"svg-2\\\"\\n154 2652 2648 path key=\\\"svg-3\\\"\\n154 2653 2648 path key=\\\"svg-4\\\"\\n152 2654 2646 span\\n144 2655 2638 Forget(TooltipContent)\\n145 2656 2655 TooltipPortal\\n129 2329 2295 Suspense\\n129 2330 2295 Suspense\\n127 2331 2231 Forget(SidebarFooter)\\n128 2332 2331 div\\n129 2333 2332 Forget(SidebarUser)\\n130 2334 2333 Forget(NavUser)\\n131 2335 2334 Forget(SidebarMenu)\\n132 2336 2335 ul\\n133 2337 2336 Forget(SidebarMenuItem)\\n134 2338 2337 li\\n135 2339 2338 Forget(SidebarMenuButton)\\n136 2340 2339 button\\n137 2341 2340 Forget(Skeleton)\\n138 2342 2341 div\\n137 2343 2340 div\\n138 2344 2343 Forget(Skeleton)\\n139 2345 2344 div\\n138 2346 2343 Forget(Skeleton)\\n139 2347 2346 div\\n135 2348 2338 Forget(DropdownMenu)\\n136 2349 2348 MenuRoot\\n137 2350 2349 MenuRootInternal\\n138 2351 2350 FloatingTree\\n139 2352 2351 FloatingTreeContext.Provider\\n140 2353 2352 MenuRootContext.Provider\\n141 2354 2353 Forget(DropdownMenuTrigger)\\n142 2355 2354 MenuTrigger\\n143 2356 2355 Fragment key=\\\"base-ui-_r_17_\\\"\\n144 2357 2356 Forget(SidebarMenuButton)\\n145 2358 2357 Forget(Tooltip)\\n146 2359 2358 TooltipRoot\\n147 2360 2359 TooltipRootContext.Provider\\n148 2361 2360 Forget(TooltipTrigger)\\n149 2362 2361 TooltipTrigger\\n150 2363 2362 button\\n151 2364 2363 Forget(UserAvatar)\\n152 2365 2364 span\\n153 2366 2365 Forget(Avatar)\\n154 2367 2366 AvatarRoot\\n155 2368 2367 AvatarRootContext.Provider\\n156 2369 2368 span\\n157 2370 2369 Forget(AvatarImage)\\n158 2371 2370 AvatarImage\\n159 2390 2371 img\\n157 2372 2369 Forget(AvatarFallback)\\n158 2373 2372 AvatarFallback\\n159 2374 2373 span\\n160 2375 2374 Loader2\\n161 2376 2375 svg\\n162 2377 2376 path key=\\\"svg-0\\\"\\n151 2378 2363 div\\n152 2379 2378 span\\n152 2380 2378 span\\n151 2381 2363 DotsVertical\\n152 2382 2381 svg\\n153 2383 2382 path key=\\\"svg-0\\\"\\n153 2384 2382 path key=\\\"svg-1\\\"\\n153 2385 2382 path key=\\\"svg-2\\\"\\n148 2386 2360 Forget(TooltipContent)\\n149 2387 2386 TooltipPortal\\n141 2388 2353 Forget(DropdownMenuContent)\\n142 2389 2388 MenuPortal\\n119 1772 1767 Forget(SidebarInset)\\n120 1773 1772 main\\n121 1774 1773 Suspense\\n121 1775 1773 Forget(OfflineBanner)\\n122 1956 1775 div\\n123 1957 1956 div\\n124 1958 1957 div\\n125 1959 1958 Refresh\\n126 1960 1959 svg\\n127 1961 1960 path key=\\\"svg-0\\\"\\n127 1962 1960 path key=\\\"svg-1\\\"\\n125 1963 1958 span\\n121 1776 1773 Suspense\\n121 1777 1773 Forget(OrganizationDeletionBanner)\\n121 1778 1773 PositionConsentDialogHost\\n122 1779 1778 Forget(Dialog)\\n123 1780 1779 Context.Provider\\n124 1781 1780 DialogRoot\\n125 1782 1781 DialogRootContext.Provider\\n126 1783 1782 Forget(DialogContent)\\n127 1784 1783 Forget(DialogPortal)\\n128 1785 1784 DialogPortal\\n121 1786 1773 div\\n122 1787 1786 OuterLayoutRouter\\n123 1788 1787 Activity key=\\\"personnel-files\\\"\\n124 1801 1788 SegmentStateProvider key=\\\"personnel-files\\\"\\n125 1802 1801 Context.Provider key=\\\"0\\\"\\n126 1803 1802 TemplateContext.Provider key=\\\"personnel-files\\\"\\n127 1804 1803 RenderFromTemplateContext\\n128 1805 1804 ScrollHandler\\n129 1806 1805 InnerScrollHandler\\n130 1807 1806 ErrorBoundary\\n131 1808 1807 ErrorBoundaryHandler\\n132 1809 1808 LoadingBoundary\\n133 1810 1809 HTTPAccessFallbackBoundary\\n134 1811 1810 HTTPAccessFallbackErrorBoundary\\n135 1812 1811 RedirectBoundary\\n136 1813 1812 RedirectErrorBoundary\\n137 1814 1813 InnerLayoutRouter\\n138 1815 1814 LayoutRouterContext.Provider\\n139 1816 1815 NavigationPromisesContext.Provider\\n140 1817 1816 SegmentViewNode key=\\\"layout\\\"\\n141 1818 1817 SegmentTrieNode key=\\\"layout\\\"\\n141 1819 1817 Fragment key=\\\"c\\\"\\n142 1820 1819 Prerender(PersonnelFilesLayout)\\n143 1821 1820 Prerender(RouteTranslationBoundary)\\n144 1822 1821 Suspense\\n145 1829 1822 Prerender(RouteCatalog)\\n146 1830 1829 Forget(FeatureTranslationProvider)\\n147 1831 1830 Context.Provider\\n148 1832 1831 TolgeeProvider\\n149 1833 1832 Context.Provider\\n150 1834 1833 OuterLayoutRouter\\n151 1835 1834 Activity key=\\\"payslip-batches\\\"\\n152 1836 1835 SegmentStateProvider key=\\\"payslip-batches\\\"\\n153 1837 1836 Context.Provider key=\\\"0\\\"\\n154 1838 1837 TemplateContext.Provider key=\\\"payslip-batches\\\"\\n155 1839 1838 RenderFromTemplateContext\\n156 1840 1839 ScrollHandler\\n157 1841 1840 InnerScrollHandler\\n158 1842 1841 ErrorBoundary\\n159 1843 1842 LoadingBoundary\\n160 1844 1843 HTTPAccessFallbackBoundary\\n161 1845 1844 RedirectBoundary\\n162 1846 1845 RedirectErrorBoundary\\n163 1847 1846 InnerLayoutRouter\\n164 1848 1847 LayoutRouterContext.Provider\\n165 1849 1848 NavigationPromisesContext.Provider\\n166 1850 1849 Fragment key=\\\"c\\\"\\n167 1851 1850 OuterLayoutRouter\\n168 1852 1851 Activity key=\\\"batchId|4186fabc-629e-4f6e-ab55-93836a541f7e|d\\\"\\n169 1855 1852 SegmentStateProvider key=\\\"batchId|4186fabc-629e-4f6e-ab55-93836a541f7e|d\\\"\\n170 1856 1855 Context.Provider key=\\\"0\\\"\\n171 1857 1856 TemplateContext.Provider key=\\\"batchId|4186fabc-629e-4f6e-ab55-93836a541f7e|d\\\"\\n172 1858 1857 RenderFromTemplateContext\\n173 1859 1858 ScrollHandler\\n174 1860 1859 InnerScrollHandler\\n175 1861 1860 ErrorBoundary\\n176 1862 1861 LoadingBoundary\\n177 1863 1862 HTTPAccessFallbackBoundary\\n178 1864 1863 RedirectBoundary\\n179 1865 1864 RedirectErrorBoundary\\n180 1866 1865 InnerLayoutRouter\\n181 1867 1866 LayoutRouterContext.Provider\\n182 1868 1867 NavigationPromisesContext.Provider\\n183 1869 1868 Fragment key=\\\"c\\\"\\n184 1870 1869 OuterLayoutRouter\\n185 1871 1870 Activity key=\\\"__PAGE__\\\"\\n186 1874 1871 SegmentStateProvider key=\\\"__PAGE__\\\"\\n187 1875 1874 Context.Provider key=\\\"0\\\"\\n188 1876 1875 TemplateContext.Provider key=\\\"__PAGE__\\\"\\n189 1877 1876 RenderFromTemplateContext\\n190 1878 1877 ScrollHandler\\n191 1879 1878 InnerScrollHandler\\n192 1880 1879 ErrorBoundary\\n193 1881 1880 LoadingBoundary\\n194 1882 1881 HTTPAccessFallbackBoundary\\n195 1883 1882 RedirectBoundary\\n196 1884 1883 RedirectErrorBoundary\\n197 1885 1884 InnerLayoutRouter\\n198 1886 1885 LayoutRouterContext.Provider\\n199 1887 1886 Fragment key=\\\"c\\\"\\n200 1888 1887 SegmentViewNode key=\\\"c-page\\\"\\n201 1889 1888 SegmentTrieNode key=\\\"page\\\"\\n201 1890 1888 Prerender(PayslipBatchPage)\\n202 1891 1890 Suspense\\n203 1900 1891 Prerender(Server(PayslipBatchContent))\\n204 1901 1900 div\\n205 1902 1901 Server(PageHeader)\\n206 1903 1902 div\\n207 1904 1903 div\\n208 1905 1904 div\\n209 1906 1905 Server(Link)\\n210 1907 1906 ForwardRef(BaseLink)\\n211 1908 1907 LinkComponent\\n212 1909 1908 Context.Provider\\n213 1910 1909 a\\n214 1911 1910 Server(ArrowLeft)\\n215 1912 1911 svg\\n216 1913 1912 path key=\\\"svg-0\\\"\\n216 1914 1912 path key=\\\"svg-1\\\"\\n216 1915 1912 path key=\\\"svg-2\\\"\\n208 1916 1904 h1\\n205 1917 1901 Forget(PayslipBatchWorkspace)\\n206 1918 1917 Forget(BatchArrival) key=\\\"[\\\\\\\"4186fabc-629e-4f6e-ab55-93836a541f7e\\\\\\\",\\\\\\\"perf-small-0-e7f98ad3ebad\\\\\\\",\\\\\\\"perf-small-e7f98ad3ebad\\\\\\\"]\\\"\\n207 1919 1918 div\\n208 1920 1919 Forget(Skeleton)\\n209 1921 1920 div\\n208 1922 1919 Forget(Skeleton)\\n209 1923 1922 div\\n207 1964 1918 Context.Provider\\n208 1965 1964 div\\n209 1966 1965 Forget(BatchSummary)\\n210 1967 1966 section\\n211 1968 1967 div\\n212 1969 1968 h2\\n213 1970 1969 Forget(Badge)\\n214 1971 1970 span\\n212 1972 1968 p\\n211 1973 1967 p\\n209 1974 1965 Forget(BatchProgress)\\n210 1975 1974 ol\\n211 1976 1975 li\\n211 1977 1975 li\\n211 1978 1975 li\\n209 1979 1965 Forget(AddFilesCard)\\n210 1980 1979 Forget(Card)\\n211 1981 1980 div\\n212 1982 1981 Forget(CardHeader)\\n213 1983 1982 div\\n214 1984 1983 Forget(CardTitle)\\n215 1985 1984 div\\n214 1986 1983 Forget(CardDescription)\\n215 1987 1986 div\\n212 1988 1981 Forget(CardContent)\\n213 1989 1988 div\\n214 1990 1989 div\\n215 1991 1990 Forget(Label)\\n216 1992 1991 label\\n215 1993 1990 Forget(Input)\\n216 1994 1993 input\\n215 1995 1990 p\\n216 1996 1995 FileZip\\n217 1997 1996 svg\\n218 1998 1997 path key=\\\"svg-0\\\"\\n218 1999 1997 path key=\\\"svg-1\\\"\\n218 2000 1997 path key=\\\"svg-2\\\"\\n218 2001 1997 path key=\\\"svg-3\\\"\\n218 2002 1997 path key=\\\"svg-4\\\"\\n218 2003 1997 path key=\\\"svg-5\\\"\\n218 2004 1997 path key=\\\"svg-6\\\"\\n218 2005 1997 path key=\\\"svg-7\\\"\\n209 2006 1965 fieldset\\n210 2007 2006 legend\\n210 2008 2006 Forget(FileList)\\n211 2009 2008 Forget(Card)\\n212 2010 2009 div\\n213 2011 2010 Forget(CardContent)\\n214 2012 2011 div\\n215 2013 2012 ul\\n216 2014 2013 Forget(FileRow) key=\\\"66be458e-cb20-4d80-893b-3ef09939887a\\\"\\n217 2015 2014 li\\n218 2016 2015 div\\n219 2017 2016 Forget(Checkbox)\\n220 2018 2017 CheckboxRoot\\n221 2019 2018 CheckboxRootContext.Provider\\n222 2020 2019 span\\n223 2021 2020 CheckboxIndicator\\n224 2022 2021 span\\n225 2023 2022 Check\\n226 2024 2023 svg\\n227 2025 2024 path key=\\\"svg-0\\\"\\n222 2026 2019 input\\n219 2027 2016 Forget(PayslipFileStatus)\\n220 2028 2027 div\\n221 2029 2028 p\\n221 2030 2028 div\\n222 2031 2030 Forget(Badge)\\n223 2032 2031 span\\n218 2033 2015 div\\n219 2034 2033 Forget(SearchableSelect)\\n220 2035 2034 Forget(Popover)\\n221 2036 2035 PopoverRoot\\n222 2037 2036 FloatingTree\\n223 2038 2037 FloatingTreeContext.Provider\\n224 2039 2038 PopoverRootComponent\\n225 2040 2039 PopoverRootContext.Provider\\n226 2041 2040 Forget(PopoverTrigger)\\n227 2042 2041 PopoverTrigger\\n228 2043 2042 Fragment key=\\\"base-ui-_r_6_\\\"\\n229 2044 2043 Forget(Button)\\n230 2045 2044 button\\n231 2046 2045 span\\n231 2047 2045 Selector\\n232 2048 2047 svg\\n233 2049 2048 path key=\\\"svg-0\\\"\\n233 2050 2048 path key=\\\"svg-1\\\"\\n226 2051 2040 Forget(PopoverContent)\\n227 2052 2051 PopoverPortal\\n216 2053 2013 Forget(FileRow) key=\\\"6ffa3370-d88c-4057-833a-a9c135d3f961\\\"\\n217 2054 2053 li\\n218 2055 2054 div\\n219 2056 2055 Forget(Checkbox)\\n220 2057 2056 CheckboxRoot\\n221 2058 2057 CheckboxRootContext.Provider\\n222 2059 2058 span\\n223 2060 2059 CheckboxIndicator\\n224 2061 2060 span\\n225 2062 2061 Check\\n226 2063 2062 svg\\n227 2064 2063 path key=\\\"svg-0\\\"\\n222 2065 2058 input\\n219 2066 2055 Forget(PayslipFileStatus)\\n220 2067 2066 div\\n221 2068 2067 p\\n221 2069 2067 div\\n222 2070 2069 Forget(Badge)\\n223 2071 2070 span\\n218 2072 2054 div\\n219 2073 2072 Forget(SearchableSelect)\\n220 2074 2073 Forget(Popover)\\n221 2075 2074 PopoverRoot\\n222 2076 2075 FloatingTree\\n223 2077 2076 FloatingTreeContext.Provider\\n224 2078 2077 PopoverRootComponent\\n225 2079 2078 PopoverRootContext.Provider\\n226 2080 2079 Forget(PopoverTrigger)\\n227 2081 2080 PopoverTrigger\\n228 2082 2081 Fragment key=\\\"base-ui-_r_d_\\\"\\n229 2083 2082 Forget(Button)\\n230 2084 2083 button\\n231 2085 2084 span\\n231 2086 2084 Selector\\n232 2087 2086 svg\\n233 2088 2087 path key=\\\"svg-0\\\"\\n233 2089 2087 path key=\\\"svg-1\\\"\\n226 2090 2079 Forget(PopoverContent)\\n227 2091 2090 PopoverPortal\\n216 2092 2013 Forget(FileRow) key=\\\"e4c2d1e7-4d5b-45c6-8888-a1f19e9205f7\\\"\\n217 2093 2092 li\\n218 2094 2093 div\\n219 2095 2094 Forget(Checkbox)\\n220 2096 2095 CheckboxRoot\\n221 2097 2096 CheckboxRootContext.Provider\\n222 2098 2097 span\\n223 2099 2098 CheckboxIndicator\\n224 2100 2099 span\\n225 2101 2100 Check\\n226 2102 2101 svg\\n227 2103 2102 path key=\\\"svg-0\\\"\\n222 2104 2097 input\\n219 2105 2094 Forget(PayslipFileStatus)\\n220 2106 2105 div\\n221 2107 2106 p\\n221 2108 2106 div\\n222 2109 2108 Forget(Badge)\\n223 2110 2109 span\\n218 2111 2093 div\\n219 2112 2111 Forget(SearchableSelect)\\n220 2113 2112 Forget(Popover)\\n221 2114 2113 PopoverRoot\\n222 2115 2114 FloatingTree\\n223 2116 2115 FloatingTreeContext.Provider\\n224 2117 2116 PopoverRootComponent\\n225 2118 2117 PopoverRootContext.Provider\\n226 2119 2118 Forget(PopoverTrigger)\\n227 2120 2119 PopoverTrigger\\n228 2121 2120 Fragment key=\\\"base-ui-_r_k_\\\"\\n229 2122 2121 Forget(Button)\\n230 2123 2122 button\\n231 2124 2123 span\\n231 2125 2123 Selector\\n232 2126 2125 svg\\n233 2127 2126 path key=\\\"svg-0\\\"\\n233 2128 2126 path key=\\\"svg-1\\\"\\n226 2129 2118 Forget(PopoverContent)\\n227 2130 2129 PopoverPortal\\n216 2131 2013 Forget(FileRow) key=\\\"51725af1-b940-404e-bff1-f23c1c3490a9\\\"\\n217 2132 2131 li\\n218 2133 2132 div\\n219 2134 2133 Forget(Checkbox)\\n220 2135 2134 CheckboxRoot\\n221 2136 2135 CheckboxRootContext.Provider\\n222 2137 2136 span\\n223 2138 2137 CheckboxIndicator\\n224 2139 2138 span\\n225 2140 2139 Check\\n226 2141 2140 svg\\n227 2142 2141 path key=\\\"svg-0\\\"\\n222 2143 2136 input\\n219 2144 2133 Forget(PayslipFileStatus)\\n220 2145 2144 div\\n221 2146 2145 p\\n221 2147 2145 div\\n222 2148 2147 Forget(Badge)\\n223 2149 2148 span\\n218 2150 2132 div\\n219 2151 2150 Forget(SearchableSelect)\\n220 2152 2151 Forget(Popover)\\n221 2153 2152 PopoverRoot\\n222 2154 2153 FloatingTree\\n223 2155 2154 FloatingTreeContext.Provider\\n224 2156 2155 PopoverRootComponent\\n225 2157 2156 PopoverRootContext.Provider\\n226 2158 2157 Forget(PopoverTrigger)\\n227 2159 2158 PopoverTrigger\\n228 2160 2159 Fragment key=\\\"base-ui-_r_r_\\\"\\n229 2161 2160 Forget(Button)\\n230 2162 2161 button\\n231 2163 2162 span\\n231 2164 2162 Selector\\n232 2165 2164 svg\\n233 2166 2165 path key=\\\"svg-0\\\"\\n233 2167 2165 path key=\\\"svg-1\\\"\\n226 2168 2157 Forget(PopoverContent)\\n227 2169 2168 PopoverPortal\\n216 2170 2013 Forget(FileRow) key=\\\"e12a5386-4968-4d9f-893d-12992aeda66d\\\"\\n217 2171 2170 li\\n218 2172 2171 div\\n219 2173 2172 Forget(Checkbox)\\n220 2174 2173 CheckboxRoot\\n221 2175 2174 CheckboxRootContext.Provider\\n222 2176 2175 span\\n223 2177 2176 CheckboxIndicator\\n224 2178 2177 span\\n225 2179 2178 Check\\n226 2180 2179 svg\\n227 2181 2180 path key=\\\"svg-0\\\"\\n222 2182 2175 input\\n219 2183 2172 Forget(PayslipFileStatus)\\n220 2184 2183 div\\n221 2185 2184 p\\n221 2186 2184 div\\n222 2187 2186 Forget(Badge)\\n223 2188 2187 span\\n218 2189 2171 div\\n219 2190 2189 Forget(SearchableSelect)\\n220 2191 2190 Forget(Popover)\\n221 2192 2191 PopoverRoot\\n222 2193 2192 FloatingTree\\n223 2194 2193 FloatingTreeContext.Provider\\n224 2195 2194 PopoverRootComponent\\n225 2196 2195 PopoverRootContext.Provider\\n226 2197 2196 Forget(PopoverTrigger)\\n227 2198 2197 PopoverTrigger\\n228 2199 2198 Fragment key=\\\"base-ui-_r_12_\\\"\\n229 2200 2199 Forget(Button)\\n230 2201 2200 button\\n231 2202 2201 span\\n231 2203 2201 Selector\\n232 2204 2203 svg\\n233 2205 2204 path key=\\\"svg-0\\\"\\n233 2206 2204 path key=\\\"svg-1\\\"\\n226 2207 2196 Forget(PopoverContent)\\n227 2208 2207 PopoverPortal\\n209 2209 1965 Forget(BatchSaveActions)\\n210 2210 2209 div\\n211 2211 2210 p\\n211 2212 2210 Forget(Button)\\n212 2213 2212 button\\n213 2214 2213 CircleCheck\\n214 2215 2214 svg\\n215 2216 2215 path key=\\\"svg-0\\\"\\n215 2217 2215 path key=\\\"svg-1\\\"\\n209 2218 1965 Forget(AlertDialog)\\n210 2219 2218 Context.Provider\\n211 2220 2219 AlertDialogRoot\\n212 2221 2220 DialogRootContext.Provider\\n213 2222 2221 Forget(AlertDialogContent)\\n214 2223 2222 Forget(AlertDialogPortal)\\n215 2224 2223 DialogPortal\\n200 1892 1887 script key=\\\"script-0\\\"\\n200 1893 1887 script key=\\\"script-1\\\"\\n200 1894 1887 script key=\\\"script-2\\\"\\n200 1895 1887 Prerender(Next.MetadataOutlet)\\n201 1896 1895 __next_outlet_boundary__\\n202 1897 1896 Suspense\\n197 1898 1884 SegmentBoundaryTriggerNode\\n192 1899 1879 SegmentViewStateNode key=\\\"/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e\\\"\\n180 1872 1865 SegmentBoundaryTriggerNode\\n175 1873 1860 SegmentViewStateNode key=\\\"/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e\\\"\\n163 1853 1846 SegmentBoundaryTriggerNode\\n158 1854 1841 SegmentViewStateNode key=\\\"/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e\\\"\\n137 1823 1813 SegmentBoundaryTriggerNode\\n130 1824 1806 SegmentViewStateNode key=\\\"/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e\\\"\\n126 1825 1802 SegmentViewNode\\n127 1826 1825 SegmentTrieNode key=\\\"boundary:not-found\\\"\\n126 1827 1802 SegmentViewNode\\n127 1828 1827 SegmentTrieNode key=\\\"boundary:error\\\"\\n121 1789 1773 Forget(GetTheAppBanner)\\n103 1790 1750 Forget(NativePushBridge)\\n103 1791 1750 Forget(PushPermissionModal)\\n104 1792 1791 Forget(ActionPanel)\\n105 1793 1792 Forget(Sheet)\\n106 1794 1793 Context.Provider\\n107 1795 1794 DialogRoot\\n108 1796 1795 DialogRootContext.Provider\\n109 1797 1796 Forget(ActionPanelContent)\\n110 1798 1797 Forget(SheetContent)\\n111 1799 1798 Forget(SheetPortal)\\n112 1800 1799 DialogPortal\\n93 1742 1704 SegmentBoundaryTriggerNode\\n86 1743 1697 SegmentViewStateNode key=\\\"/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e\\\"\\n82 1744 1693 SegmentViewNode\\n83 1745 1744 SegmentTrieNode key=\\\"boundary:not-found\\\"\\n82 1746 1693 SegmentViewNode\\n83 1747 1746 SegmentTrieNode key=\\\"boundary:error\\\"\\n78 1687 1682 Forget(Toaster)\\n79 1688 1687 ForwardRef(Toaster)\\n80 1689 1688 section\\n69 1690 1672 ReactQueryDevtools\\n70 1691 1690 div\\n40 1652 1606 SegmentBoundaryTriggerNode\\n34 1653 1600 SegmentViewStateNode key=\\\"/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e\\\"\\n30 1654 1596 SegmentViewNode\\n31 1655 1654 SegmentTrieNode key=\\\"boundary:not-found\\\"\\n30 1656 1596 SegmentViewNode\\n31 1657 1656 SegmentTrieNode key=\\\"boundary:global-error\\\"\\n24 1594 1579 AppRouterAnnouncer\"},\"error\":null}\n"
+  },
+  "closeExit": 0,
+  "source": {
+    "head": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+    "pins": [
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+        "raw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+        "lf": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+        "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+        "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+        "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+        "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+        "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+        "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+        "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+        "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+      },
+      {
+        "path": "apps/webapp/src/components/site-header.tsx",
+        "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+        "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+        "raw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+        "lf": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+        "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+        "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+        "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+        "lf": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "b723feb2fb46e943b3123a3bf7e12208e7036b33f1ab7441ece944a50a3a063e"
+  },
+  "mainRegionA11y": {
+    "exit": 0,
+    "violations": [],
+    "incomplete": [
+      {
+        "help": "ARIA attributes must conform to valid values",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-valid-attr-value?application=axeAPI",
+        "id": "aria-valid-attr-value",
+        "impact": "critical",
+        "nodeCount": 5,
+        "nodes": [
+          {
+            "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"_r_4_\"",
+            "html": "<button class=\"relative pointer-coa...\" data-slot=\"popover-trigger\" role=\"combobox\" aria-expanded=\"false\" aria-controls=\"_r_4_\" aria-invalid=\"true\" aria-label=\"Employee for 100-200...\" data-placeholder=\"\" type=\"button\" tabindex=\"0\" data-base-ui-click-t...=\"\" aria-haspopup=\"dialog\">",
+            "target": [
+              "button[aria-controls=\"_r_4_\"]"
+            ]
+          },
+          {
+            "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"_r_b_\"",
+            "html": "<button class=\"relative pointer-coa...\" data-slot=\"popover-trigger\" role=\"combobox\" aria-expanded=\"false\" aria-controls=\"_r_b_\" aria-label=\"Employee for 100.pdf\" type=\"button\" tabindex=\"0\" data-base-ui-click-t...=\"\" aria-haspopup=\"dialog\">",
+            "target": [
+              "button[aria-controls=\"_r_b_\"]"
+            ]
+          },
+          {
+            "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"_r_i_\"",
+            "html": "<button class=\"relative pointer-coa...\" data-slot=\"popover-trigger\" role=\"combobox\" aria-expanded=\"false\" aria-controls=\"_r_i_\" aria-label=\"Employee for 200.pdf\" type=\"button\" tabindex=\"0\" data-base-ui-click-t...=\"\" aria-haspopup=\"dialog\">",
+            "target": [
+              "button[aria-controls=\"_r_i_\"]"
+            ]
+          },
+          {
+            "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"_r_p_\"",
+            "html": "<button class=\"relative pointer-coa...\" data-slot=\"popover-trigger\" role=\"combobox\" aria-expanded=\"false\" aria-controls=\"_r_p_\" aria-label=\"Employee for 300.pdf\" type=\"button\" tabindex=\"0\" data-base-ui-click-t...=\"\" aria-haspopup=\"dialog\">",
+            "target": [
+              "button[aria-controls=\"_r_p_\"]"
+            ]
+          },
+          {
+            "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"_r_10_\"",
+            "html": "<button class=\"relative pointer-coa...\" data-slot=\"popover-trigger\" role=\"combobox\" aria-expanded=\"false\" aria-controls=\"_r_10_\" aria-invalid=\"true\" aria-label=\"Employee for unknown...\" data-placeholder=\"\" type=\"button\" tabindex=\"0\" data-base-ui-click-t...=\"\" aria-haspopup=\"dialog\">",
+            "target": [
+              "button[aria-controls=\"_r_10_\"]"
+            ]
+          }
+        ],
+        "tags": [
+          "cat.aria",
+          "wcag2a",
+          "wcag412",
+          "EN-301-549",
+          "EN-9.4.1.2",
+          "RGAAv4",
+          "RGAA-7.1.1"
+        ]
+      }
+    ]
+  },
+  "mountedTargets": [
+    {
+      "selector": "input[type=file]",
+      "connected": true,
+      "ancestors": [
+        "input",
+        "Input",
+        "div",
+        "div",
+        "CardContent",
+        "div",
+        "Card",
+        "AddFilesCard",
+        "div",
+        "BatchArrival",
+        "PayslipBatchWorkspace",
+        "div",
+        "SegmentViewNode",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary",
+        "HTTPAccessFallbackBoundary",
+        "LoadingBoundary",
+        "ErrorBoundary",
+        "InnerScrollHandler",
+        "ScrollHandler",
+        "RenderFromTemplateContext",
+        "TemplateContext",
+        "SegmentStateProvider",
+        "OuterLayoutRouter",
+        "NavigationPromisesContext",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary",
+        "HTTPAccessFallbackBoundary",
+        "LoadingBoundary",
+        "ErrorBoundary",
+        "InnerScrollHandler",
+        "ScrollHandler",
+        "RenderFromTemplateContext",
+        "TemplateContext",
+        "SegmentStateProvider"
+      ]
+    },
+    {
+      "selector": "[aria-label=\"Include 100.pdf\"]",
+      "connected": true,
+      "ancestors": [
+        "span",
+        "CheckboxRootContext",
+        "CheckboxRoot",
+        "Checkbox",
+        "div",
+        "li",
+        "FileRow",
+        "ul",
+        "div",
+        "CardContent",
+        "div",
+        "Card",
+        "FileList",
+        "fieldset",
+        "div",
+        "BatchArrival",
+        "PayslipBatchWorkspace",
+        "div",
+        "SegmentViewNode",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary",
+        "HTTPAccessFallbackBoundary",
+        "LoadingBoundary",
+        "ErrorBoundary",
+        "InnerScrollHandler",
+        "ScrollHandler",
+        "RenderFromTemplateContext",
+        "TemplateContext",
+        "SegmentStateProvider",
+        "OuterLayoutRouter",
+        "NavigationPromisesContext",
+        "LayoutRouterContext",
+        "InnerLayoutRouter",
+        "RedirectErrorBoundary",
+        "RedirectBoundary",
+        "HTTPAccessFallbackBoundary",
+        "LoadingBoundary",
+        "ErrorBoundary"
+      ]
+    }
+  ],
+  "qualification": "Actual native agent-browser React DevTools tree plus mounted-target React fiber ancestry. Main region axe:0violations/one incomplete ARIA-controls rule across5comboboxes; no exhaustive AT/contrast/profiling claim."
+}

@@ -1,0 +1,271 @@
+{
+  "passed": true,
+  "base": "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+  "incoming": "301825c0bd096b5be74e7b545aee791da6bf418e",
+  "merge": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "tree": "2df0695c469d05fb5cc1162555da4a7a6ed1819e",
+  "parents": [
+    "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+    "301825c0bd096b5be74e7b545aee791da6bf418e"
+  ],
+  "independentMergeTreeMatches": true,
+  "sourcePaths": [
+    "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx"
+  ],
+  "changedPaths": 108,
+  "preservation": {
+    "unaffectedPaths": 12888,
+    "priorRolloutPaths": 2640,
+    "incomingRawPaths": 105,
+    "verifiedTicketAncestors": 42,
+    "baselineAncestor": true,
+    "root1828CorrectionAndProofAncestors": true,
+    "allIncomingBlobsMatch": true,
+    "headingOptInsUnchanged": true,
+    "authoritativeOwners": [
+      "apps/webapp/src/app/[locale]/onboarding/organization/actions.ts",
+      "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "apps/webapp/src/lib/auth/organization-joining-hooks.ts",
+      "apps/webapp/src/lib/organization/creation-policy.server.ts",
+      "apps/webapp/src/lib/organization/creation-policy.ts",
+      "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "sourcePageTemplates": 172,
+    "persistentPages": 153,
+    "aliases": 19,
+    "graphNodes": 157,
+    "graphEdges": 159
+  },
+  "artifacts": {
+    "decodedPNGs": 61,
+    "parsedJSON": 35,
+    "syntaxCheckedMJS": 7,
+    "documentLinks": 0,
+    "defaultPairs": 13,
+    "defaultMatrixPairs": 12,
+    "keyboardPairs": 1,
+    "allCaptureSourcePins": 270,
+    "matchedCaptureSourcePins": 245,
+    "unmatchedPins": [
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+        "capture": "actions-slug-available.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+        "capture": "actions-tracking-boundary.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+        "capture": "actions-creation-pending.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-desktop-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-desktop-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-wide-dark.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-wide-dark.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-dark-large.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "5e556ff4c7d31792a37b21141473ad16426476ce09c51cca5f35af796bde7e2c",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-phone-dark-large.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-keyboard.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "5e556ff4c7d31792a37b21141473ad16426476ce09c51cca5f35af796bde7e2c",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+        "capture": "after-keyboard.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-desktop-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-wide-dark.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-phone-light.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-phone-dark-large.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+        "capture": "before-keyboard.png",
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+        "capture": "denial-policy-refusal-readback.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+        "capture": "disabled-creation-disabled.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-desktop-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-wide-dark.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-phone-light.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-phone-dark-large.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      },
+      {
+        "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+        "capture": "after-keyboard.png",
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+        "match": null
+      }
+    ],
+    "finalOwnedMatches": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a",
+        "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+        "blob": "25ca035071da40526be4f082e4738f227e78dc27",
+        "sha256": "bd6208bed5f20092ac626258c7f6f4bf189bcec266dd11e045fc6eeada009aad"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+        "blob": "26896bb0e441b42192da745f697352a496bd9f00",
+        "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca"
+      }
+    ],
+    "recordedUnitFiles": 37,
+    "recordedUnitTests": 349,
+    "recordedPGFiles": 3,
+    "recordedPGTests": 78,
+    "recordedRuntimeAssertions": 23
+  },
+  "dependencies": {
+    "lockSHA256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "physicalRoots": [
+      "node_modules",
+      "apps/webapp/node_modules",
+      "node_modules/.pnpm"
+    ],
+    "verifiedLocalLeafLinks": 158,
+    "noInstallOrRepair": true
+  },
+  "qualification": [
+    "Fresh archive/source/dependency preservation audit; browser/Next/PostgreSQL/native/contrast observations remain inherited.",
+    "All retained capture source hashes are compared with actual Git blobs allowing only canonical LF/CRLF; temporary config pins and earlier dirty-source pins may remain unmatched and are listed, not promoted.",
+    "Default before/after substitutes only organization consumer source; request-time declaration and shared shell are current. Random shared background images can differ across requests; full-page PNG heights differ with layout.",
+    "Held browser Create across restart remains unpassed; separate generated Next action policy transport refusal is not a replacement pass.",
+    "Private fixture values unavailable after cleanup; worker exact secret-value exclusion remains inherited, no fresh exact-value exclusion claim.",
+    "No optional prior1726/1727 archive verifier rerun; independent preservation only."
+  ]
+}

@@ -1,0 +1,392 @@
+apps\webapp\src\app\[locale]\onboarding\vacation-policy\page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - "use·client";
+      2     │ -
+      3     │ - import·{·IconBeach,·IconLoader2·}·from·"@tabler/icons-react";
+      4     │ - import·{·useForm·}·from·"@tanstack/react-form";
+      5     │ - import·{·useStore·}·from·"@tanstack/react-store";
+      6     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      7     │ - import·{·type·RefObject,·useEffect,·useRef,·useState·}·from·"react";
+      8     │ - import·{·toast·}·from·"sonner";
+      9     │ - import·{·z·}·from·"zod";
+     10     │ - import·{·ProgressIndicator·}·from·"@/components/onboarding/progress-indicator";
+     11     │ - import·{·Button·}·from·"@/components/ui/button";
+     12     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";
+     13     │ - import·{·Input·}·from·"@/components/ui/input";
+     14     │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+     15     │ - import·{
+     16     │ - → Select,
+     17     │ - → SelectContent,
+     18     │ - → SelectItem,
+     19     │ - → SelectTrigger,
+     20     │ - → SelectValue,
+     21     │ - }·from·"@/components/ui/select";
+     22     │ - import·{·Switch·}·from·"@/components/ui/switch";
+     23     │ - import·{
+     24     │ - → TFormDescription,
+     25     │ - → TFormItem,
+     26     │ - → TFormLabel,
+     27     │ - → TFormMessage,
+     28     │ - }·from·"@/components/ui/tanstack-form";
+     29     │ - import·type·{·OnboardingVacationPolicyFormValues·}·from·"@/lib/validations/onboarding";
+     30     │ - import·{·useRouter·}·from·"@/navigation";
+     31     │ - import·{·runOnboardingAction·}·from·"../run-onboarding-action";
+     32     │ - import·{·checkIsAdmin,·createVacationPolicyOnboarding,·skipVacationPolicySetup·}·from·"./actions";
+     33     │ - import·{·usePolicyArrival·}·from·"./use-policy-arrival";
+     34     │ -
+     35     │ - function·VacationPolicyHeader({·t·}:·{·t:·(key:·string,·defaultValue:·string)·=>·string·})·{
+     36     │ - → return·(
+     37     │ - → → <div·className="onboarding-heading-panel·mb-6·rounded-xl·border·border-white/30·bg-white/20·p-6·text-center·shadow-xl·shadow-black/5·backdrop-blur-[40px]·sm:p-8·dark:border-white/10·dark:bg-slate-950/20·dark:shadow-black/30·[&_.text-muted-foreground]:text-foreground/75">
+     38     │ - → → → <div·className="mb-3·inline-flex·size-10·items-center·justify-center·rounded-full·bg-primary/10">
+     39     │ - → → → → <IconBeach·aria-hidden="true"·className="size-5·text-primary"·/>
+     40     │ - → → → </div>
+     41     │ - → → → <h1·className="mb-2·text-2xl·font-semibold·tracking-tight">
+     42     │ - → → → → {t("onboarding.vacationPolicy.title",·"Set·up·vacation·policy")}
+     43     │ - → → → </h1>
+     44     │ - → → → <p·className="text-muted-foreground">
+     45     │ - → → → → {t(
+     46     │ - → → → → → "onboarding.vacationPolicy.defaultsContext",
+     47     │ - → → → → → "Set·organization·defaults·for·vacation.·Individual·allowances·and·balances·are·managed·separately.",
+     48     │ - → → → → )}
+     49     │ - → → → </p>
+     50     │ - → → </div>
+     51     │ - → );
+     52     │ - }
+     53     │ -
+     54     │ - function·VacationPolicyActions({
+     55     │ - → loading,
+     56     │ - → onSkip,
+     57     │ - → t,
+     58     │ - }:·{
+     59     │ - → loading:·boolean;
+     60     │ - → onSkip:·()·=>·void;
+     61     │ - → t:·(key:·string,·defaultValue:·string)·=>·string;
+     62     │ - })·{
+     63     │ - → return·(
+     64     │ - → → <div·className="flex·flex-col-reverse·gap-3·border-t·pt-6·sm:flex-row">
+     65     │ - → → → <Button
+     66     │ - → → → → type="button"
+     67     │ - → → → → variant="outline"
+     68     │ - → → → → onClick={onSkip}
+     69     │ - → → → → disabled={loading}
+     70     │ - → → → → className="flex-1"
+     71     │ - → → → >
+     72     │ - → → → → {t("onboarding.vacationPolicy.skip",·"Skip·for·now")}
+     73     │ - → → → </Button>
+     74     │ - → → → <Button·type="submit"·disabled={loading}·className="flex-1">
+     75     │ - → → → → {loading·&&·(
+     76     │ - → → → → → <IconLoader2
+     77     │ - → → → → → → aria-hidden="true"
+     78     │ - → → → → → → className="mr-2·size-4·animate-spin·motion-reduce:animate-none"
+     79     │ - → → → → → />
+     80     │ - → → → → )}
+     81     │ - → → → → {t("onboarding.vacationPolicy.saveContinue",·"Save·and·continue")}
+     82     │ - → → → </Button>
+     83     │ - → → </div>
+     84     │ - → );
+     85     │ - }
+     86     │ -
+     87     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];
+     88     │ -
+     89     │ - function·useVacationPolicyForm({
+     90     │ - → onSubmit,
+     91     │ - → t,
+     92     │ - }:·{
+     93     │ - → onSubmit:·(value:·OnboardingVacationPolicyFormValues)·=>·Promise<void>;
+     94     │ - → t:·Translate;
+     95     │ - })·{
+     96     │ - → return·useForm({
+     97     │ - → → defaultValues:·{
+     98     │ - → → → name:·t("onboarding.vacationPolicy.defaultName",·"Standard"),
+     99     │ - → → → defaultAnnualDays:·25,
+    100     │ - → → → accrualType:·"annual"·as·"annual"·|·"monthly"·|·"biweekly",
+    101     │ - → → → allowCarryover:·true,
+    102     │ - → → → maxCarryoverDays:·5,
+    103     │ - → → },
+    104     │ - → → onSubmit:·async·({·value·})·=>·onSubmit(value),
+    105     │ - → });
+    106     │ - }
+    107     │ -
+    108     │ - type·VacationPolicyFormApi·=·ReturnType<typeof·useVacationPolicyForm>;
+    109     │ -
+    110     │ - function·VacationPolicyForm({
+    111     │ - → allowCarryover,
+    112     │ - → form,
+    113     │ - → loading,
+    114     │ - → onSave,
+    115     │ - → onSkip,
+    116     │ - → t,
+    117     │ - }:·{
+    118     │ - → allowCarryover:·boolean;
+    119     │ - → form:·VacationPolicyFormApi;
+    120     │ - → loading:·boolean;
+    121     │ - → onSave:·(element:·HTMLFormElement)·=>·void;
+    122     │ - → onSkip:·()·=>·void;
+    123     │ - → t:·Translate;
+    124     │ - })·{
+    125     │ - → const·dayCountSchema·=·z
+    126     │ - → → .number()
+    127     │ - → → .min(0,·t("onboarding.vacationPolicy.validation.daysNegative",·"Days·cannot·be·negative"))
+    128     │ - → → .max(365,·t("onboarding.vacationPolicy.validation.daysTooMany",·"Days·cannot·exceed·365"));
+    129     │ -
+    130     │ - → return·(
+    131     │ - → → <Card>
+    132     │ - → → → <CardHeader>
+    133     │ - → → → → <CardTitle>{t("onboarding.vacationPolicy.cardTitle",·"Vacation·Policy")}</CardTitle>
+    134     │ - → → → → <CardDescription>
+    135     │ - → → → → → {t(
+    136     │ - → → → → → → "onboarding.vacationPolicy.cardDesc",
+    137     │ - → → → → → → "Configure·vacation·allowance·for·your·team.·You·can·customize·this·later·in·settings.",
+    138     │ - → → → → → )}
+    139     │ - → → → → </CardDescription>
+    140     │ - → → → </CardHeader>
+    141     │ - → → → <CardContent>
+    142     │ - → → → → <form
+    143     │ - → → → → → onSubmit={(event)·=>·{
+    144     │ - → → → → → → event.preventDefault();
+    145     │ - → → → → → → onSave(event.currentTarget);
+    146     │ - → → → → → }}
+    147     │ - → → → → → aria-busy={loading}
+    148     │ - → → → → → className="space-y-6"
+    149     │ - → → → → >
+    150     │ - → → → → → <fieldset·className="grid·gap-6·sm:grid-cols-2"·disabled={loading}>
+  909 more lines truncated
+
+
+apps\webapp\src\app\[locale]\onboarding\vacation-policy\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1     │ - /*·@vitest-environment·jsdom·*/
+      2     │ -
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";
+      4     │ - import·{·Activity,·StrictMode·}·from·"react";
+      5     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";
+      6     │ -
+      7     │ - const·mocks·=·vi.hoisted(()·=>·({
+      8     │ - → session:·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},
+      9     │ - → listeners:·new·Set<(value:·unknown)·=>·void>(),
+     10     │ - → checkIsAdmin:·vi.fn(),
+     11     │ - → createVacationPolicyOnboarding:·vi.fn(),
+     12     │ - → push:·vi.fn(),
+     13     │ - → skipVacationPolicySetup:·vi.fn(),
+     14     │ - → toastError:·vi.fn(),
+     15     │ - → toastSuccess:·vi.fn(),
+     16     │ - }));
+     17     │ -
+     18     │ - vi.mock("@/lib/auth-client",·()·=>·({
+     19     │ - → useSession:·()·=>·({·data:·mocks.session,·isPending:·false·}),
+     20     │ - → authClient:·{
+     21     │ - → → $store:·{
+     22     │ - → → → atoms:·{
+     23     │ - → → → → session:·{
+     24     │ - → → → → → get:·()·=>·({·data:·mocks.session·}),
+     25     │ - → → → → → subscribe:·(listener:·(value:·unknown)·=>·void)·=>·{
+     26     │ - → → → → → → mocks.listeners.add(listener);
+     27     │ - → → → → → → return·()·=>·mocks.listeners.delete(listener);
+     28     │ - → → → → → },
+     29     │ - → → → → },
+     30     │ - → → → },
+     31     │ - → → },
+     32     │ - → },
+     33     │ - }));
+     34     │ -
+     35     │ - vi.mock("@tolgee/react",·()·=>·({
+     36     │ - → useTranslate:·()·=>·({
+     37     │ - → → t:·(_key:·string,·fallback?:·string)·=>·fallback·??·_key,
+     38     │ - → }),
+     39     │ - }));
+     40     │ -
+     41     │ - vi.mock("sonner",·()·=>·({
+     42     │ - → toast:·{·error:·mocks.toastError,·success:·mocks.toastSuccess·},
+     43     │ - }));
+     44     │ -
+     45     │ - vi.mock("@/navigation",·()·=>·({
+     46     │ - → useRouter:·()·=>·({·push:·mocks.push·}),
+     47     │ - }));
+     48     │ -
+     49     │ - vi.mock("@/components/onboarding/progress-indicator",·()·=>·({
+     50     │ - → ProgressIndicator:·()·=>·null,
+     51     │ - }));
+     52     │ -
+     53     │ - vi.mock("./actions",·()·=>·({
+     54     │ - → checkIsAdmin:·mocks.checkIsAdmin,
+     55     │ - → createVacationPolicyOnboarding:·mocks.createVacationPolicyOnboarding,
+     56     │ - → skipVacationPolicySetup:·mocks.skipVacationPolicySetup,
+     57     │ - }));
+     58     │ -
+     59     │ - import·VacationPolicyPage·from·"./page-client";
+     60     │ -
+     61     │ - function·deferred<T>()·{
+     62     │ - → let·resolve!:·(value:·T)·=>·void;
+     63     │ - → let·reject!:·(reason:·unknown)·=>·void;
+     64     │ - → const·promise·=·new·Promise<T>((resolvePromise,·rejectPromise)·=>·{
+     65     │ - → → resolve·=·resolvePromise;
+     66     │ - → → reject·=·rejectPromise;
+     67     │ - → });
+     68     │ - → return·{·promise,·reject,·resolve·};
+     69     │ - }
+     70     │ -
+     71     │ - describe("VacationPolicyPage·load·effect",·()·=>·{
+     72     │ - → beforeEach(()·=>·{
+     73     │ - → → mocks.session·=·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·"org-a"·}·};
+     74     │ - → → vi.clearAllMocks();
+     75     │ - → → mocks.checkIsAdmin.mockReset();
+     76     │ - → → mocks.createVacationPolicyOnboarding.mockReset();
+     77     │ - → → mocks.skipVacationPolicySetup.mockReset();
+     78     │ - → });
+     79     │ -
+     80     │ - → it("retires·held·saves·through·an·organization·A·to·B·to·A·arrival",·async·()·=>·{
+     81     │ - → → const·held·=·deferred<{·success:·true·}>();
+     82     │ - → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});
+     83     │ - → → mocks.createVacationPolicyOnboarding.mockReturnValue(held.promise);
+     84     │ - → → const·view·=·render(<VacationPolicyPage·/>);
+     85     │ - → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Save·and·continue"·}));
+     86     │ - → → await·waitFor(()·=>·expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledOnce());
+     87     │ - → → mocks.session·=·{·...mocks.session,·session:·{·activeOrganizationId:·"org-b"·}·};
+     88     │ - → → view.rerender(<VacationPolicyPage·/>);
+     89     │ - → → await·screen.findByLabelText("Policy·Name");
+     90     │ - → → mocks.session·=·{·...mocks.session,·session:·{·activeOrganizationId:·"org-a"·}·};
+     91     │ - → → view.rerender(<VacationPolicyPage·/>);
+     92     │ - → → const·draft·=·await·screen.findByLabelText("Policy·Name");
+     93     │ - → → fireEvent.change(draft,·{·target:·{·value:·"New·arrival"·}·});
+     94     │ - → → await·act(async·()·=>·held.resolve({·success:·true·}));
+     95     │ - → → expect(mocks.push).not.toHaveBeenCalled();
+     96     │ - → → expect(mocks.toastSuccess).not.toHaveBeenCalled();
+     97     │ - → → expect(draft).toHaveProperty("value",·"New·arrival");
+     98     │ - → });
+     99     │ -
+    100     │ - → it.each([
+    101     │ - → → ["save",·"account",·true],
+    102     │ - → → ["save",·"account",·false],
+    103     │ - → → ["save",·"organization",·true],
+    104     │ - → → ["save",·"organization",·false],
+    105     │ - → → ["skip",·"account",·true],
+    106     │ - → → ["skip",·"account",·false],
+    107     │ - → → ["skip",·"organization",·true],
+    108     │ - → → ["skip",·"organization",·false],
+    109     │ - → ]·as·const)(
+    110     │ - → → "retires·held·%s·after·batched·%s·A→B→A·(success=%s)",
+    111     │ - → → async·(action,·scope,·success)·=>·{
+    112     │ - → → → const·held·=·deferred<{·success:·boolean;·error?:·string·}>();
+    113     │ - → → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});
+    114     │ - → → → const·operation·=
+    115     │ - → → → → action·===·"save"·?·mocks.createVacationPolicyOnboarding·:·mocks.skipVacationPolicySetup;
+    116     │ - → → → operation.mockReturnValue(held.promise);
+    117     │ - → → → render(<VacationPolicyPage·/>);
+    118     │ - → → → fireEvent.click(
+    119     │ - → → → → await·screen.findByRole("button",·{
+    120     │ - → → → → → name:·action·===·"save"·?·"Save·and·continue"·:·"Skip·for·now",
+    121     │ - → → → → }),
+    122     │ - → → → );
+    123     │ - → → → await·waitFor(()·=>·expect(operation).toHaveBeenCalledOnce());
+    124     │ - → → → await·act(async·()·=>·{
+    125     │ - → → → → for·(const·suffix·of·["b",·"a"])·{
+    126     │ - → → → → → mocks.session·=
+    127     │ - → → → → → → scope·===·"account"
+    128     │ - → → → → → → → ?·{·...mocks.session,·user:·{·id:·`account-${suffix}`·}·}
+    129     │ - → → → → → → → :·{·...mocks.session,·session:·{·activeOrganizationId:·`org-${suffix}`·}·};
+    130     │ - → → → → → for·(const·listener·of·mocks.listeners)·listener({·data:·mocks.session·});
+    131     │ - → → → → }
+    132     │ - → → → });
+    133     │ - → → → const·draft·=·await·screen.findByLabelText("Policy·Name");
+    134     │ - → → → fireEvent.change(draft,·{·target:·{·value:·"Current·arrival·draft"·}·});
+    135     │ - → → → await·act(async·()·=>·held.resolve({·success,·error:·"Retired·refusal"·}));
+    136     │ - → → → expect(mocks.push).not.toHaveBeenCalled();
+    137     │ - → → → expect(mocks.toastError).not.toHaveBeenCalled();
+    138     │ - → → → expect(mocks.toastSuccess).not.toHaveBeenCalled();
+    139     │ - → → → expect(draft).toHaveProperty("value",·"Current·arrival·draft");
+    140     │ - → → },
+    141     │ - → );
+    142     │ -
+    143     │ - → it.each(["account",·"organization"]·as·const)(
+    144     │ - → → "retires·held·access·through·batched·%s·A→B→A",
+    145     │ - → → async·(scope)·=>·{
+    146     │ - → → → const·held·=·deferred<{·success:·true;·data:·false·}>();
+    147     │ - → → → mocks.checkIsAdmin
+    148     │ - → → → → .mockReturnValueOnce(held.promise)
+    149     │ - → → → → .mockResolvedValue({·success:·true,·data:·true·});
+    150     │ - → → → render(<VacationPolicyPage·/>);
+  831 more lines truncated
+
+
+apps\webapp\src\app\[locale]\onboarding\vacation-policy\use-policy-arrival.ts format ━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     1    │ - "use·client";
+     2    │ -
+     3    │ - import·{·useEffect,·useRef,·useState·}·from·"react";
+     4    │ - import·{·authClient,·useSession·}·from·"@/lib/auth-client";
+     5    │ -
+     6    │ - function·sessionScope(data:·ReturnType<typeof·useSession>["data"])·{
+     7    │ - → return·JSON.stringify([data?.user.id,·data?.session.activeOrganizationId]);
+     8    │ - }
+     9    │ -
+    10    │ - //·The·epoch·also·observes·intermediate·A→B→A·atom·changes·which·React·can·batch.
+    11    │ - //·It·is·presentation·lifetime·only;·the·server·still·owns·admission·and·writes.
+    12    │ - export·function·usePolicyArrival()·{
+    13    │ - → const·session·=·useSession();
+    14    │ - → const·scope·=·sessionScope(session.data);
+    15    │ - → const·epoch·=·useRef(0);
+    16    │ - → const·[arrival,·setArrival]·=·useState(0);
+    17    │ - → useEffect(()·=>·{
+    18    │ - → → let·previous·=·scope;
+    19    │ - → → return·authClient.$store.atoms.session.subscribe((value)·=>·{
+    20    │ - → → → const·next·=·sessionScope(value.data);
+    21    │ - → → → if·(next·!==·previous)·{
+    22    │ - → → → → previous·=·next;
+    23    │ - → → → → epoch.current·+=·1;
+    24    │ - → → → → setArrival(epoch.current);
+    25    │ - → → → }
+    26    │ - → → });
+    27    │ - → },·[scope]);
+    28    │ - → return·{
+    29    │ - → → key:·`${scope}:${arrival}`,
+    30    │ - → → epoch,
+    31    │ - → → ready:·!session.isPending·&&·!!session.data?.user.id,
+    32    │ - → };
+    33    │ - }
+        1 │ + "use·client";␍
+        2 │ + ␍
+        3 │ + import·{·useEffect,·useRef,·useState·}·from·"react";␍
+        4 │ + import·{·authClient,·useSession·}·from·"@/lib/auth-client";␍
+        5 │ + ␍
+        6 │ + function·sessionScope(data:·ReturnType<typeof·useSession>["data"])·{␍
+        7 │ + → return·JSON.stringify([data?.user.id,·data?.session.activeOrganizationId]);␍
+        8 │ + }␍
+        9 │ + ␍
+       10 │ + //·The·epoch·also·observes·intermediate·A→B→A·atom·changes·which·React·can·batch.␍
+       11 │ + //·It·is·presentation·lifetime·only;·the·server·still·owns·admission·and·writes.␍
+       12 │ + export·function·usePolicyArrival()·{␍
+       13 │ + → const·session·=·useSession();␍
+       14 │ + → const·scope·=·sessionScope(session.data);␍
+       15 │ + → const·epoch·=·useRef(0);␍
+       16 │ + → const·[arrival,·setArrival]·=·useState(0);␍
+       17 │ + → useEffect(()·=>·{␍
+       18 │ + → → let·previous·=·scope;␍
+       19 │ + → → return·authClient.$store.atoms.session.subscribe((value)·=>·{␍
+       20 │ + → → → const·next·=·sessionScope(value.data);␍
+       21 │ + → → → if·(next·!==·previous)·{␍
+       22 │ + → → → → previous·=·next;␍
+       23 │ + → → → → epoch.current·+=·1;␍
+       24 │ + → → → → setArrival(epoch.current);␍
+       25 │ + → → → }␍
+       26 │ + → → });␍
+       27 │ + → },·[scope]);␍
+       28 │ + → return·{␍
+       29 │ + → → key:·`${scope}:${arrival}`,␍
+       30 │ + → → epoch,␍
+       31 │ + → → ready:·!session.isPending·&&·!!session.data?.user.id,␍
+       32 │ + → };␍
+       33 │ + }␍
+    34 34 │
+
+
+Checked 3 files in 7ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.

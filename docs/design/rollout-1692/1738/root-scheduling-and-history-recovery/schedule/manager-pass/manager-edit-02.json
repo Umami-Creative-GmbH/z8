@@ -1,0 +1,19 @@
+{
+  "actor": "standard manager",
+  "normalUi": true,
+  "offlineAttempt": "No observed failure toast; no write-refusal pass claimed; prior timeout retained",
+  "steps": [
+    {
+      "name": "normal edit save/current public read",
+      "notes": "Independent manager edited retained draft"
+    },
+    {
+      "name": "first Escape",
+      "closed": true,
+      "focus": {
+        "tag": "BUTTON",
+        "text": "Open ShiftIndependent scheduling office · Independent receptionMon, Nov 16 · 09:00 – 17:00Draft"
+      }
+    }
+  ]
+}

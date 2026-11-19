@@ -1,0 +1,68 @@
+{
+  "env": "pnpm_config_verify_deps_before_run=false on every invocation; explicit --config.verify-deps-before-run=false; nested Bash shim prepends it",
+  "extraCommands": [
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version",
+      "exit": null,
+      "result": "Separate version-probe exit was not captured; the combined shell ended1 after install refusal. stdout12.21.0 fallback with engine-store warning; not pinned-version proof.",
+      "log": "pnpm-version.log"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false install --offline --frozen-lockfile --ignore-scripts --package-import-method=copy",
+      "exit": 1,
+      "result": "non-escalated engine-store lock access denied; no install",
+      "log": "install-attempt1.log"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version",
+      "exit": 0,
+      "result": "escalated: 12.16.1",
+      "log": "pnpm-version-escalated.log"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false install --offline --frozen-lockfile --ignore-scripts --package-import-method=copy",
+      "exit": 0,
+      "result": "escalated: 1823 physically copied packages, downloaded0, ignore-scripts",
+      "log": "install-attempt2.log"
+    },
+    {
+      "command": "node docs/design/rollout-1692/1748/root-withdrawal-and-continuation/verify.cjs",
+      "exit": 0,
+      "log": "archive-verifier.log"
+    },
+    {
+      "command": "node .tmp/r165-independent-SAFE/fixture-audit.cjs",
+      "exit": 1,
+      "result": "Own audit harness expected nonexistent typescript package; no product execution",
+      "log": "fixture-audit-attempt1.log"
+    },
+    {
+      "command": "node .tmp/r165-independent-SAFE/fixture-audit.cjs",
+      "exit": 0,
+      "result": "Used installed own @babel/parser; original assertion chains and test names preserved",
+      "log": "fixture-audit-final.log"
+    },
+    {
+      "command": "node .tmp/r165-independent-SAFE/multiset.cjs",
+      "exit": 0,
+      "result": "253 exact distinct identities across20 files;172 overlap frozen #1748"
+    },
+    {
+      "command": "node .tmp/r165-independent-SAFE/audit.cjs",
+      "exit": 0,
+      "result": "Twice, nonadditive read-only Git and immutable archive preservation"
+    },
+    {
+      "command": "docker ps --all --filter 'name=^/z8_approval_workflow_repository_test_1794971184289582700_13971$' --format '{{.Names}}'",
+      "exit": 0,
+      "result": "Escalated exact owned container readback empty",
+      "log": "docker-release.log"
+    },
+    {
+      "command": "Get-CimInstance Win32_Process (filtered before output to node/bash/pnpm/cmd commands for this checkout or SAFE runner)",
+      "exit": null,
+      "result": "Non-escalated inventory denied; attempt1 receipt is INVALID evidence of absence. Escalated ErrorAction Stop retry succeeded with zero matching processes.",
+      "receipt": "resource-release.json"
+    }
+  ]
+}

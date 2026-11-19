@@ -34,6 +34,7 @@ import {
 	ShowFormerEmployeesSwitch,
 } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
+import { badgeVariants } from "@/components/ui/badge-variants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -112,18 +113,21 @@ function TimeBalanceBadge({
 		<BalanceAdjustmentHistoryDialog
 			employeeId={employee.id}
 			trigger={
-				<Badge
-					asChild
-					variant={balance ? getBalanceVariant(balance.balanceMinutes) : "outline"}
+				<button
+					type="button"
+					aria-label={accessibleLabel}
+					title={historyLabel}
+					data-slot="badge"
 					className={cn(
+						badgeVariants({
+							variant: balance ? getBalanceVariant(balance.balanceMinutes) : "outline",
+						}),
 						"relative z-10 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring",
 						balance && "text-xs font-normal",
 					)}
 				>
-					<button type="button" aria-label={accessibleLabel} title={historyLabel}>
-						{label}
-					</button>
-				</Badge>
+					{label}
+				</button>
 			}
 		/>
 	);
@@ -179,19 +183,6 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 		);
 	});
 
-	if (employees.length === 0) {
-		return (
-			<EmptyTeamMembers
-				title={t("team.empty.title", "No team members yet")}
-				description={t(
-					"team.empty.description",
-					"Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",
-				)}
-				actionLabel={t("team.empty.action", "Go to Employee Settings")}
-			/>
-		);
-	}
-
 	return (
 		<div className="space-y-4">
 			<TeamMembersToolbar
@@ -215,7 +206,16 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 				}
 			/>
 
-			{filteredEmployees.length > 0 ? (
+			{employees.length === 0 ? (
+				<EmptyTeamMembers
+					title={t("team.empty.title", "No team members yet")}
+					description={t(
+						"team.empty.description",
+						"Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",
+					)}
+					actionLabel={t("team.empty.action", "Go to Employee Settings")}
+				/>
+			) : filteredEmployees.length > 0 ? (
 				viewMode === "cards" ? (
 					<TeamMemberCards
 						employees={filteredEmployees}
@@ -260,11 +260,9 @@ function EmptyTeamMembers({
 }) {
 	return (
 		<Card className="border-dashed">
-			<CardContent className="flex flex-col items-center justify-center py-16 text-center">
-				<div className="rounded-full bg-muted p-4">
-					<IconUsers className="size-10 text-muted-foreground" />
-				</div>
-				<h3 className="mt-6 text-xl font-semibold">{title}</h3>
+			<CardContent className="flex flex-col items-center justify-center px-4 py-10 text-center">
+				<IconUsers className="size-6 text-muted-foreground" aria-hidden="true" />
+				<h2 className="mt-4 text-lg font-semibold">{title}</h2>
 				<p className="mt-2 max-w-sm text-muted-foreground">{description}</p>
 				<Button className="mt-6" variant="outline" asChild>
 					<Link href="/settings/employees">{actionLabel}</Link>
@@ -300,10 +298,12 @@ function TeamMembersToolbar({
 	onShowFormerChange: (value: boolean) => void;
 }) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-4">
+		<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
 			<div className="relative min-w-48 max-w-md flex-1">
 				<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
+					name="team-search"
+					autoComplete="off"
 					placeholder={searchPlaceholder}
 					aria-label={searchLabel}
 					value={searchQuery}
@@ -321,7 +321,7 @@ function TeamMembersToolbar({
 				type="single"
 				value={viewMode}
 				onValueChange={(value) => value && onViewModeChange(value as "cards" | "table")}
-				className="hidden sm:flex"
+				className="flex"
 			>
 				<ToggleGroupItem value="cards" aria-label={cardsLabel}>
 					<IconLayoutGrid className="size-4" />
@@ -351,14 +351,15 @@ function TeamMemberCards({
 	historyLabel,
 	primaryManagerLabel,
 }: TeamMemberPresentationProps) {
+	const { t } = useTranslate();
 	return (
-		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+		<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 			{employees.map((employee) => (
 				// The name is the link, stretched over the card, so the balance badge
 				// can be its own control (#996).
 				<Card
 					key={employee.id}
-					className="group relative h-full overflow-hidden py-0 transition-shadow focus-within:shadow-md hover:shadow-md"
+					className="group relative h-full min-w-0 py-0 shadow-none focus-within:border-ring hover:border-primary/40"
 				>
 					<CardContent className="p-3">
 						<div className="flex items-center gap-3">
@@ -371,14 +372,14 @@ function TeamMemberCards({
 							/>
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-1.5">
-									<h3 className="truncate text-sm font-medium">
+									<h2 className="min-w-0 break-words text-sm font-semibold">
 										<Link
 											href={`/settings/employees/${employee.id}`}
-											className="after:absolute after:inset-0 focus-visible:outline-none"
+											className="after:absolute after:inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
 										>
 											{employee.user.name}
 										</Link>
-									</h3>
+									</h2>
 									{employee.isPrimaryManager && (
 										<IconUserCheck
 											className="size-3.5 shrink-0 text-primary"
@@ -387,9 +388,9 @@ function TeamMemberCards({
 									)}
 									<YouBadge show={employee.isCurrentUser} label={youLabel} />
 								</div>
-								<p className="truncate text-xs text-muted-foreground">{employee.user.email}</p>
+								<p className="break-all text-sm text-muted-foreground">{employee.user.email}</p>
 								{employee.position && (
-									<p className="truncate text-xs text-muted-foreground">{employee.position}</p>
+									<p className="break-words text-sm text-muted-foreground">{employee.position}</p>
 								)}
 								<EmployeeActivityText
 									lastActivityAt={employee.lastActivityAt}
@@ -399,8 +400,8 @@ function TeamMemberCards({
 								/>
 							</div>
 						</div>
-						<div className="mt-2 flex items-center justify-between">
-							<div className="flex flex-wrap gap-1">
+						<div className="mt-2 flex items-start justify-between gap-2">
+							<div className="flex min-w-0 flex-wrap gap-1">
 								{employee.team && (
 									<Badge variant="secondary" className="text-xs font-normal">
 										{employee.team.name}
@@ -415,16 +416,19 @@ function TeamMemberCards({
 								{employee.isFormer && (
 									<FormerEmployeeBadge since={employee.formerSince} className="font-normal" />
 								)}
-								{employee.role !== "employee" && (
-									<Badge
-										variant={employee.role === "admin" ? "default" : "secondary"}
-										className="text-xs font-normal"
-									>
-										{employee.role}
+								{!employee.isFormer && (
+									<Badge variant="outline" className="font-normal">
+										{t("common:formerEmployees.current", "Current")}
 									</Badge>
 								)}
+								<Badge variant="outline" className="text-xs font-normal">
+									{employee.role}
+								</Badge>
 							</div>
-							<IconArrowRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+							<IconArrowRight
+								className="size-4 shrink-0 text-muted-foreground"
+								aria-hidden="true"
+							/>
 						</div>
 					</CardContent>
 				</Card>
@@ -575,8 +579,11 @@ function TeamMembersTable({
 
 	return (
 		<div className="space-y-4">
-			<div className="overflow-x-auto rounded-md border">
-				<Table className="min-w-[760px]">
+			<section
+				className="overflow-x-auto rounded-md border"
+				aria-label={t("team.table.region", "Team members table")}
+			>
+				<Table mobileLayout="stacked" className="min-w-[760px]">
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
@@ -613,10 +620,10 @@ function TeamMembersTable({
 						))}
 					</TableBody>
 				</Table>
-			</div>
+			</section>
 
 			{table.getPageCount() > 1 && (
-				<div className="flex items-center justify-between">
+				<div className="flex flex-wrap items-center justify-between gap-3">
 					<p className="text-sm text-muted-foreground">
 						{t("team.pagination.showing", "Showing {from} to {to} of {total}", {
 							from: table.state.pagination.pageIndex * table.state.pagination.pageSize + 1,
@@ -666,7 +673,7 @@ function NoTeamMemberResults({
 		<Card className="border-dashed">
 			<CardContent className="flex flex-col items-center justify-center py-12 text-center">
 				<IconSearch className="size-8 text-muted-foreground" />
-				<h3 className="mt-4 font-semibold">{title}</h3>
+				<h2 className="mt-4 font-semibold">{title}</h2>
 				<p className="mt-1 text-sm text-muted-foreground">{description}</p>
 				<Button variant="ghost" size="sm" className="mt-4" onClick={onClear}>
 					{clearLabel}

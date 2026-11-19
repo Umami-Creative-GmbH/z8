@@ -1,0 +1,22 @@
+src\lib\navigation\route-metadata.test.tsx fs/cantRead ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Cannot read file.
+    
+    Caused by:
+      Das System kann die angegebene Datei nicht finden. (os error 2)
+  
+  × Biome can't read the following file, maybe for permissions reasons or it doesn't exist.
+  
+
+Checked 12 files in 15ms. Fixed 1 file.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-c42af28b-
+  │ eda920ca028710b9\apps\webapp
+

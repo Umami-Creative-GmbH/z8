@@ -66,11 +66,14 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 	const queryClient = useQueryClient();
 	// #1425: a save that ends driving authorizations asks first (preview under the org lock).
 	const { confirm, dialog: endingConfirmation } = useDrivingLicenceEndingConfirmation("assignment");
-	const applied = (message: string) => {
-		toast.success(message);
+	const refreshStatus = () => {
 		void queryClient.invalidateQueries({ queryKey: queryKeys.drivingLicence.status });
 		router.refresh();
 		return true;
+	};
+	const applied = (message: string) => {
+		toast.success(message);
+		return refreshStatus();
 	};
 	const options: { value: IntendedDriverRequirement; label: string }[] = [
 		{ value: "required", label: t("drivingLicence.intendedDrivers.required", "Required") },
@@ -135,9 +138,8 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 						toast.error(refusalMessage(t, result.error));
 						return false;
 					}
-					return applied(
-						t("drivingLicence.intendedDrivers.removed", "Intended driver assignment removed"),
-					);
+					// ScopedFeatureAssignments shows the success toast with Undo.
+					return refreshStatus();
 				}}
 			/>
 			{endingConfirmation}

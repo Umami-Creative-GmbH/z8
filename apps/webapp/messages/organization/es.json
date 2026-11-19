@@ -89,7 +89,13 @@
       "slugLabel": "Slug de la organización",
       "title": "Editar organización",
       "updateError": "Error al actualizar la organización",
-      "updateSuccess": "Organización actualizada correctamente"
+      "updateSuccess": "Organización actualizada correctamente",
+      "validation": {
+        "nameMax": "El nombre no puede superar los 100 caracteres",
+        "nameMin": "El nombre debe tener al menos 2 caracteres",
+        "slugMax": "El slug no puede superar los 50 caracteres",
+        "slugMin": "El slug debe tener al menos 2 caracteres"
+      }
     },
     "error": {
       "description": "No se pudo cargar el organigrama. Por favor, inténtelo de nuevo.",
@@ -395,6 +401,7 @@
     "switchTo": "Cambiar de organización",
     "teams": {
       "card": {
+        "actionsFor": "Acciones para {name}",
         "deleteTeam": "Eliminar equipo",
         "editTeam": "Editar equipo",
         "fallbackManager": "Gerente de respaldo",
@@ -406,10 +413,10 @@
       "delete": "Eliminar equipo",
       "deleteDialogDescription": "Esto eliminará permanentemente el equipo \"{teamName}\".",
       "deleteDialogMembersWarning": "Advertencia: Este equipo tiene {count} miembro(s). Serán eliminados del equipo.",
+      "deleteDialogNamedTitle": "¿Eliminar el equipo {name}?",
       "deleteDialogTitle": "¿Estás seguro?",
       "deleteError": "Error al eliminar el equipo",
       "deleteSuccess": "Equipo eliminado con éxito",
-      "description": "Organiza a tus empleados en equipos para una mejor colaboración",
       "edit": {
         "description": "Actualizar nombre y descripción del equipo",
         "descriptionLabel": "Descripción (opcional)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Miembro eliminado del equipo",
         "selectEmployee": "Seleccione un empleado para añadir",
         "title": "{teamName} - Miembros del equipo"
-      },
-      "title": "Equipos"
+      }
     },
     "timezone": {
       "balances-recalculating": "Los balances de trabajo se están recalculando para la nueva zona horaria y permanecerán ocultos hasta que estén listos.",

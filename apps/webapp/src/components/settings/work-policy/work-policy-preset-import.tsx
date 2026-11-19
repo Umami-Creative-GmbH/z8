@@ -8,6 +8,7 @@ import {
 	IconFilePlus,
 	IconLoader2,
 	IconPlus,
+	IconRefresh,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -207,6 +208,8 @@ export function WorkPolicyPresetImport({
 		data: presets,
 		isLoading,
 		error,
+		refetch,
+		isRefetching,
 	} = useQuery({
 		queryKey: presetsQueryKey,
 		queryFn: async () => {
@@ -289,15 +292,19 @@ export function WorkPolicyPresetImport({
 
 	if (isLoading) {
 		return (
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div
+				className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+				aria-busy="true"
+				data-testid="work-policy-presets-loading"
+			>
 				{[1, 2, 3].map((i) => (
 					<Card key={i}>
 						<CardHeader>
-							<Skeleton className="h-6 w-40" />
-							<Skeleton className="h-4 w-full" />
+							<Skeleton className="h-6 w-40" aria-hidden="true" />
+							<Skeleton className="h-4 w-full" aria-hidden="true" />
 						</CardHeader>
 						<CardContent>
-							<Skeleton className="h-28 w-full" />
+							<Skeleton className="h-28 w-full" aria-hidden="true" />
 						</CardContent>
 					</Card>
 				))}
@@ -309,12 +316,25 @@ export function WorkPolicyPresetImport({
 		return (
 			<Card>
 				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
+					<p role="alert" className="text-destructive">
 						{t(
 							"settings.workPolicies.presetsLoadError",
 							"Failed to load presets",
 						)}
 					</p>
+					<Button
+						className="mt-4"
+						variant="outline"
+						onClick={() => void refetch()}
+						disabled={isRefetching}
+					>
+						{isRefetching ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+						) : (
+							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+						)}
+						{t("common.retry", "Retry")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -335,7 +355,7 @@ export function WorkPolicyPresetImport({
 					</p>
 				</div>
 				<Button onClick={() => openReviewDialog("createCustom")}>
-					<IconPlus className="mr-2 size-4" />
+					<IconPlus className="mr-2 size-4" aria-hidden="true" />
 					{t(
 						"settings.workPolicies.createCustomPreset",
 						"Create custom preset",
@@ -423,7 +443,7 @@ export function WorkPolicyPresetImport({
 					<CardContent className="py-12 text-center">
 						<div className="flex flex-col items-center gap-4">
 							<div className="rounded-full bg-muted p-4">
-								<IconFilePlus className="size-8 text-muted-foreground" />
+								<IconFilePlus className="size-8 text-muted-foreground" aria-hidden="true" />
 							</div>
 							<div>
 								<h3 className="font-medium text-lg">
@@ -455,13 +475,15 @@ export function WorkPolicyPresetImport({
 						const isArchiving =
 							archiveMutation.variables === preset.id &&
 							archiveMutation.isPending;
+						// Card actions repeat across cards; the title tells them apart for assistive tech.
+						const titleId = `work-policy-preset-${preset.id}-title`;
 
 						return (
 							<Card key={preset.id} className="flex flex-col">
 								<CardHeader className="pb-3">
 									<div className="flex items-start justify-between gap-3">
-										<div className="space-y-2">
-											<CardTitle className="text-base leading-tight">
+										<div className="min-w-0 space-y-2">
+											<CardTitle as="h3" id={titleId} className="text-base leading-tight">
 												{preset.name}
 											</CardTitle>
 											<div className="flex flex-wrap gap-2">
@@ -491,7 +513,7 @@ export function WorkPolicyPresetImport({
 										{getPresetSummary(preset, t).map((summary) => (
 											<div
 												key={summary}
-												className="rounded-md bg-muted/50 px-3 py-2 text-muted-foreground"
+												className="rounded-md bg-muted/50 px-3 py-2 text-muted-foreground tabular-nums"
 											>
 												{summary}
 											</div>
@@ -501,18 +523,20 @@ export function WorkPolicyPresetImport({
 									<div className="grid gap-2">
 										<Button
 											size="sm"
+											aria-describedby={titleId}
 											onClick={() => openReviewDialog("useAsPolicy", preset)}
 										>
-											<IconFilePlus className="mr-2 size-4" />
+											<IconFilePlus className="mr-2 size-4" aria-hidden="true" />
 											{t("settings.workPolicies.useAsPolicy", "Use as policy")}
 										</Button>
 										{source === "system" ? (
 											<Button
 												variant="outline"
 												size="sm"
+												aria-describedby={titleId}
 												onClick={() => openReviewDialog("copySystem", preset)}
 											>
-												<IconCopy className="mr-2 size-4" />
+												<IconCopy className="mr-2 size-4" aria-hidden="true" />
 												{t(
 													"settings.workPolicies.copyToCustomPreset",
 													"Copy to custom preset",
@@ -523,14 +547,16 @@ export function WorkPolicyPresetImport({
 												<Button
 													variant="outline"
 													size="sm"
+													aria-describedby={titleId}
 													onClick={() => openReviewDialog("editCustom", preset)}
 												>
-													<IconEdit className="mr-2 size-4" />
+													<IconEdit className="mr-2 size-4" aria-hidden="true" />
 													{t("settings.workPolicies.editPreset", "Edit preset")}
 												</Button>
 												<Button
 													variant="outline"
 													size="sm"
+													aria-describedby={titleId}
 													disabled={archiveMutation.isPending}
 													onClick={() =>
 														dispatch({
@@ -540,9 +566,12 @@ export function WorkPolicyPresetImport({
 													}
 												>
 													{isArchiving ? (
-														<IconLoader2 className="mr-2 size-4 animate-spin" />
+														<IconLoader2
+															className="mr-2 size-4 animate-spin"
+															aria-hidden="true"
+														/>
 													) : (
-														<IconArchive className="mr-2 size-4" />
+														<IconArchive className="mr-2 size-4" aria-hidden="true" />
 													)}
 													{t("settings.workPolicies.archivePreset", "Archive")}
 												</Button>
@@ -570,15 +599,18 @@ export function WorkPolicyPresetImport({
 			<AlertDialog
 				open={uiState.archivePreset !== null}
 				onOpenChange={(open) => {
-					if (!open) dispatch({ type: "setArchivePreset", value: null });
+					if (!open && !archiveMutation.isPending) {
+						dispatch({ type: "setArchivePreset", value: null });
+					}
 				}}
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
 							{t(
-								"settings.workPolicies.archivePresetTitle",
-								"Archive custom preset?",
+								"settings.workPolicies.archivePresetNamedTitle",
+								"Archive the preset “{name}”?",
+								{ name: uiState.archivePreset?.name ?? "" },
 							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
@@ -595,13 +627,18 @@ export function WorkPolicyPresetImport({
 						<AlertDialogAction
 							disabled={!uiState.archivePreset || archiveMutation.isPending}
 							onClick={(event) => {
+								// Stay open until the archive settles; Base UI's Close ignores preventDefault.
 								event.preventDefault();
+								(
+									event as unknown as { preventBaseUIHandler?: () => void }
+								).preventBaseUIHandler?.();
+								if (archiveMutation.isPending) return;
 								if (uiState.archivePreset)
 									archiveMutation.mutate(uiState.archivePreset.id);
 							}}
 						>
 							{archiveMutation.isPending ? (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							) : null}
 							{t(
 								"settings.workPolicies.confirmArchivePreset",

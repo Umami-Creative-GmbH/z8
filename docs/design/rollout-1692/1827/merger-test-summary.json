@@ -1,0 +1,44 @@
+{
+  "runs": [
+    {
+      "name": "exact",
+      "physicalFiles": 4,
+      "cases": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "overlapCasesWithPriorRuns": 0,
+      "initialRunPassed": true
+    },
+    {
+      "name": "compatibility",
+      "physicalFiles": 141,
+      "cases": 1382,
+      "passed": 1382,
+      "failed": 0,
+      "skipped": 0,
+      "overlapCasesWithPriorRuns": 36,
+      "initialRunPassed": true
+    },
+    {
+      "name": "adversarial",
+      "physicalFiles": 2,
+      "cases": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "overlapCasesWithPriorRuns": 0,
+      "initialRunPassed": true
+    }
+  ],
+  "unique": {
+    "physicalFiles": 143,
+    "cases": 1400,
+    "passed": 1400,
+    "failed": 0
+  },
+  "deduplication": "Normalized physical path + fullName + occurrence multiplicity within a file. Overlapping exact/current selections are not added; parameterized cases retain multiplicity.",
+  "newProbes": 9,
+  "latestRoot1727Probes": 9,
+  "attempts": "All merger test runs passed initially; no test/source edit or rerun needed."
+}

@@ -1,0 +1,213 @@
+{
+  "sourceCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424",
+  "mergedAt": "1578b6c8d52c23839ec405e7dc0a370d30877169",
+  "frozenReview": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+  "rootAtPublication": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9",
+  "historicalAppTree": "36930b073418c8f624d0f94b74de02e2497f726b",
+  "currentWholeAppTreeFrozen": false,
+  "currentSourcePins": 18,
+  "metadataQualification": "Both metadata blobs are fixed historical pins only; later legitimate additive route adoptions are not rejected by optional current-source mode.",
+  "verifiedCommit": null,
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/actions.integration.test.ts",
+      "kind": "source",
+      "bytes": 2884,
+      "sha256": "20d02314493aac502e7b6fdde574004e7eddcc71dd6255dea56fb3816cdc8d2c",
+      "canonicalSha256": "41cc48ff15ae0a7ea96ac28d1d5e16bfdf430950e4923975be3a410dbb783f05",
+      "gitBlob": "fc1396feb37a577cd85f73758a1e1b71e9ea6f37",
+      "blobSha256": "41cc48ff15ae0a7ea96ac28d1d5e16bfdf430950e4923975be3a410dbb783f05",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/actions.ts",
+      "kind": "source",
+      "bytes": 605,
+      "sha256": "c35358b0bb3ede4e196e5c90846c6329c1fda2d1741c7371b355efac5448c7ea",
+      "canonicalSha256": "e46c8440fdd21330867520d48678d2ba1d3854255b19f0affc5203122e502749",
+      "gitBlob": "260ae86dae2d891e7d5e4eb74c8f23b13ae90564",
+      "blobSha256": "e46c8440fdd21330867520d48678d2ba1d3854255b19f0affc5203122e502749",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/heading.test.tsx",
+      "kind": "source",
+      "bytes": 1061,
+      "sha256": "40d149841e0f846261f5168fa4d02c303456abd2793f03a184256735d327d16c",
+      "canonicalSha256": "78bda93b4ca7f69e0f0207526a213905cd7e8d8a36977c3ec0df412ff04c2975",
+      "gitBlob": "9f0034863c85a92c83b3b899355527c9c0aefc09",
+      "blobSha256": "78bda93b4ca7f69e0f0207526a213905cd7e8d8a36977c3ec0df412ff04c2975",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx",
+      "kind": "source",
+      "bytes": 892,
+      "sha256": "a918fe7e262ca4e2b652a484e4a82f944441c788e65a3e14ccdcec8168738c34",
+      "canonicalSha256": "b18d637b9701c78a29227b17172037009d674b7a9d1b9285ad27e178129c2e42",
+      "gitBlob": "79e8cb3662bce41af141f69196e7ca23f0227ee3",
+      "blobSha256": "b18d637b9701c78a29227b17172037009d674b7a9d1b9285ad27e178129c2e42",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.test.tsx",
+      "kind": "source",
+      "bytes": 3670,
+      "sha256": "eb2171037f9172b14412f342b29713b96efc6564219c2ea601788335a3ebba9e",
+      "canonicalSha256": "7e352efd717b50c6ca77dbf0797b54380d5cb92af9cf8f0e26f698986832d29d",
+      "gitBlob": "d1fd83fb942cea346ec6231094b2b6d59cccd795",
+      "blobSha256": "7e352efd717b50c6ca77dbf0797b54380d5cb92af9cf8f0e26f698986832d29d",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.tsx",
+      "kind": "source",
+      "bytes": 8448,
+      "sha256": "acdd6312fded3bf6915fc2a2146c520ed21d1f3a26af76c5f61f1fc3d3a6b275",
+      "canonicalSha256": "fbde13631dad6ce3e64188e64904c4b4fbca1166e6dac904cbbcba50417c0740",
+      "gitBlob": "1eeff48598413167a3fe7a46b8f542856aa5d80f",
+      "blobSha256": "fbde13631dad6ce3e64188e64904c4b4fbca1166e6dac904cbbcba50417c0740",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+      "kind": "source",
+      "bytes": 9791,
+      "sha256": "94b2b60789a30ef228951811580ba85b13c0c630d0ada6cb4e24a97ffc22d1d4",
+      "canonicalSha256": "530aa3aa8a1646fa4a82bb6f0383a904fe54daa5b82de7e4e5df306571187b76",
+      "gitBlob": "544b56106bb913c7ad1c688cf1cf77b775a60557",
+      "blobSha256": "530aa3aa8a1646fa4a82bb6f0383a904fe54daa5b82de7e4e5df306571187b76",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-client.tsx",
+      "kind": "source",
+      "bytes": 8417,
+      "sha256": "053668e91e1376a7587d7470c701308bad4cc945b63a08bdff0ba970a740dfd6",
+      "canonicalSha256": "6d46830d8b0668b2cbc041fa6a3036cc3a2f3834e71389847c60a888b7c10e90",
+      "gitBlob": "aec44c277e185569cba970cb3de7efe5375ea220",
+      "blobSha256": "6d46830d8b0668b2cbc041fa6a3036cc3a2f3834e71389847c60a888b7c10e90",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-data.ts",
+      "kind": "source",
+      "bytes": 2445,
+      "sha256": "48fe2cecbb4f482d44418da97e6712504fa808bf4692924ec1acbd5ee12445da",
+      "canonicalSha256": "7b7c78d802e0cdc364812e67aa170ba96e0f130ebc349450a84e105ca9f89170",
+      "gitBlob": "a179f6f504d6af7be65c0e9a4531b67765608d71",
+      "blobSha256": "7b7c78d802e0cdc364812e67aa170ba96e0f130ebc349450a84e105ca9f89170",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+      "kind": "source",
+      "bytes": 12783,
+      "sha256": "e336c6493f90eaf1d12d0e5df09579687ca477fdd11fb8f80abd2e9014e950d2",
+      "canonicalSha256": "1395fa907b266331f69bd275fb72e3d4c22274c5899b51e6cdc3aa5ee6c1fe12",
+      "gitBlob": "d287df9d43a388c51dcff4a50a3ae93d3a4b8481",
+      "blobSha256": "1395fa907b266331f69bd275fb72e3d4c22274c5899b51e6cdc3aa5ee6c1fe12",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "kind": "source",
+      "bytes": 7321,
+      "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "blobSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+      "kind": "source",
+      "bytes": 4072,
+      "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+      "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+      "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+      "blobSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/components/header-refresh-button.tsx",
+      "kind": "source",
+      "bytes": 1337,
+      "sha256": "48cf0dac8ae3fcaa3f53ed926fa7af56f4c8f9e21a06709ec34e91bd2d7a492b",
+      "canonicalSha256": "565fb841d6c91cae2930dd260dce1edd8a0b1bcc2dced8d313448c1ef3d4e195",
+      "gitBlob": "aaa9fcf47bfad91043d978408f4e860389dc5ddd",
+      "blobSha256": "565fb841d6c91cae2930dd260dce1edd8a0b1bcc2dced8d313448c1ef3d4e195",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "kind": "source",
+      "bytes": 7566,
+      "sha256": "d4f0396aeedf6f048cc8f0b5f6c680df9f15ee7cf883999a7cc166340679e1e1",
+      "canonicalSha256": "209c86da4bac71af4a26f72df5b6903a5167a52a805099aa410e10824565ed7e",
+      "gitBlob": "61531e71e0d18c385346a827a434dfddc97588ed",
+      "blobSha256": "209c86da4bac71af4a26f72df5b6903a5167a52a805099aa410e10824565ed7e",
+      "currentSource": false
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "kind": "source",
+      "bytes": 11587,
+      "sha256": "93dc06146bf521b4c7b488004347f3e4f4e047cbdf0b1fd8a8ee4ad232da8067",
+      "canonicalSha256": "93bfe1f5dc5e64f088dda545a3869bb92ca35032436b64f27c1674261e51f36b",
+      "gitBlob": "ae691d85d94b9cddbd46e54969f0afe5ee445410",
+      "blobSha256": "93bfe1f5dc5e64f088dda545a3869bb92ca35032436b64f27c1674261e51f36b",
+      "currentSource": false
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "kind": "configuration",
+      "bytes": 1840,
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "canonicalSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "gitBlob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "blobSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "kind": "configuration",
+      "bytes": 4308,
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "canonicalSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+      "blobSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "currentSource": true
+    },
+    {
+      "path": "package.json",
+      "kind": "configuration",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "canonicalSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "gitBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "blobSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "currentSource": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "kind": "configuration",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "canonicalSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "gitBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "blobSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "currentSource": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "kind": "configuration",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "canonicalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "blobSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "currentSource": true
+    }
+  ]
+}

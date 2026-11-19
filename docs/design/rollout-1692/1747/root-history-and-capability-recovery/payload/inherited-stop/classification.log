@@ -1,0 +1,50 @@
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9e91ce57-fc9997590e8a7cdb/apps/webapp
+
+stdout | src/components/travel-expenses/r165-review-classification.test.tsx > minimal repeat and classification incoming: refusal then outage cannot retain retired rows; fresh success recovers
+{"owner":"incoming","afterRefusal":true,"afterOutage":true,"freshSuccessRecovered":true,"historyReads":4}
+
+stdout | src/components/travel-expenses/r165-review-classification.test.tsx > minimal repeat and classification premerge-root: refusal then outage cannot retain retired rows; fresh success recovers
+{"owner":"premerge-root","afterRefusal":true,"afterOutage":true,"freshSuccessRecovered":true,"historyReads":4}
+
+ ❯ |unit| src/components/travel-expenses/r165-review-classification.test.tsx (3 tests | 2 failed) 384ms
+   ✓ initial canonical refusal remains unknown and local Retry restores only fresh evidence 73ms
+   × minimal repeat and classification incoming: refusal then outage cannot retain retired rows; fresh success recovers 160ms
+   × minimal repeat and classification premerge-root: refusal then outage cannot retain retired rows; fresh success recovers 150ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  02:30:56
+   Duration  1.16s (tests 35%, environment 29%, import 25%, transform 8%, setup 2%)
+
+JSON report written to C:/Users/KAIHEN~1/AppData/Local/Temp/z8-r165-review-bceb0ee-SAFE/classification-vitest.json
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/r165-review-classification.test.tsx > minimal repeat and classification incoming: refusal then outage cannot retain retired rows; fresh success recovers
+ FAIL  |unit| src/components/travel-expenses/r165-review-classification.test.tsx > minimal repeat and classification premerge-root: refusal then outage cannot retain retired rows; fresh success recovers
+AssertionError: expected { afterRefusal: true, …(1) } to deeply equal { afterRefusal: false, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "afterOutage": false,
+-   "afterRefusal": false,
++   "afterOutage": true,
++   "afterRefusal": true,
+  }
+
+ ❯ src/components/travel-expenses/r165-review-classification.test.tsx:56:37
+     54|  expect(screen.queryByRole('alert')).toBeNull();expect(edge.history).t…
+     55|  console.info(JSON.stringify({owner,afterRefusal,afterOutage,freshSucc…
+     56|  expect({afterRefusal,afterOutage}).toEqual({afterRefusal:false,afterO…
+       |                                     ^
+     57| });
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

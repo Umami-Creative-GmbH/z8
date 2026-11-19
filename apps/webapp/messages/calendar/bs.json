@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Dodaj odsustvo",
     "balance": {
       "carryoverDays": "Imate {count} prenesenih dana",
-      "carryoverExpiry": "koji ističu",
+      "carryoverDaysExpiring": "Imate {count} prenesenih dana. Ističu {date}.",
       "carryoverFrom": "Prijenos iz {year}.",
       "daysRemaining": "Preostali dani",
-      "description": "Vaši dani godišnjeg odmora za tekuću godinu",
       "outOfTotalDays": "od ukupno {totalDays} dana",
       "pending": "Na čekanju",
       "title": "Stanje godišnjeg odmora za {year}.",
       "used": "Iskorišteno"
     },
     "calendar": {
+      "currentYear": "Ova godina",
       "legend": {
         "approved": "Odobreno",
-        "halfDayAm": "Pola dana (prije podne)",
-        "halfDayPm": "Pola dana (poslije podne)",
+        "halfDay": "Pola dana",
         "holiday": "Praznik",
         "pending": "Na čekanju",
         "rejected": "Odbijeno"
       },
       "nextYear": "Sljedeća godina",
-      "previousYear": "Prethodna godina"
+      "previousYear": "Prethodna godina",
+      "requestAnotherAbsence": "Zatražite još jedno odsustvo od ovog dana",
+      "selectDayDetailsHint": "Odaberite dan da biste zatražili odsustvo od tog dana. Dan s odobrenim odsustvom ili odsustvom na čekanju umjesto toga prikazuje njegove detalje."
     },
     "change": {
       "afternoon": "Poslijepodne",
@@ -40,6 +40,7 @@
       "historyFailed": "Učitavanje zahtjeva za promjenu nije uspjelo.",
       "keepHours": "Zadrži evidentirane sate i pokrivenost",
       "morning": "Prijepodne",
+      "pendingCount": "{count} na čekanju",
       "pendingExplanation": "Evidentirano odsustvo ostaje na snazi sve dok drugi odobravatelj ne prihvati vaš zahtjev.",
       "reason": "Razlog",
       "reasonRequired": "Razlog je obavezan",
@@ -321,10 +322,10 @@
       "pending": "Na čekanju",
       "rejected": "Odbijeno"
     },
-    "subtitle": "Upravljajte svojim slobodnim danima i godišnjim odmorom",
     "table": {
       "cancelAbsence": "Otkaži odsustvo",
       "cancelAbsenceTooltip": "Otkaži odsustvo",
+      "changePending": "Zahtjev za promjenu na čekanju",
       "end": "Kraj",
       "headers": {
         "actions": "Radnje",
@@ -337,9 +338,7 @@
       "noRequests": "Nema pronađenih zahtjeva za odsustvo.",
       "noSearchResults": "Nijedno odsustvo ne odgovara vašoj pretrazi.",
       "searchPlaceholder": "Pretražite po tipu, statusu ili bilješkama...",
-      "start": "Početak",
-      "subtitle": "Nedavni i predstojeći zahtjevi za odsustvo",
-      "title": "Vaši zahtjevi za odsustvo"
+      "start": "Početak"
     },
     "title": "Odsustva",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kalendar",
       "table": "Tabela"
+    },
+    "year": {
+      "loadFailed": "Nije moguće učitati {year}. I dalje se prikazuje {loadedYear}.",
+      "loading": "Učitavanje {year}… I dalje se prikazuje {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Uredi",
       "label": "Radnje za unos vremena"
     },
+    "context": {
+      "timezone": "Vremenska zona kalendara"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Unosi vremena su blokirani",
       "category": "Kategorija",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Brisanje unosa radnog vremena je primijenjeno",
       "auditNote": "Unosi radnog vremena bit će označeni kao izbrisani u svrhu revizije.",
-      "confirm": "Pretvori u pauzu",
-      "description": "Ovo će trajno izbrisati ovaj radni period. Razmak će se prikazati kao pauza u kalendaru.",
       "failed": "Brisanje radnog perioda nije uspjelo",
       "reasonLabel": "Razlog za brisanje",
-      "reasonRequired": "Razlog je obavezan",
-      "success": "Radni period pretvoren u pauzu",
-      "title": "Pretvoriti u pauzu?"
+      "reasonRequired": "Razlog je obavezan"
     },
     "details": {
       "automaticClockOut": "Automatski odjavljeno",
@@ -516,10 +518,7 @@
       "holiday": "Praznik",
       "missingRequiredWork": "Nedostaje obavezni rad",
       "requirementMetOrOver": "Zahtjev ispunjen/premašen",
-      "timeEntry": "Unos vremena",
-      "title": "Legenda",
       "underRequirement": "Ispod zahtjeva",
-      "workPeriod": "Radni period",
       "workPeriodPending": "Čeka odobrenje"
     },
     "loadEventsError": "Učitavanje događaja iz kalendara nije uspjelo: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Evidentirano vrijeme u poređenju sa satima prema pravilima",
       "weekSum": "Zbir"
     },
+    "nextMonth": "Sljedeći mjesec",
+    "previousMonth": "Prethodni mjesec",
     "requirements": {
       "dayLabel": "{date}: potrebno {required}, zabilježeno {actual}, razlika {delta}, {status}",
       "includesRunningWork": "Uključuje rad u toku",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Naplativo",
+      "breakEnforcementNote": "Automatski prilagođeno: provođenje pauze",
       "editedBy": "(uredio/la {name} dana {date})",
       "missingTask": "Nedostaje zadatak",
       "missingTaskHint": "Nedostaje zadatak: dodajte zadatak",
-      "breakEnforcementNote": "Automatski prilagođeno: primjena pauza"
+      "runningTitle": "{name} - {duration} (u toku)",
+      "stop": "Zaustavi",
+      "stopFor": "Zaustavi tekući radni period za {name}"
     },
     "workStatus": {
       "overRequirement": "preko zahtjeva",

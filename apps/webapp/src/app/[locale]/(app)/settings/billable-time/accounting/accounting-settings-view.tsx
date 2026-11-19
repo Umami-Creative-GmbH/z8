@@ -11,6 +11,8 @@ import { useTaxTreatmentSummary } from "@/components/billable-time/accounting/ta
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -58,19 +60,40 @@ export function AccountingSettingsView() {
 
 	if (settings.isPending) {
 		return (
-			<div className="flex justify-center p-6">
-				<IconLoader2
-					aria-label={t("common.loading", "Loading")}
-					className="size-6 animate-spin text-muted-foreground"
-				/>
-			</div>
+			<LoadingRegion
+				className="space-y-6"
+				label={{
+					labelKey: "settings.billableTime.accounting.loading",
+					labelDefault: "Loading accounting settings",
+				}}
+			>
+				<Skeleton aria-hidden="true" className="h-48 w-full" />
+				<Skeleton aria-hidden="true" className="h-64 w-full" />
+			</LoadingRegion>
 		);
 	}
 	if (settings.isError) {
 		return (
-			<p className="text-sm text-destructive" role="alert">
-				{settings.error.message}
-			</p>
+			<div className="space-y-3 rounded-lg border p-4" role="alert">
+				<p className="text-sm font-medium text-destructive">
+					{t(
+						"settings.billableTime.accounting.loadFailed",
+						"The accounting settings could not be loaded.",
+					)}
+				</p>
+				<p className="text-sm text-muted-foreground">{settings.error.message}</p>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={settings.isFetching}
+					onClick={() => void settings.refetch()}
+				>
+					{settings.isFetching && (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					)}
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
 		);
 	}
 
@@ -83,7 +106,7 @@ export function AccountingSettingsView() {
 			<Card>
 				<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="space-y-1.5">
-						<CardTitle>
+						<CardTitle role="heading" aria-level={2}>
 							{t("settings.billableTime.accounting.customers.title", "Customers")}
 						</CardTitle>
 						<CardDescription>
@@ -188,6 +211,11 @@ export function AccountingSettingsView() {
 											<Button
 												size="sm"
 												variant="outline"
+												aria-label={t(
+													"settings.billableTime.accounting.customers.editAction",
+													"Edit accounting for {name}",
+													{ name: entry.name },
+												)}
 												onClick={() =>
 													setSelected({ customerId: entry.customerId, name: entry.name })
 												}

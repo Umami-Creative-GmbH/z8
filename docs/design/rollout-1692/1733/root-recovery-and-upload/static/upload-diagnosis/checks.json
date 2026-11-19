@@ -1,0 +1,89 @@
+{
+  "source": "c0480cfd33e579d807264ff4c2017a66b799ae36",
+  "provisionalIntegration": "32c91479c1184a0080bf82db6a6bfc6731b57c6f",
+  "previousCandidate": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "productionChange": "Set removeFingerprintOnSuccess for this payslip uploader because staging consumes temporary bytes. Unfinished URL storage/resume remains enabled. No domain/storage/auth/notification contract changes or automatic stage retries.",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "rawSha256": "e42e0520b9757460129a5771e82f19867d556f738021067d1c56af0f8a2397d1",
+      "lfSha256": "45b0de1a23d591ef68ae569eefaea5e486b135a69faf014b1c11d27fc9d414c4",
+      "gitBlob": "2afc394220374b28a96e255f8ec50ec94d3ebc48"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "rawSha256": "38804515a8d47aedf0106c9cbd12ec2811d3a1f559eaebaade63921a651c448e",
+      "lfSha256": "09252443a2e1965da235f6333a46505ffe56f4da22118c74ffee064d26b6a04d",
+      "gitBlob": "77f8987efba2c3b3b30b92d6189c8a2a724120ac"
+    }
+  ],
+  "red": {
+    "mini": [
+      "red-01.json",
+      "red-02.json"
+    ],
+    "filenameControl": "renamed-control.json",
+    "browser": "browser-red-final.json",
+    "browserResult": "one failed completed-reuse case; one passed unfinished-reload control"
+  },
+  "green": {
+    "mini": "green-original.json",
+    "browser": "browser-green.json",
+    "final": "unit-final.json",
+    "caseInstances": 459,
+    "physicalFiles": 65
+  },
+  "types": {
+    "file": "typecheck.log",
+    "typegen": true,
+    "projects": 3,
+    "exit": 0,
+    "observedSession": 89667
+  },
+  "quality": {
+    "newBrowserFormat100CrlfExit": 0,
+    "hookPreservedFormat80CrlfExit": 0,
+    "lint2Exit": 0,
+    "doctor": {
+      "file": "doctor.log",
+      "base": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "files": 9,
+      "errors": 0,
+      "warnings": 3,
+      "exit": 0,
+      "observedSession": 43124
+    },
+    "otherProfiles": "Explicit100 hook retains one preexisting wrapping finding. Earlier full1733 formatting qualifications remain."
+  },
+  "priorStop": {
+    "path": ".tmp/1733-command-checks/runtime/HANDOFF-runtime.md",
+    "publicFiles": 71,
+    "probes": 39,
+    "probeFiles": 4,
+    "pgCases": 20,
+    "pgFiles": 1,
+    "boundary": "Inherited from immediately prior786 candidate, never counted as fresh current full-app acceptance."
+  },
+  "limitations": [
+    "Transport test uses a loopback model for completed metadata plus consumed bytes, not canonical storage/auth/PG.",
+    "Existing previously completed client resume entries are not bulk migrated or manually cleared; fresh application retry behavior remains to be checked.",
+    "No fresh current full-application ZIP/confirmation/readback/download/role/native/Next/matched evidence yet.",
+    "Full generation/Tolgee/providers/device/truezoom/global transition/roster matrices remain unpassed."
+  ],
+  "preservation": {
+    "verifiedAncestors": 56,
+    "changedPaths": [
+      "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts"
+    ],
+    "applicationTree": "c1919e4667d9f74400c3001c84f8baede1ce2195",
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "counts": {
+    "integrated": 56,
+    "awaiting-integration": 21,
+    "implementing": 1,
+    "pending": 79
+  }
+}

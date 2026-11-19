@@ -8,14 +8,6 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -34,7 +26,13 @@ import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { openingBalanceMinutes } from "@/lib/work-balance/adjustments/rules";
 import type { ConflictingPayout } from "@/lib/work-balance/adjustments/types";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
+import {
+	type BalanceFormSurface,
+	balanceDialogSurface,
+	balancePanelSurface,
+} from "./balance-form-surface";
 import { useBalanceAdjustmentErrorMessage } from "./use-balance-adjustment-error";
+import { useBalanceFormRequest } from "./use-balance-form-request";
 import { BalanceAdjustmentActionError } from "./use-employee-work-balance";
 
 type SetOpeningBalanceValues = {
@@ -50,13 +48,15 @@ type SetOpeningBalanceValues = {
  * balance up to and including its day; setting one cancels the one in effect.
  * A refusal because of overtime payouts lists them in the dialog.
  */
-export function SetOpeningBalanceDialog({
+function SetOpeningBalanceForm({
+	surface = balanceDialogSurface,
 	open,
 	onOpenChange,
 	today,
 	replacesCurrent,
 	onSet,
 }: {
+	surface?: BalanceFormSurface;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/** Today in the employee's timezone: the latest day an opening balance may have. */
@@ -72,6 +72,16 @@ export function SetOpeningBalanceDialog({
 	}) => Promise<unknown>;
 }) {
 	const { t } = useTranslate();
+	const {
+		Root: Dialog,
+		Content: DialogContent,
+		Header: DialogHeader,
+		Title: DialogTitle,
+		Description: DialogDescription,
+		Footer: DialogFooter,
+	} = surface;
+	const request = useBalanceFormRequest();
+	const [failure, setFailure] = useState<string | null>(null);
 	const id = useId();
 	const displayContext = useDisplayContext();
 	const errorMessage = useBalanceAdjustmentErrorMessage();
@@ -84,8 +94,14 @@ export function SetOpeningBalanceDialog({
 		reason: "",
 	};
 	const form = useForm({
+		onSubmitInvalid: () => {
+			document.querySelector<HTMLElement>('[role="dialog"] [aria-invalid="true"]')?.focus();
+		},
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			const token = request.begin();
+			if (!token) return;
+			setFailure(null);
 			setConflictingPayouts([]);
 			try {
 				await onSet({
@@ -96,15 +112,19 @@ export function SetOpeningBalanceDialog({
 					reason: value.reason,
 				});
 			} catch (error) {
+				if (!request.current(token)) return;
+				request.finish(token);
 				const actionError = error instanceof BalanceAdjustmentActionError ? error : null;
 				if (actionError?.code === "conflicting_payouts") {
 					setConflictingPayouts(actionError.conflictingPayouts);
 				}
-				toast.error(
+				setFailure(
 					errorMessage(actionError?.code ?? null, { closedMonth: actionError?.closedMonth }),
 				);
 				return;
 			}
+			if (!request.current(token)) return;
+			request.finish(token);
 			toast.success(t("settings.employees.workBalance.openingBalanceSet", "Opening balance set"));
 			form.reset(defaultValues);
 			onOpenChange(false);
@@ -112,6 +132,8 @@ export function SetOpeningBalanceDialog({
 	});
 
 	function handleOpenChange(nextOpen: boolean) {
+		if (request.pending()) return;
+		if (!nextOpen) setFailure(null);
 		if (!nextOpen) {
 			form.reset(defaultValues);
 			setConflictingPayouts([]);
@@ -132,7 +154,11 @@ export function SetOpeningBalanceDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<form
-					className="grid gap-4"
+					className="grid min-w-0 gap-4"
+					noValidate
+					onInvalid={(event) => {
+						event.preventDefault();
+					}}
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
@@ -363,6 +389,11 @@ export function SetOpeningBalanceDialog({
 						</Alert>
 					) : null}
 
+					{failure ? (
+						<p role="alert" className="text-sm text-destructive">
+							{failure}
+						</p>
+					) : null}
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
@@ -371,7 +402,10 @@ export function SetOpeningBalanceDialog({
 							{(isSubmitting: boolean) => (
 								<Button type="submit" disabled={isSubmitting}>
 									{isSubmitting ? (
-										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+										<IconLoader2
+											className="size-4 animate-spin motion-reduce:animate-none"
+											aria-hidden="true"
+										/>
 									) : null}
 									{t(
 										"settings.employees.workBalance.setOpeningBalanceSubmit",
@@ -385,4 +419,15 @@ export function SetOpeningBalanceDialog({
 			</DialogContent>
 		</Dialog>
 	);
+}
+
+export function SetOpeningBalanceDialog(
+	props: Omit<Parameters<typeof SetOpeningBalanceForm>[0], "surface">,
+) {
+	return <SetOpeningBalanceForm {...props} />;
+}
+export function SetOpeningBalancePanel(
+	props: Omit<Parameters<typeof SetOpeningBalanceForm>[0], "surface">,
+) {
+	return <SetOpeningBalanceForm {...props} surface={balancePanelSurface} />;
 }

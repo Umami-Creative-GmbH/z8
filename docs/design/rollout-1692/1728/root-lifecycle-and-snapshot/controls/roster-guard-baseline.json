@@ -1,0 +1,39 @@
+{
+  "base": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+  "verified": "16443982de929de4f885a6cfb6de5b377374cb3e",
+  "grown": [
+    {
+      "file": "app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx",
+      "current": 1,
+      "baseline": 0,
+      "atProvisional": 1,
+      "atVerified": 1,
+      "entireSourceMatchesProvisional": true
+    },
+    {
+      "file": "components/payroll/employee-balance-workspace.tsx",
+      "current": 1,
+      "baseline": 0,
+      "atProvisional": 1,
+      "atVerified": 1,
+      "entireSourceMatchesProvisional": true
+    },
+    {
+      "file": "lib/approvals/server/time-approval-decision/decision.ts",
+      "current": 1,
+      "baseline": 0,
+      "atProvisional": 1,
+      "atVerified": 1,
+      "entireSourceMatchesProvisional": true
+    },
+    {
+      "file": "test/web-time-decision.ts",
+      "current": 1,
+      "baseline": 0,
+      "atProvisional": 1,
+      "atVerified": 1,
+      "entireSourceMatchesProvisional": true
+    }
+  ],
+  "qualification": "Read-only classification of the broad preexisting guard; no whitelist, test or unrelated source changed."
+}

@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Pristup ovoj organizaciji je pauziran dok se podaci o naplati ne ažuriraju.",
       "adminDescription": "Vaš probni period je istekao ili pretplata više nije važeća. Ažurirajte podatke o naplati da nastavite koristiti Z8.",
       "goToBilling": "Idi na naplatu",
       "memberDescription": "Ova organizacija je suspendovana. Kontaktirajte administratora organizacije da ažurirate podatke o naplati.",
@@ -165,6 +166,13 @@
     "teal": "Tirkizna"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Došlo je do greške. Pokušajte ponovo.",
+      "formerEmployee": "Bivši zaposlenici se ne mogu odabrati. Odaberite nekoga s trenutnog spiska.",
+      "invalidInput": "Provjerite svoj unos i pokušajte ponovo.",
+      "notAllowed": "Nemate pristup ovoj postavci.",
+      "signInRequired": "Prijavite se za nastavak."
+    },
     "actions": "Radnje",
     "active": "Aktivno",
     "add": "Dodaj",
@@ -174,6 +182,7 @@
     "approve": "Odobri",
     "assign": "Dodijeli",
     "back": "Nazad",
+    "backToDashboard": "Nazad na kontrolnu tablu",
     "brandLogo": "{brand} logo",
     "breadcrumb": {
       "breadcrumb": "navigacijska putanja",
@@ -195,6 +204,7 @@
     "copy": "Kopiraj",
     "create": "Kreiraj",
     "current": "Trenutno",
+    "date": "Datum",
     "datePicker": {
       "clearDate": "Očisti datum",
       "placeholder": "Odaberite datum"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Uredi",
     "employees": "Zaposlenici",
-    "enabled": "Omogućeno",
     "error": "Greška",
     "error-occurred": "Došlo je do greške",
     "errors": {
       "monthClosed": "Mjesec {month} je zatvoren. Mora se ponovo otvoriti prije nego što se rad ili odsustva mogu mijenjati."
     },
     "fieldPresets": "{label} predefinisane postavke",
+    "filters": "Filteri",
     "focusInput": "Fokusiraj unos",
     "gender": {
       "female": "Žensko",
@@ -253,6 +263,7 @@
       "application": "Učitavanje aplikacije",
       "auditExportSettings": "Učitavanje postavki izvoza revizije",
       "authentication": "Učitavanje autentifikacije",
+      "billableTimeSettings": "Učitavanje postavki naplativog vremena",
       "changePolicySettings": "Učitavanje postavki pravila promjena",
       "coverageRuleSettings": "Učitavanje postavki pravila pokrivenosti",
       "customerSettings": "Učitavanje postavki klijenta",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Učitavanje postavki demo podataka",
       "deploymentDiagnostics": "Učitavanje dijagnostike implementacije",
       "employeeReports": "Učitavanje izvještaja o zaposlenicima",
+      "employees": "Učitavanje zaposlenika",
+      "employeeVacationAllowance": "Učitavanje prava na godišnji odmor zaposlenika",
       "employeeVacationAllowances": "Učitavanje dana godišnjeg odmora zaposlenika",
       "exportOperations": "Učitavanje operacija izvoza",
       "holidaySettings": "Učitavanje postavki praznika",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Učitavanje rasporeda smjena",
       "shiftTemplateSettings": "Učitavanje postavki predložaka smjena",
       "skillSettings": "Učitavanje postavki vještina",
+      "statistics": "Učitavanje statistike",
       "surchargeSettings": "Učitavanje postavki doplataka",
       "team": "Učitavanje tima",
       "todaySManagerBriefing": "Učitavanje današnjeg brifinga za menadžere",
@@ -315,8 +329,6 @@
     },
     "more": "više",
     "moreActions": "Više radnji",
-    "moveDown": "Pomjeri dolje",
-    "moveUp": "Pomjeri gore",
     "name": "Ime",
     "navigation": {
       "retry": "Pokušaj ponovo navigaciju",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Obavještenja} other {Obavještenja (# nepročitanih)}}"
     },
+    "offline": "Van mreže",
     "open": "Otvori",
     "openEnded": "Neodređeno",
     "openMenu": "Otvori meni",
@@ -389,6 +402,7 @@
     "removing": "Uklanjanje...",
     "reset": "Poništi",
     "retry": "Pokušaj ponovo",
+    "retrying": "Ponovni pokušaj…",
     "revoke": "Opozovi",
     "save": "Sačuvaj",
     "saveChanges": "Sačuvaj promjene",
@@ -403,7 +417,9 @@
       "sidebar": "Bočna traka",
       "toggleSidebar": "Uključi/isključi bočnu traku"
     },
+    "signIn": "Prijava",
     "skip": "Preskoči",
+    "skipToContent": "Preskoči na sadržaj",
     "start": "Početak",
     "status": "Status",
     "submitting": "Slanje…",
@@ -422,6 +438,9 @@
     },
     "to": "do",
     "today": "Danas",
+    "tryAgain": "Pokušajte ponovo",
+    "unavailable": "Nedostupno",
+    "undo": "Poništi",
     "unexpectedError": "Došlo je do neočekivane greške",
     "unknown": "Nepoznato",
     "unknownEmployee": "Nepoznati zaposlenik",
@@ -575,6 +594,7 @@
       "submit": "Evidentiraj originalnu provjeru",
       "suspensionNotice": "Uspješna ponovna provjera ne vraća automatski suspendovano ovlaštenje. Potrebna je nova provjera i izričita odluka o vraćanju ovlaštenja.",
       "title": "Pregledaj originalnu dozvolu osobe {name}",
+      "transportError": "Provjera nije mogla biti zabilježena. Vaš unos je sačuvan; pokušajte ponovo nakon što provjerite vezu i nadležnost.",
       "verifier": "Potvrđujem da zabilježene činjenice i rezultati pojedinačnih kategorija odražavaju moj pregled."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Zapis o vozačkoj dozvoli nije se mogao učitati. Provjerite svoju trenutnu odgovornost verifikatora.",
       "loading": "Učitavanje zapisa o vozačkoj dozvoli…",
       "notIntended": "{name} nije predviđeni vozač. Provjera je potrebna samo za predviđene vozače.",
+      "retained": "Sačuvani dokazi su dostupni za pregled. Nove provjere nisu dostupne za bivše zaposlenike.",
       "title": "Provjera vozačke dozvole za {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Status",
         "team": "Tim"
       },
+      "customOrder": "Sortirano prema odabranoj koloni i smjeru.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Provjera dospijeva sada",
+      "dueOrder": "Prvo provjere koje dospijevaju sada, a zatim sljedeći rok.",
       "empty": {
         "description": "Ovdje se prikazuju predviđeni vozači u okviru vaše odgovornosti verifikatora. Obratite se administratoru ako neko nedostaje.",
         "title": "Još nema nikoga za provjeru"
@@ -607,6 +630,8 @@
       "loadError": "Lista se nije mogla učitati. Provjerite svoju trenutnu odgovornost verifikatora.",
       "loading": "Učitavanje predviđenih vozača…",
       "noMatches": "Nijedan predviđeni vozač ne odgovara pretrazi ili filteru.",
+      "refresh": "Osvježi listu provjera",
+      "refreshing": "Ažuriranje liste provjera…",
       "search": "Pretraži po imenu",
       "status": {
         "active": "Aktivan",
@@ -682,6 +707,7 @@
       "failed": "Pregledana kategorija neuspješna",
       "field": "Ispravljeno polje",
       "from": "Od datuma (UTC)",
+      "fromHelp": "Period počinje u 00:00 UTC.",
       "globalSuspension": "Sva ovlaštenja za vožnju suspendovana",
       "help": "Originalne potvrde, datirani dodaci i važeće odluke o ovlaštenju ostaju odvojeni. Raniji dokazi potrebni za razumijevanje odabranog perioda označeni su kao kontekst. Sva vremena događaja i granice perioda u nastavku koriste UTC.",
       "impedimentReported": "Prijavljena prepreka za vožnju",
@@ -716,6 +742,7 @@
       "suspended": "Ovlaštenje suspendovano",
       "title": "Historija provjera i ovlaštenja",
       "to": "Prije datuma (UTC)",
+      "toHelp": "Period završava prije 00:00 UTC na ovaj datum.",
       "unavailable": "Historija nije dostupna. Provjerite period i vaš trenutni pristup.",
       "value": "Ispravljena vrijednost",
       "verifierConfirmation": "Potvrda verifikatora zabilježena u vrijeme originalne provjere"
@@ -751,7 +778,6 @@
         "teamNotFound": "Taj tim više ne postoji."
       },
       "notRequired": "Nije obavezno (isključeno)",
-      "removed": "Dodjela predviđenog vozača je uklonjena",
       "required": "Obavezno",
       "saved": "Predviđeni vozači su sačuvani",
       "targetOrganization": "Cijela organizacija",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Ovlaštenje za vožnju",
       "loading": "Učitavanje ovlaštenja za vožnju…",
+      "loadingEmployees": "Učitavanje zaposlenika za planiranje…",
       "noEmployees": "Nema podudarnih uposlenika.",
       "recordingHelp": "Uvijek možete evidentirati radno vrijeme i stvarnu upotrebu vozila. Odabir vozila ne daje ovlaštenje za vožnju; provjerene kategorije ne utvrđuju prikladnost za svako vozilo.",
       "refresh": "Osvježi status vožnje",
+      "refreshEmployees": "Osvježi zaposlenike za planiranje",
+      "rosterUnavailable": "Zaposlenici za planiranje nisu dostupni. Provjerite svoj trenutni pristup organizaciji i pokušajte ponovo.",
       "search": "Pronađi uposlenika",
       "searchHelp": "Prikazuje se do 50 uposlenika. Suzite pretragu da biste pronašli drugog uposlenika. Ovaj prikaz ne sadrži zapise o inspekciji.",
       "title": "Status vožnje za planiranje",
       "unavailable": "Status ovlaštenja za vožnju nije dostupan."
     },
     "page": {
+      "reconciling": "Učitavanje pristupa vozačkim dozvolama za trenutnu organizaciju…",
+      "scope": "Ovlaštenje za vožnju, originalne provjere i planiranje u vašoj aktivnoj organizaciji. Svaki prikaz prati vaš trenutni pristup.",
       "title": "Vozačka dozvola"
     },
     "policyTitle": "Pravilnik organizacije",
@@ -960,6 +991,13 @@
       "description": "Potreban vam je profil zaposlenika da biste {feature}. Molimo kreirajte organizaciju ili kontaktirajte svog administratora.",
       "emailBody": "Pozdrav,nnPotrebno je postavljanje mog profila zaposlenika kako bih pristupio/la funkcijama platforme. Možete li mi pomoći s ovim?nnHvala vam!",
       "emailSubject": "Potrebno je podešavanje profila zaposlenika",
+      "formerEmployee": {
+        "description": "Ponovo ste član ove organizacije, ali je vaše prethodno zaposlenje završeno. Administrator vas mora ponovo zaposliti prije nego što budete mogli {feature}.",
+        "emailBody": "Zdravo,nnPonovo sam član organizacije, ali je moje prethodno zaposlenje završeno. Možete li me ponovo zaposliti kako bih mogao pristupiti funkcijama platforme?nnHvala!",
+        "emailSubject": "Zahtjev za ponovno zapošljavanje",
+        "helpText": "Zatražite od administratora da vas ponovo zaposli. Do tada ne možete koristiti ovu organizaciju.",
+        "title": "Vaše zaposlenje ovdje je završeno"
+      },
       "helpText": "Ako ste pozvani u organizaciju, zatražite od svog administratora da vam postavi profil zaposlenika.",
       "title": "Potreban je profil zaposlenika"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Učitavanje reda čekanja radnika"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Potvrdite postojeću prijavu"
+    },
     "banner": {
       "action": "Pregledajte zahtjeve i verifikujte",
       "requirement": "Ova organizacija zahtijeva verifikovanu autentifikaciju od {deadline}."
     },
     "code": {
       "label": "Kod autentifikatora",
+      "required": "Unesite kod iz autentifikatora",
       "verify": "Verifikujte autentifikator"
     },
     "continue": "Nastavite nakon verifikacije",
@@ -1056,6 +1098,8 @@
       "title": "Registrujte ili zamijenite autentifikator",
       "warning": "Dodavanje ili zamjena faktora zahtijeva verifikaciju u roku od pet minuta. Verifikujte zamjenu prije uklanjanja starog faktora. Opoziv vašeg posljednjeg faktora je dozvoljen i može blokirati pristup gore navedenim organizacijama; to ne odobrava novi period za registraciju."
     },
+    "loading": "Učitavanje sigurnosne provjere",
+    "navigation": "Organizacija i račun",
     "organization": {
       "select": "Odaberite drugu organizaciju"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Verifikacija lozinke nije uspjela",
       "label": "Trenutna lozinka",
+      "required": "Unesite svoju trenutnu lozinku",
       "verified": "Lozinka je verifikovana. Možete registrovati svoj prvi autentifikator ili verifikovati postojeći autentifikator ili rezervni kod ispod.",
       "verify": "Verifikujte lozinku"
     },
@@ -1097,7 +1142,16 @@
       "description": "Za oporavak, verifikujte svoju lozinku iznad i zatim unesite jedan neiskorišteni rezervni kod. Ovo briše prethodnu lokalnu verifikaciju u svim vašim organizacijama.",
       "label": "Rezervni kod",
       "lockout": "Ako jedini administrator izgubi sve načine autentifikacije i oporavka, organizacija ostaje zaključana. Ne postoji zaobilaženje putem administratora ili podrške.",
-      "success": "Oporavak dozvoljava samo zamjensku registraciju. Verifikujte autentifikator prije povratka u svoju organizaciju."
+      "nextSteps": "Ponovo potvrdite svoju lozinku prije potvrde autentifikatora.",
+      "open": "Oporavite pomoću rezervnog koda",
+      "required": "Unesite neiskorišteni rezervni kod",
+      "success": "Oporavak dozvoljava samo zamjensku registraciju. Verifikujte autentifikator prije povratka u svoju organizaciju.",
+      "title": "Oporavak računa"
+    },
+    "requirements": {
+      "empty": "Nisu navedeni zahtjevi organizacije za ovaj račun.",
+      "selected": "Odabrana organizacija",
+      "title": "Zahtjevi organizacije"
     },
     "security": {
       "factorWarning": "Uklanjanje faktora može blokirati pristup organizacijama koje ga zahtijevaju. Prvo verifikujte zamjenski faktor; uklanjanje posljednjeg faktora ne odobrava novi poček.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Pravila autentifikacije organizacije (vlasnici/administratori)"
     },
     "signout": "Odjavi se",
+    "signout.failed": "Odjava nije uspjela. Pokušajte ponovo.",
     "social": {
       "verify": "Verifikujte postojeću prijavu putem {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Administrator platforme",
     "reports": "Izvještaji",
     "scheduling": "Raspored",
+    "secondary-label": "Postavke i pomoć",
     "settings": "Postavke",
     "team": "Tim",
     "teamAbsences": "Odsustva tima",
     "teamDriving": "Detalji vožnje",
-    "team-label": "Tim",
+    "team-organization-label": "Tim i organizacija",
     "teamPeriodSubmissions": "Podnošenja perioda",
     "teamPresence": "Ko je prisutan",
     "time-tracking": "Evidencija radnog vremena",
     "today": "Danas",
     "travel-expenses": "Putni troškovi",
+    "workplace-label": "Radno mjesto",
     "worksCouncil": "Radničko vijeće"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Vaša smjena je završila u {endTime} ({timezone}). Odjavite se ako ste završili s radom.",
         "title": "Još uvijek ste prijavljeni"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} je ponovo član, ali je prethodno zaposlenje završeno. Pristup nije dostupan dok ne izvršite ponovno zapošljavanje.",
+        "title": "Bivšem zaposleniku je potrebno ponovno zapošljavanje"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# zaposlenik je i dalje povezan samo s bivšim menadžerom: {names}. Dodijelite trenutnog menadžera.} other {# zaposlenika je i dalje povezano samo s bivšim menadžerom: {names}. Dodijelite trenutnog menadžera.}}",
@@ -1735,6 +1796,7 @@
         "title": "Vrijeme je za hidrataciju!"
       }
     },
+    "countFailed": "Broj nepročitanih nije dostupan",
     "description": "Pregledajte ažuriranja, odobrenja i sistemska upozorenja na jednoj vremenskoj liniji.",
     "empty": {
       "description": "Sve ste pregledali! Nova obavještenja će se pojaviti ovdje.",
@@ -1754,6 +1816,8 @@
       "read": "Pročitano",
       "unread": "Nepročitano"
     },
+    "loading": "Učitavanje obavještenja…",
+    "loadingCount": "Učitavanje broja nepročitanih…",
     "nativePush": {
       "attention": {
         "title": "Nešto zahtijeva vašu pažnju"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Smjene otvorene deaktivacijom",
         "equipment_return_reminder": "Podsjetnici za povrat opreme",
         "forgotten_clock_out_reminder": "Zaboravljena odjava",
+        "former_employee_needs_rehire": "Bivši zaposlenici kojima je potrebno ponovno zapošljavanje",
         "former_employee_reports_without_manager": "Zaposlenici bez trenutnog menadžera",
         "kiosk_command_refused": "Evidencija na kiosku nije zabilježena",
         "kiosk_fob_registered": "Privjesak za kiosk registriran",
@@ -1871,6 +1936,7 @@
       "placeholder": "Pretraži obavještenja..."
     },
     "selection": {
+      "actions": "Odabrana obavještenja",
       "selectAll": "Odaberi sve vidljivo",
       "selectAllAria": "Odaberi sva vidljiva obavještenja",
       "selectNamedAria": "Odaberi {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "Izbrisano {count} obavještenja",
       "deleteFailed": "Brisanje obavještenja nije uspjelo",
+      "deletePartial": "Obrisano: {count}; neuspješno: {failed}. Pokušajte ponovo za preostali odabir.",
       "markedRead": "Označeno {count} obavještenja kao pročitano",
-      "markReadFailed": "Označavanje obavještenja kao pročitanih nije uspjelo"
+      "markReadFailed": "Označavanje obavještenja kao pročitanih nije uspjelo",
+      "readPartial": "Označeno kao pročitano: {count}; neuspješno: {failed}. Pokušajte ponovo za preostali odabir."
     },
     "unreadBadge": "{count} nepročitano",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} vidljivo · najnovijih {limit} obavještenja"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "Korisnički avatar"
-  },
   "user": {
+    "account": "Nalog",
     "font-size": "Veličina fonta",
     "language": "Jezik",
+    "loadingAccount": "Učitavanje naloga",
     "logging-out": "Odjavljivanje...",
     "log-out": "Odjavi se",
     "log-out-failed": "Odjava nije uspjela. Molimo pokušajte ponovo.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Bazirano na vremenu",
     "theme-time-info": "Bazirano na vremenu koristi način {currentMode}. Prelazi na {nextMode} u {time}.",
     "theme-toggle": "Promijeni temu"
+  },
+  "userAvatar": {
+    "alt": "Korisnički avatar"
   },
   "vacationBalance": {
     "conflictingPolicies": "Konfliktna pravila o godišnjem odmoru",

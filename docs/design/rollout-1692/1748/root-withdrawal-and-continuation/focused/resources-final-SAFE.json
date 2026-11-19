@@ -1,0 +1,11 @@
+{
+  "cleanupExactNamesAndLabels": true,
+  "ownProfileRemaining": 0,
+  "ownServicesRemaining": 0,
+  "ownPortsRemaining": 0,
+  "recordedOwnProcessesRemaining": 0,
+  "isolatedContextsRemaining": 0,
+  "ownCommandProcessesRemaining": 0,
+  "peerCleanup": false,
+  "expectedServiceCount": 3
+}

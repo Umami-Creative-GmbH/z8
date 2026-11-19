@@ -274,6 +274,7 @@
       "formatAccessCheck": "Provjera pristupa formatu",
       "nobodyEmployedInPeriod": "Nitko unutar vaših ovlasti za obračun plaća nije bio zaposlen u ovom razdoblju.",
       "noConfiguredTarget": "Nema konfiguriranog odredišta za izvoz obračuna plaća",
+      "notPayment": "Izvoz priprema podatke za obračun plaća. Ne izvršava plaćanje.",
       "queued": "Izvoz obračuna plaća stavljen u red čekanja",
       "selectFormat": "Odaberite format",
       "target": "Odredište izvoza obračuna plaća",
@@ -374,6 +375,7 @@
       "blockers": "Blokade",
       "employees": "Zaposlenici",
       "ready": "Spremno",
+      "title": "Sažetak spremnosti za obračun plaća",
       "workedHours": "Odrađeni sati"
     },
     "title": "Obračun plaća",
@@ -383,6 +385,7 @@
       "title": "Obračun plaća privremeno nedostupan"
     },
     "workBalances": {
+      "accessChanged": "Ovaj radni saldo više nije dostupan u vašem opsegu obračuna plaća.",
       "back": "Radni saldi",
       "backToPayroll": "Obračun plaća",
       "description": "Evidentirajte i poništite isplate prekovremenog rada za zaposlenike obuhvaćene vašim pristupom obračunu plaća, uključujući zaposlenike koji su napustili organizaciju.",
@@ -391,6 +394,13 @@
       "loading": "Učitavanje radnih salda",
       "loadingEmployee": "Učitavanje radnog salda",
       "open": "Radni saldi",
+      "openEmployee": "Otvori saldo zaposlenika",
+      "projectionUnavailable": "Projekcija salda nije dostupna. Zapisi o prilagodbama ostaju u nastavku.",
+      "refresh": "Osvježi saldo radnih sati",
+      "refreshing": "Osvježavanje salda radnih sati…",
+      "retry": "Ponovno učitaj saldo radnih sati",
+      "scopeChanged": "Učitavanje trenutnog opsega obračuna plaća…",
+      "stale": "Osvježavanje nije uspjelo. Prikazani su prethodno učitani zapisi; osvježite prije unošenja izmjena.",
       "title": "Radni saldi"
     }
   }

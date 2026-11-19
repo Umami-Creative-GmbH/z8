@@ -1,0 +1,65 @@
+{
+  "mode": "disabled",
+  "fixture": "new owned disposable services; synthetic account with no initial membership",
+  "checks": [
+    {
+      "name": "disabled policy hides creation fields",
+      "passed": true
+    },
+    {
+      "name": "expected invitation continues via real skip with no membership",
+      "passed": true
+    },
+    {
+      "name": "no browser page errors",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "disabled-creation-disabled.png",
+      "source": {
+        "head": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+        "dirty": "M apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx\n M apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+        "hashes": {
+          "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+          "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+          "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+          "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+        }
+      },
+      "role": "fresh account; no membership",
+      "scope": "onboarding account",
+      "png": {
+        "width": 800,
+        "height": 628
+      },
+      "pathname": "/en/onboarding/organization",
+      "width": 800,
+      "height": 600,
+      "documentWidth": 800,
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "dark": false,
+      "storedFont": null,
+      "heading": [
+        "Set up your organization"
+      ],
+      "fields": [],
+      "branding": [
+        {
+          "alt": "",
+          "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fa-chosen-soul-sJ_nxQIAUvg-unsplash.00tnody-jqz11.webp&w=3840&q=75&dpl=19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+        }
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "limits": [
+    "Default committed Next config and fully workspace-local frozen/offline copy install",
+    "before replaces only organization consumer with actual HEAD bytes; shared historical shell/branding remains current",
+    "saved18px is not true zoom or physical-device certification"
+  ]
+}

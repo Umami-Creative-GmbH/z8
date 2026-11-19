@@ -1,9 +1,9 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteWorkPolicyAssignment,
@@ -21,11 +21,15 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
-import { WorkPolicyAssignmentSections } from "./work-policy-assignment-sections";
+import {
+	WorkPolicyAssignmentSections,
+	workPolicyAssignmentTargetLabel,
+} from "./work-policy-assignment-sections";
 
 interface WorkPolicyAssignmentManagerProps {
 	organizationId: string;
@@ -41,13 +45,15 @@ export function WorkPolicyAssignmentManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const selectedAssignmentRef = useRef<WorkPolicyAssignmentWithDetails | null>(null);
+	const [selectedAssignment, setSelectedAssignment] =
+		useState<WorkPolicyAssignmentWithDetails | null>(null);
 
 	// Fetch assignments
 	const {
 		data: assignments,
 		isLoading,
 		error,
+		refetch,
 	} = useQuery({
 		queryKey: queryKeys.workPolicies.assignments(organizationId),
 		queryFn: async () => {
@@ -71,7 +77,7 @@ export function WorkPolicyAssignmentManager({
 					queryKey: queryKeys.workPolicies.assignments(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				selectedAssignmentRef.current = null;
+				setSelectedAssignment(null);
 			} else {
 				toast.error(
 					actionErrorMessage(t, result, {}, [
@@ -87,13 +93,13 @@ export function WorkPolicyAssignmentManager({
 	});
 
 	const handleDeleteClick = (assignment: WorkPolicyAssignmentWithDetails) => {
-		selectedAssignmentRef.current = assignment;
+		setSelectedAssignment(assignment);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (selectedAssignmentRef.current) {
-			deleteMutation.mutate(selectedAssignmentRef.current.id);
+		if (selectedAssignment) {
+			deleteMutation.mutate(selectedAssignment.id);
 		}
 	};
 
@@ -121,10 +127,14 @@ export function WorkPolicyAssignmentManager({
 	if (error) {
 		return (
 			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
+				<CardContent className="flex flex-col items-center gap-4 py-8 text-center">
+					<p role="alert" className="text-destructive">
 						{t("settings.workPolicies.assignmentsLoadError", "Failed to load assignments")}
 					</p>
+					<Button variant="outline" onClick={() => refetch()}>
+						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+						{t("common.retry", "Retry")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -150,17 +160,33 @@ export function WorkPolicyAssignmentManager({
 				/>
 			</div>
 
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					// A removal in flight keeps the dialog open so its outcome stays visible.
+					if (!open && deleteMutation.isPending) return;
+					setDeleteDialogOpen(open);
+				}}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
 							{t("settings.workPolicies.removeAssignment", "Remove Assignment")}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							{t(
-								"settings.workPolicies.removeAssignmentDescription",
-								"Are you sure you want to remove this policy assignment? The affected employees will inherit their policy from the next level up.",
-							)}
+							{selectedAssignment
+								? t(
+										"settings.workPolicies.removeAssignmentNamedDescription",
+										'Remove the policy "{policy}" from {target}? The affected employees will inherit their policy from the next level up.',
+										{
+											policy: selectedAssignment.policy?.name ?? t("common.unknown", "Unknown"),
+											target: workPolicyAssignmentTargetLabel(selectedAssignment, t),
+										},
+									)
+								: t(
+										"settings.workPolicies.removeAssignmentDescription",
+										"Are you sure you want to remove this policy assignment? The affected employees will inherit their policy from the next level up.",
+									)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -168,11 +194,22 @@ export function WorkPolicyAssignmentManager({
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
-							onClick={handleDeleteConfirm}
+							onClick={(event) => {
+								// Keep the dialog open, showing progress, until the removal settles.
+								// Base UI's Close ignores preventDefault; its own handler must be stopped.
+								event.preventDefault();
+								(
+									event as unknown as { preventBaseUIHandler?: () => void }
+								).preventBaseUIHandler?.();
+								if (deleteMutation.isPending) return;
+								handleDeleteConfirm();
+							}}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{deleteMutation.isPending && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							)}
 							{t("common.remove", "Remove")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

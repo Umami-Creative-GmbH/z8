@@ -1,0 +1,11 @@
+{
+  "verifiedOwnedNextStopped": true,
+  "loopbackPortClosed": true,
+  "removedContainers": [
+    "z8_perf_804f3fc15d36_postgres",
+    "z8_perf_804f3fc15d36_redis",
+    "z8_perf_804f3fc15d36_storage"
+  ],
+  "privateCredentialsRemainLocal": true,
+  "browserLifecycle": "Every accepted harness awaited browser.close; first stalled slug browser was explicitly identified and closed. Held-policy browser-close errors remain qualified in failed evidence."
+}

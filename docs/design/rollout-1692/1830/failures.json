@@ -1,0 +1,23 @@
+{
+  "productRedGreen": [
+    {"check":"inline refusal and retry", "red":"1 failed, 7 passed", "log":"red-inline.log", "resolved":true},
+    {"check":"account/organization A-B-A", "red":"2 failed, 8 passed", "log":"red-scope.log", "resolved":true},
+    {"check":"Activity hidden completion/resume", "red":"2 failed, 10 passed", "log":"red-activity.log", "resolved":true},
+    {"check":"server birthday range", "red":"2 failed, 5 passed", "log":"red-birthday.log", "resolved":true}
+  ],
+  "setupAndProbeFailures": [
+    "Sandbox pnpm global engine-store lock open was denied; the authorized escalated pnpm run succeeded.",
+    "Initial complete typecheck could not find ignored licenses.json; standard pnpm --filter webapp generate-licenses resolved it.",
+    "One JSX section parenthesis and a duplicated apps/webapp relative Biome config path were corrected before acceptance.",
+    "Changing Puppeteer isMobile during a capture reloaded to skeletons; those captures were excluded and replaced by settled width-only matched pairs.",
+    "Early birthday locator and immediate focus probe failed; stable input id and settled focus waits fixed the probes.",
+    "Closed Base UI Select options remain mounted; waiting for removal timed out. Waiting for the trigger expanded state fixed the probe.",
+    "A hidden native checkbox input id did not toggle the visible Base UI root. The failed assertion found persisted consent true; clicking the actual visible root then verified false in PostgreSQL and the settings reader.",
+    "The pnpm executable is an exe in this environment; passing it through node failed ERR_UNKNOWN_FILE_EXTENSION. The launcher now invokes the pnpm executable directly.",
+    "A PowerShell node -e quoting error prevented backup restoration in one baseline command; a dedicated file script restored the exact hash-verified owned backup immediately.",
+    "Native agent-browser restored sign-in instead of the target, one daemon call returned os error 10054, and react tree returned React DevTools hook not installed despite the enable flag. Native React inspection remains unpassed. Owned session was closed."
+  ],
+  "retainedWarnings": ["Existing Vitest native-config warning", "Existing pg concurrent client.query deprecation"],
+  "automaticApprovalRejections": [],
+  "unpassed": ["Full production static generation", "Remote Tolgee synchronization and complete translation coverage", "Native React component tree/render-count review", "Physical devices/safe-area hardware", "True browser zoom", "Exhaustive assistive technology/contrast certification", "External identity/payment providers", "Global app transition acceptance", "Real browser React Activity hide/resume (assembled only)"]
+}

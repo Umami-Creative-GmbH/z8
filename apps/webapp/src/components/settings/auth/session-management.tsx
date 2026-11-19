@@ -7,12 +7,18 @@ import {
 	IconDeviceTablet,
 	IconLoader2,
 	IconMapPin,
+	IconRefresh,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	ConfirmActionDialog,
+	useConfirmedAction,
+} from "@/components/settings/confirm-action-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -83,10 +89,24 @@ function parseUserAgent(userAgent: string | null | undefined): {
 	return { browser, os, device };
 }
 
+/** A revoke awaiting confirmation: one named session, or every other session. */
+type PendingRevoke =
+	| { kind: "session"; token: string; sessionId: string; label: string }
+	| { kind: "others"; count: number };
+
+/** Better Auth client calls report failures as `{ error }` instead of throwing. */
+function throwOnAuthError(result: { error?: unknown } | null | undefined) {
+	if (result?.error) throw new Error("Better Auth request failed");
+}
+
 export function SessionManagement() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
+	// The target stays set while the dialog animates closed, so its copy does not change mid-exit.
+	const revocation = useConfirmedAction<PendingRevoke>();
+	const pendingRevoke = revocation.target;
+	const requestRevoke = revocation.request;
 
 	// Query for current session token
 	const currentSessionQuery = useQuery({
@@ -102,8 +122,9 @@ export function SessionManagement() {
 	const sessionsQuery = useQuery({
 		queryKey: queryKeys.auth.sessions(),
 		queryFn: async () => {
-			const { data } = await authClient.listSessions();
-			return (data || []) as Session[];
+			const result = await authClient.listSessions();
+			throwOnAuthError(result);
+			return (result.data || []) as Session[];
 		},
 		staleTime: 30 * 1000, // 30 seconds
 	});
@@ -111,7 +132,7 @@ export function SessionManagement() {
 	// Mutation for revoking a single session
 	const revokeSessionMutation = useMutation({
 		mutationFn: async ({ token }: { token: string; sessionId: string }) => {
-			await authClient.revokeSession({ token });
+			throwOnAuthError(await authClient.revokeSession({ token }));
 		},
 		onMutate: ({ sessionId }) => {
 			setRevokingSessionId(sessionId);
@@ -120,8 +141,8 @@ export function SessionManagement() {
 			toast.success(t("settings.sessions.revoked", "Session revoked successfully"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.sessions() });
 		},
+		// The failure is shown inside the confirmation dialog, which stays open for a retry.
 		onError: (error) => {
-			toast.error(t("settings.sessions.revokeFailed", "Failed to revoke session"));
 			console.error("Failed to revoke session:", error);
 		},
 		onSettled: () => {
@@ -132,7 +153,7 @@ export function SessionManagement() {
 	// Mutation for revoking all other sessions
 	const revokeOtherSessionsMutation = useMutation({
 		mutationFn: async () => {
-			await authClient.revokeOtherSessions();
+			throwOnAuthError(await authClient.revokeOtherSessions());
 		},
 		onSuccess: () => {
 			toast.success(
@@ -140,8 +161,8 @@ export function SessionManagement() {
 			);
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.sessions() });
 		},
+		// The failure is shown inside the confirmation dialog, which stays open for a retry.
 		onError: (error) => {
-			toast.error(t("settings.sessions.revokeAllFailed", "Failed to revoke other sessions"));
 			console.error("Failed to revoke other sessions:", error);
 		},
 	});
@@ -155,7 +176,7 @@ export function SessionManagement() {
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.sessions.title", "Active Sessions")}</CardTitle>
+					<CardTitle as="h2">{t("settings.sessions.title", "Active Sessions")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.sessions.description",
@@ -172,12 +193,64 @@ export function SessionManagement() {
 		);
 	}
 
+	// A failed background refetch keeps the sessions already shown; only a missing list is an error state.
+	if (sessionsQuery.isError && !sessionsQuery.data) {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle as="h2">{t("settings.sessions.title", "Active Sessions")}</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.sessions.description",
+							"Manage your active sessions across different devices",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="flex flex-col items-start gap-3">
+					<p className="text-sm" role="alert">
+						{t(
+							"settings.sessions.loadFailed",
+							"Your active sessions could not be loaded. Try again.",
+						)}
+					</p>
+					<Button
+						variant="outline"
+						onClick={() => void sessionsQuery.refetch()}
+						disabled={sessionsQuery.isFetching}
+					>
+						<IconRefresh className="size-4" aria-hidden="true" />
+						{t("common.retry", "Retry")}
+					</Button>
+				</CardContent>
+			</Card>
+		);
+	}
+
+	// Stays open until the revocation settles and keeps a failure visible inline.
+	const confirmPendingRevoke = () =>
+		void revocation.confirm(
+			async (revoke) => {
+				if (revoke.kind === "others") {
+					await revokeOtherSessionsMutation.mutateAsync();
+				} else {
+					await revokeSessionMutation.mutateAsync({
+						token: revoke.token,
+						sessionId: revoke.sessionId,
+					});
+				}
+			},
+			() =>
+				pendingRevoke?.kind === "others"
+					? t("settings.sessions.revokeAllFailed", "Failed to revoke other sessions")
+					: t("settings.sessions.revokeFailed", "Failed to revoke session"),
+		);
+
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle>{t("settings.sessions.title", "Active Sessions")}</CardTitle>
+				<div className="flex flex-wrap items-start justify-between gap-3">
+					<div className="min-w-0 flex-[1_1_16rem] space-y-1.5">
+						<CardTitle as="h2">{t("settings.sessions.title", "Active Sessions")}</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.sessions.description",
@@ -189,7 +262,7 @@ export function SessionManagement() {
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() => revokeOtherSessionsMutation.mutate()}
+							onClick={() => requestRevoke({ kind: "others", count: otherSessionsCount })}
 							disabled={revokeOtherSessionsMutation.isPending}
 						>
 							{revokeOtherSessionsMutation.isPending ? (
@@ -227,28 +300,27 @@ export function SessionManagement() {
 									: device === "Tablet"
 										? t("settings.sessions.devices.tablet", "Tablet")
 										: t("settings.sessions.devices.desktop", "Desktop");
+							const sessionLabel = t("settings.sessions.browserOnOs", "{browser} on {os}", {
+								browser: browserLabel,
+								os: osLabel,
+							});
 
 							return (
 								<div key={session.id}>
 									{index > 0 && <Separator className="my-4" />}
 									<div className="flex items-start justify-between gap-4">
 										<div className="flex min-w-0 flex-1 items-start gap-3">
-											<div className="rounded-full bg-muted p-2">
+											<div className="shrink-0 rounded-full bg-muted p-2">
 												<DeviceIcon className="size-5 text-muted-foreground" aria-hidden="true" />
 											</div>
 											<div className="min-w-0 flex-1 space-y-1">
-												<div className="flex items-center gap-2">
-													<p className="font-medium">
-														{t("settings.sessions.browserOnOs", "{browser} on {os}", {
-															browser: browserLabel,
-															os: osLabel,
-														})}
-													</p>
+												<div className="flex flex-wrap items-center gap-2">
+													<p className="font-medium">{sessionLabel}</p>
 													{isCurrentSession && (
-														<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-															<IconCheck className="size-3" aria-hidden="true" />
+														<Badge variant="secondary">
+															<IconCheck aria-hidden="true" />
 															{t("settings.sessions.current", "Current Session")}
-														</span>
+														</Badge>
 													)}
 												</div>
 												<div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -273,10 +345,15 @@ export function SessionManagement() {
 											<Button
 												variant="ghost"
 												size="sm"
+												aria-label={t("settings.sessions.revokeSession", "Revoke session: {session}", {
+													session: sessionLabel,
+												})}
 												onClick={() =>
-													revokeSessionMutation.mutate({
+													requestRevoke({
+														kind: "session",
 														token: session.token,
 														sessionId: session.id,
+														label: sessionLabel,
 													})
 												}
 												disabled={revokingSessionId === session.id}
@@ -284,12 +361,7 @@ export function SessionManagement() {
 												{revokingSessionId === session.id ? (
 													<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 												) : (
-													<>
-														<IconTrash className="size-4" aria-hidden="true" />
-														<span className="sr-only">
-															{t("settings.sessions.revoke", "Revoke")}
-														</span>
-													</>
+													<IconTrash className="size-4" aria-hidden="true" />
 												)}
 											</Button>
 										)}
@@ -301,8 +373,8 @@ export function SessionManagement() {
 				</div>
 
 				{otherSessionsCount > 0 && (
-					<div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
-						<p className="text-sm text-amber-900 dark:text-amber-200">
+					<div className="mt-6 rounded-lg border border-warning/40 bg-warning/10 p-4">
+						<p className="text-sm text-foreground">
 							{t(
 								"settings.sessions.securityTip",
 								"If you see a session you don't recognize, revoke it immediately and change your password.",
@@ -311,6 +383,37 @@ export function SessionManagement() {
 					</div>
 				)}
 			</CardContent>
+
+			<ConfirmActionDialog
+				open={revocation.open}
+				onOpenChange={revocation.onOpenChange}
+				title={
+					pendingRevoke?.kind === "others"
+						? t("settings.sessions.revokeOthersTitle", "Revoke all other sessions?")
+						: t("settings.sessions.revokeSessionTitle", "Revoke this session?")
+				}
+				description={
+					pendingRevoke?.kind === "others"
+						? t(
+								"settings.sessions.revokeOthersDescription",
+								"This signs you out on {count, plural, one {# other device} other {# other devices}}. You stay signed in here.",
+								{ count: pendingRevoke.count },
+							)
+						: t(
+								"settings.sessions.revokeSessionDescription",
+								"This signs out {session}. Anyone using it must sign in again.",
+								{ session: pendingRevoke?.kind === "session" ? pendingRevoke.label : "" },
+							)
+				}
+				confirmLabel={
+					pendingRevoke?.kind === "others"
+						? t("settings.sessions.revokeAllOthers", "Revoke All Other Sessions")
+						: t("settings.sessions.revoke", "Revoke")
+				}
+				isPending={revocation.isPending}
+				error={revocation.error}
+				onConfirm={confirmPendingRevoke}
+			/>
 		</Card>
 	);
 }

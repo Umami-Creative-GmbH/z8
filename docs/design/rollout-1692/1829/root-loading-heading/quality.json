@@ -1,0 +1,127 @@
+{
+  "sourceCommit": "511ecaaacf5a4d864f0968dec3537172023beb63",
+  "provisionalMerge": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "fbbe31f4f3ac0a1a34a35b1d568284984f86a13cbd02879eb50091d5809b4d97",
+    "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx": "310f552dd3223e202b757a2ad2ea306b467fba1b30625b17fbdd7a92f9af8d5f",
+    "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "21cc8c0c5d0a41f97794f266262db9c58ae052e40c93ba9ad358f1ec30df0713"
+  },
+  "units": {
+    "selections": [
+      {
+        "name": "exact-unit.json",
+        "files": 37,
+        "tests": 369
+      },
+      {
+        "name": "compatibility-serial-unit.json",
+        "files": 167,
+        "tests": 1688
+      },
+      {
+        "name": "adversarial-unit.json",
+        "files": 1,
+        "tests": 8
+      },
+      {
+        "name": "preservation-unit.json",
+        "files": 3,
+        "tests": 25
+      }
+    ],
+    "uniqueFiles": 171,
+    "uniqueTests": 1721
+  },
+  "retainedParallelFailure": {
+    "passed": 1687,
+    "failed": 1,
+    "failures": [
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+        "title": "PayrollWorkspace keeps focus on the activated clear control when dismissal fails"
+      }
+    ],
+    "handling": "Same unchanged selection rerun with one worker passed; original parallel failure retained, payroll source unchanged. No payroll focus or global timing certification."
+  },
+  "tdd": {
+    "newPermanentCases": 1,
+    "oldPageFailed": 1,
+    "independentOldMembershipHeadingFailed": 1
+  },
+  "types": {
+    "exitCode": 0,
+    "profiles": [
+      "next typegen",
+      "application",
+      "workflow contracts",
+      "smoke"
+    ]
+  },
+  "biome": {
+    "files": 3,
+    "ordinaryCRLF": 0,
+    "ordinaryLintImport": 0,
+    "explicitLintImport": 0,
+    "ordinaryDefault": 1,
+    "explicitCRLF": 1
+  },
+  "doctor": {
+    "files": 3,
+    "errors": 0,
+    "warnings": 0
+  },
+  "runtime": {
+    "acceptedCaptures": 4,
+    "actualHeldSummaryRequestsPerPhase": 1,
+    "baselineMainHeadings": 0,
+    "finalMainHeadings": 1,
+    "existingMemberContinuation": "/en/onboarding/profile",
+    "browserExceptions": 0,
+    "nextCompilationConfigSessionErrors": 0,
+    "qualification": "Actual generated member, unmodified real summary POST held before transport. Exact one-consumer comparison, current infrastructure/default config and separate cold owned processes. Profile URL arrival only; settled profile content not certified. Random auth backgrounds differ."
+  },
+  "native": {
+    "actualPendingTarget": true,
+    "qualification": "Actual OrganizationPageClient/OrganizationSetupHeader tree with unchanged successful HTTP200 summary Response delivery delayed through a disclosed native eval fetch wrapper. Separate Puppeteer check holds the actual request without injecting a fetch wrapper. No response value or authority is mocked."
+  },
+  "postgres": {
+    "freshOfficialSuite": false,
+    "inheritedSuites": 3,
+    "inheritedTests": 78
+  },
+  "attempts": [
+    "Unauthenticated warmup reached sign-in so the target action manifest was absent; failed before browser launch. Corrected warmup sends the generated private account cookie.",
+    "Earlier actual baseline pending capture passed, but a broader settled-profile h1 wait timed out after URL arrival. Raw failed metadata and two aliased PNGs retained; final scope verifies arrival only."
+  ],
+  "reviews": {
+    "outcome": "Reuse existing bounded private task header/translation in pending branch; no new state, actions, policy/authority/date/slug/domain changes. Existing loader annotations remain inherited final-review scope."
+  },
+  "cleanup": {
+    "portClosed": true,
+    "port": 62562,
+    "ownedNextIdentityVerified": true,
+    "stoppedPids": [
+      102552,
+      27820,
+      72764,
+      96240
+    ],
+    "ownedNextStopped": true,
+    "cacheMoved": false,
+    "ownedContainers": 3,
+    "remainingOwnedContainers": 0,
+    "nativeBrowserClosed": true,
+    "puppeteerBrowsersClosed": true,
+    "readGatesReleased": true
+  },
+  "limits": [
+    "full production static generation",
+    "remote Tolgee",
+    "providers/devices/true zoom",
+    "live held create across restart",
+    "exhaustive role/locale/accessibility/global transition acceptance",
+    "settled destination profile acceptance",
+    "original historical/temporary-config source pins",
+    "ordinary/explicit formatter and raw archive whitespace"
+  ]
+}

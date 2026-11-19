@@ -1,0 +1,17 @@
+{
+  "zeroWorkPeriod": {
+    "actor": "small-manager",
+    "rows": [
+      "Fixture team 1\t0.0h\t0.0h\t3\tOn Track"
+    ],
+    "meaning": "Existing active roster remains present with real zero hours in current month"
+  },
+  "emptyScope": {
+    "actor": "small-manager",
+    "removedAssignmentCount": 3,
+    "emptyPeriod": true,
+    "emptyVariance": true,
+    "tableAbsent": true,
+    "transport": "real authorized reads; no response substitution"
+  }
+}

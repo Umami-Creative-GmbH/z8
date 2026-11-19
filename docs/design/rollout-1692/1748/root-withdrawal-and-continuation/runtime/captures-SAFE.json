@@ -1,0 +1,83 @@
+{
+  "captures": [
+    {
+      "file": "draft-desktop-1600-settled.png",
+      "width": 1344,
+      "height": 1000,
+      "decodedBytes": 4033000,
+      "sha256": "19dc722635ac7577abfb8b951f923f18532e790b0a5ec8d4f478987316e7abda",
+      "bytes": 73801,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    },
+    {
+      "file": "real-receipt-refusal-desktop.png",
+      "width": 1344,
+      "height": 1000,
+      "decodedBytes": 4033000,
+      "sha256": "ee3ddafdcb4465093afbac647e518386cf441e9d13ca1d979b8cac4e11c1d3eb",
+      "bytes": 95736,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    },
+    {
+      "file": "converted-desktop.png",
+      "width": 1344,
+      "height": 1000,
+      "decodedBytes": 4033000,
+      "sha256": "8961453d56bd57014002a5e43ec194b6ae42254a92a4c1230c814c416f0eb317",
+      "bytes": 81043,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    },
+    {
+      "file": "submitted-desktop-1600.png",
+      "width": 1344,
+      "height": 1000,
+      "decodedBytes": 4033000,
+      "sha256": "2f9e794007badb520bb9f238d1ffa51b0d9d22d64d3a078ad4c339132119d326",
+      "bytes": 71183,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    },
+    {
+      "file": "submitted-local-retry.png",
+      "width": 1312,
+      "height": 1000,
+      "decodedBytes": 3937000,
+      "sha256": "3ebd71f82e84b58e25f4a208a50c25b9136bc9f231647ed3dac08e380e4d84d6",
+      "bytes": 79261,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    },
+    {
+      "file": "submitted-phone-390-large.png",
+      "width": 390,
+      "height": 844,
+      "decodedBytes": 988324,
+      "sha256": "33d1c27c83d263d611d45f345c04ceb1662a9d6969c423d85bb1c6530882c418",
+      "bytes": 42338,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    },
+    {
+      "file": "submitted-wide-2400-dark-large.png",
+      "width": 2337,
+      "height": 1200,
+      "decodedBytes": 8414400,
+      "sha256": "5999f11759e62589b409d9576d8af50dd371cbe502f9f07d2507b3b267599f14",
+      "bytes": 97439,
+      "region": "Actual main element, viewport crop",
+      "source": "3a3c1243147d92213ffde7ffe423e3da67ecd011"
+    }
+  ],
+  "qualifications": [
+    "Current frozen source only; no historical checkout/source overlay or matched historical recapture.",
+    "All captures use newly seeded fixture identities, distinct from historical archive.",
+    "Viewport main-region crops; phone does not include all below-fold evidence or full keyboard coverage.",
+    "Progress/dev indicator and mascot overlays were not removed, hidden or masked. They remain visible where overlapping main.",
+    "Initial draft-desktop-1600.png captured before conversion read settled and is excluded from SAFE final allowlist.",
+    "PNG data inflated and dimensions checked; phone and wide actual pixels inspected.",
+    "CSS viewports, not real devices or true zoom."
+  ]
+}

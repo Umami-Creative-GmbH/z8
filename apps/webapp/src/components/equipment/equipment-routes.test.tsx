@@ -22,10 +22,15 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn() }),
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
 		<a {...props}>{children}</a>
 	),
 }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("./equipment-workspace", () => ({
 	EquipmentOverview: ({ query }: { query: unknown }) => (
 		<p>Equipment overview {JSON.stringify(query)}</p>
@@ -98,6 +103,31 @@ it("reads the whole scope for the overview and hands the URL filters to the list
 	);
 });
 
+it("offers an employee read retry and keeps a named heading while streaming", async () => {
+	api.employee.mockResolvedValue({ success: false, code: "DatabaseError" });
+	const page = EmployeePage({
+		params: Promise.resolve({ employeeId: assignmentId }),
+	});
+	const html = await content(page);
+	expect(html).toContain('aria-label="Reload equipment"');
+	expect(html).toContain("Equipment could not be loaded.");
+	expect(html.match(/<h1\b/g)).toHaveLength(1);
+	const loading = renderToStaticMarkup(page.props.fallback);
+	expect(loading).toContain("Employee equipment");
+	expect(loading.match(/<h1\b/g)).toHaveLength(1);
+});
+
+it("keeps an unavailable overview distinct from zero holdings and offers a real read retry", async () => {
+	api.overview.mockResolvedValue({ success: false, code: "DatabaseError" });
+	const html = await content(
+		OverviewPage({ searchParams: Promise.resolve({ overdue: "true" }) }),
+	);
+	expect(html).toContain('aria-label="Reload equipment"');
+	expect(html).toContain("Equipment could not be loaded.");
+	expect(html).not.toContain("Nothing issued yet");
+	expect(html.match(/<h1\b/g)).toHaveLength(1);
+});
+
 it("opens the overview on outstanding returns without parameters and refuses the staff route when its read denies access", async () => {
 	api.overview.mockResolvedValue({ success: true, data: {} });
 	expect(
@@ -127,6 +157,19 @@ it("opens the personal route through self-history only and refuses departed acce
 		code: "AuthorizationError",
 	});
 	await expect(element.type()).rejects.toThrow("not_found");
+});
+
+it("keeps personal read failure distinct from empty equipment and offers retry with a named streaming heading", async () => {
+	api.personal.mockResolvedValue({ success: false, code: "DatabaseError" });
+	const page = PersonalPage();
+	const html = await content(page);
+	expect(html).toContain('aria-label="Reload equipment"');
+	expect(html).toContain("Your equipment could not be loaded.");
+	expect(html).not.toContain("No equipment recorded");
+	expect(html.match(/<h1\b/g)).toHaveLength(1);
+	const loading = renderToStaticMarkup(page.props.fallback);
+	expect(loading).toContain("My equipment");
+	expect(loading.match(/<h1\b/g)).toHaveLength(1);
 });
 
 describe("assignment page", () => {
@@ -161,6 +204,9 @@ describe("assignment page", () => {
 
 	it("shows a load failure without pretending the assignment is missing", async () => {
 		api.assignment.mockResolvedValue({ success: false, code: "DatabaseError" });
-		expect(await content(page())).toContain("Equipment could not be loaded.");
+		const html = await content(page());
+		expect(html).toContain("Equipment could not be loaded.");
+		expect(html).toContain('aria-label="Reload equipment"');
+		expect(html.match(/<h1\b/g)).toHaveLength(1);
 	});
 });

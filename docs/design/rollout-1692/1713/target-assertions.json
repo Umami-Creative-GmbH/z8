@@ -1,0 +1,75 @@
+{
+  "checks": [
+    {
+      "name": "direct selected arrival identifies target in page and real manual title",
+      "passed": true
+    },
+    {
+      "name": "genuine on-behalf submission returns in authorized calendar reader",
+      "passed": true
+    },
+    {
+      "name": "manual New York wall times preserve UTC instants and duration",
+      "passed": true
+    },
+    {
+      "name": "manual endpoints use target zone and captured offsets",
+      "passed": true
+    },
+    {
+      "name": "genuine entry survives route reload",
+      "passed": true
+    },
+    {
+      "name": "manual submit exposes real pending duplicate protection",
+      "passed": true
+    },
+    {
+      "name": "server action refuses authority lost after panel preparation",
+      "passed": true
+    },
+    {
+      "name": "refused manual entry retains reason in real form",
+      "passed": true
+    },
+    {
+      "name": "refused attempt created no calendar record",
+      "passed": true
+    },
+    {
+      "name": "target-local January includes real February UTC boundary entry",
+      "passed": true
+    },
+    {
+      "name": "target-local February excludes January wall-date entry",
+      "passed": true
+    },
+    {
+      "name": "manual submit exposes real pending duplicate protection",
+      "passed": true
+    },
+    {
+      "name": "prepared manual action refuses changed active organization",
+      "passed": true
+    },
+    {
+      "name": "changed-organization refusal retains the prepared reason",
+      "passed": true
+    },
+    {
+      "name": "changed-organization attempt created no target record",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "submittedHttp": null,
+  "boundarySubmittedHttp": null,
+  "expected": {
+    "date": "2025-01-12",
+    "start": "2025-01-12T23:00:00.000Z",
+    "end": "2025-01-13T00:00:00.000Z",
+    "minutes": 60,
+    "offset": -300
+  },
+  "limits": []
+}

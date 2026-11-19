@@ -1,0 +1,35 @@
+{
+  "session": "next-dev-loop-d3956a9d6aef",
+  "version": "0.39.1",
+  "treeSuccess": true,
+  "components": [
+    "171 544 526 Forget(LegacyApprovalsWorkspace)",
+    "181 569 567 Forget(AbsenceApprovalsTable)",
+    "183 841 821 Forget(DataTable)",
+    "186 1337 1336 Forget(DataTablePagination)"
+  ],
+  "inspectSuccess": true,
+  "inspect": {
+    "lifecycle": {
+      "effectiveLaunch": {
+        "browserLaunched": true,
+        "engine": "chrome",
+        "launchHash": 15036667313614878836
+      },
+      "launched": false,
+      "relaunchedBrowser": false,
+      "restartedBackground": false,
+      "restoreStatus": "missing",
+      "reused": true,
+      "saveStatus": "saved"
+    },
+    "source": [
+      "http://localhost:65103/_next/static/chunks/apps_webapp_src_0cc4eb__abkdw._.js?dpl=aeb40cb1d95d574724ee5a68d7402e6ee0757b43",
+      1113,
+      1
+    ],
+    "text": "Forget(AbsenceApprovalsTable) #569\nprops:\n  scope: {userId: \"perf-small-1-a781dc91f493\", organizationId: \"perf-small-a781dc91f493\"}\nhooks:\n  Translate: undefined (2 sub)\n  [7] State: \"\"\n  [8] State: false\n  [9] State: \"approve\"\n  [10] State: null\n  Query: undefined (1 sub)\n  AbsenceApprovalMutations: undefined (4 sub)\nrendered by: Forget(LegacyApprovalsWorkspace) > ApprovalsContent > ApprovalsPage"
+  },
+  "renderRecordingSuccess": true,
+  "limit": "Development native tree/inspect and a brief render start/stop are runtime inspection, not a performance benchmark or evidence that historical transition diagnostics are resolved."
+}

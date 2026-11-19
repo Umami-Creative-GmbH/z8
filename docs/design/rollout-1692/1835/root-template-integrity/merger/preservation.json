@@ -1,0 +1,130 @@
+{
+  "base": "cf0203c822ac2837de2c02bc4da816dc741a63e9",
+  "incoming": "64b1d9aba8100607826e80ec6e3c4e6b1154fc69",
+  "merge": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "tree": "0e015eda05ce608d01de7414db57eb437b256313",
+  "parents": [
+    "cf0203c822ac2837de2c02bc4da816dc741a63e9",
+    "64b1d9aba8100607826e80ec6e3c4e6b1154fc69"
+  ],
+  "baselinePaths": 14732,
+  "baselineUnchangedExceptTwoConsumers": true,
+  "baselineDigest": "e29df68c02d64f97df0005da9c7be39bcc53e3d52277cc14a3978aa18296b512",
+  "changedPaths": 100,
+  "applicationPaths": [
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx"
+  ],
+  "verifiedAncestors": 50,
+  "queuedPeersAbsent": true,
+  "dependencies": {
+    "physicalRoots": true,
+    "links": 158,
+    "linkDigest": "8404cac9cc14ed8fa2ac8462608229209270a648b1019dee94908853a6449a9e",
+    "hashes": 6,
+    "unchanged": true
+  },
+  "historicalEvidence": {
+    "fullyDecodedPngs": [
+      {
+        "file": "after-desktop-light.png",
+        "sha256": "255910ee040f3a765fc91861bff978759c9f1776db74af716bcc381a2c781ddf",
+        "width": 1600,
+        "height": 1132,
+        "channels": 3,
+        "decodedBytes": 5433600
+      },
+      {
+        "file": "after-phone-dark-large.png",
+        "sha256": "642214958eaac43920e279f1c57a7a742b8b9a7f0a9827318e14d6cb1a2f1329",
+        "width": 390,
+        "height": 1866,
+        "channels": 3,
+        "decodedBytes": 2183220
+      },
+      {
+        "file": "after-phone-light.png",
+        "sha256": "006509aadc4856d2d6caa11a09551b6a77354b38055994f56404734306d585b2",
+        "width": 390,
+        "height": 1617,
+        "channels": 3,
+        "decodedBytes": 1891890
+      },
+      {
+        "file": "after-wide-dark-large.png",
+        "sha256": "5b69138853d44e4329e7a131dc55e79864220156b89569385f3014476a779a71",
+        "width": 2400,
+        "height": 1272,
+        "channels": 3,
+        "decodedBytes": 9158400
+      },
+      {
+        "file": "before-desktop-light.png",
+        "sha256": "09db6cd4037352aa10bb3c4107a2c42c886e377c1422a79e98e2b0dbe3bf1b34",
+        "width": 1600,
+        "height": 1273,
+        "channels": 3,
+        "decodedBytes": 6110400
+      },
+      {
+        "file": "before-phone-dark-large.png",
+        "sha256": "cdfa1dfe18032de07254275ac7768069204022946f8e751ccd2272da460cc086",
+        "width": 390,
+        "height": 1620,
+        "channels": 3,
+        "decodedBytes": 1895400
+      },
+      {
+        "file": "before-phone-light.png",
+        "sha256": "d294cd384f96ad757175c1f506e64183187d8a4378f176232742061e20157b1a",
+        "width": 390,
+        "height": 1417,
+        "channels": 3,
+        "decodedBytes": 1657890
+      },
+      {
+        "file": "before-wide-dark-large.png",
+        "sha256": "c99817b1cdc623dc53ee1edc0017f734fc2bd9f7e7f4c6eaaf4d7e20696d6ad6",
+        "width": 2400,
+        "height": 1431,
+        "channels": 3,
+        "decodedBytes": 10303200
+      },
+      {
+        "file": "state-existing-default-refusal.png",
+        "sha256": "30150d00a42b87bdce6ae3ae677ebf132a1c9f52a99e76bd3e27463a4bf60606",
+        "width": 1600,
+        "height": 1359,
+        "channels": 3,
+        "decodedBytes": 6523200
+      }
+    ],
+    "jsonParsed": 39,
+    "doctorStdoutFiles": [
+      "docs/design/rollout-1692/1835/doctor-current.json",
+      "docs/design/rollout-1692/1835/doctor-ticket.json",
+      "docs/design/rollout-1692/1835/doctor.json"
+    ],
+    "scriptsSyntaxChecked": 3,
+    "sourcePins": 50,
+    "reportLinks": 15,
+    "uniqueUnitTests": 148,
+    "unitFiles": 18,
+    "postgresTests": 5,
+    "runtimeAssertions": 27,
+    "matchedCaptures": 8,
+    "nativeActualOwner": true
+  },
+  "routes": {
+    "total": 172,
+    "persistent": 153,
+    "aliases": 19
+  },
+  "limits": [
+    "Archived worker execution is inherited; bytes, full PNG pixels, pins, totals and links checked independently.",
+    "Three historical Doctor files with .json suffix contain stdout; structured suffix checked when present, not counted as pure JSON.",
+    "Worker owner-service pins are checked at their recorded historical refs, not promoted to current owners.",
+    "No Next/browser/native execution while source blockers remain."
+  ]
+}

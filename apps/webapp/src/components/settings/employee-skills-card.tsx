@@ -34,11 +34,23 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	Select,
 	SelectContent,
@@ -117,6 +129,10 @@ export function EmployeeSkillsCard({
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editing, setEditing] = useState<EmployeeSkillWithDetails | null>(null);
+	const [removeTarget, setRemoveTarget] = useState<{
+		skillId: string;
+		skillName: string;
+	} | null>(null);
 
 	// Fetch employee's skills
 	const { data: employeeSkills, isLoading } = useEmployeeSkills({
@@ -149,23 +165,15 @@ export function EmployeeSkillsCard({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillRemoved", "Skill removed"));
+			setRemoveTarget(null);
 			queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
 		},
-		onError: (error) => {
-			toast.error(error.message || t("settings.skills.removeError", "Failed to remove skill"));
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	const handleRemove = (skillId: string, skillName: string) => {
-		if (
-			confirm(
-				t("settings.skills.confirmRemove", 'Remove "{skillName}" from this employee?', {
-					skillName,
-				}),
-			)
-		) {
-			removeMutation.mutate({ skillId });
-		}
+		removeMutation.reset();
+		setRemoveTarget({ skillId, skillName });
 	};
 
 	const handleSuccess = () => {
@@ -178,8 +186,8 @@ export function EmployeeSkillsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="min-w-0">
 						<CardTitle>{t("settings.skills.employeeSkills", "Skills & Qualifications")}</CardTitle>
 						<CardDescription>
 							{t(
@@ -198,13 +206,18 @@ export function EmployeeSkillsCard({
 			</CardHeader>
 			<CardContent>
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
+					<LoadingRegion
+						className="flex items-center justify-center py-8"
+						label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
+					>
 						<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-					</div>
+					</LoadingRegion>
 				) : skills.length === 0 ? (
-					<div className="py-8 text-center text-muted-foreground">
-						<IconAward className="mx-auto size-12 mb-4 opacity-50" aria-hidden="true" />
-						<p>{t("settings.skills.noSkillsAssigned", "No skills assigned")}</p>
+					<div className="space-y-1 py-8 text-center text-muted-foreground">
+						<IconAward className="mx-auto mb-2 size-6" aria-hidden="true" />
+						<p className="font-medium text-foreground">
+							{t("settings.skills.noSkillsAssigned", "No skills assigned")}
+						</p>
 						{canManageSkills && (
 							<p className="text-sm mt-1">
 								{t("settings.skills.assignSkillHint", "Click 'Assign Skill' to add qualifications")}
@@ -224,7 +237,7 @@ export function EmployeeSkillsCard({
 									key={employeeSkill.id}
 									className={`flex items-start justify-between rounded-lg border p-3 ${
 										expired ? "border-destructive/50 bg-destructive/5" : ""
-									} ${expiringSoon && !expired ? "border-yellow-500/50 bg-yellow-500/5" : ""}`}
+									} ${expiringSoon && !expired ? "border-warning/50 bg-warning/5" : ""}`}
 								>
 									<div className="flex items-start gap-3">
 										<div
@@ -242,7 +255,10 @@ export function EmployeeSkillsCard({
 													</Badge>
 												)}
 												{expiringSoon && !expired && (
-													<Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
+													<Badge
+														variant="secondary"
+														className="bg-warning/15 text-warning"
+													>
 														<IconCalendarDue className="mr-1 size-3" aria-hidden="true" />
 														{t("settings.skills.expiringSoon", "Expiring Soon")}
 													</Badge>
@@ -316,7 +332,9 @@ export function EmployeeSkillsCard({
 																handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
 															}
 															disabled={removeMutation.isPending}
-															aria-label={t("common.remove", "Remove")}
+															aria-label={t("settings.skills.removeSkillNamed", "Remove {skillName}", {
+																skillName: employeeSkill.skill.name,
+															})}
 														>
 															<IconTrash className="size-4" aria-hidden="true" />
 														</Button>
@@ -332,6 +350,57 @@ export function EmployeeSkillsCard({
 					</div>
 				)}
 			</CardContent>
+
+			{canManageSkills ? (
+				<AlertDialog
+					open={removeTarget !== null}
+					onOpenChange={(open) => {
+						if (!open && !removeMutation.isPending) setRemoveTarget(null);
+					}}
+				>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t("settings.skills.removeDialog.title", "Remove skill?")}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t("settings.skills.confirmRemove", 'Remove "{skillName}" from this employee?', {
+									skillName: removeTarget?.skillName ?? "",
+								})}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						{removeMutation.isError ? (
+							<p role="alert" className="text-sm text-destructive">
+								{removeMutation.error.message ||
+									t("settings.skills.removeError", "Failed to remove skill")}
+							</p>
+						) : null}
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={removeMutation.isPending}>
+								{t("common.cancel", "Cancel")}
+							</AlertDialogCancel>
+							<AlertDialogAction asChild>
+								<Button
+									variant="destructive"
+									disabled={removeMutation.isPending}
+									onClick={(event) => {
+										// Base UI's Close ignores preventDefault; stop its handler so the
+										// dialog stays open until the removal settles.
+										keepAlertDialogOpen(event);
+										if (removeTarget && !removeMutation.isPending)
+											removeMutation.mutate({ skillId: removeTarget.skillId });
+									}}
+								>
+									{removeMutation.isPending ? (
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+									) : null}
+									{t("settings.skills.removeDialog.confirm", "Remove skill")}
+								</Button>
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			) : null}
 
 			{/* Assign Skill ActionPanel */}
 			{canManageSkills ? (

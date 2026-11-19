@@ -1,0 +1,31 @@
+{
+  "base": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+  "sourceVersion": "f043d581e481a984a54da81b967bf5e6cfdfcd5e",
+  "method": "Exact owned consumer sources; current shared shell retained; same synthetic actor, organization and post-action data; source restored byte-for-byte",
+  "restored": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/equipment/page.tsx",
+      "sha256": "df9ff49e598bf980c76d74685fe1eef8a5baed209e87458f43183334be9f7d89"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-overview.tsx",
+      "sha256": "3a2009605abe136d1a9c835932ce6072283602681eae666a6ae8932407740288"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-assignments-card.tsx",
+      "sha256": "d9e0f2f0f0f6ee99922615a7e5e9f5f06ed6802c054d2da1fde5991c51fe2ccd"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-header-actions.tsx",
+      "sha256": "c168cd535db9d63d5f700727a89ab749d04d11b177884a304b994005dfe5c876"
+    },
+    {
+      "file": "apps/webapp/src/components/equipment/equipment-loading.tsx",
+      "sha256": "fe2115d366de4b24796d53f20f37162c55185454ffdab0def77b5068f0edf429"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "d00f7203a68bb832b691e679aeb652b3c39d9d13d27b08d28f51a180df8e9a5d"
+    }
+  ]
+}

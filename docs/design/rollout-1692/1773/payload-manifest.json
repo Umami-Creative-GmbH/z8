@@ -1,0 +1,272 @@
+{
+  "sourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "note": "Text hashes normalize CRLF to LF so committed evidence is reproducible across Git checkouts; original working-tree byte hashes are also retained. PNG bytes are exact. Manifest excludes itself.",
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/error.tsx",
+      "bytes": 523,
+      "normalization": "LF",
+      "sha256": "40b69b011a2d5afa034dfaca1b270071ff1bb4313830eb2c6ce031b2a9ff2e17",
+      "workingTreeSha256": "ee2291d48947161ad9cb6e9a118e7330285c4a22e29c4af629349a64739dc09e"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+      "bytes": 2631,
+      "normalization": "LF",
+      "sha256": "34ce4c5f77ce325b90470f7a56d6b260dac5d9dcccea8eb7395627013d5a747c",
+      "workingTreeSha256": "a52fa34bbc4cacf7fc78669307e5e264c7f0ac4bf1ad7508b5e137dc50bbec9f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/loading-content.tsx",
+      "bytes": 688,
+      "normalization": "LF",
+      "sha256": "377dc34c81b23e1b42ded1e714025ed7eb77dc11e923daeb70f0e17cf5f4a52f",
+      "workingTreeSha256": "0953f608a21a419486257d9be8b20897d5269c0521baa91ecad00debdec2ec7c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/loading.tsx",
+      "bytes": 72,
+      "normalization": "LF",
+      "sha256": "1c2fdf5ac9772c6259769ca7c265b380f41256a5cbb5d157c487c8700a2d2038",
+      "workingTreeSha256": "604e6b53b38fbcf424dba4a4b38917b1c0ae41bca8b2c4ab5483da6aaa0aa356"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+      "bytes": 7849,
+      "normalization": "LF",
+      "sha256": "c33df81d0de881d1a12cd1e332a42b476a62361c3166d4d1bb97fafdf0633ee0",
+      "workingTreeSha256": "7773872088ac6ab049014066e165ec427d053c028d04a883d2490a84c7384923"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.tsx",
+      "bytes": 4132,
+      "normalization": "LF",
+      "sha256": "07cf7f42c079efb3d09f6cedd8b6fba6d872f83d3d81cf97382b2f0c428464e0",
+      "workingTreeSha256": "21331c3b9b4cab98075015ee23ffef6a2dbe70aae9039bb26185271f85936936"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page.tsx",
+      "bytes": 1325,
+      "normalization": "LF",
+      "sha256": "7322168bace3fcb4acc9150be0c0b88347c02fd629904b64dbb6e021420c04c2",
+      "workingTreeSha256": "75b375c68bf8b78401eeac32a809c0de9967d682209c01c0b0bf66a76735b861"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/view-actions.ts",
+      "bytes": 2547,
+      "normalization": "LF",
+      "sha256": "3aedbf978f7205dc38a48897ac646b288b83c91d74a2d3bda26cf6145b4d77e2",
+      "workingTreeSha256": "4eafbafa23feb394f13358561e9240c575768db61c15d87184531b4bd601121f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.integration.test.ts",
+      "bytes": 4942,
+      "normalization": "LF",
+      "sha256": "c7a2c22d88f7de45692026605a3c784f39e9ac1a16183a7c463d94176595970f",
+      "workingTreeSha256": "d53172f899f5050451b73f81a1e435927a036eb60d6416a4d549734a689b3c1f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.tsx",
+      "bytes": 966,
+      "normalization": "LF",
+      "sha256": "6073c63159bc1894cd18387d6933c994dae07595426eb5188de9b5fe7e33d9e6",
+      "workingTreeSha256": "86ff5a504d8f703bb32f2b71c633a4db2cac9703435e21f1508a3d857ab3e713"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-create-dialog.test.tsx",
+      "bytes": 15243,
+      "normalization": "LF",
+      "sha256": "9073379e0ed51bd866a8688e8ab25aa6fd5bd572b470bca977ace13c57fcddb4",
+      "workingTreeSha256": "b3121f777aa7ecab4a4eec16a2753672060b3bd5d220da6f0a92325746024021"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-create-form-body.tsx",
+      "bytes": 14218,
+      "normalization": "LF",
+      "sha256": "6ad8e415daede82bf750638631b96fb4c8d0b9ffeba1485db04f2afcfd408e75",
+      "workingTreeSha256": "8ef2e6908d2884dc0ea962987ff27db4ca09294137e452809a73e5d7992e0db6"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-edit-dialog.test.tsx",
+      "bytes": 19098,
+      "normalization": "LF",
+      "sha256": "c510facbb1abae992593f5d0a7f5648a1264a54abf918629b0294e848616e754",
+      "workingTreeSha256": "b569c5584c52249155d7d2c1a3d949b629ae3f12d28208ec0cc260988b9573ea"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-edit-dialog.tsx",
+      "bytes": 16421,
+      "normalization": "LF",
+      "sha256": "e2d84ac15b7b731a1dd28e460a09f297ac2f1f0f454733b8e4479a545e5f0213",
+      "workingTreeSha256": "8d596fffe1356b20a56713fc8697fe5ce1ae6877afe333df200b70ea2b68db27"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-lifetime.test.tsx",
+      "bytes": 4917,
+      "normalization": "LF",
+      "sha256": "3ab42d15125e90f34f2777885853b86b42c56feedf34c54e4eafefcf7571dd0b",
+      "workingTreeSha256": "af42bad609c6a328285b08817d4dde67f762271253412979add35df02b62baee"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-page-client.test.tsx",
+      "bytes": 8590,
+      "normalization": "LF",
+      "sha256": "0c96db80e63f734423ccb9091f22d31ff8dddf817bdbb3d25e82f9bc0ecf6e03",
+      "workingTreeSha256": "7bba101bb82a4a61ca7c20c26420e8bf4b8cb3563ccf76b2b836bae657f903d9"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-page-client.tsx",
+      "bytes": 20065,
+      "normalization": "LF",
+      "sha256": "4602c943bf3b238b948d4f984bce1af9b0f97264e38a1013c2a33b720521341b",
+      "workingTreeSha256": "47be6c571c0c8c0bf75ebbfccd599cee037c4aee574ed527fa6fff38e6562bfd"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-show-dialog.test.tsx",
+      "bytes": 1456,
+      "normalization": "LF",
+      "sha256": "f236d5600f9f7951cef03d39e07e5521c3742fef87fdcffc69753302a2bdbe8f",
+      "workingTreeSha256": "6ed0887acdefbbed7a694311c9935bc0bace48e0aac1f18f839cde3f56fa5561"
+    },
+    {
+      "path": "apps/webapp/src/components/enterprise/api-key-show-dialog.tsx",
+      "bytes": 6446,
+      "normalization": "LF",
+      "sha256": "78cee01faa5f1a82c5adbbc699b777b9fa7c3dee10dd36d97555a130c4b8fa04",
+      "workingTreeSha256": "c5b2634458dd762ff23c2fde518eab77b4c0777506efcccd4e29a034a54e14ca"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhook-endpoint-card.test.tsx",
+      "bytes": 4515,
+      "normalization": "LF",
+      "sha256": "b3c21bf94d1826324d8939c0f3cd04b3cc4cab4144fbaf6e88a9721b2aff17e3",
+      "workingTreeSha256": "ce1c1fb08efb414f17f7bf62ee21f9446de352d6e68d29c60f3e602a7594b510"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhook-endpoint-card.tsx",
+      "bytes": 12687,
+      "normalization": "LF",
+      "sha256": "b34c005a8bd98c5ff242a6ac171152e03fc812a5e06b65311a71dbde086524e4",
+      "workingTreeSha256": "b5fd614dbba6fc61c76e1289402d6231d2c71ac309cafb665a9f050bda837e1d"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhook-lifetime.test.tsx",
+      "bytes": 2107,
+      "normalization": "LF",
+      "sha256": "8aa2085ea7e5d100868b4de639f5b4222b9e079c33b63c56700e17173e0144bb",
+      "workingTreeSha256": "d3f6ed517d03c67075a8a340fc477d9fa68565e1db8470db9c2eb58ef7e54472"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-page-client.tsx",
+      "bytes": 6110,
+      "normalization": "LF",
+      "sha256": "76642738ea088c9d3f900ce242f8fcc5694130337b2b9c817c4943ea98cd1e1a",
+      "workingTreeSha256": "4cd3b5676be1bbc88c741b55117bcb05d3b7c53effea362ef7e2ea2c47dadc84"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "bytes": 7581,
+      "normalization": "LF",
+      "sha256": "4ac7d9f937977a312a90aae23418303e773f2e606f2362883d987fb5d239cf46",
+      "workingTreeSha256": "3c1be60dd59d66cacb47b50aea05ebf58f4b16044f05b3e4e9c8e62ec0d2af06"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/blocked-sign-in.png",
+      "bytes": 209335,
+      "normalization": "none",
+      "sha256": "9e33ef5e954820a61be00930e65fcb46b284ad763005a1914c483fa442829134",
+      "workingTreeSha256": "9e33ef5e954820a61be00930e65fcb46b284ad763005a1914c483fa442829134"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/commands.json",
+      "bytes": 4917,
+      "normalization": "LF",
+      "sha256": "8966449aa1c1f13599229575078c71bc6676ba0093fcf58f31809b9eeceeeafc",
+      "workingTreeSha256": "43a94ad1176b9f54744d512036b80821af2f45f99f8d084e1dcaf8d382164d2a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/doctor.json",
+      "bytes": 6597,
+      "normalization": "LF",
+      "sha256": "f0c96dd58dac289ad7ad460f462d6f4cc0cb560d0a39ffedc8ce9d385d24edd6",
+      "workingTreeSha256": "5211938bb172ca5d041b51641959937f9d2680eadb7e44d535e638605156463b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/environment.json",
+      "bytes": 1045,
+      "normalization": "LF",
+      "sha256": "d1a32473923df0913bcd2510006e057744d5b1033820729722f80229f4575183",
+      "workingTreeSha256": "1c3fbc761a94cda0c6c1382f771d17b31f4311a0ffef05fa737552f442bca997"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/postgres-results.json",
+      "bytes": 26154,
+      "normalization": "LF",
+      "sha256": "c4aad023a86ab75051b68db92a3ba558d94912f5ae927ea6b05063fad204c988",
+      "workingTreeSha256": "37b169583510f278e6e2033a4f74f8c65d24fb02bfded508e20b4446babe5621"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/quality.json",
+      "bytes": 1020,
+      "normalization": "LF",
+      "sha256": "564644e526c99e1955a64cb33c7a7bab3b0e840b8d45d585c67050d701476646",
+      "workingTreeSha256": "d45206b5df49f317c10388f0a3ea3143ed2f0c910b16304db757fb4492f5c165"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/resources.json",
+      "bytes": 1231,
+      "normalization": "LF",
+      "sha256": "b32788881f7bf85ccde01684b232bcdd1ba917b9acf8474484e4aaf6c135f534",
+      "workingTreeSha256": "5c4ed650fdd3dc62286e92eb30b18ee75429be82f5d15d7c3ea40184e2e0f156"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/runtime.json",
+      "bytes": 3878,
+      "normalization": "LF",
+      "sha256": "08b691aafb7421cc9b31132ed1ebeec8a8ff27556061b446b3c64c52459e471e",
+      "workingTreeSha256": "43762b693f8299c604b2302ab64126a19c7c18461ec9be2ee97a04a0c439b471"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/secret-scan.json",
+      "bytes": 539,
+      "normalization": "LF",
+      "sha256": "5baf73bbbd426c8252abc1d07d5400eabf4c7b741d9115fa8a3eb968b4d82acf",
+      "workingTreeSha256": "7a03d3043df3591e24cd9e20ac5369e5657c67a990cec2b04fb63f179da2c245"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/source.json",
+      "bytes": 3063,
+      "normalization": "LF",
+      "sha256": "092d53049871f294b710ebcdc32f015aab2ebdae68c42c729d865ab37e938e68",
+      "workingTreeSha256": "ccd83d9fa15cf4fb223af3060e4ec697bcc3bff269636f55c05a9bc3a1ef465f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/tdd-results.json",
+      "bytes": 4686,
+      "normalization": "LF",
+      "sha256": "cf8cecf757529fe0f22e731ddac3a16bc1be7ad80658230a59a04628be60983e",
+      "workingTreeSha256": "d0559d005f823586676a4d16ae910f755c9af9fc5d21c8ede49d15741abccb9a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/unit-results.json",
+      "bytes": 132373,
+      "normalization": "LF",
+      "sha256": "b40e1ac6c8fe72c79eef587e482b12afe01428b19358f729397beccf91312c92",
+      "workingTreeSha256": "9d4e22f848264e3049c21b2f3375c9af6d31011f3fac9bf34bc0685f3aeb6ab3"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773/verify-evidence.mjs",
+      "bytes": 1943,
+      "normalization": "LF",
+      "sha256": "961fff357b77ab63a7e9739b9fdd0f093a56ee88003e3ec650262d7fa7af6b5c",
+      "workingTreeSha256": "961fff357b77ab63a7e9739b9fdd0f093a56ee88003e3ec650262d7fa7af6b5c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1773.md",
+      "bytes": 21133,
+      "normalization": "LF",
+      "sha256": "18c6d5f72c2f5acbe514f9c7a4ab0a7da7ff2624b7e95e50d73f0c563c158d31",
+      "workingTreeSha256": "a05ee2dd1be837d9f9787481ad24b6f337d7d71b7392ddb981ada203c9abf3d8"
+    }
+  ]
+}

@@ -96,11 +96,12 @@
         "year": "Año"
       },
       "history": {
-        "description": "Ver y descargar exportaciones de DATEV anteriores",
+        "descriptionAllFormats": "Ver y descargar exportaciones de nómina anteriores",
         "download": "Descargar exportación",
         "downloadError": "Error al obtener la URL de descarga",
         "employees": "empleados",
         "noExports": "Aún no hay exportaciones",
+        "noExportsHint": "Inicia una exportación de nómina en la pestaña Exportar. Las exportaciones finalizadas aparecerán aquí para descargarlas.",
         "payrollRun": "{count, plural, one {Ejecución de nómina: # informe de gastos} other {Ejecución de nómina: # informes de gastos}}",
         "periods": "periodos",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Procesando"
         },
         "table": {
+          "actions": "Acciones",
           "createdAt": "Creado",
           "dateRange": "Rango de fechas",
           "records": "Registros",
@@ -151,7 +153,8 @@
         "configureFirst": "Por favor, configure al menos un formato de exportación de nómina (DATEV, Lexware o Sage) antes de configurar las asignaciones.",
         "deleteDescription": "¿Está seguro de que desea eliminar esta asignación de tipo de salario?",
         "deleteError": "Error al eliminar la asignación",
-        "deleteMapping": "Eliminar asignación",
+        "deleteMappingNamed": "Eliminar asignación de {name}",
+        "deleteNamedDescription": "¿Eliminar la asignación de tipo de salario para \"{name}\"?",
         "deleteSuccess": "Asignación eliminada",
         "deleteTitle": "Eliminar asignación",
         "description": "Descripción",
@@ -335,7 +338,8 @@
         "name": "Empleado",
         "noNumber": "No establecido",
         "personnelIdentifier": "Identificador de personal",
-        "personnelNumber": "Número de personal"
+        "personnelNumber": "Número de personal",
+        "unnamed": "Empleado sin nombre"
       },
       "checks": {
         "count": "Cantidad",
@@ -364,6 +368,13 @@
       },
       "description": "Compruebe si un periodo de nómina está listo antes de exportar datos de tiempo, ausencias y nómina.",
       "openPayrollExport": "Abrir exportación de nómina",
+      "period": {
+        "currentMonth": "Mes actual",
+        "navLabel": "Período de nómina",
+        "previousMonth": "Mes anterior",
+        "scope": "Período de nómina: {period} (UTC)",
+        "showMonth": "Mostrar {month}"
+      },
       "status": {
         "blocked": "Bloqueado",
         "ready": "Listo para la nómina",

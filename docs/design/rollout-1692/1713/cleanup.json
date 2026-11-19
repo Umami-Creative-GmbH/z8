@@ -1,0 +1,25 @@
+{
+    "nextOutputMovedOrDeleted":  false,
+    "nativeSavedStateCleared":  true,
+    "portHasListener":  false,
+    "privateFixtureRemoved":  true,
+    "sharedPreviewClosed":  true,
+    "ownedNextPid":  19924,
+    "labelVerifiedContainersRemoved":  3,
+    "fixturePort":  53316,
+    "nativeBrowserSessionClosed":  "next-dev-loop-dc4f5ca06d09",
+    "scope":  "First owned fixture",
+    "secondOwnedFixture":  {
+                               "currentIgnoredNextOutputRetained":  true,
+                               "oldCacheBackupRemoved":  true,
+                               "cacheDependencyLinksRemovedWithoutFollowingTargets":  16,
+                               "portHasListener":  false,
+                               "privateFixtureRemoved":  true,
+                               "ownedNextPid":  48152,
+                               "labelVerifiedContainersRemoved":  3,
+                               "fixturePort":  63483,
+                               "nativeBrowserAndSavedStateClosed":  true,
+                               "noCrossDriveCacheMove":  true,
+                               "stoppedCacheRelocatedWithinXDrive":  true
+                           }
+}

@@ -10,6 +10,7 @@ import {
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRouter } from "@/navigation";
 import { CsvWorkMapping } from "./csv-work-mapping";
+import { ImportCommitConfirmDialog } from "./import-commit-confirm-dialog";
 import {
 	CsvWorkReviewHeader,
 	CsvWorkReviewNotices,
@@ -64,6 +65,8 @@ export function CsvWorkReview({
 	const router = useRouter();
 	const [pending, startTransition] = useTransition();
 	const [error, setError] = useState<string | null>(null);
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [commitError, setCommitError] = useState<string | null>(null);
 	const [selected, setSelected] = useState<string[]>([]);
 	const editable = view.batch.status === "needs_review" && !pending;
 	const selectedIds = new Set(selected);
@@ -93,14 +96,21 @@ export function CsvWorkReview({
 			} else setError(actionErrorMessage(t, result));
 		});
 	}
+	function openCommitConfirm() {
+		setCommitError(null);
+		setConfirmOpen(true);
+	}
 	function commit() {
 		startTransition(async () => {
-			setError(null);
+			setCommitError(null);
 			const result = await commitCsvWorkAction({
 				batchId,
 			});
-			if (!result.success) setError(actionErrorMessage(t, result));
-			else router.refresh();
+			if (!result.success) setCommitError(actionErrorMessage(t, result));
+			else {
+				setConfirmOpen(false);
+				router.refresh();
+			}
 		});
 	}
 	function recheck() {
@@ -124,7 +134,28 @@ export function CsvWorkReview({
 	}, [busy, router]);
 	return (
 		<div className="space-y-6">
-			<CsvWorkReviewHeader view={view} pending={pending} onCommit={commit} />
+			<CsvWorkReviewHeader view={view} pending={pending} onCommit={openCommitConfirm} />
+			<ImportCommitConfirmDialog
+				open={confirmOpen}
+				onOpenChange={setConfirmOpen}
+				title={t(
+					"settings.import.csv.commitConfirm.title",
+					"Import {count, plural, one {# accepted row} other {# accepted rows}}?",
+					{ count: view.summary.accepted },
+				)}
+				description={t(
+					"settings.import.csv.commitConfirm.description",
+					"Importing creates completed work for the mapped employees, with the vehicle details the rows carry. It runs in the background. Rows that overlap existing work are not imported: an import never overwrites work.",
+				)}
+				irreversibleNote={t(
+					"settings.import.csv.commitConfirm.irreversible",
+					"An import cannot be undone. To change imported work afterwards, correct it in time tracking.",
+				)}
+				confirmLabel={t("settings.import.csv.commitConfirm.confirm", "Import rows")}
+				pending={pending}
+				error={commitError}
+				onConfirm={commit}
+			/>
 			<CsvWorkReviewNotices
 				busy={busy}
 				status={view.batch.status}

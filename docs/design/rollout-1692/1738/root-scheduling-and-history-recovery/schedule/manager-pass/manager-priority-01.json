@@ -1,0 +1,287 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "actor": "canonical small-manager",
+  "conditions": "fresh normal development widget/form login; no extra grants; no interference or writes; bounded normal retry settlement",
+  "events": [
+    {
+      "navigation": "/en/scheduling"
+    },
+    {
+      "navigation": "/en/scheduling"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "event": "request"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getPendingShiftRequests",
+      "event": "request"
+    },
+    {
+      "name": "getPendingShiftRequests",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShifts",
+      "event": "request"
+    },
+    {
+      "name": "getShifts",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShiftTemplates",
+      "event": "request"
+    },
+    {
+      "name": "getShiftTemplates",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getScheduleComplianceSummary",
+      "event": "request"
+    },
+    {
+      "name": "getScheduleComplianceSummary",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getOwnPositionCaptureAction",
+      "event": "request"
+    },
+    {
+      "name": "getOwnPositionCaptureAction",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getClockVehicleUseStatus",
+      "event": "request"
+    },
+    {
+      "name": "getClockVehicleUseStatus",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "event": "request"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShiftTemplates",
+      "event": "request"
+    },
+    {
+      "name": "getShiftTemplates",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "event": "request"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShiftTemplates",
+      "event": "request"
+    },
+    {
+      "name": "getShiftTemplates",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "event": "request"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShiftTemplates",
+      "event": "request"
+    },
+    {
+      "name": "getShiftTemplates",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    }
+  ],
+  "pendingActionCount": 0,
+  "state": {
+    "url": "http://localhost:61081/en/scheduling?date=2026-11-16",
+    "path": "/en/scheduling",
+    "visibleH1": [
+      "Shift Schedule"
+    ],
+    "alerts": [
+      "Templates or compliance information could not be refreshed. Check again before publishing.\n\nRetry",
+      "Coverage could not be loaded. Retry to check staffing.\n\nRetry"
+    ],
+    "summary": [
+      "Shift list (4)"
+    ],
+    "buttons": [
+      {
+        "text": "Performance smallMember",
+        "aria": "Switch Organization: Performance small",
+        "disabled": false
+      },
+      {
+        "text": "SearchCtrl+K",
+        "aria": "Search",
+        "disabled": false
+      },
+      {
+        "text": "Person 1[synthetic fixture]",
+        "aria": "Account: Person 1",
+        "disabled": false
+      },
+      {
+        "text": "Toggle Sidebar",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "05:18UTC+01:00",
+        "aria": "Current timezone Europe/Berlin, 05:18, UTC+01:00",
+        "disabled": false
+      },
+      {
+        "text": "Clock In",
+        "aria": "Clock In",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh data",
+        "disabled": false
+      },
+      {
+        "text": "Toggle theme",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "Create Shift",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Retry",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Coverage",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Retry",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Shift requests",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Today",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Previous period",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Next period",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Week",
+        "aria": "Select View",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Choose Date",
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2Independent scheduling office · Independent receptionThu, Nov 19 · 09:00 – 17:00Draft",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Open ShiftIndependent scheduling office · Independent receptionWed, Nov 18 · 09:00 – 17:00Published",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Open ShiftIndependent scheduling office · Independent receptionTue, Nov 17 · 22:00 – 06:00 (ends next day)Draft",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2Independent scheduling office · Independent receptionMon, Nov 16 · 09:00 – 17:00Published",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Publish (2)",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open Tanstack query devtools",
+        "disabled": false
+      }
+    ],
+    "notifications": "denied"
+  },
+  "rawResponsesCaptured": false
+}

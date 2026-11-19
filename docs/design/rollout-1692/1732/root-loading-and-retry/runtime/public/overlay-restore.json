@@ -1,0 +1,21 @@
+{
+  "mode": "restore",
+  "ref": "96e64b16a10c629cae6ec820b11862ac48511503",
+  "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "paths": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+      "restoredRaw": "7857a9d62ed925a1c99ea89454207f529bc4565d84e10059014d46b0002da4d7"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "restoredRaw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "restoredRaw": "cca2112f55a8be84b77e0f092f668fcfa702e1d2006cda2e1b3fc7b7cb239562"
+    }
+  ],
+  "partialApplication": true,
+  "qualification": "Exact historical page/start/route-metadata existing consumers only. Current actions, new unused helpers and rest of app remain; site-header is unchanged between ref and candidate. Not an entire historical application or authority comparison."
+}

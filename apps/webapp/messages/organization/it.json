@@ -89,7 +89,13 @@
       "slugLabel": "Slug dell'organizzazione",
       "title": "Modifica organizzazione",
       "updateError": "Impossibile aggiornare l'organizzazione",
-      "updateSuccess": "Organizzazione aggiornata correttamente"
+      "updateSuccess": "Organizzazione aggiornata correttamente",
+      "validation": {
+        "nameMax": "Il nome non può superare i 100 caratteri",
+        "nameMin": "Il nome deve contenere almeno 2 caratteri",
+        "slugMax": "Lo slug non può superare i 50 caratteri",
+        "slugMin": "Lo slug deve contenere almeno 2 caratteri"
+      }
     },
     "error": {
       "description": "Non è stato possibile caricare l'organigramma. Riprova.",
@@ -395,6 +401,7 @@
     "switchTo": "Cambia organizzazione",
     "teams": {
       "card": {
+        "actionsFor": "Azioni per {name}",
         "deleteTeam": "Elimina team",
         "editTeam": "Modifica team",
         "fallbackManager": "Manager di fallback",
@@ -406,10 +413,10 @@
       "delete": "Elimina team",
       "deleteDialogDescription": "Questo eliminerà definitivamente il team \"{teamName}\".",
       "deleteDialogMembersWarning": "Attenzione: questo team ha {count} membro/i. Verranno rimossi dal team.",
+      "deleteDialogNamedTitle": "Eliminare il team {name}?",
       "deleteDialogTitle": "Sei sicuro?",
       "deleteError": "Impossibile eliminare il team",
       "deleteSuccess": "Team eliminato correttamente",
-      "description": "Organizza i tuoi dipendenti in team per una migliore collaborazione",
       "edit": {
         "description": "Aggiorna nome e descrizione del team",
         "descriptionLabel": "Descrizione (opzionale)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Membro rimosso dal team",
         "selectEmployee": "Seleziona un dipendente da aggiungere",
         "title": "{teamName} - Membri del team"
-      },
-      "title": "Team"
+      }
     },
     "timezone": {
       "balances-recalculating": "I bilanci delle ore lavorate sono in fase di ricalcolo per il nuovo fuso orario e rimarranno nascosti finché non saranno pronti.",

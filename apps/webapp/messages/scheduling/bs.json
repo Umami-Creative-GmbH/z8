@@ -6,9 +6,13 @@
       "gapCount": "{count} manjak osoblja",
       "gaps": "praznine",
       "hideOverlay": "Sakrij sloj pokrivenosti",
+      "lastLoaded": "Posljednja učitana pokrivenost",
+      "loading": "Učitavanje pokrivenosti…",
       "metSlots": "{count} adekvatno",
       "overSlots": "{count} prekomjerno popunjeno",
       "overstaffed": "Prekomjerno popunjeno",
+      "readFailed": "Nije moguće učitati pokrivenost. Pokušajte ponovo da provjerite popunjenost osobljem.",
+      "refreshing": "Osvježavanje pokrivenosti…",
       "showOverlay": "Prikaži sloj ciljeva pokrivenosti",
       "summary": "Sažetak pokrivenosti:",
       "toggleLabel": "Pokrivenost",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Vaše objavljene smjene, sedmica po sedmicu",
       "employeeTitle": "Moj raspored",
-      "managerDescription": "Upravljajte i planirajte smjene zaposlenika",
+      "planningDescription": "Planirajte i objavite smjene. Planirane smjene ne evidentiraju radno vrijeme.",
       "title": "Raspored smjena"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Otkaži",
       "complianceAcknowledgmentRequired": "Potrebna je potvrda usklađenosti",
       "complianceWarnings": "{count, plural, one {Provjere usklađenosti su pronašle # upozorenje; morat ćete ga potvrditi prije objavljivanja.} other {Provjere usklađenosti su pronašle # upozorenja; morat ćete ih potvrditi prije objavljivanja.}}",
+      "coverageLoading": "Pokrivenost se učitava",
+      "coverageRulesCheckedOnPublish": "Objavljivanjem će se primijeniti trenutna pravila o popunjenosti osobljem.",
+      "coverageUnavailable": "Pokrivenost nije dostupna",
+      "coverageUnloaded": "Pokrivenost nije provjerena",
       "coverageWarning": "Neki vremenski blokovi ne ispunjavaju minimalne zahtjeve za brojem osoblja.",
       "maxHours": "Maks. sati: {count}",
       "notifyEmployees": "{count, plural, one {Objavite # smjenu u pripremi i obavijestite zaposlenike} other {Objavite # smjena u pripremi i obavijestite zaposlenike}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Otkrivena su upozorenja prije objavljivanja"
     },
     "scheduler": {
+      "assigned": "Dodijeljeno",
       "complianceBanner": {
         "findingsDetected": "Otkriveno {count} nalaz(a) prije objave.",
         "maxHours": "Maksimalno sati: {count}",
@@ -59,18 +68,24 @@
         "employee": "Prikazuju se smjene za {name}",
         "showAll": "Prikaži sve smjene"
       },
+      "loadFailed": "Smjene nisu mogle biti osvježene. Učitane smjene su zadržane.",
       "loading": "Učitavanje rasporeda...",
+      "open": "Otvorena smjena",
       "publish": {
         "failed": "Objavljivanje smjena nije uspjelo",
         "published": "Objavljeno {count} smjena"
       },
+      "retry": "Pokušaj ponovo",
+      "shiftList": "Lista smjena",
       "shiftUpdate": {
         "failed": "Ažuriranje smjene nije uspjelo",
         "overlapDescription": "Ova smjena se preklapa s još {count} smjena",
         "overlapWarning": "Smjena je sačuvana uz upozorenje o preklapanju",
         "skillOverrideReasonRequired": "Zaposlenik nema potrebnu vještinu za ovaj dan. Otvorite smjenu da navedete razlog.",
         "updated": "Smjena je ažurirana"
-      }
+      },
+      "supportFailed": "Šabloni ili informacije o usklađenosti nisu mogle biti osvježene. Provjerite ponovo prije objavljivanja.",
+      "templatesUnavailable": "Šabloni smjena nisu mogli biti učitani."
     },
     "shiftDetails": {
       "close": "Zatvori",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Prevucite šablon na kalendar da kreirate smjenu",
       "empty": "Nema dostupnih šablona. Kreirajte šablone u Postavkama za brzo dodavanje smjena.",
+      "selectHint": "Odaberite šablon, zatim postavite datum smjene i dodjelu.",
       "title": "Šabloni smjena"
     }
   }

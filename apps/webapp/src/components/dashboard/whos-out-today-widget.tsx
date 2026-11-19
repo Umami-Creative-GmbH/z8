@@ -1,22 +1,26 @@
 "use client";
 
-import { IconBeach, IconCalendar, IconCheck, IconSunHigh, IconUsers } from "@tabler/icons-react";
+import { IconBeach, IconCalendar, IconUsers } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
-import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { formatDashboardDate } from "./format-dashboard-date";
 import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
 import { WidgetReadError } from "./widget-read-error";
 
-type AbsentEmployee = DashboardWidgetData["whos-out-today"]["outToday"][number] & {
-	clockStatus?: EmployeeClockStatus;
-};
+type AbsentEmployee =
+	DashboardWidgetData["whos-out-today"]["outToday"][number] & {
+		clockStatus?: EmployeeClockStatus;
+	};
 
 function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 	const { t } = useTranslate();
@@ -41,7 +45,11 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 							{t("dashboard.whos-out.returns-tomorrow", "Returns tomorrow")}
 						</span>
 					) : (
-						<span>{t("dashboard.whos-out.until-date", "Until {date}", { date: returnDate })}</span>
+						<span>
+							{t("dashboard.whos-out.until-date", "Until {date}", {
+								date: returnDate,
+							})}
+						</span>
 					)}
 				</div>
 			</div>
@@ -50,9 +58,13 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 				variant="secondary"
 				className="shrink-0 text-xs font-medium"
 				style={{
-					backgroundColor: employee.categoryColor ? `${employee.categoryColor}20` : undefined,
+					backgroundColor: employee.categoryColor
+						? `${employee.categoryColor}20`
+						: undefined,
 					color: employee.categoryColor || undefined,
-					borderColor: employee.categoryColor ? `${employee.categoryColor}40` : undefined,
+					borderColor: employee.categoryColor
+						? `${employee.categoryColor}40`
+						: undefined,
 				}}
 			>
 				{employee.category}
@@ -81,29 +93,18 @@ function ReturningBadge({ employee }: { employee: AbsentEmployee }) {
 function EmptyState() {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-col items-center justify-center py-8 text-center">
-			<div className="relative">
-				<div className="rounded-full bg-gradient-to-br from-emerald-100 to-green-100 p-4 dark:from-emerald-900/30 dark:to-green-900/30">
-					<IconSunHigh className="size-8 text-emerald-600 dark:text-emerald-400" />
-				</div>
-				<div className="absolute -right-1 -top-1 rounded-full bg-emerald-500 p-1">
-					<IconCheck className="size-3 text-white" />
-				</div>
-			</div>
-			<p className="mt-4 text-sm font-medium">
-				{t("dashboard.whos-out.full-team", "Full team available!")}
-			</p>
-			<p className="mt-1 text-xs text-muted-foreground">
-				{t("dashboard.whos-out.everyone-in", "Everyone is in the office today")}
-			</p>
-		</div>
+		<p role="status" className="text-sm text-muted-foreground">
+			{t("dashboard.refresh.noAbsences", "No absences recorded for today.")}
+		</p>
 	);
 }
 
 export function WhosOutTodayWidget({
 	initialSnapshot,
 }: {
-	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["whos-out-today"]>;
+	initialSnapshot?: DashboardWidgetSnapshot<
+		DashboardWidgetData["whos-out-today"]
+	>;
 } = {}) {
 	const { t } = useTranslate();
 	const { data, loading, refreshing, refetch, error } = useDashboardWidget(
@@ -111,9 +112,13 @@ export function WhosOutTodayWidget({
 		initialSnapshot,
 	);
 	const presenceEmployeeIds = data
-		? [...data.outToday, ...data.returningTomorrow].map((employee) => employee.id)
+		? [...data.outToday, ...data.returningTomorrow].map(
+				(employee) => employee.id,
+			)
 		: [];
-	const presence = useEmployeeClockStatuses(presenceEmployeeIds, { polling: false });
+	const presence = useEmployeeClockStatuses(presenceEmployeeIds, {
+		polling: false,
+	});
 	const dataWithPresence = data
 		? {
 				...data,
@@ -128,7 +133,8 @@ export function WhosOutTodayWidget({
 			}
 		: null;
 
-	const isEmpty = !loading && dataWithPresence && dataWithPresence.totalOut === 0;
+	const isEmpty =
+		!loading && dataWithPresence && dataWithPresence.totalOut === 0;
 
 	return (
 		<DashboardWidget id="whos-out-today">
@@ -137,14 +143,18 @@ export function WhosOutTodayWidget({
 				description={
 					dataWithPresence
 						? dataWithPresence.totalOut === 0
-							? t("dashboard.whos-out.everyones-in", "Everyone's in!")
-							: t("dashboard.whos-out.members-out", "{count} team {member} out", {
-									count: dataWithPresence.totalOut,
-									member:
-										dataWithPresence.totalOut === 1
-											? t("dashboard.whos-out.member", "member")
-											: t("dashboard.whos-out.members", "members"),
-								})
+							? ""
+							: t(
+									"dashboard.whos-out.members-out",
+									"{count} team {member} out",
+									{
+										count: dataWithPresence.totalOut,
+										member:
+											dataWithPresence.totalOut === 1
+												? t("dashboard.whos-out.member", "member")
+												: t("dashboard.whos-out.members", "members"),
+									},
+								)
 						: t("dashboard.whos-out.team-availability", "Team availability")
 				}
 				icon={<IconUsers className="size-4 text-violet-500" />}
@@ -175,7 +185,18 @@ export function WhosOutTodayWidget({
 					dataWithPresence && (
 						<div className="space-y-4">
 							{isEmpty ? (
-								<EmptyState />
+								<div className="flex flex-wrap items-center justify-between gap-2">
+										<EmptyState />
+										<Button variant="ghost" size="sm" asChild>
+											<Link href="/calendar">
+												<IconCalendar className="size-4" aria-hidden="true" />
+												{t(
+													"dashboard.whos-out.view-calendar",
+													"View Full Calendar",
+												)}
+											</Link>
+										</Button>
+									</div>
 							) : (
 								<>
 									{/* Currently Out */}
@@ -183,7 +204,9 @@ export function WhosOutTodayWidget({
 										<div className="space-y-2">
 											<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
 												<IconBeach className="size-3.5 text-amber-500" />
-												<span>{t("dashboard.whos-out.out-today", "Out Today")}</span>
+												<span>
+													{t("dashboard.whos-out.out-today", "Out Today")}
+												</span>
 												<span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
 													{dataWithPresence.outToday.length}
 												</span>
@@ -194,9 +217,13 @@ export function WhosOutTodayWidget({
 												))}
 												{dataWithPresence.outToday.length > 4 && (
 													<div className="flex items-center justify-center rounded-lg border border-dashed py-2 text-xs text-muted-foreground">
-														{t("dashboard.whos-out.more-members", "+{count} more team members", {
-															count: dataWithPresence.outToday.length - 4,
-														})}
+														{t(
+															"dashboard.whos-out.more-members",
+															"+{count} more team members",
+															{
+																count: dataWithPresence.outToday.length - 4,
+															},
+														)}
 													</div>
 												)}
 											</div>
@@ -209,18 +236,28 @@ export function WhosOutTodayWidget({
 											<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
 												<IconCalendar className="size-3.5 text-emerald-500" />
 												<span>
-													{t("dashboard.whos-out.returning-tomorrow", "Returning Tomorrow")}
+													{t(
+														"dashboard.whos-out.returning-tomorrow",
+														"Returning Tomorrow",
+													)}
 												</span>
 											</div>
 											<div className="flex flex-wrap gap-2">
-												{dataWithPresence.returningTomorrow.slice(0, 4).map((emp) => (
-													<ReturningBadge key={emp.id} employee={emp} />
-												))}
+												{dataWithPresence.returningTomorrow
+													.slice(0, 4)
+													.map((emp) => (
+														<ReturningBadge key={emp.id} employee={emp} />
+													))}
 												{dataWithPresence.returningTomorrow.length > 4 && (
 													<div className="flex items-center rounded-lg bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
-														{t("dashboard.whos-out.more-returning", "+{count} more", {
-															count: dataWithPresence.returningTomorrow.length - 4,
-														})}
+														{t(
+															"dashboard.whos-out.more-returning",
+															"+{count} more",
+															{
+																count:
+																	dataWithPresence.returningTomorrow.length - 4,
+															},
+														)}
 													</div>
 												)}
 											</div>
@@ -229,12 +266,14 @@ export function WhosOutTodayWidget({
 								</>
 							)}
 
-							<Button className="w-full group" variant="outline" size="sm" asChild>
-								<Link href="/calendar">
-									<IconCalendar className="mr-2 size-4 transition-transform group-hover:scale-110" />
-									{t("dashboard.whos-out.view-calendar", "View Full Calendar")}
-								</Link>
-							</Button>
+							{isEmpty ? null : (
+								<Button className="w-full group" variant="outline" size="sm" asChild>
+									<Link href="/calendar">
+										<IconCalendar className="mr-2 size-4 transition-transform group-hover:scale-110" />
+										{t("dashboard.whos-out.view-calendar", "View Full Calendar")}
+									</Link>
+								</Button>
+							)}
 						</div>
 					)
 				)}

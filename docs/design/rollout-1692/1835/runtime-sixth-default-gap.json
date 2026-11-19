@@ -1,0 +1,138 @@
+{
+  "classification": "actual work-template page and actions; matched exact baseline consumer overlay on current infrastructure",
+  "source": {
+    "head": "3c7bc534edeb355d862c3f38759444658863af20",
+    "files": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "rawSha256": "98eb38443438f354991939bb4b2b243013729103779d1e467264e5604d63f983",
+        "lfSha256": "190bb7d4a68d9b1270efd10869ba497a6a80c0e39c822756131b27429f59e22a",
+        "crlfSha256": "98eb38443438f354991939bb4b2b243013729103779d1e467264e5604d63f983",
+        "gitBlob": "610889c9e54b2e9e0f19715ffa9c63e7f0bdd323"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+        "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+        "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+        "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+        "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+        "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+        "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+        "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+        "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+        "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "exact refreshed source restored after baseline overlay",
+      "passed": true
+    },
+    {
+      "name": "invalid name is focused",
+      "passed": true
+    },
+    {
+      "name": "weekly hour upper bound refused without a policy",
+      "passed": true
+    },
+    {
+      "name": "derived context follows actual fractional hours and selected days",
+      "passed": true
+    },
+    {
+      "name": "keyboard toggles a selected working day",
+      "passed": true
+    },
+    {
+      "name": "one pending save disables fields and skip",
+      "passed": true
+    },
+    {
+      "name": "failed real transport retains draft and inline retry context",
+      "passed": true
+    },
+    {
+      "name": "real save navigates to notifications and creates one non-default policy",
+      "passed": true
+    },
+    {
+      "name": "database stores selected weekly hours and all seven day rows",
+      "passed": true
+    },
+    {
+      "name": "non-default creates no organization assignment",
+      "passed": true
+    },
+    {
+      "name": "existing writer persists wellness step",
+      "passed": true
+    }
+  ],
+  "captures": [],
+  "pageErrors": [],
+  "limitations": [
+    "Not full historical app execution",
+    "No real device or true browser zoom",
+    "Scope switch runtime and late authority scenarios qualified separately"
+  ],
+  "failure": "Waiting failed: 45000ms exceeded",
+  "failureState": {
+    "hours": "40",
+    "days": [
+      {
+        "id": "base-ui-_r_g_",
+        "tag": "SPAN",
+        "checked": "true"
+      },
+      {
+        "id": "base-ui-_r_j_",
+        "tag": "SPAN",
+        "checked": "true"
+      },
+      {
+        "id": "base-ui-_r_m_",
+        "tag": "SPAN",
+        "checked": "true"
+      },
+      {
+        "id": "base-ui-_r_p_",
+        "tag": "SPAN",
+        "checked": "true"
+      },
+      {
+        "id": "base-ui-_r_s_",
+        "tag": "SPAN",
+        "checked": "true"
+      },
+      {
+        "id": "base-ui-_r_v_",
+        "tag": "SPAN",
+        "checked": "false"
+      },
+      {
+        "id": "base-ui-_r_12_",
+        "tag": "SPAN",
+        "checked": "false"
+      }
+    ],
+    "preview": "Schedule Preview\n\n5 working days, 8.0 hours per day\n\nThis template configures working hours for your organization. It does not record time or change your personal display week."
+  }
+}

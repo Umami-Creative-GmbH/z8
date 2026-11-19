@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { Progress } from "@/components/ui/progress";
 import type { GoLiveGroupSettings } from "@/lib/implementation-checklist/go-live/group-types";
 import type { ImplementationChecklistItemStatus } from "@/lib/implementation-checklist/go-live/types";
@@ -112,22 +113,14 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 
 	return (
 		<div className="space-y-6">
-			<div className="space-y-2">
-				<p className="font-medium text-muted-foreground text-sm">
-					{t("settings.implementationChecklist.eyebrow", "Customer implementation")}
-				</p>
-				<div className="space-y-1">
-					<h1 className="text-balance font-semibold text-2xl tracking-tight">
-						{t("settings.implementationChecklist.title", "Implementation checklist")}
-					</h1>
-					<p className="max-w-3xl text-muted-foreground">
-						{t(
-							"settings.implementationChecklist.description",
-							"Finish the setup steps before inviting your full team so time tracking, approvals, and payroll workflows are ready for daily use.",
-						)}
-					</p>
-				</div>
-			</div>
+			<PageHeader
+				scope={t("settings.implementationChecklist.eyebrow", "Customer implementation")}
+				title={t("settings.implementationChecklist.title", "Implementation checklist")}
+				description={t(
+					"settings.implementationChecklist.description",
+					"Finish the setup steps before inviting your full team so time tracking, approvals, and payroll workflows are ready for daily use.",
+				)}
+			/>
 
 			<GoLiveReadinessCard goLive={checklist.goLive} items={checklist.items} />
 

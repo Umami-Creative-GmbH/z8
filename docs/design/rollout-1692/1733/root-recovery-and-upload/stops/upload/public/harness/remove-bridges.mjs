@@ -1,0 +1,3 @@
+import assert from'node:assert/strict';import fs from'node:fs';import{createHash}from'node:crypto';const out='.tmp/1733-command-checks/runtime';const files=JSON.parse(fs.readFileSync(out+'/bridge-ownership.json','utf8')).files;const removed=[];
+for(const{path,publicName}of files){const a=fs.readFileSync(path),b=fs.readFileSync(out+'/'+publicName);assert.deepEqual(a,b);removed.push({path,sha256:createHash('sha256').update(a).digest('hex'),exactGeneratedBytes:true});fs.unlinkSync(path);}
+fs.writeFileSync(out+'/bridge-cleanup.json',JSON.stringify({removed},null,2)+'\n');console.log('Removed two exact owned bridges.');

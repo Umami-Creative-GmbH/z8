@@ -17,13 +17,22 @@ export type TeamDrivingDetailsResult =
  * owners and admins see every employee's, managers the employees they manage; everyone else is
  * refused.
  */
-export async function getTeamDrivingDetails(filters: {
-	teamId: string | null;
-	employeeId: string | null;
-}): Promise<TeamDrivingDetailsResult> {
+export async function getTeamDrivingDetails(
+	filters: {
+		teamId: string | null;
+		employeeId: string | null;
+	},
+	expected?: { userId: string; organizationId: string },
+): Promise<TeamDrivingDetailsResult> {
 	const context = await getCurrentSettingsRouteContext();
 	const organizationId = context?.authContext.session.activeOrganizationId;
 	if (!context || !organizationId) return { status: "forbidden" };
+	// Display scope is a consistency check, never an authorization input.
+	if (
+		expected &&
+		(expected.userId !== context.authContext.user.id || expected.organizationId !== organizationId)
+	)
+		return { status: "forbidden" };
 	const scope = drivingDetailsTeamScope({
 		accessTier: context.accessTier,
 		organizationId,

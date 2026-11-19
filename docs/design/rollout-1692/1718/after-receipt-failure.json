@@ -1,0 +1,40 @@
+{
+  "identity": {
+    "head": "3d5d0bc242b38eb5c14d3c736b2d0ba65b9da111",
+    "branch": "fix/1718-equipment-panel",
+    "override": null,
+    "hashes": {
+      "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx": "4554940be313de4b1eaeff09e0f19015eb7462c38638746b9e182beb2ec2d587",
+      "apps/webapp/src/components/equipment/equipment-loading.tsx": "4500b564074e4a95a00870581a19e1c7e3e225d7195f5f37544ef435b74f34c6",
+      "apps/webapp/src/lib/navigation/route-metadata.ts": "236eccf9c74c8ca3acac5eaae867d844ce0d55514702906133a4ad7ededb2da7",
+      "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx": "b6e15bade1407edb1266f6f97da0bac1a350d438274d3131782ac7d108815b0d"
+    }
+  },
+  "observation": {
+    "url": "/en/equipment/assignments/1632e9f1-9b63-421e-bb6e-0b0f2fc1520a",
+    "dialog": true,
+    "fields": [
+      {
+        "name": "actualDate",
+        "value": "2026-11-14",
+        "disabled": false
+      },
+      {
+        "name": "condition",
+        "value": "damaged",
+        "disabled": false
+      },
+      {
+        "name": "notes",
+        "value": "R020 synthetic damaged return",
+        "disabled": false
+      }
+    ],
+    "alerts": [
+      "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history."
+    ],
+    "submitDisabled": false,
+    "focus": null,
+    "toasts": []
+  }
+}

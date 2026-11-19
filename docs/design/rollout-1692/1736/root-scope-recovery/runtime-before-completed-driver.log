@@ -1,0 +1,1 @@
+{"phase":"before","status":"failed-run","consumers":[{"name":"project-reports","status":"accepted-defect-reproduction","failedTransport":1,"responseStatuses":[200],"captures":4},{"name":"settings-share-links","status":"failed-run","failedTransport":0,"responseStatuses":[],"captures":0}]}

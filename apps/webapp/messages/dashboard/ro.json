@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Absență",
-      "all-caught-up": "Totul este la zi!",
-      "approved-recently": "{count} {request} aprobate recent",
       "by": "de {name}",
       "description": "Ultimele cereri aprobate",
       "description-count": "Ultimele {count} {request} aprobate",
@@ -123,11 +121,27 @@
       "title": "Aprobate recent",
       "view-all": "Vezi toate aprobările"
     },
+    "refresh": {
+      "activity": "Activitate recentă",
+      "attention": "Ziua de astăzi pe scurt",
+      "balanceRetry": "Reîmprospătați pentru a încerca din nou încărcarea soldului.",
+      "balanceUnavailable": "Sold indisponibil",
+      "currentSession": "Sesiune curentă",
+      "dayUnavailable": "Totalul de astăzi nu este disponibil. Reîmprospătați pentru a încerca din nou.",
+      "employee": "Angajat",
+      "greeting": "Bună ziua, {name}.",
+      "noAbsences": "Nu există absențe înregistrate pentru astăzi.",
+      "openTimeTracking": "Accesați pontajul",
+      "overview": "Activitatea dvs. pe scurt",
+      "personalDay": "Ziua dvs. de lucru",
+      "status": "Stare",
+      "summary": "Rezumat",
+      "team": "Echipă",
+      "todayTarget": "Astăzi · {target} necesar"
+    },
     "team-overview": {
       "avg-hours": "Medie ore",
       "current-employees": "Angajați actuali",
-      "current-employees-description": "Toți cei care lucrează aici în prezent",
-      "description": "Statistici ale echipei pe scurt",
       "employees-button": "Angajați",
       "per-week": "/săptămână",
       "teams": "Echipe",
@@ -175,9 +189,6 @@
       "used": "{days} utilizate"
     },
     "whos-out": {
-      "everyone-in": "Toată lumea este la birou astăzi",
-      "everyones-in": "Toată lumea este prezentă!",
-      "full-team": "Toată echipa este disponibilă!",
       "member": "membru",
       "members": "membri",
       "members-out": "{count} {member} din echipă lipsă",

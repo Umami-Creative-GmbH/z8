@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424",
+  "frozenReview": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+  "rootAtPublication": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9",
+  "verifiedCommit": null,
+  "readiness": null,
+  "report": "docs/design/rollout-1692/1742.md",
+  "indexExcludes": [
+    "file-index.json",
+    "SHA256SUMS.txt",
+    "seal.json"
+  ],
+  "exclusionReason": "Indexes cannot self-hash; seal binds both indexes. Every final file plus report is separately hashed in private handoff. Verifier outputs are private only.",
+  "payload": {
+    "files": 60,
+    "bytes": 6792696
+  },
+  "execution": "Read-only publication verification and syntax parsing only. No archived modules, tests, runtime, browser or fixtures executed.",
+  "derivedSummaries": [
+    "README.md",
+    "capability-evidence.md",
+    "case-accounting-derived.json",
+    "syntax-checks.json"
+  ],
+  "historicalMetadataOnly": [
+    "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+  ],
+  "currentWholeAppTreeFrozen": false
+}

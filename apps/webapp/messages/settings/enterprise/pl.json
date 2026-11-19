@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Aktywny",
+      "contextRetry": "Odśwież kontekst organizacji, aby kontynuować.",
+      "contextUnavailable": "Kontekst organizacji jest niedostępny",
+      "copyFailed": "Nie udało się skopiować klucza. Spróbuj ponownie.",
       "copyKey": "Kopiuj klucz API",
       "copyPrefix": "Kopiuj prefiks",
       "create": "Utwórz klucz",
@@ -9,6 +12,7 @@
       "createdBy": "przez {name}",
       "createDescription": "Utwórz nowy klucz API dla dostępu programistycznego. Klucz zostanie wyświetlony tylko raz.",
       "createdOn": "Utworzono {date}",
+      "createFailed": "Nie udało się potwierdzić utworzenia klucza. Odśwież listę przed ponowną próbą.",
       "createTitle": "Utwórz klucz API",
       "creatorDeparted": "Odszedł(a)",
       "deleted": "Klucz API usunięty",
@@ -24,6 +28,8 @@
         "creator": "Utworzone przez",
         "creatorDeparted": "{name} (odszedł/a)",
         "ip": "Adres IP",
+        "kind": "Klucz API",
+        "loading": "Ładowanie klucza API",
         "noRateLimit": "Wył.",
         "noRequests": "Brak żądań w ciągu ostatnich 90 dni.",
         "rateLimit": "Limit żądań",
@@ -80,13 +86,19 @@
         "scopes": "Uprawnienia",
         "scopesRequired": "Wybierz co najmniej jedno uprawnienie"
       },
+      "hideKey": "Ukryj klucz",
       "keyCopied": "Klucz API skopiowany do schowka",
+      "keyHidden": "Klucz ukryty",
       "lastUsed": "Ostatnio używany",
+      "loading": "Ładowanie kluczy API",
       "name": "Nazwa",
       "neverExpires": "Nigdy nie wygasa",
       "noPermissions": "Brak uprawnień",
       "prefix": "Prefiks klucza",
       "prefixCopied": "Prefiks klucza skopiowany",
+      "retryHelp": "Odśwież tę listę, aby potwierdzić aktualne klucze. Wcześniej załadowane rekordy zostaną zachowane.",
+      "revealKey": "Odkryj klucz",
+      "revokeUnknown": "Nie udało się potwierdzić unieważnienia. Odśwież listę przed ponowną próbą.",
       "scopeLabel": {
         "absencesRead": "Odczyt nieobecności",
         "absencesReadHealth": "Odczyt szczegółów zdrowotnych nieobecności",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Ważne:",
       "status": "Status",
       "title": "Klucze API",
+      "unavailable": "Klucze API są niedostępne",
+      "unavailableDescription": "Nie udało się załadować Twoich ustawień. Ponów próbę, aby odświeżyć tę stronę.",
+      "unavailableTitle": "Dostęp deweloperski jest niedostępny",
       "unknownCreator": "były administrator",
       "updated": "Klucz API zaktualizowany",
+      "updateUnknown": "Nie udało się potwierdzić aktualizacji. Odśwież ten klucz przed ponowną próbą.",
       "usage": "Wykorzystano {count} z {max} kluczy"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Domyślne adresy URL",
         "defaultUrlsDescription": "Te adresy URL zarządzane przez platformę działają automatycznie bez konieczności konfiguracji niestandardowego DNS.",
         "deleteAria": "Usuń domenę niestandardową {domain}",
+        "deleteConfirm": "Usuń domenę",
         "deleted": "Domenę usunięto",
         "deleteDescription": "Czy na pewno chcesz usunąć „{domain}”? Tej akcji nie można cofnąć. Użytkownicy nie będą już mogli logować się za pośrednictwem tej domeny niestandardowej.",
         "deleteFailed": "Nie udało się usunąć domeny",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Pozostaw puste, aby zachować istniejący klucz. Pobierz swój klucz API z resend.com",
         "create": "Utwórz konfigurację",
         "delete": "Usuń konfigurację",
-        "deleteConfirm": "Czy na pewno chcesz usunąć tę konfigurację poczty e-mail?",
+        "deleteConfirmNamed": "Usunąć konfigurację poczty e-mail dla {fromEmail}? Wiadomości e-mail organizacji będą ponownie korzystać z domyślnego nadawcy systemowego.",
         "deleted": "Konfiguracja poczty e-mail została usunięta",
         "deleteFailed": "Usuwanie nie powiodło się",
+        "deleteTitle": "Usunąć konfigurację poczty e-mail?",
         "description": "Skonfiguruj niestandardowego dostawcę poczty e-mail dla swojej organizacji. Wszystkie wiadomości e-mail organizacji będą korzystać z tej konfiguracji zamiast domyślnej systemowej.",
         "fromEmail": "Adres e-mail nadawcy",
         "fromName": "Nazwa nadawcy",
@@ -356,10 +374,9 @@
           "title": "Domena"
         },
         "hero": {
-          "description": "Skonfiguruj SSO, SCIM i wymuszanie dla organizacji {organizationId} z zabezpieczoną aktywacją.",
-          "eyebrow": "Tożsamość korporacyjna",
           "title": "Lista kontrolna operacji"
         },
+        "progress": "Ukończono {completed} z {total} kroków",
         "provider": {
           "action": {
             "save": "Zapisz dostawcę"
@@ -453,7 +470,6 @@
           },
           "description": "Weryfikacja SCIM aktualizuje się po wysłaniu przez dostawcę tożsamości zmiany użytkownika testowego lub grupy.",
           "dialog": {
-            "cancel": "Anuluj",
             "decommission": {
               "description": "Spowoduje to trwałe wycofanie aprowizacji SCIM z eksploatacji i nie można tego cofnąć.",
               "title": "Wycofaj SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Nie udało się usunąć konfiguracji OAuth",
         "description": "Skonfiguruj własne dane uwierzytelniające OAuth do logowania społecznościowego. Pozwala to użytkownikom logować się za pomocą aplikacji OAuth Twojej organizacji zamiast współdzielonych danych uwierzytelniających.",
         "developerConsole": "Konsola programisty {provider}",
+        "editAria": "Edytuj logowanie przez {provider}",
         "editDescription": "Zaktualizuj swoje dane uwierzytelniające OAuth.",
         "editTitle": "Edytuj OAuth {provider}",
         "empty": "Nie skonfigurowano niestandardowych dostawców OAuth społecznościowych.",
@@ -616,9 +633,11 @@
         "keyId": "Identyfikator klucza",
         "pasteYourP8PrivateKeyContents": "Wklej zawartość klucza prywatnego .p8",
         "privateKey": "Klucz prywatny (.p8)",
+        "removeAria": "Usuń logowanie przez {provider}",
         "removed": "Usunięto OAuth dla {provider}",
         "removeDialogDescription": "Czy na pewno chcesz usunąć tę konfigurację OAuth? Użytkownicy powrócą do współdzielonych danych uwierzytelniających OAuth (jeśli są dostępne).",
         "removeDialogTitle": "Usuń dostawcę OAuth",
+        "removeDialogTitleNamed": "Usunąć logowanie przez {provider}?",
         "teamId": "Identyfikator zespołu (Team ID)",
         "title": "Dostawcy logowania społecznościowego",
         "unverified": "Niezweryfikowane",
@@ -629,8 +648,9 @@
         "addError": "Nie udało się dodać dostawcy SSO",
         "addSuccess": "Pomyślnie dodano dostawcę SSO",
         "addTitle": "Dodaj dostawcę SSO",
+        "deleteConfirm": "Usuń dostawcę",
         "deleteDialogDescription": "Czy na pewno chcesz usunąć tego dostawcę SSO? Użytkownicy nie będą już mogli logować się za pomocą tego dostawcy tożsamości.",
-        "deleteDialogTitle": "Usuń dostawcę SSO",
+        "deleteDialogTitleNamed": "Usunąć dostawcę SSO {provider}?",
         "deleteError": "Nie udało się usunąć dostawcy SSO",
         "deleteProviderAria": "Usuń dostawcę SSO {provider}",
         "deleteSuccess": "Dostawca SSO usunięty",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Użytkownicy z tą domeną e-mail będą mogli korzystać z SSO",
         "empty": "Nie skonfigurowano jeszcze żadnych dostawców SSO.",
         "emptyDescription": "Dodaj dostawcę OIDC, aby włączyć logowanie jednokrotne (SSO) w przedsiębiorstwie.",
+        "generateToken": "Wygeneruj token TXT",
         "guide": {
           "addDescription": "Postępuj zgodnie z instrukcjami konfiguracji dostawcy, a następnie połącz go ze swoją organizacją.",
           "afterSave": "Po zapisaniu zweryfikuj domenę e-mail za pomocą rekordu DNS TXT w Z8. Przeprowadź logowanie pilotażowe docelowym użytkownikiem, nie zamykając bieżącej sesji administratora. W konfiguracji z przewodnikiem zapisz ten sam identyfikator dostawcy i domenę e-mail, które widnieją na liście dostawców, a następnie ręcznie zarejestruj zaobserwowany wynik logowania przed rozważeniem opcji Wymagaj SSO. Zapisanie i weryfikacja DNS nie gwarantują udanego logowania.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Unikalny identyfikator dla tego dostawcy (małe litery, bez spacji)",
         "providerIdInvalid": "Identyfikator dostawcy może zawierać tylko małe litery, cyfry i myślniki",
         "title": "Dostawcy tożsamości",
-        "token": "Token",
         "tokenError": "Nie udało się wygenerować tokena weryfikacji domeny",
         "tokenGenerated": "Wygenerowano token weryfikacyjny",
         "txtToken": "Token TXT:",

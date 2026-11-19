@@ -1,0 +1,27 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-root-checks/recovery-red.json",
+    "bytes": 13809,
+    "sha256": "b90d0bcc2fb6f0bc2e2d76af4be2a56652d5ee49ad5ad9596a87303e19365941"
+  },
+  "reported": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "failed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Aktiv",
+      "contextRetry": "Uppdatera din organisationskontext för att fortsätta.",
+      "contextUnavailable": "Organisationskontext inte tillgänglig",
+      "copyFailed": "Det gick inte att kopiera nyckeln. Försök igen.",
       "copyKey": "Kopiera API-nyckel",
       "copyPrefix": "Kopiera prefix",
       "create": "Skapa nyckel",
@@ -9,6 +12,7 @@
       "createdBy": "av {name}",
       "createDescription": "Skapa en ny API-nyckel för programmatisk åtkomst. Nyckeln visas endast en gång.",
       "createdOn": "Skapad {date}",
+      "createFailed": "Det gick inte att bekräfta att nyckeln skapades. Uppdatera listan innan du försöker igen.",
       "createTitle": "Skapa API-nyckel",
       "creatorDeparted": "Slutat",
       "deleted": "API-nyckeln har tagits bort",
@@ -24,6 +28,8 @@
         "creator": "Skapad av",
         "creatorDeparted": "{name} (har slutat)",
         "ip": "IP-adress",
+        "kind": "API-nyckel",
+        "loading": "Läser in API-nyckel",
         "noRateLimit": "Av",
         "noRequests": "Inga anrop under de senaste 90 dagarna.",
         "rateLimit": "Hastighetsbegränsning",
@@ -80,13 +86,19 @@
         "scopes": "Behörigheter",
         "scopesRequired": "Välj minst en behörighet"
       },
+      "hideKey": "Dölj nyckel",
       "keyCopied": "API-nyckel kopierad till urklipp",
+      "keyHidden": "Nyckel dold",
       "lastUsed": "Senast använd",
+      "loading": "Läser in API-nycklar",
       "name": "Namn",
       "neverExpires": "Löper aldrig ut",
       "noPermissions": "Inga behörigheter",
       "prefix": "Nyckelprefix",
       "prefixCopied": "Nyckelprefix kopierat",
+      "retryHelp": "Uppdatera den här listan för att bekräfta de aktuella nycklarna. Tidigare inlästa poster behålls.",
+      "revealKey": "Visa nyckel",
+      "revokeUnknown": "Det gick inte att bekräfta återkallandet. Uppdatera listan innan du försöker igen.",
       "scopeLabel": {
         "absencesRead": "Läs frånvaro",
         "absencesReadHealth": "Läs hälsouppgifter för frånvaro",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Viktigt:",
       "status": "Status",
       "title": "API-nycklar",
+      "unavailable": "API-nycklar är inte tillgängliga",
+      "unavailableDescription": "Dina inställningar kunde inte läsas in. Försök igen för att uppdatera sidan.",
+      "unavailableTitle": "Utvecklaråtkomst inte tillgänglig",
       "unknownCreator": "en tidigare administratör",
       "updated": "API-nyckel uppdaterad",
+      "updateUnknown": "Det gick inte att bekräfta uppdateringen. Uppdatera den här nyckeln innan du försöker igen.",
       "usage": "{count} av {max} nycklar används"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Standard-URL:er",
         "defaultUrlsDescription": "Dessa plattformshanterade URL:er fungerar automatiskt utan anpassad DNS-konfiguration.",
         "deleteAria": "Ta bort anpassad domän {domain}",
+        "deleteConfirm": "Ta bort domän",
         "deleted": "Domänen har tagits bort",
         "deleteDescription": "Är du säker på att du vill ta bort \"{domain}\"? Denna åtgärd kan inte ångras. Användare kommer inte längre att kunna logga in via denna anpassade domän.",
         "deleteFailed": "Det gick inte att ta bort domänen",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Lämna tomt för att behålla befintlig nyckel. Hämta din API-nyckel från resend.com",
         "create": "Skapa konfiguration",
         "delete": "Ta bort konfiguration",
-        "deleteConfirm": "Är du säker på att du vill ta bort denna e-postkonfiguration?",
+        "deleteConfirmNamed": "Vill du ta bort e-postkonfigurationen för {fromEmail}? Organisationens e-postmeddelanden kommer att använda systemets standardavsändare igen.",
         "deleted": "E-postkonfigurationen har tagits bort",
         "deleteFailed": "Det gick inte att ta bort",
+        "deleteTitle": "Vill du ta bort e-postkonfigurationen?",
         "description": "Konfigurera en anpassad e-postleverantör för din organisation. Alla organisationens e-postmeddelanden kommer att använda denna konfiguration istället för systemets standard.",
         "fromEmail": "Avsändar-e-post",
         "fromName": "Avsändarnamn",
@@ -356,10 +374,9 @@
           "title": "Domän"
         },
         "hero": {
-          "description": "Konfigurera SSO, SCIM och tillämpning för organisation {organizationId} med skyddad aktivering.",
-          "eyebrow": "Företagsidentitet",
           "title": "Checklista för operativa kommandon"
         },
+        "progress": "{completed} av {total} steg slutförda",
         "provider": {
           "action": {
             "save": "Spara leverantör"
@@ -453,7 +470,6 @@
           },
           "description": "SCIM-verifieringen uppdateras efter att din identitetsleverantör skickar en testanvändare eller gruppändring.",
           "dialog": {
-            "cancel": "Avbryt",
             "decommission": {
               "description": "Detta avvecklar SCIM-provisionering permanent och kan inte ångras.",
               "title": "Avveckla SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Kunde inte ta bort OAuth-konfigurationen",
         "description": "Konfigurera dina egna OAuth-inloggningsuppgifter för social inloggning. Detta gör att dina användare kan logga in med din organisations OAuth-appar istället för delade inloggningsuppgifter.",
         "developerConsole": "{provider} Developer Console",
+        "editAria": "Redigera inloggning med {provider}",
         "editDescription": "Uppdatera dina OAuth-inloggningsuppgifter.",
         "editTitle": "Redigera {provider} OAuth",
         "empty": "Inga anpassade sociala OAuth-leverantörer har konfigurerats.",
@@ -616,9 +633,11 @@
         "keyId": "Nyckel-ID",
         "pasteYourP8PrivateKeyContents": "Klistra in innehållet i din privata .p8-nyckel",
         "privateKey": "Privat nyckel (.p8)",
+        "removeAria": "Ta bort inloggning med {provider}",
         "removed": "{provider} OAuth har tagits bort",
         "removeDialogDescription": "Är du säker på att du vill ta bort den här OAuth-konfigurationen? Användare kommer att återgå till de delade OAuth-inloggningsuppgifterna (om tillgängliga).",
         "removeDialogTitle": "Ta bort social OAuth-leverantör",
+        "removeDialogTitleNamed": "Vill du ta bort inloggning med {provider}?",
         "teamId": "Team-ID",
         "title": "Sociala inloggningsleverantörer",
         "unverified": "Overifierad",
@@ -629,8 +648,9 @@
         "addError": "Kunde inte lägga till SSO-leverantör",
         "addSuccess": "SSO-leverantör har lagts till",
         "addTitle": "Lägg till SSO-leverantör",
+        "deleteConfirm": "Ta bort leverantör",
         "deleteDialogDescription": "Är du säker på att du vill ta bort den här SSO-leverantören? Användare kommer inte längre att kunna logga in med denna identitetsleverantör.",
-        "deleteDialogTitle": "Ta bort SSO-leverantör",
+        "deleteDialogTitleNamed": "Vill du ta bort SSO-leverantören {provider}?",
         "deleteError": "Kunde inte ta bort SSO-leverantör",
         "deleteProviderAria": "Ta bort SSO-leverantör {provider}",
         "deleteSuccess": "SSO-leverantör har tagits bort",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Användare med denna e-postdomän kommer att kunna använda SSO",
         "empty": "Inga SSO-leverantörer har konfigurerats ännu.",
         "emptyDescription": "Lägg till en OIDC-leverantör för att aktivera enkel inloggning (SSO) för företag.",
+        "generateToken": "Generera TXT-token",
         "guide": {
           "addDescription": "Följ instruktionerna från din leverantör och anslut den sedan till din organisation.",
           "afterSave": "Efter att du har sparat verifierar du din e-postdomän med DNS TXT-posten i Z8. Testa inloggningen med en tilltänkt användare samtidigt som du håller din nuvarande administratörssession öppen. I Guidad konfiguration sparar du samma leverantörs-ID och e-postdomän som visas i leverantörslistan, och registrerar sedan det observerade inloggningsresultatet manuellt innan du överväger att kräva SSO. Att spara och göra DNS-verifiering bevisar inte att inloggningen lyckas.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "En unik identifierare för denna leverantör (gemener, inga mellanslag)",
         "providerIdInvalid": "Leverantörs-ID får endast innehålla gemener, siffror och bindestreck",
         "title": "Identitetsleverantörer",
-        "token": "Token",
         "tokenError": "Kunde inte generera domänverifieringstoken",
         "tokenGenerated": "Verifieringstoken har genererats",
         "txtToken": "TXT-token:",

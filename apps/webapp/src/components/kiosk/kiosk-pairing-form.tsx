@@ -3,7 +3,7 @@
 import { IconDeviceTablet, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +11,7 @@ import {
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
+	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { type KioskPairingResult, pairKioskDevice } from "@/lib/time-tracking/kiosk/device";
 import type { KioskDeviceInfo, KioskOfflineContact } from "@/lib/time-tracking/kiosk/protocol";
@@ -27,6 +28,7 @@ export function KioskPairingForm({ initialCode, onPaired }: KioskPairingFormProp
 	const { t } = useTranslate();
 	const [failure, setFailure] = useState<PairingFailure | null>(null);
 	const [pairing, setPairing] = useState(false);
+	const codeInput = useRef<HTMLInputElement>(null);
 
 	const form = useForm({
 		defaultValues: { code: initialCode },
@@ -40,6 +42,7 @@ export function KioskPairingForm({ initialCode, onPaired }: KioskPairingFormProp
 				return;
 			}
 			setFailure(result.status);
+			codeInput.current?.focus();
 		},
 	});
 
@@ -69,7 +72,7 @@ export function KioskPairingForm({ initialCode, onPaired }: KioskPairingFormProp
 	}
 
 	return (
-		<div className="m-auto w-full max-w-md space-y-8">
+		<div className="m-auto w-full max-w-lg space-y-8 rounded-xl border bg-card p-6 sm:p-8">
 			<div className="space-y-3 text-center">
 				<IconDeviceTablet className="mx-auto size-14 text-primary" aria-hidden="true" />
 				<h1 className="text-3xl font-semibold">
@@ -100,6 +103,9 @@ export function KioskPairingForm({ initialCode, onPaired }: KioskPairingFormProp
 							</TFormLabel>
 							<TFormControl hasError={failure !== null}>
 								<Input
+									ref={codeInput}
+									name="pairingCode"
+									disabled={pairing}
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
 									onBlur={field.handleBlur}
@@ -117,16 +123,24 @@ export function KioskPairingForm({ initialCode, onPaired }: KioskPairingFormProp
 									"The code works once and expires 10 minutes after it was issued.",
 								)}
 							</TFormDescription>
+							<TFormMessage>
+								{failure ? failureMessage(failure) : null}
+							</TFormMessage>
 						</TFormItem>
 					)}
 				</form.Field>
-				{failure ? (
-					<p role="alert" className="text-center text-sm text-destructive">
-						{failureMessage(failure)}
-					</p>
-				) : null}
-				<Button type="submit" size="lg" className="h-14 w-full text-lg" disabled={pairing}>
-					{pairing ? <IconLoader2 className="size-5 animate-spin" aria-hidden="true" /> : null}
+				<Button
+					type="submit"
+					size="lg"
+					className="h-14 w-full text-lg"
+					disabled={pairing}
+				>
+					{pairing ? (
+						<IconLoader2
+							className="size-5 animate-spin motion-reduce:animate-none"
+							aria-hidden="true"
+						/>
+					) : null}
 					{t("timeTracking.kiosk.pairing.submit", "Pair this device")}
 				</Button>
 			</form>

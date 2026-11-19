@@ -1,0 +1,18 @@
+{
+  "protocolAttempt": 1,
+  "convertRequests": 1,
+  "heldResponses": 1,
+  "unrelatedContinued": 0,
+  "finished": 0,
+  "cancelled": 0,
+  "failed": 0,
+  "actionIdentifiedByNextMcp": true,
+  "method": "CDP Fetch Response stage, exact non-auth claim route POST and privately identified Next-Action ID; original response unmodified",
+  "realResponseStage": true,
+  "successfulResponseStatus": true,
+  "canonicalConversionRowsWhileHeld": 1,
+  "pendingButtonObserved": true,
+  "stillClaimBeforeDeparture": true,
+  "primaryStable": true,
+  "pageCount": 1
+}

@@ -1,0 +1,22 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp
+
+{"level":50,"time":1794767607290,"pid":105120,"hostname":"be-kai-et","component":"PersonnelFileDocument","error":{"type":"Error","message":"Stored document content does not match its recorded identity","stack":"Error: Stored document content does not match its recorded identity\n    at readVerifiedPrivateObject (X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp/src/lib/storage/verified-private-object.ts:36:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"},"msg":"Failed to retrieve employee document"}
+{"level":50,"time":1794767607299,"pid":105120,"hostname":"be-kai-et","component":"PersonnelFileDocument","error":{"type":"Error","message":"Stored document content does not match its recorded identity","stack":"Error: Stored document content does not match its recorded identity\n    at readVerifiedPrivateObject (X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp/src/lib/storage/verified-private-object.ts:36:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"},"msg":"Failed to retrieve employee document"}
+{"level":30,"time":1794767607710,"pid":105120,"hostname":"be-kai-et","component":"organization-cleanup","count":1,"msg":"Found organizations ready for permanent deletion"}
+{"level":30,"time":1794767607710,"pid":105120,"hostname":"be-kai-et","component":"organization-cleanup","organizationId":"t865-purged","msg":"Starting permanent deletion of organization"}
+{"level":30,"time":1794767607793,"pid":105120,"hostname":"be-kai-et","component":"organization-cleanup","organizationId":"t865-purged","msg":"Organization and all related data permanently deleted"}
+{"level":30,"time":1794767607793,"pid":105120,"hostname":"be-kai-et","component":"organization-cleanup","organizationId":"t865-purged","organizationName":"t865-purged","msg":"Organization permanently deleted"}
+(node:25564) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:107452) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)
+   Start at  18:33:24
+   Duration  11.27s (tests 60%, import 26%, transform 13%, setup 1%)
+

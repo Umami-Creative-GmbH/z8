@@ -7,7 +7,8 @@ const hasRemoteOtel = Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT);
 
 const transport = isDev
 	? {
-			target: require.resolve("pino-pretty"),
+			// Let Pino resolve the package at runtime. Turbopack emits a module ID for require.resolve.
+			target: "pino-pretty",
 			options: {
 				colorize: true,
 				translateTime: "HH:MM:ss Z",

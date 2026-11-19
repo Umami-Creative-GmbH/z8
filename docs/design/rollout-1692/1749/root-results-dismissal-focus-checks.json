@@ -1,0 +1,114 @@
+{
+  "id": "R167",
+  "issue": 1749,
+  "status": "provisional",
+  "verifiedCommit": null,
+  "previousHead": "fa3ab8c06dd7dad77c69f13bc553752419506603",
+  "sourceCorrection": "4b9a71790af314e984c83d687b8b3db3752ea753",
+  "integration": "1bf72269aff032a8f811a48e11d5ba1835c764b5",
+  "tree": "50a06f066c635b8b2d7d747142e0b961adff435b",
+  "appTree": "dabdfeb948509ebae379540360fd680ca4df4001",
+  "orderedParents": [
+    "fa3ab8c06dd7dad77c69f13bc553752419506603",
+    "4b9a71790af314e984c83d687b8b3db3752ea753"
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx",
+      "gitBlob": "0c2446d3a617963ef10db932000c9326b21f9ad7"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.tsx",
+      "gitBlob": "e9b579b9bdb68990e0b5848177a002ff083449b7"
+    }
+  ],
+  "independentPrevious": {
+    "head": "fa3ab8c06dd7dad77c69f13bc553752419506603",
+    "finding": "One P2 shared by Spec and Standards. Done and Escape disabled a surviving opener during results dismissal, leaving focus on the body.",
+    "p1": 0,
+    "compatibilityCases": 377,
+    "pairedResultsCurrent": {
+      "passed": 4,
+      "failed": 2
+    },
+    "pairedResultsBaseline": {
+      "passed": 1,
+      "failed": 5
+    },
+    "allowlistSha256": "a1fb60a2f9575557a1c909cdba70c85725e8c35c281829aabaa0bbfbac544634",
+    "payloads": 13,
+    "bytes": 251005,
+    "qualification": "Independent application TypeScript was blocked by the missing ignored licenses file. The 84 canonical PostgreSQL cases with migrations belong to the earlier 9c96193fb checkpoint."
+  },
+  "correction": "The queue sets the heading as its focus destination when acknowledging results, before the same React commit disables the opener. The next draft uses the usual opener-first behavior.",
+  "checks": {
+    "unit": {
+      "passed": 380,
+      "files": 30,
+      "priorIdentitiesPreserved": 377,
+      "newCases": 3
+    },
+    "sealedProbe": {
+      "before": {
+        "passed": 28,
+        "failed": 2
+      },
+      "after": {
+        "passed": 30,
+        "failed": 0
+      }
+    },
+    "doctor": {
+      "errors": 0,
+      "warnings": [
+        {
+          "rule": "no-high-complexity-react-function",
+          "file": "src/components/travel-expenses/finance/finance-queue.tsx",
+          "line": 410
+        },
+        {
+          "rule": "no-giant-component",
+          "file": "src/components/travel-expenses/finance/finance-queue.tsx",
+          "line": 410
+        }
+      ]
+    },
+    "probeSha256": "cb84484948354c269e4b5d83c7278dcf0aaa0f5e805d0a3cd3d7a9274ce0ee6b",
+    "caseMultisetSha256": "82cd44942191229fb94c68bb58c19e64036201de43075c56b5fa5565ae27bd57",
+    "unitSelection": "docs/design/rollout-1692/1749/root-focus-and-refusal-checks.json#/root/units/selection",
+    "nextTypegen": 0,
+    "applicationTypes": 0,
+    "workflowContractTypes": 0,
+    "smokeTypes": 0,
+    "lint": 0,
+    "explicitCRLF": 0,
+    "gitWhitespace": 0,
+    "ordinaryFormat": 1,
+    "ordinaryDifferences": 2,
+    "doctorNotes": "Zero errors. The existing queue complexity warning persists. The focus change crosses the component length threshold and introduces the length warning.",
+    "newPostgresCases": 0,
+    "newLiveRuntimeCases": 0
+  },
+  "custody": {
+    "ledgerAnchorOccurrences": 66,
+    "uniqueAncestorCommits": 62,
+    "priorArchives": {
+      "1747": 327,
+      "1748": 202
+    },
+    "trackedDomainSourceChanges": 0,
+    "temporaryBridgesRemoved": 1,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "remaining": [
+    "Independent current acceptance",
+    "Browser keyboard focus",
+    "Live finance acceptance and grant-change sequence"
+  ],
+  "frontier": {
+    "integrated": 65,
+    "awaitingIntegration": 39,
+    "pending": 53
+  }
+}

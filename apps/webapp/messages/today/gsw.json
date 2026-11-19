@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Genehmige",
       "approveLabel": "{title} genehmige",
+      "decided": "Entscheidig gspeicheret. Aktualisiere, zum die aktuell Warteschlange z lade.",
       "description": "Aaträg, wo uf en Entscheid vom Vorgesetzte warte.",
       "empty": "Es sind keini Genehmigige offe.",
       "openInbox": "Postig öffne",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Offeni Genehmigige",
       "reject": "Ablehne",
       "rejectLabel": "{title} ablehne",
+      "retry": "Gnämigunge nomal probiere",
       "title": "Genehmigige",
       "toast": {
         "approved": "Aatrag genehmigt",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Hüt",
-      "description": "Prüef d'Pünkt, wo hüt en Iigriff bruched, und gang denn direkt in richtige Workflow.",
+      "accessUnavailable": "Das Briefing isch für die aktuell aagstellt Person und Organisation nid verfüegbar.",
+      "contextFailed": "Ihre aktuell Zuegriff hät nid chönne prüeft wärde. Nomal probiere.",
+      "drivingUnavailable": "D Fahrdetails händ nid chönne prüeft wärde.",
+      "incomplete": "Einigi Prüefige sind nid verfüegbar. Abschnittsfähler prüefe; die Ergebnis sind unvollständig.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Arbeitsperioden Ihrer Mitarbeitenden, bei denen ein Fahrzeug oder ein Kilometerstand fehlt.",
           "title": "Fahrtdetails fehlen ({count})"
         }
       },
+      "loadFailed": "S Briefing hät nid chönne glade wärde. Nomal probiere.",
       "needsAction": {
         "description": "Fang do aa für die dringendschte operative Nachbearbeitige.",
-        "empty": "Alles im grüene Bereich. Es isch im Moment kei Handlig vom Vorgesetzte nötig.",
+        "noExceptions": "I dere Momentufnahm isch kei betrieblichi Nachbearbeitig gfunde worde. Das bestätigt nid d Aawäseheit vo Mitarbeitende.",
         "title": "Brucht Handlig"
       },
+      "partial": "Teilwiis",
+      "refreshFailed": "Hät nid chönne aktualisiert wärde. Die vorherige Ergebnis wärded aazeigt; vor em Handle nomal probiere.",
+      "refreshing": "Briefing wird aktualisiert. Die vorherige Ergebnis bliibed sichtbar.",
+      "retainedSection": "Vorherigi Ergebnis wärded aazeigt. Nomal probiere, zum uf Änderige z prüefe.",
+      "retry": "Briefing nomal probiere",
+      "retrySection": "{title} nomal probiere",
+      "scope": "Betrieblichi Nachbearbeitig für d Mitarbeitende, wo Si i de aktive Organisation beaufsichtige chönd.",
       "sections": {
         "empty": "Keini Problem gfunde."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Warnig"
       },
+      "snapshot": "Momentufnahm {time} aktualisiert. Date aktualisiere bruuche, zum uf Änderige z prüefe.",
       "summaryAriaLabel": "Zämefassig vo hüt",
       "supportingSectionsAriaLabel": "Unterstützendi Abschnitt",
       "title": "Täglichs Briefing für Vorgesetzti",
-      "updatedAt": "{date} - Aktualisiert am {time}"
+      "unavailable": "Nid verfüegbar"
     }
   }
 }

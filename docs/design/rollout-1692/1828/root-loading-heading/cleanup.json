@@ -1,0 +1,18 @@
+{
+  "ownedNextStopped": true,
+  "portClosed": true,
+  "ownedNextIdentityVerified": true,
+  "cacheMoved": false,
+  "stoppedPids": [
+    92860,
+    82832,
+    18480,
+    109344
+  ],
+  "port": 59169,
+  "ownedContainers": 3,
+  "remainingOwnedContainers": 0,
+  "nativeBrowserClosed": true,
+  "puppeteerBrowsersClosed": true,
+  "sessionReadsReleased": true
+}

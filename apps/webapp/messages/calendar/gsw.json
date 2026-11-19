@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Abweseheit erfasse",
     "balance": {
       "carryoverDays": "Du häsch {count} Täg zum Übertrage",
-      "carryoverExpiry": "wo ablaufed am",
+      "carryoverDaysExpiring": "Sie haben {count} übertragene Tage. Diese verfallen am {date}.",
       "carryoverFrom": "Übertrag us em {year}",
       "daysRemaining": "Verblibendi Täg",
-      "description": "Dini Ferietäg fürs laufende Jahr",
       "outOfTotalDays": "vo {totalDays} Gsamttäg",
       "pending": "Hängig",
       "title": "Ferieguthabe {year}",
       "used": "Brucht"
     },
     "calendar": {
+      "currentYear": "Dieses Jahr",
       "legend": {
         "approved": "Gnämigt",
-        "halfDayAm": "Halbe Tag (am Morge)",
-        "halfDayPm": "Halbe Tag (am Namittag)",
+        "halfDay": "Halber Tag",
         "holiday": "Fiirtig",
         "pending": "Hängig",
         "rejected": "Abglähnt"
       },
       "nextYear": "Nächsts Jahr",
-      "previousYear": "Vorherigs Jahr"
+      "previousYear": "Vorherigs Jahr",
+      "requestAnotherAbsence": "Eine weitere Abwesenheit ab diesem Tag beantragen",
+      "selectDayDetailsHint": "Wählen Sie einen Tag aus, um ab diesem eine Abwesenheit zu beantragen. Bei einem Tag mit einer genehmigten oder ausstehenden Abwesenheit werden stattdessen deren Details angezeigt."
     },
     "change": {
       "afternoon": "Nachmittag",
@@ -40,6 +40,7 @@
       "historyFailed": "Änderungsanträge konnten nicht geladen werden.",
       "keepHours": "Erfasste Stunden und Abdeckung beibehalten",
       "morning": "Vormittag",
+      "pendingCount": "{count} ausstehend",
       "pendingExplanation": "Die erfasste Abwesenheit bleibt gültig, bis eine andere genehmigende Person Ihren Antrag akzeptiert.",
       "reason": "Grund",
       "reasonRequired": "Eine Begründung ist erforderlich",
@@ -321,10 +322,10 @@
       "pending": "Hängig",
       "rejected": "Abglehnt"
     },
-    "subtitle": "Verwalte dini Abweseheite und Ferietäg",
     "table": {
       "cancelAbsence": "Abwesenheit storniere",
       "cancelAbsenceTooltip": "Abwesenheit storniere",
+      "changePending": "Änderungsantrag ausstehend",
       "end": "Endi",
       "headers": {
         "actions": "Aktionä",
@@ -337,9 +338,7 @@
       "noRequests": "Kei Abweseheitsafragä gfunde.",
       "noSearchResults": "Kei Absänze gfunde, wo uf dini Suech passet.",
       "searchPlaceholder": "Suech nach Typ, Status oder Notize...",
-      "start": "Start",
-      "subtitle": "Aktuelli und chünftigi Abweseheitsafragä",
-      "title": "Dini Abweseheitsafragä"
+      "start": "Start"
     },
     "title": "Abweseheite",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kaländer",
       "table": "Tabälle"
+    },
+    "year": {
+      "loadFailed": "{year} konnte nicht geladen werden. Es wird weiterhin {loadedYear} angezeigt.",
+      "loading": "{year} wird geladen… Es wird weiterhin {loadedYear} angezeigt."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Bearbeite",
       "label": "Ziterfassigsaktione"
     },
+    "context": {
+      "timezone": "Kalender-Zeitzone"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Ziiterfassig blockiert",
       "category": "Kategori",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Löschung des Zeiteintrags angewendet",
       "auditNote": "Ziititräg wärded für Audit-Zwäck als glöscht markiert.",
-      "confirm": "In Pause umwandle",
-      "description": "Das löscht die Arbeitsziit permanent. D Lücke wird im Kaländer als Pause aazeigt.",
       "failed": "Arbeitsziit chönnt nöd glöscht wärde",
       "reasonLabel": "Grund für s'Lösche",
-      "reasonRequired": "Grund isch erforderlich",
-      "success": "Arbeitsziit in Pause umgwandlet",
-      "title": "In Pause umwandle?"
+      "reasonRequired": "Grund isch erforderlich"
     },
     "details": {
       "automaticClockOut": "Automatisch usgstämpelt",
@@ -516,10 +518,7 @@
       "holiday": "Fiirtig",
       "missingRequiredWork": "Erforderliche Arbeit fehlt",
       "requirementMetOrOver": "Anforderung erfüllt/überschritten",
-      "timeEntry": "Ziitibuechig",
-      "title": "Legände",
       "underRequirement": "Unter Anforderung",
-      "workPeriod": "Arbetsperiode",
       "workPeriodPending": "Wartet uf Bestätigung"
     },
     "loadEventsError": "Kaländerereignis händ nöd chönne glade werde: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
       "weekSum": "Summe"
     },
+    "nextMonth": "Nächster Monat",
+    "previousMonth": "Vorheriger Monat",
     "requirements": {
       "dayLabel": "{date}: {actual} erfasst, {required} nötig, {delta} {status}.",
       "includesRunningWork": "Enthält laufende Arbeiten",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "Verrechebar",
+      "breakEnforcementNote": "Automatisch angepasst: Pausenregelung",
       "editedBy": "(bearbeitet vo {name} am {date})",
       "missingTask": "Fählendi Ufgab",
       "missingTaskHint": "Fählendi Ufgab: Füeg e Ufgab dezue",
-      "breakEnforcementNote": "Automatisch aapasst: Pauseregelig"
+      "runningTitle": "{name} - {duration} (läuft)",
+      "stop": "Stoppen",
+      "stopFor": "Laufende Arbeitszeit für {name} stoppen"
     },
     "workStatus": {
       "overRequirement": "über Anforderung",

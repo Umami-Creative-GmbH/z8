@@ -1,8 +1,13 @@
 "use client";
 
-import { IconDownload, IconFileTypeCsv, IconFileTypeXls, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconDownload,
+	IconFileTypeCsv,
+	IconFileTypeXls,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,14 +32,40 @@ interface ExportButtonProps<T = any> {
 	data: ExportData<T>;
 	onExport?: (format: ExportFormat) => Promise<void>;
 	disabled?: boolean;
+	/** Opt-in identity for a route-owned organization/period result. */
+	exportScope?: string;
 }
 
-export function ExportButton<T = any>({ data, onExport, disabled }: ExportButtonProps<T>) {
+export function ExportButton<T = any>({
+	data,
+	onExport,
+	disabled,
+	exportScope,
+}: ExportButtonProps<T>) {
 	const { t } = useTranslate();
 	const [isExporting, setIsExporting] = useState(false);
-	const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
+	const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(
+		null,
+	);
+	const mounted = useRef(true);
+	const current = useRef({ disabled, exportScope, generation: 0 });
+	useLayoutEffect(() => {
+		current.current = {
+			disabled,
+			exportScope,
+			generation: current.current.generation + 1,
+		};
+	}, [disabled, exportScope]);
+	useEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, []);
 
 	const handleExport = async (format: ExportFormat) => {
+		if (disabled || isExporting) return;
+		const generation = current.current.generation;
 		setIsExporting(true);
 		setExportingFormat(format);
 
@@ -66,13 +97,28 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 			(value) => ({ ok: true as const, value }),
 			(error) => ({ ok: false as const, error }),
 		);
+		// A completed transport must still belong to the admitted route and period.
+		if (!mounted.current) return;
+		if (
+			current.current.disabled ||
+			current.current.generation !== generation ||
+			current.current.exportScope !== exportScope
+		) {
+			setIsExporting(false);
+			setExportingFormat(null);
+			return;
+		}
 
 		if (!exportResult.ok) {
 			console.error("Export failed:", exportResult.error);
 			toast.error(
-				t("common:analytics.export.failedAsFormat", "Failed to export as {format}", {
-					format: format.toUpperCase(),
-				}),
+				t(
+					"common:analytics.export.failedAsFormat",
+					"Failed to export as {format}",
+					{
+						format: format.toUpperCase(),
+					},
+				),
 			);
 			setIsExporting(false);
 			setExportingFormat(null);
@@ -82,9 +128,13 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 		if (exportResult.value.type === "error") {
 			console.error("Export failed:", exportResult.value.message);
 			toast.error(
-				t("common:analytics.export.failedAsFormat", "Failed to export as {format}", {
-					format: format.toUpperCase(),
-				}),
+				t(
+					"common:analytics.export.failedAsFormat",
+					"Failed to export as {format}",
+					{
+						format: format.toUpperCase(),
+					},
+				),
 			);
 			setIsExporting(false);
 			setExportingFormat(null);
@@ -121,9 +171,13 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 					{isExporting ? (
 						<>
 							<IconLoader2 className="mr-2 size-4 animate-spin" />
-							{t("common:analytics.export.exportingFormat", "Exporting {format}…", {
-								format: exportingFormat?.toUpperCase() ?? "",
-							})}
+							{t(
+								"common:analytics.export.exportingFormat",
+								"Exporting {format}…",
+								{
+									format: exportingFormat?.toUpperCase() ?? "",
+								},
+							)}
 						</>
 					) : (
 						<>
@@ -134,11 +188,17 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem onClick={() => handleExport("csv")} disabled={isExporting}>
+				<DropdownMenuItem
+					onClick={() => handleExport("csv")}
+					disabled={disabled || isExporting}
+				>
 					<IconFileTypeCsv className="mr-2 size-4" />
 					{t("common:analytics.export.exportAsCsv", "Export as CSV")}
 				</DropdownMenuItem>
-				<DropdownMenuItem onClick={() => handleExport("excel")} disabled={isExporting}>
+				<DropdownMenuItem
+					onClick={() => handleExport("excel")}
+					disabled={disabled || isExporting}
+				>
 					<IconFileTypeXls className="mr-2 size-4" />
 					{t("common:analytics.export.exportAsExcel", "Export as Excel")}
 				</DropdownMenuItem>

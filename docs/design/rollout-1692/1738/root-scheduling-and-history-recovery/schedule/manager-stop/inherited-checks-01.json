@@ -1,0 +1,72 @@
+{
+  "candidate": "3f22ce77ccc5219338237b9522f19b9405539355",
+  "applicationTree": "51911eadc52202719f67d97def3df8c323ac6690",
+  "sameApplicationTreeAsCorrectionIntegration": true,
+  "currentRoot": {
+    "firstRangeCase": 1,
+    "finalPgCases": 6,
+    "finalPgFiles": 2,
+    "unitCases": 297,
+    "unitFiles": 46,
+    "distinctCases": 303,
+    "distinctFiles": 48
+  },
+  "types": "all3projects/typegen passed after type-only import sorting",
+  "lint": "3owned paths pass",
+  "format": {
+    "ordinary": "Found 3 errors.",
+    "explicit": "Found 1 error.",
+    "legacyActionNotReformatted": true
+  },
+  "doctor": "3changedfiles zero diagnostics; score disabled",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "bytes": 13116,
+      "sha256": "05b3b4fab2ad322d83628902cbf4aa087d9b2e677c20d1c677c4022e0158f297",
+      "canonicalSha256": "97c022c7efaa6162f6fb5208d272c6c4f477117ed36a0544f2ef2ef5f3a36fea"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.range.integration.test.ts",
+      "bytes": 4556,
+      "sha256": "e5a5afe4f2676928819ad69ff07418f09672b42d306899337d9ebe008a1c4024",
+      "canonicalSha256": "c5fe218205eaf9e23721a9ec462bf24efd4b18d3c468d0ce5d604772f3750fe0"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+      "bytes": 4075,
+      "sha256": "474d2d98c9ab3aac0f7d25b93d10a9d9de5e07cf64229518f5c6d51870718b06",
+      "canonicalSha256": "4e8a44345800a48da2b80c6bde391a95d520ac4a0e725d9b2198f2cfdb077d1a"
+    }
+  ],
+  "receipts": [
+    {
+      "path": ".tmp/1738-range-hit-checks/checks-final-01.json",
+      "bytes": 2946,
+      "sha256": "77f335899538e71a70b557fa95992a40d7800b80b1fffe8c17114a3d05e067e1"
+    },
+    {
+      "path": ".tmp/1738-range-hit-checks/integration.json",
+      "bytes": 290,
+      "sha256": "ea08e4eec9f668d458da3ca95f5250f93f75e5ddf18b5af9f59575554963782c"
+    },
+    {
+      "path": ".tmp/1738-range-hit-checks/published-provisional.json",
+      "bytes": 440,
+      "sha256": "b237d0f2bdb3d4e798aa66a5addd4699319a00d2806165da76c247ddc6877b12"
+    },
+    {
+      "path": ".tmp/1738-range-hit-checks/cleanup-final.json",
+      "bytes": 352,
+      "sha256": "808d2c7c3b24fdad08a07d5c7a892eb0ad77474cf2a732acb38ecafc66d71ae9"
+    }
+  ],
+  "freshUnitCases": 0,
+  "freshPostgresTestCases": 0,
+  "additional45Pg": "Earlier coverage/compliance/reader/roster/request snapshot remains inherited; nonadditive. No new execution or count union claimed. Current action/Fab correction source is distinguished from prior 7e5 snapshot; authoritative writer/service unchanged.",
+  "prior48PgReceipt": {
+    "path": ".tmp/1738-publication-query-checks/postgres-final-01.json",
+    "bytes": 18958,
+    "sha256": "40a6d0bb4bddb58e785b2a247105922708ab865a35e7e5167036685f50e666d2"
+  }
+}

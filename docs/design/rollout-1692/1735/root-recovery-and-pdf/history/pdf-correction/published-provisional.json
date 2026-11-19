@@ -1,0 +1,31 @@
+{
+  "published": "1d328a1b352fa6504d58b443367b6aabeda56fcb",
+  "origin": "1d328a1b352fa6504d58b443367b6aabeda56fcb",
+  "tree": "e2419f58997932018c617f0babcea93a9a66d4d1",
+  "source": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+  "provisionalIntegration": "9284956219792bc328f24137ae5a17856f2dd999",
+  "latestVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "verifiedCommit": null,
+  "pr": {
+    "number": 1854,
+    "state": "OPEN",
+    "draft": true,
+    "base": "dev",
+    "head": "1d328a1b352fa6504d58b443367b6aabeda56fcb"
+  },
+  "comments": {
+    "issue1735": "https://github.com/Umami-Creative-GmbH/z8/issues/1735#issuecomment-6931830649",
+    "spec1692": "https://github.com/Umami-Creative-GmbH/z8/issues/1692#issuecomment-6931832167"
+  },
+  "counts": {
+    "integrated": 58,
+    "awaiting": 28,
+    "implementing": 2,
+    "pending": 69
+  },
+  "unit": {
+    "cases": 294,
+    "files": 52
+  },
+  "runtimeAcceptance": "pending after correction; prior CSV1/XLSX1/PDF0 retain original241a snapshot"
+}

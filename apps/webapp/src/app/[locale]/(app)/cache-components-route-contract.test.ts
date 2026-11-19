@@ -289,7 +289,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/shifts/page.tsx",
 		fallbackComponent: "ShiftTemplatesPageLoading",
 		contentComponent: "ShiftTemplatesPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading shift template settings",
 	},
 	{
@@ -311,14 +311,14 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/surcharges/page.tsx",
 		fallbackComponent: "SurchargeSettingsPageLoading",
 		contentComponent: "SurchargeSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading surcharge settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/change-policies/page.tsx",
 		fallbackComponent: "ChangePoliciesSettingsPageLoading",
 		contentComponent: "ChangePoliciesSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading change policy settings",
 	},
 	{
@@ -340,29 +340,31 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/work-policies/page.tsx",
 		fallbackComponent: "WorkPoliciesPageLoading",
 		contentComponent: "WorkPoliciesPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading work policy settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/roles/page.tsx",
 		fallbackComponent: "CustomRolesSettingsPageLoading",
 		contentComponent: "CustomRolesSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading custom role settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/projects/page.tsx",
 		fallbackComponent: "ProjectSettingsPageLoading",
 		contentComponent: "ProjectSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading project settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/holidays/page.tsx",
 		fallbackComponent: "HolidaySettingsPageLoading",
 		contentComponent: "HolidaySettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		// Redirect-only routes load in the shared, framed settings skeleton.
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading holiday settings",
+		requiresSynchronousDefaultExport: true,
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/compliance/works-council/page.tsx",
@@ -373,18 +375,88 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/locations/page.tsx",
 		fallbackComponent: "LocationSettingsPageLoading",
 		contentComponent: "LocationSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading location settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/telegram/page.tsx",
 		fallbackComponent: "TelegramSettingsLoading",
 		contentComponent: "TelegramSettingsContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/email-templates/page.tsx",
 		fallbackComponent: "EmailTemplatesSettingsPageLoading",
 		contentComponent: "EmailTemplatesSettingsPageContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/vehicle-use/page.tsx",
+		fallbackComponent: "VehicleUseSettingsPageLoading",
+		contentComponent: "VehicleUseSettingsPageContent",
+		fallbackFrameClass: "page-frame",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/enterprise/sso/page.tsx",
+		fallbackComponent: "SSOProvidersPageLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/enterprise/branding/page.tsx",
+		fallbackComponent: "BrandingPageLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/slack/page.tsx",
+		fallbackComponent: "LegacyChatSettingsLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/discord/page.tsx",
+		fallbackComponent: "LegacyChatSettingsLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/teams-notifications/page.tsx",
+		fallbackComponent: "LegacyChatSettingsLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/webhooks/page.tsx",
+		fallbackComponent: "WebhooksSettingsLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/audit-log/page.tsx",
+		fallbackComponent: "AuditLogPageLoading",
+		contentComponent: "RedirectContent",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
+		fallbackAriaLabel: "Loading settings",
+		requiresSynchronousDefaultExport: true,
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/enterprise/email/page.tsx",
@@ -395,7 +467,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/skills/page.tsx",
 		fallbackComponent: "SkillsSettingsPageLoading",
 		contentComponent: "SkillsSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading skill settings",
 	},
 	{
@@ -412,21 +484,22 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/travel-expenses/page.tsx",
 		fallbackComponent: "TravelExpenseSettingsPageLoading",
 		contentComponent: "TravelExpenseSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading travel expense settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/customers/page.tsx",
 		fallbackComponent: "CustomerSettingsPageLoading",
 		contentComponent: "CustomerSettingsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading customer settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/page.tsx",
 		fallbackComponent: "DashboardPageLoading",
 		contentComponent: "DashboardPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-2",
+		fallbackFrameClass:
+			"@container/main page-frame flex flex-1 flex-col gap-4 md:gap-6",
 		fallbackAriaLabel: "Loading dashboard",
 		fallbackNestedSkeletonComponent: "SectionCardsSkeleton",
 		fallbackNestedSkeletonFile: "src/components/section-cards.tsx",
@@ -442,7 +515,7 @@ const SHELL_WORK_QUEUE = [
 		resolvedComponentFile: "src/app/[locale]/(app)/today/today-briefing.tsx",
 		resolvedComponent: "TodayBriefing",
 		resolvedOuterFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackGeometryGroups: [
 			{
 				keyArray: "TODAY_SUMMARY_LOADING_KEYS",
@@ -466,8 +539,11 @@ const SHELL_WORK_QUEUE = [
 	{
 		file: "src/app/[locale]/(app)/scheduling/page.tsx",
 		fallbackComponent: "SchedulingPageLoading",
+		// The route's loading.tsx is also the page's Suspense fallback.
+		fallbackComponentFile: "src/app/[locale]/(app)/scheduling/loading.tsx",
 		contentComponent: "SchedulingPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-2",
+		fallbackFrameClass:
+			"@container/main page-frame-full flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading shift schedule",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -476,7 +552,7 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "TravelExpensesPageLoading",
 		contentComponent: "TravelExpensesPageContent",
 		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading travel expenses",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -489,7 +565,7 @@ const SHELL_WORK_QUEUE = [
 			"src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
 		resolvedComponent: "MyRequestsClient",
 		resolvedOuterFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		requiresSynchronousDefaultExport: true,
 	},
 	{
@@ -497,7 +573,7 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "ReportsPageLoading",
 		contentComponent: "ReportsPageContent",
 		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading employee reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -505,8 +581,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/projects/page.tsx",
 		fallbackComponent: "ProjectReportsPageLoading",
 		contentComponent: "ProjectReportsPageContent",
-		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading project reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -515,7 +590,7 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "VehicleDistanceReportPageLoading",
 		contentComponent: "VehicleDistanceReportPageContent",
 		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading the distance per vehicle report",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -523,14 +598,17 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(admin)/platform-admin/page.tsx",
 		fallbackComponent: "AdminDashboardLoading",
 		contentComponent: "AdminDashboardContent",
-		fallbackFrameClass: "space-y-10",
+		// The overview heading stays visible above the labelled loading region.
+		fallbackFrameClass: "space-y-8",
+		fallbackStatusRegionClass: "space-y-8",
 		fallbackAriaLabel: "Loading platform admin overview",
 		fallbackGeometryGroups: [
 			{
 				component: "DashboardStatsLoading",
 				keyArray: "DASHBOARD_STATS_LOADING_KEYS",
 				itemCount: 4,
-				frameClass: "grid gap-4 sm:grid-cols-2 lg:grid-cols-4",
+				frameClass:
+					"grid grid-cols-1 gap-px rounded-lg border bg-card p-1 sm:grid-cols-2 lg:grid-cols-4",
 			},
 		],
 		requiresSynchronousDefaultExport: true,
@@ -619,7 +697,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/audit-export/page.tsx",
 		fallbackComponent: "AuditExportSettingsLoading",
 		contentComponent: "AuditExportSettingsContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading audit export settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -627,7 +705,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
 		fallbackComponent: "CoverageRulesSettingsLoading",
 		contentComponent: "CoverageRulesSettingsContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading coverage rule settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -635,7 +713,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/demo/page.tsx",
 		fallbackComponent: "DemoSettingsLoading",
 		contentComponent: "DemoSettingsContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading demo data settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -643,7 +721,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/export-operations/page.tsx",
 		fallbackComponent: "ExportOperationsPageLoading",
 		contentComponent: "ExportOperationsPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading export operations",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -651,7 +729,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/export/page.tsx",
 		fallbackComponent: "ExportSettingsLoading",
 		contentComponent: "ExportSettingsContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading data export settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -659,7 +737,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/export/history/[organizationId]/page.tsx",
 		fallbackComponent: "OrganizationExportHistoryLoading",
 		contentComponent: "OrganizationExportHistoryContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading data export settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -667,7 +745,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/import/[batchId]/page.tsx",
 		fallbackComponent: "ImportReviewRouteLoading",
 		contentComponent: "ImportReviewRouteContent",
-		fallbackFrameClass: "p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading import review",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -675,7 +753,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/import/page.tsx",
 		fallbackComponent: "ImportPageLoading",
 		contentComponent: "ImportPageContent",
-		fallbackFrameClass: "p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading import settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -683,7 +761,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/payroll-export/page.tsx",
 		fallbackComponent: "PayrollExportLoading",
 		contentComponent: "PayrollExportContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading payroll export settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -691,7 +769,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/scheduled-exports/page.tsx",
 		fallbackComponent: "ScheduledExportsLoading",
 		contentComponent: "ScheduledExportsContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading scheduled exports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -700,7 +778,7 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "AnalyticsLayoutLoading",
 		contentComponent: "AnalyticsLayoutContent",
 		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading analytics navigation",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -724,7 +802,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/payroll/page.tsx",
 		fallbackComponent: "PayrollPageLoading",
 		contentComponent: "PayrollPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading payroll workspace",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -733,7 +811,7 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "AbsencesPageLoading",
 		contentComponent: "AbsencesPageContent",
 		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+			"@container/main page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading absences",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -741,7 +819,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/works-council/page.tsx",
 		fallbackComponent: "WorksCouncilPageLoading",
 		contentComponent: "WorksCouncilPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading Works Council portal",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -749,7 +827,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/wellness/page.tsx",
 		fallbackComponent: "WellnessPageLoading",
 		contentComponent: "WellnessPageContent",
-		fallbackFrameClass: "p-6",
+		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading wellness settings",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -757,7 +835,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 		fallbackComponent: "PayrollReadinessPageLoading",
 		contentComponent: "PayrollReadinessPageContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading payroll readiness",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -765,7 +843,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
 		fallbackComponent: "EmployeeAllowancesLoading",
 		contentComponent: "EmployeeAllowancesContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackFrameClass: "page-frame flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading employee vacation allowances",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -1087,18 +1165,25 @@ function hasExpectedLoadingFrame(
 		fallbackAriaLabel,
 		expectedOuterFrameClass,
 		fallbackNestedSkeletonComponent,
+		fallbackStatusRegionClass,
 	}: {
 		fallbackComponent: string;
 		fallbackAriaLabel: string;
 		expectedOuterFrameClass: string;
 		fallbackNestedSkeletonComponent?: string;
+		/**
+		 * The labelled status region when it sits inside the outer frame, below a
+		 * page heading that stays visible while the content loads.
+		 */
+		fallbackStatusRegionClass?: string;
 	},
 ): boolean {
-	// The client region renders the same native frame and translates its label.
+	// The client region renders the same native frame and translates its label;
+	// as a div it is a status region unless it says otherwise.
 	source = source.replace(
 		/<LoadingRegion\b([^>]*)>/gs,
 		(_match, attributes: string) =>
-			`<div${attributes.replace(/label=\{\{\s*labelKey:\s*"[^"]+",\s*labelDefault:\s*("[^"]+")[,\s]*\}\}/g, "aria-label=$1")}>`,
+			`<div${/\b(?:role|as)=/.test(attributes) ? "" : ' role="status"'}${attributes.replace(/label=\{\{\s*labelKey:\s*"[^"]+",\s*labelDefault:\s*("[^"]+")[,\s]*\}\}/g, "aria-label=$1")}>`,
 	);
 	source = source.replace(
 		/label=\{\{\s*labelKey:\s*"[^"]+",\s*labelDefault:\s*("[^"]+")[,\s]*\}\}/g,
@@ -1106,24 +1191,31 @@ function hasExpectedLoadingFrame(
 	);
 	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
 	const sharedSkeleton = fallbackBody?.match(
-		/<SettingsPageSkeleton\s+label="([^"]+)"\s*\/>/,
+		/<SettingsPageSkeleton\s+(measure\s+)?label="([^"]+)"\s*\/>/,
 	);
 	if (sharedSkeleton) {
 		const markup = renderToStaticMarkup(
 			createElement(
 				TolgeeProvider,
 				{ tolgee: createTestTolgee() },
-				createElement(SettingsPageSkeleton, { label: sharedSkeleton[1] }),
+				createElement(SettingsPageSkeleton, {
+					label: sharedSkeleton[2],
+					measure: Boolean(sharedSkeleton[1]),
+				}),
 			),
 		);
 		const outerFrame = markup.match(/^<div\b[^>]*>/)?.[0] ?? "";
+		// A measured skeleton puts the status region inside the page frame.
+		const statusRegion = markup.match(/<div\b[^>]*role="status"[^>]*>/)?.[0] ?? "";
 		const placeholders = [
 			...markup.matchAll(/<div\b[^>]*data-slot="skeleton"[^>]*>/g),
 		];
 		return (
 			outerFrame.includes(`class="${expectedOuterFrameClass}"`) &&
-			outerFrame.includes('role="status"') &&
-			outerFrame.includes(`aria-label="${fallbackAriaLabel}"`) &&
+			(sharedSkeleton[1]
+				? statusRegion.includes("page-measure")
+				: outerFrame === statusRegion) &&
+			statusRegion.includes(`aria-label="${fallbackAriaLabel}"`) &&
 			placeholders.length > 0 &&
 			placeholders.every(([placeholder]) =>
 				placeholder.includes('aria-hidden="true"'),
@@ -1133,6 +1225,17 @@ function hasExpectedLoadingFrame(
 	const outerElement = fallbackBody?.match(/<div\b[^>]*>/)?.[0];
 
 	if (!fallbackBody || !outerElement) return false;
+
+	const statusElement = fallbackStatusRegionClass
+		? fallbackBody.match(/<div\b[^>]*role="status"[^>]*>/)?.[0]
+		: outerElement;
+	if (
+		!statusElement ||
+		(fallbackStatusRegionClass &&
+			!statusElement.includes(`className="${fallbackStatusRegionClass}"`))
+	) {
+		return false;
+	}
 
 	const skeletons = [...fallbackBody.matchAll(/<Skeleton\b[^>]*>/g)];
 	const hasHiddenSkeletonContent = fallbackNestedSkeletonComponent
@@ -1144,8 +1247,8 @@ function hasExpectedLoadingFrame(
 
 	return (
 		outerElement.includes(`className="${expectedOuterFrameClass}"`) &&
-		outerElement.includes('role="status"') &&
-		outerElement.includes(`aria-label="${fallbackAriaLabel}"`) &&
+		statusElement.includes('role="status"') &&
+		statusElement.includes(`aria-label="${fallbackAriaLabel}"`) &&
 		hasHiddenSkeletonContent
 	);
 }
@@ -1507,7 +1610,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(68);
+		expect(workQueueFiles).toHaveLength(76);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

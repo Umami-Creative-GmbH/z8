@@ -1,0 +1,125 @@
+{
+  "base": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "profileSha256": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+  "matchedPairs": 5,
+  "decodedPngs": 18,
+  "actionAssertions": 30,
+  "realScopeCases": 4,
+  "trackedSourcePaths": [
+    "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "apps/webapp/src/lib/validations/onboarding.ts"
+  ],
+  "priorTrackedRolloutPathsPreserved": 2308,
+  "pictures": [
+    {
+      "name": "after-calendar.png",
+      "sha256": "bb968fcec0542479505150d62fff476bf888fa9ad122e4dd9083f460dc46c960",
+      "width": 390,
+      "height": 1893
+    },
+    {
+      "name": "after-calendar320.png",
+      "sha256": "2f863c1f17cc86bfb8f94debb1bc7249814c4f889624b05ca6fd3e9b637c20e5",
+      "width": 320,
+      "height": 2084
+    },
+    {
+      "name": "after-desktop-dark-large.png",
+      "sha256": "e47b856bdfa1fefa4d30d634a8b22f86fc95603672d71ddfd935ef0dca37b47e",
+      "width": 1600,
+      "height": 1664
+    },
+    {
+      "name": "after-desktop.png",
+      "sha256": "7a7fe7918b056a10b56626d9c7a306ffa33be9a789473097222549edf5dc28a5",
+      "width": 1600,
+      "height": 1480
+    },
+    {
+      "name": "after-phone-dark-large.png",
+      "sha256": "061fb99c864ba0c6d3fa01f563cec98cb4c35bb3adb112ab0c9deed05f42cbdc",
+      "width": 390,
+      "height": 1893
+    },
+    {
+      "name": "after-phone.png",
+      "sha256": "580fc41dc0e0dafff4b172183b9fc422438f869d09f9b051068a0e68b49c91eb",
+      "width": 390,
+      "height": 1664
+    },
+    {
+      "name": "after-saved-dark-large-german.png",
+      "sha256": "57448d1ff455646f7136d23e0bff5eef9d637b13675ac1db97db9c308107f591",
+      "width": 390,
+      "height": 1976
+    },
+    {
+      "name": "after-wide.png",
+      "sha256": "c4249858f946bfaa8161257f95ea56a6a89bc68d915e66a7a2acc5ffc06cee68",
+      "width": 2400,
+      "height": 1480
+    },
+    {
+      "name": "before-calendar.png",
+      "sha256": "59577885f8220e4a32b1d4d3d50c975e87cbc004c8312c4678d8c5ec0507e8c3",
+      "width": 390,
+      "height": 1834
+    },
+    {
+      "name": "before-desktop-dark-large.png",
+      "sha256": "9fd577e832c4e2f9307fc3dd878cb7c72797d9192a49d1409ba4ead27a63a4c5",
+      "width": 1600,
+      "height": 1649
+    },
+    {
+      "name": "before-desktop.png",
+      "sha256": "c3d0d490ac50dca5962a02d4389965d09e9036566fcec3b2002eaf7de18fb30f",
+      "width": 1600,
+      "height": 1467
+    },
+    {
+      "name": "before-phone-dark-large.png",
+      "sha256": "79feb3de497d8d38a6344af3f32d40e942f84dcb56fed9cc70cf3a11da539c8d",
+      "width": 390,
+      "height": 1834
+    },
+    {
+      "name": "before-phone.png",
+      "sha256": "5583d042c03877b579711c5a7db1d55bc836efaae0138a8c5b75e0442e3b3835",
+      "width": 390,
+      "height": 1575
+    },
+    {
+      "name": "before-wide.png",
+      "sha256": "58cce6c5c2dbc3e74f1f1f238fc193ef89e71c470e3eb9a7bdd0b10698a62cc3",
+      "width": 2400,
+      "height": 1467
+    },
+    {
+      "name": "small-admin-readback.png",
+      "sha256": "59ba66adbfef0aeb58aa87a1eaadf49a231efc8bed14501d7e64731ace93fef2",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "small-admin-refusal.png",
+      "sha256": "7472e51b9fec036538b032452cbe7d297e56f54303b8e25c0cf07d5cc20a2459",
+      "width": 390,
+      "height": 1846
+    },
+    {
+      "name": "small-restricted-readback.png",
+      "sha256": "c7717cf2006601660ef4bfffcd9ddb5efb3c27860310fc63e7ba0d2ce2e74ad2",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "small-restricted-refusal.png",
+      "sha256": "66771d29ae8f0767f834573104a634707c75808c1622655bb51cafe2e8c5d16b",
+      "width": 390,
+      "height": 1846
+    }
+  ]
+}

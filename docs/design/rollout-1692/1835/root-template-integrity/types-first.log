@@ -1,0 +1,19 @@
+$ next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false
+Generating route types...
+✓ Types generated successfully
+src/lib/effect/services/onboarding.service.ts(803,13): error TS2304: Cannot find name 'workPolicyAssignment'.
+src/lib/effect/services/onboarding.service.ts(806,15): error TS2304: Cannot find name 'workPolicyAssignment'.
+src/lib/effect/services/onboarding.service.ts(807,15): error TS2304: Cannot find name 'workPolicyAssignment'.
+src/lib/effect/services/onboarding.service.ts(817,16): error TS2304: Cannot find name 'workPolicyAssignment'.
+src/lib/effect/services/onboarding.service.ts(818,16): error TS2304: Cannot find name 'workPolicyAssignment'.
+src/lib/effect/services/onboarding.service.ts(819,16): error TS2304: Cannot find name 'workPolicyAssignment'.
+src/lib/onboarding/work-template-mutation.ts(80,45): error TS2345: Argument of type '{ readonly db: PgTransaction<NodePgQueryResultHKT, { user: PgTableWithColumns<{ name: "user"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "user"; dataType: "string"; columnType: "PgText"; data: string; ... 9 more ...; generated: undefined; }, {}, {}>; ... 15 more ...; pendingInviteCode: PgCol...' is not assignable to parameter of type '{ readonly db: NodePgDatabase<{ user: PgTableWithColumns<{ name: "user"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "user"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; ... 6 more ...; generated: undefined; }, {}, {}>; ... 15 ...'.
+  Types of property 'db' are incompatible.
+    Type 'PgTransaction<NodePgQueryResultHKT, { user: PgTableWithColumns<{ name: "user"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "user"; dataType: "string"; columnType: "PgText"; data: string; ... 9 more ...; generated: undefined; }, {}, {}>; ... 15 more ...; pendingInviteCode: PgColumn<...>; }; di...' is not assignable to type 'NodePgDatabase<{ user: PgTableWithColumns<{ name: "user"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "user"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; ... 6 more ...; generated: undefined; }, {}, {}>; ... 15 more ...; pendi...'.
+      Property '$client' is missing in type 'PgTransaction<NodePgQueryResultHKT, { user: PgTableWithColumns<{ name: "user"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "user"; dataType: "string"; columnType: "PgText"; data: string; ... 9 more ...; generated: undefined; }, {}, {}>; ... 15 more ...; pendingInviteCode: PgColumn<...>; }; di...' but required in type '{ $client: Pool; }'.
+[ELIFECYCLE] Command failed with exit code 1.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

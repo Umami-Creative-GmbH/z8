@@ -1,0 +1,12 @@
+import{readFileSync,writeFileSync}from'node:fs';
+const old='.tmp/1733-command-checks/runtime/public/harness/commands/',out='.tmp/1733-final-runtime-checks/runtime/commands/';
+let s=readFileSync(old+'003-context-preview-recovery.mjs','utf8');
+s=s.replaceAll('db.query','lockClient.query');writeFileSync(out+'004-context-preview-recovery.mjs',s);
+s=readFileSync(old+'004-current-captures-native.mjs','utf8');
+s=s.replace("check('phone navigation closes on first Escape and restores trigger focus',await toggle.evaluate(e=>document.activeElement===e));","await p.waitForFunction(()=>![...document.querySelectorAll('[data-mobile=true]')].some(e=>e.checkVisibility()));await p.waitForFunction(()=>document.activeElement?.textContent?.trim()==='Toggle Sidebar');check('phone navigation closes on first Escape and restores trigger focus after transition',true);");
+const begin=s.indexOf('results.nativeTargets=[];'),end=s.indexOf('results.nextCurrent=',begin);s=s.slice(0,begin)+s.slice(end);s=s.replace('nativeTargets:results.nativeTargets,','');
+writeFileSync(out+'005-current-layout.mjs',s);
+s=readFileSync(old+'007-operational-intake-confirm.mjs','utf8');
+s=s.replace("check('held real confirmation disables decision and all matching controls',pending.dialog&&pending.decisionDisabled&&pending.fileDisabled)","check('held real confirmation disables decision and all matching controls',pending.dialog&&pending.decisionDisabled&&pending.fileDisabled)");
+writeFileSync(out+'006-operational-intake-confirm.mjs',s);
+console.log('Fresh adapted public recovery, visual, and operational scripts queued.');

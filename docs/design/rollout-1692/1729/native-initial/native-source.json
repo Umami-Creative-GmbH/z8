@@ -1,0 +1,16 @@
+{
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "session": "next-dev-loop-1729-t3-c42af28b-eda920ca028710b9",
+  "source": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+      "canonicalSha256": "fc724de2d5112f6f119ec44ea266f13a85d84c644907717bbcfeb9514a52d7e1"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "canonicalSha256": "a29928ba0793e9ec05adac8c2e5b2f67cc5e47875e3d222fdae71c2accae24d7"
+    }
+  ],
+  "targetPersonnelFilePanelPresent": true,
+  "qualification": "Actual selected-employee panel target tree; no performance claim."
+}

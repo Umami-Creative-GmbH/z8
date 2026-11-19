@@ -19,6 +19,39 @@ vi.mock("@/navigation", () => ({
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
 describe("AuthFormWrapper", () => {
+	it("names the task as the main heading with or without organization artwork", () => {
+		const page = render(
+			<AuthFormWrapper title="Sign in">
+				<input aria-label="Email" defaultValue="draft@example.com" />
+			</AuthFormWrapper>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Sign in" }),
+		).toBeTruthy();
+		page.rerender(
+			<AuthFormWrapper
+				title="Verify your email"
+				branding={{
+					appName: "Acme Time",
+					logoUrl: "https://example.com/logo.png",
+				}}
+			>
+				<input aria-label="Email" defaultValue="draft@example.com" />
+			</AuthFormWrapper>,
+		);
+		expect(
+			screen
+				.getAllByRole("heading", { level: 1 })
+				.map((heading) => heading.textContent),
+		).toEqual(["Verify your email"]);
+		expect(screen.getByAltText("Acme Time logo")).toBeTruthy();
+		expect((screen.getByLabelText("Email") as HTMLInputElement).value).toBe(
+			"draft@example.com",
+		);
+		expect(
+			screen.queryByRole("link", { name: /dashboard|settings/i }),
+		).toBeNull();
+	});
 	it("renders a focused auth card without the legacy image panel", () => {
 		render(
 			<AuthFormWrapper title="Create your account">
@@ -53,40 +86,27 @@ describe("AuthFormWrapper", () => {
 		expect(screen.queryByAltText("Acme Time background")).toBeNull();
 	});
 
-	it("uses mobile-friendly card spacing before desktop card polish", () => {
+	it("preserves the build reference, return destination and form transport", () => {
 		const { container } = render(
-			<AuthFormWrapper title="Join workspace" buildHash="build-123">
+			<AuthFormWrapper
+				title="Join workspace"
+				buildHash="build-123"
+				backHref="/sign-in?callbackUrl=%2Fcalendar"
+				formProps={{ action: "/auth/join", method: "post" }}
+			>
 				<div>join form</div>
 			</AuthFormWrapper>,
 		);
 
-		const wrapper = container.firstElementChild;
-		const card = wrapper?.firstElementChild;
-		const cardContent = card?.firstElementChild;
-
-		expect(wrapper?.className).toContain("max-w-md");
-		expect(card?.className).toContain("bg-white/20");
-		expect(card?.className).toContain("dark:bg-slate-950/20");
-		expect(card?.className).toContain("backdrop-blur-[40px]");
-		expect(card?.className).toContain(
-			"[&_.text-muted-foreground]:text-foreground/75",
+		expect(screen.getByText("Version build-123")).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Back to login" }).getAttribute("href"),
+		).toBe("/sign-in?callbackUrl=%2Fcalendar");
+		expect(container.querySelector("form")?.getAttribute("action")).toBe(
+			"/auth/join",
 		);
-		expect(card?.className).toContain("[&_[data-slot=input]]:bg-background/85");
-		expect(card?.className).toContain(
-			"dark:[&_[data-slot=input]]:bg-background/80",
-		);
-		expect(card?.className).toContain("relative");
-		expect(card?.className).toContain("sm:shadow-xl");
-		expect(cardContent?.className).toContain("p-5");
-		expect(cardContent?.className).toContain("sm:p-8");
-		expect(screen.getByText("Version build-123").className).toContain(
-			"right-3",
-		);
-		expect(screen.getByText("Version build-123").className).toContain(
-			"text-foreground/55",
-		);
-		expect(screen.getByText("Version build-123").className).toContain(
-			"bottom-1.5",
+		expect(container.querySelector("form")?.getAttribute("method")).toBe(
+			"post",
 		);
 	});
 });

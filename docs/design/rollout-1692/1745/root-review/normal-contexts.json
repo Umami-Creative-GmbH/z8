@@ -1,0 +1,72 @@
+{
+  "sourceCommit": "f9769a74353ac6670c4a36401029faf805b2a899",
+  "observations": [
+    {
+      "actor": "small-manager",
+      "route": "/en/time-tracking",
+      "observed": {
+        "headings": [
+          "Time Tracking"
+        ],
+        "headerAriaHidden": null,
+        "sidebarAriaHidden": null,
+        "selectedTabs": [],
+        "columns": [
+          "Clock InRecorded local time",
+          "Clock OutRecorded local time",
+          "Duration",
+          "Description",
+          "Time entry actions"
+        ],
+        "rows": 2,
+        "missingAllowanceNotice": false
+      },
+      "pageErrors": [],
+      "consoleErrors": [],
+      "probes": {
+        "get_compilation_issues": {
+          "issues": []
+        },
+        "get_errors": {
+          "configErrors": [],
+          "sessionErrors": []
+        }
+      }
+    },
+    {
+      "actor": "small-admin",
+      "route": "/en/analytics/vacation-trends",
+      "observed": {
+        "headings": [
+          "Vacation Trends"
+        ],
+        "headerAriaHidden": null,
+        "sidebarAriaHidden": null,
+        "selectedTabs": [
+          "Vacation Trends"
+        ],
+        "columns": [
+          "Employee",
+          "Allocated",
+          "Taken",
+          "Remaining",
+          "Utilization"
+        ],
+        "rows": 8,
+        "missingAllowanceNotice": true
+      },
+      "pageErrors": [],
+      "consoleErrors": [],
+      "probes": {
+        "get_compilation_issues": {
+          "issues": []
+        },
+        "get_errors": {
+          "configErrors": [],
+          "sessionErrors": []
+        }
+      }
+    }
+  ],
+  "boundary": "Fresh notification-denied contexts after preserving the prior dialog-session notices; no dialog interaction or native React instrumentation in these probes."
+}

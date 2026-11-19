@@ -39,6 +39,11 @@ const policy = {
 	presence: null,
 } as unknown as WorkPolicyWithDetails;
 
+const translate = ((_key: string, fallback: string, params?: Record<string, unknown>) =>
+	fallback.replace(/\{(\w+)\}/g, (_match, name: string) =>
+		String(params?.[name] ?? ""),
+	)) as TFnType;
+
 function renderActions({
 	canManagePolicies = true,
 	isDuplicatePending = false,
@@ -49,7 +54,7 @@ function renderActions({
 	isSetDefaultPending?: boolean;
 }) {
 	const columns = getWorkPolicyTableColumns({
-		t: ((_key: string, fallback: string) => fallback) as TFnType,
+		t: translate,
 		canManagePolicies,
 		onEdit: vi.fn(),
 		onDuplicate: vi.fn(),
@@ -96,7 +101,7 @@ describe("getWorkPolicyTableColumns", () => {
 		const user = userEvent.setup();
 		renderActions({ isDuplicatePending: true, isSetDefaultPending: true });
 
-		await user.click(screen.getByRole("button", { name: "Open menu" }));
+		await user.click(screen.getByRole("button", { name: "Actions for Retail 38h" }));
 
 		expect(screen.getByRole("menuitem", { name: "Duplicate" }).getAttribute("aria-disabled")).toBe(
 			"true",

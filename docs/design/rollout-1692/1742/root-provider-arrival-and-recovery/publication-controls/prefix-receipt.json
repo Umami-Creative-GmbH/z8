@@ -1,0 +1,17 @@
+{
+  "verifiedCommit": null,
+  "heading": "## Root bounded provider-arrival and recovery proof — 2026-11-17",
+  "originalPrefix": {
+    "bytes": 22325,
+    "sha256": "8474e59a976010379183692f842ad68b7c3e0c1abd5a2b278dd1c05bd9276afc"
+  },
+  "append": {
+    "bytes": 6127,
+    "sha256": "ac8441149027a4d1276aa016128e9a6169d057ff4c0fa4301101fad33dace50e"
+  },
+  "finalReport": {
+    "bytes": 28452,
+    "sha256": "4cb2fdae784dc511d891d5ab3de41f2eea89e64d6f8280a79957464a424b71cc"
+  },
+  "rawMaterialization": "Original CRLF bytes preserved verbatim; appended UTF-8 LF bytes are separately pinned. Root must audit staged Git LF/CRLF materialization independently."
+}

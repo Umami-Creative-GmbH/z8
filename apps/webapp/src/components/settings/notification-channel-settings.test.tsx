@@ -135,6 +135,35 @@ describe("NotificationChannelSettings", () => {
 			).toBe(true),
 		);
 	});
+	it("explains an out-of-range escalation timeout beside the field and does not save it", async () => {
+		const update = vi.fn();
+		renderWithQueryClient(
+			<NotificationChannelSettings
+				channelName="Slack"
+				config={{
+					setupStatus: "active",
+					displayName: "Slack workspace",
+					enableApprovals: false,
+					enableCommands: false,
+					enableDailyDigest: false,
+					enableEscalations: true,
+					digestTime: "09:00",
+					digestTimezone: "Europe/Berlin",
+					escalationTimeoutHours: 24,
+				}}
+				updateAction={update}
+			/>,
+		);
+		const timeout = screen.getByLabelText("Timeout");
+		fireEvent.change(timeout, { target: { value: "0" } });
+		expect(
+			await screen.findByText("Enter a whole number of hours from 1 to 168."),
+		).toBeTruthy();
+		expect(timeout.getAttribute("aria-invalid")).toBe("true");
+		fireEvent.click(screen.getByRole("button", { name: "Save Settings" }));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(update).not.toHaveBeenCalled();
+	});
 	it("localizes known non-active setup status labels", () => {
 		renderWithQueryClient(
 			<NotificationChannelSettings
@@ -157,6 +186,65 @@ describe("NotificationChannelSettings", () => {
 
 		expect(screen.getByText("Pending")).toBeTruthy();
 		expect(screen.queryByText("pending")).toBeNull();
+	});
+
+	it("chooses the digest timezone from the timezone picker and preselects the stored zone", () => {
+		renderWithQueryClient(
+			<NotificationChannelSettings
+				channelName="Slack"
+				config={{
+					setupStatus: "active",
+					displayName: "Slack workspace",
+					enableApprovals: false,
+					enableCommands: false,
+					enableDailyDigest: true,
+					enableEscalations: false,
+					digestTime: "09:00",
+					digestTimezone: "Asia/Tokyo",
+					escalationTimeoutHours: 24,
+				}}
+				updateAction={vi.fn()}
+			/>,
+		);
+
+		const timezone = screen.getByLabelText("Timezone");
+		expect(timezone.getAttribute("role")).toBe("combobox");
+		expect(timezone.textContent).toContain("Tokyo");
+		expect(screen.queryByPlaceholderText("Europe/Berlin…")).toBeNull();
+	});
+
+	it("offers the connect action only while the channel is not connected", () => {
+		const { rerender } = renderWithQueryClient(
+			<NotificationChannelSettings
+				channelName="Slack"
+				config={null}
+				updateAction={vi.fn()}
+				connectAction={<button type="button">Connect Slack</button>}
+			/>,
+		);
+		expect(screen.getByRole("button", { name: "Connect Slack" })).toBeTruthy();
+
+		rerender(
+			<QueryClientProvider client={new QueryClient()}>
+				<NotificationChannelSettings
+					channelName="Slack"
+					config={{
+						setupStatus: "active",
+						displayName: "Slack workspace",
+						enableApprovals: false,
+						enableCommands: false,
+						enableDailyDigest: false,
+						enableEscalations: false,
+						digestTime: "09:00",
+						digestTimezone: "Europe/Berlin",
+						escalationTimeoutHours: 24,
+					}}
+					updateAction={vi.fn()}
+					connectAction={<button type="button">Connect Slack</button>}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByRole("button", { name: "Connect Slack" })).toBeNull();
 	});
 
 	it("keeps switch controls visible beside wrapping labels on narrow screens", () => {

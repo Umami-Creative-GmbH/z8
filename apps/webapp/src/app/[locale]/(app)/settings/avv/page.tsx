@@ -8,6 +8,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -41,122 +42,122 @@ async function AvvPageContent() {
 	const missingFields = getAvvMissingFields(profile);
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.avv.title", "Auftragsverarbeitungsvertrag (AVV)")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("settings.avv.title", "Auftragsverarbeitungsvertrag (AVV)")}
+					description={t(
 						"settings.avv.description",
 						"Laden Sie Ihren Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO herunter.",
 					)}
-				</p>
-			</div>
+				/>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>
-						{t("settings.avv.contractDetails.title", "Vertragsdetails")}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.avv.contractDetails.descriptionPrefix",
-							"Dieser Vertrag regelt die Auftragsverarbeitung personenbezogener Daten zwischen Ihrer Organisation und ",
-						)}
-						Umami Creative GmbH.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					<div className="grid gap-6 sm:grid-cols-2">
-						<div className="min-w-0 space-y-1 break-words">
-							<h2 className="text-sm font-medium text-muted-foreground">
-								{t(
-									"settings.avv.contractDetails.controller",
-									"Auftraggeber (Verantwortlicher)",
+				<Card>
+					<CardHeader>
+						<CardTitle>
+							<h2>{t("settings.avv.contractDetails.title", "Vertragsdetails")}</h2>
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.avv.contractDetails.descriptionPrefix",
+								"Dieser Vertrag regelt die Auftragsverarbeitung personenbezogener Daten zwischen Ihrer Organisation und ",
+							)}
+							Umami Creative GmbH.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<div className="grid gap-6 sm:grid-cols-2">
+							<div className="min-w-0 space-y-1 break-words">
+								<h3 className="text-sm font-medium text-muted-foreground">
+									{t(
+										"settings.avv.contractDetails.controller",
+										"Auftraggeber (Verantwortlicher)",
+									)}
+								</h3>
+								{profile.legalCompanyName.trim() && (
+									<p className="font-medium">{profile.legalCompanyName.trim()}</p>
 								)}
-							</h2>
-							{profile.legalCompanyName.trim() && (
-								<p className="font-medium">{profile.legalCompanyName.trim()}</p>
-							)}
-							<address className="text-sm not-italic">
-								{getRegisteredAddressLines(profile).map(({ field, value }) => (
-									<p key={field}>{value}</p>
-								))}
-							</address>
-							{profile.vatId.trim() && (
-								<dl className="text-sm">
-									<dt>{t("settings.avv.profile.vatId", "VAT ID")}</dt>
-									<dd>{profile.vatId.trim()}</dd>
-								</dl>
-							)}
-							<Link
-								href="/settings/organization#organization-profile"
-								className="text-sm text-primary underline underline-offset-4"
-							>
-								{t("settings.avv.profile.edit", "Edit organization profile")}
-							</Link>
-						</div>
+								<address className="text-sm not-italic">
+									{getRegisteredAddressLines(profile).map(({ field, value }) => (
+										<p key={field}>{value}</p>
+									))}
+								</address>
+								{profile.vatId.trim() && (
+									<dl className="text-sm">
+										<dt>{t("settings.avv.profile.vatId", "VAT ID")}</dt>
+										<dd>{profile.vatId.trim()}</dd>
+									</dl>
+								)}
+								<Link
+									href="/settings/organization#organization-profile"
+									className="text-sm text-primary underline underline-offset-4"
+								>
+									{t("settings.avv.profile.edit", "Edit organization profile")}
+								</Link>
+							</div>
 
-						<div className="space-y-1">
-							<h2 className="text-sm font-medium text-muted-foreground">
-								{t(
-									"settings.avv.contractDetails.processor",
-									"Auftragnehmer (Auftragsverarbeiter)",
-								)}
-							</h2>
-							<div className="text-sm">
-								<p className="font-medium">Umami Creative GmbH</p>
-								<p>Bismarckstra&szlig;e 9</p>
-								<p>91054 Erlangen, Bayern</p>
-								<p>Deutschland</p>
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium text-muted-foreground">
+									{t(
+										"settings.avv.contractDetails.processor",
+										"Auftragnehmer (Auftragsverarbeiter)",
+									)}
+								</h3>
+								<div className="text-sm">
+									<p className="font-medium">Umami Creative GmbH</p>
+									<p>Bismarckstra&szlig;e 9</p>
+									<p>91054 Erlangen, Bayern</p>
+									<p>Deutschland</p>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div className="space-y-2">
-						<h2 className="text-sm font-medium text-muted-foreground">
-							{t("settings.avv.hosting.title", "Hosting & Subprozessoren")}
-						</h2>
-						<p className="text-sm">
-							{t(
-								"settings.avv.hosting.descriptionPrefix",
-								"Alle Daten werden auf Servern der ",
-							)}
-							{avvHostingDetails.displayText}
-							{t(
-								"settings.avv.hosting.descriptionSuffix",
-								" gehostet. Derzeit eingesetzte Subprozessoren:",
-							)}
-						</p>
-						<ul className="list-disc space-y-1 pl-5 text-sm">
-							{avvHostingDetails.subprocessors.map((subprocessor) => (
-								<li key={subprocessor.providerName}>
-									{subprocessor.displayText}
-								</li>
-							))}
-						</ul>
-					</div>
+						<div className="space-y-2">
+							<h3 className="text-sm font-medium text-muted-foreground">
+								{t("settings.avv.hosting.title", "Hosting & Subprozessoren")}
+							</h3>
+							<p className="text-sm">
+								{t(
+									"settings.avv.hosting.descriptionPrefix",
+									"Alle Daten werden auf Servern der ",
+								)}
+								{avvHostingDetails.displayText}
+								{t(
+									"settings.avv.hosting.descriptionSuffix",
+									" gehostet. Derzeit eingesetzte Subprozessoren:",
+								)}
+							</p>
+							<ul className="list-disc space-y-1 pl-5 text-sm">
+								{avvHostingDetails.subprocessors.map((subprocessor) => (
+									<li key={subprocessor.providerName}>
+										{subprocessor.displayText}
+									</li>
+								))}
+							</ul>
+						</div>
 
-					<div className="border-t pt-6">
-						<AvvDownloadButton
-							missingFields={missingFields}
-						/>
-					</div>
-				</CardContent>
-			</Card>
+						<div className="border-t pt-6">
+							<AvvDownloadButton
+								missingFields={missingFields}
+							/>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
 		</div>
 	);
 }
 
 function AvvPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-2">
-				<Skeleton className="h-8 w-72" />
-				<Skeleton className="h-5 w-full max-w-xl" />
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-9 w-72 max-w-full" />
+					<Skeleton className="h-5 w-full max-w-xl" />
+				</div>
+				<Skeleton className="h-80 w-full" />
 			</div>
-			<Skeleton className="h-80 w-full" />
 		</div>
 	);
 }

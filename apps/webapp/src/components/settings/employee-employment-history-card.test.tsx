@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Settings } from "luxon";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -179,29 +179,80 @@ describe("EmployeeEmploymentHistoryCard", () => {
 		expect(onCreate).not.toHaveBeenCalled();
 	});
 
-	it("does not cancel an employment change when confirmation is declined", () => {
+	it("does not cancel an employment change when confirmation is declined", async () => {
 		const onCancel = vi.fn().mockResolvedValue({ success: true });
-		const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
 
 		renderCard({ onCancel });
 
-		fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
 
-		expect(confirmSpy).toHaveBeenCalledWith(
-			"Cancel this employment change? This removes the scheduled or draft employment change.",
-		);
+		const dialog = await screen.findByRole("alertdialog");
+		expect(
+			within(dialog).getByText(
+				"Cancel this employment change? This removes the scheduled or draft employment change.",
+			),
+		).toBeTruthy();
+		fireEvent.click(within(dialog).getByRole("button", { name: "Keep change" }));
+
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
 		expect(onCancel).not.toHaveBeenCalled();
 	});
 
-	it("cancels an employment change after confirmation is accepted", () => {
+	it("cancels an employment change after confirmation is accepted", async () => {
 		const onCancel = vi.fn().mockResolvedValue({ success: true });
-		vi.spyOn(window, "confirm").mockReturnValue(true);
 
 		renderCard({ onCancel });
 
-		fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
+		expect(onCancel).not.toHaveBeenCalled();
 
-		expect(onCancel).toHaveBeenCalledWith("history-pending");
+		const dialog = await screen.findByRole("alertdialog");
+		fireEvent.click(within(dialog).getByRole("button", { name: "Cancel change" }));
+
+		await waitFor(() => expect(onCancel).toHaveBeenCalledWith("history-pending"));
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+	});
+
+	it("names the employment change being canceled by type and effective date", async () => {
+		renderCard();
+
+		fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
+
+		const dialog = await screen.findByRole("alertdialog");
+		expect(
+			within(dialog).getByRole("heading", { name: "Cancel hourly change effective Mar 1, 2026?" }),
+		).toBeTruthy();
+		expect(within(dialog).getByText("30h / week · remote · pending")).toBeTruthy();
+	});
+
+	it("keeps the dialog open while canceling and shows a failure inline", async () => {
+		let resolveCancel: (value: { success: false; error: string }) => void = () => {};
+		const onCancel = vi.fn(
+			() =>
+				new Promise<{ success: false; error: string }>((resolve) => {
+					resolveCancel = resolve;
+				}),
+		);
+
+		renderCard({ onCancel: onCancel as EmployeeEmploymentHistoryCardProps["onCancel"] });
+
+		fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
+		const dialog = await screen.findByRole("alertdialog");
+		const confirm = within(dialog).getByRole("button", { name: "Cancel change" });
+		fireEvent.click(confirm);
+
+		await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(true));
+		expect(within(dialog).getByRole("button", { name: "Keep change" }).hasAttribute("disabled")).toBe(
+			true,
+		);
+		fireEvent.click(confirm);
+		expect(onCancel).toHaveBeenCalledTimes(1);
+
+		resolveCancel({ success: false, error: "Change already applied" });
+
+		expect(await within(dialog).findByRole("alert")).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(confirm.hasAttribute("disabled")).toBe(false);
 	});
 
 	it("groups terms by employment stint with the gap between them and unknown legacy dates", () => {

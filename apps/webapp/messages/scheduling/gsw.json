@@ -6,9 +6,13 @@
       "gapCount": "{count} Personalmangel",
       "gaps": "Lücke",
       "hideOverlay": "Abdeckungs-Overlay usblände",
+      "lastLoaded": "Zuletzt geladene Abdeckung",
+      "loading": "Abdeckung wird geladen…",
       "metSlots": "{count} gnueg Personal",
       "overSlots": "{count} überbesetzt",
       "overstaffed": "Überbesetzt",
+      "readFailed": "Abdeckung konnte nicht geladen werden. Erneut versuchen, um die Besetzung zu prüfen.",
+      "refreshing": "Abdeckung wird aktualisiert…",
       "showOverlay": "Abdeckigsziel-Overlay iiblände",
       "summary": "Zämefassig vo de Abdeckig:",
       "toggleLabel": "Abdeckig",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Dini veröffentlichte Schichte, Wuche für Wuche",
       "employeeTitle": "Min Schichtplan",
-      "managerDescription": "Mitarbeiterschichte verwalte und plane",
+      "planningDescription": "Schichten planen und veröffentlichen. Geplante Schichten erfassen keine Arbeitszeit.",
       "title": "Schichtplan"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Abbräche",
       "complianceAcknowledgmentRequired": "Compliance-Bestätigung erforderlich",
       "complianceWarnings": "{count, plural, one {Bi de Compliance-Prüefig isch # Warnig gfunde worde; du muesch si vor em Veröffentliche bestätige.} other {Bi de Compliance-Prüefig sind # Warnige gfunde worde; du muesch si vor em Veröffentliche bestätige.}}",
+      "coverageLoading": "Abdeckung wird geladen",
+      "coverageRulesCheckedOnPublish": "Beim Veröffentlichen werden die aktuellen Besetzungsregeln angewendet.",
+      "coverageUnavailable": "Abdeckung nicht verfügbar",
+      "coverageUnloaded": "Abdeckung wurde nicht geprüft",
       "coverageWarning": "Einigi Ziitblöck erfüllid d Mindestaaforderige ans Personal nöd.",
       "maxHours": "Max. Stunde: {count}",
       "notifyEmployees": "{count, plural, one {# Entwurfs-Schicht veröffentliche und Mitarbeiter benachrichtige} other {# Entwurfs-Schichte veröffentliche und Mitarbeiter benachrichtige}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Warnige vor em Veröffentliche entdeckt"
     },
     "scheduler": {
+      "assigned": "Zugewiesen",
       "complianceBanner": {
         "findingsDetected": "{count} Problem vor em Veröffentliche gfunde.",
         "maxHours": "Maximali Stunde: {count}",
@@ -59,18 +68,24 @@
         "employee": "Schichten für {name} werden angezeigt",
         "showAll": "Alle Schichten anzeigen"
       },
+      "loadFailed": "Schichten konnten nicht aktualisiert werden. Geladene Schichten bleiben erhalten.",
       "loading": "Schichtplan wird glade...",
+      "open": "Offene Schicht",
       "publish": {
         "failed": "Schichte händ nöd chöne veröffentlicht werde",
         "published": "{count} Schicht(e) veröffentlicht"
       },
+      "retry": "Erneut versuchen",
+      "shiftList": "Schichtliste",
       "shiftUpdate": {
         "failed": "Schicht hät nöd chöne aktualisiert werde",
         "overlapDescription": "Die Schicht überschniidet sich mit {count} andere Schicht(e)",
         "overlapWarning": "Schicht mit Überschniidigswarnig gspeicheret",
         "skillOverrideReasonRequired": "Dem/der Mitarbeitenden fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
         "updated": "Schicht aktualisiert"
-      }
+      },
+      "supportFailed": "Vorlagen oder Compliance-Informationen konnten nicht aktualisiert werden. Vor dem Veröffentlichen erneut prüfen.",
+      "templatesUnavailable": "Schichtvorlagen konnten nicht geladen werden."
     },
     "shiftDetails": {
       "close": "Schlüsse",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Zieh e Vorlag uf de Kaländer, zum e Schicht z'erstelle",
       "empty": "Kei Vorlage verfüegbar. Erstell Vorlage i de Iistellige, zum Schichte schnäller z'erfasse.",
+      "selectHint": "Vorlage auswählen, dann Schichtdatum und Zuweisung festlegen.",
       "title": "Schichtvorlage"
     }
   }

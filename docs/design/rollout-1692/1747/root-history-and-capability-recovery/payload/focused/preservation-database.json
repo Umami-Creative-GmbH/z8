@@ -1,0 +1,125 @@
+{
+  "at": "2026-11-18T04:26:35.578Z",
+  "deltas": [
+    {
+      "org": "small",
+      "table": "expense_officer_grant",
+      "countDelta": 1
+    },
+    {
+      "org": "small",
+      "table": "travel_expense_report",
+      "countDelta": 2
+    },
+    {
+      "org": "small",
+      "table": "travel_expense_report_item",
+      "countDelta": 2
+    }
+  ],
+  "reports": [
+    {
+      "kind": "standalone",
+      "status": "draft"
+    },
+    {
+      "kind": "standalone",
+      "status": "draft"
+    }
+  ],
+  "items": [
+    {
+      "type": "receipt",
+      "n": 2
+    }
+  ],
+  "grants": [
+    {
+      "scope": "all",
+      "can_export": false,
+      "can_record_reimbursements": false,
+      "is_active": false
+    }
+  ],
+  "exactExpectedUIReports": true,
+  "expectedDeltasOnly": true,
+  "originalClaimsAttachmentsLogsUnchanged": true,
+  "foreignOrgBusinessUnchanged": true,
+  "timeTables": [
+    {
+      "table": "time_record",
+      "small": {
+        "count": 2088,
+        "sha256": "d27ef3d2dfbdd3e116435942784bb0eb7647390f55e514aa17685036ad567c22"
+      },
+      "large": {
+        "count": 52200,
+        "sha256": "4352ce4cee24a76b8abdba777c6f84895470df873365fbe06a3fad5e6db49b21"
+      },
+      "unchangedBothOrgs": true
+    },
+    {
+      "table": "time_entry",
+      "small": {
+        "count": 4176,
+        "sha256": "8ebc07cc3acaf563a6fc7741b6f5ae730958f51378d75f0183c656a48dae495f"
+      },
+      "large": {
+        "count": 104400,
+        "sha256": "64eddfff38969f93432c8534fcea30762e02249de9dd206e3b9656918f36bec0"
+      },
+      "unchangedBothOrgs": true
+    },
+    {
+      "table": "work_period",
+      "small": {
+        "count": 2088,
+        "sha256": "a1a5bb42a910ccddecce9f290a882a01d0a57e9849a3a33f5217dc7cea83d04b"
+      },
+      "large": {
+        "count": 52200,
+        "sha256": "6330efef91bb3bc78b6759394fc9e6822aac68a05c374a72d2bdfc4a6b0e1d7a"
+      },
+      "unchangedBothOrgs": true
+    }
+  ],
+  "objects": [
+    {
+      "alias": "creator-draft",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "creator-approved",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "peer-draft",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "foreign-draft",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    }
+  ],
+  "writeAccounting": {
+    "businessSeeds": {
+      "claims": 4,
+      "attachments": 4,
+      "logs": 1,
+      "objects": 4
+    },
+    "UIWrites": {
+      "reports": 2,
+      "items": 2,
+      "expenseOfficerGrants": 1,
+      "expenseOfficerRevocations": 1
+    },
+    "authoritySQL": 0,
+    "timeWrites": 0
+  },
+  "qualification": "Empty tables retained as count zero; actual populated time_record/time_entry/work_period preserved for both organizations. No inherited unit/PG counts added."
+}

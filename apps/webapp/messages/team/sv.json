@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Registrera frånvaro för {name}"
       },
+      "allowances": "Årliga tilldelningar",
       "calendar": {
         "approved": "Godkänd",
         "changeDeputy": "Ändra ersättare",
@@ -12,7 +13,6 @@
         "deputyMissing": "Ersättare saknas",
         "description": "Godkänd och väntande frånvaro för valt team och år.",
         "error": {
-          "description": "Försök igen om en stund.",
           "title": "Kunde inte läsa in kalendern"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Registrera frånvaro",
         "titleForEmployee": "Registrera frånvaro för {name}"
       },
+      "recordingUnavailable": "Det gick inte att läsa in alternativ för frånvaroregistrering",
+      "retained": "Tidigare inlästa uppgifter visas. Försök igen för att hämta aktuella poster.",
+      "scopeChanged": "Teamomfattningen har ändrats. Ladda om för att fortsätta.",
+      "scopeLoading": "Läser in aktuell teamomfattning…",
+      "scopeUnavailable": "Det gick inte att läsa in aktuell teamomfattning",
+      "sections": "Sidavsnitt",
       "sort": {
         "ascending": "stigande",
         "by": "Sortera efter {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Inget saldo"
     },
-    "description": "Visa och hantera medarbetare som du är direkt chef för",
+    "directory": {
+      "count": "{count, plural, one {# medlem i den här omfattningen} other {# medlemmar i den här omfattningen}}",
+      "loading": "Läser in teammedlemmar",
+      "retained": "Visar de senast inlästa medlemmarna. Försök igen för att uppdatera dem.",
+      "retry": "Försök igen",
+      "retrying": "Försöker igen…",
+      "scope": "Du och de anställda du har direkt personalansvar för i den aktiva organisationen.",
+      "scopeChanged": "Din organisation eller behörighet har ändrats. Uppdatera för att läsa in ditt team."
+    },
     "driving": {
+      "clearFilters": "Rensa filter",
       "columns": {
         "calendar": "Kalender",
         "date": "Datum",
@@ -126,6 +141,8 @@
         "employee": "Medarbetare",
         "team": "Team"
       },
+      "guidance": "Öppna en anställds kalender för att slutföra tilldelning av arbetsperiod. Saknade uppgifter hindrar inte stämpling och ger inte körtillstånd.",
+      "loadFailed": "Körningsuppgifter kunde inte läsas in.",
       "loading": "Läser in körningsuppgifter",
       "missing": {
         "endReading": "Ingen slutmätarställning",
@@ -133,10 +150,18 @@
         "startReading": "Ingen startmätarställning",
         "vehicle": "Inget fordon"
       },
+      "noMatch": "Inga saknade körningsuppgifter matchar dessa filter.",
       "openCalendar": "Kalender",
       "openCalendarOf": "Öppna kalendern för {name}",
+      "refreshFailed": "Körningsuppgifter kunde inte uppdateras. Tidigare inlästa poster visas.",
+      "restricted": "Körningsuppgifter är inte tillgängliga i din nuvarande omfattning.",
+      "scopeAll": "Alla anställda i den här organisationen",
+      "scopeFailed": "Den aktuella köromfattningen kunde inte läsas in.",
+      "scopeLoading": "Läser in aktuell köromfattning…",
+      "scopeManaged": "Anställda du leder",
       "title": "Körningsuppgifter saknas",
-      "truncated": "Visar de {count} senaste arbetspassen. Filtrera efter team eller medarbetare för att se resten."
+      "truncated": "Visar de {count} senaste arbetspassen. Filtrera efter team eller medarbetare för att se resten.",
+      "updating": "Uppdaterar körningsuppgifter…"
     },
     "empty": {
       "action": "Gå till medarbetarinställningar",
@@ -148,9 +173,9 @@
       "title": "Något gick fel"
     },
     "feature": "visa ditt team",
-    "member": "medlem",
-    "members": "medlemmar",
-    "member.you": "Du",
+    "member": {
+      "you": "Du"
+    },
     "noResults": {
       "action": "Rensa sökning",
       "description": "Inga teammedlemmar matchar \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Period",
         "status": "Status"
       },
-      "descriptionAll": "Vem som har skickat in den valda perioden. Godkänn eller avvisa inskick i inkorgen för godkännande.",
-      "descriptionManaged": "Vilka av de medarbetare du hanterar som har skickat in den valda perioden. Godkänn eller avvisa inskick i inkorgen för godkännande.",
+      "confirmationContext": "Inlämningar bekräftar uppgifter utan att låsa dem. Ändrade uppgifter måste lämnas in på nytt. Granska beslut i inkorgen för godkännanden.",
+      "contextFailed": "Det gick inte att kontrollera din aktuella behörighet.",
       "empty": "Ingen du kan se förväntas skicka in denna period.",
       "loading": "Läser in inskickade perioder",
       "notSubmitted": "Ej inskickad",
@@ -180,7 +205,12 @@
       "openInbox": "Öppna inkorgen för godkännande",
       "owing": "{count, plural, other {# medarbetare har inte skickat in denna period ännu.} }",
       "period": "Inskickningsperiod",
+      "readFailed": "Det gick inte att läsa in periodinlämningar. Tidigare inlästa poster kan vara inaktuella.",
+      "records": "Inlämningar från anställda",
+      "refresh": "Uppdatera inlämningar",
       "running": "Denna period pågår fortfarande. Medarbetare kan skicka in den från och med dess sista dag.",
+      "scopeAll": "Alla omfattade anställda",
+      "scopeManaged": "Medarbetare du ansvarar för",
       "status": {
         "approved": "Godkänd",
         "awaiting": "Inväntar inskick",
@@ -189,10 +219,13 @@
         "submitted": "Inskickad"
       },
       "summary": "Statusar",
-      "title": "Inskickade perioder"
+      "title": "Inskickade perioder",
+      "unavailable": "Periodinlämningar är inte tillgängliga med din nuvarande behörighet. Uppdatera för att kontrollera behörigheten igen."
     },
     "presence": {
       "allLocations": "Alla platser",
+      "assignmentContext": "Platstilldelning är inte ett bevis på enhetens position. Tider använder zonen som registrerades när arbetet eller rasten började. Närvaron uppdateras varje minut.",
+      "chooseLocation": "Välj en plats",
       "columns": {
         "name": "Namn",
         "since": "Sedan",
@@ -202,9 +235,19 @@
       "descriptionAll": "Anställda kopplade till denna plats som är instämplade eller har rast.",
       "descriptionManaged": "Anställda du hanterar som är kopplade till denna plats och är instämplade eller har rast.",
       "empty": "Ingen som du har behörighet att se är instämplad på denna plats just nu.",
+      "loadFailed": "Det gick inte att läsa in närvaron för den här platsen. Försök igen eller välj en plats på nytt.",
+      "loading": "Läser in platsnärvaro…",
+      "loadingLocations": "Läser in platser för den aktuella organisationen…",
       "locationTitle": "Vem är på plats: {location}",
+      "locationUnavailable": "Platsen är inte tillgänglig",
+      "locationUnavailableDescription": "Den här platsen är inte tillgänglig i din nuvarande organisation. Välj en aktiv plats för att visa närvaro.",
       "noLocations": "Din organisation har inga aktiva platser ännu.",
-      "title": "Vem är på plats"
+      "refreshFailed": "Det gick inte att uppdatera platser. Visar senast inlästa platser.",
+      "refreshingLocations": "Uppdaterar platser…",
+      "scopeChanged": "Närvaron behöver läsas in på nytt för det aktuella kontot eller organisationen.",
+      "title": "Vem är på plats",
+      "unavailable": "Närvaro är inte tillgänglig",
+      "viewPresence": "Visa närvaro"
     },
     "primaryManager": "Du är primär chef",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Anställd",
       "position": "Befattning",
+      "region": "Tabell över teammedlemmar",
       "role": "Roll",
       "sort": {
         "ascending": "stigande",

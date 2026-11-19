@@ -1,0 +1,28 @@
+{
+  "origin": "Actual settled draft readback",
+  "h1": {
+    "x": 504,
+    "y": 129,
+    "width": 848,
+    "height": 36
+  },
+  "main": {
+    "x": 256,
+    "y": 0,
+    "width": 1344,
+    "height": 1000
+  },
+  "sidebar": {
+    "x": 0,
+    "y": 0,
+    "width": 255,
+    "height": 1000
+  },
+  "fontSize": "16px",
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "scrollWidth": 1600,
+  "h1Count": 1
+}

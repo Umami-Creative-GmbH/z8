@@ -11,6 +11,7 @@ import {
 	IconPencil,
 	IconPlayerPlay,
 	IconPlus,
+	IconRefresh,
 	IconTrash,
 	IconUserCog,
 } from "@tabler/icons-react";
@@ -31,16 +32,8 @@ import {
 	type ScheduledExportSummary,
 	toggleScheduledExportAction,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +50,15 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import {
 	Table,
@@ -117,8 +119,7 @@ export function ScheduledExportsTable({
 		useState<ScheduledExportSummary | null>(null);
 	const [runNowSchedule, setRunNowSchedule] =
 		useState<ScheduledExportSummary | null>(null);
-	const [deleteSchedule, setDeleteSchedule] =
-		useState<ScheduledExportSummary | null>(null);
+	const deletion = useConfirmedAction<ScheduledExportSummary>();
 	const [ownerSchedule, setOwnerSchedule] =
 		useState<ScheduledExportSummary | null>(null);
 
@@ -138,6 +139,7 @@ export function ScheduledExportsTable({
 	const {
 		data: schedules,
 		error,
+		isFetching,
 		isLoading: loading,
 		refetch,
 	} = useQuery({
@@ -197,9 +199,10 @@ export function ScheduledExportsTable({
 			);
 			return { previous };
 		},
-		onError: (cause, _change, context) => {
+		onError: (cause, change, context) => {
 			if (context?.previous) queryClient.setQueryData(schedulesKey, context.previous);
-			toast.error(cause.message);
+			// A failed deletion is shown inside its confirmation dialog instead.
+			if (change.kind !== "delete") toast.error(cause.message);
 		},
 		onSettled: () => queryClient.invalidateQueries({ queryKey: schedulesKey, exact: true }),
 		// Retrying a mutation can duplicate a successful server operation after transport loss.
@@ -267,15 +270,19 @@ export function ScheduledExportsTable({
 		changeSchedule.mutate({ scheduleId, kind: "toggle", isActive });
 	};
 
-	// Delete schedule with optimistic update
-	const handleConfirmDelete = async () => {
-		if (!schedules || !deleteSchedule) return;
-
-		const scheduleId = deleteSchedule.id;
-		setDeleteSchedule(null);
-
-		changeSchedule.mutate({ scheduleId, kind: "delete" });
-	};
+	// Delete schedule with optimistic update; the confirmation stays open until the
+	// deletion settles and shows a failure inline (the row is restored on failure).
+	const handleConfirmDelete = () =>
+		void deletion.confirm(
+			async (schedule) => {
+				await changeSchedule.mutateAsync({ scheduleId: schedule.id, kind: "delete" });
+			},
+			(failure) =>
+				describeFailure(
+					failure,
+					t("settings.scheduledExports.error.deleteFailed", "Delete failed"),
+				),
+		);
 
 	// Format schedule description
 	const getScheduleLabel = (schedule: ScheduledExportSummary): string => {
@@ -341,7 +348,9 @@ export function ScheduledExportsTable({
 
 			<ScheduledExportsStatus
 				error={error}
+				isRetrying={isFetching}
 				onCreate={handleOpenCreate}
+				onRetry={() => void mutate()}
 				schedules={schedules}
 			/>
 
@@ -350,7 +359,7 @@ export function ScheduledExportsTable({
 					formatDate={formatDate}
 					getReportTypeLabel={getReportTypeLabel}
 					getScheduleLabel={getScheduleLabel}
-					onDelete={setDeleteSchedule}
+					onDelete={deletion.request}
 					onEdit={handleOpenEdit}
 					onHistory={setHistorySchedule}
 					onChangeOwner={setOwnerSchedule}
@@ -362,13 +371,16 @@ export function ScheduledExportsTable({
 
 			<ScheduledExportsHelp />
 			<ScheduledExportDialogs
-				deleteSchedule={deleteSchedule}
+				deleteSchedule={deletion.target}
+				deleteOpen={deletion.open}
+				isDeleting={deletion.isPending}
+				deleteError={deletion.error}
 				editInitialValues={editInitialValues}
 				editScheduleId={editScheduleId}
 				filterOptions={filterOptions}
 				historySchedule={historySchedule}
 				isCreateDialogOpen={isCreateDialogOpen}
-				onCloseDelete={() => setDeleteSchedule(null)}
+				onDeleteOpenChange={deletion.onOpenChange}
 				onCloseHistory={() => setHistorySchedule(null)}
 				onCloseRunNow={() => setRunNowSchedule(null)}
 				onConfirmDelete={handleConfirmDelete}
@@ -402,33 +414,33 @@ function ScheduledExportsHeader({ onCreate }: { onCreate: () => void }) {
 	const { t } = useTranslate();
 
 	return (
-		<div className="flex items-center justify-between">
-			<div>
-				<h1 className="text-2xl font-semibold">
-					{t("settings.scheduledExports.title", "Scheduled Exports")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.scheduledExports.description",
-						"Configure recurring exports for payroll, data, and audit reports.",
-					)}
-				</p>
-			</div>
-			<Button onClick={onCreate}>
-				<IconPlus className="size-4 mr-2" aria-hidden="true" />
-				{t("settings.scheduledExports.newSchedule", "New Schedule")}
-			</Button>
-		</div>
+		<PageHeader
+			title={t("settings.scheduledExports.title", "Scheduled Exports")}
+			description={t(
+				"settings.scheduledExports.description",
+				"Configure recurring exports for payroll, data, and audit reports.",
+			)}
+			actions={
+				<Button onClick={onCreate}>
+					<IconPlus className="size-4 mr-2" aria-hidden="true" />
+					{t("settings.scheduledExports.newSchedule", "New Schedule")}
+				</Button>
+			}
+		/>
 	);
 }
 
 function ScheduledExportsStatus({
 	error,
+	isRetrying,
 	onCreate,
+	onRetry,
 	schedules,
 }: {
 	error: unknown;
+	isRetrying: boolean;
 	onCreate: () => void;
+	onRetry: () => void;
 	schedules: ScheduledExportSummary[] | undefined;
 }) {
 	const { t } = useTranslate();
@@ -436,12 +448,12 @@ function ScheduledExportsStatus({
 	if (error) {
 		return (
 			<Card className="border-destructive">
-				<CardContent className="pt-6">
+				<CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
 					<div
-						className="flex items-center gap-2 text-destructive"
+						className="flex min-w-0 items-center gap-2 text-destructive"
 						role="alert"
 					>
-						<IconAlertCircle className="size-5" aria-hidden="true" />
+						<IconAlertCircle className="size-5 shrink-0" aria-hidden="true" />
 						<p>
 							{error instanceof Error
 								? error.message
@@ -451,6 +463,21 @@ function ScheduledExportsStatus({
 									)}
 						</p>
 					</div>
+					<Button
+						variant="outline"
+						onClick={onRetry}
+						disabled={isRetrying}
+					>
+						{isRetrying ? (
+							<IconLoader2
+								className="size-4 mr-2 animate-spin"
+								aria-hidden="true"
+							/>
+						) : (
+							<IconRefresh className="size-4 mr-2" aria-hidden="true" />
+						)}
+						{t("settings.scheduledExports.error.retry", "Try again")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -460,29 +487,32 @@ function ScheduledExportsStatus({
 
 	return (
 		<Card>
-			<CardContent className="py-12">
-				<div className="text-center">
-					<IconCalendar
-						className="size-12 mx-auto text-muted-foreground mb-4"
-						aria-hidden="true"
-					/>
-					<h3 className="text-lg font-medium mb-2">
-						{t("settings.scheduledExports.empty.title", "No scheduled exports")}
-					</h3>
-					<p className="text-muted-foreground mb-6">
-						{t(
-							"settings.scheduledExports.empty.description",
-							"Create your first scheduled export to automate recurring reports.",
-						)}
-					</p>
-					<Button onClick={onCreate}>
-						<IconPlus className="size-4 mr-2" aria-hidden="true" />
-						{t(
-							"settings.scheduledExports.empty.createButton",
-							"Create Schedule",
-						)}
-					</Button>
-				</div>
+			<CardContent>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<IconCalendar aria-hidden="true" />
+						</EmptyMedia>
+						<EmptyTitle role="heading" aria-level={2}>
+							{t("settings.scheduledExports.empty.title", "No scheduled exports")}
+						</EmptyTitle>
+						<EmptyDescription>
+							{t(
+								"settings.scheduledExports.empty.description",
+								"Create your first scheduled export to automate recurring reports.",
+							)}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button onClick={onCreate}>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t(
+								"settings.scheduledExports.empty.createButton",
+								"Create Schedule",
+							)}
+						</Button>
+					</EmptyContent>
+				</Empty>
 			</CardContent>
 		</Card>
 	);
@@ -519,7 +549,8 @@ function SchedulesCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("settings.scheduledExports.table.title", "Active Schedules")}
+					{/* The table lists paused schedules too, so it is not titled "Active". */}
+					{t("settings.scheduledExports.table.titleAll", "Schedules")}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -625,9 +656,12 @@ function ScheduledExportRow({
 				<div className="text-xs text-muted-foreground">{schedule.timezone}</div>
 			</TableCell>
 			<TableCell>
-				<div>{schedule.ownerName ?? schedule.ownerId}</div>
+				<div>
+					{schedule.ownerName ??
+						t("settings.scheduledExports.table.unknownOwner", "Unknown owner")}
+				</div>
 				{!schedule.ownerEligible && (
-					<div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+					<div className="flex items-center gap-1 text-xs text-warning">
 						<IconAlertCircle className="size-3.5" aria-hidden="true" />
 						{t(
 							"settings.scheduledExports.table.ownerNotAdmin",
@@ -667,7 +701,7 @@ function ScheduledExportRow({
 					/>
 					{schedule.isActive ? (
 						<IconCircleCheck
-							className="size-4 text-green-500"
+							className="size-4 text-primary"
 							aria-label={t("settings.scheduledExports.table.active", "Active")}
 						/>
 					) : (
@@ -784,12 +818,15 @@ function ScheduledExportsHelp() {
 
 interface ScheduledExportDialogsProps {
 	deleteSchedule: ScheduledExportSummary | null;
+	deleteOpen: boolean;
+	isDeleting: boolean;
+	deleteError: string | null;
 	editInitialValues: Record<string, unknown> | null;
 	editScheduleId: string | null;
 	filterOptions: FilterOptions | null;
 	historySchedule: ScheduledExportSummary | null;
 	isCreateDialogOpen: boolean;
-	onCloseDelete: () => void;
+	onDeleteOpenChange: (open: boolean) => void;
 	onCloseHistory: () => void;
 	onCloseRunNow: () => void;
 	onConfirmDelete: () => void;
@@ -802,12 +839,15 @@ interface ScheduledExportDialogsProps {
 
 function ScheduledExportDialogs({
 	deleteSchedule,
+	deleteOpen,
+	isDeleting,
+	deleteError,
 	editInitialValues,
 	editScheduleId,
 	filterOptions,
 	historySchedule,
 	isCreateDialogOpen,
-	onCloseDelete,
+	onDeleteOpenChange,
 	onCloseHistory,
 	onCloseRunNow,
 	onConfirmDelete,
@@ -849,39 +889,20 @@ function ScheduledExportDialogs({
 					onSuccess={onSuccess}
 				/>
 			)}
-			<AlertDialog
-				open={Boolean(deleteSchedule)}
-				onOpenChange={(open: boolean) => !open && onCloseDelete()}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.scheduledExports.deleteDialog.title",
-								"Delete Scheduled Export",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.scheduledExports.deleteDialog.description",
-								'Are you sure you want to delete "{name}"? This action cannot be undone.',
-								{ name: deleteSchedule?.name ?? "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("settings.scheduledExports.deleteDialog.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={onConfirmDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("settings.scheduledExports.deleteDialog.confirm", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={deleteOpen}
+				onOpenChange={onDeleteOpenChange}
+				title={t("settings.scheduledExports.deleteDialog.title", "Delete Scheduled Export")}
+				description={t(
+					"settings.scheduledExports.deleteDialog.description",
+					'Are you sure you want to delete "{name}"? This action cannot be undone.',
+					{ name: deleteSchedule?.name ?? "" },
+				)}
+				confirmLabel={t("settings.scheduledExports.deleteDialog.confirm", "Delete")}
+				isDeleting={isDeleting}
+				error={deleteError}
+				onConfirm={onConfirmDelete}
+			/>
 		</>
 	);
 }

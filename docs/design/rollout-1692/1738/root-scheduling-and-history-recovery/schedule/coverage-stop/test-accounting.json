@@ -1,0 +1,141 @@
+{
+    "distinctLogicalCases":  3,
+    "validExecutedInstances":  7,
+    "validHealthyPassInstances":  4,
+    "validBlockerRedInstances":  3,
+    "excludedHarnessExecutedInstances":  9,
+    "allExecutedInstances":  16,
+    "allPassInstances":  4,
+    "allFailInstances":  12,
+    "selectedOutInstances":  2,
+    "freshPostgresCases":  0,
+    "worker282InheritedOnly":  true,
+    "runs":  [
+                 {
+                     "attempt":  "attempt01-public-controls",
+                     "passed":  0,
+                     "failed":  3,
+                     "selectedOut":  0,
+                     "validAcceptanceVerdict":  false,
+                     "cases":  [
+                                   {
+                                       "name":  "healthy successful empty coverage offers the ordinary publish description",
+                                       "status":  "failed"
+                                   },
+                                   {
+                                       "name":  "healthy understaffed coverage exposes the actual coverage warning",
+                                       "status":  "failed"
+                                   },
+                                   {
+                                       "name":  "failed coverage stays visibly unavailable and offers local read Retry",
+                                       "status":  "failed"
+                                   }
+                               ]
+                 },
+                 {
+                     "attempt":  "attempt02-hover-controls",
+                     "passed":  0,
+                     "failed":  3,
+                     "selectedOut":  0,
+                     "validAcceptanceVerdict":  false,
+                     "cases":  [
+                                   {
+                                       "name":  "healthy successful empty coverage offers the ordinary publish description",
+                                       "status":  "failed"
+                                   },
+                                   {
+                                       "name":  "healthy understaffed coverage exposes the actual coverage warning",
+                                       "status":  "failed"
+                                   },
+                                   {
+                                       "name":  "failed coverage stays visibly unavailable and offers local read Retry",
+                                       "status":  "failed"
+                                   }
+                               ]
+                 },
+                 {
+                     "attempt":  "attempt03-popup-text",
+                     "passed":  2,
+                     "failed":  1,
+                     "selectedOut":  0,
+                     "validAcceptanceVerdict":  true,
+                     "cases":  [
+                                   {
+                                       "name":  "healthy successful empty coverage offers the ordinary publish description",
+                                       "status":  "passed"
+                                   },
+                                   {
+                                       "name":  "healthy understaffed coverage exposes the actual coverage warning",
+                                       "status":  "passed"
+                                   },
+                                   {
+                                       "name":  "failed coverage stays visibly unavailable and offers local read Retry",
+                                       "status":  "failed"
+                                   }
+                               ]
+                 },
+                 {
+                     "attempt":  "attempt04-repeat-failure",
+                     "passed":  0,
+                     "failed":  1,
+                     "selectedOut":  2,
+                     "validAcceptanceVerdict":  true,
+                     "cases":  [
+                                   {
+                                       "name":  "healthy successful empty coverage offers the ordinary publish description",
+                                       "status":  "skipped"
+                                   },
+                                   {
+                                       "name":  "healthy understaffed coverage exposes the actual coverage warning",
+                                       "status":  "skipped"
+                                   },
+                                   {
+                                       "name":  "failed coverage stays visibly unavailable and offers local read Retry",
+                                       "status":  "failed"
+                                   }
+                               ]
+                 },
+                 {
+                     "attempt":  "attempt05-premerge-partial-control",
+                     "passed":  0,
+                     "failed":  3,
+                     "selectedOut":  0,
+                     "validAcceptanceVerdict":  false,
+                     "cases":  [
+                                   {
+                                       "name":  "healthy successful empty coverage offers the ordinary publish description",
+                                       "status":  "failed"
+                                   },
+                                   {
+                                       "name":  "healthy understaffed coverage exposes the actual coverage warning",
+                                       "status":  "failed"
+                                   },
+                                   {
+                                       "name":  "failed coverage stays visibly unavailable and offers local read Retry",
+                                       "status":  "failed"
+                                   }
+                               ]
+                 },
+                 {
+                     "attempt":  "attempt06-premerge-settled",
+                     "passed":  2,
+                     "failed":  1,
+                     "selectedOut":  0,
+                     "validAcceptanceVerdict":  true,
+                     "cases":  [
+                                   {
+                                       "name":  "healthy successful empty coverage offers the ordinary publish description",
+                                       "status":  "passed"
+                                   },
+                                   {
+                                       "name":  "healthy understaffed coverage exposes the actual coverage warning",
+                                       "status":  "passed"
+                                   },
+                                   {
+                                       "name":  "failed coverage stays visibly unavailable and offers local read Retry",
+                                       "status":  "failed"
+                                   }
+                               ]
+                 }
+             ]
+}

@@ -1,0 +1,32 @@
+{
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "cleanTracked": true,
+  "indexHash": "cf1f8dccd45d276aeba291ae589ac1ec71706ad1deee18c20c35afd0972ef124",
+  "pins": {
+    "pnpm-lock.yaml": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "apps/webapp/src/data/licenses.json": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+    "scripts/performance/fixture.mjs": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+  },
+  "trackedFiles": 18871,
+  "protectedFiles": 183931,
+  "protectedBytes": 2594548767,
+  "links": 5898,
+  "archives": [
+    {
+      "name": "1747-current-runtime-20261118a",
+      "sha256": "2060b5911818b40a3fd8b4a94b66d4b247c686eb8217f4c0f2cd761ae5494a59",
+      "files": 28,
+      "bytes": 88616
+    },
+    {
+      "name": "1747-current-runtime-20261118b",
+      "sha256": "742e2206163482442c83ea6615261b1ca95283fd7ed9fbd7f395e714d8992b9f",
+      "files": 51,
+      "bytes": 517361
+    }
+  ],
+  "verifiedCommit": null
+}

@@ -1,0 +1,367 @@
+{
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+      "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+    }
+  ],
+  "checks": [
+    {
+      "name": "saved Large preference after reload",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 1",
+          "Person 3",
+          "Person 5",
+          "Person 7"
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "search": "",
+        "text": "Toggle Sidebar\n\nTeam\n\n02:39\nUTC+01:00\nLoading clock status\n4 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nPerson 1\nYou\n\nperf-small-1-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nmanager\nPerson 3\n\nperf-small-3-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nemployee\nPerson 5\n\nperf-small-5-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nemployee\nPerson 7\n\nperf-small-7-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nemployee",
+        "theme": "light bprogress-busy",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "18px phone table all fields",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 1Youperf-small-1-6160ea8e831f@example.test",
+          "Person 3You are the primary managerperf-small-3-6160ea8e831f@example.testlast activity 31.12.",
+          "Person 5You are the primary managerperf-small-5-6160ea8e831f@example.testlast activity 31.12.",
+          "Person 7You are the primary managerperf-small-7-6160ea8e831f@example.testlast activity 31.12."
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "search": "",
+        "text": "Toggle Sidebar\n\nTeam\n\nMore actions\n4 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nEmployee\nPosition\nTeam\nAll-time balance\nRole\nStatus\nPerson 1\nYou\nperf-small-1-6160ea8e831f@example.test\n—\nFixture team 1\nNo balance\nmanager\nCurrent\nPerson 3\nperf-small-3-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n—\nFixture team 1\nNo balance\nemployee\nCurrent\nPerson 5\nperf-small-5-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n—\nFixture team 1\nNo balance\nemployee\nCurrent\nPerson 7\nperf-small-7-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n—\nFixture team 1\nNo balance\nemployee\nCurrent",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          390,
+          844
+        ]
+      }
+    },
+    {
+      "name": "sidebar collapse retains search",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 3"
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "search": "Person 3",
+        "text": "Toggle Sidebar\n\nTeam\n\n02:39\nUTC+01:00\nClock In\nToggle theme\n4 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nPerson 3\n\nperf-small-3-6160ea8e831f@example.test\n\nlast activity 31.12.\n\nFixture team 1\nNo balance\nCurrent\nemployee",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "existing authorized employee destination",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Employees",
+          "Your Team"
+        ],
+        "links": [
+          "Person 3"
+        ],
+        "pageWidth": 1600,
+        "path": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+        "search": "",
+        "text": "Toggle Sidebar\nEmployees\n02:39\nUTC+01:00\nClock In\nToggle theme\nAccount\nProfile Settings\nSecurity Settings\nNotification Settings\nWellness Settings\nPosition stamps\nMy data\nOrganization\nEmployees\nTeams\nLocations\nPolicies\nWork Policies\nAbsences\nTime Tracking\nWork Categories\nScheduling\nSkills & Qualifications\nIntegrations\nCalendar Sync\nData\nStatistics\nSettings\nEmployees\nEmployee Details",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "shared history failed-read public repro",
+      "value": {
+        "retry": false,
+        "text": "Balance adjustmentsOvertime payouts and opening balances on this work balance. A mistaken one is cancelled, never deleted, so cancelled ones stay listed.The balance adjustments could not be loaded.Close"
+      }
+    }
+  ],
+  "commands": [
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "dark"
+    ],
+    [
+      "screenshot",
+      "docs/design/rollout-1692/1739/after-18px-phone-dark.png"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Table view"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('table[data-mobile-layout=\"stacked\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "docs/design/rollout-1692/1739/after-18px-phone-table.png"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Card view"
+    ],
+    [
+      "set",
+      "viewport",
+      "1600",
+      "1000"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "Person 3",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Toggle Sidebar"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Toggle Sidebar"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "find",
+      "role",
+      "link",
+      "click",
+      "--name",
+      "Person 3",
+      "--exact"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.includes('/settings/employees/')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "network",
+      "route",
+      "**/en/team",
+      "--abort"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "wait",
+      "--text",
+      "The balance adjustments could not be loaded."
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "docs/design/rollout-1692/1739/history-failed-read.png"
+    ],
+    [
+      "network",
+      "unroute",
+      "**/en/team"
+    ],
+    [
+      "press",
+      "Escape"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Table view"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('table')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Next",
+      "--exact"
+    ]
+  ],
+  "failure": {
+    "message": "Command failed: C:/Users/KaiHentschel/AppData/Local/pnpm/global/v11/bf86bf49b40726ed136d2d0acb80e5862fa90fc3a766ffc0e05622cbe6aa30a8/node_modules/agent-browser/bin/agent-browser-win32-x64.exe --namespace z8-1739 --session z8-1739-transient find role button click --name Next --exact\n✗ Element '@e446' is covered by <nextjs-portal> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).\n",
+    "stack": "Error: Command failed: C:/Users/KaiHentschel/AppData/Local/pnpm/global/v11/bf86bf49b40726ed136d2d0acb80e5862fa90fc3a766ffc0e05622cbe6aa30a8/node_modules/agent-browser/bin/agent-browser-win32-x64.exe --namespace z8-1739 --session z8-1739-transient find role button click --name Next --exact\n✗ Element '@e446' is covered by <nextjs-portal> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).\n\n    at genericNodeError (node:internal/errors:999:15)\n    at wrappedFn (node:internal/errors:544:14)\n    at checkExecSyncError (node:child_process:942:11)\n    at execFileSync (node:child_process:978:15)\n    at cli (file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/.tmp/1739-checks/native.mjs:6:9)\n    at file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/.tmp/1739-checks/runtime-extra.mjs:43:24\n    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)\n    at async node:internal/modules/esm/loader:650:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)"
+  }
+}

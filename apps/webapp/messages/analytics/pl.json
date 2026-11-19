@@ -39,11 +39,13 @@
       "byCostCenter": "Według centrum kosztów",
       "byManager": "Według menedżera",
       "byTeam": "Według zespołu",
+      "chartValues": "Wyświetl wartości tygodniowe",
       "costCenter": "Centrum kosztów",
       "currentOvertime": "Aktualne nadgodziny",
       "description": "Śledź cotygodniową redukcję nadgodzin w zespołach.",
       "errors": {
-        "loadData": "Nie udało się załadować danych o redukcji nadgodzin"
+        "loadData": "Nie udało się załadować danych o redukcji nadgodzin",
+        "retryDescription": "Nie udało się załadować danych o nadgodzinach. Spróbuj ponownie dla wybranego okresu i filtrów."
       },
       "filters": {
         "allCostCenters": "Wszystkie centra kosztów",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Poprawiające się grupy",
       "improvingGroupsDescription": "Grupy z malejącą liczbą nadgodzin",
+      "loading": "Ładowanie danych o nadgodzinach",
       "manager": "Menedżer",
       "previousOvertime": "Poprzednie nadgodziny",
       "previousPeriodDescription": "W porównaniu z poprzednim okresem",
+      "refreshing": "Odświeżanie danych o nadgodzinach",
       "selectedRangeDescription": "Dla wybranego zakresu dat i filtrów",
       "title": "Redukcja nadgodzin",
       "trendDirection": "Kierunek trendu",
@@ -92,6 +96,10 @@
         "title": "Wąskie gardła zatwierdzania",
         "unavailable": "Nie udało się załadować wąskich gardeł zatwierdzania"
       },
+      "chartValues": "Wyświetl wartości wykresu",
+      "errors": {
+        "retryDescription": "Nie udało się załadować części danych analitycznych. Poprzednio załadowane wartości, jeśli są wyświetlane, mogą być nieaktualne."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Z rozpatrzonych wniosków zatwierdzone",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Ładowanie danych analitycznych",
+      "refreshing": "Odświeżanie analityki…",
       "workHoursByTeam": {
         "description": "Łączna liczba godzin pracy zarejestrowanych na zespół",
         "title": "Godziny pracy według zespołu"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Nie udało się załadować danych wydajności zespołu"
       },
+      "loading": "Ładowanie danych o wydajności zespołu",
       "onTrack": "Zgodnie z planem",
+      "refreshFailed": "Odświeżanie nie powiodło się. Wyświetlanie poprzednio załadowanych danych dla tego okresu. Eksport jest niedostępny do czasu pomyślnego ponowienia próby.",
+      "refreshing": "Odświeżanie danych o wydajności zespołu",
       "variance": {
         "description": "Odchylenie godzin od oczekiwanego czasu pracy",
         "empty": "Brak dostępnych danych o odchyleniach",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Przydzielone",
+      "allowanceMissing": "Nie skonfigurowano wymiaru urlopu",
+      "allowanceSource": "Niektórzy pracownicy nie mają zapisanego wymiaru urlopu. Sumy uwzględniają wyłącznie istniejące zapisane wymiary.",
       "balance": {
         "description": "Dni przydzielone, wykorzystane i pozostałe według pracownika",
         "title": "Bilans urlopowy"
       },
-      "daysRemaining": "Pozostało {count} dni",
-      "daysTaken": "Wykorzystano {count} dni",
+      "dayValue": "{count} dni",
+      "description": "Porównaj wykorzystanie urlopów i salda pracowników dla wybranego okresu w organizacji.",
       "errors": {
-        "loadData": "Nie udało się załadować danych o trendach urlopowych"
+        "loadData": "Nie udało się załadować danych o trendach urlopowych",
+        "retryDescription": "Nie udało się załadować danych o urlopach. Spróbuj ponownie dla wybranego okresu."
       },
+      "loading": "Ładowanie danych o urlopach",
       "monthlyUsage": {
         "description": "Dni urlopowe wykorzystane w miesiącu",
         "empty": "Brak dostępnych danych o miesięcznym wykorzystaniu",
         "title": "Miesięczne wykorzystanie urlopów"
       },
+      "monthlyValues": "Wyświetl wartości miesięczne",
       "peakMonths": {
         "description": "Miesiące z największą aktywnością urlopową",
         "empty": "Brak dostępnych danych o miesiącach szczytowych",
         "title": "Szczytowe miesiące urlopowe"
       },
+      "refreshing": "Odświeżanie danych o urlopach",
       "remaining": "Pozostało",
       "taken": "Wykorzystano",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Brak dostępnych danych o godzinach dziennych",
         "title": "Dzienne godziny pracy"
       },
+      "dailyStatus": "Wyświetl status dzienny",
+      "dailyValues": "Wyświetl godziny dzienne",
       "distribution": {
         "description": "Porównanie godzin pracy pracowników (wykres słupkowy poziomy)",
         "empty": "Brak dostępnych danych o dystrybucji",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Oczekiwane godziny",
       "hoursPerWeekAbbreviation": "godz./tydz.",
+      "loading": "Ładowanie danych analitycznych czasu pracy",
+      "refreshFailed": "Odświeżanie nie powiodło się. Wyświetlanie poprzednio załadowanych danych dla tego okresu. Eksport jest niedostępny do czasu pomyślnego ponowienia próby.",
+      "refreshing": "Odświeżanie danych analitycznych czasu pracy",
       "variance": "Odchylenie",
       "varianceTrend": {
         "description": "Odchylenie godzin od oczekiwanego czasu pracy w czasie",
         "empty": "Brak dostępnych danych trendu",
-        "title": "Trend nadgodzin i niedoczasu"
+        "title": "Trend nadgodzin i niedoczasu",
+        "unavailable": "Dzienne wartości nadgodzin i niedogodzin nie są dostępne w tym raporcie. Poniżej wyświetlono zarejestrowany status dzienny."
       }
     }
   }

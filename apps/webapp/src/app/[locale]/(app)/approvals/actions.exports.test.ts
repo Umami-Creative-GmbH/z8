@@ -7,34 +7,67 @@ const approvalsDir = dirname(fileURLToPath(import.meta.url));
 
 describe("approvals actions module structure", () => {
 	it("wraps extracted approvals server modules with async exports", () => {
-		const actionsSource = readFileSync(join(approvalsDir, "actions.ts"), "utf8");
+		const actionsSource = readFileSync(
+			join(approvalsDir, "actions.ts"),
+			"utf8",
+		);
 
 		expect(
-			existsSync(join(approvalsDir, "../../../../lib/approvals/server/absence-approvals.ts")),
+			existsSync(
+				join(
+					approvalsDir,
+					"../../../../lib/approvals/server/absence-approvals.ts",
+				),
+			),
 		).toBe(true);
 		expect(
 			existsSync(
-				join(approvalsDir, "../../../../lib/approvals/server/time-correction-approvals.ts"),
+				join(
+					approvalsDir,
+					"../../../../lib/approvals/server/time-correction-approvals.ts",
+				),
 			),
 		).toBe(true);
-		expect(existsSync(join(approvalsDir, "../../../../lib/approvals/server/queries.ts"))).toBe(
-			true,
-		);
-		expect(existsSync(join(approvalsDir, "../../../../lib/approvals/server/types.ts"))).toBe(true);
-		expect(existsSync(join(approvalsDir, "../../../../lib/approvals/server/shared.ts"))).toBe(true);
+		expect(
+			existsSync(
+				join(approvalsDir, "../../../../lib/approvals/server/queries.ts"),
+			),
+		).toBe(true);
+		expect(
+			existsSync(
+				join(approvalsDir, "../../../../lib/approvals/server/types.ts"),
+			),
+		).toBe(true);
+		expect(
+			existsSync(
+				join(approvalsDir, "../../../../lib/approvals/server/shared.ts"),
+			),
+		).toBe(true);
 
-		expect(actionsSource).toContain(
-			'export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/approvals/server/types";',
+		expect(actionsSource).toMatch(
+			/export type \{\s*ApprovalWithAbsence,\s*ApprovalWithTimeCorrection,?\s*\} from "@\/lib\/approvals\/server\/types";/,
 		);
-		expect(actionsSource).toMatch(/approveAbsenceEffect as approveAbsenceAction/);
+		expect(actionsSource).toMatch(
+			/approveAbsenceEffect as approveAbsenceAction/,
+		);
 		expect(actionsSource).toMatch(/rejectAbsenceEffect as rejectAbsenceAction/);
-		expect(actionsSource).toMatch(/getCurrentEmployee as getCurrentEmployeeAction/);
-		expect(actionsSource).toMatch(/getPendingApprovalCounts as getPendingApprovalCountsAction/);
-		expect(actionsSource).toMatch(/getPendingApprovals as getPendingApprovalsAction/);
+		expect(actionsSource).toMatch(
+			/getCurrentEmployee as getCurrentEmployeeAction/,
+		);
+		expect(actionsSource).toMatch(
+			/getPendingApprovalCounts as getPendingApprovalCountsAction/,
+		);
+		expect(actionsSource).toMatch(
+			/getPendingApprovals as getPendingApprovalsAction/,
+		);
 		expect(actionsSource).toContain("export async function approveAbsence(");
 		expect(actionsSource).toContain("export async function rejectAbsence(");
-		expect(actionsSource).toContain("export async function getPendingApprovals(");
-		expect(actionsSource).not.toMatch(/export\s*\{[^}]+\}\s*from\s*"@\/lib\/approvals\/server\//);
+		expect(actionsSource).toContain(
+			"export async function getPendingApprovals(",
+		);
+		expect(actionsSource).not.toMatch(
+			/export\s*\{[^}]+\}\s*from\s*"@\/lib\/approvals\/server\//,
+		);
 		expect(actionsSource).not.toContain("@opentelemetry/api");
 		expect(actionsSource).not.toContain("drizzle-orm");
 	});
@@ -42,11 +75,16 @@ describe("approvals actions module structure", () => {
 	it("routes travel expense approvals through the unified inbox entry point", () => {
 		// The travel expenses page shows this entry under its header (#688).
 		const travelExpensesPageSource = readFileSync(
-			join(approvalsDir, "../../../../components/travel-expenses/approvals-entry.tsx"),
+			join(
+				approvalsDir,
+				"../../../../components/travel-expenses/approvals-entry.tsx",
+			),
 			"utf8",
 		);
 
-		expect(existsSync(join(approvalsDir, "../travel-expenses/approvals/page.tsx"))).toBe(false);
+		expect(
+			existsSync(join(approvalsDir, "../travel-expenses/approvals/page.tsx")),
+		).toBe(false);
 		// Reports (#602) and legacy claims (#617) share one filtered inbox entry.
 		expect(travelExpensesPageSource).toContain(
 			'"/approvals/inbox?types=travel_expense_report,travel_expense_claim"',
@@ -55,14 +93,19 @@ describe("approvals actions module structure", () => {
 
 	it("routes payroll readiness travel expense actions through the filtered unified inbox", () => {
 		const payrollReadinessSource = readFileSync(
-			join(approvalsDir, "../../../../lib/payroll-readiness/get-payroll-readiness.ts"),
+			join(
+				approvalsDir,
+				"../../../../lib/payroll-readiness/get-payroll-readiness.ts",
+			),
 			"utf8",
 		);
 
 		expect(payrollReadinessSource).toContain(
 			'actionHref: "/approvals/inbox?types=travel_expense_report,travel_expense_claim"',
 		);
-		expect(payrollReadinessSource).not.toContain('actionHref: "/travel-expenses/approvals"');
+		expect(payrollReadinessSource).not.toContain(
+			'actionHref: "/travel-expenses/approvals"',
+		);
 	});
 
 	it("removes the legacy travel expense approval queue implementation", () => {
@@ -71,11 +114,18 @@ describe("approvals actions module structure", () => {
 			"utf8",
 		);
 
-		expect(travelExpenseActionsSource).not.toContain("getTravelExpenseApprovalQueue");
-		expect(travelExpenseActionsSource).not.toContain("TravelExpenseApprovalQueueItem");
+		expect(travelExpenseActionsSource).not.toContain(
+			"getTravelExpenseApprovalQueue",
+		);
+		expect(travelExpenseActionsSource).not.toContain(
+			"TravelExpenseApprovalQueueItem",
+		);
 		expect(
 			existsSync(
-				join(approvalsDir, "../../../components/travel-expenses/travel-expense-approval-queue.tsx"),
+				join(
+					approvalsDir,
+					"../../../components/travel-expenses/travel-expense-approval-queue.tsx",
+				),
 			),
 		).toBe(false);
 		expect(
@@ -95,8 +145,12 @@ describe("approvals actions module structure", () => {
 		);
 
 		// New expenses are reports; legacy drafts are converted, never submitted (#621).
-		expect(travelExpenseActionsSource).not.toContain("createTravelExpenseDraft");
-		expect(travelExpenseActionsSource).not.toContain("submitTravelExpenseClaim");
+		expect(travelExpenseActionsSource).not.toContain(
+			"createTravelExpenseDraft",
+		);
+		expect(travelExpenseActionsSource).not.toContain(
+			"submitTravelExpenseClaim",
+		);
 		expect(travelExpenseActionsSource).not.toContain(".insert(");
 	});
 });

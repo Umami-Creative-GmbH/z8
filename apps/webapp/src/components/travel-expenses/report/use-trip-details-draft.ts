@@ -43,7 +43,11 @@ export function useTripDetailsDraft({
 					"Your latest changes to the trip details could not be saved. Open the trip again to check them.",
 				),
 			),
-		save: async (values, expectedVersion): Promise<DraftSaveOutcome<TripDetailsView>> => {
+		save: async (
+			values,
+			expectedVersion,
+			isCurrent,
+		): Promise<DraftSaveOutcome<TripDetailsView>> => {
 			const parsed = parseTripDetailsDraft(values);
 			const errors = parsed.ok ? null : parsed.errors;
 			const saveable = errors ? withSavedValues(values, errors, lastSaved.current) : values;
@@ -57,7 +61,7 @@ export function useTripDetailsDraft({
 			switch (result.data.status) {
 				case "saved":
 					lastSaved.current = toDraftInput(toFormValues(result.data.details));
-					onSaved?.();
+					if (isCurrent()) onSaved?.();
 					return errors
 						? { status: "invalid", errors, version: result.data.details.version }
 						: { status: "saved", version: result.data.details.version };

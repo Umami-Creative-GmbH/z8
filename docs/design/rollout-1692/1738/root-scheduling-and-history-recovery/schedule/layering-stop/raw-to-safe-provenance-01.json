@@ -1,0 +1,176 @@
+{
+  "schema": "bounded raw-to-safe provenance v1",
+  "mappings": [
+    {
+      "safe": "public-test-results-01.json",
+      "raws": [
+        {
+          "path": "public-attempt-05.raw.json",
+          "bytes": 2981,
+          "sha256": "d9a612d1f42ab4af1dea07f6c053680240cae482242b7f893d7785ac89c61791"
+        },
+        {
+          "path": "public-attempt-06.raw.json",
+          "bytes": 31424,
+          "sha256": "1bac631c0086bec4da2c08313e88dd0f8efa93f1e55c5941555af4cd5cff5dc0"
+        },
+        {
+          "path": "public-attempt-07.raw.json",
+          "bytes": 3254,
+          "sha256": "8a2de57b4abe32ed842f554f8d8a9237389b65d55d2a5c54bbf1a9215ae6f96a"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    },
+    {
+      "safe": "postgres-test-results-01.json",
+      "raws": [
+        {
+          "path": "postgres-attempt-02.raw.json",
+          "bytes": 17554,
+          "sha256": "7a84965f4368ba0900c8c621a45d0cab31113adf3ab76444a6d0307fc1e7bfcc"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    },
+    {
+      "safe": "runtime-read-recovery-safe-01.json",
+      "raws": [
+        {
+          "path": "runtime-read-recovery-result-03.json",
+          "bytes": 989,
+          "sha256": "996f47c4c919ccf4e97f4157d35ba77331800a2b703634686a6901723b0ac2f9"
+        },
+        {
+          "path": "coverage-live-failed-03.raw-private.json",
+          "bytes": 3238,
+          "sha256": "370c735d6a60356a412d877e85dcd3fd36477db7a63fcd301659cb28bb8c0e38"
+        },
+        {
+          "path": "coverage-live-retry-pending-03.raw-private.json",
+          "bytes": 3223,
+          "sha256": "c840ce3783fe678f7318065d764513fa94c45bdd15bd255397a007dd968b23c6"
+        },
+        {
+          "path": "supporting-live-failed-03.raw-private.json",
+          "bytes": 3233,
+          "sha256": "e571340b138d1fb3253422259ec138aff726cd3c16025d7e5b76e6056204b068"
+        },
+        {
+          "path": "supporting-live-pending-03.raw-private.json",
+          "bytes": 3233,
+          "sha256": "8dba5d79656d50af13eb3b6499610c1701528739f555ae472cb7c06537b4b49f"
+        },
+        {
+          "path": "read-recovery-action-counts-03.raw-private.json",
+          "bytes": 4371,
+          "sha256": "acaea8ac7052b1c3f2064c4ff26463dc3007f8caf12bea44b1feb1ecab31bc65"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    },
+    {
+      "safe": "scoped-planned-readback-01.json",
+      "raws": [
+        {
+          "path": "scheduling-seed-01.json",
+          "bytes": 2022,
+          "sha256": "bba888b088682ba1201ec0b06b2bc9cf1e36576ecd4124b4a6079f1294681222"
+        },
+        {
+          "path": "scheduling-readback-01.json",
+          "bytes": 2280,
+          "sha256": "db31f09e29b0257d86b92b4ad75b52b2f9e727de2693ded4e411729e21756c5c"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    },
+    {
+      "safe": "edit-server-response-01.json",
+      "raws": [
+        {
+          "path": "edit-server-response-01.raw-private.txt",
+          "bytes": 751,
+          "sha256": "268389e117906062c24117fe8d66a723bf09edfbfc9fc42562bfcbdc4c54c22a"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    },
+    {
+      "safe": "cleanup-final-01.json",
+      "raws": [
+        {
+          "path": "owned-process-identities-01.private.json",
+          "bytes": 941471,
+          "sha256": "366d0188d07deb1825b31d80dc5c648c37d43b88488dbf3bb3e95518c8e134bc"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    },
+    {
+      "safe": "runtime-outcomes-01.json",
+      "raws": [
+        {
+          "path": "login-admin-01.raw-private.json",
+          "bytes": 119,
+          "sha256": "05782cf75a5a95afa20824af4243f9b156f2ed55a538dc253632cbc945746601"
+        },
+        {
+          "path": "login-post-navigation-01.raw-private.json",
+          "bytes": 3013,
+          "sha256": "724d6fed595130b7e2f59b5e0093e53ed57ea95987b651254877f8572abd0080"
+        },
+        {
+          "path": "planner-loaded-01.raw-private.json",
+          "bytes": 3042,
+          "sha256": "2aa1c0632bf15737e2b15efc37be43f7427e7743f2edaae1c28e7019030cfa03"
+        },
+        {
+          "path": "after-edit-retry-01.raw-private.json",
+          "bytes": 3184,
+          "sha256": "ab1adf140a2204220d1ee499d35fe94310f07b958bcfba2f78b67d726d3ffa73"
+        }
+      ],
+      "rule": "Only explicit bounded public fields/outcomes; fixture actor strings and UUID values omitted/redacted; no cookies/storage/header values or private log content exported"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "stop-publish-list-expanded-1600-01.png",
+      "bytes": 89175,
+      "sha256": "c105b76a16fa9c3938b5e0cee4f0ede10da87ee43ad751602150896617dbcfe4",
+      "provenance": "Actual admitted current consumer screenshot; fixture actor strings removed in DOM before pixel capture; no private failure image opened",
+      "reviewedPixels": true,
+      "sourceScript": "stop-publish-occlusion-01.mjs",
+      "sourceSha256": "c712a7bf480ed9da34e0c24651c0f5612c7a7e7ef9198d7d9d34079002411165",
+      "rawPrivateScreenshotWritten": false
+    },
+    {
+      "path": "stop-publish-list-collapsed-1600-01.png",
+      "bytes": 90287,
+      "sha256": "39a9cc98b52e380261a5a866610b9bf6c43ad491b9652aff3c1a7711da4ce78c",
+      "provenance": "Actual admitted current consumer screenshot; fixture actor strings removed in DOM before pixel capture; no private failure image opened",
+      "reviewedPixels": true,
+      "sourceScript": "stop-publish-occlusion-01.mjs",
+      "sourceSha256": "c712a7bf480ed9da34e0c24651c0f5612c7a7e7ef9198d7d9d34079002411165",
+      "rawPrivateScreenshotWritten": false
+    },
+    {
+      "path": "stop-publish-hit-wrong-edit-1600-01.png",
+      "bytes": 122093,
+      "sha256": "b474fcc7e102ad46317269d5ed00626da2868ce2590761739804b122da6ab031",
+      "provenance": "Actual admitted current consumer screenshot; fixture actor strings removed in DOM before pixel capture; no private failure image opened",
+      "reviewedPixels": true,
+      "sourceScript": "stop-publish-occlusion-01.mjs",
+      "sourceSha256": "c712a7bf480ed9da34e0c24651c0f5612c7a7e7ef9198d7d9d34079002411165",
+      "rawPrivateScreenshotWritten": false
+    }
+  ],
+  "privacyBoundary": {
+    "generatedCredentialsAndActorIds": "Never tool-output or public artifacts",
+    "earlierToolOutputQualification": "One pre-rpc02 form-state output contained two generated scheduling template/subarea record IDs; no credential or actor ID. Later RPC outputs and public receipts redact every UUID. That raw form state is excluded from the public allowlist.",
+    "privateFailuresInspected": false,
+    "authStateFilesCreated": false,
+    "privateInputsAndInventoriesExcluded": true
+  }
+}

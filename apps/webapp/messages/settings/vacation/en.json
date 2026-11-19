@@ -61,6 +61,7 @@
           "allowance": "Allowance",
           "allowanceForYear": "Vacation Allowance for {year}",
           "assignedPolicy": "Assigned Policy",
+          "backToAllowances": "Back to employee allowances",
           "cancel": "Cancel",
           "carryover": "Carryover",
           "carryoverDaysOptional": "Carryover Days (Optional)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Default: {days} days",
           "employeeInformation": "Employee Information",
           "errors": {
+            "adjustmentReasonRequired": "Enter a reason to record this adjustment.",
             "createAdjustmentFailed": "Failed to create adjustment",
-            "unexpected": "An unexpected error occurred",
+            "loadFailed": "The employee's vacation allowance could not be loaded.",
             "updateAllowanceFailed": "Failed to update allowance",
             "updatePolicyAssignmentFailed": "Failed to update policy assignment"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "manage employee vacation allowances",
           "managers": "Managers",
           "overrideEffectivePolicy": "Override the assigned policy allowance ({days} days) for this employee",
+          "partialSave": {
+            "description": "Your entries are kept. Retry saves only what is still missing.",
+            "failed": {
+              "adjustment": "Manual adjustment could not be saved: {reason}",
+              "allowance": "Custom allowance could not be saved: {reason}",
+              "policy": "Policy assignment could not be saved: {reason}"
+            },
+            "pending": {
+              "adjustment": "Manual adjustment not saved yet.",
+              "allowance": "Custom allowance not saved yet.",
+              "policy": "Policy assignment not saved yet."
+            },
+            "retry": "Retry unsaved changes",
+            "saved": {
+              "adjustment": "Manual adjustment saved.",
+              "allowance": "Custom allowance saved.",
+              "policy": "Policy assignment saved."
+            },
+            "title": "Some changes were not saved",
+            "titleNothingSaved": "Changes were not saved"
+          },
           "policyOptionDays": "{name} ({days} days)",
           "position": "Position",
           "postingsSkipped": "Automatic vacation postings are skipped until the policy configuration is resolved.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Warning: \"{name}\" is the company default policy. You must set another policy as default before deleting this one.",
       "delete-description-v2": "Are you sure you want to delete \"{name}\"? This will also remove all assignments for this policy.",
       "deleteFailed": "Failed to delete policy",
+      "deleteLastDefault": "This is the only company default policy. Set another policy as default first.",
       "delete-title": "Delete Vacation Policy",
       "header": {
         "accrual": "Accrual",
@@ -334,6 +358,7 @@
       },
       "loadError": "Failed to load policies",
       "max-days": "Max {days} days",
+      "no-end-date": "No end date",
       "none": "None",
       "no-policies-created": "No vacation policies created yet. Create a policy to define vacation allowances for your team.",
       "noSearchResults": "No policies match your search.",

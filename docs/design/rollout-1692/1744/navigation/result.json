@@ -1,0 +1,247 @@
+{
+  "checks": [
+    "Actual employee link opens the existing employee settings destination",
+    "Browser Back restores selected presence location",
+    "Phone navigation drawer opens and first Escape preserves the selected location",
+    "Actual All locations returns to the existing selector"
+  ],
+  "employeeHref": "/en/settings/employees/9a7b03f1-9a10-48df-ad22-acfa62e85814",
+  "returnLinks": [
+    {
+      "text": "All locations",
+      "href": "/en/team/presence",
+      "visible": true
+    },
+    {
+      "text": "Fixture Person 3",
+      "href": "/en/settings/employees/9a7b03f1-9a10-48df-ad22-acfa62e85814",
+      "visible": true
+    },
+    {
+      "text": "Profile Settings",
+      "href": "/en/settings/profile",
+      "visible": false
+    },
+    {
+      "text": "Security Settings",
+      "href": "/en/settings/security",
+      "visible": false
+    },
+    {
+      "text": "Notification Settings",
+      "href": "/en/settings/notifications",
+      "visible": false
+    },
+    {
+      "text": "Wellness Settings",
+      "href": "/en/settings/wellness",
+      "visible": false
+    },
+    {
+      "text": "Position stamps",
+      "href": "/en/settings/position-stamps",
+      "visible": false
+    },
+    {
+      "text": "My data",
+      "href": "/en/settings/my-data",
+      "visible": false
+    },
+    {
+      "text": "Organization",
+      "href": "/en/settings/organization",
+      "visible": false
+    },
+    {
+      "text": "Employees",
+      "href": "/en/settings/employees",
+      "visible": false
+    },
+    {
+      "text": "Teams",
+      "href": "/en/settings/teams",
+      "visible": false
+    },
+    {
+      "text": "Custom Roles",
+      "href": "/en/settings/roles",
+      "visible": false
+    },
+    {
+      "text": "Identity & Access",
+      "href": "/en/settings/enterprise/identity-setup",
+      "visible": false
+    },
+    {
+      "text": "Locations",
+      "href": "/en/settings/locations",
+      "visible": false
+    },
+    {
+      "text": "Vehicles",
+      "href": "/en/settings/vehicles",
+      "visible": false
+    },
+    {
+      "text": "Custom fields",
+      "href": "/en/settings/custom-fields",
+      "visible": false
+    },
+    {
+      "text": "Domain & Branding",
+      "href": "/en/settings/enterprise/domains",
+      "visible": false
+    },
+    {
+      "text": "Implementation checklist",
+      "href": "/en/settings/implementation-checklist",
+      "visible": false
+    },
+    {
+      "text": "Work Policies",
+      "href": "/en/settings/work-policies",
+      "visible": false
+    },
+    {
+      "text": "Absences",
+      "href": "/en/settings/vacation",
+      "visible": false
+    },
+    {
+      "text": "Employee Allowances",
+      "href": "/en/settings/vacation/employees",
+      "visible": false
+    },
+    {
+      "text": "Travel Expense Policies",
+      "href": "/en/settings/travel-expenses",
+      "visible": false
+    },
+    {
+      "text": "Approval",
+      "href": "/en/settings/approval-policies",
+      "visible": false
+    },
+    {
+      "text": "Clocking",
+      "href": "/en/settings/clocking",
+      "visible": false
+    },
+    {
+      "text": "Work Categories",
+      "href": "/en/settings/work-categories",
+      "visible": false
+    },
+    {
+      "text": "Position capture",
+      "href": "/en/settings/position-capture",
+      "visible": false
+    },
+    {
+      "text": "Kiosks",
+      "href": "/en/settings/kiosks",
+      "visible": false
+    },
+    {
+      "text": "Work Diagnostics",
+      "href": "/en/settings/work-diagnostics",
+      "visible": false
+    },
+    {
+      "text": "Skills & Qualifications",
+      "href": "/en/settings/skills",
+      "visible": false
+    },
+    {
+      "text": "Payroll Officers",
+      "href": "/en/settings/payroll-access",
+      "visible": false
+    },
+    {
+      "text": "Payroll Readiness",
+      "href": "/en/settings/payroll-readiness",
+      "visible": false
+    },
+    {
+      "text": "Payroll Export",
+      "href": "/en/settings/payroll-export",
+      "visible": false
+    },
+    {
+      "text": "Closed months",
+      "href": "/en/settings/closed-months",
+      "visible": false
+    },
+    {
+      "text": "Email",
+      "href": "/en/settings/enterprise/email",
+      "visible": false
+    },
+    {
+      "text": "Chat Integrations",
+      "href": "/en/settings/notification-channels",
+      "visible": false
+    },
+    {
+      "text": "Calendar Sync",
+      "href": "/en/settings/calendar",
+      "visible": false
+    },
+    {
+      "text": "Developer Access",
+      "href": "/en/settings/enterprise/api-keys",
+      "visible": false
+    },
+    {
+      "text": "Audit",
+      "href": "/en/settings/audit-export",
+      "visible": false
+    },
+    {
+      "text": "Import Data",
+      "href": "/en/settings/import",
+      "visible": false
+    },
+    {
+      "text": "Data Export",
+      "href": "/en/settings/export",
+      "visible": false
+    },
+    {
+      "text": "Scheduled Exports",
+      "href": "/en/settings/scheduled-exports",
+      "visible": false
+    },
+    {
+      "text": "Export Operations",
+      "href": "/en/settings/export-operations",
+      "visible": false
+    },
+    {
+      "text": "Statistics",
+      "href": "/en/settings/statistics",
+      "visible": false
+    },
+    {
+      "text": "Settings",
+      "href": "/en/settings",
+      "visible": false
+    },
+    {
+      "text": "Employees",
+      "href": "/en/settings/employees",
+      "visible": false
+    },
+    {
+      "text": "",
+      "href": "/en/settings/employees",
+      "visible": false
+    },
+    {
+      "text": "Change in Contract & Work Model",
+      "href": "#employment-history",
+      "visible": false
+    }
+  ],
+  "status": "completed"
+}

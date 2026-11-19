@@ -1,0 +1,134 @@
+{
+  "jsonParsed": 162,
+  "mjsSyntaxChecked": 36,
+  "images": [
+    {
+      "path": "current-desktop-1600-01.png",
+      "sha256": "e98b992761d5e7417f3f50113e03036588bed2ffabaab7710a872d5ae2e97290",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-final-collapsed18-01.png",
+      "sha256": "a10b6e28d648f2271163a91e8cbe23ddec817cf1e0c6fccc4b7b0cd5399a7e14",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-final-saved18-01.png",
+      "sha256": "8ee22b57ddec69b288cc9949b72728423ec47dfda6141f412fd5da69f2e10f1e",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-phone-390-01.png",
+      "sha256": "ad81eb958bf61af7ad3c9e6b8ba4bec62e665705daa6ce2be6c08c33430ca595",
+      "width": 390,
+      "height": 844,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-saved18-reload-01.png",
+      "sha256": "2e7fec9f77e72dd21d9f9d09155e8df9ce90d2877cf4afcb56f50a8862f79073",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-single-desktop-1600-01.png",
+      "sha256": "8100542938c5d9baf971b2ec92a40ec9fbe1e774757d191530477df2eea2555f",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-single-desktop-tail-01.png",
+      "sha256": "f86f02b2374f8cf80a9c6afd4f59cf0cd2dd8a3f9b0f8eb923ba5e73785fba34",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-single-phone-390-01.png",
+      "sha256": "93c347cb16f0097fcdf90bd8c610c539d1bb7e7eb73ea05cb76aa301ae5470b1",
+      "width": 390,
+      "height": 844,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-single-phone-tail-01.png",
+      "sha256": "d6a8d83a49b1419ab69f7769e2ea2d1cab1c47be038ee620a32b713d50827dba",
+      "width": 390,
+      "height": 844,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-single-wide-2400-dark-01.png",
+      "sha256": "98653eb4532d93aed6e84137504afad3d151d5d820cf85553964e3ca8fbcb4e3",
+      "width": 2400,
+      "height": 1350,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "current-wide-2400-dark-01.png",
+      "sha256": "0efcbd5397e5d4d5cb158e783448447e1cddac56c1686ac4ea752c9c20d808f1",
+      "width": 2400,
+      "height": 1350,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "historical-single-desktop-1600-01.png",
+      "sha256": "294390454d2fcc1b552f141d75efe3506505f94656dab7aa31017907e9a7d0c6",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "historical-single-desktop-tail-01.png",
+      "sha256": "d1814abbeb050b8858f93625a76850e4d3debfe90aa8cb85c59b2ae4fefe577b",
+      "width": 1600,
+      "height": 1100,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "historical-single-phone-390-01.png",
+      "sha256": "c14fc0e25e968bb490d19b24547ce636af7ed0b852314035ee633c38c976a22b",
+      "width": 390,
+      "height": 844,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "historical-single-phone-tail-01.png",
+      "sha256": "46e562b5efd2e6c6f5d491c0a5b1f98d3078e0701b177a992ab4a49095c6e627",
+      "width": 390,
+      "height": 844,
+      "fullyInflatedAndUnfiltered": true
+    },
+    {
+      "path": "historical-single-wide-2400-dark-01.png",
+      "sha256": "12c66e4d496f45132115038c2afc3cfebf3a6c86cb407c43c43d9e081ccc3c11",
+      "width": 2400,
+      "height": 1350,
+      "fullyInflatedAndUnfiltered": true
+    }
+  ],
+  "acceptedPixelReview": [
+    "current-single-desktop-1600-01.png",
+    "current-single-desktop-tail-01.png",
+    "current-single-phone-390-01.png",
+    "current-single-phone-tail-01.png",
+    "current-single-wide-2400-dark-01.png",
+    "historical-single-desktop-1600-01.png",
+    "historical-single-desktop-tail-01.png",
+    "historical-single-phone-390-01.png",
+    "historical-single-phone-tail-01.png",
+    "historical-single-wide-2400-dark-01.png",
+    "current-final-saved18-01.png",
+    "current-final-collapsed18-01.png"
+  ],
+  "mixedControllerEarlierCapturesQualified": true,
+  "privateFailureImagesFromPriorArchivesOpened": 0
+}

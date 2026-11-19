@@ -90,6 +90,7 @@ interface ShiftDialogProps {
 	templates: ShiftTemplate[];
 	isManager: boolean;
 	defaultDate: string | null;
+	defaultTemplateId?: string | null;
 	organizationId: string;
 	organizationTimezone: string;
 }
@@ -101,6 +102,7 @@ export function ShiftDialog({
 	templates,
 	isManager,
 	defaultDate,
+	defaultTemplateId,
 	organizationId,
 	organizationTimezone,
 }: ShiftDialogProps) {
@@ -120,11 +122,15 @@ export function ShiftDialog({
 	// The assignment context the server last refused for want of a skill override reason (#893).
 	const [reasonRefusedFor, setReasonRefusedFor] = useState<string | null>(null);
 	const handleOpenChange = (next: boolean) => {
+		if (!next && (upsertMutation.isPending || deleteMutation.isPending || formSubmitting)) return;
 		if (!next) setReasonRefusedFor(null);
 		onOpenChange(next);
 	};
 
-	const closeDialog = () => handleOpenChange(false);
+	const closeDialog = () => {
+		setReasonRefusedFor(null);
+		onOpenChange(false);
+	};
 
 	const upsertMutation = useShiftUpsertMutation({
 		shiftId: shift?.id,
@@ -133,14 +139,20 @@ export function ShiftDialog({
 		onReasonRefused: setReasonRefusedFor,
 	});
 
-	const { form, formValues } = useShiftDialogForm({
+	const {
+		form,
+		formValues,
+		isSubmitting: formSubmitting,
+	} = useShiftDialogForm({
 		open,
 		shift,
 		templates,
 		defaultDate,
+		defaultTemplateId,
 		organizationTimezone,
-		onSubmit: (values) => {
-			upsertMutation.mutate(values);
+		onSubmit: async (values) => {
+			// The mutation reports errors beside the retained form; the submit promise tracks pending.
+			await upsertMutation.mutateAsync(values).catch(() => {});
 		},
 	});
 
@@ -178,7 +190,16 @@ export function ShiftDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
-			<ActionPanelContent>
+			<ActionPanelContent
+				onEscapeKeyDown={(event) => {
+					if (upsertMutation.isPending || deleteMutation.isPending || formSubmitting)
+						event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (upsertMutation.isPending || deleteMutation.isPending || formSubmitting)
+						event.preventDefault();
+				}}
+			>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{title}</ActionPanelTitle>
 					<ActionPanelDescription>{description}</ActionPanelDescription>
@@ -213,7 +234,7 @@ export function ShiftDialog({
 						shift={shift}
 						isManager={isManager}
 						isDeleting={deleteMutation.isPending}
-						isSaving={upsertMutation.isPending}
+						isSaving={upsertMutation.isPending || formSubmitting}
 						onDelete={() => deleteMutation.mutate()}
 						onCancel={closeDialog}
 					/>

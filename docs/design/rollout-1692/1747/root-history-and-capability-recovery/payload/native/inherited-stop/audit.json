@@ -1,0 +1,590 @@
+{
+  "scope": "SAFE explicit payload intake only; no archived code or probes executed",
+  "indexSha256": "0f8bb1c3fa10466d981bae4e594b674972ece096dfbd911db32104619718f67b",
+  "manifestFileCount": 56,
+  "actualFileCount": 56,
+  "manifestTotalBytes": 6242185,
+  "actualTotalBytes": 6242185,
+  "allBytesMatch": true,
+  "allHashesMatch": true,
+  "jsonFiles": 22,
+  "jsonParseFailures": [],
+  "pythonFiles": 12,
+  "pythonAstFailures": [
+    {
+      "path": "prepare-attempt3.py",
+      "actualBytes": 4413,
+      "expectedBytes": 4413,
+      "actualSha256": "f993a340e477c6ed9a9cfe229a2c68337bcc349031dd32a642ff8fc184776b60",
+      "expectedSha256": "f993a340e477c6ed9a9cfe229a2c68337bcc349031dd32a642ff8fc184776b60",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "invalid syntax. Is this intended to be part of the string? (prepare-attempt3.py, line 60)"
+    }
+  ],
+  "typedSourceFiles": [
+    "bridges/r165-review-classification.test.tsx",
+    "bridges/r165-review-priority.test.tsx",
+    "bridges/r165-root-expense-history.tsx",
+    "bridges/r165-root-management.tsx",
+    "bridges/r165-root-new-buttons.tsx",
+    "r165-review-classification.test.tsx",
+    "r165-review-priority.test.tsx",
+    "resolved-route-metadata.ts",
+    "root-expense-history.tsx",
+    "root-new-receipt-expense-button.tsx",
+    "root-travel-expense-management.tsx"
+  ],
+  "pngFiles": [],
+  "rows": [
+    {
+      "path": "anchors.json",
+      "actualBytes": 121808,
+      "expectedBytes": 121808,
+      "actualSha256": "41cd043125bb918686363ee4c9bfef0efb78d4dabdc294ae64e1e4eeb38a65c7",
+      "expectedSha256": "41cd043125bb918686363ee4c9bfef0efb78d4dabdc294ae64e1e4eeb38a65c7",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "archive-current-source-evolution.json",
+      "actualBytes": 3603,
+      "expectedBytes": 3603,
+      "actualSha256": "ca0e28235a944b4225fb2865cdd9cab9150bcb25decbb95ccbe266f4a117f499",
+      "expectedSha256": "ca0e28235a944b4225fb2865cdd9cab9150bcb25decbb95ccbe266f4a117f499",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "bridges/r165-review-classification.test.tsx",
+      "actualBytes": 6301,
+      "expectedBytes": 6301,
+      "actualSha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672",
+      "expectedSha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "bridges/r165-review-priority.test.tsx",
+      "actualBytes": 5989,
+      "expectedBytes": 5989,
+      "actualSha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa",
+      "expectedSha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "bridges/r165-root-expense-history.tsx",
+      "actualBytes": 14641,
+      "expectedBytes": 14641,
+      "actualSha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+      "expectedSha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "bridges/r165-root-management.tsx",
+      "actualBytes": 1707,
+      "expectedBytes": 1707,
+      "actualSha256": "9c004df1e35d65788121cdaa5f807f9f40e8a97f696ae2050e78f654a180779d",
+      "expectedSha256": "9c004df1e35d65788121cdaa5f807f9f40e8a97f696ae2050e78f654a180779d",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "bridges/r165-root-new-buttons.tsx",
+      "actualBytes": 2760,
+      "expectedBytes": 2760,
+      "actualSha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+      "expectedSha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "bridges.json",
+      "actualBytes": 1954,
+      "expectedBytes": 1954,
+      "actualSha256": "0d6f7e2762e18c95fbb51e6639ff6f4d19beef005961023970a275e50d6ed6f8",
+      "expectedSha256": "0d6f7e2762e18c95fbb51e6639ff6f4d19beef005961023970a275e50d6ed6f8",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "candidate.json",
+      "actualBytes": 292,
+      "expectedBytes": 292,
+      "actualSha256": "3c0d566673533d2d8fa10055b8b2104286b0cca1c69f53baba4488511ad6e2d5",
+      "expectedSha256": "3c0d566673533d2d8fa10055b8b2104286b0cca1c69f53baba4488511ad6e2d5",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "classification-command.json",
+      "actualBytes": 550,
+      "expectedBytes": 550,
+      "actualSha256": "d11c96c23c6bcba44fb873a94ed0c5e467a946a9b11510194ef759816318ebef",
+      "expectedSha256": "d11c96c23c6bcba44fb873a94ed0c5e467a946a9b11510194ef759816318ebef",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "classification-version.log",
+      "actualBytes": 8,
+      "expectedBytes": 8,
+      "actualSha256": "af24c4404052eb57d108af369192a87f56f1b93ef88bd1a4901c4e1aefef8c8e",
+      "expectedSha256": "af24c4404052eb57d108af369192a87f56f1b93ef88bd1a4901c4e1aefef8c8e",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "classification-vitest.json",
+      "actualBytes": 2749,
+      "expectedBytes": 2749,
+      "actualSha256": "a58f470fd63a6fb0e30f004b9b61499e4b890b7ce9b90cc32f6b117336541146",
+      "expectedSha256": "a58f470fd63a6fb0e30f004b9b61499e4b890b7ce9b90cc32f6b117336541146",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "classification.log",
+      "actualBytes": 2997,
+      "expectedBytes": 2997,
+      "actualSha256": "aef37b703785f41c8489bfd2fff1a79868217264d3ee9085697cd4acd1fe5d08",
+      "expectedSha256": "aef37b703785f41c8489bfd2fff1a79868217264d3ee9085697cd4acd1fe5d08",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "COMMANDS.md",
+      "actualBytes": 6427,
+      "expectedBytes": 6427,
+      "actualSha256": "ea2d179a6ae152c8d7eaf5d88c1085fb5d83f907e80e71d657ea5ef8609226d8",
+      "expectedSha256": "ea2d179a6ae152c8d7eaf5d88c1085fb5d83f907e80e71d657ea5ef8609226d8",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "commit-candidate.py",
+      "actualBytes": 985,
+      "expectedBytes": 985,
+      "actualSha256": "b1e250d5a0b1ec750d908302b8ea76ca142a048244c6ac0fe2e3a7435e20cb2d",
+      "expectedSha256": "b1e250d5a0b1ec750d908302b8ea76ca142a048244c6ac0fe2e3a7435e20cb2d",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "dependency-after-inventory.json",
+      "actualBytes": 40125,
+      "expectedBytes": 40125,
+      "actualSha256": "5296a3f0d2ce3dfa16cd83435d94f2fcddd0615da34b18beef5a68ef755a0bad",
+      "expectedSha256": "5296a3f0d2ce3dfa16cd83435d94f2fcddd0615da34b18beef5a68ef755a0bad",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "expected-map.json",
+      "actualBytes": 2928429,
+      "expectedBytes": 2928429,
+      "actualSha256": "cd8e286fb582f3990f928906d96db292552b30de15289774037aaa2061bbffdb",
+      "expectedSha256": "cd8e286fb582f3990f928906d96db292552b30de15289774037aaa2061bbffdb",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "final-git-status.log",
+      "actualBytes": 176,
+      "expectedBytes": 176,
+      "actualSha256": "18519ea3d3157441ea4b79614e1107c89f621e04f0efa4d697d64ee5ca2c7172",
+      "expectedSha256": "18519ea3d3157441ea4b79614e1107c89f621e04f0efa4d697d64ee5ca2c7172",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "finding.json",
+      "actualBytes": 1635,
+      "expectedBytes": 1635,
+      "actualSha256": "97b190f241246e1146f0ec66dc2e0b1b4783228c19d73d9c03c1898d0e3797c0",
+      "expectedSha256": "97b190f241246e1146f0ec66dc2e0b1b4783228c19d73d9c03c1898d0e3797c0",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "HANDOFF.md",
+      "actualBytes": 1441,
+      "expectedBytes": 1441,
+      "actualSha256": "cff6d80cfe33d3c992852517ceafade0fee0f25fea0d2d9b9d29e25102ecfa8a",
+      "expectedSha256": "cff6d80cfe33d3c992852517ceafade0fee0f25fea0d2d9b9d29e25102ecfa8a",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "issue-SAFE.json",
+      "actualBytes": 408,
+      "expectedBytes": 408,
+      "actualSha256": "924f43180eb1629bb5051622937c96357cdf71597e4aab1ae2914fbf48954f62",
+      "expectedSha256": "924f43180eb1629bb5051622937c96357cdf71597e4aab1ae2914fbf48954f62",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "location.txt",
+      "actualBytes": 54,
+      "expectedBytes": 54,
+      "actualSha256": "0eaa1c1d70b9b049b85005fe37505446db6f83d50c4e027d232b24fb23ed8427",
+      "expectedSha256": "0eaa1c1d70b9b049b85005fe37505446db6f83d50c4e027d232b24fb23ed8427",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "make-classification.py",
+      "actualBytes": 4039,
+      "expectedBytes": 4039,
+      "actualSha256": "23ea0a6269eb4bffe7512aff21b5fa8efd123a745f50870d47273df74692ccab",
+      "expectedSha256": "23ea0a6269eb4bffe7512aff21b5fa8efd123a745f50870d47273df74692ccab",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "merge-prediction.json",
+      "actualBytes": 761,
+      "expectedBytes": 761,
+      "actualSha256": "8d508de4ab3c34904079af3e49d97d2262dfac1abf27a6bacbfa3494517dc742",
+      "expectedSha256": "8d508de4ab3c34904079af3e49d97d2262dfac1abf27a6bacbfa3494517dc742",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "native-merge.log",
+      "actualBytes": 218,
+      "expectedBytes": 218,
+      "actualSha256": "393accddb179ea830129f391df40832847a272346c689ec78f24431267f9070f",
+      "expectedSha256": "393accddb179ea830129f391df40832847a272346c689ec78f24431267f9070f",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "prep-attempt1-commands.json",
+      "actualBytes": 16657,
+      "expectedBytes": 16657,
+      "actualSha256": "a9cb5fd2d59b6c0f61c4160cc86d57e4f18fbde47e372a770898c5637c72332a",
+      "expectedSha256": "a9cb5fd2d59b6c0f61c4160cc86d57e4f18fbde47e372a770898c5637c72332a",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "prep-attempt2-commands.json",
+      "actualBytes": 16947,
+      "expectedBytes": 16947,
+      "actualSha256": "8bbdd0045cb630dc72d535ac638a3f97458d0f10ad49e85a7cb1cefeac1663f3",
+      "expectedSha256": "8bbdd0045cb630dc72d535ac638a3f97458d0f10ad49e85a7cb1cefeac1663f3",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "prep-commands.json",
+      "actualBytes": 16981,
+      "expectedBytes": 16981,
+      "actualSha256": "f8dd376f419f7a6d7cb63152c994f67cc1b5de81a6c99e73d585cf8058238077",
+      "expectedSha256": "f8dd376f419f7a6d7cb63152c994f67cc1b5de81a6c99e73d585cf8058238077",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "prep-hash-audit.json",
+      "actualBytes": 13208,
+      "expectedBytes": 13208,
+      "actualSha256": "0a5654075893ebc6645ad514325d4ba1649364b58ba66b288ac06c3410e0bb2d",
+      "expectedSha256": "0a5654075893ebc6645ad514325d4ba1649364b58ba66b288ac06c3410e0bb2d",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "prepare-attempt1.py",
+      "actualBytes": 4241,
+      "expectedBytes": 4241,
+      "actualSha256": "f4b5a9459e29daa9d877b107c4c28f16fd2cd248bc4ddd5b6a59e89c16d0c1f5",
+      "expectedSha256": "f4b5a9459e29daa9d877b107c4c28f16fd2cd248bc4ddd5b6a59e89c16d0c1f5",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "prepare-attempt2.py",
+      "actualBytes": 4269,
+      "expectedBytes": 4269,
+      "actualSha256": "563eb5991aea91e1c022ad84f7d43761a01cba16b491224e0cc72e40e6df9f71",
+      "expectedSha256": "563eb5991aea91e1c022ad84f7d43761a01cba16b491224e0cc72e40e6df9f71",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "prepare-attempt3.py",
+      "actualBytes": 4413,
+      "expectedBytes": 4413,
+      "actualSha256": "f993a340e477c6ed9a9cfe229a2c68337bcc349031dd32a642ff8fc184776b60",
+      "expectedSha256": "f993a340e477c6ed9a9cfe229a2c68337bcc349031dd32a642ff8fc184776b60",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "invalid syntax. Is this intended to be part of the string? (prepare-attempt3.py, line 60)"
+    },
+    {
+      "path": "prepare.py",
+      "actualBytes": 4475,
+      "expectedBytes": 4475,
+      "actualSha256": "22258da5ea40b6982bf2e904c646e229a76de9f8af997beb32169a93e4c399cf",
+      "expectedSha256": "22258da5ea40b6982bf2e904c646e229a76de9f8af997beb32169a93e4c399cf",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "preservation.json",
+      "actualBytes": 576,
+      "expectedBytes": 576,
+      "actualSha256": "80f069d097f51ace64ccf41a0999d1434516fc7eaa4599646e5752ddd322fb55",
+      "expectedSha256": "80f069d097f51ace64ccf41a0999d1434516fc7eaa4599646e5752ddd322fb55",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "preserve-and-clean-attempt1.py",
+      "actualBytes": 6770,
+      "expectedBytes": 6770,
+      "actualSha256": "4fbb6498acfc004fb9b2523cdb08c430de518b189fc9bad7b7010df7c9637c18",
+      "expectedSha256": "4fbb6498acfc004fb9b2523cdb08c430de518b189fc9bad7b7010df7c9637c18",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "preserve-and-clean.py",
+      "actualBytes": 6767,
+      "expectedBytes": 6767,
+      "actualSha256": "2065cf22f8f4fd1df8979ff3e64b96ae9db1d1550b68aafbdfed48c0e566c256",
+      "expectedSha256": "2065cf22f8f4fd1df8979ff3e64b96ae9db1d1550b68aafbdfed48c0e566c256",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "priority-command.json",
+      "actualBytes": 555,
+      "expectedBytes": 555,
+      "actualSha256": "ddc2e9098586b6ec15a8f5b9f5da789f0b3656acb5918fe9c5a1eee5c5745545",
+      "expectedSha256": "ddc2e9098586b6ec15a8f5b9f5da789f0b3656acb5918fe9c5a1eee5c5745545",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "priority-version.log",
+      "actualBytes": 8,
+      "expectedBytes": 8,
+      "actualSha256": "af24c4404052eb57d108af369192a87f56f1b93ef88bd1a4901c4e1aefef8c8e",
+      "expectedSha256": "af24c4404052eb57d108af369192a87f56f1b93ef88bd1a4901c4e1aefef8c8e",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "priority-vitest.json",
+      "actualBytes": 2673,
+      "expectedBytes": 2673,
+      "actualSha256": "b5d13f939770f29e3d7a8b1348e6037f4112ce4883013c8fb764042f1bf0e41e",
+      "expectedSha256": "b5d13f939770f29e3d7a8b1348e6037f4112ce4883013c8fb764042f1bf0e41e",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "priority.log",
+      "actualBytes": 2495,
+      "expectedBytes": 2495,
+      "actualSha256": "73a659987b9fc1e47671eb0f58894daa78353d1824a4f7e4840c63207bc01265",
+      "expectedSha256": "73a659987b9fc1e47671eb0f58894daa78353d1824a4f7e4840c63207bc01265",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "protected-archive-verifier.log",
+      "actualBytes": 806,
+      "expectedBytes": 806,
+      "actualSha256": "1e481ac8364f64bd32316f752164f66cdcc0110dd50c0fc2494fc7a7a11a8f13",
+      "expectedSha256": "1e481ac8364f64bd32316f752164f66cdcc0110dd50c0fc2494fc7a7a11a8f13",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "r165-review-classification.test.tsx",
+      "actualBytes": 6301,
+      "expectedBytes": 6301,
+      "actualSha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672",
+      "expectedSha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "r165-review-priority.test.tsx",
+      "actualBytes": 5989,
+      "expectedBytes": 5989,
+      "actualSha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa",
+      "expectedSha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "release.json",
+      "actualBytes": 603,
+      "expectedBytes": 603,
+      "actualSha256": "c5819eedd978a502dd7c4a6283e0e0f8b4c009fddc72ae65432e8b008ac83936",
+      "expectedSha256": "c5819eedd978a502dd7c4a6283e0e0f8b4c009fddc72ae65432e8b008ac83936",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "REPORT.md",
+      "actualBytes": 8251,
+      "expectedBytes": 8251,
+      "actualSha256": "20da74f7080ec629a65d2cdda2e28df0a077d02421a80e4021eeeeaf3a7d2a58",
+      "expectedSha256": "20da74f7080ec629a65d2cdda2e28df0a077d02421a80e4021eeeeaf3a7d2a58",
+      "bytesMatch": true,
+      "hashMatch": true
+    },
+    {
+      "path": "resolved-route-metadata.ts",
+      "actualBytes": 7674,
+      "expectedBytes": 7674,
+      "actualSha256": "731c8cd6359af7eec20ba12a2d456e7c5d4cdc46e4efab7f573ae743ab7fdb6c",
+      "expectedSha256": "731c8cd6359af7eec20ba12a2d456e7c5d4cdc46e4efab7f573ae743ab7fdb6c",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "root-baseline.json",
+      "actualBytes": 2916188,
+      "expectedBytes": 2916188,
+      "actualSha256": "2852d660f7bda607ec1dec5db86f6d182c503542958550d0026ea89b21425068",
+      "expectedSha256": "2852d660f7bda607ec1dec5db86f6d182c503542958550d0026ea89b21425068",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "root-expense-history.tsx",
+      "actualBytes": 14641,
+      "expectedBytes": 14641,
+      "actualSha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+      "expectedSha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "root-new-receipt-expense-button.tsx",
+      "actualBytes": 2760,
+      "expectedBytes": 2760,
+      "actualSha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+      "expectedSha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "root-travel-expense-management.tsx",
+      "actualBytes": 1702,
+      "expectedBytes": 1702,
+      "actualSha256": "90777b2798983cd9a1a062a2f031c1c144c5b0044451fe01dd03406613fee5e2",
+      "expectedSha256": "90777b2798983cd9a1a062a2f031c1c144c5b0044451fe01dd03406613fee5e2",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "staticSourceUtf8": "pass"
+    },
+    {
+      "path": "run-package.py",
+      "actualBytes": 944,
+      "expectedBytes": 944,
+      "actualSha256": "df5d50ccc86dd4a74f447c24eaa74cfa8cdc312f45c4d0897f72039a51333a01",
+      "expectedSha256": "df5d50ccc86dd4a74f447c24eaa74cfa8cdc312f45c4d0897f72039a51333a01",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "seal.py",
+      "actualBytes": 2273,
+      "expectedBytes": 2273,
+      "actualSha256": "8b96dff38c29a611722eb24863423f210001d43bff2235ab95f8566adaa76d89",
+      "expectedSha256": "8b96dff38c29a611722eb24863423f210001d43bff2235ab95f8566adaa76d89",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "STOP.json",
+      "actualBytes": 254,
+      "expectedBytes": 254,
+      "actualSha256": "7af6d6153e0c58a45eb78c50f986091b780eefe815ff37b60824fe97a7f7bc34",
+      "expectedSha256": "7af6d6153e0c58a45eb78c50f986091b780eefe815ff37b60824fe97a7f7bc34",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "test-multiset.json",
+      "actualBytes": 3023,
+      "expectedBytes": 3023,
+      "actualSha256": "c6eb8b75dc8b09f389c0346a278915b68aca6e0f41a4c939ad85fb22e48cc244",
+      "expectedSha256": "c6eb8b75dc8b09f389c0346a278915b68aca6e0f41a4c939ad85fb22e48cc244",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "jsonParse": "pass"
+    },
+    {
+      "path": "VERIFY-SEAL.py",
+      "actualBytes": 688,
+      "expectedBytes": 688,
+      "actualSha256": "61ecfa92b6352cb5c19fb71cf2d1e0b1dde00443205c22bb016d12ac22094d97",
+      "expectedSha256": "61ecfa92b6352cb5c19fb71cf2d1e0b1dde00443205c22bb016d12ac22094d97",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    },
+    {
+      "path": "write-report.py",
+      "actualBytes": 18996,
+      "expectedBytes": 18996,
+      "actualSha256": "287e4c699499617cd5e8af8f3facabdd3f09758a27c10d5ad95e74b395ea97e3",
+      "expectedSha256": "287e4c699499617cd5e8af8f3facabdd3f09758a27c10d5ad95e74b395ea97e3",
+      "bytesMatch": true,
+      "hashMatch": true,
+      "pythonAstParse": "pass"
+    }
+  ]
+}

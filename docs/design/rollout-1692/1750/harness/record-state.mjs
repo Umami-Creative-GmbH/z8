@@ -1,0 +1,10 @@
+import {spawnSync} from 'node:child_process';
+import {writeFile} from 'node:fs/promises';
+const agent='USER_HOME/AppData/Local/pnpm/global/v11/bf86bf49b40726ed136d2d0acb80e5862fa90fc3a766ffc0e05622cbe6aa30a8/node_modules/agent-browser/bin/agent-browser.js';
+const env={...process.env,AGENT_BROWSER_SESSION:'z8-r168-1750-35f73bb3'};delete env.AGENT_BROWSER_RESTORE;
+const code=`(()=>{const main=document.querySelector('main');return {source:'7e466fae2668148a856b6dfb2fdaf605d7366029',path:location.pathname+location.search,h1:[...document.querySelectorAll('h1')].map(n=>n.innerText),fields:[...document.querySelectorAll('main textarea,main input[type=text]')].map(n=>({name:n.name,value:n.value})),actions:[...document.querySelectorAll('main button')].map(n=>({name:n.getAttribute('aria-label')||n.innerText,disabled:n.disabled})),cycleLinks:[...document.querySelectorAll('main a[href*=cycle]')].map(n=>({text:n.innerText,href:n.getAttribute('href')})),evidenceText:main?.innerText.replace(/[^\\s@]+@[^\\s@]+\\.[^\\s@]+/g,'[contact omitted]')};})()`;
+const r=spawnSync(process.execPath,[agent,'--session',env.AGENT_BROWSER_SESSION,'eval','--stdin'],{input:code,env,encoding:'utf8',windowsHide:true,timeout:60000});
+if(r.status!==0) throw Error(r.stderr||'native record failed');
+const parsed=JSON.parse(r.stdout); const value=typeof parsed==='string'?JSON.parse(parsed):parsed;
+await writeFile('docs/design/rollout-1692/1750/'+process.argv[2]+'.json',JSON.stringify(value,null,2));
+console.log('Recorded '+process.argv[2]);

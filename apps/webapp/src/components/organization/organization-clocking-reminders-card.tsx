@@ -160,7 +160,10 @@ export function OrganizationClockingRemindersCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.clockingReminders.title", "Clocking reminders")}</CardTitle>
+				{/* The tab already shows this name; keep it as the panel's heading for assistive tech only. */}
+				<CardTitle as="h2" className="sr-only">
+					{t("organization.clockingReminders.title", "Clocking reminders")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.clockingReminders.description",
@@ -180,7 +183,8 @@ export function OrganizationClockingRemindersCard({
 						{(pending) => (
 							<div className="space-y-6">
 								{reminders.map((reminder) => (
-									<div key={reminder.enabledField} className="space-y-3">
+									// One bordered row per reminder keeps its switch and its minutes together.
+									<div key={reminder.enabledField} className="space-y-3 rounded-lg border p-4">
 										<form.Field name={reminder.enabledField}>
 											{(field) => (
 												<TFormItem className="flex items-center justify-between gap-4">
@@ -192,7 +196,6 @@ export function OrganizationClockingRemindersCard({
 															disabled={!canEdit || pending}
 														/>
 													</TFormControl>
-													<TFormMessage id={`${errorId}-${reminder.minutesField}`} field={field} />
 												</TFormItem>
 											)}
 										</form.Field>
@@ -218,6 +221,8 @@ export function OrganizationClockingRemindersCard({
 													>
 														<Input
 															type="number"
+															inputMode="numeric"
+															className="tabular-nums"
 															min={reminder.minMinutes}
 															max={MAX_CLOCKING_REMINDER_MINUTES}
 															step={1}

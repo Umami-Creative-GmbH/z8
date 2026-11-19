@@ -1,0 +1,223 @@
+{
+  "base": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+  "source": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+  "preservedOutsideThreeSourcePaths": 14603,
+  "originalIncomingArtifactPaths": 85,
+  "prior1736ArtifactPaths": 266,
+  "changedSourcePaths": [
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx"
+  ],
+  "verifiedAncestors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5"
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f"
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383"
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211"
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde"
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc"
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733"
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715"
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805"
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896"
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1"
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1"
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007"
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a"
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb"
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10"
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30"
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741"
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784"
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd"
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8"
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83"
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc"
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179"
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c"
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2"
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8"
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a"
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27"
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190"
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a"
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51"
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b"
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe"
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069"
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670"
+    },
+    {
+      "issue": 1833,
+      "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36"
+    },
+    {
+      "issue": 1834,
+      "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914"
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7"
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3"
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a"
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510"
+    },
+    {
+      "issue": 1736,
+      "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f"
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    }
+  ],
+  "verificationSourcePins": {
+    "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx": "ee82f580d522f3c090da1d2a005a4776a6d338575a9bc09bcd6f3889e19d9ae6",
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.test.tsx": "5c7840140b30d39547860c25e78f91bf7627f6231113b742b42eff5166f6d84e",
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx": "7035a7a6c086d8b8f3a88fb2ed975ef29088efb7369a6a5a82b35cf00000599a",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx": "0874fce137d4d67a82f8cd63d4574e0af2bce37d357beaa71c404c7fd2350eba",
+    "apps/webapp/src/components/site-header.test.tsx": "481becd103cab876c9c9ee371b7bb84527a6710ea1cc4a946f4f053c61e129c6",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts": "b4cad6c3dd349e3d86c0056795a4992ab3f3d353a7a3ebb25a78ae0fe6cf23fa",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx": "e66f164beb7857c80cc56ac921519ec08df6ee99c783a20207768f2a0fed7a87"
+  },
+  "dependencyInternalLinks": 158,
+  "unchangedDependencyHashes": 6
+}

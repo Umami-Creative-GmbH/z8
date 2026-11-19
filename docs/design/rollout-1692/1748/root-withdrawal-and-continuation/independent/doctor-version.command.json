@@ -1,0 +1,18 @@
+{
+  "label": "doctor-version",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "react-doctor",
+    "--version"
+  ],
+  "exit": 0,
+  "seconds": 1.833,
+  "logBytes": 7,
+  "logSha256": "b092840e628fef3f3d89757723ea756d4f778c61175f24d99276ace077105eca"
+}

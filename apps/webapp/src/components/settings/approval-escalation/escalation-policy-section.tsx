@@ -30,6 +30,7 @@ import { useDisplayContext } from "@/hooks/use-display-context";
 import type { EscalationManagementOverview } from "@/lib/approvals/escalation/management-overview";
 import {
 	channelLabel,
+	channelSetupStatusLabel,
 	conflictLabel,
 	formatEscalationInstant,
 } from "./escalation-labels";
@@ -375,7 +376,9 @@ export function EscalationMigrationCard({
 										<TableCell className="font-medium">
 											{sourceName.get(source.sourceId)}
 										</TableCell>
-										<TableCell>{source.setupStatus}</TableCell>
+										<TableCell>
+											{channelSetupStatusLabel(source.setupStatus, t)}
+										</TableCell>
 										<TableCell>
 											{source.escalationEnabled
 												? t("settings.approvalEscalation.on", "On")
@@ -392,13 +395,15 @@ export function EscalationMigrationCard({
 										</TableCell>
 										<TableCell>
 											{source.contributed ? (
-												<IconCheck
-													className="size-4"
-													aria-label={t(
-														"settings.approvalEscalation.migration.usedYes",
-														"Used",
-													)}
-												/>
+												<>
+													<IconCheck className="size-4" aria-hidden="true" />
+													<span className="sr-only">
+														{t(
+															"settings.approvalEscalation.migration.usedYes",
+															"Used",
+														)}
+													</span>
+												</>
 											) : (
 												<span className="sr-only">
 													{t(
@@ -610,82 +615,91 @@ export function EscalationRevisionsCard({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<div className="overflow-x-auto">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead className="text-right">
-									{t(
-										"settings.approvalEscalation.revisions.revision",
-										"Revision",
-									)}
-								</TableHead>
-								<TableHead>
-									{t("settings.approvalEscalation.revisions.policy", "Policy")}
-								</TableHead>
-								<TableHead>
-									{t(
-										"settings.approvalEscalation.revisions.changedBy",
-										"Changed by",
-									)}
-								</TableHead>
-								<TableHead>
-									{t("settings.approvalEscalation.revisions.when", "When")}
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{revisions.map((revision) => (
-								<TableRow key={revision.revision}>
-									<TableCell className="text-right tabular-nums">
-										{revision.revision}
-									</TableCell>
-									<TableCell>
-										<span>
-											{revision.enabled
-												? t(
-														"settings.approvalEscalation.policy.enabled",
-														"Enabled",
-													)
-												: t(
-														"settings.approvalEscalation.policy.disabled",
-														"Disabled",
-													)}
-											{" · "}
-											{t(
-												"settings.approvalEscalation.hoursValue",
-												"{hours} h",
-												{
-													hours: revision.responseWindowHours,
-												},
-											)}
-										</span>
-										{revision.reason &&
-										revision.origin === "management_edit" ? (
-											<p className="break-words text-sm text-muted-foreground">
-												{revision.reason}
-											</p>
-										) : null}
-									</TableCell>
-									<TableCell>
-										{revision.origin === "migration"
-											? t(
-													"settings.approvalEscalation.revisions.migration",
-													"Settings migration",
-												)
-											: (revision.changedByName ?? "—")}
-									</TableCell>
-									<TableCell className="whitespace-nowrap">
-										{formatEscalationInstant(
-											revision.createdAt,
-											displayContext,
+				{revisions.length === 0 ? (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.approvalEscalation.revisions.empty",
+							"No policy changes have been recorded yet.",
+						)}
+					</p>
+				) : (
+					<div className="overflow-x-auto">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead className="text-right">
+										{t(
+											"settings.approvalEscalation.revisions.revision",
+											"Revision",
 										)}
-									</TableCell>
+									</TableHead>
+									<TableHead>
+										{t("settings.approvalEscalation.revisions.policy", "Policy")}
+									</TableHead>
+									<TableHead>
+										{t(
+											"settings.approvalEscalation.revisions.changedBy",
+											"Changed by",
+										)}
+									</TableHead>
+									<TableHead>
+										{t("settings.approvalEscalation.revisions.when", "When")}
+									</TableHead>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
+							</TableHeader>
+							<TableBody>
+								{revisions.map((revision) => (
+									<TableRow key={revision.revision}>
+										<TableCell className="text-right tabular-nums">
+											{revision.revision}
+										</TableCell>
+										<TableCell>
+											<span>
+												{revision.enabled
+													? t(
+															"settings.approvalEscalation.policy.enabled",
+															"Enabled",
+														)
+													: t(
+															"settings.approvalEscalation.policy.disabled",
+															"Disabled",
+														)}
+												{" · "}
+												{t(
+													"settings.approvalEscalation.hoursValue",
+													"{hours} h",
+													{
+														hours: revision.responseWindowHours,
+													},
+												)}
+											</span>
+											{revision.reason &&
+											revision.origin === "management_edit" ? (
+												<p className="break-words text-sm text-muted-foreground">
+													{revision.reason}
+												</p>
+											) : null}
+										</TableCell>
+										<TableCell>
+											{revision.origin === "migration"
+												? t(
+														"settings.approvalEscalation.revisions.migration",
+														"Settings migration",
+													)
+												: (revision.changedByName ?? "—")}
+										</TableCell>
+										<TableCell className="whitespace-nowrap">
+											{formatEscalationInstant(
+												revision.createdAt,
+												displayContext,
+											)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
+				)}
 			</CardContent>
 		</Card>
 	);

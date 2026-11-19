@@ -69,26 +69,39 @@ export function DataTablePagination<TData extends RowData>({
 	const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
 	return (
-		<div className="flex items-center justify-between px-2">
-			<div className="flex-1 text-sm text-muted-foreground">
+		<div className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-2">
+			<div
+				className="text-sm text-muted-foreground"
+				role="status"
+				aria-live="polite"
+			>
 				{showSelectedCount && selectedCount > 0
-					? t("table.selectedOfTotal", "{selected} of {total} row(s) selected", {
-							selected: selectedCount,
-							total,
-						})
+					? t(
+							"table.selectedOfTotal",
+							"{selected} of {total} row(s) selected",
+							{
+								selected: selectedCount,
+								total,
+							},
+						)
 					: t("table.totalRows", "{total} row(s)", { total })}
 			</div>
 
-			<div className="flex items-center gap-6 lg:gap-8">
-				<div className="flex items-center gap-2">
-					<p className="text-sm font-medium">{t("table.rowsPerPage", "Rows per page")}</p>
+			<div className="flex min-w-0 flex-wrap items-center gap-3 lg:gap-6">
+				<div className="flex flex-wrap items-center gap-2">
+					<p className="text-sm font-medium">
+						{t("table.rowsPerPage", "Rows per page")}
+					</p>
 					<Select
 						value={`${pageSize}`}
 						onValueChange={(value) => {
 							table.setPageSize(Number(value));
 						}}
 					>
-						<SelectTrigger className="h-8 w-[70px]">
+						<SelectTrigger
+							aria-label={t("table.rowsPerPage", "Rows per page")}
+							className="h-9 w-20"
+						>
 							<SelectValue placeholder={pageSize} />
 						</SelectTrigger>
 						<SelectContent side="top">
@@ -101,7 +114,7 @@ export function DataTablePagination<TData extends RowData>({
 					</Select>
 				</div>
 
-				<div className="flex w-[100px] items-center justify-center text-sm font-medium">
+				<div className="flex items-center justify-center text-sm font-medium tabular-nums">
 					{t("table.pageOfPages", "Page {current} of {total}", {
 						current: currentPage,
 						total: pageCount || 1,
@@ -111,38 +124,46 @@ export function DataTablePagination<TData extends RowData>({
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
-						className="hidden size-8 p-0 lg:flex"
+						className="size-9 p-0"
 						onClick={() => table.setPageIndex(0)}
 						disabled={!table.getCanPreviousPage()}
 					>
-						<span className="sr-only">{t("table.goToFirstPage", "Go to first page")}</span>
+						<span className="sr-only">
+							{t("table.goToFirstPage", "Go to first page")}
+						</span>
 						<IconChevronsLeft className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
-						className="size-8 p-0"
+						className="size-9 p-0"
 						onClick={() => table.previousPage()}
 						disabled={!table.getCanPreviousPage()}
 					>
-						<span className="sr-only">{t("table.goToPreviousPage", "Go to previous page")}</span>
+						<span className="sr-only">
+							{t("table.goToPreviousPage", "Go to previous page")}
+						</span>
 						<IconChevronLeft className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
-						className="size-8 p-0"
+						className="size-9 p-0"
 						onClick={() => table.nextPage()}
 						disabled={!table.getCanNextPage()}
 					>
-						<span className="sr-only">{t("table.goToNextPage", "Go to next page")}</span>
+						<span className="sr-only">
+							{t("table.goToNextPage", "Go to next page")}
+						</span>
 						<IconChevronRight className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
-						className="hidden size-8 p-0 lg:flex"
+						className="size-9 p-0"
 						onClick={() => table.setPageIndex(pageCount - 1)}
 						disabled={!table.getCanNextPage()}
 					>
-						<span className="sr-only">{t("table.goToLastPage", "Go to last page")}</span>
+						<span className="sr-only">
+							{t("table.goToLastPage", "Go to last page")}
+						</span>
 						<IconChevronsRight className="size-4" />
 					</Button>
 				</div>

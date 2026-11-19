@@ -1,0 +1,65 @@
+{
+  "results": [
+    {
+      "name": "real organization switch settles in the new roster",
+      "passed": true,
+      "detail": "Performance large / 201 current employees: existing switch joining fallback creates the missing current employee; no no-employee refusal claimed"
+    },
+    {
+      "name": "return from organization switch restores original roster",
+      "passed": true,
+      "detail": "same small-admin; 8 current employees; no foreign Person 199"
+    },
+    {
+      "name": "phone relationship record is native outline",
+      "passed": true,
+      "detail": "390×844 CSS pixels"
+    },
+    {
+      "name": "phone detail uses bottom sheet and first Escape closes",
+      "passed": true,
+      "detail": "person selected through visible outline"
+    },
+    {
+      "name": "saved large text and dark theme survive reload",
+      "passed": true,
+      "detail": {
+        "storedFont": "large",
+        "storedTheme": "dark",
+        "rootFont": "18px",
+        "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "theme": "dark bprogress-busy",
+        "viewport": 390,
+        "documentWidth": 390
+      }
+    },
+    {
+      "name": "reduced-motion preference reaches the actual browser",
+      "passed": true,
+      "detail": "local canvas centering honors it; no global transition claim"
+    },
+    {
+      "name": "phone drawer first Escape and focus return, with current route",
+      "passed": true,
+      "detail": [
+        "/en/organization"
+      ]
+    },
+    {
+      "name": "evaluated accessibility counts",
+      "passed": true,
+      "detail": {
+        "visibleH1": 1,
+        "unnamedButtons": 0,
+        "unlabelledInputs": 0
+      }
+    },
+    {
+      "name": "desktop Ctrl+B collapse survives reload",
+      "passed": true,
+      "detail": "native sidebar cookie; route unchanged"
+    }
+  ],
+  "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+  "fixtureChange": "Existing switch owner joined small-admin into the large organization; large now 201, small remains original 8."
+}

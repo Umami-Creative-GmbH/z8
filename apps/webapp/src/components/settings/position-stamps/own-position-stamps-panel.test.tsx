@@ -177,6 +177,14 @@ describe("OwnPositionStampsPanel", () => {
 		expect(screen.getByText("Nobody else has been shown your positions.")).toBeTruthy();
 	});
 
+	it("says the access log failed to load instead of hiding it", () => {
+		render(<OwnPositionStampsPanel data={data({})} accessLog={null} />);
+
+		expect(screen.getByText("Who saw your positions")).toBeTruthy();
+		expect(screen.getByRole("alert").textContent).toMatch(/could not be loaded/);
+		expect(screen.queryByText("Nobody else has been shown your positions.")).toBeNull();
+	});
+
 	it("tells employees capture is off for them and shows no notice when none exists", () => {
 		render(
 			<OwnPositionStampsPanel

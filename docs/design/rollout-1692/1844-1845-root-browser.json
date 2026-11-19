@@ -1,0 +1,57 @@
+{
+  "issues": [1844, 1845],
+  "status": "bounded-dependency-handoff-verified",
+  "verifiedCommit": "ae4dbdf71ac1a2527d2bf78d2d5b828041ee0d2c",
+  "appTree": "a329bc47257858d11cf1b0c82f0a361dce1271b2",
+  "overviewSourceCheckpoint": "71a85dbd50a9a3af2f422214da3d1036f0cbece5",
+  "sanitizedBrowserReceiptSha256": "ecde256ba3a1da10955f81a0a1f719f3b0ac06652de71bf3bcb04885427fb8b7",
+  "fixture": {
+    "setupThroughPublicForm": true,
+    "platformAdministratorsAfterSetup": 1,
+    "ordinaryCloudflareBackedSignIn": true,
+    "sessionsAfterSignIn": 1,
+    "migrationVerifierExit": 0,
+    "appliedMigrationsObserved": 315,
+    "viewportWidths": [1440, 390, 1920],
+    "horizontalOverflowInEitherRoute": false,
+    "connectedNextRouteErrors": 0,
+    "projectWideCompilationFindings": ["Generated licenses module absent in fixture"],
+    "ownedResourcesRemaining": 0
+  },
+  "overview": {
+    "signedOutDenied": true,
+    "platformAdminAdmitted": true,
+    "canonicalCounts": [1, 0, 0, 0],
+    "operationalAndAnalyticsSummary": true,
+    "filteredUsersAndOrganizationsDestinations": true,
+    "adminExit": true,
+    "backRestoredHeading": true,
+    "metricsSettledAfterFreshLoad": true,
+    "metricsRestoredOnBackInRecordedRun": false,
+    "nativeComponentsObserved": true,
+    "independentUnitCases": 211,
+    "independentUnitFiles": 39
+  },
+  "analytics": {
+    "signedOutDenied": true,
+    "platformAdminAdmitted": true,
+    "rangeAndBucketControls": true,
+    "preservedOrderedRepeatedQueryValues": true,
+    "backAndForwardControlRestorations": 4,
+    "chartSettlementAfterHistoryObserved": false,
+    "freshLoadMetricCount": 5,
+    "freshLoadChartAndTableCount": 3,
+    "independentUnitCases": 235,
+    "independentUnitFiles": 38,
+    "independentPostgreSqlCases": 8,
+    "independentPostgreSqlFiles": 2
+  },
+  "rootTypeProjectsPassedOnCombinedSource": 3,
+  "testCountsOverlap": true,
+  "unverified": [
+    "Chart and metric settlement from browser history without a fresh read",
+    "Live organization-admin admission matrix and billing-enabled states",
+    "Live empty analytics states and analytics native React introspection",
+    "Live old-session race, provider behavior, and full production build"
+  ]
+}

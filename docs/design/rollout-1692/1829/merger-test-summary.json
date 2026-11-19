@@ -1,0 +1,70 @@
+{
+  "runs": [
+    {
+      "name": "exact-unit",
+      "physicalFiles": 37,
+      "cases": 368,
+      "passed": 368,
+      "failed": 0,
+      "skipped": 0,
+      "overlapCasesWithEarlierRuns": 0
+    },
+    {
+      "name": "compatibility-unit",
+      "physicalFiles": 167,
+      "cases": 1687,
+      "passed": 1686,
+      "failed": 1,
+      "skipped": 0,
+      "overlapCasesWithEarlierRuns": 368
+    },
+    {
+      "name": "translation-retry",
+      "physicalFiles": 1,
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "overlapCasesWithEarlierRuns": 1
+    },
+    {
+      "name": "adversarial-unit",
+      "physicalFiles": 1,
+      "cases": 8,
+      "passed": 7,
+      "failed": 1,
+      "skipped": 0,
+      "overlapCasesWithEarlierRuns": 0
+    },
+    {
+      "name": "preservation-unit",
+      "physicalFiles": 3,
+      "cases": 25,
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "overlapCasesWithEarlierRuns": 0
+    }
+  ],
+  "unique": {
+    "physicalFiles": 171,
+    "cases": 1720,
+    "passed": 1719,
+    "failed": 1,
+    "skipped": 0
+  },
+  "failures": [
+    {
+      "key": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1829-audit/arrival-races.test.tsx\u0000Independent public onboarding arrival and response probes retains exactly one task heading while membership detection is held\u00000",
+      "file": "x:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1829-audit/arrival-races.test.tsx",
+      "name": "Independent public onboarding arrival and response probes retains exactly one task heading while membership detection is held",
+      "occurrence": 0,
+      "status": "failed",
+      "failureMessages": [
+        "AssertionError: expected [] to have a length of 1 but got +0\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1861:20)\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/chai@6.3.0/node_modules/chai/index.js:1737:25)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1829-audit/arrival-races.test.tsx:24:54\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20"
+      ]
+    }
+  ],
+  "deduplication": "Canonical realpath + fullName + occurrence multiplicity within the physical file. Later unchanged extractor rerun replaces its timed-out observation; all initial failures remain in their raw JSON.",
+  "newIndependentProbes": 8
+}

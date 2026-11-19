@@ -1,0 +1,10 @@
+{
+  "route": "/en/team",
+  "role": "normally signed-in canonical small-admin",
+  "setup": "public Set opening balance form on own employee, default Nov17 Berlin day, +2h, synthetic reason",
+  "reasonPresent": true,
+  "rows": 1,
+  "hasTwoHours": true,
+  "heading": "Balance adjustments",
+  "qualification": "one canonical balance ledger write; no shift/time_entry/work_period writes or member/grant/policy SQL. Disposable fixture only."
+}

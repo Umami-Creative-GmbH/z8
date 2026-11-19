@@ -146,6 +146,7 @@ interface GetApprovalInboxDetailFromRequestInput {
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	request: {
 		id: string;
+		reason?: string | null;
 		entityType: string;
 		entityId: string;
 		organizationId: string;
@@ -829,6 +830,22 @@ export async function getApprovalInboxDetailFromRequest({
 			timeEvidence.kind === "time_correction"
 		),
 	});
+	// The reason belongs to this already authorized exact request.
+	if (
+		request.entityType === "time_entry" &&
+		timeApprovalKindOf(detail.entity) === "time_correction" &&
+		!isOrdinaryTimeApprovalDetail(detail) &&
+		request.reason?.trim()
+	) {
+		sections.splice(1, 0, {
+			type: "text",
+			title: {
+				key: "approvals:approvals.submittedReason",
+				fallback: "Submitted reason",
+			},
+			body: request.reason,
+		});
+	}
 
 	if (request.entityType === "absence_entry") {
 		const evidence = await loadAbsenceReviewEvidence({

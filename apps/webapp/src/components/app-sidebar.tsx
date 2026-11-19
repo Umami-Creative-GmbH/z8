@@ -142,8 +142,8 @@ export function AppSidebar({
 	const navSecondary = buildSecondaryNav(translate, navigationCapabilities);
 
 	return (
-		<Sidebar collapsible="offcanvas" {...props}>
-			<SidebarHeader>
+		<Sidebar collapsible="icon" {...props}>
+			<SidebarHeader className="py-4 group-data-[collapsible=icon]:px-2">
 				<OrganizationSwitcher
 					organizations={organizations}
 					currentOrganization={currentOrganization}
@@ -151,13 +151,16 @@ export function AppSidebar({
 				/>
 			</SidebarHeader>
 			{capabilitiesUnavailable ? <SidebarCapabilityNotice /> : null}
-			<SidebarContent>
+			<SidebarContent className="gap-3 group-data-[collapsible=icon]:overflow-y-auto">
 				<AppSearch
 					staticCommands={staticCommands}
 					staticResults={staticSearchResults}
 				/>
 				<Suspense fallback={<SidebarNavigationLoading rows={8} />}>
-					<NavMain items={navPersonal} label="z8 app" />
+					<NavMain
+						items={navPersonal}
+						label={t("nav.workplace-label", "Workplace")}
+					/>
 				</Suspense>
 				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
 					{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
@@ -166,7 +169,7 @@ export function AppSidebar({
 					<NavSecondary className="mt-auto" items={navSecondary} />
 				</Suspense>
 			</SidebarContent>
-			<SidebarFooter>
+			<SidebarFooter className="border-t border-sidebar-border">
 				<SidebarUser />
 			</SidebarFooter>
 		</Sidebar>

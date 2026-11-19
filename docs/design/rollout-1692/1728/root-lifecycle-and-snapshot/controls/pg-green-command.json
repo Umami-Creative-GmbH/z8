@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1728-root-checks\\pg-green.json"
+  ],
+  "sourceHead": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+  "sourcePins": {
+    "apps/webapp/src/lib/personnel-file/access-store.ts": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+    "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts": "0d94ea17d132a1c1e3c0c18a51350fa8ad59c92f93534ea1c053262af0aada92"
+  },
+  "start": "2026-11-16T06:13:04.291Z",
+  "end": "2026-11-16T06:13:07.332Z",
+  "exitCode": 0
+}

@@ -1,0 +1,1263 @@
+src\app\[locale]\(app)\reports\vehicles\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·Suspense·}·from·"react";␍
+     2    │ - import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";␍
+     3    │ - import·{·VehicleDistanceReportContainer·}·from·"@/components/reports/vehicles/vehicle-distance-report-container";␍
+     4    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     5    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     6    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     7    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+     8    │ - import·{·getCurrentEmployee·}·from·"../actions";␍
+     9    │ - ␍
+    10    │ - async·function·VehicleDistanceReportPageContent()·{␍
+    11    │ - → //·Auth·is·checked·in·layout;·who·sees·whose·driving·is·decided·by·the·report·action.␍
+    12    │ - → const·[t,·employee]·=·await·Promise.all([getTranslate(),·getCurrentEmployee()]);␍
+    13    │ - ␍
+    14    │ - → if·(!employee)·{␍
+    15    │ - → → return·(␍
+    16    │ - → → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-6">␍
+    17    │ - → → → → <PageHeader·title={t("reports.vehicles.title",·"Distance·per·Vehicle")}·/>␍
+    18    │ - → → → → <NoEmployeeError␍
+    19    │ - → → → → → feature={t("reports.vehicles.page.feature",·"view·the·distance·per·vehicle·report")}␍
+    20    │ - → → → → />␍
+    21    │ - → → → </div>␍
+    22    │ - → → );␍
+    23    │ - → }␍
+    24    │ - ␍
+    25    │ - → return·(␍
+    26    │ - → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6">␍
+    27    │ - → → → <div·className="px-4·lg:px-6">␍
+    28    │ - → → → → <PageHeader␍
+    29    │ - → → → → → title={t("reports.vehicles.title",·"Distance·per·Vehicle")}␍
+    30    │ - → → → → → description={t(␍
+    31    │ - → → → → → → "reports.vehicles.page.description",␍
+    32    │ - → → → → → → "Kilometres·driven·for·work·per·vehicle·and·employee,·by·month",␍
+    33    │ - → → → → → )}␍
+    34    │ - → → → → />␍
+    35    │ - → → → </div>␍
+    36    │ - ␍
+    37    │ - → → → <VehicleDistanceReportContainer·/>␍
+    38    │ - → → </div>␍
+    39    │ - → );␍
+    40    │ - }␍
+    41    │ - ␍
+    42    │ - async·function·VehicleDistanceReportPageLoading()·{␍
+    43    │ - → const·t·=·await·getTranslate();␍
+    44    │ - → return·(␍
+    45    │ - → → <LoadingRegion␍
+    46    │ - → → → label={{␍
+    47    │ - → → → → labelKey:·"common.loadingRegions.vehicleDistanceReport",␍
+    48    │ - → → → → labelDefault:·"Loading·the·distance·per·vehicle·report",␍
+    49    │ - → → → }}␍
+    50    │ - → → → className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6"␍
+    51    │ - → → → role="status"␍
+    52    │ - → → >␍
+    53    │ - → → → <div·className="space-y-3·px-4·lg:px-6">␍
+    54    │ - → → → → <PageHeader·title={t("reports.vehicles.title",·"Distance·per·Vehicle")}·/>␍
+    55    │ - → → → → <Skeleton·aria-hidden="true"·className="h-5·w-full·max-w-2xl"·/>␍
+    56    │ - → → → </div>␍
+    57    │ - → → → <div·className="px-4·lg:px-6">␍
+    58    │ - → → → → <Skeleton·aria-hidden="true"·className="h-96·w-full"·/>␍
+    59    │ - → → → </div>␍
+    60    │ - → → </LoadingRegion>␍
+    61    │ - → );␍
+    62    │ - }␍
+    63    │ - ␍
+    64    │ - export·default·function·VehicleDistanceReportPage()·{␍
+    65    │ - → return·(␍
+    66    │ - → → <Suspense·fallback={<VehicleDistanceReportPageLoading·/>}>␍
+    67    │ - → → → <VehicleDistanceReportPageContent·/>␍
+    68    │ - → → </Suspense>␍
+    69    │ - → );␍
+    70    │ - }␍
+        1 │ + import·{·Suspense·}·from·"react";
+        2 │ + import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";
+        3 │ + import·{·VehicleDistanceReportContainer·}·from·"@/components/reports/vehicles/vehicle-distance-report-container";
+        4 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        5 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        6 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        7 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+        8 │ + import·{·getCurrentEmployee·}·from·"../actions";
+        9 │ + 
+       10 │ + async·function·VehicleDistanceReportPageContent()·{
+       11 │ + → //·Auth·is·checked·in·layout;·who·sees·whose·driving·is·decided·by·the·report·action.
+       12 │ + → const·[t,·employee]·=·await·Promise.all([
+       13 │ + → → getTranslate(),
+       14 │ + → → getCurrentEmployee(),
+       15 │ + → ]);
+       16 │ + 
+       17 │ + → if·(!employee)·{
+       18 │ + → → return·(
+       19 │ + → → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-6">
+       20 │ + → → → → <PageHeader
+       21 │ + → → → → → title={t("reports.vehicles.title",·"Distance·per·Vehicle")}
+       22 │ + → → → → />
+       23 │ + → → → → <NoEmployeeError
+       24 │ + → → → → → feature={t(
+       25 │ + → → → → → → "reports.vehicles.page.feature",
+       26 │ + → → → → → → "view·the·distance·per·vehicle·report",
+       27 │ + → → → → → )}
+       28 │ + → → → → />
+       29 │ + → → → </div>
+       30 │ + → → );
+       31 │ + → }
+       32 │ + 
+       33 │ + → return·(
+       34 │ + → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6">
+       35 │ + → → → <div·className="px-4·lg:px-6">
+       36 │ + → → → → <PageHeader
+       37 │ + → → → → → title={t("reports.vehicles.title",·"Distance·per·Vehicle")}
+       38 │ + → → → → → description={t(
+       39 │ + → → → → → → "reports.vehicles.page.description",
+       40 │ + → → → → → → "Kilometres·driven·for·work·per·vehicle·and·employee,·by·month",
+       41 │ + → → → → → )}
+       42 │ + → → → → />
+       43 │ + → → → </div>
+       44 │ + 
+       45 │ + → → → <VehicleDistanceReportContainer·/>
+       46 │ + → → </div>
+       47 │ + → );
+       48 │ + }
+       49 │ + 
+       50 │ + async·function·VehicleDistanceReportPageLoading()·{
+       51 │ + → const·t·=·await·getTranslate();
+       52 │ + → return·(
+       53 │ + → → <LoadingRegion
+       54 │ + → → → label={{
+       55 │ + → → → → labelKey:·"common.loadingRegions.vehicleDistanceReport",
+       56 │ + → → → → labelDefault:·"Loading·the·distance·per·vehicle·report",
+       57 │ + → → → }}
+       58 │ + → → → className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6"
+       59 │ + → → → role="status"
+       60 │ + → → >
+       61 │ + → → → <div·className="space-y-3·px-4·lg:px-6">
+       62 │ + → → → → <PageHeader
+       63 │ + → → → → → title={t("reports.vehicles.title",·"Distance·per·Vehicle")}
+       64 │ + → → → → />
+       65 │ + → → → → <Skeleton·aria-hidden="true"·className="h-5·w-full·max-w-2xl"·/>
+       66 │ + → → → </div>
+       67 │ + → → → <div·className="px-4·lg:px-6">
+       68 │ + → → → → <Skeleton·aria-hidden="true"·className="h-96·w-full"·/>
+       69 │ + → → → </div>
+       70 │ + → → </LoadingRegion>
+       71 │ + → );
+       72 │ + }
+       73 │ + 
+       74 │ + export·default·function·VehicleDistanceReportPage()·{
+       75 │ + → return·(
+       76 │ + → → <Suspense·fallback={<VehicleDistanceReportPageLoading·/>}>
+       77 │ + → → → <VehicleDistanceReportPageContent·/>
+       78 │ + → → </Suspense>
+       79 │ + → );
+       80 │ + }
+  1 more lines truncated
+  
+
+src\components\reports\vehicles\vehicle-distance-report-container.test.tsx format ━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      3     │ - import·{·Activity·}·from·"react";␍
+      4     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      5     │ - import·type·{·ServerActionResult·}·from·"@/lib/effect/result";␍
+      6     │ - import·type·{·VehicleDistanceReport·}·from·"@/lib/reports/vehicle-distance-report";␍
+      7     │ - import·{·useOrganizationSettings·}·from·"@/stores/organization-settings-store";␍
+      8     │ - import·{·VehicleDistanceReportContainer·}·from·"./vehicle-distance-report-container";␍
+      9     │ - ␍
+     10     │ - const·boundary·=·vi.hoisted(()·=>·({␍
+     11     │ - → scope:·{␍
+     12     │ - → → userId:·"user-a",␍
+     13     │ - → → activeOrganizationId:·"org-a",␍
+     14     │ - → → organizationId:·"org-a",␍
+     15     │ - → → employeeId:·"employee-a",␍
+     16     │ - → → role:·"admin",␍
+     17     │ - → → isLoading:·false,␍
+     18     │ - → → error:·null,␍
+     19     │ - → },␍
+     20     │ - → pending:·false,␍
+     21     │ - → read:·vi.fn(),␍
+     22     │ - → refresh:·undefined·as·undefined·|·(()·=>·Promise<unknown>),␍
+     23     │ - → pdf:·vi.fn(),␍
+     24     │ - }));␍
+     25     │ - vi.mock("@/hooks/use-organization",·()·=>·({␍
+     26     │ - → useOrganization:·()·=>·boundary.scope,␍
+     27     │ - }));␍
+     28     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     29     │ - → useSession:·()·=>·({␍
+     30     │ - → → isPending:·boundary.pending,␍
+     31     │ - → → data:·{␍
+     32     │ - → → → user:·{·id:·boundary.scope.userId·},␍
+     33     │ - → → → session:·{·activeOrganizationId:·boundary.scope.activeOrganizationId·},␍
+     34     │ - → → },␍
+     35     │ - → }),␍
+     36     │ - }));␍
+     37     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     38     │ - → useTranslate:·()·=>·({␍
+     39     │ - → → t:·(_key:·string,·fallback:·string,·values?:·Record<string,·unknown>)·=>␍
+     40     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key)·=>·String(values?.[key]·??·match)),␍
+     41     │ - → }),␍
+     42     │ - }));␍
+     43     │ - vi.mock("@/hooks/use-display-context",·()·=>·({␍
+     44     │ - → useDisplayContext:·()·=>·({␍
+     45     │ - → → locale:·"en-US",␍
+     46     │ - → → timezone:·"Europe/Berlin",␍
+     47     │ - → → timeFormat:·"24h",␍
+     48     │ - → }),␍
+     49     │ - }));␍
+     50     │ - vi.mock("@/app/[locale]/(app)/reports/vehicles/actions",·()·=>·({␍
+     51     │ - → getVehicleDistanceReport:·boundary.read,␍
+     52     │ - }));␍
+     53     │ - vi.mock("@/components/providers/view-refresh-provider",·()·=>·({␍
+     54     │ - → useViewRefresh:·(handler:·()·=>·Promise<unknown>)·=>·{␍
+     55     │ - → → boundary.refresh·=·handler;␍
+     56     │ - → },␍
+     57     │ - }));␍
+     58     │ - vi.mock("@/lib/reports/exporters/report-document-pdf",·()·=>·({␍
+     59     │ - → exportReportDocumentToPDF:·boundary.pdf,␍
+     60     │ - }));␍
+     61     │ - ␍
+     62     │ - const·report:·VehicleDistanceReport·=·{␍
+     63     │ - → period:·{·fromDay:·"2026-01-01",·toDay:·"2026-12-31"·},␍
+     64     │ - → months:·["2026-01",·"2026-02"],␍
+     65     │ - → monthlyKm:·[101,·29],␍
+     66     │ - → totalKm:·130,␍
+     67     │ - → vehicles:·[␍
+     68     │ - → → {␍
+     69     │ - → → → vehicle:·{␍
+     70     │ - → → → → kind:·"organization",␍
+     71     │ - → → → → id:·"van",␍
+     72     │ - → → → → name:·"Archived·van",␍
+     73     │ - → → → → licencePlate:·"B-123",␍
+     74     │ - → → → → archived:·true,␍
+     75     │ - → → → },␍
+     76     │ - → → → monthlyKm:·[101,·0],␍
+     77     │ - → → → totalKm:·101,␍
+     78     │ - → → → employees:·[␍
+     79     │ - → → → → {␍
+     80     │ - → → → → → employeeId:·"a",␍
+     81     │ - → → → → → employeeName:·"Alice",␍
+     82     │ - → → → → → monthlyKm:·[101,·0],␍
+     83     │ - → → → → → totalKm:·101,␍
+     84     │ - → → → → },␍
+     85     │ - → → → ],␍
+     86     │ - → → },␍
+     87     │ - → → {␍
+     88     │ - → → → vehicle:·{·kind:·"own"·},␍
+     89     │ - → → → monthlyKm:·[0,·29],␍
+     90     │ - → → → totalKm:·29,␍
+     91     │ - → → → employees:·[␍
+     92     │ - → → → → {␍
+     93     │ - → → → → → employeeId:·"b",␍
+     94     │ - → → → → → employeeName:·"Bob",␍
+     95     │ - → → → → → monthlyKm:·[0,·29],␍
+     96     │ - → → → → → totalKm:·29,␍
+     97     │ - → → → → },␍
+     98     │ - → → → ],␍
+     99     │ - → → },␍
+    100     │ - → ],␍
+    101     │ - };␍
+    102     │ - function·deferred<T>()·{␍
+    103     │ - → let·resolve!:·(value:·T)·=>·void;␍
+    104     │ - → const·promise·=·new·Promise<T>((done)·=>·{␍
+    105     │ - → → resolve·=·done;␍
+    106     │ - → });␍
+    107     │ - → return·{·promise,·resolve·};␍
+    108     │ - }␍
+    109     │ - async·function·generate()·{␍
+    110     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Generate·report"·}));␍
+    111     │ - → await·waitFor(()·=>·expect(boundary.read).toHaveBeenCalled());␍
+    112     │ - }␍
+    113     │ - beforeEach(()·=>·{␍
+    114     │ - → boundary.scope·=·{␍
+    115     │ - → → userId:·"user-a",␍
+    116     │ - → → activeOrganizationId:·"org-a",␍
+    117     │ - → → organizationId:·"org-a",␍
+    118     │ - → → employeeId:·"employee-a",␍
+    119     │ - → → role:·"admin",␍
+    120     │ - → → isLoading:·false,␍
+    121     │ - → → error:·null,␍
+    122     │ - → };␍
+    123     │ - → boundary.pending·=·false;␍
+    124     │ - → boundary.read.mockReset();␍
+    125     │ - → boundary.pdf.mockReset();␍
+    126     │ - → useOrganizationSettings.setState({␍
+    127     │ - → → isHydrated:·true,␍
+    128     │ - → → organizationId:·"org-a",␍
+    129     │ - → → timezone:·"Europe/Berlin",␍
+    130     │ - → });␍
+    131     │ - });␍
+    132     │ - afterEach(cleanup);␍
+    133     │ - ␍
+    134     │ - it("retires·an·in-flight·organization·A·read·across·A·to·B·to·A",·async·()·=>·{␍
+    135     │ - → const·held·=·deferred<ServerActionResult<VehicleDistanceReport>>();␍
+    136     │ - → boundary.read.mockReturnValue(held.promise);␍
+    137     │ - → const·view·=·render(<VehicleDistanceReportContainer·/>);␍
+    138     │ - → await·generate();␍
+    139     │ - → boundary.scope·=·{␍
+    140     │ - → → ...boundary.scope,␍
+    141     │ - → → activeOrganizationId:·"org-b",␍
+    142     │ - → → organizationId:·"org-b",␍
+    143     │ - → };␍
+    144     │ - → view.rerender(<VehicleDistanceReportContainer·/>);␍
+    145     │ - → boundary.scope·=·{␍
+    146     │ - → → ...boundary.scope,␍
+    147     │ - → → activeOrganizationId:·"org-a",␍
+    148     │ - → → organizationId:·"org-a",␍
+    149     │ - → };␍
+    150     │ - → view.rerender(<VehicleDistanceReportContainer·/>);␍
+  531 more lines truncated
+  
+
+src\components\reports\vehicles\vehicle-distance-report-container.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconAlertCircle,·IconCar,·IconChartBar·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·Fragment,·useEffect,·useRef,·useState·}·from·"react";␍
+      7     │ - import·{·useShallow·}·from·"zustand/react/shallow";␍
+      8     │ - import·{·getVehicleDistanceReport·}·from·"@/app/[locale]/(app)/reports/vehicles/actions";␍
+      9     │ - import·{·useViewRefresh·}·from·"@/components/providers/view-refresh-provider";␍
+     10     │ - import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";␍
+     11     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     12     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     13     │ - import·{·Card,·CardContent,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+     14     │ - import·{␍
+     15     │ - → Table,␍
+     16     │ - → TableBody,␍
+     17     │ - → TableCell,␍
+     18     │ - → TableFooter,␍
+     19     │ - → TableHead,␍
+     20     │ - → TableHeader,␍
+     21     │ - → TableRow,␍
+     22     │ - }·from·"@/components/ui/table";␍
+     23     │ - import·{·useDisplayContext·}·from·"@/hooks/use-display-context";␍
+     24     │ - import·{·useOrganization·}·from·"@/hooks/use-organization";␍
+     25     │ - import·{·useSession·}·from·"@/lib/auth-client";␍
+     26     │ - import·{·parsePlainDate,·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+     27     │ - import·{␍
+     28     │ - → formatInstant,␍
+     29     │ - → formatPlainDate,␍
+     30     │ - → formatPlainDateRange,␍
+     31     │ - }·from·"@/lib/datetime/temporal-format";␍
+     32     │ - import·{·getDateRangeForPreset·}·from·"@/lib/reports/date-ranges";␍
+     33     │ - import·type·{·ReportDateRange·}·from·"@/lib/reports/types";␍
+     34     │ - import·{␍
+     35     │ - → buildVehicleDistanceReportDocument,␍
+     36     │ - → type·VehicleDistanceExportLabels,␍
+     37     │ - → type·VehicleDistanceReport,␍
+     38     │ - }·from·"@/lib/reports/vehicle-distance-report";␍
+     39     │ - import·{·useOrganizationSettings·}·from·"@/stores/organization-settings-store";␍
+     40     │ - import·{·VehicleReportExports·}·from·"./vehicle-report-exports";␍
+     41     │ - import·{·VehicleReportPeriodPicker·}·from·"./vehicle-report-period-picker";␍
+     42     │ - ␍
+     43     │ - /**␍
+     44     │ - ·*·The·distance·per·vehicle·report·(#1129):·pick·a·period,·then·read·whole␍
+     45     │ - ·*·kilometres·per·vehicle·and·employee·per·month.·The·server·decides·whose␍
+     46     │ - ·*·driving·the·viewer·sees.␍
+     47     │ - ·*/␍
+     48     │ - export·function·VehicleDistanceReportContainer()·{␍
+     49     │ - → const·scope·=·useOrganization();␍
+     50     │ - → const·session·=·useSession();␍
+     51     │ - → const·{·t·}·=·useTranslate();␍
+     52     │ - → if·(␍
+     53     │ - → → scope.isLoading·||␍
+     54     │ - → → scope.error·||␍
+     55     │ - → → session.isPending·||␍
+     56     │ - → → !scope.employeeId·||␍
+     57     │ - → → !scope.userId·||␍
+     58     │ - → → !scope.activeOrganizationId·||␍
+     59     │ - → → session.data?.user.id·!==·scope.userId·||␍
+     60     │ - → → session.data?.session.activeOrganizationId·!==·scope.activeOrganizationId␍
+     61     │ - → )·{␍
+     62     │ - → → return·(␍
+     63     │ - → → → <p·role="status"·className="px-4·lg:px-6">␍
+     64     │ - → → → → {t("reports.vehicles.scopeLoading",·"Confirming·the·current·organization·and·employee…")}␍
+     65     │ - → → → </p>␍
+     66     │ - → → );␍
+     67     │ - → }␍
+     68     │ - → return·(␍
+     69     │ - → → <VehicleReportArrival␍
+     70     │ - → → → key={JSON.stringify([scope.userId,·scope.activeOrganizationId,·scope.employeeId,·scope.role])}␍
+     71     │ - → → />␍
+     72     │ - → );␍
+     73     │ - }␍
+     74     │ - ␍
+     75     │ - function·VehicleReportArrival()·{␍
+     76     │ - → const·{·t·}·=·useTranslate();␍
+     77     │ - → const·display·=·useDisplayContext();␍
+     78     │ - → const·{·locale·}·=·display;␍
+     79     │ - → const·{·isHydrated,·timezone·}·=·useOrganizationSettings(␍
+     80     │ - → → useShallow((state)·=>·({␍
+     81     │ - → → → isHydrated:·state.isHydrated,␍
+     82     │ - → → → timezone:·state.timezone,␍
+     83     │ - → → })),␍
+     84     │ - → );␍
+     85     │ - → const·hasUserChangedRange·=·useRef(false);␍
+     86     │ - → const·[dateRange,·setDateRange]·=·useState<ReportDateRange·|·null>(null);␍
+     87     │ - → const·generatedRange·=·useRef<ReportDateRange·|·null>(null);␍
+     88     │ - → const·attemptedRange·=·useRef<ReportDateRange·|·null>(null);␍
+     89     │ - → const·[report,·setReport]·=·useState<VehicleDistanceReport·|·null>(null);␍
+     90     │ - → const·[isLoading,·setIsLoading]·=·useState(false);␍
+     91     │ - → const·[error,·setError]·=·useState<string·|·null>(null);␍
+     92     │ - → //·Every·effect·setup·owns·a·distinct·arrival,·including·an·Activity·restore.␍
+     93     │ - → //·A·retired·token·is·never·reactivated,·even·when·the·same·org/account·returns.␍
+     94     │ - → const·[lifetime,·setLifetime]·=·useState({·active:·false·});␍
+     95     │ - → const·pending·=·useRef<object·|·null>(null);␍
+     96     │ - → const·revision·=·useRef(0);␍
+     97     │ - → const·[generation,·setGeneration]·=·useState(0);␍
+     98     │ - → const·[generatedAt,·setGeneratedAt]·=·useState<string·|·null>(null);␍
+     99     │ - → useEffect(()·=>·{␍
+    100     │ - → → const·token·=·{·active:·true·};␍
+    101     │ - → → setLifetime(token);␍
+    102     │ - → → setIsLoading(false);␍
+    103     │ - → → setReport(null);␍
+    104     │ - → → setError(null);␍
+    105     │ - → → generatedRange.current·=·null;␍
+    106     │ - → → pending.current·=·null;␍
+    107     │ - → → return·()·=>·{␍
+    108     │ - → → → token.active·=·false;␍
+    109     │ - → → };␍
+    110     │ - → },·[]);␍
+    111     │ - ␍
+    112     │ - → useEffect(()·=>·{␍
+    113     │ - → → if·(!isHydrated·||·hasUserChangedRange.current)·return;␍
+    114     │ - → → setDateRange(getDateRangeForPreset("current_year",·{·timezone·}));␍
+    115     │ - → },·[isHydrated,·timezone]);␍
+    116     │ - ␍
+    117     │ - → const·monthLabel·=·(month:·string)·=>␍
+    118     │ - → → formatPlainDate(parsePlainDate(`${month}-01`),·locale,·"monthYear");␍
+    119     │ - → const·kilometres·=·(km:·number)·=>␍
+    120     │ - → → t("reports.vehicles.kilometres",·"{distance}·km",·{␍
+    121     │ - → → → distance:·km.toLocaleString(locale),␍
+    122     │ - → → });␍
+    123     │ - ␍
+    124     │ - → const·exportLabels:·VehicleDistanceExportLabels·=·{␍
+    125     │ - → → title:·t("reports.vehicles.title",·"Distance·per·Vehicle"),␍
+    126     │ - → → period:·t("reports.vehicles.export.period",·"Period"),␍
+    127     │ - → → generatedAt:·t("reports.vehicles.export.generatedAt",·"Generated·on"),␍
+    128     │ - → → table:·t("reports.vehicles.export.table",·"Kilometres"),␍
+    129     │ - → → vehicle:·t("reports.vehicles.table.vehicle",·"Vehicle"),␍
+    130     │ - → → licencePlate:·t("reports.vehicles.table.licencePlate",·"Licence·plate"),␍
+    131     │ - → → employee:·t("reports.vehicles.table.employee",·"Employee"),␍
+    132     │ - → → total:·t("reports.vehicles.table.total",·"Total"),␍
+    133     │ - → → ownVehicle:·t("reports.vehicles.ownVehicle",·"Own·vehicle"),␍
+    134     │ - → → archived:·t("reports.vehicles.archived",·"archived"),␍
+    135     │ - → → note:·t(␍
+    136     │ - → → → "reports.vehicles.export.note",␍
+    137     │ - → → → "Whole·kilometres·of·completed·work,·counted·in·the·month·the·work·started·in·(local·time·where·it·was·recorded).",␍
+    138     │ - → → ),␍
+    139     │ - → → footer:·t("reports.vehicles.export.footer",·"Generated·by·Z8"),␍
+    140     │ - → → monthLabel,␍
+    141     │ - → };␍
+    142     │ - ␍
+    143     │ - → useViewRefresh(async·()·=>·{␍
+    144     │ - → → const·range·=·generatedRange.current;␍
+    145     │ - → → if·(!range·||·!report·||·!lifetime.active·||·pending.current)·return;␍
+    146     │ - → → await·generate(range,·lifetime);␍
+    147     │ - → });␍
+    148     │ - ␍
+    149     │ - → async·function·generate(range:·ReportDateRange,·arrival:·{·active:·boolean·})·{␍
+    150     │ - → → if·(!arrival.active·||·pending.current)·return;␍
+  836 more lines truncated
+  
+
+src\components\reports\vehicles\vehicle-report-exports.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconDownload,·IconFileSpreadsheet,·IconFileText·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useEffect,·useRef,·useState·}·from·"react";␍
+      6     │ - import·{·toast·}·from·"sonner";␍
+      7     │ - import·{·Button·}·from·"@/components/ui/button";␍
+      8     │ - import·{·type·ReportDocument,·reportFileName·}·from·"@/lib/reports/exporters/report-document";␍
+      9     │ - ␍
+     10     │ - type·Format·=·"pdf"·|·"xlsx"·|·"csv";␍
+     11     │ - ␍
+     12     │ - //·Vehicle-only·lifetime·control.·Shared·project/customer/snapshot·export·controls␍
+     13     │ - //·remain·with·their·owner;·all·three·file·serializers·and·the·document·are·canonical.␍
+     14     │ - export·function·VehicleReportExports({␍
+     15     │ - → buildDocument,␍
+     16     │ - → isCurrent,␍
+     17     │ - }:·{␍
+     18     │ - → buildDocument:·()·=>·ReportDocument;␍
+     19     │ - → isCurrent:·()·=>·boolean;␍
+     20     │ - })·{␍
+     21     │ - → const·{·t·}·=·useTranslate();␍
+     22     │ - → const·[loading,·setLoading]·=·useState<Format·|·null>(null);␍
+     23     │ - → const·[error,·setError]·=·useState<string·|·null>(null);␍
+     24     │ - → const·active·=·useRef<{·active:·boolean·}>({·active:·false·});␍
+     25     │ - → const·pending·=·useRef<object·|·null>(null);␍
+     26     │ - → useEffect(()·=>·{␍
+     27     │ - → → const·arrival·=·{·active:·true·};␍
+     28     │ - → → active.current·=·arrival;␍
+     29     │ - → → pending.current·=·null;␍
+     30     │ - → → setLoading(null);␍
+     31     │ - → → return·()·=>·{␍
+     32     │ - → → → arrival.active·=·false;␍
+     33     │ - → → };␍
+     34     │ - → },·[]);␍
+     35     │ - → async·function·download(format:·Format)·{␍
+     36     │ - → → const·arrival·=·active.current;␍
+     37     │ - → → if·(!arrival.active·||·!isCurrent()·||·pending.current)·return;␍
+     38     │ - → → const·request·=·{};␍
+     39     │ - → → pending.current·=·request;␍
+     40     │ - → → setLoading(format);␍
+     41     │ - → → setError(null);␍
+     42     │ - → → try·{␍
+     43     │ - → → → const·document·=·buildDocument();␍
+     44     │ - → → → const·data·=␍
+     45     │ - → → → → format·===·"pdf"␍
+     46     │ - → → → → → ?·await·(␍
+     47     │ - → → → → → → → await·import("@/lib/reports/exporters/report-document-pdf")␍
+     48     │ - → → → → → → ).exportReportDocumentToPDF(document)␍
+     49     │ - → → → → → :·format·===·"xlsx"␍
+     50     │ - → → → → → → ?·await·(␍
+     51     │ - → → → → → → → → await·import("@/lib/reports/exporters/report-document-excel")␍
+     52     │ - → → → → → → → ).exportReportDocumentToExcel(document)␍
+     53     │ - → → → → → → :·(␍
+     54     │ - → → → → → → → → await·import("@/lib/reports/exporters/report-document-csv")␍
+     55     │ - → → → → → → → ).exportReportDocumentToCSV(document);␍
+     56     │ - → → → if·(!arrival.active·||·!isCurrent()·||·pending.current·!==·request)·return;␍
+     57     │ - → → → const·type·=␍
+     58     │ - → → → → format·===·"pdf"␍
+     59     │ - → → → → → ?·"application/pdf"␍
+     60     │ - → → → → → :·format·===·"xlsx"␍
+     61     │ - → → → → → → ?·"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"␍
+     62     │ - → → → → → → :·"text/csv;charset=utf-8;";␍
+     63     │ - → → → const·url·=·URL.createObjectURL(new·Blob([data·as·BlobPart],·{·type·}));␍
+     64     │ - → → → try·{␍
+     65     │ - → → → → const·anchor·=·window.document.createElement("a");␍
+     66     │ - → → → → anchor.href·=·url;␍
+     67     │ - → → → → anchor.download·=·reportFileName(document,·format);␍
+     68     │ - → → → → window.document.body.appendChild(anchor);␍
+     69     │ - → → → → anchor.click();␍
+     70     │ - → → → → anchor.remove();␍
+     71     │ - → → → → toast.success(t("reports.export.success",·"Export·successful"),·{␍
+     72     │ - → → → → → description:·t("reports.export.downloaded",·"Downloaded·{filename}",·{␍
+     73     │ - → → → → → → filename:·anchor.download,␍
+     74     │ - → → → → → }),␍
+     75     │ - → → → → });␍
+     76     │ - → → → }·finally·{␍
+     77     │ - → → → → //·Give·the·browser's·download·task·time·to·consume·the·blob.␍
+     78     │ - → → → → window.setTimeout(()·=>·URL.revokeObjectURL(url),·1_000);␍
+     79     │ - → → → }␍
+     80     │ - → → }·catch·(cause)·{␍
+     81     │ - → → → if·(arrival.active·&&·pending.current·===·request)␍
+     82     │ - → → → → setError(␍
+     83     │ - → → → → → cause·instanceof·Error␍
+     84     │ - → → → → → → ?·cause.message␍
+     85     │ - → → → → → → :·t("reports.export.errorDescription",·"An·error·occurred·while·exporting·the·report"),␍
+     86     │ - → → → → );␍
+     87     │ - → → }·finally·{␍
+     88     │ - → → → if·(arrival.active·&&·pending.current·===·request)·{␍
+     89     │ - → → → → pending.current·=·null;␍
+     90     │ - → → → → setLoading(null);␍
+     91     │ - → → → }␍
+     92     │ - → → }␍
+     93     │ - → }␍
+     94     │ - → return·(␍
+     95     │ - → → <div·className="space-y-2">␍
+     96     │ - → → → <div·className="flex·flex-wrap·gap-2">␍
+     97     │ - → → → → <Button␍
+     98     │ - → → → → → type="button"␍
+     99     │ - → → → → → variant="outline"␍
+    100     │ - → → → → → disabled={loading·!==·null}␍
+    101     │ - → → → → → onClick={()·=>·void·download("pdf")}␍
+    102     │ - → → → → >␍
+    103     │ - → → → → → <IconFileText·aria-hidden="true"·className="size-4"·/>␍
+    104     │ - → → → → → {loading·===·"pdf"␍
+    105     │ - → → → → → → ?·t("reports.export.generating",·"Generating...")␍
+    106     │ - → → → → → → :·t("reports.export.pdf",·"Export·PDF")}␍
+    107     │ - → → → → </Button>␍
+    108     │ - → → → → <Button␍
+    109     │ - → → → → → type="button"␍
+    110     │ - → → → → → variant="outline"␍
+    111     │ - → → → → → disabled={loading·!==·null}␍
+    112     │ - → → → → → onClick={()·=>·void·download("xlsx")}␍
+    113     │ - → → → → >␍
+    114     │ - → → → → → <IconFileSpreadsheet·aria-hidden="true"·className="size-4"·/>␍
+    115     │ - → → → → → {loading·===·"xlsx"␍
+    116     │ - → → → → → → ?·t("reports.export.generating",·"Generating...")␍
+    117     │ - → → → → → → :·t("reports.export.excel",·"Export·Excel")}␍
+    118     │ - → → → → </Button>␍
+    119     │ - → → → → <Button␍
+    120     │ - → → → → → type="button"␍
+    121     │ - → → → → → variant="outline"␍
+    122     │ - → → → → → disabled={loading·!==·null}␍
+    123     │ - → → → → → onClick={()·=>·void·download("csv")}␍
+    124     │ - → → → → >␍
+    125     │ - → → → → → <IconDownload·aria-hidden="true"·className="size-4"·/>␍
+    126     │ - → → → → → {loading·===·"csv"␍
+    127     │ - → → → → → → ?·t("reports.export.generating",·"Generating...")␍
+    128     │ - → → → → → → :·t("reports.export.csv",·"Export·CSV")}␍
+    129     │ - → → → → </Button>␍
+    130     │ - → → → </div>␍
+    131     │ - → → → {error·&&·(␍
+    132     │ - → → → → <p·role="alert">␍
+    133     │ - → → → → → {t("reports.export.failed",·"Export·failed")}:·{error}␍
+    134     │ - → → → → </p>␍
+    135     │ - → → → )}␍
+    136     │ - → → </div>␍
+    137     │ - → );␍
+    138     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{
+          4 │ + → IconDownload,
+          5 │ + → IconFileSpreadsheet,
+          6 │ + → IconFileText,
+          7 │ + }·from·"@tabler/icons-react";
+          8 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          9 │ + import·{·useEffect,·useRef,·useState·}·from·"react";
+         10 │ + import·{·toast·}·from·"sonner";
+         11 │ + import·{·Button·}·from·"@/components/ui/button";
+         12 │ + import·{
+  138 more lines truncated
+  
+
+src\components\reports\vehicles\vehicle-report-period-picker.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconCalendar·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useId,·useState·}·from·"react";␍
+      6     │ - import·{·useShallow·}·from·"zustand/react/shallow";␍
+      7     │ - import·{·Button·}·from·"@/components/ui/button";␍
+      8     │ - import·{·Calendar·}·from·"@/components/ui/calendar";␍
+      9     │ - import·{·Popover,·PopoverContent,·PopoverTrigger·}·from·"@/components/ui/popover";␍
+     10     │ - import·{␍
+     11     │ - → Select,␍
+     12     │ - → SelectContent,␍
+     13     │ - → SelectItem,␍
+     14     │ - → SelectTrigger,␍
+     15     │ - → SelectValue,␍
+     16     │ - }·from·"@/components/ui/select";␍
+     17     │ - import·{·useDisplayContext·}·from·"@/hooks/use-display-context";␍
+     18     │ - import·{·parsePlainDate,·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+     19     │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     20     │ - import·{␍
+     21     │ - → dateToCalendarString,␍
+     22     │ - → formatDateRangeLabel,␍
+     23     │ - → getDateRangeForPreset,␍
+     24     │ - }·from·"@/lib/reports/date-ranges";␍
+     25     │ - import·type·{·PeriodPreset,·ReportDateRange·}·from·"@/lib/reports/types";␍
+     26     │ - import·{·useOrganizationSettings·}·from·"@/stores/organization-settings-store";␍
+     27     │ - ␍
+     28     │ - interface·VehicleReportPeriodPickerProps·{␍
+     29     │ - → value:·ReportDateRange;␍
+     30     │ - → onChange:·(range:·ReportDateRange)·=>·void;␍
+     31     │ - }␍
+     32     │ - ␍
+     33     │ - export·function·VehicleReportPeriodPicker({·value,·onChange·}:·VehicleReportPeriodPickerProps)·{␍
+     34     │ - → const·{·t·}·=·useTranslate();␍
+     35     │ - → const·{·locale·}·=·useDisplayContext();␍
+     36     │ - → const·{·isHydrated,·timezone·}·=·useOrganizationSettings(␍
+     37     │ - → → useShallow((state)·=>·({␍
+     38     │ - → → → isHydrated:·state.isHydrated,␍
+     39     │ - → → → timezone:·state.timezone,␍
+     40     │ - → → })),␍
+     41     │ - → );␍
+     42     │ - → const·loadingDescriptionId·=·useId();␍
+     43     │ - → const·[preset,·setPreset]·=·useState<PeriodPreset>("current_year");␍
+     44     │ - → const·[isCalendarOpen,·setIsCalendarOpen]·=·useState(false);␍
+     45     │ - ␍
+     46     │ - → const·handlePresetChange·=·(newPreset:·PeriodPreset)·=>·{␍
+     47     │ - → → if·(!isHydrated)·{␍
+     48     │ - → → → return;␍
+     49     │ - → → }␍
+     50     │ - ␍
+     51     │ - → → setPreset(newPreset);␍
+     52     │ - ␍
+     53     │ - → → if·(newPreset·!==·"custom")·{␍
+     54     │ - → → → const·range·=·getDateRangeForPreset(newPreset,·{·timezone·});␍
+     55     │ - → → → onChange(range);␍
+     56     │ - → → → setIsCalendarOpen(false);␍
+     57     │ - → → }·else·{␍
+     58     │ - → → → setIsCalendarOpen(true);␍
+     59     │ - → → }␍
+     60     │ - → };␍
+     61     │ - ␍
+     62     │ - → const·handleDateSelect·=·(range:·{·from?:·Date;·to?:·Date·}·|·undefined)·=>·{␍
+     63     │ - → → if·(range?.from·&&·range?.to)·{␍
+     64     │ - → → → onChange({␍
+     65     │ - → → → → startDate:·dateToCalendarString(range.from),␍
+     66     │ - → → → → endDate:·dateToCalendarString(range.to),␍
+     67     │ - → → → });␍
+     68     │ - → → }␍
+     69     │ - → };␍
+     70     │ - ␍
+     71     │ - → const·currentYear·=·systemClock.nowInstant().toZonedDateTimeISO(timezone).year;␍
+     72     │ - → const·{·startDate,·endDate·}·=·value;␍
+     73     │ - → const·start·=·parsePlainDate(startDate);␍
+     74     │ - → const·end·=·parsePlainDate(endDate);␍
+     75     │ - ␍
+     76     │ - → return·(␍
+     77     │ - → → <div·className="flex·flex-col·gap-2·sm:flex-row·sm:flex-wrap·sm:items-center">␍
+     78     │ - → → → {/*·Preset·Selector·*/}␍
+     79     │ - → → → <Select␍
+     80     │ - → → → → value={preset}␍
+     81     │ - → → → → onValueChange={(v)·=>·handlePresetChange(v·as·PeriodPreset)}␍
+     82     │ - → → → → disabled={!isHydrated}␍
+     83     │ - → → → >␍
+     84     │ - → → → → <SelectTrigger␍
+     85     │ - → → → → → aria-describedby={!isHydrated·?·loadingDescriptionId·:·undefined}␍
+     86     │ - → → → → → aria-label={t("reports.filter.period",·"Period")}␍
+     87     │ - → → → → → className="w-full·sm:w-[200px]"␍
+     88     │ - → → → → >␍
+     89     │ - → → → → → <SelectValue·placeholder={t("reports.filter.selectPeriod",·"Select·period")}·/>␍
+     90     │ - → → → → </SelectTrigger>␍
+     91     │ - → → → → <SelectContent>␍
+     92     │ - → → → → → <SelectItem·value="last_month">{t("reports.period.lastMonth",·"Last·Month")}</SelectItem>␍
+     93     │ - → → → → → <SelectItem·value="current_month">␍
+     94     │ - → → → → → → {t("reports.period.currentMonth",·"Current·Month")}␍
+     95     │ - → → → → → </SelectItem>␍
+     96     │ - → → → → → <SelectItem·value="last_year">{t("reports.period.lastYear",·"Last·Year")}</SelectItem>␍
+     97     │ - → → → → → <SelectItem·value="current_year">␍
+     98     │ - → → → → → → {t("reports.period.currentYear",·"Current·Year")}␍
+     99     │ - → → → → → </SelectItem>␍
+    100     │ - → → → → → <SelectItem·value="ytd">{t("reports.period.yearToDate",·"Year·to·Date")}</SelectItem>␍
+    101     │ - → → → → → <SelectItem·value="q1">Q1·{currentYear}</SelectItem>␍
+    102     │ - → → → → → <SelectItem·value="q2">Q2·{currentYear}</SelectItem>␍
+    103     │ - → → → → → <SelectItem·value="q3">Q3·{currentYear}</SelectItem>␍
+    104     │ - → → → → → <SelectItem·value="q4">Q4·{currentYear}</SelectItem>␍
+    105     │ - → → → → → <SelectItem·value="custom">{t("reports.period.customRange",·"Custom·Range")}</SelectItem>␍
+    106     │ - → → → → </SelectContent>␍
+    107     │ - → → → </Select>␍
+    108     │ - → → → {!isHydrated·&&·(␍
+    109     │ - → → → → <p·id={loadingDescriptionId}·className="text-sm·text-muted-foreground">␍
+    110     │ - → → → → → {t(␍
+    111     │ - → → → → → → "reports.filter.loadingSettings",␍
+    112     │ - → → → → → → "Loading·organization·settings·before·enabling·presets.",␍
+    113     │ - → → → → → )}␍
+    114     │ - → → → → </p>␍
+    115     │ - → → → )}␍
+    116     │ - ␍
+    117     │ - → → → {/*·Calendar·picker·for·custom·range·*/}␍
+    118     │ - → → → {preset·===·"custom"·&&·(␍
+    119     │ - → → → → <Popover·open={isCalendarOpen}·onOpenChange={setIsCalendarOpen}>␍
+    120     │ - → → → → → <PopoverTrigger·asChild>␍
+    121     │ - → → → → → → <Button␍
+    122     │ - → → → → → → → variant="field"␍
+    123     │ - → → → → → → → className="w-full·justify-start·text-left·sm:w-[280px]"␍
+    124     │ - → → → → → → → data-placeholder={startDate·?·undefined·:·""}␍
+    125     │ - → → → → → → >␍
+    126     │ - → → → → → → → <IconCalendar·aria-hidden="true"·className="mr-2·size-4"·/>␍
+    127     │ - → → → → → → → {startDate·?·(␍
+    128     │ - → → → → → → → → endDate·?·(␍
+    129     │ - → → → → → → → → → <>␍
+    130     │ - → → → → → → → → → → {formatPlainDate(start,·locale,·"dateMedium")}·-{"·"}␍
+    131     │ - → → → → → → → → → → {formatPlainDate(end,·locale,·"dateMedium")}␍
+    132     │ - → → → → → → → → → </>␍
+    133     │ - → → → → → → → → )·:·(␍
+    134     │ - → → → → → → → → → formatPlainDate(start,·locale,·"dateMedium")␍
+    135     │ - → → → → → → → → )␍
+    136     │ - → → → → → → → )·:·(␍
+    137     │ - → → → → → → → → <span>{t("reports.period.pickDateRange",·"Pick·a·date·range")}</span>␍
+    138     │ - → → → → → → → )}␍
+    139     │ - → → → → → → </Button>␍
+    140     │ - → → → → → </PopoverTrigger>␍
+    141     │ - → → → → → <PopoverContent·className="w-auto·p-0"·align="start">␍
+    142     │ - → → → → → → <Calendar␍
+    143     │ - → → → → → → → autoFocus␍
+    144     │ - → → → → → → → mode="range"␍
+    145     │ - → → → → → → → defaultMonth={new·Date(start.year,·start.month·-·1,·start.day)}␍
+    146     │ - → → → → → → → selected={{␍
+    147     │ - → → → → → → → → from:·new·Date(start.year,·start.month·-·1,·start.day),␍
+    148     │ - → → → → → → → → to:·new·Date(end.year,·end.month·-·1,·end.day),␍
+    149     │ - → → → → → → → }}␍
+    150     │ - → → → → → → → onSelect={handleDateSelect}␍
+  204 more lines truncated
+  
+
+src\components\site-header.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ReactElement,·ReactNode·}·from·"react";␍
+      5     │ - import·{·describe,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{·SiteHeader·}·from·"./site-header";␍
+      7     │ - import·{·PageHeader·}·from·"./ui/page-header";␍
+      8     │ - ␍
+      9     │ - let·pathname·=·"/";␍
+     10     │ - ␍
+     11     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     12     │ - → useTranslate:·()·=>·({␍
+     13     │ - → → t:·(_key:·string,·fallback:·string)·=>·fallback,␍
+     14     │ - → }),␍
+     15     │ - }));␍
+     16     │ - ␍
+     17     │ - vi.mock("@/navigation",·()·=>·({␍
+     18     │ - → usePathname:·()·=>·pathname,␍
+     19     │ - }));␍
+     20     │ - ␍
+     21     │ - vi.mock("@/components/providers/user-preferences-provider",·()·=>·({␍
+     22     │ - → useTimeFormat:·()·=>·"24h",␍
+     23     │ - → useUserTimezone:·()·=>·"Europe/Berlin",␍
+     24     │ - }));␍
+     25     │ - ␍
+     26     │ - vi.mock("@/components/header-refresh-button",·()·=>·({␍
+     27     │ - → HeaderRefreshButton:·({·children·}:·{·children?:·ReactNode·})·=>·(␍
+     28     │ - → → <button·type="button">{children·??·"Refresh·data"}</button>␍
+     29     │ - → ),␍
+     30     │ - }));␍
+     31     │ - ␍
+     32     │ - vi.mock("@/components/header-timezone-control",·()·=>·({␍
+     33     │ - → HeaderTimezoneControl:·({·trigger·}:·{·trigger?:·ReactElement·})·=>␍
+     34     │ - → → trigger·??·<button·type="button">Timezone</button>,␍
+     35     │ - }));␍
+     36     │ - ␍
+     37     │ - vi.mock("@/components/notifications",·()·=>·({␍
+     38     │ - → NotificationBell:·()·=>·<button·type="button">Notifications</button>,␍
+     39     │ - }));␍
+     40     │ - ␍
+     41     │ - vi.mock("@/components/theme-toggle",·()·=>·({␍
+     42     │ - → ThemeToggle:·({·trigger·}:·{·trigger?:·ReactElement·})·=>␍
+     43     │ - → → trigger·??·<button·type="button">Toggle·theme</button>,␍
+     44     │ - }));␍
+     45     │ - ␍
+     46     │ - vi.mock("@/components/time-tracking/time-clock-popover",·()·=>·({␍
+     47     │ - → TimeClockPopover:·()·=>·<button·type="button">Clock·In</button>,␍
+     48     │ - }));␍
+     49     │ - ␍
+     50     │ - vi.mock("@/components/ui/sidebar",·()·=>·({␍
+     51     │ - → SidebarTrigger:·()·=>·<button·type="button">Toggle·sidebar</button>,␍
+     52     │ - }));␍
+     53     │ - ␍
+     54     │ - vi.mock("@/components/dashboard/dashboard-header-customize",·()·=>·({␍
+     55     │ - → DashboardHeaderCustomize:·({·trigger·}:·{·trigger?:·ReactElement·})·=>␍
+     56     │ - → → trigger·??·<button·type="button">Customize·dashboard</button>,␍
+     57     │ - }));␍
+     58     │ - ␍
+     59     │ - describe("SiteHeader",·()·=>·{␍
+     60     │ - → it("hands·the·personal·equipment·title·to·its·page·without·adopting·other·destinations",·()·=>·{␍
+     61     │ - → → pathname·=·"/en/my-equipment";␍
+     62     │ - → → const·page·=·render(␍
+     63     │ - → → → <>␍
+     64     │ - → → → → <SiteHeader·/>␍
+     65     │ - → → → → <PageHeader·title="My·equipment"·/>␍
+     66     │ - → → → </>,␍
+     67     │ - → → );␍
+     68     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·}).map((n)·=>·n.textContent)).toEqual([␍
+     69     │ - → → → "My·equipment",␍
+     70     │ - → → ]);␍
+     71     │ - → → page.unmount();␍
+     72     │ - → → pathname·=·"/en/my-equipment/other";␍
+     73     │ - → → render(<SiteHeader·/>);␍
+     74     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"My·equipment"·})).toBeTruthy();␍
+     75     │ - → });␍
+     76     │ - → it("hands·the·suspended·recovery·title·to·the·page·without·opting·descendants·into·heading·ownership",·()·=>·{␍
+     77     │ - → → pathname·=·"/de/billing/suspended";␍
+     78     │ - → → const·page·=·render(␍
+     79     │ - → → → <>␍
+     80     │ - → → → → <SiteHeader·/>␍
+     81     │ - → → → → <PageHeader·title="Organization·suspended"·/>␍
+     82     │ - → → → </>,␍
+     83     │ - → → );␍
+     84     │ - → → expect(␍
+     85     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),␍
+     86     │ - → → ).toEqual(["Organization·suspended"]);␍
+     87     │ - → → page.unmount();␍
+     88     │ - → → pathname·=·"/en/billing/suspended/unconverted";␍
+     89     │ - → → render(<SiteHeader·/>);␍
+     90     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Billing·&·Subscription"·})).toBeTruthy();␍
+     91     │ - → });␍
+     92     │ - → it("hands·the·main·title·to·converted·pages·while·retaining·unknown·descendant·titles",·()·=>·{␍
+     93     │ - → → pathname·=·"/de/reports";␍
+     94     │ - → → const·page·=·render(␍
+     95     │ - → → → <>␍
+     96     │ - → → → → <SiteHeader·/>␍
+     97     │ - → → → → <PageHeader·title="Employee·Reports"·/>␍
+     98     │ - → → → </>,␍
+     99     │ - → → );␍
+    100     │ - → → expect(␍
+    101     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),␍
+    102     │ - → → ).toEqual(["Employee·Reports"]);␍
+    103     │ - → → page.unmount();␍
+    104     │ - → → pathname·=·"/de/calendar/employee-1";␍
+    105     │ - → → const·calendar·=·render(␍
+    106     │ - → → → <>␍
+    107     │ - → → → → <SiteHeader·/>␍
+    108     │ - → → → → <PageHeader·title="Calendar"·/>␍
+    109     │ - → → → </>,␍
+    110     │ - → → );␍
+    111     │ - → → expect(␍
+    112     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),␍
+    113     │ - → → ).toEqual(["Calendar"]);␍
+    114     │ - → → calendar.unmount();␍
+    115     │ - → → pathname·=·"/en/calendar/employee-1/detail";␍
+    116     │ - → → render(<SiteHeader·/>);␍
+    117     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Calendar"·})).toBeTruthy();␍
+    118     │ - → });␍
+    119     │ - ␍
+    120     │ - → it("hands·the·exact·vehicle·report·its·heading·and·retains·descendant·shell·titles",·()·=>·{␍
+    121     │ - → → pathname·=·"/en/reports/vehicles";␍
+    122     │ - → → const·page·=·render(␍
+    123     │ - → → → <>␍
+    124     │ - → → → → <SiteHeader·/>␍
+    125     │ - → → → → <PageHeader·title="Distance·per·Vehicle"·/>␍
+    126     │ - → → → </>,␍
+    127     │ - → → );␍
+    128     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+    129     │ - → → page.unmount();␍
+    130     │ - → → pathname·=·"/en/reports/vehicles/detail";␍
+    131     │ - → → render(<SiteHeader·/>);␍
+    132     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Distance·per·Vehicle"·})).toBeTruthy();␍
+    133     │ - → });␍
+    134     │ - → it("shows·header·actions·in·the·requested·order·on·the·dashboard·route",·()·=>·{␍
+    135     │ - → → pathname·=·"/en";␍
+    136     │ - ␍
+    137     │ - → → render(<SiteHeader·/>);␍
+    138     │ - ␍
+    139     │ - → → const·buttons·=·screen.getAllByRole("button").map((button)·=>·button.textContent);␍
+    140     │ - → → expect(buttons).toEqual([␍
+    141     │ - → → → "Toggle·sidebar",␍
+    142     │ - → → → "Customize·dashboard",␍
+    143     │ - → → → "Timezone",␍
+    144     │ - → → → "Clock·In",␍
+    145     │ - → → → "Refresh·data",␍
+    146     │ - → → → "Toggle·theme",␍
+    147     │ - → → → "Notifications",␍
+    148     │ - → → → "More·actions",␍
+    149     │ - → → ]);␍
+    150     │ - → });␍
+  319 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      3     │ - ␍
+      4     │ - describe("route·metadata",·()·=>·{␍
+      5     │ - → it("adopts·only·the·report·share-link·settings·heading·without·other·settings·or·descendants",·()·=>·{␍
+      6     │ - → → expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);␍
+      7     │ - → → expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);␍
+      8     │ - → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);␍
+      9     │ - → → expect(appPageOwnsHeading("/en/settings/other")).toBe(false);␍
+     10     │ - → });␍
+     11     │ - → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{␍
+     12     │ - → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     13     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     14     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+     15     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     16     │ - → });␍
+     17     │ - → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{␍
+     18     │ - → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);␍
+     19     │ - → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);␍
+     20     │ - → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);␍
+     21     │ - → });␍
+     22     │ - → it("adopts·only·the·personal·requests·page·heading",·()·=>·{␍
+     23     │ - → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);␍
+     24     │ - → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);␍
+     25     │ - → });␍
+     26     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{␍
+     27     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);␍
+     28     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);␍
+     29     │ - → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);␍
+     30     │ - → });␍
+     31     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{␍
+     32     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     33     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     34     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     35     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     36     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     37     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     38     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+     39     │ - → });␍
+     40     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{␍
+     41     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);␍
+     42     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);␍
+     43     │ - → });␍
+     44     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{␍
+     45     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     46     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     47     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     48     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     49     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+     50     │ - → });␍
+     51     │ - → it("retains·independent·approvals·page·headings",·()·=>·{␍
+     52     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     53     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     54     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+     55     │ - → });␍
+     56     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{␍
+     57     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     58     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+     59     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     60     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     61     │ - → });␍
+     62     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{␍
+     63     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     64     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     65     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+     66     │ - → });␍
+     67     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{␍
+     68     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     69     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     70     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+     71     │ - → });␍
+     72     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{␍
+     73     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     74     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+     75     │ - → });␍
+     76     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{␍
+     77     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     78     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+     79     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     80     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+     81     │ - → });␍
+     82     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{␍
+     83     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);␍
+     84     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);␍
+     85     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);␍
+     86     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);␍
+     87     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);␍
+     88     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);␍
+     89     │ - → });␍
+     90     │ - → it("adopts·exact·report·titles·and·preserves·descendant·shell·headings",·()·=>·{␍
+     91     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);␍
+     92     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(true);␍
+     93     │ - → → expect(appPageOwnsHeading("/de/reports/vehicles/detail")).toBe(false);␍
+     94     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);␍
+     95     │ - → });␍
+     96     │ - → it.each([␍
+     97     │ - → → ["/en",·"Dashboard"],␍
+     98     │ - → → ["/de/my-requests",·"My·Requests"],␍
+     99     │ - → → ["/en/organization",·"Org·Explorer"],␍
+    100     │ - → → ["/en/payroll",·"Payroll"],␍
+    101     │ - → → ["/en/scheduling",·"Scheduling"],␍
+    102     │ - → → ["/en/approvals/inbox",·"Approvals"],␍
+    103     │ - → → ["/en/compliance",·"Compliance"],␍
+    104     │ - → → ["/en/works-council",·"Works·Council"],␍
+    105     │ - → → ["/en/team/absences",·"Team·Absences"],␍
+    106     │ - → → ["/en/team/driving",·"Driving·Details"],␍
+    107     │ - → → ["/en/driving-licence",·"My·driving·authorization"],␍
+    108     │ - → → ["/en/driving-licence/checks/employee-1",·"My·driving·authorization"],␍
+    109     │ - → → ["/en/reports/projects",·"Project·Reports"],␍
+    110     │ - → → ["/en/reports/vehicles",·"Distance·per·Vehicle"],␍
+    111     │ - → → ["/en/settings/employees/employee-1",·"Employees"],␍
+    112     │ - → → ["/en/settings/locations/location-1",·"Locations"],␍
+    113     │ - → → ["/en/equipment",·"Equipment"],␍
+    114     │ - → → ["/en/equipment/employees/employee-1",·"Equipment"],␍
+    115     │ - → → ["/en/equipment/assignments/assignment-1",·"Equipment"],␍
+    116     │ - → → ["/de/my-equipment",·"My·equipment"],␍
+    117     │ - → → ["/en/settings/equipment",·"Settings"],␍
+    118     │ - → ])("resolves·%s",·(pathname,·title)·=>·{␍
+    119     │ - → → expect(resolveAppRouteMetadata(pathname).titleDefault).toBe(title);␍
+    120     │ - → });␍
+    121     │ - ␍
+    122     │ - → it("matches·route·prefixes·only·at·path-segment·boundaries",·()·=>·{␍
+    123     │ - → → expect(resolveAppRouteMetadata("/en/teamwork").titleDefault).toBe("Z8");␍
+    124     │ - → });␍
+    125     │ - ␍
+    126     │ - → it("normalizes·locale·and·trailing·slash·segments",·()·=>·{␍
+    127     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    128     │ - → });␍
+    129     │ - });␍
+          1 │ + import·{·describe,·expect,·it·}·from·"vitest";
+          2 │ + import·{
+          3 │ + → appPageOwnsHeading,
+          4 │ + → normalizeAppPath,
+          5 │ + → resolveAppRouteMetadata,
+          6 │ + }·from·"./route-metadata";
+          7 │ + 
+          8 │ + describe("route·metadata",·()·=>·{
+          9 │ + → it("adopts·only·the·report·share-link·settings·heading·without·other·settings·or·descendants",·()·=>·{
+         10 │ + → → expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
+         11 │ + → → expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);
+         12 │ + → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(
+         13 │ + → → → false,
+         14 │ + → → );
+         15 │ + → → expect(appPageOwnsHeading("/en/settings/other")).toBe(false);
+         16 │ + → });
+         17 │ + → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{
+         18 │ + → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+         19 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
+         20 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
+         21 │ + → → → true,
+  149 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  364 more lines truncated
+  
+
+Checked 8 files in 42ms. No fixes applied.
+Found 8 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

@@ -1,0 +1,19 @@
+{
+  "newClaims": 6,
+  "newAttachments": 6,
+  "newDecisionLogs": 1,
+  "newPrivateObjects": 5,
+  "bytes": 68,
+  "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+  "authWrites": 0,
+  "timekeepingWrites": 0,
+  "records": [
+    "draft",
+    "submitted",
+    "approved",
+    "unavailable",
+    "same-org-sentinel",
+    "foreign-sentinel"
+  ],
+  "kind": "Synthetic business seeding, not actual UI creation"
+}

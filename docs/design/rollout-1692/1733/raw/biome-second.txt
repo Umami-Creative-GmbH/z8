@@ -1,0 +1,16 @@
+src\components\personnel-file\payslip-batch-workspace.tsx:832:2 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━
+
+  ! This parameter onChanged is unused.
+  
+    830 │ 	file,
+    831 │ 	preview,
+  > 832 │ 	onChanged,
+        │ 	^^^^^^^^^
+    833 │ }: {
+    834 │ 	file: PayslipBatchFileView;
+  
+  i Unused parameters might be the result of an incomplete refactoring.
+  
+
+Checked 6 files in 18ms. Fixed 1 file.
+Found 1 warning.

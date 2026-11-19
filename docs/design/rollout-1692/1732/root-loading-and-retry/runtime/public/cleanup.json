@@ -1,0 +1,40 @@
+{
+  "ownedControllerClosed": true,
+  "ownedNextTreesRemaining": 0,
+  "ownedListenerCount": 0,
+  "ownedBrowserPidRemaining": false,
+  "containersRemaining": 0,
+  "containers": [
+    {
+      "service": "postgres",
+      "remaining": false,
+      "fixture": "browser"
+    },
+    {
+      "service": "redis",
+      "remaining": false,
+      "fixture": "browser"
+    },
+    {
+      "service": "storage",
+      "remaining": false,
+      "fixture": "browser"
+    },
+    {
+      "service": "postgres",
+      "remaining": false,
+      "fixture": "pg"
+    },
+    {
+      "service": "redis",
+      "remaining": false,
+      "fixture": "pg"
+    },
+    {
+      "service": "storage",
+      "remaining": false,
+      "fixture": "pg"
+    }
+  ],
+  "privateInputsPreserved": true
+}

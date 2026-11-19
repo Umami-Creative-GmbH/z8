@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/wellness/page.test.tsx (8 tests | 2 failed) 382ms
+   ❯ WellnessPage (8)
+     × ignores held save success after an organization round trip and retains the personal draft 30ms
+     × ignores held skip success after an organization round trip and retains the personal draft 27ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > ignores held save success after an organization round trip and retains the personal draft
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > ignores held skip success after an organization round trip and retains the personal draft
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "/onboarding/notifications",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/wellness/page.test.tsx:98:24
+     96|   view.rerender(<WellnessPage />);
+     97|   await act(async () => request.resolve({ success: true }));
+     98|   expect(pushMock).not.toHaveBeenCalled();
+       |                        ^
+     99|   expect(toastSuccessMock).not.toHaveBeenCalled();
+    100|   expect(screen.getByRole("slider", { name: "Daily Goal" }).getAttribu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 6 passed (8)
+   Start at  16:20:51
+   Duration  1.29s (environment 35%, tests 32%, import 26%, transform 4%, setup 2%)
+

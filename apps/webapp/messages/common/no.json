@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Tilgangen til denne organisasjonen er satt på pause til faktureringen er oppdatert.",
       "adminDescription": "Prøveperioden din er utløpt eller abonnementet er ikke lenger gyldig. Oppdater faktureringsinformasjon for å fortsette å bruke Z8.",
       "goToBilling": "Gå til fakturering",
       "memberDescription": "Denne organisasjonen er suspendert. Kontakt en organisasjonsadministrator for å oppdatere fakturering.",
@@ -165,6 +166,13 @@
     "teal": "Blågrønn"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Noe gikk galt. Prøv på nytt.",
+      "formerEmployee": "Tidligere ansatte kan ikke velges. Velg noen på den gjeldende listen.",
+      "invalidInput": "Kontroller det du har fylt inn, og prøv på nytt.",
+      "notAllowed": "Du har ikke tilgang til denne innstillingen.",
+      "signInRequired": "Logg inn for å fortsette."
+    },
     "actions": "Handlinger",
     "active": "Aktiv",
     "add": "Legg til",
@@ -174,6 +182,7 @@
     "approve": "Godkjenn",
     "assign": "Tildel",
     "back": "Tilbake",
+    "backToDashboard": "Tilbake til kontrollpanelet",
     "brandLogo": "{brand}-logo",
     "breadcrumb": {
       "breadcrumb": "brødsmulesti",
@@ -195,6 +204,7 @@
     "copy": "Kopier",
     "create": "Opprett",
     "current": "Gjeldende",
+    "date": "Dato",
     "datePicker": {
       "clearDate": "Fjern dato",
       "placeholder": "Velg en dato"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Rediger",
     "employees": "Ansatte",
-    "enabled": "Aktivert",
     "error": "Feil",
     "error-occurred": "Det oppsto en feil",
     "errors": {
       "monthClosed": "{month} er lukket. Den må gjenåpnes før arbeid eller fravær kan endres."
     },
     "fieldPresets": "{label}-forhåndsinnstillinger",
+    "filters": "Filtre",
     "focusInput": "Fokuser inndatafelt",
     "gender": {
       "female": "Kvinne",
@@ -253,6 +263,7 @@
       "application": "Laster inn applikasjon",
       "auditExportSettings": "Laster inn innstillinger for revisjonseksport",
       "authentication": "Laster inn autentisering",
+      "billableTimeSettings": "Laster innstillinger for fakturerbar tid",
       "changePolicySettings": "Laster inn innstillinger for endringsretningslinjer",
       "coverageRuleSettings": "Laster inn innstillinger for dekningsregler",
       "customerSettings": "Laster inn kundeinnstillinger",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Laster inn innstillinger for demodata",
       "deploymentDiagnostics": "Laster inn distribusjonsdiagnostikk",
       "employeeReports": "Laster inn ansattrapporter",
+      "employees": "Laster ansatte",
+      "employeeVacationAllowance": "Laster ansattes feriekvote",
       "employeeVacationAllowances": "Laster inn feriekvoter for ansatte",
       "exportOperations": "Laster inn eksportoperasjoner",
       "holidaySettings": "Laster inn innstillinger for helligdager",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Laster inn skiftplan",
       "shiftTemplateSettings": "Laster inn innstillinger for skiftmaler",
       "skillSettings": "Laster inn ferdighetsinnstillinger",
+      "statistics": "Laster statistikk",
       "surchargeSettings": "Laster inn tilleggsinnstillinger",
       "team": "Laster inn team",
       "todaySManagerBriefing": "Laster inn dagens lederbriefing",
@@ -315,8 +329,6 @@
     },
     "more": "mer",
     "moreActions": "Flere handlinger",
-    "moveDown": "Flytt ned",
-    "moveUp": "Flytt opp",
     "name": "Navn",
     "navigation": {
       "retry": "Prøv navigasjon på nytt",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Varsler} other {Varsler (# uleste)}}"
     },
+    "offline": "Frakoblet",
     "open": "Åpne",
     "openEnded": "Uten sluttdato",
     "openMenu": "Åpne meny",
@@ -389,6 +402,7 @@
     "removing": "Fjerner...",
     "reset": "Tilbakestill",
     "retry": "Prøv på nytt",
+    "retrying": "Prøver på nytt…",
     "revoke": "Tilbakekall",
     "save": "Lagre",
     "saveChanges": "Lagre endringer",
@@ -403,7 +417,9 @@
       "sidebar": "Sidemeny",
       "toggleSidebar": "Veksle sidemeny"
     },
+    "signIn": "Logg inn",
     "skip": "Hopp over",
+    "skipToContent": "Hopp til innhold",
     "start": "Start",
     "status": "Status",
     "submitting": "Sender inn…",
@@ -422,6 +438,9 @@
     },
     "to": "til",
     "today": "I dag",
+    "tryAgain": "Prøv igjen",
+    "unavailable": "Utilgjengelig",
+    "undo": "Angre",
     "unexpectedError": "Det oppsto en uventet feil",
     "unknown": "Ukjent",
     "unknownEmployee": "Ukjent ansatt",
@@ -575,6 +594,7 @@
       "submit": "Registrer originalkontroll",
       "suspensionNotice": "En vellykket ny kontroll gjenoppretter ikke automatisk en suspendert tillatelse. En ny kontroll og en eksplisitt gjenopprettingsbeslutning kreves.",
       "title": "Kontroller {name}s originale førerkort",
+      "transportError": "Kontrollen kunne ikke registreres. Inndataene dine er beholdt; prøv igjen etter å ha sjekket tilkoblingen og ansvaret ditt.",
       "verifier": "Jeg bekrefter at de registrerte faktaene og individuelle klasseresultatene gjenspeiler min kontroll."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Førerkortoppføringen kunne ikke lastes inn. Sjekk ditt gjeldende kontrolløransvar.",
       "loading": "Laster inn førerkortoppføringen …",
       "notIntended": "{name} er ikke en tiltenkt sjåfør. Kontroll er kun nødvendig for tiltenkte sjåfører.",
+      "retained": "Lagret dokumentasjon er tilgjengelig for gjennomgang. Nye kontroller er utilgjengelige for tidligere ansatte.",
       "title": "Førerkortkontroll for {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Status",
         "team": "Team"
       },
+      "customOrder": "Sortert etter valgt kolonne og retning.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Kontroll forfaller nå",
+      "dueOrder": "Kontroller som forfaller nå først, deretter neste frist.",
       "empty": {
         "description": "Tiltenkte sjåfører under ditt kontrolløransvar vises her. Kontakt en administrator hvis noen mangler.",
         "title": "Ingen å kontrollere ennå"
@@ -607,6 +630,8 @@
       "loadError": "Listen kunne ikke lastes inn. Sjekk ditt gjeldende kontrolløransvar.",
       "loading": "Laster inn tiltenkte sjåfører …",
       "noMatches": "Ingen tiltenkte sjåfører samsvarer med søket eller filteret.",
+      "refresh": "Oppdater arbeidsliste for kontroller",
+      "refreshing": "Oppdaterer arbeidsliste for kontroller…",
       "search": "Søk etter navn",
       "status": {
         "active": "Aktiv",
@@ -682,6 +707,7 @@
       "failed": "Kontrollert klasse ikke godkjent",
       "field": "Korrigert felt",
       "from": "Fra-dato (UTC)",
+      "fromHelp": "Perioden starter kl. 00:00 UTC.",
       "globalSuspension": "All kjøreautorisasjon suspendert",
       "help": "Opprinnelige bekreftelser, daterte tillegg og gjeldende autorisasjonsbeslutninger holdes atskilt. Tidligere dokumentasjon som er nødvendig for å forstå den valgte perioden, er merket som kontekst. Alle hendelsestidspunkter og periodebegrensninger nedenfor bruker UTC.",
       "impedimentReported": "Kjørehindring rapportert",
@@ -716,6 +742,7 @@
       "suspended": "Autorisasjon suspendert",
       "title": "Kontroll- og autorisasjonshistorikk",
       "to": "Før dato (UTC)",
+      "toHelp": "Perioden avsluttes før kl. 00:00 UTC på denne datoen.",
       "unavailable": "Historikken er utilgjengelig. Kontroller perioden og din gjeldende tilgang.",
       "value": "Korrigert verdi",
       "verifierConfirmation": "Kontrollørbekreftelse registrert på tidspunktet for den opprinnelige kontrollen"
@@ -751,7 +778,6 @@
         "teamNotFound": "Dette teamet finnes ikke lenger."
       },
       "notRequired": "Ikke påkrevd (ekskludert)",
-      "removed": "Tildeling som tiltenkt sjåfør er fjernet",
       "required": "Påkrevd",
       "saved": "Tiltenkte sjåfører er lagret",
       "targetOrganization": "Hele organisasjonen",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Kjøretillatelse",
       "loading": "Laster inn kjøretillatelse …",
+      "loadingEmployees": "Laster ansatte for planlegging…",
       "noEmployees": "Ingen matchende ansatte.",
       "recordingHelp": "Du kan alltid registrere arbeidstid og faktisk kjøretøybruk. Å velge et kjøretøy gir ingen kjøretillatelse; kontrollerte førerkortklasser fastslår ikke egnethet for alle kjøretøy.",
       "refresh": "Oppdater kjørestatus",
+      "refreshEmployees": "Oppdater ansatte for planlegging",
+      "rosterUnavailable": "Ansatte for planlegging er utilgjengelige. Sjekk din nåværende organisasjonstilgang og prøv igjen.",
       "search": "Finn ansatt",
       "searchHelp": "Opptil 50 ansatte vises. Avgrens søket for å finne en annen ansatt. Denne visningen inneholder ingen kontrolloppføringer.",
       "title": "Kjørestatus for planlegging",
       "unavailable": "Status for kjøretillatelse er utilgjengelig."
     },
     "page": {
+      "reconciling": "Laster førerkorttilgang for gjeldende organisasjon…",
+      "scope": "Kjøretillatelse, originalkontroller og planlegging i din aktive organisasjon. Hver visning følger din nåværende tilgang.",
       "title": "Førerkort"
     },
     "policyTitle": "Organisasjonens retningslinje",
@@ -960,6 +991,13 @@
       "description": "Du trenger en ansattprofil for å {feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
       "emailBody": "Hei,nnJeg trenger en ansattprofil konfigurert for å få tilgang til plattformfunksjonene. Kan du hjelpe meg med dette?nnTakk!",
       "emailSubject": "Oppsett av ansattprofil kreves",
+      "formerEmployee": {
+        "description": "Du er medlem av denne organisasjonen igjen, men ditt tidligere ansettelsesforhold ble avsluttet. En administrator må gjenansette deg før du kan {feature}.",
+        "emailBody": "Hei,\n\nJeg er medlem av organisasjonen igjen, men mitt tidligere ansettelsesforhold ble avsluttet. Kan du gjenansette meg slik at jeg får tilgang til plattformfunksjonene?\n\nTakk!",
+        "emailSubject": "Forespørsel om gjenansettelse",
+        "helpText": "Be administratoren din om å gjenansette deg. Inntil da kan du ikke bruke denne organisasjonen.",
+        "title": "Ansettelsesforholdet ditt her er avsluttet"
+      },
       "helpText": "Hvis du ble invitert til en organisasjon, kan du be administratoren din om å opprette ansattprofilen din.",
       "title": "Ansattprofil kreves"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Laster inn arbeidskø"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Bekreft en eksisterende innlogging"
+    },
     "banner": {
       "action": "Gjennomgå krav og verifiser",
       "requirement": "Denne organisasjonen krever verifisert autentisering fra {deadline}."
     },
     "code": {
       "label": "Autentiseringskode",
+      "required": "Skriv inn en autentiseringskode",
       "verify": "Verifiser autentiseringsmetode"
     },
     "continue": "Fortsett etter verifisering",
@@ -1056,6 +1098,8 @@
       "title": "Registrer eller erstatt en autentiseringsmetode",
       "warning": "Å legge til eller erstatte en faktor krever verifisering innen fem minutter. Verifiser erstatningen før du fjerner den gamle faktoren. Det er tillatt å tilbakekalle den siste faktoren din, og dette kan blokkere tilgangen til organisasjonene oppført ovenfor; det gir ikke et nytt registreringsvindu."
     },
+    "loading": "Laster sikkerhetsbekreftelse",
+    "navigation": "Organisasjon og konto",
     "organization": {
       "select": "Velg en annen organisasjon"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Passordverifisering mislyktes",
       "label": "Nåværende passord",
+      "required": "Skriv inn ditt nåværende passord",
       "verified": "Passord verifisert. Du kan registrere din første autentiseringsmetode, eller verifisere en eksisterende autentiseringsmetode eller reservekode nedenfor.",
       "verify": "Verifiser passord"
     },
@@ -1097,7 +1142,16 @@
       "description": "For gjenoppretting må du bekrefte passordet ditt ovenfor og deretter angi én ubrukt reservekode. Dette fjerner tidligere lokal bekreftelse på tvers av organisasjonene dine.",
       "label": "Reservekode",
       "lockout": "Hvis en eneadministrator mister alle autentiserings- og gjenopprettingsmetoder, forblir organisasjonen låst. Det finnes ingen overstyring for administrator eller kundestøtte.",
-      "success": "Gjenoppretting tillater kun erstatningsregistrering. Bekreft en autentikator før du går tilbake til organisasjonen din."
+      "nextSteps": "Bekreft passordet ditt på nytt før du bekrefter en autentikator.",
+      "open": "Gjenopprett med en reservekode",
+      "required": "Skriv inn en ubrukt reservekode",
+      "success": "Gjenoppretting tillater kun erstatningsregistrering. Bekreft en autentikator før du går tilbake til organisasjonen din.",
+      "title": "Kontogjenoppretting"
+    },
+    "requirements": {
+      "empty": "Ingen organisasjonskrav er oppført for denne kontoen.",
+      "selected": "Valgt organisasjon",
+      "title": "Organisasjonskrav"
     },
     "security": {
       "factorWarning": "Fjerning av en faktor kan blokkere tilgangen til organisasjoner som krever den. Bekreft en erstatning først; fjerning av den siste faktoren gir ingen ny respittid.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Policy for organisasjonsautentisering (eiere/administratorer)"
     },
     "signout": "Logg ut",
+    "signout.failed": "Utlogging mislyktes. Prøv igjen.",
     "social": {
       "verify": "Bekreft eksisterende pålogging med {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Plattformadministrator",
     "reports": "Rapporter",
     "scheduling": "Planlegging",
+    "secondary-label": "Innstillinger og hjelp",
     "settings": "Innstillinger",
     "team": "Team",
     "teamAbsences": "Teamfravær",
     "teamDriving": "Kjøredetaljer",
-    "team-label": "Team",
+    "team-organization-label": "Team og organisasjon",
     "teamPeriodSubmissions": "Periodeinnsendinger",
     "teamPresence": "Hvem er på jobb",
     "time-tracking": "Tidsregistrering",
     "today": "I dag",
     "travel-expenses": "Reiseutgifter",
+    "workplace-label": "Arbeidsplass",
     "worksCouncil": "Bedriftsutvalg"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Vakten din var ferdig kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig med å jobbe.",
         "title": "Du er fortsatt stemplet inn"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} er medlem igjen, men det tidligere ansettelsesforholdet ble avsluttet. Vedkommende har ingen tilgang før du gjenansetter hen.",
+        "title": "En tidligere ansatt må gjenansettes"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# ansatt er fortsatt kun koblet til en tidligere leder: {names}. Tildel en nåværende leder.} other {# ansatte er fortsatt kun koblet til en tidligere leder: {names}. Tildel en nåværende leder.}}",
@@ -1735,6 +1796,7 @@
         "title": "På tide å drikke vann!"
       }
     },
+    "countFailed": "Antall uleste er utilgjengelig",
     "description": "Gjennomgå oppdateringer, godkjenninger og systemvarsler på én tidslinje.",
     "empty": {
       "description": "Du er helt oppdatert! Nye varsler vises her.",
@@ -1754,6 +1816,8 @@
       "read": "Lest",
       "unread": "Ulest"
     },
+    "loading": "Laster inn varsler…",
+    "loadingCount": "Laster inn antall uleste…",
     "nativePush": {
       "attention": {
         "title": "Noe krever din oppmerksomhet"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Vakter som er åpnet etter en deaktivering",
         "equipment_return_reminder": "Påminnelser om innlevering av utstyr",
         "forgotten_clock_out_reminder": "Glemt utstempling",
+        "former_employee_needs_rehire": "Tidligere ansatte som må gjenansettes",
         "former_employee_reports_without_manager": "Ansatte uten en nåværende leder",
         "kiosk_command_refused": "Kioskstempling ikke registrert",
         "kiosk_fob_registered": "Kiosknøkkelbrikke registrert",
@@ -1871,6 +1936,7 @@
       "placeholder": "Søk i varsler..."
     },
     "selection": {
+      "actions": "Valgte varsler",
       "selectAll": "Velg alle synlige",
       "selectAllAria": "Velg alle synlige varsler",
       "selectNamedAria": "Velg {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "Slettet {count} varsler",
       "deleteFailed": "Kunne ikke slette varsler",
+      "deletePartial": "{count} slettet; {failed} mislyktes. Prøv det gjenværende utvalget på nytt.",
       "markedRead": "Markerte {count} varsler som lest",
-      "markReadFailed": "Kunne ikke markere varsler som lest"
+      "markReadFailed": "Kunne ikke markere varsler som lest",
+      "readPartial": "{count} merket som lest; {failed} mislyktes. Prøv det gjenværende utvalget på nytt."
     },
     "unreadBadge": "{count} uleste",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} synlige · siste {limit} varsler"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}t",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "Brukeravatar"
-  },
   "user": {
+    "account": "Konto",
     "font-size": "Skriftstørrelse",
     "language": "Språk",
+    "loadingAccount": "Laster inn konto",
     "logging-out": "Logger ut...",
     "log-out": "Logg ut",
     "log-out-failed": "Kunne ikke logge ut. Vennligst prøv igjen.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Tidsbasert",
     "theme-time-info": "Tidsbasert bruker {currentMode}-modus. Bytter til {nextMode} kl. {time}.",
     "theme-toggle": "Veksle tema"
+  },
+  "userAvatar": {
+    "alt": "Brukeravatar"
   },
   "vacationBalance": {
     "conflictingPolicies": "Motstridende ferieretningslinjer",

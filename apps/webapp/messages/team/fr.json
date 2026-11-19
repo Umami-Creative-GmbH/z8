@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Enregistrer une absence pour {name}"
       },
+      "allowances": "Droits annuels",
       "calendar": {
         "approved": "Approuvé",
         "changeDeputy": "Changer de remplaçant",
@@ -12,7 +13,6 @@
         "deputyMissing": "Remplaçant manquant",
         "description": "Absences approuvées et en attente pour l'équipe et l'année sélectionnées.",
         "error": {
-          "description": "Veuillez réessayer dans un instant.",
           "title": "Impossible de charger le calendrier"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Enregistrer l'absence",
         "titleForEmployee": "Enregistrer une absence pour {name}"
       },
+      "recordingUnavailable": "Impossible de charger les options d'enregistrement des absences",
+      "retained": "Les données précédemment chargées sont affichées. Réessayez pour obtenir les enregistrements actuels.",
+      "scopeChanged": "Le périmètre de l'équipe a changé. Rechargez pour continuer.",
+      "scopeLoading": "Chargement du périmètre actuel de l'équipe…",
+      "scopeUnavailable": "Impossible de charger le périmètre actuel de l'équipe",
+      "sections": "Sections de la page",
       "sort": {
         "ascending": "croissant",
         "by": "Trier par {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Aucun solde"
     },
-    "description": "Voir et gérer les employés que vous supervisez directement",
+    "directory": {
+      "count": "{count, plural, one {# membre dans ce périmètre} other {# membres dans ce périmètre}}",
+      "loading": "Chargement des membres de l'équipe",
+      "retained": "Affichage des derniers membres chargés. Réessayez pour les mettre à jour.",
+      "retry": "Réessayer",
+      "retrying": "Nouvelle tentative…",
+      "scope": "Vous et les employés que vous supervisez directement dans l'organisation active.",
+      "scopeChanged": "Votre organisation ou vos accès ont changé. Actualisez pour charger votre équipe."
+    },
     "driving": {
+      "clearFilters": "Effacer les filtres",
       "columns": {
         "calendar": "Calendrier",
         "date": "Date",
@@ -126,6 +141,8 @@
         "employee": "Employé",
         "team": "Équipe"
       },
+      "guidance": "Ouvrez le calendrier d'un employé pour compléter l'attribution des périodes de travail. Les informations manquantes ne bloquent pas le pointage et n'établissent pas d'autorisation de conduite.",
+      "loadFailed": "Impossible de charger les détails de conduite.",
       "loading": "Chargement des détails de conduite",
       "missing": {
         "endReading": "Aucun relevé de fin",
@@ -133,10 +150,18 @@
         "startReading": "Aucun relevé de début",
         "vehicle": "Aucun véhicule"
       },
+      "noMatch": "Aucun détail de conduite manquant ne correspond à ces filtres.",
       "openCalendar": "Calendrier",
       "openCalendarOf": "Ouvrir le calendrier de {name}",
+      "refreshFailed": "Impossible d'actualiser les détails de conduite. Les enregistrements précédemment chargés sont affichés.",
+      "restricted": "Les détails de conduite ne sont pas disponibles dans votre périmètre actuel.",
+      "scopeAll": "Tous les employés de cette organisation",
+      "scopeFailed": "Impossible de charger le périmètre de conduite actuel.",
+      "scopeLoading": "Chargement du périmètre de conduite actuel…",
+      "scopeManaged": "Employés que vous gérez",
       "title": "Détails de conduite manquants",
-      "truncated": "Affichage des {count} périodes de travail les plus récentes. Filtrez par équipe ou par employé pour voir les autres."
+      "truncated": "Affichage des {count} périodes de travail les plus récentes. Filtrez par équipe ou par employé pour voir les autres.",
+      "updating": "Mise à jour des détails de conduite…"
     },
     "empty": {
       "action": "Aller aux paramètres des employés",
@@ -148,9 +173,9 @@
       "title": "Quelque chose s'est mal passé"
     },
     "feature": "voir votre équipe",
-    "member": "membre",
-    "members": "membres",
-    "member.you": "Vous",
+    "member": {
+      "you": "Vous"
+    },
     "noResults": {
       "action": "Effacer la recherche",
       "description": "Aucun membre de l'équipe ne correspond à \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Période",
         "status": "Statut"
       },
-      "descriptionAll": "Qui a soumis la période sélectionnée. Approuvez ou rejetez les soumissions dans la boîte de réception des approbations.",
-      "descriptionManaged": "Parmi les employés que vous gérez, qui a soumis la période sélectionnée. Approuvez ou rejetez les soumissions dans la boîte de réception des approbations.",
+      "confirmationContext": "Les soumissions confirment les enregistrements sans les figer. Les enregistrements modifiés doivent être soumis à nouveau. Consultez les décisions dans la boîte de réception des approbations.",
+      "contextFailed": "Impossible de vérifier vos accès actuels.",
       "empty": "Aucune des personnes que vous pouvez voir ne doit soumettre cette période.",
       "loading": "Chargement des soumissions de la période",
       "notSubmitted": "Non soumis",
@@ -180,7 +205,12 @@
       "openInbox": "Ouvrir la boîte de réception des approbations",
       "owing": "{count, plural, one {# employé n'a pas encore soumis cette période.} other {# employés n'ont pas encore soumis cette période.}}",
       "period": "Période de soumission",
+      "readFailed": "Impossible de charger les soumissions de la période. Les enregistrements précédemment chargés peuvent être obsolètes.",
+      "records": "Soumissions des employés",
+      "refresh": "Actualiser les soumissions",
       "running": "Cette période est toujours en cours. Les employés peuvent la soumettre à partir de son dernier jour.",
+      "scopeAll": "Tous les employés couverts",
+      "scopeManaged": "Employés que vous gérez",
       "status": {
         "approved": "Approuvé",
         "awaiting": "En attente de soumission",
@@ -189,10 +219,13 @@
         "submitted": "Soumis"
       },
       "summary": "Statuts",
-      "title": "Soumissions de périodes"
+      "title": "Soumissions de périodes",
+      "unavailable": "Les soumissions de période ne sont pas disponibles avec votre accès actuel. Actualisez pour vérifier à nouveau votre accès."
     },
     "presence": {
       "allLocations": "Tous les sites",
+      "assignmentContext": "L'attribution d'un lieu ne prouve pas la position de l'appareil. Les heures utilisent le fuseau horaire enregistré au début du travail ou de la pause. La présence est actualisée chaque minute.",
+      "chooseLocation": "Choisir un lieu",
       "columns": {
         "name": "Nom",
         "since": "Depuis",
@@ -202,9 +235,19 @@
       "descriptionAll": "Employés assignés à ce site qui ont pointé ou sont en pause.",
       "descriptionManaged": "Employés que vous gérez assignés à ce site qui ont pointé ou sont en pause.",
       "empty": "Personne que vous pouvez voir n'a pointé sur ce site actuellement.",
+      "loadFailed": "Nous n'avons pas pu charger la présence pour ce lieu. Réessayez ou choisissez à nouveau un lieu.",
+      "loading": "Chargement de la présence sur le lieu…",
+      "loadingLocations": "Chargement des lieux pour l'organisation actuelle…",
       "locationTitle": "Qui est présent : {location}",
+      "locationUnavailable": "Lieu indisponible",
+      "locationUnavailableDescription": "Ce lieu n'est pas disponible dans votre organisation actuelle. Choisissez un lieu actif pour afficher la présence.",
       "noLocations": "Votre organisation n'a pas encore de sites actifs.",
-      "title": "Qui est présent"
+      "refreshFailed": "Les lieux n'ont pas pu être actualisés. Affichage des derniers lieux chargés.",
+      "refreshingLocations": "Actualisation des lieux…",
+      "scopeChanged": "La présence doit être actualisée pour le compte ou l'organisation actuelle.",
+      "title": "Qui est présent",
+      "unavailable": "Présence indisponible",
+      "viewPresence": "Afficher la présence"
     },
     "primaryManager": "Vous êtes le manager principal",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Employé",
       "position": "Poste",
+      "region": "Tableau des membres de l'équipe",
       "role": "Rôle",
       "sort": {
         "ascending": "croissant",

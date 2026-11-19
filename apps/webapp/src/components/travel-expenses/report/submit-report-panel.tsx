@@ -3,7 +3,7 @@
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type SubmitTravelExpenseReportOutcome,
@@ -33,7 +33,9 @@ import { futureDateLabel, perDiemNotReturnedLabel, tripNotEndedLabel } from "./f
 import { itemTitle } from "./item-title";
 import { pendingReceiptException } from "./pending-receipt-exception";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
+import { useReportLifecycleRefresh } from "./report-read-scope";
 import { ReportTotals } from "./report-summary";
+import { useReportTask } from "./use-report-task";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -225,7 +227,10 @@ function outcomeMessage(
 				};
 			}
 			return {
-				title: t("travelExpenses.report.submit.adjustmentTitle", "This adjustment cannot be submitted"),
+				title: t(
+					"travelExpenses.report.submit.adjustmentTitle",
+					"This adjustment cannot be submitted",
+				),
 				body: t(
 					"travelExpenses.report.submit.adjustment",
 					"The report this adjustment corrects is no longer approved in this currency, so no signed difference can be calculated. Your adjustment stays saved as a draft.",
@@ -328,7 +333,6 @@ export function SubmitReportPanel({
 	reportId,
 	blocker,
 	loadSavedReport,
-	onSubmitted,
 }: {
 	reportId: string;
 	blocker: SubmitBlocker;
@@ -337,24 +341,34 @@ export function SubmitReportPanel({
 	 * yet, so the review never shows (or submits) anything else.
 	 */
 	loadSavedReport: () => Promise<ReportView | null>;
-	onSubmitted: () => Promise<unknown>;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
+	const [submitted, setSubmitted] = useState(false);
 	const [report, setReport] = useState<ReportView | null>(null);
 	const [problem, setProblem] = useState<Problem | null>(null);
+	const task = useReportTask(reportId);
+	const refreshLifecycle = useReportLifecycleRefresh(reportId);
+	const reviewTrigger = useRef<HTMLButtonElement>(null);
 	const totals = report ? receiptReportTotals(report.items, report.reimbursementCurrency) : null;
 
 	async function openReview() {
+		const activation = task.reserve();
+		if (!activation) return;
 		setProblem(null);
 		setLoading(true);
 		// No `finally` here or in submit: the React Compiler cannot compile try
 		// statements with one.
 		try {
 			const saved = await loadSavedReport();
+			if (!task.isCurrent(activation)) {
+				setLoading(false);
+				task.release(activation);
+				return;
+			}
 			if (saved) {
 				setReport(saved);
 				setOpen(true);
@@ -367,15 +381,23 @@ export function SubmitReportPanel({
 				);
 			}
 		} catch {
+			if (!task.isCurrent(activation)) {
+				setLoading(false);
+				task.release(activation);
+				return;
+			}
 			toast.error(
 				t("travelExpenses.report.errors.load", "Unable to load this expense. Please retry."),
 			);
 		}
 		setLoading(false);
+		task.release(activation);
 	}
 
 	async function submit() {
-		if (!report) return;
+		if (!report || submitted) return;
+		const activation = task.reserve();
+		if (!activation) return;
 		setSubmitting(true);
 		setProblem(null);
 		try {
@@ -394,34 +416,42 @@ export function SubmitReportPanel({
 				},
 			});
 			if (!result.success) {
-				setProblem({
-					title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
-					body: result.error,
-				});
+				if (task.isCurrent(activation)) {
+					setProblem({
+						title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
+						body: result.error,
+					});
+				}
 			} else if (result.data.status === "submitted" || result.data.status === "self_approved") {
-				toast.success(
-					result.data.status === "self_approved"
-						? t(
-								"travelExpenses.report.submit.selfApproved",
-								"Report approved automatically: nobody else can review it",
-							)
-						: t("travelExpenses.report.submit.success", "Report submitted for approval"),
-				);
+				if (task.isCurrent(activation)) {
+					toast.success(
+						result.data.status === "self_approved"
+							? t(
+									"travelExpenses.report.submit.selfApproved",
+									"Report approved automatically: nobody else can review it",
+								)
+							: t("travelExpenses.report.submit.success", "Report submitted for approval"),
+					);
+				}
+				setSubmitted(true);
 				setOpen(false);
-				await onSubmitted();
-			} else {
+				await refreshLifecycle();
+			} else if (task.isCurrent(activation)) {
 				setProblem(outcomeMessage(t, result.data, { locale, report }));
 			}
 		} catch {
-			setProblem({
-				title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
-				body: t(
-					"travelExpenses.report.submit.failed",
-					"Something went wrong. Your report is still saved as a draft; please retry.",
-				),
-			});
+			if (task.isCurrent(activation)) {
+				setProblem({
+					title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
+					body: t(
+						"travelExpenses.report.submit.failed",
+						"Something went wrong. Your report is still saved as a draft; please retry.",
+					),
+				});
+			}
 		}
 		setSubmitting(false);
+		task.release(activation);
 	}
 
 	const hintId = `${reportId}-submit-hint`;
@@ -432,8 +462,9 @@ export function SubmitReportPanel({
 				{submitHint(t, blocker)}
 			</p>
 			<Button
+				ref={reviewTrigger}
 				type="button"
-				disabled={blocker !== null || loading}
+				disabled={blocker !== null || loading || submitting || submitted}
 				aria-describedby={hintId}
 				onClick={() => void openReview()}
 			>
@@ -444,8 +475,14 @@ export function SubmitReportPanel({
 				)}
 				{t("travelExpenses.report.submit.review", "Review and submit")}
 			</Button>
-			<Dialog open={open && report !== null} onOpenChange={(next) => !submitting && setOpen(next)}>
-				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+			<Dialog
+				open={open && report !== null}
+				onOpenChange={(next) => !task.isPending() && setOpen(next)}
+			>
+				<DialogContent
+					className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
+					finalFocus={reviewTrigger}
+				>
 					<DialogHeader>
 						<DialogTitle>
 							{t("travelExpenses.report.submit.title", "Submit expense report")}
@@ -480,7 +517,7 @@ export function SubmitReportPanel({
 						>
 							{t("travelExpenses.report.submit.cancel", "Keep editing")}
 						</Button>
-						<Button type="button" disabled={submitting} onClick={() => void submit()}>
+						<Button type="button" disabled={submitting || submitted} onClick={() => void submit()}>
 							{submitting && (
 								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
 							)}

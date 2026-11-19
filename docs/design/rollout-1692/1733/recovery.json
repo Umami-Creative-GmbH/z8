@@ -1,0 +1,51 @@
+{
+  "failed": 1,
+  "failedMessage": false,
+  "keyboard": [
+    {
+      "tag": "A",
+      "label": "Skip to content"
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Switch Organization: Performance small"
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Search"
+    },
+    {
+      "tag": "A",
+      "label": "Dashboard"
+    },
+    {
+      "tag": "A",
+      "label": "Time Tracking"
+    },
+    {
+      "tag": "A",
+      "label": "Calendar"
+    },
+    {
+      "tag": "A",
+      "label": "Absences"
+    },
+    {
+      "tag": "A",
+      "label": "Travel Expenses"
+    }
+  ],
+  "collapse": {
+    "clicked": true,
+    "persisted": true
+  },
+  "sourceHashes": {
+    "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx": "06153983e4f486b48d75317f2ac9997f2dcd73e2fecca3f36fce983c1baf133b",
+    "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts": "9d22fcac9d07044dddbec485572a116321a35bd5a82dc3e948d4d09bc446c8ef",
+    "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f",
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "8d4e158f9a8d366b1a8041ef6e603ef4727668f57827a5a5283891171ce0e7d2"
+  },
+  "recoveredRecord": true,
+  "qualification": "Transport failure injected at public network boundary; Retry uses real successful server action. Same saved original batch. Phone tail scrolled into view; keyboard focus samples only."
+}

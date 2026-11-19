@@ -2,8 +2,10 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { submitDocumentRequestAction } from "@/app/[locale]/(app)/personnel-files/document-request-actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -38,17 +40,32 @@ export function SubmitDocumentRequestDialog({
 }) {
 	const { t } = useTranslate();
 	const errorMessage = useDocumentRequestErrorMessage();
+	const pending = useRef(false);
+	const submitting = useRef(false);
+	const [error, setError] = useState<string | null>(null);
 	const form = useForm({
 		defaultValues: { note: "" },
 		onSubmit: async ({ value }) => {
-			if (!request) return;
+			if (!request || pending.current) return;
+			pending.current = true;
+			setError(null);
 			const result = await submitDocumentRequestAction({
 				requestId: request.id,
 				note: value.note,
 				expectedVersion: request.version,
-			});
+			}).catch(() => null);
+			pending.current = false;
+			if (!result) {
+				setError(
+					t(
+						"settings.personnelFiles.myDocuments.requested.submit.failed",
+						"Could not submit the documents. Your note is kept. Try again.",
+					),
+				);
+				return;
+			}
 			if (!result.success) {
-				toast.error(errorMessage(result));
+				setError(errorMessage(result));
 				if (result.code === "conflict") onSubmitted();
 				return;
 			}
@@ -63,14 +80,24 @@ export function SubmitDocumentRequestDialog({
 		<AlertDialog
 			open={request !== null}
 			onOpenChange={(open) => {
-				if (!open) form.reset();
+				if (pending.current) return;
+				if (!open) {
+					form.reset();
+					setError(null);
+				}
 				onOpenChange(open);
 			}}
 		>
 			<AlertDialogContent>
 				<form
-					action={() => {
-						void form.handleSubmit();
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						if (pending.current || submitting.current) return;
+						submitting.current = true;
+						void form.handleSubmit().finally(() => {
+							submitting.current = false;
+						});
 					}}
 					className="grid gap-4"
 				>
@@ -82,7 +109,10 @@ export function SubmitDocumentRequestDialog({
 							{t(
 								"settings.personnelFiles.myDocuments.requested.submit.description",
 								'{count, plural, one {# document is} other {# documents are}} handed in for "{title}". Your organization reviews them and tells you the result.',
-								{ count: request?.pendingDocuments.length ?? 0, title: request?.title ?? "" },
+								{
+									count: request?.pendingDocuments.length ?? 0,
+									title: request?.title ?? "",
+								},
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
@@ -106,13 +136,22 @@ export function SubmitDocumentRequestDialog({
 							</TFormItem>
 						)}
 					</form.Field>
+					{error ? (
+						<Alert variant="destructive">
+							<AlertDescription>{error}</AlertDescription>
+						</Alert>
+					) : null}
 					<AlertDialogFooter>
-						<AlertDialogCancel type="button">{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
-								<Button type="submit" disabled={isSubmitting}>
-									{t("settings.personnelFiles.myDocuments.requested.submit.confirm", "Submit")}
-								</Button>
+								<>
+									<AlertDialogCancel type="button" disabled={isSubmitting}>
+										{t("common.cancel", "Cancel")}
+									</AlertDialogCancel>
+									<Button type="submit" disabled={isSubmitting}>
+										{t("settings.personnelFiles.myDocuments.requested.submit.confirm", "Submit")}
+									</Button>
+								</>
 							)}
 						</form.Subscribe>
 					</AlertDialogFooter>

@@ -1,0 +1,7 @@
+{
+  "browserControllerAbsent": true,
+  "appAndControllerListenersAbsent": true,
+  "identity": "Exact saved PID/executable/command/path/creation/parent/listener checks; native PowerShell stop/remove only; no peer process touched",
+  "ownNextProcessesStopped": 5,
+  "ownHashGuardedBridgeRemoved": true
+}

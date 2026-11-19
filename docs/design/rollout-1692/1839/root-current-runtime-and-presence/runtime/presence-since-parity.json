@@ -1,0 +1,9 @@
+{
+  "canonicalFormatter": "formatPresenceSince",
+  "observedTimeFormat": "24h",
+  "entryLocalZones": [
+    "+01:00"
+  ],
+  "sinceTextMatches": true,
+  "canonicalRowCount": 1
+}

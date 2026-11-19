@@ -1,0 +1,108 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "gate": "canonical verifySuiteDatabase/integrationAdminPool UTC sessions",
+  "seedRawSha256": "bba888b088682ba1201ec0b06b2bc9cf1e36576ecd4124b4a6079f1294681222",
+  "readbackRawSha256": "db31f09e29b0257d86b92b4ad75b52b2f9e727de2693ded4e411729e21756c5c",
+  "authMemberGrantMutations": false,
+  "scopes": [
+    {
+      "scope": "small",
+      "timezone": "Europe/Berlin",
+      "shiftsBefore": 3,
+      "shiftsAfter": 4,
+      "draftsAfter": 2,
+      "recordedWorkBefore": {
+        "time_entries": 4176,
+        "work_periods": 2088
+      },
+      "recordedWorkAfter": {
+        "time_entries": 4176,
+        "work_periods": 2088
+      },
+      "recordedWorkUnchanged": true,
+      "rows": [
+        {
+          "status": "published",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent employee published",
+          "own_employee": true
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent edited overnight assignment",
+          "own_employee": false
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-16T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent open overnight draft",
+          "own_employee": null
+        },
+        {
+          "status": "published",
+          "date": "2026-11-17T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent open published",
+          "own_employee": null
+        }
+      ]
+    },
+    {
+      "scope": "large",
+      "timezone": "Europe/Berlin",
+      "shiftsBefore": 3,
+      "shiftsAfter": 3,
+      "draftsAfter": 1,
+      "recordedWorkBefore": {
+        "time_entries": 104400,
+        "work_periods": 52200
+      },
+      "recordedWorkAfter": {
+        "time_entries": 104400,
+        "work_periods": 52200
+      },
+      "recordedWorkUnchanged": true,
+      "rows": [
+        {
+          "status": "published",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent employee published",
+          "own_employee": true
+        },
+        {
+          "status": "draft",
+          "date": "2026-11-16T23:00:00.000Z",
+          "start_time": "22:00",
+          "end_time": "06:00",
+          "notes": "Independent open overnight draft",
+          "own_employee": null
+        },
+        {
+          "status": "published",
+          "date": "2026-11-17T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent open published",
+          "own_employee": null
+        }
+      ]
+    }
+  ],
+  "actualAcceptedSchedulingWrites": {
+    "create": 1,
+    "edit": 1,
+    "publish": 0,
+    "delete": 0
+  },
+  "qualification": "Read-only scoped readback sealed earlier accepted actions after STOP; no later mutation or authority workaround. Planning did not add recorded work."
+}

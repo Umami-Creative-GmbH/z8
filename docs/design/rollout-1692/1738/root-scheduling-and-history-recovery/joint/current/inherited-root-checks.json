@@ -1,0 +1,372 @@
+{
+  "kind": "INHERITED, NOT independently rerun",
+  "sourceCommit": "01771c655e179797b852adf217b684794e3266f7",
+  "resultSha256": "c2fed28f3cf2bb473c5f04938ddd6e31b4ddae6c73d534b59a368f702e025109",
+  "unit": {
+    "passed": 392,
+    "failed": 0,
+    "physicalFiles": 60
+  },
+  "pins": [
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "rawSha256": "03f1d55ef0246d722ddba0d5148155293299bb627f7400f48a414711a6e3ae85",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "rawSha256": "231c04a2c8e7828bbdf7876f8409170bcf3a4395ec393fa1437b87bfbbe4a745",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/settings-scheduling-access.test.ts",
+      "rawSha256": "402f07133c435e1e3a00fdedc6522c6328372e7b44c8982975d5766bbd7d99d8",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/calendar/calendar-controls.test.tsx",
+      "rawSha256": "bed0e438fdd6d37e17ecf79e35e916b896f4a00ba33dc63481a87c6c267a1581",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-migrated.test.tsx",
+      "rawSha256": "c26d7036d1b5f563eaec3db09ba52edd01641c3792024b0a26394a06ed150dd8",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "rawSha256": "be99b4f15541c74938dbd4c9a320367b92e3a3201945042907b535813e38ffa6",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/skill-warning-alert.test.tsx",
+      "rawSha256": "3f67d9772d2857d634a837827619c2441ec41e0bb562172c6f3625d370d5af49",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+      "rawSha256": "c2963cb3b9bedbaea30f14850373e086e1b021e69bb3668f5f877663fbb44ba5",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/time-tracking/weekly-summary-cards.test.tsx",
+      "rawSha256": "11a571d30f7d1591058d4efae6d07ff80a3f0ba14c2db653bdfcd5f649d3cb12",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/ui/dialog.test.tsx",
+      "rawSha256": "717337099de284b609036131080d4c7c43d0f9a003da646f21b32383e2a5e689",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/ui/page-header.test.tsx",
+      "rawSha256": "3b7331769a6690fcce81906c4518803ade300e57ef47e84d6eb97d59837a2a0c",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/ui/table.test.tsx",
+      "rawSha256": "e8b8896fe470e76405b695b8b16e3c5ba60633a0fd76ae42007ce8e7b72d2674",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "rawSha256": "622f6a04e958ff9572276644472d622fc2dacd6fb64d3a3f179b40997fe0d6ac",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.test.tsx",
+      "rawSha256": "b5858803353a00e22e84542646162da324f5060eda2525b5d022f8305bca1978",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/schedule-local-input.test.ts",
+      "rawSha256": "69c6375b401a3e92d34914a2853ec8be61bff3a1abe5ec0361b3119f87052b45",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/shift-date.test.ts",
+      "rawSha256": "531d237b35019f120bfcdabea7b975c4cca67a95803b52b1b1242d75889d1991",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/shift-labels.test.ts",
+      "rawSha256": "d6786d9282fe48e1e534b552b1f61a6cd8c8b87ea85e9ad438e5239f88ecca9a",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/shift-occasion.test.ts",
+      "rawSha256": "44cc1250cdad34bb060816c8b10f6fcf887d669673b29e97273c7b3e2bfa8e19",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.test.ts",
+      "rawSha256": "13f6694d109041b5a2292ab97cc0f3536e511dce2734199b8bf53327698f2481",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/skill-expiry.test.ts",
+      "rawSha256": "ea6058cf7ba20c1eecc11466f5cdd30706d71507abf4a70b13bbe135e9467739",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.test.ts",
+      "rawSha256": "9a27ac0e28af236db88bcb6e36dee09311399858ec93ab88faa4c6db07adc99e",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.test.tsx",
+      "rawSha256": "24781f44d41f9a1811077ee4b97c50bd2500a11cdfb40f11d828e9bbed014e9d",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.test.tsx",
+      "rawSha256": "4e9f467e1183a1eaa9ef4c37bf11d6b883130e20503dbcbf594cde150cf24fdf",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.test.tsx",
+      "rawSha256": "fb1c02e80fd7273d1763640c0740fd9e62c3eb4f53b60c4751ed4214076c3715",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.test.tsx",
+      "rawSha256": "acc582f3c09f94875c3aa4e461ff5351312c367e725bb82d998e946af6a799c8",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.test.tsx",
+      "rawSha256": "92c2a1647c3608d42c0739167bcf9ba91603c01a79591e05cf66419f6dcc3361",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.test.ts",
+      "rawSha256": "ff85ba934c1df83d615b2f07ad5b21bc1d662f1cd9f7a2fddd5a244616dd980e",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.test.ts",
+      "rawSha256": "52dca21da410a099a72d3f647191fa2c26685da984f5574eb90c1012bbf80b85",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.test.tsx",
+      "rawSha256": "ddee0a11dc2bb526f84ae20b0cbba0efa47c52c329b381b824cbdf1ac66b01fb",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+      "rawSha256": "f5f0d6cd5c7368bc60ca489e558d10b5946b636c909156c6982e18f5dfcd47f0",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
+      "rawSha256": "f114cd2496abcdb95423ba088f552996ecfc1c1c5a3c5e6d15ae4c26e90d3cca",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+      "rawSha256": "188991dee5749baa4ee1fdd1669dddbff3e483b42c67aa92db22bfc541e9b923",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.test.ts",
+      "rawSha256": "990999534626f72aa5894177cd6654cd21c9ef6957c5a1ce909b5f24c4320f70",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+      "rawSha256": "0eead5ddd6a09a4919f542ea40504ddb0289474d46cee5f558193c81bbce1ec5",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+      "rawSha256": "dc736b6d81117e9322350d3d773354c6c4444d0e856ed78ef777343f06b03667",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+      "rawSha256": "5628fb916c076da4b72daee1c46745f057e46fc5bb193397ef945e9e8934c7c9",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.test.ts",
+      "rawSha256": "7a177a3a88798012ef288bbfcd83b752127c960c5c04229e27c3c8a7de1e44dc",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.test.ts",
+      "rawSha256": "71ac1a7ff6e069107b039a8cf57b559b2294f20871ebf737cbc77bf2acf73deb",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.test.ts",
+      "rawSha256": "91638478bd8775e76bb32382c39154ecf56cd36ebcda883399697ad2fdb1bd76",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.test.ts",
+      "rawSha256": "5a6c606d3b87c0041cfe7f24c7c849858a5c8b115f3bfb0b3789dc6784fd638e",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.test.ts",
+      "rawSha256": "c4fb2dd8cb207321fd206021956fb3f54179163b40121fb91405e0bbeaca132d",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.exports.test.ts",
+      "rawSha256": "4dc87f57aa6d5e7f7cc94de27496dbb52db3c573a59498e8ba9f717f1cdcec6e",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+      "rawSha256": "81662d101d7e83a34e10f7dbceb85ed2ee08a9994b242edcb4c213a5d52ded15",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/actions.test.ts",
+      "rawSha256": "db90feb23f2343f431ed036f847c98cf22431925893c2279c00a70dec2d87173",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+      "rawSha256": "46faedd2778747bfd8967006293b230986520d49f1de6b4897d4477b1d5aba4a",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.test.tsx",
+      "rawSha256": "5ea8826a124f1002b30500b89663d0b9c0816883ac5dfe2d2837d070e8b49088",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+      "rawSha256": "38ac0a36cdc9013b0307f0492334cd7326100434a025663985e7e9a3ef25f7cd",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-time-balance.test.ts",
+      "rawSha256": "c7c367b335bd1bd62d95471bbb43c4842b2d6e9a6de14876b9bfd02faea41676",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/__tests__/publish-compliance-dialog-state.test.ts",
+      "rawSha256": "ed999056fafc081bf4aa5e04f829bf99ac9448d20610c37a14cb68a5889683e2",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/__tests__/shift.service.test.ts",
+      "rawSha256": "acc0eeebe94fd99d53062ecbc4e7704d34bd8cdfefccf611e1043ae75ff434f6",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/lib/scheduling/compliance/__tests__/schedule-compliance-evaluator.test.ts",
+      "rawSha256": "80e139e43acf337f963c8dd93bb724ec9fe30bdfb540a2a20879ddfe3ecac79e",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/__tests__/publish-compliance-handshake.test.ts",
+      "rawSha256": "2f48ac0d5be97738ec10b3e903db379520ea7c01aacb0eced9c8c78eaf7c8779",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.test.ts",
+      "rawSha256": "bc7df18ab1c769f7b842f4ae0746b6ff4c149136d931794d1101ad5d9d9383a9",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.delete.test.ts",
+      "rawSha256": "5d2c643f3eec4f642ee72f214809dd344bf7eeab1d13f27462af314e0fd8e1e0",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.skill-override.test.ts",
+      "rawSha256": "471804feb764ff68ab28e399f066ee5c82948e1e62e0753e82c0f9eb0573a566",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.timezone.test.ts",
+      "rawSha256": "da083b3bf6dbdd6e655e77e50892892f527c29f8d53a47ba9930d189c868907f",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.upcoming.test.ts",
+      "rawSha256": "1529bb657d2f64f4f4b2bf7966823b8998fac02d1f1cf8db93be2a22f47eb0b5",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.test.ts",
+      "rawSha256": "5fc1a7b3284caa4694da81ac912a1d247915d0e00971f5cc7fc2787ac92305a7",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.test.ts",
+      "rawSha256": "d75505d5d7e15baf9ae3858f9d043a7a72124d3a52ea61ede0180e83d2284ac1",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.scope.test.ts",
+      "rawSha256": "c4ca4ebb5a87ffe040e287b5cd4ba184b995874b8ed0f2a014a9a50c6cefccde",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "rawSha256": "cdd767ab644c969bae1e0df72eddb29108b431db39ce142e8786f296d49b1e17",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "rawSha256": "a9faa045c4a19e5c49785fb668f148823bd53c4165bd8ccc2ea262d2b5b2a205",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+      "rawSha256": "6b63ad017ccdafd4b10dd2c164f2789309df290fb30012f10180dcc3d0c67970",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+      "rawSha256": "daafd7d2b9ba347607a8bdbd8683bf346265f312211050b00351aa6213831c03",
+      "sourceCommit": "01771c655e179797b852adf217b684794e3266f7"
+    }
+  ],
+  "quality": [
+    {
+      "path": ".tmp/1738-supporting-retry-state-checks/types-final-02.log",
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e"
+    },
+    {
+      "path": ".tmp/1738-supporting-retry-state-checks/doctor-combined-final-02.log",
+      "sha256": "f4a446f57516ebd0e963488d22cffa99c215b0b687150673864a50b5bfc6cd52"
+    },
+    {
+      "path": ".tmp/1738-supporting-retry-state-checks/explicit-combined-final-02.log",
+      "sha256": "a44abd13c407f7d54482cc418480ac057c5957f5fc3bacb9d5d2efde32db9465"
+    },
+    {
+      "path": ".tmp/1738-supporting-retry-state-checks/lint-combined-final-02.log",
+      "sha256": "b80ebdbd59c8e37b6140fcb85eea75fa3e2063c7afc86c7de14e35589e04cb6f"
+    },
+    {
+      "path": ".tmp/1738-supporting-retry-state-checks/ordinary-combined-final-02.log",
+      "sha256": "387638633c190a269d1f46bf8db1bc4ca6b1db3e1a3949e71b63a0c22a738a9d"
+    }
+  ],
+  "postgres": {
+    "scheduling": {
+      "passed": 6,
+      "failed": 0,
+      "files": [
+        "src/lib/effect/services/shift-publication.integration.test.ts",
+        "src/app/[locale]/(app)/scheduling/actions/shift-actions.range.integration.test.ts"
+      ]
+    },
+    "team": {
+      "passed": 6,
+      "failed": 0,
+      "files": [
+        "src/app/[locale]/(app)/team/former-employees.integration.test.ts"
+      ]
+    }
+  },
+  "mixedSnapshot": "404 distinct cases/63 files in recorded root selections; NOT fresh database union; independent public-seam cases overlap and must not be added."
+}

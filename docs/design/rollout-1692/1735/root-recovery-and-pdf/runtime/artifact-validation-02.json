@@ -1,0 +1,9 @@
+{
+  "allJsonParsedBeforeAllowlistSeal": 202,
+  "allMjsSyntaxChecked": 43,
+  "imagesFullyDecoded": 16,
+  "acceptedImagesActuallyReviewed": 12,
+  "pngDecodeSource": "artifact-validation-01.json (all images unchanged)",
+  "powerShell": "powershell-syntax-01.json",
+  "relativeHandoffLinksVerified": true
+}

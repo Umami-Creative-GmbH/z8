@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildCsvContent } from "./helpers";
+import {
+	buildCsvContent,
+	formatCsvLocalMinute,
+	formatViolationCsvDate,
+	formatViolationDate,
+	violationLocalDate,
+} from "./helpers";
 
 describe("work policy compliance helpers", () => {
 	it("escapes quotes, commas, and line breaks in CSV cells", () => {
@@ -10,6 +16,34 @@ describe("work policy compliance helpers", () => {
 			),
 		).toBe(
 			'Employee,Acknowledged Note\n"Avery, Stone","Reviewed ""with manager""\nFollow-up scheduled"',
+		);
+	});
+
+	it("resolves the violation day in the organization's timezone, not UTC", () => {
+		// Work starting at 00:00 Berlin time is stored as 22:00 UTC the previous day.
+		const violationDate = new Date("2026-09-19T22:00:00.000Z");
+
+		expect(violationLocalDate(violationDate, "Europe/Berlin").toString()).toBe("2026-09-20");
+		expect(violationLocalDate(violationDate, "UTC").toString()).toBe("2026-09-19");
+		expect(formatViolationCsvDate(violationDate, "Europe/Berlin")).toBe("2026-09-20");
+		expect(formatViolationCsvDate(violationDate, "America/New_York")).toBe("2026-09-19");
+	});
+
+	it("formats the organization-local violation day in the UI locale", () => {
+		const violationDate = new Date("2026-09-19T22:00:00.000Z");
+
+		expect(formatViolationDate(violationDate, { locale: "en-US", timezone: "Europe/Berlin" })).toBe(
+			"Sep 20, 2026",
+		);
+		// German puts the day first, e.g. "20. Sept. 2026" (exact month abbreviation varies by ICU).
+		expect(
+			formatViolationDate(violationDate, { locale: "de-DE", timezone: "Europe/Berlin" }),
+		).toMatch(/^20\. .+ 2026$/);
+	});
+
+	it("exports acknowledgement instants as organization-local minutes", () => {
+		expect(formatCsvLocalMinute(new Date("2026-07-01T09:05:00.000Z"), "Europe/Berlin")).toBe(
+			"2026-07-01 11:05",
 		);
 	});
 });

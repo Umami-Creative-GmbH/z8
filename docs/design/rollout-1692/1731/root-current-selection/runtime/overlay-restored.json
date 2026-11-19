@@ -1,0 +1,21 @@
+{
+  "restoredWithOwnNextStopped": true,
+  "rows": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "restoredRaw": "a441d7b061dd28eae958da7ec446b85a133886b1141f8d74e0009e1eab96fdd5",
+      "byteExact": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+      "restoredRaw": "08826aa7372c010f070dc7f73b27c9b0d4780cb54443b672b1cb2e17c81de086",
+      "byteExact": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "restoredRaw": "ccbddb866cc559fade83fa503c8315d50f4fcd7eafe568b6288579a6c236cc8f",
+      "byteExact": true
+    }
+  ],
+  "allByteExact": true
+}

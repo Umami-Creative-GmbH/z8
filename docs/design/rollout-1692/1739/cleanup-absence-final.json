@@ -1,0 +1,28 @@
+{
+  "port": 62302,
+  "processes": [
+    {
+      "absent": true,
+      "pid": 102548
+    },
+    {
+      "absent": true,
+      "pid": 100288
+    }
+  ],
+  "listenerAbsent": true,
+  "containers": [
+    {
+      "absent": true,
+      "container": "z8_perf_a59ea0f6405e_postgres"
+    },
+    {
+      "absent": true,
+      "container": "z8_perf_a59ea0f6405e_redis"
+    },
+    {
+      "absent": true,
+      "container": "z8_perf_a59ea0f6405e_storage"
+    }
+  ]
+}

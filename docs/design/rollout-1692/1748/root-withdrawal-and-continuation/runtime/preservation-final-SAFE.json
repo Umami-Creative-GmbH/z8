@@ -1,0 +1,20 @@
+{
+  "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "indexHash": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac",
+  "status": "",
+  "trackedCount": 18587,
+  "changedTracked": [],
+  "internalLinksAll": 222,
+  "rootAppInternalLinks": 158,
+  "changedInternalLinks": [],
+  "indexUnchanged": true,
+  "sourcePinsUnchanged": true,
+  "lockUnchanged": true,
+  "licenseUnchanged": true,
+  "licenseEntries": 125,
+  "rootDepsPhysical": true,
+  "appDepsPhysical": true,
+  "verifiedCommit": null
+}

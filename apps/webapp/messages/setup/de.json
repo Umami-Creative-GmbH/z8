@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Arbeitsbereich wird eingerichtet...",
+    "checkFailed": "Ihre Organisationen konnten nicht überprüft werden. Versuchen Sie es erneut.",
     "checking": "Sitzung wird überprüft...",
-    "clickToSelect": "Zum Auswählen klicken",
     "redirecting": "Wird weitergeleitet...",
+    "retry": "Erneut versuchen",
+    "selectionHint": "Ihr Arbeitsbereich wird nach der Auswahl geöffnet.",
     "selectOrganization": "Organisation auswählen",
-    "selectOrganizationDescription": "Wählen Sie die Organisation aus, mit der Sie arbeiten möchten"
+    "selectOrganizationDescription": "Wählen Sie die Organisation aus, mit der Sie arbeiten möchten",
+    "title": "Arbeitsbereich öffnen"
   },
   "setup": {
     "authorization": {

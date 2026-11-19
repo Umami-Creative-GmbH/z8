@@ -1,0 +1,10 @@
+{
+  "expectedContainers": [
+    "z8_perf_3470a3040911_postgres",
+    "z8_perf_3470a3040911_redis",
+    "z8_perf_3470a3040911_storage"
+  ],
+  "remaining": [],
+  "expectedLabel": "z8-performance-fixture-1450",
+  "cleanupCommand": "pnpm performance:fixture cleanup <private R044 fixture directory>"
+}

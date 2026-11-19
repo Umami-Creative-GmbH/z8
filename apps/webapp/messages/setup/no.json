@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Klargjør arbeidsområdet ditt...",
+    "checkFailed": "Vi kunne ikke sjekke organisasjonene dine. Prøv igjen.",
     "checking": "Sjekker økt...",
-    "clickToSelect": "Klikk for å velge",
     "redirecting": "Videresender...",
+    "retry": "Prøv igjen",
+    "selectionHint": "Arbeidsområdet ditt åpnes etter at du har valgt.",
     "selectOrganization": "Velg organisasjon",
-    "selectOrganizationDescription": "Velg hvilken organisasjon du vil jobbe med"
+    "selectOrganizationDescription": "Velg hvilken organisasjon du vil jobbe med",
+    "title": "Åpne arbeidsområdet ditt"
   },
   "setup": {
     "authorization": {

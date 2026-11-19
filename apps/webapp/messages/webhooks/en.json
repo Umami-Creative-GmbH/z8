@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Actions for {endpoint}",
+    "command-unknown": "Could not confirm the command. Refresh this endpoint before trying again.",
     "copy-failed": "Failed to copy to clipboard",
     "create": "Add Webhook",
     "create-failed": "Failed to create webhook",
     "delete-confirm": {
       "description": "This will permanently delete the webhook endpoint and all delivery history. This action cannot be undone.",
-      "title": "Delete webhook?"
+      "title-named": "Delete webhook {name}?"
     },
     "deleted": "Webhook deleted",
-    "delete-failed": "Failed to delete webhook",
     "deliveries": "Deliveries",
-    "description": "Configure webhook endpoints to receive real-time notifications when events occur in your organization.",
     "disabled": "Webhook disabled",
     "empty": {
       "description": "Create your first webhook to start receiving event notifications.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Success",
       "time": "Time",
-      "title": "Delivery Logs"
+      "title": "Delivery Logs",
+      "toggle-details": "Details for {event} at {time}"
     },
-    "regenerate-failed": "Failed to regenerate secret",
     "regenerate-secret": "Regenerate Secret",
+    "retry-help": "Refresh this list to confirm the current endpoints. Previously loaded records are retained.",
     "secret-copied": "Secret copied to clipboard",
     "secret-dialog": {
       "copy-secret": "Copy secret to clipboard",
@@ -78,14 +79,15 @@
       "degraded": "Degraded",
       "failing": "Failing",
       "healthy": "Healthy",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "untried": "No deliveries yet"
     },
     "success-rate": "Success",
     "test": "Send Test",
-    "test-failed": "Failed to send test webhook",
-    "test-sent": "Test webhook sent",
+    "test-queued": "Test webhook queued",
     "title": "Webhooks",
-    "toggle-active": "Toggle webhook active",
+    "toggle-active-named": "Active: {endpoint}",
+    "unavailable": "Webhooks unavailable",
     "updated": "Webhook updated",
     "update-failed": "Failed to update webhook",
     "view-logs": "View Logs"

@@ -1,12 +1,20 @@
 "use client";
 
-import { IconBeach, IconCheck, IconCircleCheck, IconClockEdit } from "@tabler/icons-react";
+import {
+	IconBeach,
+	IconCheck,
+	IconCircleCheck,
+	IconClockEdit,
+} from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { formatDashboardDate } from "./format-dashboard-date";
 import { useDashboardWidget } from "./use-dashboard-widget";
@@ -22,12 +30,12 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 	const isAbsence = request.type === "absence";
 
 	return (
-		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-[border-color,box-shadow] hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800">
+		<div className="flex items-center gap-3 py-3">
 			{/* Status Icon */}
 			<div
 				className={cn(
 					"flex items-center justify-center rounded-lg p-2",
-					isAbsence ? "bg-amber-100 dark:bg-amber-950/50" : "bg-blue-100 dark:bg-blue-950/50",
+					"bg-muted",
 				)}
 			>
 				{isAbsence ? (
@@ -40,13 +48,16 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 			{/* Info */}
 			<div className="flex-1 min-w-0">
 				<div className="font-medium text-sm truncate">
-					{request.requestedByEmployee.user.name || t("common.unknown", "Unknown")}
+					{request.requestedByEmployee.user.name ||
+						t("common.unknown", "Unknown")}
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<IconCircleCheck className="size-3 text-emerald-500" />
 					<span className="truncate">
 						{t("dashboard.recently-approved.by", "by {name}", {
-							name: request.approverEmployee?.user.name || t("common.unknown", "Unknown"),
+							name:
+								request.approverEmployee?.user.name ||
+								t("common.unknown", "Unknown"),
 						})}
 					</span>
 					<span className="text-muted-foreground/50">•</span>
@@ -75,7 +86,9 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 export function RecentlyApprovedWidget({
 	initialSnapshot,
 }: {
-	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["recently-approved"]>;
+	initialSnapshot?: DashboardWidgetSnapshot<
+		DashboardWidgetData["recently-approved"]
+	>;
 } = {}) {
 	const { t } = useTranslate();
 	const {
@@ -103,7 +116,10 @@ export function RecentlyApprovedWidget({
 								"Last {count} approved {request}",
 								{ count: requests.length, request: requestLabel },
 							)
-						: t("dashboard.recently-approved.description", "Latest approved requests")
+						: t(
+								"dashboard.recently-approved.description",
+								"Latest approved requests",
+							)
 				}
 				icon={<IconCheck className="size-4 text-emerald-500" />}
 				loading={loading}
@@ -129,47 +145,41 @@ export function RecentlyApprovedWidget({
 					/>
 				) : !requests?.length ? (
 					<p role="status">
-						{t("dashboard.recently-approved.empty", "No recently approved requests")}
+						{t(
+							"dashboard.recently-approved.empty",
+							"No recently approved requests",
+						)}
 					</p>
 				) : (
 					<div className="space-y-3">
-						{/* Success Summary */}
-						<div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 p-3 dark:from-emerald-950/30 dark:to-green-950/30">
-							<div className="rounded-full bg-emerald-500 p-1.5">
-								<IconCheck className="size-4 text-white" />
-							</div>
-							<div>
-								<p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-									{t("dashboard.recently-approved.all-caught-up", "All caught up!")}
-								</p>
-								<p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
-									{t(
-										"dashboard.recently-approved.approved-recently",
-										"{count} {request} approved recently",
-										{ count: requests.length, request: requestLabel },
-									)}
-								</p>
-							</div>
-						</div>
-
-						{/* List */}
-						<div className="space-y-2">
-							{requests.slice(0, 5).map((request) => (
+						<div className="divide-y">
+							{requests.slice(0, 2).map((request) => (
 								<ApprovedCard key={request.id} request={request} />
 							))}
 						</div>
-
-						{requests.length > 5 && (
-							<div className="flex items-center justify-center rounded-lg border border-dashed py-2 text-xs text-muted-foreground">
-								{t("dashboard.recently-approved.more-approved", "+{count} more approved", {
-									count: requests.length - 5,
-								})}
-							</div>
-						)}
+						{requests.length > 2 ? (
+							<details>
+								<summary className="cursor-pointer rounded-md py-2 text-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
+									{t(
+										"dashboard.recently-approved.more-approved",
+										"+{count} more approved",
+										{ count: requests.length - 2 },
+									)}
+								</summary>
+								<div className="divide-y">
+									{requests.slice(2).map((request) => (
+										<ApprovedCard key={request.id} request={request} />
+									))}
+								</div>
+							</details>
+						) : null}
 
 						<Button className="w-full" variant="outline" asChild>
 							<Link href="/approvals/inbox">
-								{t("dashboard.recently-approved.view-all", "View All Approvals")}
+								{t(
+									"dashboard.recently-approved.view-all",
+									"View All Approvals",
+								)}
 							</Link>
 						</Button>
 					</div>

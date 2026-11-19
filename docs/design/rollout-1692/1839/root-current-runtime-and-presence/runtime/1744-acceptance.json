@@ -1,0 +1,303 @@
+{
+  "schema": 1,
+  "issue": 1744,
+  "head": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+  "appTree": "138aab92cde099756c13347827a90112763def68",
+  "tree": "c46bc8d4f045c8fff2d9a6f51c678784e0cb2f80",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "verifiedCommit": null,
+  "readiness": null,
+  "sourcePinFormat": "Filesystem SHA256 (CRLF where present); full frozen tracked snapshots and clean index identify the exact HEAD.",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/all-locations-link.tsx",
+      "sha256": "647591d60758a7097e34cfddce6dce36a249c87514b83e1bfd617300bc6c54bf"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/error.tsx",
+      "sha256": "b85bee01ae8123e019bf675e69d88b515046712c4c4722f11fb176c028e1f38f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/heading.test.ts",
+      "sha256": "7d222132a66f47cbc630fb6f14f024736944349ff424cc9b76b37d9d945b64a6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/location-presence-loading.tsx",
+      "sha256": "650a20fef595bdde9ff62ea17932989d6db46b1210fc73d3d4cd94c9b8f367b6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/not-found.tsx",
+      "sha256": "86de1f113c3d2886cd6c9a5aa4d1cca1e2dd114e45c7979e04428602ba0e2a92"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "sha256": "87f64ef9dba9259fae34c1c789a210682972d491a7a250ae5e905b380aa57a3e"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx",
+      "sha256": "f9d17b56e51dd03f4eb6e4624cda5ca3c46b9c8ae81102c902448809f7bb437a"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-arrival.test.tsx",
+      "sha256": "1c72c58440a30fb56c536a8b3e02d965ca9bd31eeba310eecdc0c304f66529df"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx",
+      "sha256": "a6916fd0e80ecacf2ac0d66948e5a16c4435ec6bcd4ac43f6ad4318fbf2e6439"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+      "sha256": "221c4886712345a5541f0cdc4e313fcab50aeaa93d27d2b1164f0b91415d0f12"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-view.tsx",
+      "sha256": "30e2e12a624968b496cca2255231f0e1dcf13d4931f30e9282a5766a376ad233"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.test.tsx",
+      "sha256": "8b4893bf0b9351894a2cb3a22662696c33ccd477c2313815f176941c3eec1062"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.tsx",
+      "sha256": "cee05a75fc290d03b9c3c2ad02c8e2e4e09dad836c613e81cfca0abea8f0766d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx",
+      "sha256": "699389bef9221ff28dd16bf987cac3f12ce0dcc0e4f4b1b1bcfdf24f9d7f27e8"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/presence-data.ts",
+      "sha256": "055bd7a939e701e327b55fda936e7651cd07f69c9864e69d2e18ce284bd3c036"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/provider-arrival.test.tsx",
+      "sha256": "fe58df1dc002b8a511b05eba6b62e8c3d1be576df7bf453ca0adb1de65706ebd"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/selection-actions.integration.test.ts",
+      "sha256": "987dab7c4737e742cb787c50afb45cbb430ffc8ea0a2e6a67a9e81bd7286ff26"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/selection-actions.ts",
+      "sha256": "03f7d83d57edc545a33d2289ab205f667523e58a6ab87c8bb116a954c34f3952"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/use-presence-view-arrival.ts",
+      "sha256": "eddcb3599ee9268e62522a4602cd14522058f8555c97abba25f82302c355ddb4"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/assigned-locations/queries.ts",
+      "sha256": "20ed8d2b974b18e218363e269dd20b9e238758d47d9532a4807b5c1473f26b9e"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/clock-presence.ts",
+      "sha256": "369af13e02f92bd78a2bd4f1ce5aabbe504311f18484cb06487ced4fafe35e6f"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/format.test.ts",
+      "sha256": "68208bd506226cdb2ac83188b09bf6e80b2b72df35a5e5ed87a864fd63ad1524"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/format.ts",
+      "sha256": "b3c49ef4a9e5c1deb5c567916540563dd55b8192282e4ad1febff1b0641a7328"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/queries.ts",
+      "sha256": "2215fd986dd75c59a17ff50f37b8f827703a4c9099c1fc57ba299cfc1fc16ff9"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/shape.test.ts",
+      "sha256": "6d230b5f1de6cb93cd8e3705e24e788cc0ec5abc7b6984817c7afcdf9e90b5c4"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/shape.ts",
+      "sha256": "5f8df5749fb9313947881117c273f460cff3e093aa0c8b3c74cb3c0f3b6b1d91"
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/who-is-in.integration.test.ts",
+      "sha256": "5c3d39dcaea3aed6268c8b142021b651ffce89797f9d69f743989df0e4dd6b01"
+    }
+  ],
+  "actualRuntimeAssertions": {
+    "total": 32,
+    "passed": 32,
+    "failed": 0,
+    "assertions": [
+      {
+        "id": "selected-canonical-heading",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "canonical-record-count",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "canonical-names",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "canonical-employee-link-targets",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "canonical-clock-state",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "own-employee-only",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "canonical-event-zone-since-text",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "desktop-one-heading",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "desktop-no-horizontal-overflow",
+        "passed": true,
+        "observed": false
+      },
+      {
+        "id": "assignment-context",
+        "passed": true,
+        "observed": "Assignment is not device-position evidence; captured event zone is used."
+      },
+      {
+        "id": "phone-one-heading",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "phone-heading",
+        "passed": true,
+        "observed": "Who is in: Runtime acceptance location"
+      },
+      {
+        "id": "phone-no-horizontal-overflow",
+        "passed": true,
+        "observed": false
+      },
+      {
+        "id": "phone-record-count",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "phone-employee-link-count",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "phone-column-labels",
+        "passed": true,
+        "observed": [
+          "Name",
+          "State",
+          "Since"
+        ]
+      },
+      {
+        "id": "public-dark-theme-choice",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "reduced-motion-media",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "sidebar-collapse",
+        "passed": true,
+        "observed": "collapsed"
+      },
+      {
+        "id": "sidebar-heading-preserved",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "employee-link-navigation",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "return-retires-old-heading",
+        "passed": true,
+        "observed": false
+      },
+      {
+        "id": "return-retires-old-employee-links",
+        "passed": true,
+        "observed": 0
+      },
+      {
+        "id": "return-offers-local-retry",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "retry-new-server-read",
+        "passed": true,
+        "observed": 200
+      },
+      {
+        "id": "retry-restores-heading",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "retry-restores-row",
+        "passed": true,
+        "observed": 1
+      },
+      {
+        "id": "retry-control-retires",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "unavailable-location-title",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "unavailable-location-no-employee-links",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "unavailable-location-recovery-link",
+        "passed": true,
+        "observed": true
+      },
+      {
+        "id": "chooser-selected-route-recovery",
+        "passed": true,
+        "observed": "Observed All locations -> own location -> correct visible selected heading."
+      }
+    ]
+  },
+  "freshUnitCases": 0,
+  "freshPostgresSuiteCases": 0,
+  "confirmedP1": 0,
+  "limits": [
+    "Actual coverage is one normally admitted small-admin fixture, one public-UI-created location, one assignment and one new public-UI clocking period. No extra seed/factory or SQL write was used.",
+    "The employee link destination URL was verified. Complete employee-detail content acceptance was not claimed; private logs included ancillary Equipment access is not available refusals.",
+    "Arrival retirement and real Retry were observed after same-account route departure/return. Live account, org, role and authorization races were unavailable and remain qualified, not simulated as actual.",
+    "The unavailable-location document streamed status 200 while showing the intended safe unavailable UI. No HTTP 404 assertion is made.",
+    "No actual injected read transport error, loading skeleton, live authority race, font-size preference persistence, break-state, native or physical device acceptance.",
+    "135 unit cases/14 files and prior 15 PostgreSQL cases are inherited and unadded. Fresh unit/PG suite counts are zero."
+  ]
+}

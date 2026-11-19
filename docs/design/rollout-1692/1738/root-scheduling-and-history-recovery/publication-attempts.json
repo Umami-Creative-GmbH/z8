@@ -1,0 +1,36 @@
+{
+  "failedAttemptsPreserved": true,
+  "attempts": [
+    {
+      "attempt": 1,
+      "command": "node -e (PowerShell single-quoted JavaScript inspection string)",
+      "exit": 1,
+      "kind": "inspection quoting",
+      "result": "PowerShell stripped JavaScript quotes; Node SyntaxError: Unexpected token dot. No archive writes; replaced by file-based inspector.",
+      "rawPreserved": "initial-validation-failures.json"
+    },
+    {
+      "attempt": 2,
+      "command": "node .tmp/1738-1739-publication-20261117/syntax-publication.mjs",
+      "exit": 1,
+      "kind": "validator handling error",
+      "result": "PowerShell -File native parser launcher was blocked by existing execution policy. Empty stdout was incorrectly parsed as JSON; Unexpected end of JSON input. Archived script was never executed.",
+      "rawPreserved": "initial-validation-failures.json"
+    },
+    {
+      "attempt": 3,
+      "command": "node .tmp/1738-1739-publication-20261117/seal-publication.mjs",
+      "exit": 0,
+      "kind": "preliminary seal before complete syntax receipt",
+      "result": "Preliminary file index/seal preserved privately; not claimed as complete publication verification."
+    },
+    {
+      "attempt": 4,
+      "command": "node .tmp/1738-1739-publication-20261117/syntax-publication.mjs",
+      "exit": 0,
+      "kind": "intermediate syntax classification corrected",
+      "result": "All JS/TSX passed; the blocked PowerShell launcher was wrongly labeled historical-invalid by the intermediate collector. Exact stderr/commands and intermediate receipt retained privately. Inline ParseFile later passed; no execution-policy bypass or archived-script execution."
+    }
+  ],
+  "originalRawFailures": "All copied historical failures remain byte-exact. No original archive input was amended."
+}

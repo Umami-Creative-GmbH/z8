@@ -11,6 +11,7 @@ import type { LegacyConversionFlag } from "@/lib/travel-expenses/legacy-draft-co
 import type { LegacyConversionView } from "@/lib/travel-expenses/legacy-draft-conversion-read";
 import { Link } from "@/navigation";
 import { formatMoney, formatPlainDateRange } from "./format";
+import { useReportQueryKey } from "./report-read-scope";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -81,7 +82,7 @@ function legacyConversionFlagText(
 /** The legacy draft the report continues (#616); null when it continues none. */
 export function useLegacyConversion(reportId: string) {
 	return useQuery({
-		queryKey: queryKeys.travelExpenses.legacyConversion(reportId),
+		queryKey: useReportQueryKey(queryKeys.travelExpenses.legacyConversion(reportId)),
 		queryFn: async () => {
 			const result = await getLegacyTravelExpenseConversion({ reportId });
 			if (!result.success) throw new Error(result.error);

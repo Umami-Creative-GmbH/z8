@@ -108,7 +108,7 @@ export function KioskConfirmation({
 					aria-hidden="true"
 				/>
 			)}
-			<span className="text-3xl font-semibold break-words">{name}</span>
+			<h1 className="text-3xl font-semibold break-words">{name}</h1>
 			<span className="text-2xl">{action}</span>
 			<span className="text-5xl font-semibold tabular-nums">{time}</span>
 			{note ? <span className="text-lg text-muted-foreground">{note}</span> : null}

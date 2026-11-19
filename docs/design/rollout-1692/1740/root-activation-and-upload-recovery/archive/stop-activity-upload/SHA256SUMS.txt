@@ -1,0 +1,1 @@
+4db8061d7a7cf6a25997805dc334b4ad406b00b708fa35011d2da8500bff1e98  safe-allowlist.json

@@ -96,11 +96,12 @@
         "year": "År"
       },
       "history": {
-        "description": "Visa och ladda ned tidigare DATEV-exporter",
+        "descriptionAllFormats": "Visa och ladda ner tidigare löneexporter",
         "download": "Ladda ned export",
         "downloadError": "Kunde inte hämta nedladdnings-URL",
         "employees": "anställda",
         "noExports": "Inga exporter ännu",
+        "noExportsHint": "Starta en löneexport på fliken Exportera. Slutförda exporter visas här för nedladdning.",
         "payrollRun": "{count, plural, one {Lönekörning: # utläggsrapport} other {Lönekörning: # utläggsrapporter}}",
         "periods": "perioder",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Bearbetas"
         },
         "table": {
+          "actions": "Åtgärder",
           "createdAt": "Skapad",
           "dateRange": "Datumintervall",
           "records": "Poster",
@@ -151,7 +153,8 @@
         "configureFirst": "Konfigurera minst ett format för löneexport (DATEV, Lexware eller Sage) innan du ställer in mappningar.",
         "deleteDescription": "Är du säker på att du vill ta bort den här löneartsmappningen?",
         "deleteError": "Kunde inte ta bort mappningen",
-        "deleteMapping": "Ta bort mappning",
+        "deleteMappingNamed": "Ta bort mappning för {name}",
+        "deleteNamedDescription": "Vill du ta bort löneartsmappningen för \"{name}\"?",
         "deleteSuccess": "Mappningen har tagits bort",
         "deleteTitle": "Ta bort mappning",
         "description": "Beskrivning",
@@ -335,7 +338,8 @@
         "name": "Anställd",
         "noNumber": "Ej angivet",
         "personnelIdentifier": "Personalidentifierare",
-        "personnelNumber": "Anställningsnummer"
+        "personnelNumber": "Anställningsnummer",
+        "unnamed": "Namnlös medarbetare"
       },
       "checks": {
         "count": "Antal",
@@ -364,6 +368,13 @@
       },
       "description": "Kontrollera om en löneperiod är redo innan du exporterar tids-, frånvaro- och lönedata.",
       "openPayrollExport": "Öppna löneexport",
+      "period": {
+        "currentMonth": "Innevarande månad",
+        "navLabel": "Löneperiod",
+        "previousMonth": "Föregående månad",
+        "scope": "Löneperiod: {period} (UTC)",
+        "showMonth": "Visa {month}"
+      },
       "status": {
         "blocked": "Blockerad",
         "ready": "Redo för lönekörning",

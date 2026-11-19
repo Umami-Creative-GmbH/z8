@@ -1,0 +1,42 @@
+{
+  "checks": [
+    {
+      "name": "canonical assignment arrives in the existing detail panel",
+      "passed": true
+    },
+    {
+      "name": "fresh canonical detail pins the exact assignment",
+      "passed": true
+    },
+    {
+      "name": "missing canonical evidence holds both decisions",
+      "passed": true
+    },
+    {
+      "name": "canonical detail reopens by keyboard",
+      "passed": true
+    },
+    {
+      "name": "review retains reachable mobile navigation",
+      "passed": true
+    },
+    {
+      "name": "mobile navigation dismisses with Escape",
+      "passed": true
+    },
+    {
+      "name": "canonical writer refuses held evidence",
+      "passed": true
+    },
+    {
+      "name": "compatibility kind cannot substitute for a canonical assignment",
+      "passed": true
+    },
+    {
+      "name": "retired canonical assignment is safely unavailable",
+      "passed": true
+    }
+  ],
+  "refusalStatus": 500,
+  "scope": "owned disposable fixture; seeded real canonical absence/workflow/stage/assignment/projection; missing evidence intentional; no manufactured HTTP success"
+}

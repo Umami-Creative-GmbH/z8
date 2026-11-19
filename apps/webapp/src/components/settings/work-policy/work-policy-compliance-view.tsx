@@ -2,14 +2,16 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	acknowledgeWorkPolicyViolation,
 	getWorkPolicyViolations,
 	type WorkPolicyViolationWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { AcknowledgementPanel } from "./work-policy-compliance/acknowledgement-panel";
@@ -18,14 +20,30 @@ import {
 	WorkPolicyComplianceError,
 	WorkPolicyComplianceLoading,
 } from "./work-policy-compliance/content";
-import { buildCsvContent, formatEmployeeName, getViolationTypeLabel } from "./work-policy-compliance/helpers";
+import {
+	buildCsvContent,
+	formatCsvLocalMinute,
+	formatEmployeeName,
+	formatViolationCsvDate,
+	getViolationTypeLabel,
+	type ViolationDisplayContext,
+} from "./work-policy-compliance/helpers";
 
 interface WorkPolicyComplianceViewProps {
 	organizationId: string;
+	/** The organization's IANA timezone; violation instants are shown in it. */
+	organizationTimezone: string;
 }
 
-export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianceViewProps) {
+const RANGE_DAYS = { "7d": 7, "30d": 30, "90d": 90 } as const;
+
+export function WorkPolicyComplianceView({
+	organizationId,
+	organizationTimezone,
+}: WorkPolicyComplianceViewProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const display: ViolationDisplayContext = { locale, timezone: organizationTimezone };
 	const queryClient = useQueryClient();
 	const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
 	const [acknowledgeDialogOpen, setAcknowledgeDialogOpen] = useState(false);
@@ -33,25 +51,25 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		null,
 	);
 	const [acknowledgeNote, setAcknowledgeNote] = useState("");
+	// The range ends when it was chosen, not at every render: a moving end would change
+	// the query key on each render and refetch without end.
+	const [rangeEndMillis, setRangeEndMillis] = useState(
+		() => systemClock.nowInstant().epochMilliseconds,
+	);
+
+	const handleDateRangeChange = (nextRange: "7d" | "30d" | "90d") => {
+		setDateRange(nextRange);
+		setRangeEndMillis(systemClock.nowInstant().epochMilliseconds);
+	};
 
 	const range = (() => {
-		const endDt = DateTime.now();
-		let days: number;
-		switch (dateRange) {
-			case "7d":
-				days = 7;
-				break;
-			case "30d":
-				days = 30;
-				break;
-			case "90d":
-				days = 90;
-				break;
-			default:
-				days = 30;
-		}
-		const startDt = endDt.minus({ days });
-		return { start: startDt.toJSDate(), end: endDt.toJSDate() };
+		const end = Temporal.Instant.fromEpochMilliseconds(rangeEndMillis);
+		// Calendar days back in the organization's zone, so a DST change keeps whole days.
+		const start = end
+			.toZonedDateTimeISO(organizationTimezone)
+			.subtract({ days: RANGE_DAYS[dateRange] ?? 30 })
+			.toInstant();
+		return { start: dateFromInstant(start), end: dateFromInstant(end) };
 	})();
 
 	const queryKey = queryKeys.workPolicies.violations.list(organizationId, range);
@@ -119,11 +137,15 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 
 		const headers = [
 			t("settings.workPolicies.csv.employee", "Employee"),
-			t("settings.workPolicies.csv.date", "Date"),
+			t("settings.workPolicies.csv.dateInTimezone", "Date ({timezone})", {
+				timezone: organizationTimezone,
+			}),
 			t("settings.workPolicies.csv.policy", "Policy"),
 			t("settings.workPolicies.csv.violationType", "Violation Type"),
 			t("settings.workPolicies.csv.status", "Status"),
-			t("settings.workPolicies.csv.acknowledgedAt", "Acknowledged At"),
+			t("settings.workPolicies.csv.acknowledgedAtInTimezone", "Acknowledged At ({timezone})", {
+				timezone: organizationTimezone,
+			}),
 			t("settings.workPolicies.csv.acknowledgedNote", "Acknowledged Note"),
 		];
 		const unknownLabel = t("common.unknown", "Unknown");
@@ -131,12 +153,12 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		const pendingLabel = t("settings.workPolicies.pending", "Pending");
 		const rows = violations.map((violation) => [
 			formatEmployeeName(violation.employee, unknownLabel),
-			DateTime.fromJSDate(violation.violationDate).toFormat("yyyy-MM-dd"),
+			formatViolationCsvDate(violation.violationDate, organizationTimezone),
 			violation.policy?.name || unknownLabel,
 			getViolationTypeLabel(violation.violationType, t),
 			violation.acknowledgedAt ? acknowledgedLabel : pendingLabel,
 			violation.acknowledgedAt
-				? DateTime.fromJSDate(violation.acknowledgedAt).toFormat("yyyy-MM-dd HH:mm")
+				? formatCsvLocalMinute(violation.acknowledgedAt, organizationTimezone)
 				: "",
 			violation.acknowledgedNote || "",
 		]);
@@ -144,8 +166,13 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
+		const exportDay = systemClock
+			.nowInstant()
+			.toZonedDateTimeISO(organizationTimezone)
+			.toPlainDate()
+			.toString();
 		link.href = url;
-		link.download = `policy-violations-${dateRange}-${DateTime.now().toFormat("yyyy-MM-dd")}.csv`;
+		link.download = `policy-violations-${dateRange}-${exportDay}.csv`;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -165,14 +192,19 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 	return (
 		<>
 			<WorkPolicyComplianceContent
+				display={display}
 				dateRange={dateRange}
 				violations={violations}
-				onDateRangeChange={setDateRange}
+				onDateRangeChange={handleDateRangeChange}
 				onExport={handleExportCSV}
-				onRefresh={() => refetch()}
+				onRefresh={() => {
+					// Move the range end to now so violations recorded since the range was chosen appear.
+					setRangeEndMillis(systemClock.nowInstant().epochMilliseconds);
+				}}
 				onAcknowledge={handleAcknowledgeClick}
 			/>
 			<AcknowledgementPanel
+				display={display}
 				open={acknowledgeDialogOpen}
 				violation={selectedViolation}
 				note={acknowledgeNote}

@@ -89,7 +89,13 @@
       "slugLabel": "Kuruluş URL Kısa Adı",
       "title": "Kuruluşu Düzenle",
       "updateError": "Kuruluş güncellenemedi",
-      "updateSuccess": "Kuruluş başarıyla güncellendi"
+      "updateSuccess": "Kuruluş başarıyla güncellendi",
+      "validation": {
+        "nameMax": "Ad 100 karakteri aşamaz",
+        "nameMin": "Ad en az 2 karakter olmalıdır",
+        "slugMax": "Kısa ad 50 karakteri aşamaz",
+        "slugMin": "Kısa ad en az 2 karakter olmalıdır"
+      }
     },
     "error": {
       "description": "Kuruluş şeması yüklenemedi. Lütfen tekrar deneyin.",
@@ -395,6 +401,7 @@
     "switchTo": "Organizasyon Değiştir",
     "teams": {
       "card": {
+        "actionsFor": "{name} için eylemler",
         "deleteTeam": "Ekibi Sil",
         "editTeam": "Ekibi Düzenle",
         "fallbackManager": "Yedek yönetici",
@@ -406,10 +413,10 @@
       "delete": "Ekibi Sil",
       "deleteDialogDescription": "Bu işlem \"{teamName}\" ekibini kalıcı olarak silecektir.",
       "deleteDialogMembersWarning": "Uyarı: Bu ekipte {count} üye bulunuyor. Bu üyeler ekipten çıkarılacaktır.",
+      "deleteDialogNamedTitle": "{name} ekibi silinsin mi?",
       "deleteDialogTitle": "Emin misiniz?",
       "deleteError": "Ekip silinemedi",
       "deleteSuccess": "Ekip başarıyla silindi",
-      "description": "Daha iyi bir iş birliği için çalışanlarınızı ekiplere ayırın",
       "edit": {
         "description": "Ekip adını ve açıklamasını güncelleyin",
         "descriptionLabel": "Açıklama (İsteğe bağlı)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Üye ekipten çıkarıldı",
         "selectEmployee": "Eklenecek bir çalışan seçin",
         "title": "{teamName} - Ekip Üyeleri"
-      },
-      "title": "Ekipler"
+      }
     },
     "timezone": {
       "balances-recalculating": "Çalışma bakiyeleri yeni saat dilimi için yeniden hesaplanıyor ve hazır olana kadar gizli tutuluyor.",

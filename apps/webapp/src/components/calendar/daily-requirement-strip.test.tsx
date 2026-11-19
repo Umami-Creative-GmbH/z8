@@ -39,12 +39,12 @@ describe("requirement header helpers", () => {
 	it("builds compact header content for an over-requirement day", () => {
 		const content = buildRequirementHeaderContent(baseSummary, "Friday, May 22", interpolating);
 
-		expect(content.requiredHours).toBe("8:00h");
-		expect(content.deltaHours).toBe("+1:33h");
+		expect(content.requiredHours).toBe("8h 00m");
+		expect(content.deltaHours).toBe("+1h 33m");
 		expect(content.status).toBe("over");
 		expect(content.liveLabel).toBeNull();
 		expect(content.accessibleLabel).toBe(
-			"Friday, May 22: 8:00h required, 9:33h recorded, +1:33h delta, over requirement",
+			"Friday, May 22: 8h 00m required, 9h 33m recorded, +1h 33m delta, over requirement",
 		);
 	});
 
@@ -72,11 +72,11 @@ describe("requirement header helpers", () => {
 
 		expect(content).toEqual({
 			requiredHours: null,
-			actualHours: "2:30h",
+			actualHours: "2h 30m",
 			deltaHours: null,
 			status: null,
 			liveLabel: null,
-			accessibleLabel: "Saturday, May 23: 2:30h recorded",
+			accessibleLabel: "Saturday, May 23: 2h 30m recorded",
 		});
 	});
 
@@ -89,7 +89,7 @@ describe("requirement header helpers", () => {
 
 		expect(content.liveLabel).toBe("Includes running work");
 		expect(content.accessibleLabel).toBe(
-			"Friday, May 22: 8:00h required, 9:33h recorded, +1:33h delta, over requirement. Includes running work",
+			"Friday, May 22: 8h 00m required, 9h 33m recorded, +1h 33m delta, over requirement. Includes running work",
 		);
 	});
 

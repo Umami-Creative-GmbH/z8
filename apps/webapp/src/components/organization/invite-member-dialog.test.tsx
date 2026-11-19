@@ -40,6 +40,13 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: refreshMock }),
 }));
 
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: "actor-1" }, session: { activeOrganizationId: "org-1" } },
+		isPending: false,
+	}),
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/organization/actions", () => ({
 	sendInvitation: sendInvitationMock,
 }));

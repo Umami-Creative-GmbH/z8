@@ -1,0 +1,25 @@
+{
+  "criticalProductBlockerReproduced": false,
+  "readinessNotGranted": true,
+  "verifiedCommit": null,
+  "unpassed": [
+    "Matched historical/current screenshots: automatic approval review rejected tracked historical overlay before execution",
+    "Supporting Retry pending through both serialized reads: immediate-state/4s wait failed; no pass claimed",
+    "Actual rejected write/server refusal and pending write duplicate handling: offline attempt produced no failure toast; only retained input and subsequent normal edit proved",
+    "Sidebar collapsed preference on immediate reload: collapsed false; no settled persistence pass",
+    "Coverage gaps and allowPublishWithGaps server refusal, skill override, compliance warning/current-v-stale acknowledgment: canonical fixture has no configured gaps/findings; no policy/grants changed",
+    "Live authority revocation/org ABA, pickups/swaps, exhaustive phone calendar interactions, full historical app, production generation, remote Tolgee/provider/email/payment, physical devices/true zoom, exhaustive races/locales/global transitions and broad roster"
+  ],
+  "knownClockWarning": "Not observed in final exact Scheduling get_errors/compilation checks; no cause/baseline classification or broad clock probe",
+  "harnessQualifications": [
+    "Initial login wrapper context destroyed during normal post-submit navigation; visible authenticated account checked separately",
+    "Manager Retry unloaded error becomes loading status; prior disabled-alert locator timeout is not a product failure",
+    "Supporting action transport serializes requests; simultaneous held-count assumption withdrawn",
+    "Offline edit did not produce a refusal toast; do not claim refusal/retry acceptance",
+    "Role attempts 1/2 selected stale/untracked contexts; attempt3 supplied a non-invoked string function; attempt4 uses authoritative controller and invoked visible evaluation",
+    "Native attempt1 opened own unauthenticated default tab; attempt2 discovered tabs; attempt3 inspected exact planner before list mounted; attempt4 waited list and verified exact target",
+    "One historical rg query was too broad and read excluded private fixture metadata. Those values were not reused, repackaged, copied into new evidence, or used for authentication. No further broad historical search was made.",
+    "Initial pnpm store-lock denial and two status-helper quoting/read failures changed no product sources or results"
+  ],
+  "sourceAndAuthority": "Exact candidate d18; all server, action, query-provider, grants, policies and recorded-work owners unchanged; no source overlay executed"
+}

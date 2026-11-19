@@ -39,11 +39,13 @@
       "byCostCenter": "Sipas qendrës së kostos",
       "byManager": "Sipas menaxherit",
       "byTeam": "Sipas ekipit",
+      "chartValues": "Shikoni vlerat javore",
       "costCenter": "Qendra e kostos",
       "currentOvertime": "Orët shtesë aktuale",
       "description": "Gjurmoni uljen javore të orëve shtesë nëpër ekipe.",
       "errors": {
-        "loadData": "Dështoi ngarkimi i të dhënave të reduktimit të orëve shtesë"
+        "loadData": "Dështoi ngarkimi i të dhënave të reduktimit të orëve shtesë",
+        "retryDescription": "Të dhënat e orëve shtesë nuk mund të ngarkoheshin. Riprovoni periudhën dhe filtrat e përzgjedhur."
       },
       "filters": {
         "allCostCenters": "Të gjitha qendrat e kostos",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Grupet në përmirësim",
       "improvingGroupsDescription": "Grupet me rënie të orëve shtesë",
+      "loading": "Po ngarkohen të dhënat e orëve shtesë",
       "manager": "Menaxheri",
       "previousOvertime": "Orët shtesë të mëparshme",
       "previousPeriodDescription": "Krahasuar me periudhën e mëparshme",
+      "refreshing": "Po rifreskohen të dhënat e orëve shtesë",
       "selectedRangeDescription": "Për intervalin e përzgjedhur të datave dhe filtrat",
       "title": "Reduktimi i orëve shtesë",
       "trendDirection": "Drejtimi i trendit",
@@ -92,6 +96,10 @@
         "title": "Pengesat e miratimit",
         "unavailable": "Pengesat e miratimit nuk mund të ngarkoheshin"
       },
+      "chartValues": "Shikoni vlerat e grafikut",
+      "errors": {
+        "retryDescription": "Disa analitika nuk mund të ngarkoheshin. Vlerat e ngarkuara më parë, nëse shfaqen, mund të jenë të vjetruara."
+      },
       "kpis": {
         "approvalRate": {
           "description": "E kërkesave të shqyrtuara të miratuara",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Po ngarkohen të dhënat analitike",
+      "refreshing": "Po rifreskohen analitikat…",
       "workHoursByTeam": {
         "description": "Totali i orëve të punës të regjistruara për çdo ekip",
         "title": "Orët e punës sipas ekipit"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Ngarkimi i të dhënave të performancës së ekipit dështoi"
       },
+      "loading": "Po ngarkohen të dhënat e performancës së ekipit",
       "onTrack": "Në plan",
+      "refreshFailed": "Rifreskimi dështoi. Po shfaqen të dhënat e ngarkuara më parë për këtë periudhë. Eksportimi nuk është i disponueshëm derisa riprovimi të ketë sukses.",
+      "refreshing": "Po rifreskohen të dhënat e performancës së ekipit",
       "variance": {
         "description": "Diferenca e orëve nga orët e pritshme të punës",
         "empty": "Nuk ka të dhëna të disponueshme për diferencën",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Të alokuara",
+      "allowanceMissing": "Kuota nuk është konfiguruar",
+      "allowanceSource": "Disa punonjës nuk kanë kuotë të ruajtur. Totali përdor vetëm kuotat ekzistuese të ruajtura.",
       "balance": {
         "description": "Ditët e alokuara, të marra dhe të mbetura sipas punonjësit",
         "title": "Bilanci i pushimeve"
       },
-      "daysRemaining": "{count} ditë të mbetura",
-      "daysTaken": "{count} ditë të marra",
+      "dayValue": "{count} ditë",
+      "description": "Krahasoni përdorimin e pushimeve dhe balancat e punonjësve për periudhën e përzgjedhur të organizatës.",
       "errors": {
-        "loadData": "Ngarkimi i të dhënave të trendeve të pushimeve dështoi"
+        "loadData": "Ngarkimi i të dhënave të trendeve të pushimeve dështoi",
+        "retryDescription": "Të dhënat e pushimeve nuk mund të ngarkoheshin. Riprovoni periudhën e përzgjedhur."
       },
+      "loading": "Po ngarkohen të dhënat e pushimeve",
       "monthlyUsage": {
         "description": "Ditët e pushimit të marra për çdo muaj",
         "empty": "Nuk ka të dhëna mujore të disponueshme për përdorimin",
         "title": "Përdorimi mujor i pushimeve"
       },
+      "monthlyValues": "Shikoni vlerat mujore",
       "peakMonths": {
         "description": "Muajt me aktivitetin më të lartë të pushimeve",
         "empty": "Nuk ka të dhëna të disponueshme për muajt me kulm",
         "title": "Muajt me kulmin e pushimeve"
       },
+      "refreshing": "Po rifreskohen të dhënat e pushimeve",
       "remaining": "Të mbetura",
       "taken": "Të marra",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Nuk ka të dhëna të disponueshme për orët ditore",
         "title": "Orët ditore të punës"
       },
+      "dailyStatus": "Shikoni statusin ditor",
+      "dailyValues": "Shikoni orët ditore",
       "distribution": {
         "description": "Krahasimi i orëve të punës së punonjësve (shirit horizontal)",
         "empty": "Nuk ka të dhëna të disponueshme për shpërndarjen",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Orët e pritshme",
       "hoursPerWeekAbbreviation": "orë/javë",
+      "loading": "Po ngarkohen të dhënat analitike të orëve të punës",
+      "refreshFailed": "Rifreskimi dështoi. Po shfaqen të dhënat e ngarkuara më parë për këtë periudhë. Eksportimi nuk është i disponueshëm derisa riprovimi të ketë sukses.",
+      "refreshing": "Po rifreskohen të dhënat analitike të orëve të punës",
       "variance": "Diferenca",
       "varianceTrend": {
         "description": "Diferenca e orëve nga orët e pritshme të punës me kalimin e kohës",
         "empty": "Nuk ka të dhëna të disponueshme për trendin",
-        "title": "Trendi i orëve shtesë dhe orëve mangët"
+        "title": "Trendi i orëve shtesë dhe orëve mangët",
+        "unavailable": "Vlerat ditore të orëve shtesë dhe orëve mangët nuk janë të disponueshme nga ky raport. Statusi ditor i regjistruar shfaqet më poshtë."
       }
     }
   }

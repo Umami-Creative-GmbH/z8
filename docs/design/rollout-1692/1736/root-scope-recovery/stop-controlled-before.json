@@ -1,0 +1,7 @@
+{
+  "ownedNextIdentityVerified": true,
+  "ownedNextStopped": true,
+  "port": 53808,
+  "portClosed": true,
+  "qualification": "The prior helper verified path/creation/listener before an owned process exited between CIM and Stop-Process. Fresh exact PID and listener checks find the root and port absent. No further processes killed."
+}

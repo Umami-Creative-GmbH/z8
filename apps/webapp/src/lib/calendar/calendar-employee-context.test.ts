@@ -23,7 +23,9 @@ vi.mock("@/lib/timezone/effective-timezone", () => ({
 	getEffectiveTimezone: mockState.getEffectiveTimezone,
 }));
 
-const { resolveAuthorizedCalendarEmployeeContext } = await import("./calendar-employee-context");
+const { resolveAuthorizedCalendarEmployeeContext } = await import(
+	"./calendar-employee-context"
+);
 
 describe("resolveAuthorizedCalendarEmployeeContext", () => {
 	beforeEach(() => {
@@ -44,8 +46,11 @@ describe("resolveAuthorizedCalendarEmployeeContext", () => {
 				isActive: true,
 				role: "employee",
 				teamId: null,
+				user: { firstName: "Ada", lastName: "Lovelace", name: "Old name" },
 			});
-		mockState.findManagerLinks.mockResolvedValue([{ employeeId: "employee-2" }]);
+		mockState.findManagerLinks.mockResolvedValue([
+			{ employeeId: "employee-2" },
+		]);
 		mockState.getEffectiveTimezone.mockResolvedValue("America/New_York");
 	});
 
@@ -61,11 +66,15 @@ describe("resolveAuthorizedCalendarEmployeeContext", () => {
 
 		expect(context).toEqual({
 			employeeId: "employee-2",
+			employeeName: "Ada Lovelace",
 			timezone: "America/New_York",
 			initialDateKey: "2026-05-31",
 		});
 		expect(structuredClone(context)).toEqual(context);
-		expect(mockState.getEffectiveTimezone).toHaveBeenCalledWith("user-2", "org-1");
+		expect(mockState.getEffectiveTimezone).toHaveBeenCalledWith(
+			"user-2",
+			"org-1",
+		);
 	});
 
 	it("retains an explicit saved UTC timezone", async () => {
@@ -80,7 +89,10 @@ describe("resolveAuthorizedCalendarEmployeeContext", () => {
 			now: Temporal.Instant.from("2026-06-01T00:30:00Z"),
 		});
 
-		expect(context).toMatchObject({ timezone: "UTC", initialDateKey: "2026-06-01" });
+		expect(context).toMatchObject({
+			timezone: "UTC",
+			initialDateKey: "2026-06-01",
+		});
 	});
 
 	it("rejects targets outside the active organization", async () => {
@@ -108,8 +120,14 @@ describe("resolveAuthorizedCalendarEmployeeContext", () => {
 	});
 
 	function compiledWhere(callIndex: number) {
-		const { where } = mockState.findEmployee.mock.calls[callIndex]?.[0] as { where: SQL };
-		return new PgDialect().sqlToQuery(sql`select * from ${employee} where ${where}`).sql;
+		const call = mockState.findEmployee.mock.calls[callIndex];
+		if (!call) throw new Error("Expected calendar employee query");
+		const { where } = call[0] as {
+			where: SQL;
+		};
+		return new PgDialect().sqlToQuery(
+			sql`select * from ${employee} where ${where}`,
+		).sql;
 	}
 
 	it("opens an offboarded employee's historical calendar for an authorized active viewer", async () => {
@@ -141,7 +159,10 @@ describe("resolveAuthorizedCalendarEmployeeContext", () => {
 			now: Temporal.Instant.from("2026-06-01T00:30:00Z"),
 		});
 
-		expect(context).toMatchObject({ employeeId: "employee-2", timezone: "America/New_York" });
+		expect(context).toMatchObject({
+			employeeId: "employee-2",
+			timezone: "America/New_York",
+		});
 		expect(compiledWhere(1)).toContain('"organization_id"');
 		expect(compiledWhere(1)).not.toContain("is_active");
 	});

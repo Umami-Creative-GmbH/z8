@@ -74,8 +74,8 @@ export function CloseMonthWarningList({ warnings }: { warnings: readonly CloseMo
 	const more = warnings.length - listed.length;
 
 	return (
-		<Alert role="status" className="border-amber-300 dark:border-amber-700">
-			<IconAlertTriangle aria-hidden="true" className="text-amber-600" />
+		<Alert role="status" className="border-warning/50">
+			<IconAlertTriangle aria-hidden="true" className="text-warning" />
 			<AlertTitle>
 				{t(
 					"settings.closedMonths.warnings.title",

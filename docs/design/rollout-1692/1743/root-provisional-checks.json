@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "status": "provisional",
+  "verifiedCommit": null,
+  "incoming": "6dfe584445982cfe1760dea47741a770a088f1cc",
+  "candidate": "b6d9e0b92907148b71a2a3b65d6cd26d1ebfa950",
+  "correction": "8155d789ce7cda7201886ec09fca4fab2a487247",
+  "integration": "b2fcf93969cc929351757428311220c9926910d2",
+  "tree": "1d74bd38bc0bb3e942b93eb11f4457a3739060e5",
+  "appTree": "d0853a2009d558508195195d04b9c28795339e35",
+  "red": {
+    "cases": 3,
+    "passed": 2,
+    "failed": 1,
+    "sameAsSealedCandidate": true
+  },
+  "accepted": {
+    "cases": 116,
+    "physicalFiles": 10,
+    "uniqueFileFullNames": 116,
+    "duplicateNameOccurrences": 0
+  },
+  "types": "Next typegen and all 3 complete tsc projects passed on final source.",
+  "lint": "8 imported/owned source-test files passed; owned3 explicit webapp100-column/CRLF passed.",
+  "formatQualifications": {
+    "explicit": "2 shared metadata files fail; 6 route files pass",
+    "ordinary": "8 formatting failures; no rewrite"
+  },
+  "doctor": {
+    "base": "75d365a3bb0b95e51f44283ab789a1e0f7292e76",
+    "files": 8,
+    "errors": 0,
+    "warnings": 0,
+    "score": null,
+    "correctedHarnessDiagnostic": "First scan flagged Date.now() in the test provider render; bootstrap timestamp moved to beforeEach, no suppressions."
+  },
+  "preservation": {
+    "anchors": 63,
+    "baseline": true,
+    "changedFromPublished": 35,
+    "unexpected": 0,
+    "priorArchives": [
+      445,
+      127,
+      72
+    ],
+    "routePageFiles": 172,
+    "priorAliases": 19
+  },
+  "publicArchiveAudit": {
+    "files": 24,
+    "pngFullyDecoded": 15,
+    "json": 8,
+    "markdownLinks": 11,
+    "jsonFileReferences": 27,
+    "matchedPairs": 7,
+    "extraUnpairedBeforeEmpty": true,
+    "auditSha256": "a32d8e6c89c01d1d65d0f806afc4f47401308ccac772d9e4b8ab46f5d5cc02b4",
+    "capturePinQualification": "All4 source pins match capturede8fd322 after CRLF materialization;3/4 match5bc50e5/final6dfe584. The remaining difference is one indentation line.",
+    "visualQualification": "Headings and3rows visible; phone name wraps; no task-region clipping. Two lower-right development controls remain visible. Exact dated capture timestamps unavailable."
+  },
+  "limits": [
+    "No fresh PostgreSQL, browser, Next runtime, native, provider, production-generation/catalog, physical-device or true-zoom acceptance in root static phase.",
+    "Fresh context publication can retire a concurrent header-started read and require a replacement server read;4 total calls in independent context-error/header control, same-arrival duplicate recovery stays coalesced.",
+    "Incoming gap has no equivalent premerge client seam; no historical regression or live authorization-bypass claim.",
+    "Broader current-roster guards and prior global acceptance limits remain unchanged."
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.tsx",
+      "blob": "905de340b5d78773963b955be017624d73969716",
+      "rawSha256": "cee05a75fc290d03b9c3c2ad02c8e2e4e09dad836c613e81cfca0abea8f0766d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.test.tsx",
+      "blob": "11147ae29dc1757fbd291354f2aa1ea5123235b5",
+      "rawSha256": "8b4893bf0b9351894a2cb3a22662696c33ccd477c2313815f176941c3eec1062"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/provider-arrival.test.tsx",
+      "blob": "938d767ca7a6a85ed23091fd20a24db5e680fce0",
+      "rawSha256": "fe58df1dc002b8a511b05eba6b62e8c3d1be576df7bf453ca0adb1de65706ebd"
+    }
+  ]
+}

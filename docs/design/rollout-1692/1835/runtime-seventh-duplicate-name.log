@@ -1,0 +1,20 @@
+Passed: exact refreshed source restored after baseline overlay
+Passed: invalid name is focused
+Passed: weekly hour upper bound refused without a policy
+Passed: derived context follows actual fractional hours and selected days
+Passed: keyboard toggles a selected working day
+Passed: one pending save disables fields and skip
+Passed: failed real transport retains draft and inline retry context
+file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46
+            this.#timeoutError = new TimeoutError(`Waiting failed: ${options.timeout}ms exceeded`);
+                                 ^
+
+TimeoutError: Waiting failed: 45000ms exceeded
+    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)
+    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)
+    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)
+    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)
+    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)
+    at file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:58:46
+
+Node.js v26.9.0

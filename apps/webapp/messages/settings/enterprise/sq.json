@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Aktiv",
+      "contextRetry": "Rifreskoni kontekstin e organizatës suaj për të vazhduar.",
+      "contextUnavailable": "Konteksti i organizatës nuk është i disponueshëm",
+      "copyFailed": "Çelësi nuk mund të kopjohej. Provoni përsëri.",
       "copyKey": "Kopjo çelësin API",
       "copyPrefix": "Kopjo prefiksin",
       "create": "Krijo çelës",
@@ -9,6 +12,7 @@
       "createdBy": "nga {name}",
       "createDescription": "Krijoni një çelës të ri API për qasje programatike. Çelësi do të shfaqet vetëm një herë.",
       "createdOn": "Krijuar më {date}",
+      "createFailed": "Nuk mund të konfirmohej krijimi i çelësit. Rifreskoni listën përpara se të provoni përsëri.",
       "createTitle": "Krijo çelës API",
       "creatorDeparted": "I larguar",
       "deleted": "Çelësi API u fshi",
@@ -24,6 +28,8 @@
         "creator": "Krijuar nga",
         "creatorDeparted": "{name} (larguar)",
         "ip": "Adresa IP",
+        "kind": "Çelësi i API-së",
+        "loading": "Po ngarkohet çelësi i API-së",
         "noRateLimit": "Joaktiv",
         "noRequests": "Nuk ka kërkesa në 90 ditët e fundit.",
         "rateLimit": "Kufiri i kërkesave",
@@ -80,13 +86,19 @@
         "scopes": "Lejet",
         "scopesRequired": "Zgjidhni të paktën një leje"
       },
+      "hideKey": "Fshih çelësin",
       "keyCopied": "Çelësi API u kopjua në kujtesën e fragmenteve",
+      "keyHidden": "Çelësi u fsheh",
       "lastUsed": "Përdorur për herë të fundit",
+      "loading": "Po ngarkohen çelësat e API-së",
       "name": "Emri",
       "neverExpires": "Nuk skadon kurrë",
       "noPermissions": "Pa leje",
       "prefix": "Prefiksi i çelësit",
       "prefixCopied": "Prefiksi i çelësit u kopjua",
+      "retryHelp": "Rifreskoni këtë listë për të konfirmuar çelësat aktualë. Të dhënat e ngarkuara më parë ruhen.",
+      "revealKey": "Shfaq çelësin",
+      "revokeUnknown": "Nuk mund të konfirmohej shfuqizimi. Rifreskoni listën përpara se të provoni përsëri.",
       "scopeLabel": {
         "absencesRead": "Lexo mungesat",
         "absencesReadHealth": "Lexo detajet shëndetësore të mungesës",
@@ -120,8 +132,12 @@
       "showWarningTitle": "E rëndësishme:",
       "status": "Statusi",
       "title": "Çelësat API",
+      "unavailable": "Çelësat e API-së nuk janë të disponueshëm",
+      "unavailableDescription": "Cilësimet tuaja nuk mund të ngarkoheshin. Riprovojeni për të rifreskuar këtë faqe.",
+      "unavailableTitle": "Qasja e zhvilluesit nuk është e disponueshme",
       "unknownCreator": "një ish-administrator",
       "updated": "Çelësi API u përditësua",
+      "updateUnknown": "Nuk mund të konfirmohej përditësimi. Rifreskoni këtë çelës përpara se të provoni përsëri.",
       "usage": "{count} nga {max} çelësa të përdorur"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "URL-të e paracaktuara",
         "defaultUrlsDescription": "Këto URL të menaxhuara nga platforma funksionojnë automatikisht pa konfigurim të personalizuar të DNS-së.",
         "deleteAria": "Fshij domenin e personalizuar {domain}",
+        "deleteConfirm": "Fshi domenin",
         "deleted": "Domeni u fshi",
         "deleteDescription": "A jeni i sigurt që dëshironi të fshini \"{domain}\"? Ky veprim nuk mund të zhbëhet. Përdoruesit nuk do të mund të identifikohen më përmes këtij domeni të personalizuar.",
         "deleteFailed": "Fshirja e domenit dështoi",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Lëreni bosh për të mbajtur çelësin ekzistues. Merrni çelësin tuaj API nga resend.com",
         "create": "Krijo konfigurimin",
         "delete": "Fshi konfigurimin",
-        "deleteConfirm": "A jeni i sigurt që dëshironi ta fshini këtë konfigurim të email-it?",
+        "deleteConfirmNamed": "Të fshihet konfigurimi i email-it për {fromEmail}? Email-et e organizatës do të përdorin përsëri dërguesin e paracaktuar të sistemit.",
         "deleted": "Konfigurimi i email-it u fshi",
         "deleteFailed": "Fshirja dështoi",
+        "deleteTitle": "Të fshihet konfigurimi i email-it?",
         "description": "Konfiguroni një ofrues të personalizuar të email-it për organizatën tuaj. Të gjithë email-et e organizatës do të përdorin këtë konfigurim në vend të parazgjedhjes së sistemit.",
         "fromEmail": "Email-i i dërguesit",
         "fromName": "Emri i dërguesit",
@@ -356,10 +374,9 @@
           "title": "Domeni"
         },
         "hero": {
-          "description": "Konfiguroni SSO-në, SCIM-in dhe zbatimin e detyrueshëm për organizatën {organizationId} me aktivizim të mbrojtur.",
-          "eyebrow": "Identiteti i ndërmarrjes",
           "title": "Lista e kontrollit të komandave operacionale"
         },
+        "progress": "{completed} nga {total} hapa të përfunduar",
         "provider": {
           "action": {
             "save": "Ruaj ofruesin"
@@ -453,7 +470,6 @@
           },
           "description": "Verifikimi SCIM përditësohet pasi ofruesi juaj i identitetit të dërgojë një ndryshim për përdoruesin ose grupin testues.",
           "dialog": {
-            "cancel": "Anulo",
             "decommission": {
               "description": "Kjo çaktivizon përgjithmonë provizionimin SCIM dhe veprimi nuk mund të zhbëhet.",
               "title": "Çaktivizo SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Dështoi fshirja e konfigurimit OAuth",
         "description": "Konfiguroni kredencialet tuaja OAuth për hyrje me rrjete sociale. Kjo u lejon përdoruesve tuaj të hyjnë duke përdorur aplikacionet OAuth të organizatës suaj në vend të kredencialeve të përbashkëta.",
         "developerConsole": "Konsola e zhvilluesve {provider}",
+        "editAria": "Modifiko hyrjen me {provider}",
         "editDescription": "Përditësoni kredencialet tuaja OAuth.",
         "editTitle": "Modifiko OAuth të {provider}",
         "empty": "Nuk është konfiguruar asnjë ofrues i personalizuar i OAuth-it social.",
@@ -616,9 +633,11 @@
         "keyId": "ID-ja e çelësit",
         "pasteYourP8PrivateKeyContents": "Ngjitni përmbajtjen e çelësit tuaj privat .p8",
         "privateKey": "Çelësi privat (.p8)",
+        "removeAria": "Hiq hyrjen me {provider}",
         "removed": "OAuth i {provider} u hoq",
         "removeDialogDescription": "A jeni i sigurt që dëshironi ta hiqni këtë konfigurim OAuth? Përdoruesit do të kalojnë te kredencialet e përbashkëta OAuth (nëse janë të disponueshme).",
         "removeDialogTitle": "Hiq ofruesin social OAuth",
+        "removeDialogTitleNamed": "Të hiqet hyrja me {provider}?",
         "teamId": "ID-ja e ekipit",
         "title": "Ofruesit e identifikimit social",
         "unverified": "E paverifikuar",
@@ -629,8 +648,9 @@
         "addError": "Shtimi i ofruesit SSO dështoi",
         "addSuccess": "Ofruesi SSO u shtua me sukses",
         "addTitle": "Shto ofrues SSO",
+        "deleteConfirm": "Fshi ofruesin",
         "deleteDialogDescription": "A jeni i sigurt që dëshironi ta fshini këtë ofrues SSO? Përdoruesit nuk do të mund të identifikohen më duke përdorur këtë ofrues identiteti.",
-        "deleteDialogTitle": "Fshi ofruesin SSO",
+        "deleteDialogTitleNamed": "Të fshihet ofruesi SSO {provider}?",
         "deleteError": "Fshirja e ofruesit SSO dështoi",
         "deleteProviderAria": "Fshi ofruesin SSO {provider}",
         "deleteSuccess": "Ofruesi SSO u fshi",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Përdoruesit me këtë domen emaili do të mund të përdorin SSO-në",
         "empty": "Ende nuk është konfiguruar asnjë ofrues SSO.",
         "emptyDescription": "Shtoni një ofrues OIDC për të aktivizuar identifikimin e njëhershëm (SSO) për ndërmarrje.",
+        "generateToken": "Gjenero token TXT",
         "guide": {
           "addDescription": "Ndiqni udhëzimet e konfigurimit të ofruesit tuaj, më pas lidheni atë me organizatën tuaj.",
           "afterSave": "Pas ruajtjes, verifikoni domenin e email-it tuaj me regjistrimin DNS TXT në Z8. Testoni hyrjen me një përdorues të synuar duke e mbajtur të hapur sesionin aktual të administratorit. Te Konfigurimi i udhëhequr, ruani të njëjtin ID ofruesi dhe domen email-i të shfaqur në listën e ofruesve, më pas regjistroni manualisht rezultatin e vëzhguar të hyrjes përpara se të merrni parasysh «Kërko SSO». Ruajtja dhe verifikimi i DNS-së nuk provojnë një hyrje të suksesshme.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Një identifikues unik për këtë ofrues (me shkronja të vogla, pa hapësira)",
         "providerIdInvalid": "ID-ja e ofruesit duhet të përmbajë vetëm shkronja të vogla, numra dhe viza lidhëse",
         "title": "Ofruesit e identitetit",
-        "token": "Token",
         "tokenError": "Gjenerimi i token-it të verifikimit të domenit dështoi",
         "tokenGenerated": "Token-i i verifikimit u gjenerua",
         "txtToken": "Tokeni TXT:",

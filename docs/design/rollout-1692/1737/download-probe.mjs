@@ -1,0 +1,16 @@
+import {readFile,readdir,copyFile,mkdir,writeFile} from 'node:fs/promises';import {spawn} from 'node:child_process';import {resolve,join} from 'node:path';
+const [profile]=process.argv.slice(2);if(!/agent-browser-chrome-[a-f0-9-]+$/.test(profile??''))throw Error('Only the verified own transient profile is accepted');
+const [port]=String(await readFile(join(profile,'DevToolsActivePort'))).trim().split(/\r?\n/);const version=await(await fetch(`http://127.0.0.1:${Number(port)}/json/version`)).json();
+const socket=new WebSocket(version.webSocketDebuggerUrl);await new Promise(done=>socket.addEventListener('open',done,{once:true}));let id=0;const calls=new Map(),events=[];socket.addEventListener('message',({data})=>{const m=JSON.parse(data);if(m.id){calls.get(m.id)?.(m);calls.delete(m.id);}else events.push(m);});
+function call(method,params){return new Promise((done,reject)=>{const n=++id;calls.set(n,m=>m.error?reject(Error(m.error.message)):done(m.result));socket.send(JSON.stringify({id:n,method,params}));});}
+const directory=resolve('.tmp/1737/downloads');await mkdir(directory,{recursive:true});await call('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:directory,eventsEnabled:true});
+const env={...process.env};for(const key of Object.keys(env))if(/^AGENT_BROWSER_(RESTORE|SESSION_NAME|STATE)/i.test(key))delete env[key];
+async function browser(args){return new Promise((done,reject)=>{const child=spawn('cmd.exe',['/d','/c','C:/Users/KaiHentschel/AppData/Local/pnpm/bin/agent-browser.cmd','--session','z8-1737-c46170e5',...args],{env,windowsHide:true,stdio:['ignore','pipe','pipe']});let output='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);child.once('exit',code=>code?reject(Error(output)):done(output));});}
+const results=[];
+for(const [label,extension]of [['CSV','csv'],['Excel','xlsx']]){
+ const snapshot=await browser(['snapshot','-i']);const ref=snapshot.match(new RegExp(`button "Export ${label}" \\[ref=(e\\d+)\\]`))?.[1];if(!ref)throw Error('Observed export button missing');events.length=0;await browser(['click',`@${ref}`]);
+ const deadline=Date.now()+15000;let progress;while(Date.now()<deadline){progress=events.find(e=>e.method==='Browser.downloadProgress'&&['completed','canceled'].includes(e.params.state));if(progress)break;await new Promise(done=>setTimeout(done,100));}
+ const begin=events.find(e=>e.method==='Browser.downloadWillBegin');if(progress?.params.state!=='completed')throw Error(`Actual ${extension} download ${progress?.params.state??'timed out'}`);
+ const filename=begin?.params.suggestedFilename;if(!filename||!filename.endsWith(`.${extension}`))throw Error('Unexpected filename');const target=resolve(`docs/design/rollout-1692/1737/actual.${extension}`);await copyFile(join(directory,filename),target);results.push({format:extension,state:'completed',suggestedFilename:filename,artifact:`actual.${extension}`,at:new Date().toISOString()});
+}
+await writeFile('docs/design/rollout-1692/1737/downloads.json',JSON.stringify({method:'Normal public export control click; own native Browser download events awaited to completed, then copied from exact owned directory. No cookies/state read.',results},null,2)+'\n');socket.close();console.log('Two actual browser downloads completed.');

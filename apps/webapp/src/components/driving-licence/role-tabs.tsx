@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { drivingLicenceRoles } from "@/lib/organization/driving-licence/visibility-rules";
 import { useLinkedTabs } from "./use-linked-tabs";
@@ -9,7 +10,11 @@ import { useLinkedTabs } from "./use-linked-tabs";
 type DrivingLicenceRoles = ReturnType<typeof drivingLicenceRoles>;
 
 export type DrivingLicenceRoleTab = keyof DrivingLicenceRoles;
-const ORDER: readonly DrivingLicenceRoleTab[] = ["myLicence", "checks", "planning"];
+const ORDER: readonly DrivingLicenceRoleTab[] = [
+	"myLicence",
+	"checks",
+	"planning",
+];
 /** `?tab=` values, so a tab can be linked to. */
 const PARAM: Record<DrivingLicenceRoleTab, string> = {
 	myLicence: "my-licence",
@@ -40,8 +45,14 @@ export function DrivingLicenceRoleTabs({
 	const { active, select, mounted } = useLinkedTabs(tabs, (tab) => PARAM[tab]);
 
 	return (
-		<div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-6 p-4 sm:p-6">
-			<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+		<div className="page-frame flex min-w-0 flex-col gap-6">
+			<PageHeader
+				title={title}
+				description={t(
+					"drivingLicence.page.scope",
+					"Driving authorization, original checks and planning in your active organization. Each view follows your current access.",
+				)}
+			/>
 			{tabs.length === 1 ? (
 				<div className="min-w-0">{panels[tabs[0]]}</div>
 			) : tabs.length > 1 ? (

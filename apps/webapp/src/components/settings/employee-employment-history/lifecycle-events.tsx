@@ -35,10 +35,10 @@ export function EmploymentLifecycleEvents({ employeeId }: { employeeId: string }
 
 	if (query.isError) {
 		return (
-			<Alert variant="destructive" role="alert">
+			<Alert variant="destructive" role="alert" className="[&>svg]:translate-y-2">
 				<IconAlertTriangle aria-hidden="true" />
 				<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-					<span>
+					<span className="py-1.5">
 						{t(
 							"settings.employmentHistory.lifecycleEvents.loadError",
 							"Deactivations and reactivations could not be loaded.",

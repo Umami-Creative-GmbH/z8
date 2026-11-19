@@ -18,12 +18,13 @@ import {
 	formatRecordedInstant,
 } from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { FinanceReadBoundary } from "./finance-read-boundary";
+import { readFinanceResult } from "./finance-read-result";
 import { PayrollRunNotice } from "./payroll-run-notice";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
 import { OverpaidOwnerNotice, SettlementAdjustmentLines } from "./settlement-adjustments";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
-
-const NOT_VISIBLE = "Not found";
+import { useFinanceReadScope } from "./use-finance-command";
 
 type SettlementViewer = SettlementAccountView["viewer"];
 type SettlementLine = SettlementAccount["summary"]["currencies"][number];
@@ -37,19 +38,43 @@ type SettlementEntry = SettlementAccount["entries"][number];
  */
 export function SettlementPanel({ source }: { source: SettlementSource }) {
 	const { t } = useTranslate();
-	const queryKey = queryKeys.travelExpenses.settlement(source.type, source.id);
-	const { data, isError, error, isFetching, refetch } = useQuery({
+	return (
+		<FinanceReadBoundary
+			loading={<SettlementLoading />}
+			errorMessage={t(
+				"travelExpenses.settlement.errors.load",
+				"Unable to load the reimbursement balance. Please retry.",
+			)}
+		>
+			<SettlementReader source={source} />
+		</FinanceReadBoundary>
+	);
+}
+
+function SettlementLoading() {
+	const { t } = useTranslate();
+	return (
+		<div>
+			<p className="sr-only">
+				{t("travelExpenses.settlement.loading", "Loading reimbursement balance…")}
+			</p>
+			<Skeleton aria-hidden="true" className="h-32 w-full" />
+		</div>
+	);
+}
+
+function SettlementReader({ source }: { source: SettlementSource }) {
+	const { t } = useTranslate();
+	const scope = useFinanceReadScope();
+	const queryKey = [...queryKeys.travelExpenses.settlement(source.type, source.id), scope];
+	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey,
-		queryFn: async (): Promise<SettlementAccountView | null> => {
-			const result = await getTravelExpenseSettlement(source);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-		retry: (count, failure) => failure.message !== NOT_VISIBLE && count < 2,
+		queryFn: () => readFinanceResult(getTravelExpenseSettlement(source)),
+		retry: (count) => count < 2,
 	});
 
+	if (data === null && !isError) return null;
 	if (isError && !data) {
-		if (error.message === NOT_VISIBLE) return null;
 		return (
 			<TravelExpenseLoadError
 				message={t(
@@ -64,16 +89,31 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 		);
 	}
 	if (!data) {
-		return (
-			<div>
-				<p className="sr-only">
-					{t("travelExpenses.settlement.loading", "Loading reimbursement balance…")}
-				</p>
-				<Skeleton aria-hidden="true" className="h-32 w-full" />
-			</div>
-		);
+		return <SettlementLoading />;
 	}
-	return <SettlementAccountCard source={source} queryKey={queryKey} data={data} />;
+	return (
+		<>
+			{isError && (
+				<TravelExpenseLoadError
+					message={t(
+						"travelExpenses.settlement.errors.refresh",
+						"The balance could not be refreshed. Previously loaded records are shown; retry before recording a payment.",
+					)}
+					retry={() => {
+						void refetch();
+					}}
+					isRetrying={isFetching}
+				/>
+			)}
+			<SettlementAccountCard
+				key={`${source.type}:${source.id}:${scope}`}
+				source={source}
+				queryKey={queryKey}
+				data={data}
+				available={!isError && !isFetching}
+			/>
+		</>
+	);
 }
 
 /** The loaded settlement: balance, recorded payments and, for finance, the record forms. */
@@ -81,10 +121,12 @@ function SettlementAccountCard({
 	source,
 	queryKey,
 	data,
+	available,
 }: {
 	source: SettlementSource;
 	queryKey: QueryKey;
 	data: SettlementAccountView;
+	available: boolean;
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -94,7 +136,11 @@ function SettlementAccountCard({
 	if (account.adjustmentOf) return null;
 
 	const settled = (next: SettlementAccount | null) => {
-		if (next) queryClient.setQueryData(queryKey, { ...data, account: next });
+		if (next) {
+			queryClient.setQueryData<SettlementAccountView | null>(queryKey, (current) =>
+				current ? { ...current, account: next } : current,
+			);
+		}
 		void queryClient.invalidateQueries({ queryKey: ["travel-expenses", "settlement"] });
 		void queryClient.invalidateQueries({ queryKey: ["travel-expenses", "finance"] });
 	};
@@ -122,14 +168,21 @@ function SettlementAccountCard({
 						<PayrollRunNotice
 							reportId={source.id}
 							run={account.payrollRun}
-							canRemove={canSettle}
+							canRemove={canSettle && available}
 							onRemoved={() => settled(null)}
 						/>
 					)}
 
 					{/* An included report is paid with its payroll run (#852); nothing else is recorded. */}
 					{viewer === "finance" && canSettle && account.approved && !account.payrollRun && (
-						<RecordReimbursementForms source={source} account={account} onSettled={settled} />
+						<fieldset disabled={!available} className="min-w-0">
+							<RecordReimbursementForms
+								source={source}
+								account={account}
+								onSettled={settled}
+								available={available}
+							/>
+						</fieldset>
 					)}
 				</CardContent>
 			</Card>
@@ -312,10 +365,12 @@ function RecordReimbursementForms({
 	source,
 	account,
 	onSettled,
+	available,
 }: {
 	source: SettlementSource;
 	account: SettlementAccount;
 	onSettled: (next: SettlementAccount | null) => void;
+	available: boolean;
 }) {
 	return (
 		<>
@@ -323,7 +378,8 @@ function RecordReimbursementForms({
 				.filter((line) => line.state !== "settled" && line.currency === account.currency)
 				.map((line) => (
 					<RecordReimbursementForm
-						key={`${line.currency}:${line.balance}`}
+						key={line.currency}
+						available={available}
 						source={source}
 						line={line}
 						onSettled={onSettled}

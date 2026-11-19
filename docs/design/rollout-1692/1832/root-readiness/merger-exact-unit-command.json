@@ -1,0 +1,31 @@
+{
+    "name":  "exact-unit",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "sourceHead":  "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+    "env":  {
+                "pnpm_config_verify_deps_before_run":  "false"
+            },
+    "argv":  [
+                 "pnpm",
+                 "--config.verify-deps-before-run=false",
+                 "--filter",
+                 "webapp",
+                 "exec",
+                 "vitest",
+                 "run",
+                 "--project",
+                 "unit",
+                 "--maxWorkers",
+                 "1",
+                 "src/app/[locale]/onboarding",
+                 "src/components/onboarding/progress-indicator.test.tsx",
+                 "src/lib/effect/services/onboarding.service.test.ts",
+                 "src/lib/validations/onboarding.test.ts",
+                 "src/tolgee/extracted-key-defaults.test.ts",
+                 "--reporter=json",
+                 "--outputFile",
+                 "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1832-audit\\exact-unit.json"
+             ],
+    "started":  "2026-11-15T22:02:44.7345446Z",
+    "exitCode":  0
+}

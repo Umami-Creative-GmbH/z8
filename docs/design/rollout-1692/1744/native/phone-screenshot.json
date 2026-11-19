@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":11729442066964177753},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"path\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-831adb4b-b944467c4c43355c\\\\docs\\\\design\\\\rollout-1692\\\\1744\\\\native\\\\phone.png\"},\"error\":null}\n",
+  "err": ""
+}

@@ -1,0 +1,298 @@
+{
+  "state": "SEALED_FIXED_GIT",
+  "source": "87b431bd6116ab90aed9d822db835dc78107bffb",
+  "tree": "ba5a7bec6d0fe7feaedcf7b2d93da359e3a41593",
+  "incoming": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
+  "incomingTree": "6889454bdba84c0e3a35184d6f89ba449ceece62",
+  "incomingParents": [
+    "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+    "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf"
+  ],
+  "historical": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+  "rootCorrection": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
+  "rootCorrectionIntegration": "4769c5f1a5daba7e87f81b6cc3f8cdffd865732c",
+  "rootCorrectionIntegrationTree": "ac549e6d43125d71ee0481ef5432aa451c05f62b",
+  "latestDirectlyVerified": "8e3876c39725b7a8ef5218439766395401d64b80",
+  "incomingPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+    "apps/webapp/src/components/personnel-file/due-for-deletion-heading.tsx",
+    "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+    "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "apps/webapp/src/lib/personnel-file/retention.integration.test.ts"
+  ],
+  "rootChangedPaths": [
+    "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+    "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx"
+  ],
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "raw": "c897e353391aa3401269a259b47a5b31f7c2d5015238edd39563b0bf321836ac",
+      "lf": "c9052b9de4c70dc09a2f50f1743d58d0b21b4630638efd1e40ffb8b635687ad6",
+      "gitBlob": "a3ee0e13aec04307ad7caba8eaec1ac534fd1eae",
+      "snapshot": "source-snapshots/0.source",
+      "gitBytes": 2832,
+      "gitSha256": "c9052b9de4c70dc09a2f50f1743d58d0b21b4630638efd1e40ffb8b635687ad6",
+      "gitLfSha256": "c9052b9de4c70dc09a2f50f1743d58d0b21b4630638efd1e40ffb8b635687ad6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "raw": "a441d7b061dd28eae958da7ec446b85a133886b1141f8d74e0009e1eab96fdd5",
+      "lf": "2753124b4df7a9cb83c58ac8b5fed7d89480a1bcfffddac907f881ec0521b602",
+      "gitBlob": "3ff90a6f102cb40ca6b5cf40b585221e7e3d3186",
+      "snapshot": "source-snapshots/1.source",
+      "gitBytes": 2542,
+      "gitSha256": "2753124b4df7a9cb83c58ac8b5fed7d89480a1bcfffddac907f881ec0521b602",
+      "gitLfSha256": "2753124b4df7a9cb83c58ac8b5fed7d89480a1bcfffddac907f881ec0521b602"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+      "raw": "d205ed4f0864143a186b73c91137c1041825701ef59e970340b149988d586669",
+      "lf": "0bf17a4ad9b7e6c957f9b40413f34ef68da2a9bb14b44af751714c708f4ebbb7",
+      "gitBlob": "96c5c45e195e67403040192952b909777833b28d",
+      "snapshot": "source-snapshots/2.source",
+      "gitBytes": 3870,
+      "gitSha256": "0bf17a4ad9b7e6c957f9b40413f34ef68da2a9bb14b44af751714c708f4ebbb7",
+      "gitLfSha256": "0bf17a4ad9b7e6c957f9b40413f34ef68da2a9bb14b44af751714c708f4ebbb7"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-heading.tsx",
+      "raw": "f84d23b92178efae714289f8f9a5134fb012a2c45b9f055fdaf5df0697c325b0",
+      "lf": "502e9e65cc2b14fda9cec8c63142d68a816b3fc427d0398363580f4990449962",
+      "gitBlob": "d67bef8d9f89638ac3fa3551247a28cc10a033a5",
+      "snapshot": "source-snapshots/3.source",
+      "gitBytes": 359,
+      "gitSha256": "502e9e65cc2b14fda9cec8c63142d68a816b3fc427d0398363580f4990449962",
+      "gitLfSha256": "502e9e65cc2b14fda9cec8c63142d68a816b3fc427d0398363580f4990449962"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "raw": "2661241ef4abedafceb935aec3fc30ce1de83bd558cc16e1cabc98a22338eeb3",
+      "lf": "645bf1660ea0409c7bab3df7c1aca7826348581ccd0b8b13fbf8d45b45c762a7",
+      "gitBlob": "3d5e6f8554d08ed9686c215a6845cbab2f4cb26f",
+      "snapshot": "source-snapshots/4.source",
+      "gitBytes": 12946,
+      "gitSha256": "645bf1660ea0409c7bab3df7c1aca7826348581ccd0b8b13fbf8d45b45c762a7",
+      "gitLfSha256": "645bf1660ea0409c7bab3df7c1aca7826348581ccd0b8b13fbf8d45b45c762a7"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+      "raw": "08826aa7372c010f070dc7f73b27c9b0d4780cb54443b672b1cb2e17c81de086",
+      "lf": "160e1f6e11bc43e94ec6298594fe63f2edf26171de835a2ccbdd0cf7385a3b42",
+      "gitBlob": "33f8e0e5b54db24bbb89d8c02034eb9f79d90b24",
+      "snapshot": "source-snapshots/5.source",
+      "gitBytes": 20640,
+      "gitSha256": "160e1f6e11bc43e94ec6298594fe63f2edf26171de835a2ccbdd0cf7385a3b42",
+      "gitLfSha256": "160e1f6e11bc43e94ec6298594fe63f2edf26171de835a2ccbdd0cf7385a3b42"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "ccbddb866cc559fade83fa503c8315d50f4fcd7eafe568b6288579a6c236cc8f",
+      "lf": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6",
+      "gitBlob": "3cfa371a6d1f17170682c8e863fe4d33e3dcb908",
+      "snapshot": "source-snapshots/6.source",
+      "gitBytes": 6985,
+      "gitSha256": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6",
+      "gitLfSha256": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention.integration.test.ts",
+      "raw": "78cc9a7126c3aeadf419d86ceefdbe7e5e63bf1f5ebed7f57a50faf02b6c984c",
+      "lf": "6e55ff67a8f726ae1163a9dbcb84b11d4d304fc111bcf26b703c11ac8d8ddd40",
+      "gitBlob": "c39eec03c6e4822e8d4deb5214d8ae1aaae09959",
+      "snapshot": "source-snapshots/7.source",
+      "gitBytes": 32357,
+      "gitSha256": "6e55ff67a8f726ae1163a9dbcb84b11d4d304fc111bcf26b703c11ac8d8ddd40",
+      "gitLfSha256": "6e55ff67a8f726ae1163a9dbcb84b11d4d304fc111bcf26b703c11ac8d8ddd40"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "raw": "5806affd7573ed901211af63b06e156066c6cd1550b4c3fc567fe12f1c15781a",
+      "lf": "cf148cf379cd0379f6bddd1a465d520bb1e0588ae526ba9378ae3faefbdf4f52",
+      "gitBlob": "da57c561f339fd39479b7cb07d1fcff0ec656110",
+      "snapshot": "source-snapshots/8.source",
+      "gitBytes": 9048,
+      "gitSha256": "cf148cf379cd0379f6bddd1a465d520bb1e0588ae526ba9378ae3faefbdf4f52",
+      "gitLfSha256": "cf148cf379cd0379f6bddd1a465d520bb1e0588ae526ba9378ae3faefbdf4f52"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention-store.ts",
+      "raw": "f68227029b3d9efbab65c0aef35155aea09c1d2c387419e95c310d88272bcbde",
+      "lf": "21e2577f9f9156ce2d4fa108a221dd2f382fe5993e018db8c41a45bd6c427364",
+      "gitBlob": "c8faf87a7141d0fb06356e5fd0dbcbdfab5cd2b1",
+      "snapshot": "source-snapshots/9.source",
+      "gitBytes": 17848,
+      "gitSha256": "21e2577f9f9156ce2d4fa108a221dd2f382fe5993e018db8c41a45bd6c427364",
+      "gitLfSha256": "21e2577f9f9156ce2d4fa108a221dd2f382fe5993e018db8c41a45bd6c427364"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention.ts",
+      "raw": "9c1fe69ce7f2de3007fc9a72ed05028545ec320b78fe14d022a283ee3592ae11",
+      "lf": "60b380628a5140d592a567d3d6006f655e6a7785582354416560edc5364f20cd",
+      "gitBlob": "eb2dc0e9d616179f13e392551520137e88ee4f35",
+      "snapshot": "source-snapshots/10.source",
+      "gitBytes": 3490,
+      "gitSha256": "60b380628a5140d592a567d3d6006f655e6a7785582354416560edc5364f20cd",
+      "gitLfSha256": "60b380628a5140d592a567d3d6006f655e6a7785582354416560edc5364f20cd"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/current-access.ts",
+      "raw": "100a6dd200b71db2c30089086cecaea28c9196add2b5355cc919aff8de124792",
+      "lf": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9",
+      "gitBlob": "6c6c064f6bb02ee4f65c0885df0457c0a46333d0",
+      "snapshot": "source-snapshots/11.source",
+      "gitBytes": 1169,
+      "gitSha256": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9",
+      "gitLfSha256": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+      "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+      "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+      "gitBlob": "4a43fb54cfd7e58d04f1a1bb8056f12597f4e9b5",
+      "snapshot": "source-snapshots/12.source",
+      "gitBytes": 13740,
+      "gitSha256": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+      "gitLfSha256": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/upload-ledger.ts",
+      "raw": "19d578d0da8f2bf5afaec5a7e74f002531d7f897d16946f1017d15b0217b5e49",
+      "lf": "ef76fe9ba005f9de3cc43e73433206b3f15cdc30e46358fde3cba4941929682a",
+      "gitBlob": "7cda8bde88c5054870ef4c2f3e3fb02878dcf62d",
+      "snapshot": "source-snapshots/13.source",
+      "gitBytes": 9858,
+      "gitSha256": "ef76fe9ba005f9de3cc43e73433206b3f15cdc30e46358fde3cba4941929682a",
+      "gitLfSha256": "ef76fe9ba005f9de3cc43e73433206b3f15cdc30e46358fde3cba4941929682a"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/audit.ts",
+      "raw": "59fd4772981f1f650716202507c95f57c86d69a8469dc39fd6003f4e7ba173f8",
+      "lf": "8f932d5626aa12ae303d5fe0c14144a5f0e0a9c790db96f437bfa3b9c3649c36",
+      "gitBlob": "62d680f1c046db6e14932777bea141a2a6a440ac",
+      "snapshot": "source-snapshots/14.source",
+      "gitBytes": 10873,
+      "gitSha256": "8f932d5626aa12ae303d5fe0c14144a5f0e0a9c790db96f437bfa3b9c3649c36",
+      "gitLfSha256": "8f932d5626aa12ae303d5fe0c14144a5f0e0a9c790db96f437bfa3b9c3649c36"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/audit-minimisation.ts",
+      "raw": "a2302e8f6b8825047416623d90eb2935390eb58ab346b55241354a4cd2fa3333",
+      "lf": "01ea6777dd22f32f1fd283e31de9f7d928c9eb5ce63a91b00cb2643208954ca3",
+      "gitBlob": "7fc62443127e8c65e21b00f994e01b4b57c1f868",
+      "snapshot": "source-snapshots/15.source",
+      "gitBytes": 7077,
+      "gitSha256": "01ea6777dd22f32f1fd283e31de9f7d928c9eb5ce63a91b00cb2643208954ca3",
+      "gitLfSha256": "01ea6777dd22f32f1fd283e31de9f7d928c9eb5ce63a91b00cb2643208954ca3"
+    },
+    {
+      "path": "scripts/performance/fixture.mjs",
+      "raw": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+      "lf": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "gitBlob": "0b79ab082c1a7f49c07510b711067fd5bf987d65",
+      "snapshot": "source-snapshots/16.source",
+      "gitBytes": 27101,
+      "gitSha256": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "gitLfSha256": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4"
+    }
+  ],
+  "configs": [
+    {
+      "path": ".npmrc",
+      "snapshot": "config-snapshots/0.config",
+      "raw": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "snapshot": "config-snapshots/1.config",
+      "raw": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "snapshot": "config-snapshots/2.config",
+      "raw": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "snapshot": "config-snapshots/3.config",
+      "raw": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "snapshot": "config-snapshots/4.config",
+      "raw": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "snapshot": "config-snapshots/5.config",
+      "raw": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "snapshot": "config-snapshots/6.config",
+      "raw": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "snapshot": "config-snapshots/7.config",
+      "raw": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "snapshot": "config-snapshots/8.config",
+      "raw": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc"
+    },
+    {
+      "path": "package.json",
+      "snapshot": "config-snapshots/9.config",
+      "raw": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "snapshot": "config-snapshots/10.config",
+      "raw": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "snapshot": "config-snapshots/11.config",
+      "raw": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "path": "node_modules/.modules.yaml",
+      "snapshot": "config-snapshots/12.config",
+      "raw": "e8d58c3826da6034c257da4c8e55991b6c2a6c285d9377305e4461e5d5304d4d"
+    },
+    {
+      "path": "node_modules/.pnpm/lock.yaml",
+      "snapshot": "config-snapshots/13.config",
+      "raw": "39e4cc0bf8792f5fc5f714c03ff83f31a579ced56f8fe9f27febcedfc7e41f01"
+    }
+  ],
+  "routeInventory": {
+    "path": "docs/design/rollout-1692/route-inventory.json",
+    "gitBlob": "f2b4e27b49ac8eb9160b5bc628722693a56ade2c",
+    "counts": {
+      "persistentPages": 153,
+      "redirectAliases": 19,
+      "sourcePageTemplates": 172,
+      "aliasTemplatesUnchangedFromInitialDev": 19
+    },
+    "initialDev": "2dd336ccfe3b7fb084263eca6c2360df5e58bfa7"
+  },
+  "baselineControl": {
+    "path": "merger/baseline-due-for-deletion-list.tsx",
+    "ref": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+    "sourcePath": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+    "gitBlob": "745f8c461de99707f92676734d09916c58e7e3e8",
+    "adaptation": {
+      "from": "\"./document-labels\"",
+      "to": "\"../../document-labels\""
+    },
+    "sha256": "ba10860e2271869a634d93246e8f9bc774a3665dc9453d8475735a75fc1213c4"
+  },
+  "provenance": "Final committed bytes are pinned. Red/first-green stages had no separate commit or hash seal; no intermediate pins or reconstructed raw exit records are invented."
+}

@@ -1,0 +1,770 @@
+{
+  "phase": "before",
+  "source": {
+    "head": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+        "raw": "3a35295b57b69024f11fa766bc5d2743169239388b1f33659a761ec655061639",
+        "lf": "3a35295b57b69024f11fa766bc5d2743169239388b1f33659a761ec655061639"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+        "raw": "af7417bb04e1e4dfeeb69d5f04a91a4ab77cb5efb1bbb755ec6b5abe0203cdff",
+        "lf": "af7417bb04e1e4dfeeb69d5f04a91a4ab77cb5efb1bbb755ec6b5abe0203cdff"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+        "raw": "5ec5e01a124a394eacdb77e929ac8749c711516f9d2d1b6a37587a7a2d484852",
+        "lf": "5ec5e01a124a394eacdb77e929ac8749c711516f9d2d1b6a37587a7a2d484852"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+        "raw": "30b774d94a76adb86304d72d1671c9a6064033c31d24039440373e17407f6107",
+        "lf": "30b774d94a76adb86304d72d1671c9a6064033c31d24039440373e17407f6107"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+        "raw": "561bc1bb1b19a8991b019cf8fd11b50265c231ee98616f1f55972d5ce577c469",
+        "lf": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+        "raw": "6fb33d5f71126079245c64b42672b62c72739c59debc9398e707f1393e1f6509",
+        "lf": "b6240274c74cd80cd6cfaa92af891ecca0b9ea23555d58e14a9cc74d01beb598"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+        "raw": "eef86fdc7dc6b81ab19090f7edfab7f4f6f1740b10fcd6027cb7b029c328a017",
+        "lf": "eef86fdc7dc6b81ab19090f7edfab7f4f6f1740b10fcd6027cb7b029c328a017"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+        "raw": "9972405860dd356b001d304081c3c384435a27bd2490aa972a404d216228d838",
+        "lf": "9972405860dd356b001d304081c3c384435a27bd2490aa972a404d216228d838"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045",
+        "lf": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "ba1a0933d1e89efabb69ae70530439b9dbdd1ce223965a61fe24e0a5e9f7f10d"
+  },
+  "qualification": "Partial application boundary: only exact existing cab40dcbb6ea69cefb7aa919228298a881a66060 consumer files changed for 1729 are historical; all other framework, shared foundations, dependencies and unused new helpers remain current.",
+  "captures": [
+    {
+      "file": "matched-before-desktop.png",
+      "sha256": "05c83eb1c06672df79b13ecf7143e4531d45108cc56d15b6d3652f4a562ce05c",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 337,
+          "y": 22,
+          "width": 757.140625,
+          "height": 20,
+          "top": 22,
+          "right": 1094.140625,
+          "bottom": 42,
+          "left": 337
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 337,
+          "y": 22,
+          "width": 757.140625,
+          "height": 20,
+          "top": 22,
+          "right": 1094.140625,
+          "bottom": 42,
+          "left": 337
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "matched-before-phone.png",
+      "sha256": "109a60c4e6614077817d4a6929a570eca07de466648dc672af8e12d25f678f94",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 44,
+          "y": 22,
+          "width": 210,
+          "height": 20,
+          "top": 22,
+          "right": 254,
+          "bottom": 42,
+          "left": 44
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 44,
+          "y": 22,
+          "width": 210,
+          "height": 20,
+          "top": 22,
+          "right": 254,
+          "bottom": 42,
+          "left": 44
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "matched-before-wide-dark.png",
+      "sha256": "b23d3a97c530173210953321c30a106d012adf61dcdc07bedaf2f785c46846a4",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 337,
+          "y": 22,
+          "width": 1635.34375,
+          "height": 20,
+          "top": 22,
+          "right": 1972.34375,
+          "bottom": 42,
+          "left": 337
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 2144,
+          "height": 1200,
+          "top": 0,
+          "right": 2400,
+          "bottom": 1200,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1200,
+          "top": 0,
+          "right": 256,
+          "bottom": 1200,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 337,
+          "y": 22,
+          "width": 1635.34375,
+          "height": 20,
+          "top": 22,
+          "right": 1972.34375,
+          "bottom": 42,
+          "left": 337
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 2144,
+          "height": 1200,
+          "top": 0,
+          "right": 2400,
+          "bottom": 1200,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1200,
+          "top": 0,
+          "right": 256,
+          "bottom": 1200,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ],
+      "theme": "bprogress-busy dark",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    }
+  ],
+  "stability": [
+    {
+      "name": "desktop",
+      "samples": [
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 757.140625,
+            "height": 20,
+            "top": 22,
+            "right": 1094.140625,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1000,
+            "top": 0,
+            "right": 256,
+            "bottom": 1000,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 3
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 757.140625,
+            "height": 20,
+            "top": 22,
+            "right": 1094.140625,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1000,
+            "top": 0,
+            "right": 256,
+            "bottom": 1000,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 757.140625,
+            "height": 20,
+            "top": 22,
+            "right": 1094.140625,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1000,
+            "top": 0,
+            "right": 256,
+            "bottom": 1000,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 2
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 757.140625,
+            "height": 20,
+            "top": 22,
+            "right": 1094.140625,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1000,
+            "top": 0,
+            "right": 256,
+            "bottom": 1000,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 757.140625,
+            "height": 20,
+            "top": 22,
+            "right": 1094.140625,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1000,
+            "top": 0,
+            "right": 256,
+            "bottom": 1000,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 2
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 757.140625,
+            "height": 20,
+            "top": 22,
+            "right": 1094.140625,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1000,
+            "top": 0,
+            "right": 256,
+            "bottom": 1000,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 0
+        }
+      ],
+      "boundedWait": 60,
+      "qualification": "Persistent Next/Pets overlays retained. Baseline early/clipped heading geometry, when present, is recorded without changing application CSS."
+    },
+    {
+      "name": "phone",
+      "samples": [
+        {
+          "heading": {
+            "x": 44,
+            "y": 22,
+            "width": 210,
+            "height": 20,
+            "top": 22,
+            "right": 254,
+            "bottom": 42,
+            "left": 44
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 44,
+            "y": 22,
+            "width": 210,
+            "height": 20,
+            "top": 22,
+            "right": 254,
+            "bottom": 42,
+            "left": 44
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 44,
+            "y": 22,
+            "width": 210,
+            "height": 20,
+            "top": 22,
+            "right": 254,
+            "bottom": 42,
+            "left": 44
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 44,
+            "y": 22,
+            "width": 210,
+            "height": 20,
+            "top": 22,
+            "right": 254,
+            "bottom": 42,
+            "left": 44
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 44,
+            "y": 22,
+            "width": 210,
+            "height": 20,
+            "top": 22,
+            "right": 254,
+            "bottom": 42,
+            "left": 44
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 1
+        },
+        {
+          "heading": {
+            "x": 44,
+            "y": 22,
+            "width": 210,
+            "height": 20,
+            "top": 22,
+            "right": 254,
+            "bottom": 42,
+            "left": 44
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 0
+        }
+      ],
+      "boundedWait": 60,
+      "qualification": "Persistent Next/Pets overlays retained. Baseline early/clipped heading geometry, when present, is recorded without changing application CSS."
+    },
+    {
+      "name": "wide-dark",
+      "samples": [
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 1635.34375,
+            "height": 20,
+            "top": 22,
+            "right": 1972.34375,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1200,
+            "top": 0,
+            "right": 256,
+            "bottom": 1200,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 4422
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 1635.34375,
+            "height": 20,
+            "top": 22,
+            "right": 1972.34375,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1200,
+            "top": 0,
+            "right": 256,
+            "bottom": 1200,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 0
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 1635.34375,
+            "height": 20,
+            "top": 22,
+            "right": 1972.34375,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1200,
+            "top": 0,
+            "right": 256,
+            "bottom": 1200,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 0
+        },
+        {
+          "heading": {
+            "x": 337,
+            "y": 22,
+            "width": 1635.34375,
+            "height": 20,
+            "top": 22,
+            "right": 1972.34375,
+            "bottom": 42,
+            "left": 337
+          },
+          "sidebar": {
+            "x": 0,
+            "y": 0,
+            "width": 256,
+            "height": 1200,
+            "top": 0,
+            "right": 256,
+            "bottom": 1200,
+            "left": 0
+          },
+          "fonts": "loaded",
+          "toasts": 0,
+          "finiteAnimations": 0
+        }
+      ],
+      "boundedWait": 60,
+      "qualification": "Persistent Next/Pets overlays retained. Baseline early/clipped heading geometry, when present, is recorded without changing application CSS."
+    }
+  ],
+  "errors": [],
+  "records": [
+    "Medical note\nSick note\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+    "Employment record\nOther\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)",
+    "Safety qualification\nCertificate\nShared\n\nJan 15, 2026 · fixture.pdf (10 B)"
+  ],
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:56761\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_routes",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"appRouter\": [\n    \"/[locale]\",\n    \"/[locale]/absences\",\n    \"/[locale]/accept-invitation/[invitationId]\",\n    \"/[locale]/analytics\",\n    \"/[locale]/analytics/overtime-burn-down\",\n    \"/[locale]/analytics/team-performance\",\n    \"/[locale]/analytics/vacation-trends\",\n    \"/[locale]/analytics/work-hours\",\n    \"/[locale]/approvals\",\n    \"/[locale]/approvals/deputy-decisions/[absenceId]\",\n    \"/[locale]/approvals/inbox\",\n    \"/[locale]/approvals/review/[organizationId]/[kind]/[id]\",\n    \"/[locale]/billing/suspended\",\n    \"/[locale]/calendar\",\n    \"/[locale]/calendar/[employeeId]\",\n    \"/[locale]/compliance\",\n    \"/[locale]/driving-licence\",\n    \"/[locale]/driving-licence/checks/[employee]\",\n    \"/[locale]/equipment\",\n    \"/[locale]/equipment/assignments/[assignmentId]\",\n    \"/[locale]/equipment/employees/[employeeId]\",\n    \"/[locale]/forgot-password\",\n    \"/[locale]/init\",\n    \"/[locale]/join/[code]\",\n    \"/[locale]/kiosk\",\n    \"/[locale]/licenses\",\n    \"/[locale]/mfa\",\n    \"/[locale]/my-documents\",\n    \"/[locale]/my-equipment\",\n    \"/[locale]/my-requests\",\n    \"/[locale]/notifications\",\n    \"/[locale]/onboarding/complete\",\n    \"/[locale]/onboarding/notifications\",\n    \"/[locale]/onboarding/organization\",\n    \"/[locale]/onboarding/profile\",\n    \"/[locale]/onboarding/vacation-policy\",\n    \"/[locale]/onboarding/welcome\",\n    \"/[locale]/onboarding/wellness\",\n    \"/[locale]/onboarding/work-schedule\",\n    \"/[locale]/onboarding/work-templates\",\n    \"/[locale]/organization\",\n    \"/[locale]/payroll\",\n    \"/[locale]/payroll/work-balances\",\n    \"/[locale]/payroll/work-balances/[employeeId]\",\n    \"/[locale]/personnel-files\",\n    \"/[locale]/personnel-files/[employeeId]\",\n    \"/[locale]/personnel-files/document-requests\",\n    \"/[locale]/personnel-files/due-for-deletion\",\n    \"/[locale]/personnel-files/payslip-batches\",\n    \"/[locale]/personnel-files/payslip-batches/[batchId]\",\n    \"/[locale]/personnel-files/sick-leave\",\n    \"/[locale]/platform-admin\",\n    \"/[locale]/platform-admin/analytics\",\n    \"/[locale]/platform-admin/billing\",\n    \"/[locale]/platform-admin/diagnostics\",\n    \"/[locale]/platform-admin/organizations\",\n    \"/[locale]/platform-admin/settings\",\n    \"/[locale]/platform-admin/system-email-templates\",\n    \"/[locale]/platform-admin/users\",\n    \"/[locale]/platform-admin/worker-queue\",\n    \"/[locale]/reports\",\n    \"/[locale]/reports/projects\",\n    \"/[locale]/reports/vehicles\",\n    \"/[locale]/reset-password\",\n    \"/[locale]/scheduling\",\n    \"/[locale]/settings\",\n    \"/[locale]/settings/approval-escalation\",\n    \"/[locale]/settings/approval-policies\",\n    \"/[locale]/settings/audit-export\",\n    \"/[locale]/settings/audit-log\",\n    \"/[locale]/settings/avv\",\n    \"/[locale]/settings/billable-time\",\n    \"/[locale]/settings/billable-time/accounting\",\n    \"/[locale]/settings/billable-time/cost-rates\",\n    \"/[locale]/settings/billable-time/hand-off\",\n    \"/[locale]/settings/billable-time/rates\",\n    \"/[locale]/settings/billing\",\n    \"/[locale]/settings/calendar\",\n    \"/[locale]/settings/change-policies\",\n    \"/[locale]/settings/clocking\",\n    \"/[locale]/settings/clockodo-import\",\n    \"/[locale]/settings/closed-months\",\n    \"/[locale]/settings/compliance\",\n    \"/[locale]/settings/compliance/works-council\",\n    \"/[locale]/settings/coverage-rules\",\n    \"/[locale]/settings/custom-fields\",\n    \"/[locale]/settings/customers\",\n    \"/[locale]/settings/demo\",\n    \"/[locale]/settings/discord\",\n    \"/[locale]/settings/driving-licence\",\n    \"/[locale]/settings/email-templates\",\n    \"/[locale]/settings/employees\",\n    \"/[locale]/settings/employees/[employeeId]\",\n    \"/[locale]/settings/employees/new\",\n    \"/[locale]/settings/enterprise\",\n    \"/[locale]/settings/enterprise/api-keys\",\n    \"/[locale]/settings/enterprise/api-keys/[keyId]\",\n    \"/[locale]/settings/enterprise/audit-log\",\n    \"/[locale]/settings/enterprise/branding\",\n    \"/[locale]/settings/enterprise/domains\",\n    \"/[locale]/settings/enterprise/email\",\n    \"/[locale]/settings/enterprise/identity-setup\",\n    \"/[locale]/settings/enterprise/sso\",\n    \"/[locale]/settings/equipment\",\n    \"/[locale]/settings/export\",\n    \"/[locale]/settings/export-operations\",\n    \"/[locale]/settings/export/history/[organizationId]\",\n    \"/[locale]/settings/holidays\",\n    \"/[locale]/settings/implementation-checklist\",\n    \"/[locale]/settings/import\",\n    \"/[locale]/settings/import/[batchId]\",\n    \"/[locale]/settings/kiosks\",\n    \"/[locale]/settings/locations\",\n    \"/[locale]/settings/locations/[locationId]\",\n    \"/[locale]/settings/my-data\",\n    \"/[locale]/settings/notification-channels\",\n    \"/[locale]/settings/notifications\",\n    \"/[locale]/settings/organization\",\n    \"/[locale]/settings/organizations\",\n    \"/[locale]/settings/payroll-access\",\n    \"/[locale]/settings/payroll-export\",\n    \"/[locale]/settings/payroll-readiness\",\n    \"/[locale]/settings/permissions\",\n    \"/[locale]/settings/personnel-files\",\n    \"/[locale]/settings/position-capture\",\n    \"/[locale]/settings/position-stamps\",\n    \"/[locale]/settings/profile\",\n    \"/[locale]/settings/projects\",\n    \"/[locale]/settings/report-share-links\",\n    \"/[locale]/settings/roles\",\n    \"/[locale]/settings/scheduled-exports\",\n    \"/[locale]/settings/security\",\n    \"/[locale]/settings/shifts\",\n    \"/[locale]/settings/skills\",\n    \"/[locale]/settings/slack\",\n    \"/[locale]/settings/statistics\",\n    \"/[locale]/settings/surcharges\",\n    \"/[locale]/settings/teams\",\n    \"/[locale]/settings/teams-notifications\",\n    \"/[locale]/settings/teams/[teamId]\",\n    \"/[locale]/settings/telegram\",\n    \"/[locale]/settings/travel-expenses\",\n    \"/[locale]/settings/vacation\",\n    \"/[locale]/settings/vacation/employees\",\n    \"/[locale]/settings/vacation/employees/[employeeId]\",\n    \"/[locale]/settings/vehicle-use\",\n    \"/[locale]/settings/vehicles\",\n    \"/[locale]/settings/webhooks\",\n    \"/[locale]/settings/wellness\",\n    \"/[locale]/settings/work-categories\",\n    \"/[locale]/settings/work-diagnostics\",\n    \"/[locale]/settings/work-policies\",\n    \"/[locale]/setup\",\n    \"/[locale]/share/[token]\",\n    \"/[locale]/sign-in\",\n    \"/[locale]/sign-up\",\n    \"/[locale]/team\",\n    \"/[locale]/team/absences\",\n    \"/[locale]/team/driving\",\n    \"/[locale]/team/period-submissions\",\n    \"/[locale]/team/presence\",\n    \"/[locale]/team/presence/[locationId]\",\n    \"/[locale]/time-tracking\",\n    \"/[locale]/today\",\n    \"/[locale]/travel-expenses\",\n    \"/[locale]/travel-expenses/[claimId]\",\n    \"/[locale]/travel-expenses/finance\",\n    \"/[locale]/travel-expenses/reports/[reportId]\",\n    \"/[locale]/verify-2fa\",\n    \"/[locale]/verify-email\",\n    \"/[locale]/verify-email-pending\",\n    \"/[locale]/works-council\",\n    \"/[locale]/works-council/export\",\n    \"/api/analytics/export\",\n    \"/api/app-version\",\n    \"/api/approvals/inbox\",\n    \"/api/approvals/inbox/[id]\",\n    \"/api/approvals/inbox/[id]/approve\",\n    \"/api/approvals/inbox/[id]/reject\",\n    \"/api/approvals/inbox/bulk-approve\",\n    \"/api/approvals/inbox/bulk-reject\",\n    \"/api/approvals/inbox/counts\",\n    \"/api/audit-export/public-key\",\n    \"/api/audit-export/verify\",\n    \"/api/auth/[...all]\",\n    \"/api/auth/app-exchange\",\n    \"/api/auth/app-login\",\n    \"/api/auth/app-sign-in\",\n    \"/api/auth/callback/social-org/[provider]\",\n    \"/api/auth/context\",\n    \"/api/auth/desktop-login\",\n    \"/api/auth/providers\",\n    \"/api/auth/session-expired\",\n    \"/api/auth/social-org/[provider]\",\n    \"/api/auth/verify-turnstile\",\n    \"/api/billing/checkout\",\n    \"/api/billing/portal\",\n    \"/api/billing/subscription\",\n    \"/api/billing/webhook\",\n    \"/api/calendar/conflicts\",\n    \"/api/calendar/connections\",\n    \"/api/calendar/connections/[id]\",\n    \"/api/calendar/events\",\n    \"/api/calendar/ics-feeds\",\n    \"/api/calendar/ics-feeds/[id]\",\n    \"/api/calendar/ics-feeds/[id]/regenerate\",\n    \"/api/calendar/ics/[secret]\",\n    \"/api/calendar/oauth/[provider]\",\n    \"/api/calendar/oauth/callback/[provider]\",\n    \"/api/cron/[jobName]\",\n    \"/api/cron/status/[executionId]\",\n    \"/api/dashboard/layout\",\n    \"/api/dashboard/widgets/[widget]\",\n    \"/api/desktop/context\",\n    \"/api/desktop/open\",\n    \"/api/desktop/organizations\",\n    \"/api/desktop/vehicle-use-warnings\",\n    \"/api/discord/interactions/[token]\",\n    \"/api/discord/link\",\n    \"/api/discord/setup\",\n    \"/api/driving-licence/evidence\",\n    \"/api/driving-licence/operational-employees\",\n    \"/api/driving-licence/status\",\n    \"/api/health\",\n    \"/api/jobs/[jobId]/status\",\n    \"/api/kiosk/board\",\n    \"/api/kiosk/clock\",\n    \"/api/kiosk/clock/outcome\",\n    \"/api/kiosk/commands\",\n    \"/api/kiosk/commands/[operationId]\",\n    \"/api/kiosk/employee-status\",\n    \"/api/kiosk/employees\",\n    \"/api/kiosk/fob\",\n    \"/api/kiosk/fob/registration\",\n    \"/api/kiosk/pair\",\n    \"/api/kiosk/session\",\n    \"/api/location/countries\",\n    \"/api/location/regions\",\n    \"/api/location/states\",\n    \"/api/mcp\",\n    \"/api/notifications\",\n    \"/api/notifications/count\",\n    \"/api/notifications/preferences\",\n    \"/api/notifications/push/native-token\",\n    \"/api/notifications/push/subscribe\",\n    \"/api/notifications/push/subscriptions\",\n    \"/api/notifications/push/unsubscribe\",\n    \"/api/notifications/push/vapid-key\",\n    \"/api/org-admin/holiday-categories\",\n    \"/api/org-admin/holiday-categories/[id]\",\n    \"/api/org-admin/holiday-presets\",\n    \"/api/org-admin/holiday-presets/[id]\",\n    \"/api/org-admin/holidays\",\n    \"/api/org-admin/holidays/[id]\",\n    \"/api/org-admin/holidays/import\",\n    \"/api/org-admin/holidays/preview\",\n    \"/api/organization-mfa/policy\",\n    \"/api/organization/vehicles/[vehicleId]/photos/[photoId]\",\n    \"/api/organizations/list\",\n    \"/api/organizations/sso\",\n    \"/api/organizations/switch\",\n    \"/api/payroll/comparisons/[resultId]\",\n    \"/api/personnel-files/documents/[documentId]\",\n    \"/api/personnel-files/employees/[employeeId]/zip\",\n    \"/api/platform-admin/billing\",\n    \"/api/session/organization-status\",\n    \"/api/settings/employees/read/[dataset]\",\n    \"/api/settings/skills\",\n    \"/api/setup/authorize\",\n    \"/api/slack/commands\",\n    \"/api/slack/events\",\n    \"/api/slack/interactions\",\n    \"/api/slack/link\",\n    \"/api/slack/oauth/authorize\",\n    \"/api/slack/oauth/callback\",\n    \"/api/slack/setup\",\n    \"/api/teams/messages\",\n    \"/api/teams/setup\",\n    \"/api/telegram/link\",\n    \"/api/telegram/setup\",\n    \"/api/telegram/webhook/[token]\",\n    \"/api/time-clock\",\n    \"/api/time-clock/status\",\n    \"/api/time-entries\",\n    \"/api/time-entries/[entryId]\",\n    \"/api/time-entries/clock-out-on-behalf\",\n    \"/api/time-entries/commands\",\n    \"/api/time-entries/commands/[operationId]\",\n    \"/api/time-entries/corrections\",\n    \"/api/time-entries/diagnostics\",\n    \"/api/time-entries/diagnostics/proposals\",\n    \"/api/time-entries/diagnostics/repair\",\n    \"/api/time-entries/offline-context\",\n    \"/api/time-entries/status\",\n    \"/api/time-entries/verify\",\n    \"/api/travel-expenses/[claimId]\",\n    \"/api/travel-expenses/[claimId]/receipts/[attachmentId]\",\n    \"/api/travel-expenses/exports/[batchId]\",\n    \"/api/travel-expenses/reports/[reportId]/receipts/[receiptId]\",\n    \"/api/tus/[[...path]]\",\n    \"/api/upload/personnel-file\",\n    \"/api/upload/personnel-file/payslip-batch\",\n    \"/api/upload/process\",\n    \"/api/upload/travel-expense/process\",\n    \"/api/upload/travel-expense/report-receipt\",\n    \"/api/user/onboarding-status\",\n    \"/api/v1/[...path]\",\n    \"/api/v1/absences\",\n    \"/api/v1/customers\",\n    \"/api/v1/customers/custom-fields\",\n    \"/api/v1/employees\",\n    \"/api/v1/employees/custom-fields\",\n    \"/api/v1/openapi.json\",\n    \"/api/v1/projects\",\n    \"/api/v1/projects/custom-fields\",\n    \"/api/v1/work-periods\",\n    \"/api/wellness/water-action\",\n    \"/api/wellness/water-reminder\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/[employeeId]/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "status": "captured"
+}

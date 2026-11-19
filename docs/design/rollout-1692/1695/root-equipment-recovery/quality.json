@@ -1,0 +1,39 @@
+{
+  "baseline": "f780ef50207e9415c16a87d44c769b94602cc528",
+  "implementation": "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+  "scope": "Two equipment presentation modules, one context-only module and four existing assembled test files. No shared Sheet/Toaster/Next config, domain/action/schema/permission/date/payload or generated catalog change.",
+  "red": "Permanent actual-form inline-alert regression:1 failed/26 skipped before implementation. Real settled toast pointer:0 command requests/0 saved holdings, enabled unchanged form retained.",
+  "fresh": {
+    "unitFiles": 14,
+    "unitTests": 125,
+    "typecheck": "Complete route/application/workflow-contract/smoke projects passed",
+    "biome": "Seven files CRLF-aware check passed",
+    "doctor": "Seven files zero findings; initial component-context export warning resolved by separate context-only module, no suppression",
+    "desktopNative": "Trusted pointer reaches button,1 request,one additional persisted holding; paired initial0->1 and repeat1->2",
+    "phoneNative": "Real saved dark/18px,390x844,trusted pointer,1 request,2->3 persisted holdings; heading/error/submit inside viewport",
+    "contrast": {
+      "light": 19.114022259689076,
+      "dark": 17.487261507234752
+    }
+  },
+  "commands": [
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/equipment/equipment-workspace.test.tsx -t 'retries the same handover identity'",
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/equipment src/components/ui/action-panel.test.tsx src/components/ui/sheet.test.tsx src/components/ui/alert-dialog.test.tsx src/components/ui/sidebar.test.tsx",
+    "pnpm --filter webapp typecheck",
+    "pnpm --filter webapp exec biome check --line-ending=crlf src/components/equipment/equipment-form-error-context.ts src/components/equipment/equipment-panels.tsx src/components/equipment/equipment-handovers.tsx src/components/equipment/equipment-workspace.test.tsx src/components/equipment/equipment-assignment-detail.test.tsx src/components/equipment/equipment-transfer.test.tsx src/components/equipment/equipment-exceptions.test.tsx",
+    "pnpm exec react-doctor apps/webapp --verbose --scope changed --base f780ef50207e9415c16a87d44c769b94602cc528 --include-untracked --no-score --no-supply-chain --no-telemetry --max-duration 90",
+    "pnpm node docs/design/rollout-1692/1695/root-equipment-recovery/verify-pointer.mjs $repo $fixture $privateOutput before",
+    "pnpm node docs/design/rollout-1692/1695/root-equipment-recovery/verify-pointer.mjs $repo $fixture $privateOutput after desktop",
+    "pnpm node docs/design/rollout-1692/1695/root-equipment-recovery/verify-pointer.mjs $repo $fixture $privateOutput after phone-dark-large"
+  ],
+  "qualifications": [
+    "Next development Rendering indicator initially intercepts the pointer; after it settles, the actual error toast independently intercepts. The indicator can reappear after hover even after application correction; after-dev-indicator-limit.json retains that failure. Accepted native down/up waits for that framework overlay after hover. No framework or global-feedback suppression was made.",
+    "Initial current-root dev output produced422 shell navigations and Suspense abort messages before any equipment action. After identity-verified server stop, old development output was preserved by checked same-parent rename; fresh output reached normal UI. This is runtime setup diagnosis, not a source fix or resolution of all historical transitions.",
+    "The archive fixture prepare was rejected by the genuine Git-source-identity guard before creating services; current-root preparation was used. No guard bypass.",
+    "Phone preference attempts using exact aria-label or text/keyboard activation were excluded. The accepted run uses the proven accessible-name/pointer preference flow; offscreen content-visibility rows are awaited through tbody.textContent.",
+    "The existing authority-menu test previously sent Escape before menu focus; it now moves focus by ArrowDown and waits for dismissal/focus return before changing authority data. Permission assertions remain intact.",
+    "Native root React inspection was not rerun; earlier root native commands were unavailable. These are component/DOM/transport/readback checks, not native inspection.",
+    "No fresh PostgreSQL suite rerun; existing6/47 is inherited. New live checks use the actual authorized writer and database readback with a real fixture-only command-table outage.",
+    "No full static generation,remote catalog,physical device,true browser zoom,external provider or exhaustive domain/global keyboard certification."
+  ]
+}

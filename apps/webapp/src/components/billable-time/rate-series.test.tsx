@@ -258,6 +258,27 @@ describe.each(variants)("$kind rate series outcomes", (variant) => {
 		);
 		expect(screen.queryByRole("button", { name: "Set rate" })).toBeNull();
 	});
+
+	it("keeps the title on a failed history read and recovers on retry", async () => {
+		variant.history.mockResolvedValueOnce({
+			success: false,
+			error: "server text",
+			code: "DatabaseError",
+		});
+		const user = userEvent.setup();
+		renderSeries(variant.kind);
+		await screen.findByRole("alert");
+		expect(
+			screen.getByText(variant.kind === "billable" ? "Billable rate" : "Cost rate"),
+		).toBeTruthy();
+
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(await screen.findByRole("button", { name: "Set rate" })).toBeTruthy();
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(screen.getByText("€80.00/h")).toBeTruthy();
+		expect(variant.history).toHaveBeenCalledTimes(2);
+	});
 });
 
 it("offers the cost wage as an explicit starting value and retains it after a save", async () => {

@@ -8,14 +8,18 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import {
+	summaryField,
+	useApprovalInboxText,
+} from "@/components/approvals/use-approval-inbox-text";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ApprovalReviewArrival } from "@/lib/approvals/presentation/review-arrival";
 import { Link, useRouter } from "@/navigation";
 import { ApprovalDetailPanel } from "../../../../inbox/components/approval-detail-panel";
 
-function ReviewCard({
+function ReviewArrival({
 	title,
 	description,
 	children,
@@ -25,13 +29,12 @@ function ReviewCard({
 	children: React.ReactNode;
 }) {
 	return (
-		<Card className="mx-auto w-full max-w-xl">
-			<CardHeader>
-				<CardTitle className="flex items-center gap-2">{title}</CardTitle>
-				<CardDescription>{description}</CardDescription>
-			</CardHeader>
-			<CardFooter className="flex flex-wrap gap-2">{children}</CardFooter>
-		</Card>
+		<section className="page-measure space-y-6">
+			<PageHeader title={title} description={description} />
+			<div className="flex flex-wrap gap-2 [&_a]:h-auto [&_a]:min-h-9 [&_a]:whitespace-normal [&_a]:break-words [&_button]:h-auto [&_button]:min-h-9 [&_button]:whitespace-normal">
+				{children}
+			</div>
+		</section>
 	);
 }
 
@@ -66,7 +69,7 @@ export function ApprovalReviewOutcome({
 	if (arrival.status === "ready") {
 		content = (
 			<>
-				<ReviewCard
+				<ReviewArrival
 					title={t("approvals:approvals.review.title", "Approval review")}
 					description={text(summaryField(arrival.item.summary, "detail"))}
 				>
@@ -75,7 +78,7 @@ export function ApprovalReviewOutcome({
 						{t("approvals:approvals.review.showDetails", "Show details")}
 					</Button>
 					{inboxLink("outline")}
-				</ReviewCard>
+				</ReviewArrival>
 				<ApprovalDetailPanel
 					approval={arrival.item}
 					open={open}
@@ -91,7 +94,7 @@ export function ApprovalReviewOutcome({
 		});
 		const organization = { organization: arrival.organizationName };
 		content = (
-			<ReviewCard
+			<ReviewArrival
 				title={
 					<>
 						<IconBuildingSkyscraper className="size-5" aria-hidden="true" />
@@ -116,15 +119,19 @@ export function ApprovalReviewOutcome({
 						)}
 					</Link>
 				</Button>
-			</ReviewCard>
+				{inboxLink("outline")}
+			</ReviewArrival>
 		);
 	} else {
 		content = (
-			<ReviewCard
+			<ReviewArrival
 				title={
 					<>
 						<IconLock className="size-5" aria-hidden="true" />
-						{t("approvals:approvals.review.unavailableTitle", "This approval is not available")}
+						{t(
+							"approvals:approvals.review.unavailableTitle",
+							"This approval is not available",
+						)}
 					</>
 				}
 				description={t(
@@ -133,9 +140,31 @@ export function ApprovalReviewOutcome({
 				)}
 			>
 				{inboxLink("default")}
-			</ReviewCard>
+			</ReviewArrival>
 		);
 	}
 
-	return <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{content}</div>;
+	return (
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
+			{content}
+		</div>
+	);
+}
+
+export function ApprovalReviewLoading() {
+	const { t } = useTranslate();
+	return (
+		<div
+			aria-busy="true"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
+			role="status"
+		>
+			<ReviewArrival
+				title={t("approvals:approvals.review.title", "Approval review")}
+				description={t("common.loading", "Loading...")}
+			>
+				<Skeleton aria-hidden="true" className="h-9 w-32" />
+			</ReviewArrival>
+		</div>
+	);
 }

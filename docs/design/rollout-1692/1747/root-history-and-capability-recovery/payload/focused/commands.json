@@ -1,0 +1,102 @@
+{
+  "commands": [
+    {
+      "command": "$env:GIT_OPTIONAL_LOCKS='0'; node .tmp/1747-focused-runtime-20261118c/preflight.mjs",
+      "exit": 1,
+      "qualification": "Index-schema TypeError; no activation; original preserved"
+    },
+    {
+      "command": "$env:GIT_OPTIONAL_LOCKS='0'; node .tmp/1747-focused-runtime-20261118c/preflight-v2.mjs",
+      "exit": 1,
+      "qualification": "Second index-schema TypeError; no activation; preserved"
+    },
+    {
+      "command": "$env:GIT_OPTIONAL_LOCKS='0'; node .tmp/1747-focused-runtime-20261118c/preflight-v3.mjs",
+      "exit": 0,
+      "qualification": "Two bounded corrections, verified pins/archives and activated lease"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version",
+      "exit": 0,
+      "qualification": "Default probe engine-store EACCES warned and reported fallback12.21.0; no fixture/app execution used it"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version",
+      "exit": 0,
+      "qualification": "Approved engine-store context confirmed pinned12.16.1"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs prepare .tmp/1747-focused-runtime-20261118c/fixture-private *> .tmp/1747-focused-runtime-20261118c/prepare-attempt1-private.log; $resultCode=$LASTEXITCODE; Write-Output \"FIXTURE_PREPARE_EXIT=$resultCode\"; exit $resultCode",
+      "exit": 0,
+      "qualification": "Canonical prepare only; nested package calls guarded"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1747-focused-runtime-20261118c/runtime.mjs",
+      "exit": 1,
+      "qualification": "Approved normal verification network; owned process stopped after tests; collected unified session exit1, no product error inference"
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/controller.mjs",
+      "exit": 1,
+      "qualification": "Owned controller force-stopped during exact cleanup; collected unified session exit1"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsx ../../.tmp/1747-focused-runtime-20261118c/seed.ts *> .tmp/1747-focused-runtime-20261118c/seed-attempt1-private.log; $resultCode=$LASTEXITCODE; Write-Output \"BUSINESS_SEED_EXIT=$resultCode\"; exit $resultCode",
+      "exit": 0,
+      "qualification": "Canonical guarded synthetic business schema seam, no authority/time SQL"
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/browser.mjs",
+      "exit": 0,
+      "qualification": "Fresh normal-process Chromium; exact fresh profiles removed after closure"
+    },
+    {
+      "command": "& ./.tmp/1747-focused-runtime-20261118c/cleanup-processes.ps1",
+      "exit": -1,
+      "qualification": "Traversal stalled before mutations; exact script PID/creation/path verified and stopped"
+    },
+    {
+      "command": "& ./.tmp/1747-focused-runtime-20261118c/cleanup-processes-v2.ps1",
+      "exit": 1,
+      "qualification": "First bounded correction; exact Next subtree stopped then Stop-Process controller NullReference"
+    },
+    {
+      "command": "& ./.tmp/1747-focused-runtime-20261118c/cleanup-processes-v3.ps1",
+      "exit": 1,
+      "qualification": "Second bounded correction; Windows taskkill exact PID required /F; no process killed on this attempt"
+    },
+    {
+      "command": "taskkill.exe /F /PID 71968; & ./.tmp/1747-focused-runtime-20261118c/cleanup-processes-v3.ps1",
+      "exit": 0,
+      "qualification": "Operational completion with same unchanged final script; exact controller PID/parent/creation/path verified first, no global kill"
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs cleanup .tmp/1747-focused-runtime-20261118c/fixture-private *> .tmp/1747-focused-runtime-20261118c/cleanup-fixture-attempt1-private.log; $resultCode=$LASTEXITCODE; Write-Output \"FIXTURE_CLEANUP_EXIT=$resultCode\"; exit $resultCode",
+      "exit": 0,
+      "qualification": "Only exact three manifest names/ownership label; private manifests preserved"
+    },
+    {
+      "command": "$env:GIT_OPTIONAL_LOCKS='0'; node .tmp/1747-focused-runtime-20261118c/preserve-final.mjs",
+      "exit": 0,
+      "qualification": "All frozen tracked/index/source/deps/lock/license/old indexed payload checks unchanged"
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/seal.mjs",
+      "exit": 0,
+      "qualification": "Successful sealing is established by final verification output"
+    }
+  ],
+  "browserCommands": "Every controller call and exact collected exit is in attempts.json",
+  "toolCommands": [
+    {
+      "tool": "preview_status",
+      "result": "available:false"
+    },
+    {
+      "tool": "preview_open",
+      "input": "about:blank",
+      "result": "Invalid preview URL unsupported-protocol; unavailable preview not used further"
+    }
+  ],
+  "qualification": "Package/app/fixture execution used pinned12.16.1 with env+CLI dependency verification guards on every call, including nested prepare/Next. Only the first version-only probe reported fallback12.21.0. Read-only source/doc/file/CIM inspection commands are not acceptance checks. Literal cleanup script contents are hashed but not published; exact taskkill command above followed ownership checks."
+}

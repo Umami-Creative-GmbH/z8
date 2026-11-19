@@ -12,9 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
-import { formatDashboardDate, formatDashboardDateWithYear } from "./format-dashboard-date";
+import {
+	formatDashboardDate,
+	formatDashboardDateWithYear,
+} from "./format-dashboard-date";
 import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
 import { WidgetReadError } from "./widget-read-error";
@@ -33,10 +39,10 @@ function UrgencyIndicator({ count }: { count: number }) {
 			className={cn(
 				"flex items-center gap-2 rounded-xl px-4 py-3",
 				isUrgent
-					? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/25"
+					? "border border-destructive/30 bg-destructive/10 text-foreground"
 					: isWarning
-						? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25"
-						: "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/25",
+						? "border border-amber-500/30 bg-amber-500/10 text-foreground"
+						: "border border-primary/20 bg-primary/5 text-foreground",
 			)}
 		>
 			<div className="flex items-center justify-center rounded-full bg-white/20 p-2">
@@ -44,15 +50,25 @@ function UrgencyIndicator({ count }: { count: number }) {
 			</div>
 			<div className="flex-1">
 				<p className="font-semibold">
-					{t("dashboard.pending-approvals.pending-requests", "{count} pending {request}", {
-						count,
-						request: requestLabel,
-					})}
+					{t(
+						"dashboard.pending-approvals.pending-requests",
+						"{count} pending {request}",
+						{
+							count,
+							request: requestLabel,
+						},
+					)}
 				</p>
 				<p className="text-xs opacity-90">
 					{isUrgent
-						? t("dashboard.pending-approvals.requires-attention", "Requires immediate attention")
-						: t("dashboard.pending-approvals.awaiting-approval", "Awaiting your approval")}
+						? t(
+								"dashboard.pending-approvals.requires-attention",
+								"Requires immediate attention",
+							)
+						: t(
+								"dashboard.pending-approvals.awaiting-approval",
+								"Awaiting your approval",
+							)}
 				</p>
 			</div>
 		</div>
@@ -115,7 +131,9 @@ function ApprovalItem({
 export function PendingApprovalsWidget({
 	initialSnapshot,
 }: {
-	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["pending-approvals"]>;
+	initialSnapshot?: DashboardWidgetSnapshot<
+		DashboardWidgetData["pending-approvals"]
+	>;
 } = {}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee();
@@ -144,13 +162,18 @@ export function PendingApprovalsWidget({
 				<div className="space-y-4">
 					{error ? (
 						<WidgetReadError
-							title={t("dashboard.pending-approvals.title", "Pending Approvals")}
+							title={t(
+								"dashboard.pending-approvals.title",
+								"Pending Approvals",
+							)}
 							message={error}
 							retry={refetch}
 							refreshing={refreshing}
 						/>
 					) : totalPending === 0 ? (
-						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
+						<p role="status">
+							{t("dashboard.pending-approvals.empty", "No pending approvals")}
+						</p>
 					) : (
 						<>
 							{/* Urgency Banner */}
@@ -159,7 +182,10 @@ export function PendingApprovalsWidget({
 							{/* Absence Requests */}
 							{absenceApprovals.length > 0 && (
 								<ApprovalSection
-									title={t("dashboard.pending-approvals.absence-requests", "Absence Requests")}
+									title={t(
+										"dashboard.pending-approvals.absence-requests",
+										"Absence Requests",
+									)}
 									icon={IconBeach}
 									iconColor="bg-amber-500"
 									count={absenceApprovals.length}
@@ -167,16 +193,23 @@ export function PendingApprovalsWidget({
 									{absenceApprovals.slice(0, 3).map((approval) => (
 										<ApprovalItem
 											key={approval.id}
-											name={approval.requester.user.name || t("common.unknown", "Unknown")}
+											name={
+												approval.requester.user.name ||
+												t("common.unknown", "Unknown")
+											}
 											subtitle={`${formatDashboardDate(approval.absence.startDate, locale)} - ${formatDashboardDateWithYear(approval.absence.endDate, locale)}`}
 											badge={approval.absence.category.name}
 										/>
 									))}
 									{absenceApprovals.length > 3 && (
 										<p className="text-center text-xs text-muted-foreground pt-1">
-											{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
-												count: absenceApprovals.length - 3,
-											})}
+											{t(
+												"dashboard.pending-approvals.more-requests",
+												"+{count} more requests",
+												{
+													count: absenceApprovals.length - 3,
+												},
+											)}
 										</p>
 									)}
 								</ApprovalSection>
@@ -185,7 +218,10 @@ export function PendingApprovalsWidget({
 							{/* Time Correction Requests */}
 							{timeCorrectionApprovals.length > 0 && (
 								<ApprovalSection
-									title={t("dashboard.pending-approvals.time-corrections", "Time Corrections")}
+									title={t(
+										"dashboard.pending-approvals.time-corrections",
+										"Time Corrections",
+									)}
 									icon={IconClockEdit}
 									iconColor="bg-blue-500"
 									count={timeCorrectionApprovals.length}
@@ -193,16 +229,29 @@ export function PendingApprovalsWidget({
 									{timeCorrectionApprovals.slice(0, 3).map((approval) => (
 										<ApprovalItem
 											key={approval.id}
-											name={approval.requester.user.name || t("common.unknown", "Unknown")}
-											subtitle={formatDashboardDateWithYear(approval.workPeriod.startTime, locale)}
-											badge={t("dashboard.pending-approvals.correction", "Correction")}
+											name={
+												approval.requester.user.name ||
+												t("common.unknown", "Unknown")
+											}
+											subtitle={formatDashboardDateWithYear(
+												approval.workPeriod.startTime,
+												locale,
+											)}
+											badge={t(
+												"dashboard.pending-approvals.correction",
+												"Correction",
+											)}
 										/>
 									))}
 									{timeCorrectionApprovals.length > 3 && (
 										<p className="text-center text-xs text-muted-foreground pt-1">
-											{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
-												count: timeCorrectionApprovals.length - 3,
-											})}
+											{t(
+												"dashboard.pending-approvals.more-requests",
+												"+{count} more requests",
+												{
+													count: timeCorrectionApprovals.length - 3,
+												},
+											)}
 										</p>
 									)}
 								</ApprovalSection>
@@ -211,7 +260,10 @@ export function PendingApprovalsWidget({
 							{/* Action Button */}
 							<Button className="w-full group" asChild>
 								<Link href="/approvals/inbox">
-									{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
+									{t(
+										"dashboard.pending-approvals.review-all",
+										"Review All Approvals",
+									)}
 									<IconArrowRight
 										className="ml-2 size-4 transition-transform group-hover:translate-x-1"
 										aria-hidden="true"

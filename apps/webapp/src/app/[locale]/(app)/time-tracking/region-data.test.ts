@@ -21,9 +21,12 @@ vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester: vi.fn(),
 }));
-vi.mock("@/lib/time-tracking/vehicle-use/driving-details-missing-store", () => ({
-	listDrivingDetailsMissing: vi.fn(),
-}));
+vi.mock(
+	"@/lib/time-tracking/vehicle-use/driving-details-missing-store",
+	() => ({
+		listDrivingDetailsMissing: vi.fn(),
+	}),
+);
 vi.mock("@/lib/work-balance/service", () => ({
 	getEmployeeWorkBalance: vi.fn(),
 }));
@@ -111,7 +114,9 @@ describe("driving details missing on the time tracking page (#1127)", () => {
 	});
 
 	it("lists the employee's newest flagged work and says when there is more", async () => {
-		const many = Array.from({ length: 21 }, (_, index) => flagged(`work-${index}`));
+		const many = Array.from({ length: 21 }, (_, index) =>
+			flagged(`work-${index}`),
+		);
 		vi.mocked(listDrivingDetailsMissing).mockResolvedValue(many);
 		const region = await readDrivingRegion(employeeContext);
 		expect(region.work).toHaveLength(20);
@@ -125,6 +130,17 @@ describe("driving details missing on the time tracking page (#1127)", () => {
 });
 
 describe("independent time tracking region data", () => {
+	it("reads the browsed employee-local week across DST instead of the current week", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-11-14T12:00:00Z"));
+		await readHistoryRegion(employeeContext, "2026-03-29");
+		expect(readWorkPeriods).toHaveBeenCalledWith(
+			scope,
+			new Date("2026-03-22T23:00:00Z"),
+			new Date("2026-03-29T21:59:59.999Z"),
+		);
+	});
+
 	it("summary resolves without starting pending history or manager work", async () => {
 		vi.mocked(readWorkPeriods).mockReturnValue(new Promise(() => {}));
 		vi.mocked(getPrimaryEligibleManagerIdForRequester).mockReturnValue(
@@ -134,11 +150,7 @@ describe("independent time tracking region data", () => {
 			kpis: expectedSummary,
 			workBalance: expectedBalance,
 		});
-		expect(readTimeKpis).toHaveBeenCalledWith(
-			scope,
-			"Europe/Berlin",
-			"monday",
-		);
+		expect(readTimeKpis).toHaveBeenCalledWith(scope, "Europe/Berlin", "monday");
 		expect(getEmployeeWorkBalance).toHaveBeenCalledWith(scope);
 		expect(readWorkPeriods).not.toHaveBeenCalled();
 		expect(getPrimaryEligibleManagerIdForRequester).not.toHaveBeenCalled();

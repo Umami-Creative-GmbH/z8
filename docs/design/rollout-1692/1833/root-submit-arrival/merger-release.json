@@ -1,0 +1,71 @@
+{
+  "head": "01c1e9496f7aa68856548e709ce5b133c23f7d12",
+  "capturedUtc": "2026-11-15T22:53:22.5536874Z",
+  "activeOwnProcesses": [],
+  "commandRecords": [
+    {
+      "file": "artifacts-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "biome-discovery-crlf-command.json",
+      "exitCode": 1,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "biome-explicit-crlf-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "biome-explicit-lint-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "compatibility-unit-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "doctor-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "exact-unit-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "public-probes-command.json",
+      "exitCode": 1,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "summary-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    },
+    {
+      "file": "types-command.json",
+      "exitCode": 0,
+      "environmentFalse": true,
+      "cliFalse": true
+    }
+  ],
+  "noServicesStarted": true,
+  "noBrowserStarted": true,
+  "noSourceFix": true,
+  "release": "All checkout/index/package/runtime/process ownership is RELEASED to root; no package processes remain"
+}

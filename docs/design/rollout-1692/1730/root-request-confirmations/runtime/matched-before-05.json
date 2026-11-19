@@ -1,0 +1,114 @@
+{
+  "phase": "before",
+  "source": {
+    "head": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+        "raw": "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02",
+        "lf": "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+        "raw": "df4aef7a8010c93cf0e98fb92245b6699fc293c7205c424a6ca656be7045b1ee",
+        "lf": "93d836f470f7784d1396eb9fbcd79006ddd58af621acba5c8f00433fb5f8158b"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+        "raw": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284",
+        "lf": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+        "raw": "c08004331b87d32de5c2dfe2b7ca1f253168266a7f41a704820cc8a27a69a325",
+        "lf": "c08004331b87d32de5c2dfe2b7ca1f253168266a7f41a704820cc8a27a69a325"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+        "raw": "43b5c357cc8d0dc9163ac917b1de6969acf85391fb7b022b1b28ad4dafdc8768",
+        "lf": "94fe2bb25e27968327f22fdc016215392e1f26dfff9dacf83bb3375d24f8dcbe"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+        "raw": "30c072116dbb3aa206cce9546d77daac344061a53073afca12405650e7b35b05",
+        "lf": "30c072116dbb3aa206cce9546d77daac344061a53073afca12405650e7b35b05"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+        "raw": "9ca4700d4069fc79e0b2eb15d11c9be7961435b6d7825833e1eab489bad86a40",
+        "lf": "9ca4700d4069fc79e0b2eb15d11c9be7961435b6d7825833e1eab489bad86a40"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+        "raw": "dba29a2a17356f38e59fba8f8f617a0c6c94a3bc40639e2402638acadd9f835e",
+        "lf": "abcd121fad74d2cb015d185bfce43f7b9112edd910c8ad88ed8b5a9b105284bf"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+        "raw": "59c65f0ef1068e590631fd48f8af6bdb9075ad2e7e48a0310b1bc5895fac0a50",
+        "lf": "f979e6658a3756c1da2bc5a12983e6b72dda42947526ca75121dc49edbf39169"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+        "raw": "2656d090cf08a66cf5f122f17e6f738d74a6b3df4d402a887d8e75c27c014b38",
+        "lf": "14739c3a5db6f0848dda4760396cb15722fcc8c525ee22fe6f0b8c43671576ca"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "ed95ad623ff4739ccb1ce2c25bc069c5c3dc0beba48e1c8ea32967b061b5f33d",
+        "lf": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9",
+        "lf": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+        "raw": "4278b66a976ae5f60e31909863a071b2522eb283510a3cf4b900eb474ce4f2b4",
+        "lf": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "cb4a6be61e2be61b9612a099d3e7767580390d518022d4eae2292cc912b7bd93"
+  },
+  "checks": [
+    "actual Default/light owners persist after reload"
+  ],
+  "captures": [],
+  "errors": [],
+  "policy": "Fresh transient context and normal email sign-in each phase; notification permission denied fixture policy. Actual UI preference owners; no copied or restored cookies/storage.",
+  "qualification": "PARTIAL APPLICATION comparison: exact existing changed fb6c consumer sources only; current shared application/dependencies and unused new helpers remain.",
+  "recordTitles": [
+    "R047 record 21",
+    "R047 record 18",
+    "R047 record 17",
+    "R047 record 14",
+    "R047 record 13",
+    "R047 record 10",
+    "R047 record 09",
+    "R047 record 06",
+    "R047 record 05",
+    "R047 record 02"
+  ],
+  "recordTitlesDigest": "e67936c9dda9af1cdb346021fce9f959177dd751e8a3aebc4f374fbb6bc4ec0e",
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 30000ms exceeded",
+    "stack": "TimeoutError: Waiting failed: 30000ms exceeded\n    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)\n    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)\n    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)\n    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)\n    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)\n    at cap (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1730-root-checks/runtime/compare.mjs:9:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1730-root-checks/runtime/compare.mjs:26:313"
+  }
+}

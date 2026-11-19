@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
 import { WorkCategoryAssignmentDialog } from "./work-category-assignment-dialog";
@@ -42,31 +43,29 @@ export function WorkCategoryManagement({
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.workCategories.title", "Work Categories")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.workCategories.description",
-						"Define work categories with time factors for effective time calculation",
-					)}
-				</p>
-			</div>
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
+			<PageHeader
+				title={t("settings.workCategories.title", "Work Categories")}
+				description={t(
+					"settings.workCategories.description",
+					"Define work categories with time factors for effective time calculation",
+				)}
+			/>
 
-			<Tabs defaultValue="categories" className="space-y-4">
-				<TabsList>
-					<TabsTrigger value="categories">
-						{t("settings.workCategories.tab.categories", "Categories")}
-					</TabsTrigger>
-					<TabsTrigger value="sets">
-						{t("settings.workCategories.tab.sets", "Category Sets")}
-					</TabsTrigger>
-					<TabsTrigger value="assignments">
-						{t("settings.workCategories.tab.assignments", "Assignments")}
-					</TabsTrigger>
-				</TabsList>
+			<Tabs defaultValue="categories" className="min-w-0 space-y-4">
+				<div className="max-w-full overflow-x-auto">
+					<TabsList>
+						<TabsTrigger value="categories">
+							{t("settings.workCategories.tab.categories", "Categories")}
+						</TabsTrigger>
+						<TabsTrigger value="sets">
+							{t("settings.workCategories.tab.sets", "Category Sets")}
+						</TabsTrigger>
+						<TabsTrigger value="assignments">
+							{t("settings.workCategories.tab.assignments", "Assignments")}
+						</TabsTrigger>
+					</TabsList>
+				</div>
 
 				<TabsContent value="categories" className="space-y-4">
 					<WorkCategoryTable organizationId={organizationId} canManage={canManage} />

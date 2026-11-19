@@ -1,11 +1,14 @@
 {
   "init": {
     "activating": "Se configurează spațiul dvs. de lucru...",
+    "checkFailed": "Nu am putut verifica organizațiile dvs. Încercați din nou.",
     "checking": "Se verifică sesiunea...",
-    "clickToSelect": "Faceți clic pentru a selecta",
     "redirecting": "Redirecționare...",
+    "retry": "Încercați din nou",
+    "selectionHint": "Spațiul dvs. de lucru se deschide după selectare.",
     "selectOrganization": "Selectați organizația",
-    "selectOrganizationDescription": "Alegeți organizația cu care doriți să lucrați"
+    "selectOrganizationDescription": "Alegeți organizația cu care doriți să lucrați",
+    "title": "Deschideți spațiul de lucru"
   },
   "setup": {
     "authorization": {

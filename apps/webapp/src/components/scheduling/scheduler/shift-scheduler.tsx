@@ -6,7 +6,8 @@ import "temporal-polyfill/global";
 import { createViewDay, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
-import { useTranslate } from "@tolgee/react";
+import { IconPlus } from "@tabler/icons-react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import type {
 	DateRange,
@@ -17,21 +18,23 @@ import { useWeekStartDay } from "@/components/providers/user-preferences-provide
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import type { PlainDate, ZonedDateTime } from "@/lib/datetime/temporal-core";
+import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
+import { type PlainDate, parsePlainDate, type ZonedDateTime } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";
 import { ShiftDialog } from "../shifts/shift-dialog";
+import { CoverageHeatmapOverlay } from "./coverage-heatmap-overlay";
 import { EmployeeShiftSchedule } from "./employee-shift-schedule";
-import {
-	CoverageHeatmapOverlay,
-	CoverageSummaryBar,
-} from "./coverage-heatmap-overlay";
 import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
+import { ScheduleReadFailure } from "./schedule-read-failure";
+import { ScheduleShiftList } from "./schedule-shift-list";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
 import {
 	calendarRangeToDateRange,
 	eventToShiftTimes,
+	filterShiftsForEmployee,
 	initialSchedulerView,
 	scheduleXFirstDayOfWeek,
 } from "./shift-scheduler-utils";
@@ -55,13 +58,17 @@ export function ShiftScheduler(props: ShiftSchedulerProps) {
 	if (!props.isManager) {
 		return (
 			<EmployeeShiftSchedule
+				key={`${props.organizationId}:${props.employeeId}:employee`}
 				organizationId={props.organizationId}
+				employeeId={props.employeeId}
 				organizationTimezone={props.organizationTimezone}
 				focusDate={props.focusDate}
 			/>
 		);
 	}
-	return <PlannerShiftScheduler {...props} />;
+	return (
+		<PlannerShiftScheduler key={`${props.organizationId}:${props.employeeId}:planner`} {...props} />
+	);
 }
 
 function PlannerShiftScheduler({
@@ -73,6 +80,7 @@ function PlannerShiftScheduler({
 	focusDate,
 }: ShiftSchedulerProps) {
 	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() || "en";
 	const { resolvedTheme } = useTheme();
 	const weekStartDay = useWeekStartDay();
 	const [initialView] = useState(() =>
@@ -84,6 +92,7 @@ function PlannerShiftScheduler({
 	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
 	const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
 	const [newShiftDate, setNewShiftDate] = useState<string | null>(null);
+	const [newTemplateId, setNewTemplateId] = useState<string | null>(null);
 	const [showCoverageOverlay, setShowCoverageOverlay] = useState(true);
 	const isDark = resolvedTheme === "dark";
 
@@ -92,6 +101,15 @@ function PlannerShiftScheduler({
 		templates,
 		events,
 		shiftsLoading,
+		shiftsFailed,
+		hasLoadedShifts,
+		shiftsFetching,
+		retryShifts,
+		templatesFailed,
+		complianceFailed,
+		supportingDataFetching,
+		supportingDataRetryPending,
+		retrySupportingData,
 		complianceSummary,
 		draftCount,
 		complianceFindingsCount,
@@ -99,6 +117,7 @@ function PlannerShiftScheduler({
 		updateShift,
 	} = useShiftSchedulerData({
 		organizationId,
+		employeeId,
 		organizationTimezone,
 		dateRange,
 		isManager,
@@ -114,10 +133,11 @@ function PlannerShiftScheduler({
 	} = useShiftPublishFlow({ organizationId, dateRange });
 
 	// Fetch coverage heatmap data
-	const { data: coverageData, hasGaps: hasCoverageGaps } = useCoverageHeatmap(
+	const { hasGaps: hasCoverageGaps, readState: coverageState } = useCoverageHeatmap(
 		organizationId,
 		dateRange,
 		isManager && showCoverageOverlay,
+		employeeId,
 	);
 
 	// Schedule-X keeps the callbacks of its first render, so they read the latest shifts here.
@@ -167,14 +187,9 @@ function PlannerShiftScheduler({
 		setDateRange(calendarRangeToDateRange(range));
 	};
 
-	// Handle template drop (create new shift)
-	const handleTemplateDrop = (_template: ShiftTemplate, date: Date) => {
-		setNewShiftDate(
-			Temporal.Instant.fromEpochMilliseconds(date.getTime())
-				.toZonedDateTimeISO("UTC")
-				.toPlainDate()
-				.toString(),
-		);
+	const createShift = (template?: ShiftTemplate) => {
+		setNewShiftDate(dateRange.startDate);
+		setNewTemplateId(template?.id ?? null);
 		setSelectedShift(null);
 		setIsShiftDialogOpen(true);
 	};
@@ -183,6 +198,8 @@ function PlannerShiftScheduler({
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid()],
 		defaultView: "week",
+		locale: toScheduleXLocale(locale),
+		isResponsive: false,
 		selectedDate: initialView.selectedDate,
 		timezone: organizationTimezone,
 		firstDayOfWeek: scheduleXFirstDayOfWeek(weekStartDay),
@@ -254,7 +271,41 @@ function PlannerShiftScheduler({
 	}, [calendar, isDark]);
 
 	return (
-		<div className="flex min-w-0 flex-col gap-4 lg:h-[calc(100vh-200px)]">
+		<div className="flex min-w-0 flex-col gap-4">
+			<div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+				<p className="text-sm text-muted-foreground tabular-nums">
+					{formatPlainDate(parsePlainDate(dateRange.startDate), locale, "dateMedium")} –{" "}
+					{formatPlainDate(
+						parsePlainDate(dateRange.endDateExclusive).subtract({ days: 1 }),
+						locale,
+						"dateMedium",
+					)}{" "}
+					({organizationTimezone})
+				</p>
+				<Button type="button" onClick={() => createShift()}>
+					<IconPlus className="size-4" aria-hidden="true" />
+					{t("scheduling:scheduling.shiftDialog.createTitle", "Create Shift")}
+				</Button>
+			</div>
+			{shiftsFailed && (
+				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
+					{t(
+						"scheduling:scheduling.scheduler.loadFailed",
+						"Shifts could not be refreshed. Loaded shifts are retained.",
+					)}
+				</ScheduleReadFailure>
+			)}
+			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
+				<ScheduleReadFailure
+					onRetry={() => void retrySupportingData()}
+					pending={supportingDataFetching}
+				>
+					{t(
+						"scheduling:scheduling.scheduler.supportFailed",
+						"Templates or compliance information could not be refreshed. Check again before publishing.",
+					)}
+				</ScheduleReadFailure>
+			)}
 			{isManager && <ScheduleComplianceBanner summary={complianceSummary} />}
 
 			{/* Coverage summary bar and toggle for managers */}
@@ -262,6 +313,7 @@ function PlannerShiftScheduler({
 				<div className="flex flex-wrap items-center gap-4">
 					<CoverageHeatmapOverlay
 						organizationId={organizationId}
+						employeeId={employeeId}
 						dateRange={dateRange}
 						visible={showCoverageOverlay}
 						onToggle={() => setShowCoverageOverlay((v) => !v)}
@@ -271,11 +323,6 @@ function PlannerShiftScheduler({
 						organizationTimezone={organizationTimezone}
 					/>
 				</div>
-			)}
-
-			{/* Coverage summary when visible */}
-			{isManager && showCoverageOverlay && coverageData.length > 0 && (
-				<CoverageSummaryBar data={coverageData} visible={showCoverageOverlay} />
 			)}
 
 			{employeeFilter && (
@@ -288,12 +335,18 @@ function PlannerShiftScheduler({
 
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row">
 				{/* Template sidebar for managers */}
-				{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
+				{isManager && (
+					<div className="order-2 lg:order-none">
+						<TemplateSidebar templates={templates} onSelectTemplate={createShift} />
+					</div>
+				)}
 
 				{/* Main calendar */}
 				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
-				<div className="relative isolate h-[32rem] min-w-0 overflow-hidden lg:h-full lg:flex-1">
-					<ScheduleXCalendar calendarApp={calendar} />
+				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border lg:flex-1">
+					<div className="h-full min-w-[42rem]">
+						<ScheduleXCalendar calendarApp={calendar} />
+					</div>
 					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
 					{shiftsLoading && (
 						<div
@@ -305,20 +358,32 @@ function PlannerShiftScheduler({
 							</span>
 						</div>
 					)}
-
-					{/* Publish FAB for managers with draft shifts */}
-					{isManager && draftCount > 0 && (
-						<PublishFab
-							draftCount={draftCount}
-							onPublish={publish}
-							isPublishing={isPublishing}
-							hasCoverageGaps={hasCoverageGaps}
-							hasComplianceWarnings={hasComplianceWarnings}
-							complianceFindingsCount={complianceFindingsCount}
-						/>
-					)}
 				</div>
 			</div>
+
+			{!shiftsLoading && (!shiftsFailed || hasLoadedShifts) && (
+				<ScheduleShiftList
+					shifts={filterShiftsForEmployee(shifts, employeeFilter)}
+					organizationTimezone={organizationTimezone}
+					onSelect={(shift) => {
+						setSelectedShift(shift);
+						setIsShiftDialogOpen(true);
+					}}
+				/>
+			)}
+
+			{/* Outside the isolated calendar so later records cannot cover this viewport action. */}
+			{isManager && draftCount > 0 && (
+				<PublishFab
+					draftCount={draftCount}
+					onPublish={publish}
+					isPublishing={isPublishing}
+					hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
+					coverageState={coverageState}
+					hasComplianceWarnings={hasComplianceWarnings}
+					complianceFindingsCount={complianceFindingsCount}
+				/>
+			)}
 
 			{/* Shift dialog */}
 			<ShiftDialog
@@ -328,6 +393,7 @@ function PlannerShiftScheduler({
 				templates={templates}
 				isManager={isManager}
 				defaultDate={newShiftDate}
+				defaultTemplateId={newTemplateId}
 				organizationId={organizationId}
 				organizationTimezone={organizationTimezone}
 			/>

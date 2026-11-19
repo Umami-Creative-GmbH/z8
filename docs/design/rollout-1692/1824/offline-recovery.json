@@ -1,0 +1,29 @@
+{
+  "actualDroppedReply": true,
+  "postBeforeLookup": 1,
+  "outcomeLookups": 2,
+  "automaticPostCountBeforeExplicitReplay": 1,
+  "replay": {
+    "status": 200,
+    "outcome": "replayed"
+  },
+  "entryCountAfterLookup": 1,
+  "records": [
+    {
+      "type": "clock_in",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<comparison-device>:offline:server_anchor"
+    },
+    {
+      "type": "clock_out",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<comparison-device>"
+    }
+  ],
+  "finalLiveWork": "closed by fresh explicit online PIN action",
+  "proof": "existing frozen queue and public device endpoints; no response body or handler replaced"
+}

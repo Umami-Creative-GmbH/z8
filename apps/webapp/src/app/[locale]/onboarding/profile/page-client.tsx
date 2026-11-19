@@ -6,7 +6,6 @@ import {
 	IconGenderFemale,
 	IconGenderMale,
 	IconLoader2,
-	IconUser,
 } from "@tabler/icons-react";
 import {
 	type FormAsyncValidateOrFn,
@@ -16,28 +15,17 @@ import {
 } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -45,18 +33,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	calendarDateToBirthdayString,
-	formatBirthdayDate,
-} from "@/lib/datetime/birthday";
-import {
-	TIME_FORMAT_OPTIONS,
-	type TimeFormat,
-} from "@/lib/user-preferences/time-format";
-import {
-	WEEK_START_OPTIONS,
-	type WeekStartDay,
-} from "@/lib/user-preferences/week-start";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { useSession } from "@/lib/auth-client";
+import { calendarDateFromPlainDate, plainDateFromCalendarDate } from "@/lib/datetime/calendar-date";
+import { TIME_FORMAT_OPTIONS, type TimeFormat } from "@/lib/user-preferences/time-format";
+import { WEEK_START_OPTIONS, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
@@ -72,10 +53,12 @@ const defaultValues = {
 	helpImproveProduct: true,
 };
 
-const BIRTHDAY_START_MONTH = new Date(1900, 0);
-const BIRTHDAY_DEFAULT_MONTH = new Date(2000, 0);
+const BIRTHDAY_START_MONTH = calendarDateFromPlainDate(Temporal.PlainDate.from("1900-01-01"));
+const BIRTHDAY_DEFAULT_MONTH = calendarDateFromPlainDate(Temporal.PlainDate.from("2000-01-01"));
 
 type ProfileValues = typeof defaultValues;
+type ProfileSubmitMeta = { generation: object | null };
+const defaultSubmitMeta: ProfileSubmitMeta = { generation: null };
 type ProfileForm = ReactFormExtendedApi<
 	ProfileValues,
 	FormValidateOrFn<ProfileValues> | undefined,
@@ -88,7 +71,7 @@ type ProfileForm = ReactFormExtendedApi<
 	FormValidateOrFn<ProfileValues> | undefined,
 	FormAsyncValidateOrFn<ProfileValues> | undefined,
 	FormAsyncValidateOrFn<ProfileValues> | undefined,
-	unknown
+	ProfileSubmitMeta
 >;
 type TranslationFunction = ReturnType<typeof useTranslate>["t"];
 type GenderOption = {
@@ -97,39 +80,22 @@ type GenderOption = {
 	icon: typeof IconGenderMale;
 };
 
-function getErrorMessage(error: unknown) {
-	if (typeof error === "string") return error;
-	if (
-		typeof error === "object" &&
-		error !== null &&
-		"message" in error &&
-		typeof error.message === "string"
-	) {
-		return error.message;
-	}
-	return undefined;
-}
-
-function ProfileHeader({
-	t,
-}: {
-	t: (key: string, defaultValue: string) => string;
-}) {
+function ProfileHeader({ t }: { t: TranslationFunction }) {
 	return (
-		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
-			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
-				<IconUser className="size-8 text-primary" />
-			</div>
-			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+		<header className="space-y-3 border-b pb-6">
+			<p className="text-sm font-medium text-primary">
+				{t("onboarding.profile.stepLabel", "Your Z8 profile")}
+			</p>
+			<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
 				{t("onboarding.profile.title", "Complete your profile")}
 			</h1>
-			<p className="text-muted-foreground">
+			<p className="max-w-prose text-muted-foreground">
 				{t(
-					"onboarding.profile.subtitle",
-					"Help your team recognize you by adding some personal information.",
+					"onboarding.profile.stepDescription",
+					"Add your personal details and choose how Z8 displays time. You can change these later in your profile settings.",
 				)}
 			</p>
-		</div>
+		</header>
 	);
 }
 
@@ -143,7 +109,7 @@ function ProfileActions({
 	t: (key: string, defaultValue: string) => string;
 }) {
 	return (
-		<div className="flex gap-3 pt-4">
+		<div className="flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row">
 			<Button
 				type="button"
 				variant="outline"
@@ -154,8 +120,13 @@ function ProfileActions({
 				{t("onboarding.profile.skip", "Skip for now")}
 			</Button>
 			<Button type="submit" disabled={loading} className="flex-1">
-				{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-				{t("onboarding.profile.continue", "Continue")}
+				{loading && (
+					<IconLoader2
+						aria-hidden="true"
+						className="mr-2 size-4 animate-spin motion-reduce:animate-none"
+					/>
+				)}
+				{t("onboarding.profile.saveContinue", "Save and continue")}
 			</Button>
 		</div>
 	);
@@ -183,7 +154,7 @@ function ProfileGenderField({
 						role="group"
 						aria-labelledby="profile-gender-label"
 						aria-describedby="profile-gender-description"
-						className="grid grid-cols-3 gap-3"
+						className="grid grid-cols-3 gap-2"
 					>
 						{genderOptions.map((option) => {
 							const Icon = option.icon;
@@ -194,8 +165,8 @@ function ProfileGenderField({
 									type="button"
 									variant={selected ? "default" : "outline"}
 									aria-pressed={selected}
-									className="h-auto flex-col gap-2 py-4"
-									onClick={() => field.handleChange(option.value)}
+									className="h-auto min-w-0 flex-col gap-2 px-1 py-3 whitespace-normal break-words"
+									onClick={() => field.handleChange(selected ? undefined : option.value)}
 									disabled={loading}
 								>
 									<Icon aria-hidden="true" className="size-6" />
@@ -204,14 +175,8 @@ function ProfileGenderField({
 							);
 						})}
 					</div>
-					<p
-						id="profile-gender-description"
-						className="text-sm text-muted-foreground"
-					>
-						{t(
-							"onboarding.profile.genderDesc",
-							"This helps personalize your experience.",
-						)}
+					<p id="profile-gender-description" className="text-sm text-muted-foreground">
+						{t("onboarding.profile.genderDesc", "This helps personalize your experience.")}
 					</p>
 				</div>
 			)}
@@ -235,13 +200,7 @@ function ProfileNameFields({
 				validators={{
 					onChange: z
 						.string()
-						.min(
-							1,
-							t(
-								"onboarding.profile.validation.firstNameRequired",
-								"First name is required",
-							),
-						)
+						.min(1, t("onboarding.profile.validation.firstNameRequired", "First name is required"))
 						.max(
 							50,
 							t(
@@ -252,24 +211,24 @@ function ProfileNameFields({
 				}}
 			>
 				{(field) => (
-					<div className="flex flex-col gap-y-2">
-						<Label htmlFor="profile-first-name">
+					<TFormItem>
+						<TFormLabel htmlFor="profile-first-name">
 							{t("onboarding.profile.firstName", "First Name")}
-						</Label>
-						<Input
-							id="profile-first-name"
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-							onBlur={field.handleBlur}
-							placeholder={t("onboarding.profile.firstNamePlaceholder", "John")}
-							disabled={status.loading}
-						/>
-						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm font-medium text-destructive">
-								{getErrorMessage(field.state.meta.errors[0])}
-							</p>
-						)}
-					</div>
+						</TFormLabel>
+						<TFormControl id="profile-first-name" hasError={field.state.meta.errors.length > 0}>
+							<Input
+								id="profile-first-name"
+								name="firstName"
+								autoComplete="given-name"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t("onboarding.profile.firstNamePlaceholder", "John")}
+								disabled={status.loading}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
 				)}
 			</form.Field>
 			<form.Field
@@ -277,13 +236,7 @@ function ProfileNameFields({
 				validators={{
 					onChange: z
 						.string()
-						.min(
-							1,
-							t(
-								"onboarding.profile.validation.lastNameRequired",
-								"Last name is required",
-							),
-						)
+						.min(1, t("onboarding.profile.validation.lastNameRequired", "Last name is required"))
 						.max(
 							50,
 							t(
@@ -294,24 +247,24 @@ function ProfileNameFields({
 				}}
 			>
 				{(field) => (
-					<div className="flex flex-col gap-y-2">
-						<Label htmlFor="profile-last-name">
+					<TFormItem>
+						<TFormLabel htmlFor="profile-last-name">
 							{t("onboarding.profile.lastName", "Last Name")}
-						</Label>
-						<Input
-							id="profile-last-name"
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-							onBlur={field.handleBlur}
-							placeholder={t("onboarding.profile.lastNamePlaceholder", "Doe")}
-							disabled={status.loading}
-						/>
-						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm font-medium text-destructive">
-								{getErrorMessage(field.state.meta.errors[0])}
-							</p>
-						)}
-					</div>
+						</TFormLabel>
+						<TFormControl id="profile-last-name" hasError={field.state.meta.errors.length > 0}>
+							<Input
+								id="profile-last-name"
+								name="lastName"
+								autoComplete="family-name"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t("onboarding.profile.lastNamePlaceholder", "Doe")}
+								disabled={status.loading}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
 				)}
 			</form.Field>
 		</>
@@ -320,12 +273,13 @@ function ProfileNameFields({
 
 // 2024-01-01 was a Monday and 2024-01-07 a Sunday.
 function getWeekdayName(locale: string, day: WeekStartDay) {
-	return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(
-		Date.UTC(2024, 0, day === "monday" ? 1 : 7),
+	return Temporal.PlainDate.from(day === "monday" ? "2024-01-01" : "2024-01-07").toLocaleString(
+		locale,
+		{ weekday: "long" },
 	);
 }
 
-function ProfileDateAndDisplayFields({
+function ProfileBirthdayField({
 	form,
 	status,
 	t,
@@ -336,59 +290,72 @@ function ProfileDateAndDisplayFields({
 }) {
 	const locale = useLocale();
 	return (
+		<form.Field name="birthday">
+			{(field) => (
+				<div className="flex flex-col gap-y-2">
+					<Label htmlFor="profile-birthday">
+						{t("onboarding.profile.birthdayOptional", "Birthday (Optional)")}
+					</Label>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button
+								id="profile-birthday"
+								variant="outline"
+								className={cn(
+									"w-full pl-3 text-left font-normal",
+									!field.state.value && "text-muted-foreground",
+								)}
+								disabled={status.loading}
+							>
+								{field.state.value ? (
+									plainDateFromCalendarDate(field.state.value).toLocaleString(locale, {
+										dateStyle: "long",
+									})
+								) : (
+									<span>{t("onboarding.profile.pickDate", "Pick a date")}</span>
+								)}
+								<IconCalendar aria-hidden="true" className="ml-auto size-4 opacity-50" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent
+							className="w-auto max-h-[min(28rem,80svh)] max-w-[calc(100vw-1rem)] overflow-auto p-0"
+							align="start"
+						>
+							<Calendar
+								className="[--cell-size:clamp(2rem,11vw,2.75rem)] pointer-coarse:[--cell-size:clamp(2rem,11vw,2.75rem)]"
+								mode="single"
+								selected={field.state.value}
+								onSelect={field.handleChange}
+								disabled={(date) => date > status.today || date < BIRTHDAY_START_MONTH}
+								captionLayout="dropdown"
+								startMonth={BIRTHDAY_START_MONTH}
+								endMonth={status.today}
+								defaultMonth={field.state.value || BIRTHDAY_DEFAULT_MONTH}
+								autoFocus
+							/>
+						</PopoverContent>
+					</Popover>
+					<p className="text-sm text-muted-foreground">
+						{t("onboarding.profile.birthdayDesc", "Your team can wish you a happy birthday!")}
+					</p>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function ProfileDisplayFields({
+	form,
+	status,
+	t,
+}: {
+	form: ProfileForm;
+	status: { loading: boolean };
+	t: TranslationFunction;
+}) {
+	const locale = useLocale();
+	return (
 		<>
-			<form.Field name="birthday">
-				{(field) => (
-					<div className="flex flex-col gap-y-2">
-						<Label htmlFor="profile-birthday">
-							{t("onboarding.profile.birthdayOptional", "Birthday (Optional)")}
-						</Label>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button
-									id="profile-birthday"
-									variant="outline"
-									className={cn(
-										"w-full pl-3 text-left font-normal",
-										!field.state.value && "text-muted-foreground",
-									)}
-									disabled={status.loading}
-								>
-									{field.state.value ? (
-										formatBirthdayDate(field.state.value)
-									) : (
-										<span>
-											{t("onboarding.profile.pickDate", "Pick a date")}
-										</span>
-									)}
-									<IconCalendar className="ml-auto size-4 opacity-50" />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
-									mode="single"
-									selected={field.state.value}
-									onSelect={field.handleChange}
-									disabled={(date) =>
-										date > status.today || date < BIRTHDAY_START_MONTH
-									}
-									captionLayout="dropdown"
-									startMonth={BIRTHDAY_START_MONTH}
-									endMonth={status.today}
-									defaultMonth={field.state.value || BIRTHDAY_DEFAULT_MONTH}
-									autoFocus
-								/>
-							</PopoverContent>
-						</Popover>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"onboarding.profile.birthdayDesc",
-								"Your team can wish you a happy birthday!",
-							)}
-						</p>
-					</div>
-				)}
-			</form.Field>
 			<form.Field name="weekStartDay">
 				{(field) => (
 					<div className="flex flex-col gap-y-2">
@@ -397,9 +364,7 @@ function ProfileDateAndDisplayFields({
 						</Label>
 						<Select
 							value={field.state.value}
-							onValueChange={(value) =>
-								field.handleChange(value as WeekStartDay)
-							}
+							onValueChange={(value) => field.handleChange(value as WeekStartDay)}
 							disabled={status.loading}
 						>
 							<SelectTrigger id="week-start-day" className="w-full">
@@ -415,8 +380,8 @@ function ProfileDateAndDisplayFields({
 						</Select>
 						<p className="text-sm text-muted-foreground">
 							{t(
-								"onboarding.profile.weekStartDayDesc",
-								"This controls how calendars and weekly summaries are displayed.",
+								"onboarding.profile.weekStartDisplayOnly",
+								"This changes calendar and summary display only. Compliance and submission weeks stay unchanged.",
 							)}
 						</p>
 					</div>
@@ -425,9 +390,7 @@ function ProfileDateAndDisplayFields({
 			<form.Field name="timeFormat">
 				{(field) => (
 					<div className="flex flex-col gap-y-2">
-						<Label htmlFor="time-format">
-							{t("onboarding.profile.timeFormat", "Time format")}
-						</Label>
+						<Label htmlFor="time-format">{t("onboarding.profile.timeFormat", "Time format")}</Label>
 						<Select
 							value={field.state.value}
 							onValueChange={(value) => field.handleChange(value as TimeFormat)}
@@ -441,10 +404,7 @@ function ProfileDateAndDisplayFields({
 									<SelectItem key={option.value} value={option.value}>
 										{option.value === "24h"
 											? t("onboarding.profile.timeFormat24h", "24-hour (08:00)")
-											: t(
-													"onboarding.profile.timeFormat12h",
-													"12-hour (8:00 AM)",
-												)}
+											: t("onboarding.profile.timeFormat12h", "12-hour (8:00 AM)")}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -474,14 +434,11 @@ function ProductImprovementField({
 	return (
 		<form.Field name="helpImproveProduct">
 			{(field) => (
-				<div className="rounded-lg border bg-muted/30 p-4">
+				<div className="rounded-lg bg-muted/40 p-4">
 					<div className="flex items-start justify-between gap-4">
 						<div className="space-y-1">
 							<Label htmlFor="help-improve-product">
-								{t(
-									"onboarding.profile.helpImproveProduct",
-									"Help us improve this app",
-								)}
+								{t("onboarding.profile.helpImproveProduct", "Help us improve this app")}
 							</Label>
 							<p className="text-sm text-muted-foreground">
 								{t(
@@ -493,14 +450,9 @@ function ProductImprovementField({
 						<Checkbox
 							id="help-improve-product"
 							checked={field.state.value}
-							onCheckedChange={(checked) =>
-								field.handleChange(checked === true)
-							}
+							onCheckedChange={(checked) => field.handleChange(checked === true)}
 							disabled={status.loading}
-							aria-label={t(
-								"onboarding.profile.helpImproveProduct",
-								"Help us improve this app",
-							)}
+							aria-label={t("onboarding.profile.helpImproveProduct", "Help us improve this app")}
 						/>
 					</div>
 				</div>
@@ -510,65 +462,130 @@ function ProductImprovementField({
 }
 
 export default function ProfilePage() {
+	const { data, isPending } = useSession();
+	return (
+		<ProfileStep
+			key={data?.user.id ?? "signed-out"}
+			scope={data?.session.activeOrganizationId ?? null}
+			ready={Boolean(data?.user) && !isPending}
+		/>
+	);
+}
+
+function ProfileStep({ scope, ready }: { scope: string | null; ready: boolean }) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
-	const [loading, setLoading] = useState(false);
-	const [today] = useState(() => new Date(Temporal.Now.instant().toString()));
+	const [isLoading, setLoading] = useState(false);
+	const loading = isLoading || !ready;
+	const [failure, setFailure] = useState<{ action: "save" | "skip"; message: string } | null>(null);
+	const lifetime = useRef<object | null>(null);
+	const pending = useRef(false);
+	const formElement = useRef<HTMLFormElement>(null);
+	useLayoutEffect(() => {
+		// Effect cleanup also runs when React Activity hides this page. A generation,
+		// rather than equality of IDs, rejects completions after A → B → A.
+		lifetime.current = ready ? { scope } : null;
+		if (!pending.current) setLoading(false);
+		return () => {
+			lifetime.current = null;
+		};
+	}, [scope, ready]);
+	const [today] = useState(() => calendarDateFromPlainDate(Temporal.Now.plainDateISO("UTC")));
 
 	const form = useForm({
 		defaultValues,
-		onSubmit: async ({ value }) => {
+		onSubmitMeta: defaultSubmitMeta,
+		onSubmitInvalid: () => {
+			formElement.current?.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus();
+		},
+		onSubmit: async ({ value, meta }) => {
+			if (pending.current || !ready || !meta.generation || lifetime.current !== meta.generation)
+				return;
+			pending.current = true;
+			const generation = meta.generation;
+			setFailure(null);
 			await runOnboardingAction({
 				action: () =>
 					updateProfileOnboarding({
 						...value,
-						birthday: calendarDateToBirthdayString(value.birthday) ?? undefined,
+						birthday: value.birthday
+							? plainDateFromCalendarDate(value.birthday).toString()
+							: undefined,
 					}),
 				onResult: (result) => {
+					if (lifetime.current !== generation) return;
 					if (result.success) {
-						toast.success(
-							t("onboarding.profile.success", "Profile updated successfully!"),
-						);
+						toast.success(t("onboarding.profile.success", "Profile updated successfully!"));
 						push(result.data.nextStep);
 						return true;
 					} else {
-						toast.error(
-							result.error ||
-								t("onboarding.profile.error", "Failed to update profile"),
-						);
+						setFailure({
+							action: "save",
+							message: result.error || t("onboarding.profile.error", "Failed to update profile"),
+						});
+						toast.error(result.error || t("onboarding.profile.error", "Failed to update profile"));
 					}
 				},
 				onRejected: () => {
-					toast.error(
-						t("onboarding.profile.error", "Failed to update profile"),
-					);
+					if (lifetime.current !== generation) return;
+					setFailure({
+						action: "save",
+						message: t("onboarding.profile.error", "Failed to update profile"),
+					});
+					toast.error(t("onboarding.profile.error", "Failed to update profile"));
 				},
-				setLoading,
+				setLoading: (value) => {
+					if (!value) pending.current = false;
+					if (lifetime.current === generation) setLoading(value);
+				},
 			});
+			if (lifetime.current !== generation && lifetime.current) {
+				pending.current = false;
+				setLoading(false);
+			}
 		},
 	});
 
 	async function handleSkip() {
+		if (pending.current || !ready || !lifetime.current) return;
+		pending.current = true;
+		const generation = lifetime.current;
+		setFailure(null);
 		await runOnboardingAction({
 			action: skipProfileSetup,
 			onResult: (result) => {
+				if (lifetime.current !== generation) return;
 				if (result.success) {
 					push(result.data.nextStep);
 					return true;
 				} else {
+					setFailure({
+						action: "skip",
+						message:
+							result.error || t("onboarding.profile.skipError", "Failed to skip profile setup"),
+					});
 					toast.error(
-						result.error ||
-							t("onboarding.profile.skipError", "Failed to skip profile setup"),
+						result.error || t("onboarding.profile.skipError", "Failed to skip profile setup"),
 					);
 				}
 			},
 			onRejected: () => {
-				toast.error(
-					t("onboarding.profile.skipError", "Failed to skip profile setup"),
-				);
+				if (lifetime.current !== generation) return;
+				setFailure({
+					action: "skip",
+					message: t("onboarding.profile.skipError", "Failed to skip profile setup"),
+				});
+				toast.error(t("onboarding.profile.skipError", "Failed to skip profile setup"));
 			},
-			setLoading,
+			setLoading: (value) => {
+				if (!value) pending.current = false;
+				if (lifetime.current === generation) setLoading(value);
+			},
 		});
+		if (lifetime.current !== generation && lifetime.current) {
+			pending.current = false;
+			setLoading(false);
+		}
 	}
 
 	const genderOptions = [
@@ -593,45 +610,66 @@ export default function ProfilePage() {
 		<>
 			<ProgressIndicator currentStep="profile" />
 
-			<div className="mx-auto max-w-2xl">
+			<div className="mx-auto max-w-2xl rounded-xl border bg-card p-5 text-card-foreground shadow-sm sm:p-8">
 				<ProfileHeader t={t} />
-
-				<Card>
-					<CardHeader>
-						<CardTitle>
+				<form
+					ref={formElement}
+					action={() => {
+						void form.handleSubmit({ generation: lifetime.current });
+					}}
+					className="space-y-8 pt-6"
+					noValidate
+					aria-busy={loading}
+				>
+					<section aria-labelledby="profile-identity" className="space-y-5">
+						<h2 id="profile-identity" className="text-lg font-semibold">
 							{t("onboarding.profile.personalInfo", "Personal Information")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"onboarding.profile.personalInfoDesc",
-								"This information will be visible to your team members.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<form
-							action={() => {
-								void form.handleSubmit();
-							}}
-							className="space-y-6"
-						>
+						</h2>
+						<div className="grid gap-5 sm:grid-cols-2">
 							<ProfileNameFields form={form} status={{ loading }} t={t} />
-							<ProfileGenderField
-								form={form}
-								genderOptions={genderOptions}
-								loading={loading}
-								t={t}
-							/>
-							<ProfileDateAndDisplayFields
-								form={form}
-								status={{ loading, today }}
-								t={t}
-							/>
-							<ProductImprovementField form={form} status={{ loading }} t={t} />
-							<ProfileActions loading={loading} onSkip={handleSkip} t={t} />
-						</form>
-					</CardContent>
-				</Card>
+						</div>
+						<ProfileGenderField form={form} genderOptions={genderOptions} loading={loading} t={t} />
+						<ProfileBirthdayField form={form} status={{ loading, today }} t={t} />
+					</section>
+					<section aria-labelledby="profile-display" className="space-y-5 border-t pt-6">
+						<h2 id="profile-display" className="text-lg font-semibold">
+							{t("onboarding.profile.displayPreferences", "Display preferences")}
+						</h2>
+						<ProfileDisplayFields form={form} status={{ loading }} t={t} />
+					</section>
+					<section aria-labelledby="profile-product" className="space-y-4 border-t pt-6">
+						<h2 id="profile-product" className="text-lg font-semibold">
+							{t("onboarding.profile.productChoice", "Product improvement")}
+						</h2>
+						<ProductImprovementField form={form} status={{ loading }} t={t} />
+					</section>
+					{failure && (
+						<div role="alert" className="space-y-2 rounded-md border border-destructive/40 p-4">
+							<p>{failure.message}</p>
+							<p className="text-sm">
+								{t(
+									"onboarding.profile.draftRetained",
+									"Your input is still here. Try again when you are ready.",
+								)}
+							</p>
+							<Button
+								type="button"
+								variant="outline"
+								disabled={loading}
+								onClick={() =>
+									failure.action === "skip"
+										? void handleSkip()
+										: void form.handleSubmit({ generation: lifetime.current })
+								}
+							>
+								{failure.action === "skip"
+									? t("onboarding.profile.retrySkip", "Retry skip")
+									: t("onboarding.profile.retrySave", "Retry save")}
+							</Button>
+						</div>
+					)}
+					<ProfileActions loading={loading} onSkip={handleSkip} t={t} />
+				</form>
 			</div>
 		</>
 	);

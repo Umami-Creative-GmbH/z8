@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"origin\":\"http://localhost:49211/en/onboarding/wellness\",\"result\":{\"action\":false,\"headings\":[\"Stay Hydrated\"],\"path\":\"/en/onboarding/wellness\"}},\"error\":null}\n",
+  "err": ""
+}

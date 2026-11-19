@@ -1,0 +1,21 @@
+{
+  "bridge": {
+    "verifiedFilesRemoved": 31,
+    "absent": true
+  },
+  "overlays": {
+    "everApplied": false,
+    "trackedSourcesRestored": true
+  },
+  "ownedResources": {
+    "next": [],
+    "browser": [],
+    "nativeDaemons": [],
+    "listeners": [],
+    "fixtureServices": [],
+    "fixtureServiceCountCreated": 0
+  },
+  "runtime": "No runtime or service was started. All spawned foreground package/test commands have completed. No peer process/service was inspected, touched or stopped.",
+  "auth": "No auth/session state created, copied, saved, restored, exported or minted; no SQL, fixture or provider access occurred.",
+  "remainingOwnedServicesProcesses": 0
+}

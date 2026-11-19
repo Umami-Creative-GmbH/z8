@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "issue": 1773,
+  "node": "R148",
+  "status": "bounded-independent-pass",
+  "verifiedCommit": null,
+  "candidate": "1667fb60160900abac4594d88aa7bf72c16bb507",
+  "appTree": "0ada8178304098b103daa1284f9158cdf59384d8",
+  "criticalFindings": 0,
+  "scope": "Five-file correction and affected public proxy/layout/preference/alias consumers; synthetic framework seams and disposable PostgreSQL only.",
+  "results": {
+    "units": {
+      "passed": 418,
+      "failed": 0,
+      "physicalFiles": 32,
+      "includesRoot380": true,
+      "independentFrameworkTransport": 10,
+      "preferenceNormalization": 28,
+      "rerunsNonadditive": true
+    },
+    "postgres": {
+      "passed": 5,
+      "failed": 0,
+      "physicalFiles": 1,
+      "existingCanonicalAliasSuite": true,
+      "overlapsPriorCanonicalRuns": true
+    },
+    "total": {
+      "physicalFileFullNameInstances": 423,
+      "physicalFiles": 33,
+      "semanticOverlapQualified": true
+    },
+    "typegen": "pass",
+    "mainTypeScript": "qualified nonpass: missing ignored licenses.json; not generated/copied/borrowed",
+    "workflowSmokeTypes": "pass",
+    "lintImport": "five files pass",
+    "explicit100ColumnCRLF": "five files pass",
+    "ordinary": "nonpass:fiveformat errors/zero warnings",
+    "doctor": {
+      "version": "0.9.22",
+      "files": 5,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true
+    }
+  },
+  "independentControls": [
+    "Actual NextRequest, real next-intl/proxy, pinned Next getResolveRoutes transport and actual authenticated layout; external identity/dispatcher/filesystem/navigation adapters synthetic.",
+    "Repeated/empty/encoded bytes, saved-language precedence, matching/unset/unsupported normalized preferences.",
+    "Spoofed path/search/locale input cannot replace actual URL path/search; sequential query/noquery clears prior context.",
+    "Intl/session/client/cookie/security context survives, private override metadata is consumed without normal public search echo.",
+    "Locale-prefix and unauthenticated early return; existing session-expired/SSO/MFA/billing/setup/share/API/domain/origin controls preserved.",
+    "Canonical alias guard/repeated values/tab=webhooks and member/scope refusal cases pass."
+  ],
+  "intake": {
+    "payloadFiles": 9,
+    "payloadBytes": 162495,
+    "jsonParsed": 7,
+    "indexSha256": "f7032377648ea7b0015aba4ca4765a0dfdd8967bcc5f1152dccc20cc95910dcb",
+    "summarySha256": "6522c005227afe5abfcb5de0ebe2f77d10ae76532f8f4b38805f1209af2a7929",
+    "independentAuditSha256": "8cb1321be31b0257e4b3cdaf8280fb911182dcaeb1db8a86100609ba5c6b5646",
+    "currentRootSourcePinsMatched": 5
+  },
+  "preservation": {
+    "reviewReportedTrackedFiles": 18504,
+    "reviewReportedBytesAndIndexUnchanged": true,
+    "reportedBridgeRemoved": true,
+    "reportedOwnedProcesses": 0,
+    "reportedOwnedListeners": 0,
+    "reportedOwnedContainers": 0,
+    "qualification": "Preservation and cleanup are sealed review receipts; SAFE intake did not recertify private full inventories or live resources."
+  },
+  "harnessQualifications": [
+    "First10-case attempt passed2/failed8 because connection mock resolved outside app package. Relocated clone/bridge into matching app package; assertions retained, final10pass.",
+    "Engine-store discovery fallback12.21 never ran installation/checks; privileged12.16.1 used with dependency guard.",
+    "Initial path/loader/quote/dependency-pin lookups and unsupported Doctor flag combinations retained; final supported commands are separate.",
+    "Initial denied CIM query was not treated as verified zero; privileged read-only cleanup receipt confirms absence."
+  ],
+  "remaining": [
+    "Live saved-en/request-de and saved-de/request-de alias recheck on current source.",
+    "R096 owner/native/axe and broader runtime/provider/build/catalog/device limits remain separate.",
+    "No live alias/authentication/authorization result inferred from synthetic transport or PG session adapters."
+  ],
+  "privateSafeIndex": "X:/t3-code/worktrees/z8/t3-52a002d1-87490b7d43fe0688/.tmp/review-r148-independent-20261117/SAFE/SAFE-index.json"
+}

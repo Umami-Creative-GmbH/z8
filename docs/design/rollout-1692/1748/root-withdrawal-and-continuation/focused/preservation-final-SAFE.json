@@ -1,0 +1,17 @@
+{
+  "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "trackedFileCount": 18587,
+  "trackedDigest": "4efa03ec07a569ce351e60e3bf44b5fc0d0a22f2a908d77e13296075d985b324",
+  "trackedUnchanged": true,
+  "indexUnchanged": true,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+  "dependencyLinks": 158,
+  "dependencyLinksUnchanged": true,
+  "guardSha256": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+  "canonicalFixtureSha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+  "frozenPinsUnchanged": true,
+  "old34AllowlistedPayloadsUnchanged": true
+}

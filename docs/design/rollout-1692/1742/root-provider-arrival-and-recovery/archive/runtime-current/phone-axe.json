@@ -1,0 +1,21 @@
+{
+    "source":  "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+    "viewport":  {
+                     "height":  844,
+                     "width":  390
+                 },
+    "selector":  "main",
+    "axeVersion":  "4.12.1",
+    "counts":  {
+                   "inapplicable":  58,
+                   "incomplete":  0,
+                   "passes":  30,
+                   "violations":  0
+               },
+    "violations":  [
+
+                   ],
+    "incomplete":  [
+
+                   ]
+}

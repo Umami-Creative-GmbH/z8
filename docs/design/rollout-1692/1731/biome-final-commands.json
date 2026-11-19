@@ -1,0 +1,48 @@
+[
+  {
+    "exit": 0,
+    "profile": "explicit-crlf-final",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=./biome.jsonc",
+      "--line-ending=crlf",
+      "src/components/personnel-file/due-for-deletion-list.tsx",
+      "src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "src/components/personnel-file/due-for-deletion-heading.tsx",
+      "src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+      "src/lib/personnel-file/retention.integration.test.ts",
+      "src/lib/navigation/route-metadata.ts"
+    ]
+  },
+  {
+    "exit": 0,
+    "profile": "explicit-lint-final",
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=./biome.jsonc",
+      "--formatter-enabled=false",
+      "src/components/personnel-file/due-for-deletion-list.tsx",
+      "src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "src/components/personnel-file/due-for-deletion-heading.tsx",
+      "src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+      "src/lib/personnel-file/retention.integration.test.ts",
+      "src/lib/navigation/route-metadata.ts"
+    ]
+  }
+]

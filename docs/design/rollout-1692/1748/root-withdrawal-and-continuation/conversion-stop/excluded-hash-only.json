@@ -1,0 +1,44 @@
+[
+  {
+    "name": "install.log",
+    "bytes": 1260,
+    "sha256": "912a34d762b6c4f0d7f2003c3defc1a2a246a00bf0661f897db1ccc02dafd606",
+    "allowlistedPublicContent": false,
+    "reason": "Raw runner/install output excluded. Hash-only receipt; not audited sanitized public content."
+  },
+  {
+    "name": "install-escalated.log",
+    "bytes": 4891,
+    "sha256": "5928535ed3d2e9de99f4ce2e62956a39459e73b7df18ea2802b75380d980ab70",
+    "allowlistedPublicContent": false,
+    "reason": "Raw runner/install output excluded. Hash-only receipt; not audited sanitized public content."
+  },
+  {
+    "name": "priority.log",
+    "bytes": 497,
+    "sha256": "6207eb716662ec549342a9e894f3fc18a706fcd8964af47ebe67458f03c6182a",
+    "allowlistedPublicContent": false,
+    "reason": "Raw runner/install output excluded. Hash-only receipt; not audited sanitized public content."
+  },
+  {
+    "name": "priority.json",
+    "bytes": 13282,
+    "sha256": "73d9081769497a0eacdfb69081d30fb9180076a8cbc6cd2ccee19f7b9c4f84e2",
+    "allowlistedPublicContent": false,
+    "reason": "Raw runner/install output excluded. Hash-only receipt; not audited sanitized public content."
+  },
+  {
+    "name": "conversion.log",
+    "bytes": 499,
+    "sha256": "72179c7067d80b846dec9624e99384a303022a0021eb0009248b7856be2146d2",
+    "allowlistedPublicContent": false,
+    "reason": "Raw runner/install output excluded. Hash-only receipt; not audited sanitized public content."
+  },
+  {
+    "name": "conversion.json",
+    "bytes": 3296,
+    "sha256": "786f4de7c79378e6c31abe272043e8fa98686b1471a3e8f8d98da7e16773516f",
+    "allowlistedPublicContent": false,
+    "reason": "Raw runner/install output excluded. Hash-only receipt; not audited sanitized public content."
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "authHTTP": 500,
+  "unexpectedTargetRoot": "X:/t3-code/worktrees/z8/t3-394c4cda-6b16d8d73f89b377",
+  "port": 53965,
+  "sourceFilesUntouchedByIncident": true,
+  "stoppedPids": [
+    94904,
+    93560
+  ],
+  "portClosed": true,
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "packageMutationStoppedByRoot": false,
+  "reason": "Root package junctions now resolve outside its hermetic workspace into the welcome implementation checkout",
+  "nextError": "Could not find the Next.js package (next/package.json)"
+}

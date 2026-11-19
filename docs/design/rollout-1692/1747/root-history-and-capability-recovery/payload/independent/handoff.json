@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "issue": 1747,
+  "scope": "NEW bounded independent R165 withdrawal correction recheck; not 157-ticket whole-branch, runtime, readiness or publication acceptance",
+  "verifiedCommit": null,
+  "source": {
+    "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "tree": "e1887d9b62886063435f93c86719995e71ce6fd2",
+    "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "parents": [
+      "0a1048d64ae2a54292b454d757b4a1de306360c9"
+    ],
+    "publishedParent": "bceb0ee32ca64e1d0fcf36906e89b0509665c479",
+    "implementation": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
+    "nativeMerge": "c70858bfe507eb99f844a455230e312cc8247b61",
+    "nativeTree": "52914144178afccc17f7093ee588817be99d6180",
+    "nativeAppTree": "887eab4a441b413763f93588dfe5d874ebfffb75",
+    "correction": "20a7481f08b6156e912442492f8181ffe2650134",
+    "correctionMerge": "0a1048d64ae2a54292b454d757b4a1de306360c9",
+    "latestVerified": "e3957741a7f0f1aeeba748cce3af27a42870fcf1"
+  },
+  "findings": {
+    "critical": [],
+    "spec": [],
+    "standards": [],
+    "toolDiagnostics": [
+      {
+        "severity": "P3",
+        "kind": "ordinary formatting",
+        "files": 4,
+        "exit": 1,
+        "scope": "Four root-correction TS/TSX files; existing declared style qualification. Explicit100CRLF passes; no fixes."
+      }
+    ],
+    "lowerConfidenceObjections": [],
+    "limitations": [
+      "The exact canonical {success:false,error:\"Unauthorized\"} history response withdraws this consumer evidence. No new authority or server revision semantics were invented.",
+      "A fresh successful read may restore rows or healthy empty, including after retired conversion invalidation. No claim that session/authority revocation is linearizable across separate server requests or observers.",
+      "The session hook, session atom, context HTTP transport, server actions, navigation, translations and toast edges are adapted. Controllers, query owners, row leaves, real providers, local Retry and HeaderRefreshButton run as production code.",
+      "No browser, Next server, native or current runtime acceptance performed. Live retirement/revocation/foreign-data/accessibility/wide-layout limits remain root-owned.",
+      "Issue OPEN/KaiSoellch is supplied/inherited; this review performs no tracker operation or fresh live tracker verification.",
+      "Historical green-exact contains7 current passes plus1 unchanged failed premerge control; overall not green. No archived application driver executed or proof resealed."
+    ]
+  },
+  "results": {
+    "priority": {
+      "passed": 20,
+      "total": 20,
+      "file": "priority-final.json",
+      "actualHeaderAndRetry": true,
+      "objections": [
+        "durable refusal across structured and rejected outages",
+        "all report/legacy/provenance links, money, counts and row controls disappear",
+        "ordinary structured/transport outage preserves available evidence",
+        "initial refusal stays unknown; fresh empty restores healthy zero counts",
+        "no-match cannot hide refusal and recovery preserves selection",
+        "held continuation success and private refusal details retired by history refusal",
+        "positive active continuation navigates once",
+        "held history and continuation across pending/account/org/employee/provider/Activity arrival boundaries"
+      ]
+    },
+    "unit": {
+      "passed": 183,
+      "total": 183,
+      "files": 13,
+      "file": "unit13.json",
+      "selection": "Committed rootTdd.unitSelection, exactly"
+    },
+    "pg": {
+      "passed": 50,
+      "total": 50,
+      "files": 6,
+      "file": "pg6.json",
+      "selection": [
+        "src/lib/travel-expenses/expense-history.integration.test.ts",
+        "src/lib/travel-expenses/report-draft.integration.test.ts",
+        "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+        "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+        "src/lib/travel-expenses/mileage-policy.integration.test.ts"
+      ],
+      "runner": "Unmodified standard test:integration -> run-approval-workflow-repository-integration.sh -> run-postgres-integration-suites.sh, verifier + maxWorkers1",
+      "migrationVerifier": "custom-schema refusal, incident recovery, retry idempotency, anchor-present index recovery, fresh chain passed",
+      "warnings": [
+        "Vite native-config future compatibility warning",
+        "pg concurrent client.query deprecation warning"
+      ],
+      "ownedContainerRemoved": true
+    },
+    "identities": {
+      "file": "case-multiset.json",
+      "unit": 203,
+      "unitFiles": 14,
+      "pg": 50,
+      "pgFiles": 6,
+      "distinct": 253,
+      "files": 20,
+      "overlapFrozen1748": {
+        "unit": 159,
+        "pg": 13,
+        "total": 172,
+        "notAdded": true
+      }
+    },
+    "quality": {
+      "typegen": 0,
+      "mainTypes": {
+        "exit": 1,
+        "soleDiagnostic": "src/app/[locale]/(auth)/licenses/page.tsx(7,22): TS2307 missing @/data/licenses.json",
+        "licenseAbsent": true,
+        "licenseNotCopiedOrGenerated": true
+      },
+      "workflowTypes": 0,
+      "smokeTypes": 0,
+      "lint4": 0,
+      "ordinaryFormat4": {
+        "exit": 1,
+        "findings": 4
+      },
+      "explicit100CrLf4": 0,
+      "doctor": {
+        "version": "0.9.22",
+        "exit": 0,
+        "errorCount": 0,
+        "warningCount": 0,
+        "files": [
+          "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+          "src/components/travel-expenses/expense-history.tsx",
+          "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "src/components/travel-expenses/travel-expense-management.test.tsx"
+        ]
+      }
+    },
+    "fixtureReconciliation": {
+      "file": "fixture-reconciliation.json",
+      "assertionsRemoved": 0,
+      "testNamesUnchanged": true,
+      "baselineAssertions": 72,
+      "currentAssertions": 73,
+      "additionalExpectation": "wait until public Continue as report is enabled"
+    }
+  },
+  "preservation": {
+    "file": "preservation.json",
+    "archiveVerifier": "archive-verifier.log",
+    "archiveFiles": 202,
+    "currentSourcePins": {
+      "unchanged": 12,
+      "total": 14,
+      "expectedDifferences": [
+        {
+          "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "frozen": "ba19e9037e3e304b877091993f968a101f684b94",
+          "current": "add33b6384fe6add972aa7b4544fa3f942a82bd5"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "frozen": "225e32211910e6e2a89504996134d7673e5d1ca4",
+          "current": "af46342d736672775d7b9f49116991231a2863e0"
+        }
+      ]
+    },
+    "anchors": 65,
+    "statuses": {
+      "integrated": 64,
+      "awaiting-integration": 40,
+      "pending": 53
+    },
+    "nodes": 157,
+    "edges": 159,
+    "templates": 172,
+    "aliases": 19,
+    "rootNonoverlap": {
+      "checked": 18780,
+      "unexpected": []
+    },
+    "incomingNonoverlap": {
+      "checked": 82,
+      "unexpected": []
+    },
+    "qualification": "Counts18780 and82 exclude paths allowed to change in root correction/metadata as well as opposite-parent changes; different selection from historical18783/85. All examined nonoverlap bytes match. No broader inherited evidence acceptance claim."
+  },
+  "attempts": {
+    "priorityAttempt1": {
+      "exit": 1,
+      "passed": 0,
+      "failed": 1,
+      "unrun": 12,
+      "classification": "Harness wrong accessible filter name All 2 versus actual All2; no refusal exercised before bail; source retained"
+    },
+    "priorityAttempt2": {
+      "exit": 0,
+      "passed": 13,
+      "notAdded": true
+    },
+    "priorityFinal": {
+      "exit": 0,
+      "passed": 20
+    },
+    "fixtureAudit": "First missing-parser harness failed, corrected using own installed Babel parser; no production failure",
+    "resourceInventory": "First denied inventory invalidated; successful escalated retry proves zero matching owned processes"
+  },
+  "cleanup": {
+    "bridge": "bridge-removal.json",
+    "hashGuarded": true,
+    "removedOnlyOwnUnchangedBridge": true,
+    "release": "resource-release.json",
+    "ownedLiveResources": 0,
+    "physicalDependenciesPreserved": true,
+    "privateEvidencePreserved": true,
+    "sourceClean": true,
+    "indexClean": true,
+    "indexLockAbsent": true
+  },
+  "commands": "commands.json and commands-extra.json contain literal commands/exits; shell wrapper aggregate exit0 does not change individual child exits",
+  "remaining": "Root retains all source fixes, integration, publication and readiness. No readiness or verifiedCommit update, tracker write, commit, push, PR, closure, dev merge, deployment, browser runtime or delegate."
+}

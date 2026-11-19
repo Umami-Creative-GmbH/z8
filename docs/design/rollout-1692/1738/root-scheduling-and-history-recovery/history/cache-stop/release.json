@@ -1,0 +1,24 @@
+{
+  "head": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "indexExact": true,
+  "release": "RELEASE ALL checkout/index/integration-Git/package/runtime/process ownership",
+  "ownedLiveResources": 0,
+  "owned": {
+    "testBridges": 0,
+    "detachedProcesses": 0,
+    "servers": 0,
+    "listeners": 0,
+    "browsers": 0,
+    "nativeSessions": 0,
+    "containers": 0,
+    "fixtures": 0,
+    "authStates": 0,
+    "peerResourcesTouched": 0
+  },
+  "evidence": "Only synchronous git/node/pnpm unit commands were launched and all returned terminal exit codes. No process was detached; no runtime, fixture, browser, native target, container or auth input/state was created. Two exact ignored test bridges were removed by resolved path, archive hash and bridge hash; their dedicated namespace is removed. No peer process, container, browser or archive was enumerated for cleanup or modified.",
+  "dependencies": "Physical parents,158 in-tree links,lock,licenses and129 tracked configuration paths preserved. No install,repair,overlay,fallback or lock relocation. Vitest cache bytes are not claimed globally byte-identical.",
+  "publication": false,
+  "verifiedCommit": null
+}

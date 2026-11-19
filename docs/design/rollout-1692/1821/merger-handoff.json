@@ -1,0 +1,526 @@
+{
+  "merge": "19c6c2adccb4ed0c13ca0fbd5cb593fb4dc82d88",
+  "parents": [
+    "afa8626d21e6cd9fa988a985bfd567ee65d4f3c9",
+    "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548"
+  ],
+  "tree": "eaf964e763d32bc45a3dcc625f149c29e01eacc2",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 19,
+        "cases": 240,
+        "passed": 240,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 76,
+        "cases": 673,
+        "passed": 673,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      }
+    ],
+    "uniqueFiles": 95,
+    "uniqueCases": 913,
+    "method": "File path and full test name multisets; equal-name parameterized cases retain multiplicity; repeated runs do not add cases."
+  },
+  "quality": {
+    "types": {
+      "passed": true,
+      "scope": [
+        "Next route types",
+        "application",
+        "workflow contracts",
+        "smoke"
+      ]
+    },
+    "biome": {
+      "changedFiles": 2,
+      "actualCheckoutCrlfAware": "passed",
+      "explicitWebappLintImport": "passed",
+      "explicitWebappFormatting": {
+        "passed": false,
+        "formattingOnlyFiles": [
+          "src/components/forgot-password-form.test.tsx",
+          "src/components/forgot-password-form.tsx"
+        ],
+        "qualification": "Explicit 100-column webapp profile remains unpassed; raw source is preserved, with no formatter or rule rewrite."
+      }
+    },
+    "doctor": {
+      "files": 2,
+      "diagnostics": 0,
+      "scope": "changed",
+      "base": "afa8626d21e6cd9fa988a985bfd567ee65d4f3c9",
+      "telemetry": false,
+      "supplyChain": false,
+      "remoteScore": "disabled"
+    }
+  },
+  "preservation": {
+    "verifiedAncestors": 27,
+    "priorRolloutPathsUnchanged": 1141,
+    "unaffectedPriorPathsUnchanged": 11360,
+    "changedPaths": 55,
+    "allIncomingChangedPathsPreserved": true,
+    "allOtherFirstParentBlobsPreserved": true
+  },
+  "artifacts": {
+    "pngsFullyDecoded": 35,
+    "jsonParsed": 14,
+    "scriptsSyntaxChecked": 3,
+    "relativeLinksResolved": 11,
+    "matchedPairs": 6,
+    "afterStates": 14,
+    "actionChecks": 5,
+    "sourcePins": [
+      {
+        "record": "before",
+        "path": "apps/webapp/src/components/forgot-password-form.tsx",
+        "sha256": "2d51e578e6fd8454989815a275e3a5e1c0e899edce906b90fb3afb875611ef42",
+        "currentCheckoutSha256": "cf208403b10eb39fdb4366619d5fc164d2f958a93d1d4549ac74ca05a994c217",
+        "exactCheckoutBytesMatch": false,
+        "canonicalCapturedSourceMatches": true,
+        "canonicalCurrentSourceMatches": false
+      },
+      {
+        "record": "before",
+        "path": "apps/webapp/src/components/auth-form-wrapper.tsx",
+        "sha256": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421",
+        "currentCheckoutSha256": "d37fe83187e36825bd3c69a58e6678c99be204492d4548058264833db713e50b",
+        "exactCheckoutBytesMatch": false,
+        "canonicalCapturedSourceMatches": true,
+        "canonicalCurrentSourceMatches": false
+      },
+      {
+        "record": "after",
+        "path": "apps/webapp/src/components/forgot-password-form.tsx",
+        "sha256": "601b425b564915a9b4634f0b11c26ebb161a80e82755292ecedb1ee75e2d7640",
+        "currentCheckoutSha256": "cf208403b10eb39fdb4366619d5fc164d2f958a93d1d4549ac74ca05a994c217",
+        "exactCheckoutBytesMatch": false,
+        "canonicalCapturedSourceMatches": true,
+        "canonicalCurrentSourceMatches": true
+      },
+      {
+        "record": "after",
+        "path": "apps/webapp/src/components/auth-form-wrapper.tsx",
+        "sha256": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421",
+        "currentCheckoutSha256": "d37fe83187e36825bd3c69a58e6678c99be204492d4548058264833db713e50b",
+        "exactCheckoutBytesMatch": false,
+        "canonicalCapturedSourceMatches": true,
+        "canonicalCurrentSourceMatches": true
+      },
+      {
+        "record": "combined",
+        "path": "apps/webapp/src/components/forgot-password-form.tsx",
+        "sha256": "601b425b564915a9b4634f0b11c26ebb161a80e82755292ecedb1ee75e2d7640",
+        "currentCheckoutSha256": "cf208403b10eb39fdb4366619d5fc164d2f958a93d1d4549ac74ca05a994c217",
+        "exactCheckoutBytesMatch": false,
+        "canonicalCapturedSourceMatches": true,
+        "canonicalCurrentSourceMatches": true
+      },
+      {
+        "record": "combined",
+        "path": "apps/webapp/src/components/auth-form-wrapper.tsx",
+        "sha256": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421",
+        "currentCheckoutSha256": "d37fe83187e36825bd3c69a58e6678c99be204492d4548058264833db713e50b",
+        "exactCheckoutBytesMatch": false,
+        "canonicalCapturedSourceMatches": true,
+        "canonicalCurrentSourceMatches": true
+      }
+    ],
+    "archives": [
+      {
+        "name": "r019-historical",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1717/verify-evidence.mjs"
+        ],
+        "output": "Verified matched scope/viewport/row/title evidence, retained raw hashes against captured source f043d581e481a984a54da81b967bf5e6cfdfcd5e, 24 core + 11 final variant assertions, retained historical messages, native tree and Next diagnostics. This does not constitute a fresh browser run."
+      },
+      {
+        "name": "r021-current",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1719/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "output": "{\"matchedPairs\":3,\"retainedRows\":3,\"runtimeAssertions\":28,\"preferenceAssertions\":6,\"pinnedSource\":\"412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150\",\"currentSource\":true}"
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+        ],
+        "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+        ],
+        "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/verify-route-inventory.mjs",
+          ".",
+          "HEAD",
+          ".tmp/merge1821-audit/route-inventory.json"
+        ],
+        "output": "{\"commit\":\"19c6c2adccb4ed0c13ca0fbd5cb593fb4dc82d88\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+      }
+    ]
+  },
+  "diffChecks": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "afa8626d21e6cd9fa988a985bfd567ee65d4f3c9",
+        "HEAD"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548",
+        "HEAD"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "safe.directory=X:/t3-code/worktrees/z8/t3-83cae483-8b250e104719624c",
+        "-C",
+        "X:/t3-code/worktrees/z8/t3-83cae483-8b250e104719624c",
+        "diff",
+        "--check",
+        "d4f4859527122f39dfda456671d48de131bab51c",
+        "HEAD"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "safe.directory=X:/t3-code/worktrees/z8/t3-83cae483-8b250e104719624c",
+        "-C",
+        "X:/t3-code/worktrees/z8/t3-83cae483-8b250e104719624c",
+        "diff",
+        "--check"
+      ],
+      "passed": true
+    }
+  ],
+  "findings": {
+    "sourceBlockers": [],
+    "eofInformational": [
+      "docs/design/rollout-1692/1821/after-runtime.json",
+      "docs/design/rollout-1692/1821/attempts/after-captcha-keyboard-timing.json",
+      "docs/design/rollout-1692/1821/attempts/after-dummy-key-accepts-arbitrary-token.json",
+      "docs/design/rollout-1692/1821/attempts/after-generic-localhost-scope.json",
+      "docs/design/rollout-1692/1821/attempts/after-incomplete-state-probe.json",
+      "docs/design/rollout-1692/1821/attempts/after-input-clear-failed.json",
+      "docs/design/rollout-1692/1821/attempts/before-generic-localhost-scope.json",
+      "docs/design/rollout-1692/1821/before-runtime.json",
+      "docs/design/rollout-1692/1821/cleanup.json",
+      "docs/design/rollout-1692/1821/combined-runtime.json",
+      "docs/design/rollout-1692/1821/evidence-verification.json",
+      "docs/design/rollout-1692/1821/next-runtime.json",
+      "docs/design/rollout-1692/1821/quality.json",
+      "docs/design/rollout-1692/1821/react-runtime.json"
+    ],
+    "fontQualification": "phone-dark-large records 16px despite attempted 24px inline style and report claim. Saved Large preference records18px. 24px and true zoom remain unverified; root owns prose correction.",
+    "focusQualification": "PNG blue edge visually inspected during prep. Generic boxShadow-not-none assertion is weak; no independent focus proof follows.",
+    "formattingQualification": "Two explicit-profile formatting-only differences retained.",
+    "provenance": "Driver records actual Git HEAD/dirty/source bytes; combined sourceHead670a6b1 matches exact incoming component/wrapper canonically. Root checkout component is CRLF; recorded capture hash601b is LF; both are canonical-equal and no fresh runtime claim follows."
+  },
+  "sourceReview": {
+    "scope": "Two changed source files under R022/shared approved test boundaries; final full-branch review reserved for complete rollout.",
+    "observations": "Resolved branding passed in both states; actual TanStack label/error/focus; same-request current CAPTCHA ref rechecked after lazy import; no separate verification; native duplicate guard; retained email on failure; existing neutral outcome replaces task; locale-aware same-origin reset destination. Better Auth, mail, reset lifecycle, domain policy, rate limit, security owners and account-existence behavior unchanged."
+  },
+  "freshVsInherited": {
+    "fresh": "No-ff merge and independent tree;parents/27verified ancestries/preservation;19files240tests plus76files673tests (95unique913);complete types;2-file CRLF-awareBiome and explicit lint/import;2-file Doctor0;source/script/JSON/link/fullPNG archive checks;root recovery/Calendar/currentR021/historicalR019 archive validators;static172=153+19 source inventory.",
+    "inherited": "All implementer browser/fixture/domain/database/Next/nativeReact observations,14capturestates/5actions/6pairs,actual HTTP200 known/unknown neutral outcome,400CAPTCHA refusal→200retry,one newly issued verification. These were inspected,not reexecuted in merger."
+  },
+  "requestEvidence": "Driver holds/aborts actual request for pending/transport failure, continues retries, and modifies only one negative CAPTCHA header. No mocked response payloads. Known/unknown HTTP200 and server400→200 are inherited real request observations.",
+  "deliveryLimit": "One newly issued verification observed privately; inbox/provider delivery and token-link/full reset journey unavailable.",
+  "limits": [
+    "No fresh browser, database/PostgreSQL, Next runtime, live provider, verified custom-domain/enterprise-key provisioning, physical-device, native zoom or performance run.",
+    "Provider delivery and delivered-link/full-password-reset journey unavailable. Public development dummy CAPTCHA cannot certify production Cloudflare behavior.",
+    "Full production static generation and remote Tolgee synchronization of auth.forgot-password-sending remain open root limits; generated catalogs unchanged.",
+    "24px inline-enlargement claim unsupported by16px computed record; savedLarge18px is real inherited evidence. Generic-shadow assertion is not independent visible-focus proof.",
+    "Static route inventory and19 unchanged alias blobs do not certify locale/query/access runtime behavior.",
+    "Earlier shared-shell transition/hydration/overlay/native/tooling/build/catalog/provider/device limitations retain their existing scope."
+  ],
+  "commands": [
+    {
+      "command": [
+        "git",
+        "merge-tree",
+        "--write-tree",
+        "afa8626d21e6cd9fa988a985bfd567ee65d4f3c9",
+        "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "git",
+        "merge",
+        "--no-ff",
+        "-m",
+        "Merge #1821 forgot-password recovery into UI refresh integration",
+        "6d974f25a15fc03bb7e44d5a08bf1995d3ec7548"
+      ],
+      "passed": true
+    },
+    {
+      "name": "exact",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/components/forgot-password-form.test.tsx",
+        "src/components/ui/tanstack-form.test.tsx",
+        "src/components/auth-form-wrapper.test.tsx",
+        "src/components/auth-shell-controls.test.tsx",
+        "src/lib/turnstile/auth-plugin.test.ts",
+        "src/lib/turnstile/service.test.ts",
+        "src/lib/turnstile/verify.test.ts",
+        "src/lib/turnstile/development-keys.test.ts",
+        "src/lib/domain/platform-domain.test.ts",
+        "src/lib/domain/request-domain.test.ts",
+        "src/lib/domain/request-origin.test.ts",
+        "src/lib/auth-domain-config.test.ts",
+        "src/lib/email/auth-emails.test.ts",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+        "src/app/[locale]/(auth)/layout.test.tsx",
+        "src/app/[locale]/(auth)/primary-fallbacks.test.tsx",
+        "src/components/auth-form-fallbacks.test.tsx",
+        "src/lib/auth/reserved-email-guard.test.ts",
+        "--maxWorkers=2",
+        "--reporter=json",
+        "--outputFile=../../.tmp/merge1821-audit/exact.json"
+      ],
+      "exitCode": 0,
+      "log": ".tmp/merge1821-audit/exact.log"
+    },
+    {
+      "name": "compatibility",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/components/reset-password-form.test.tsx",
+        "src/components/accept-invitation-form.test.tsx",
+        "src/components/login/store-app-sign-in-form.test.tsx",
+        "src/lib/auth/load-auth-page-client.test.ts",
+        "src/app/[locale]/init/page-client.test.tsx",
+        "src/app/[locale]/(auth)/accept-invitation/[invitationId]/page.test.tsx",
+        "src/components/auth-background-image.test.tsx",
+        "src/app/[locale]/(auth)/layout-background.test.tsx",
+        "src/app/[locale]/(auth)/cookie-consent-script.test.ts",
+        "src/components/calendar",
+        "src/hooks/use-calendar-data.test.tsx",
+        "src/hooks/use-calendar-employees.test.ts",
+        "src/lib/calendar",
+        "src/app/[locale]/(app)/calendar",
+        "src/app/api/calendar/events/route.test.ts",
+        "src/components/equipment/equipment-workspace.test.tsx",
+        "src/components/equipment/equipment-assignment-detail.test.tsx",
+        "src/components/ui/action-panel.test.tsx",
+        "src/components/ui/dialog.test.tsx",
+        "src/components/ui/alert-dialog.test.tsx",
+        "src/components/settings/location-dialog.test.tsx",
+        "src/components/ui/loading-region.test.tsx",
+        "src/components/ui/page-header.test.tsx",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/components/ui/sidebar.test.tsx",
+        "src/components/ui/tooltip.test.tsx",
+        "src/components/app-sidebar.test.tsx",
+        "src/components/nav-main.test.tsx",
+        "src/components/site-header.test.tsx",
+        "src/app/[locale]/(app)/app-layout-content.test.tsx",
+        "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+        "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+        "src/components/errors",
+        "src/components/providers/view-refresh-provider.test.tsx",
+        "src/components/providers/view-refresh-migrated.test.tsx",
+        "--maxWorkers=2",
+        "--reporter=json",
+        "--outputFile=../../.tmp/merge1821-audit/compatibility.json"
+      ],
+      "exitCode": 0,
+      "log": ".tmp/merge1821-audit/compatibility.log"
+    },
+    {
+      "name": "types",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "log": ".tmp/merge1821-audit/types.log"
+    },
+    {
+      "name": "biome-current-crlf",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--line-ending=crlf",
+        "src/components/forgot-password-form.tsx",
+        "src/components/forgot-password-form.test.tsx"
+      ],
+      "exitCode": 0,
+      "log": ".tmp/merge1821-audit/biome-current-crlf.log"
+    },
+    {
+      "name": "biome-explicit-webapp",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=biome.jsonc",
+        "--line-ending=crlf",
+        "src/components/forgot-password-form.tsx",
+        "src/components/forgot-password-form.test.tsx"
+      ],
+      "exitCode": 1,
+      "log": ".tmp/merge1821-audit/biome-explicit-webapp.log"
+    },
+    {
+      "name": "biome-explicit-lint-import",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=biome.jsonc",
+        "--formatter-enabled=false",
+        "src/components/forgot-password-form.tsx",
+        "src/components/forgot-password-form.test.tsx"
+      ],
+      "exitCode": 0,
+      "log": ".tmp/merge1821-audit/biome-explicit-lint-import.log"
+    },
+    {
+      "name": "doctor",
+      "command": [
+        "pnpm",
+        "exec",
+        "react-doctor",
+        "apps/webapp",
+        "--scope",
+        "changed",
+        "--base",
+        "afa8626d21e6cd9fa988a985bfd567ee65d4f3c9",
+        "--verbose",
+        "--no-score",
+        "--no-supply-chain",
+        "--no-telemetry",
+        "--no-parallel"
+      ],
+      "exitCode": 0,
+      "log": ".tmp/merge1821-audit/doctor.log"
+    },
+    {
+      "command": [
+        "pnpm",
+        "node",
+        ".tmp/merge1821-audit/audit.mjs"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "pnpm",
+        "node",
+        ".tmp/merge1821-audit/check-archives.mjs"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "pnpm",
+        "node",
+        ".tmp/merge1821-audit/test-summary.mjs"
+      ],
+      "passed": true
+    }
+  ],
+  "setupObservations": [
+    "Initial sandbox Git-object and pnpm-operation-lock denials succeeded after authorized escalations;no automatic approval rejection.",
+    "Audit launcher initially treated npm_execpath pnpm.exe as JavaScript;corrected only owned audit launcher to spawn executable directly,then exact tests passed.",
+    "Source audit initially required raw checkout pin equality;diagnosis proved only LF→CRLF difference;now validates exact canonical blob and records both hashes.",
+    "Read-only incoming-worktree Git checks needed per-command safe.directory;no global Git configuration change."
+  ],
+  "packageManagerEnvironment": "pnpm only;pnpm_config_verify_deps_before_run=false;maxWorkers=2;explicit UTF8 output.",
+  "noServicesStarted": true,
+  "noSourceFixes": true,
+  "noTrackerWrites": true,
+  "noLedgerReportReadmeChanges": true,
+  "noPushOrPrChanges": true
+}

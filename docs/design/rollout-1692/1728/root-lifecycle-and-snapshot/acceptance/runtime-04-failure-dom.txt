@@ -1,0 +1,160 @@
+Skip to content
+Performance small
+Admin
+Search
+Ctrl+K
+WORKPLACE
+Dashboard
+Time Tracking
+Calendar
+Absences
+Travel Expenses
+Finance
+My Requests
+My Documents
+Personnel Files
+Reports
+Org Explorer
+TEAM & ORGANIZATION
+Team
+Team Absences
+Approvals
+Compliance
+Settings
+Get Help
+Feedback
+Person 0
+perf-small-0-6c16dc7ede83@example.test
+Toggle Sidebar
+Personnel Files
+07:54
+UTC+01:00
+Clock In
+Toggle theme
+Account
+Profile Settings
+Security Settings
+Notification Settings
+Wellness Settings
+Position stamps
+My data
+Organization
+Organization
+Employees
+Teams
+Custom Roles
+Identity & Access
+Locations
+Vehicles
+Personnel Files
+Custom fields
+Domain & Branding
+Implementation checklist
+Policies
+Work Policies
+Absences
+Employee Allowances
+Travel Expense Policies
+Approval
+Time Tracking
+Clocking
+Work Categories
+Position capture
+Kiosks
+Work Diagnostics
+Scheduling
+Skills & Qualifications
+Payroll
+Payroll Officers
+Payroll Readiness
+Payroll Export
+Closed months
+Notifications
+Email
+Chat Integrations
+Integrations
+Calendar Sync
+Developer Access
+Compliance
+Audit
+Data
+Import Data
+Data Export
+Scheduled Exports
+Export Operations
+Statistics
+Settings
+Personnel Files
+Personnel Files
+
+Choose who besides owners and admins manages employee documents.
+
+Access
+Reminders
+Retention
+Personnel file officers
+Personnel file officers manage employee documents of chosen categories, for all employees or for named teams and employees. Owners and admins always have this access. Managing employees, payroll access and expense officer grants never grant it.
+Add personnel file officer
+
+No personnel file officers yet. Only owners and admins manage personnel files.
+
+Add personnel file officer
+Choose whose personnel files the officer manages and which document categories. Officers see, upload, edit, delete and download every document in their scope.
+Personnel file officer
+Person 1
+Officer scope
+All employees
+Specific teams or employees
+
+The named employees and whoever currently belongs to one of the teams. A team change moves the employee's file in or out of scope.
+
+Teams
+Fixture team 0
+Fixture team 1
+Employees
+Select employees
+Document categories
+Contract
+Payslip
+Certificate
+Sick note
+Other
+
+The officer never sees documents of other categories, not even of employees in scope.
+
+Save personnel file officer
+Cancel
+Select employees
+
+Choose one or more employees from the list
+
+1 selected
+Person 2
+Select All
+Clear
+Person 0
+perf-small-0-6c16dc7ede83@example.test
+Employee
+Person 1
+perf-small-1-6c16dc7ede83@example.test
+Employee
+Person 2
+perf-small-2-6c16dc7ede83@example.test
+Employee
+Person 3
+perf-small-3-6c16dc7ede83@example.test
+Employee
+Person 4
+perf-small-4-6c16dc7ede83@example.test
+Employee
+Person 5
+perf-small-5-6c16dc7ede83@example.test
+Employee
+Person 6
+perf-small-6-6c16dc7ede83@example.test
+Employee
+Person 7
+perf-small-7-6c16dc7ede83@example.test
+Employee
+8 employees
+Confirm (1)

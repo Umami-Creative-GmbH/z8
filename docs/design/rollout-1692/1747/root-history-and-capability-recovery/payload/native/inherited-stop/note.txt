@@ -1,0 +1,11 @@
+SAFE intake completed with no archive execution or workspace/Git/package/runtime/tracker changes.
+
+Index SHA256 matches 0f8bb1c3fa10466d981bae4e594b674972ece096dfbd911db32104619718f67b. All 56 allowlisted payloads match their exact byte sizes and SHA256 values: 6,242,185 bytes. All 22 JSON files parse without duplicate keys. Python AST: 11/12 pass; prepare-attempt3.py:60 has the explicitly documented failed quoting attempt. Final prepare.py parses. Eleven TS/TSX payloads decode as UTF-8; formal typed syntax validation was not run because tsc was unavailable and outside-allowlist modules/harnesses were not loaded. No JS or PNG payloads are listed.
+
+The two Vitest receipts exactly reconcile to 8 unique physical-file/fullName/occurrence identities in 2 files: 5 passed / 3 failed. Candidate 5 passed / 2 failed; pinned premerge control 1 failed. All three failures represent one inherited presentation gap: canonical Unauthorized leaves old personal-history links visible, and a subsequent outage also retains them. Incoming and pinned-root repeats recover after fresh success. No live authorization bypass is proved.
+
+Independent sealed-map tree recalculation reproduces baseline fd5820196b334fa9b370d67e53ed3b4ab3af2525, candidate 52914144178afccc17f7093ee588817be99d6180, app 887eab4a441b413763f93588dfe5d874ebfffb75 and metadata blob af46342d736672775d7b9f49116991231a2863e0. Candidate c70858bfe507eb99f844a455230e312cc8247b61 and ordered parent records agree with prediction. The maps preserve 18,783 root entries, all 8,450 design paths and 202 protected archive entries; 78 entries added, 8 existing changed, none deleted. All 65 recorded ancestry commands exit zero and match 64 ticket anchors plus baseline. These are sealed producer receipts; no fresh Git/ancestry or incoming/base-tree query occurred.
+
+Minor provenance discrepancy: COMMANDS.md says commit-candidate.py copies resolved metadata, but the sealed script only stages/commits and has no copy/write step. The recorded/map-derived tree and blob pins still agree.
+
+The protected verifier log reports archive-integrity PASS, not fresh execution of 545 unit / 51 PG or runtime assertions. Broad quality/PG/runtime/artifact acceptance remains deferred at STOP; verifiedCommit=null. No readiness decision made.

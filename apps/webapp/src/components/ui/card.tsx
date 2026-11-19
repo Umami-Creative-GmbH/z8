@@ -28,9 +28,19 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * A card's title. Pass `as="h2"` (or h3/h4) when the card is a page section, so
+ * the title joins the document outline under the page h1. Defaults to a div.
+ */
+function CardTitle({
+	as: Element = "div",
+	className,
+	...props
+}: Omit<React.ComponentProps<"div">, "ref"> & {
+	as?: "div" | "h2" | "h3" | "h4";
+}) {
 	return (
-		<div
+		<Element
 			className={cn("min-w-0 break-words font-semibold leading-none", className)}
 			data-slot="card-title"
 			{...props}

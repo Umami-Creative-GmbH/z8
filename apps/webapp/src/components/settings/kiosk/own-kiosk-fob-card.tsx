@@ -56,7 +56,7 @@ export function OwnKioskFobCard() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
+				<CardTitle as="h2" className="flex items-center gap-2">
 					<IconNfc className="size-5" aria-hidden="true" />
 					{t("settings.security.kioskFob.title", "Kiosk fob")}
 				</CardTitle>

@@ -126,7 +126,8 @@ it("requires a reason for partial loss/waiver and preserves command identity on 
 	await user.clear(quantity);
 	await user.type(quantity, "2");
 	await user.click(panel.getByRole("button", { name: "Record closure" }));
-	await waitFor(() => expect(api.toast.error).toHaveBeenCalled());
+	expect(await panel.findByRole("alert")).toBeTruthy();
+	expect(api.toast.error).not.toHaveBeenCalled();
 	await user.click(panel.getByRole("button", { name: "Record closure" }));
 	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
 	expect(api.change.mock.calls[1][0]).toEqual(api.change.mock.calls[0][0]);
@@ -238,10 +239,8 @@ it("offers closure on the employee page and keeps a stale refusal reviewable", a
 	const panel = await closeFromRow(user);
 	await user.type(panel.getByLabelText(/^Reason/), "Missing laptop");
 	await user.click(panel.getByRole("button", { name: "Record closure" }));
-	await waitFor(() =>
-		expect(api.toast.error).toHaveBeenCalledWith(
-			"This record changed. Reload equipment and review it before submitting again.",
-		),
+	expect((await panel.findByRole("alert")).textContent).toBe(
+		"This record changed. Reload equipment and review it before submitting again.",
 	);
 	expect(panel.getByLabelText(/^Reason/)).toHaveProperty(
 		"value",

@@ -180,3 +180,43 @@ it("retains admitted notification reads and immediate scoped write visibility", 
 		total: 0,
 	});
 });
+
+it("keeps recipient and organization privacy on reads, mark-read and delete", async () => {
+	const own = await fixture.seedEmployee();
+	const other = await fixture.seedEmployee();
+	const foreignOrganization = await fixture.createOrganization();
+	const foreign = await fixture.seedEmployee({
+		organizationId: foreignOrganization,
+	});
+	const insert = async (userId: string, organizationId: string) => {
+		const { rows } = await fixture.pool.query(
+			"insert into notification(user_id,organization_id,type,title,message) values($1,$2,'password_changed','Private notice','Private body') returning id",
+			[userId, organizationId],
+		);
+		return String(rows[0].id);
+	};
+	const ownId = await insert(own.userId, fixture.organizationId);
+	const otherId = await insert(other.userId, fixture.organizationId);
+	const foreignId = await insert(foreign.userId, foreignOrganization);
+	actor.userId = own.userId;
+	actor.organizationId = fixture.organizationId;
+	expect(await (await requestNotification("GET")).json()).toMatchObject({
+		notifications: [{ id: ownId }],
+		total: 1,
+	});
+	for (const id of [otherId, foreignId]) {
+		expect((await requestNotification("PATCH", { id })).status).toBe(404);
+		expect((await requestNotification("DELETE", { id })).status).toBe(404);
+	}
+	actor.userId = other.userId;
+	expect(await (await requestNotification("GET")).json()).toMatchObject({
+		notifications: [{ id: otherId, isRead: false }],
+		total: 1,
+	});
+	actor.userId = foreign.userId;
+	actor.organizationId = foreignOrganization;
+	expect(await (await requestNotification("GET")).json()).toMatchObject({
+		notifications: [{ id: foreignId, isRead: false }],
+		total: 1,
+	});
+});

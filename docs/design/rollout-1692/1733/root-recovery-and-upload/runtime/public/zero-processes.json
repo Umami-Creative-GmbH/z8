@@ -1,0 +1,10 @@
+{
+  "nextWrapperForcedStopExit": 1,
+  "nextStopExit": 0,
+  "foregroundControllerExit": 0,
+  "nodeNamespaceRemaining": 0,
+  "scope": "Exact owned runtime namespace, exact transient native session, exact owned app port",
+  "nextListenersRemaining": 0,
+  "nativeSessionProcessRemaining": 0,
+  "nativeInstalledBinary": "agent-browser-win32-x64.exe"
+}

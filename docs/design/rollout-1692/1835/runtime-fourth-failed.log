@@ -1,0 +1,23 @@
+Passed: desktop-light fits viewport with loaded font, one heading and seven day controls
+Passed: phone-light fits viewport with loaded font, one heading and seven day controls
+Passed: wide-dark-large fits viewport with loaded font, one heading and seven day controls
+Passed: phone-dark-large fits viewport with loaded font, one heading and seven day controls
+Passed: exact refreshed source restored after baseline overlay
+Passed: invalid name is focused
+Passed: weekly hour upper bound refused without a policy
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: derived context follows actual fractional hours and selected days
+    at check (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:19:32)
+    at file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:48:2 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v26.9.0

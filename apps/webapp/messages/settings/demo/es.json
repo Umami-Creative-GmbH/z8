@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "ELIMINAR"
       },
       "description": "Generar datos de muestra para pruebas o borrar los datos existentes relacionados con el tiempo",
+      "employeesLoadError": {
+        "description": "Los datos de demostración se generan para tus empleados, por lo que la generación no está disponible hasta que se carguen.",
+        "retrying": "Reintentando…",
+        "title": "No se pudieron cargar los empleados"
+      },
       "errors": {
-        "generationFailed": "Error en la generación. Por favor, inténtelo de nuevo.",
-        "noOrganization": "No se ha seleccionado ninguna organización"
+        "generationFailed": "Error en la generación. Por favor, inténtelo de nuevo."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Todos los empleados ({count})",
+          "allCountUnavailable": "Todos los empleados",
           "label": "Empleados",
           "selectSpecific": "Seleccionar empleados específicos"
         }

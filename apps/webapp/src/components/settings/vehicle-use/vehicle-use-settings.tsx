@@ -163,9 +163,7 @@ export function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 					toast.error(actionErrorMessage(t, result, VEHICLE_USE_REFUSALS));
 					return false;
 				}
-				toast.success(
-					t("settings.vehicleUse.assignmentRemoved", "Assignment removed"),
-				);
+				// ScopedFeatureAssignments shows the success toast with Undo.
 				router.refresh();
 				return true;
 			}}

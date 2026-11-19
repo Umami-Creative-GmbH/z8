@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "Konfigurieren Sie, wer Anträge genehmigt, wann überfällige Genehmigungen eskaliert werden und welche Genehmigungsprobleme nachverfolgt werden müssen."
+    },
     "approvalTriage": {
       "correctionError": "Geben Sie eine ganze Zahl von 0 bis 60 Minuten ein.",
       "correctionHelp": "Null deaktiviert die Fast Lane für Kleinkorrekturen einschliesslich Null-Delta-Bearbeitungen. Verwenden Sie andernfalls 1–60 Minuten; alle erforderlichen Nachweise müssen weiterhin überprüft werden.",
@@ -138,6 +141,7 @@
           "defaultTax": "Standard: {treatment}",
           "description": "Verknüpfen Sie jeden Kunden vor der ersten Übergabe mit seinem bestehenden Kontakt im Buchhaltungstool und überschreiben Sie bei Bedarf die steuerliche Behandlung.",
           "edit": "Bearbeiten",
+          "editAction": "Buchhaltung für {name} bearbeiten",
           "empty": "Noch keine Kunden",
           "inactive": "Inaktiv",
           "notLinked": "Nicht verknüpft",
@@ -157,6 +161,8 @@
           "start": "Kunden importieren"
         },
         "keyMissing": "De API-Schlüssel fählt im Secret Store. Ersetz d Verbindig mit emene neue Schlüssel.",
+        "loadFailed": "Die Buchhaltungseinstellungen konnten nicht geladen werden.",
+        "loading": "Buchhaltungseinstellungen werden geladen",
         "netPrices": {
           "label": "Das sevdesk-Konto erfasst Rechnigspriise als Nettopriise",
           "required": "Z8 übergit Nettopriise. Bestätig, dass sevdesk Priise als Nettopriise erfasst"
@@ -225,6 +231,7 @@
         "employeeTitle": "Kostensatz",
         "empty": "Noch kein Kostensatz. Die Marge für die Arbeit dieser Person wird als unbekannte Kosten ausgewiesen.",
         "history": "Verlauf",
+        "historyAction": "Verlauf des Kostensatzes für {name}",
         "hourly": "Stündlich",
         "inactive": "Inaktiv",
         "intro": "Ein Kostensatz entspricht den internen Vollkosten pro Stunde in {currency} für eine Person, verwendet für die Marge. Er ist unabhängig vom Lohn: Die Änderung des einen ändert nie das andere.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/h",
         "saved": "Kostensatz gespeichert",
         "set": "Kostensatz festlegen",
+        "setAction": "Kostensatz für {name} festlegen",
         "setRateHelp": "Der neue Kostensatz gilt ab diesem Datum bis zur nächsten Änderung. Er ändert nie den Lohn, die Lohnabrechnung oder den Stundenlohn.",
         "startsOn": "Beginnt am {date}",
         "today": "Heute",
@@ -378,11 +386,14 @@
           "empty": "No kei Übergabe",
           "gone": "Im Tool glöscht",
           "open": "Offe",
+          "openAction": "Übergabe für {name}, {period} öffnen",
           "period": "Zitruum",
           "status": "Status",
           "title": "Übergabe",
           "total": "Nettototal"
         },
+        "loadFailed": "Die Übergaben konnten nicht geladen werden.",
+        "loading": "Übergaben werden geladen",
         "marks": {
           "compare": "Vergliiche",
           "compareItem": "{item} vergliiche",
@@ -495,6 +506,9 @@
         "customerRate": "Verrechebare Asatz",
         "customerRateTitle": "Verrechebare Asatz für {name}",
         "dateRequired": "Wähl de erscht Tag, wo das gilt",
+        "deletedCustomer": "Gelöschter Kunde",
+        "deletedEmployee": "Gelöschter Mitarbeitender",
+        "deletedProject": "Gelöschtes Projekt",
         "effectiveFrom": "Gilt ab",
         "employee": "Mitarbeiter",
         "employeeProjectRateFor": "Verrechebare Asatz für {name} bi däm Projekt",
@@ -511,10 +525,13 @@
         "endsFrom": "Gilt nümme ab",
         "for": "Für",
         "history": "Verlauf",
+        "historyAction": "Verlauf des Satzes für {name}",
         "hourlyRate": "Stundesatz",
         "inEffect": "Gültig",
         "inEffectTodayHint": "Hüt gültig: {rate}",
         "intro": "Ansätz sind in {currency} pro Stund. Für jedi Arbet gilt de spezifischst Ansatz, wo am Tag vom Start gültig gsi isch: Mitarbeiter uf eme Projekt, dänn Projekt, dänn Chund, dänn Mitarbeiter.",
+        "invalidDate": "Geben Sie ein gültiges Datum ein.",
+        "invalidRate": "Geben Sie einen positiven Stundensatz mit höchstens zwei Dezimalstellen ein.",
         "level": {
           "customer": "Chund",
           "customerDescription": "Gilt für d Arbet a de Projekt vom Chund ohni Projektansatz.",
@@ -542,6 +559,8 @@
         "setRate": "Ansatz feschtlege",
         "setRateHelp": "De neu Ansatz gilt ab däm Datum bis zur nächste Ansatzänderig. Früecheri Date passed d Priise vo Arbet aa, wo no nöd verrechnet isch.",
         "startsOn": "Startet am {date}",
+        "switchedOff": "Verrechenbare Zeit ist deaktiviert.",
+        "targetNotFound": "Der Mitarbeitende, das Projekt oder der Kunde wurde nicht gefunden.",
         "today": "Hüt",
         "unchanged": "Dä Asatz giltet scho"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Verwalten Sie Ihr Abonnement, Zahlungsmethoden und Rechnungen",
       "title": "Abrechnung & Abonnement"
+    },
+    "breadcrumbs": {
+      "label": "Breadcrumb für Einstellungen"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "Es isch no kein Monet abgschlosse worde.",
       "historyTitle": "Verlauf",
+      "loadErrorDescription": "Laden Sie die Seite neu, um es erneut zu versuchen.",
+      "loadErrorTitle": "Abgschlossni Mönet händ nöd chönne glade wärde",
       "locationNotFound": "Dä Standort git's nümme.",
       "monthsDescription": "En Monet abzschliesse friert d Arbet, d Zueordnig und d Absänze für d Lohnabrechnig ii. Notize bliibed bearbeitbar.",
       "monthsTitle": "Monet",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Überprüfen und verwalten Sie Compliance-Ausnahmeanträge von Teammitgliedern",
+      "metadata": {
+        "description": "ArbZG-Compliance-Istellige konfiguriere und Uusnahmeaafrage verwalte",
+        "title": "Compliance-Istellige | ArbZG"
+      },
       "title": "ArbZG-Compliance"
     },
     "customDomains": {
       "title": "Domain & Branding"
     },
     "customers": {
+      "accountingAction": "Buechhaltig für {name}",
       "column": {
+        "actions": "Aktione",
         "contactPerson": "Kontaktperson",
         "email": "E-Mail",
         "name": "Firmenname",
@@ -643,11 +673,13 @@
       "create": "Kunde hinzufügen",
       "created": "Kunde erstellt",
       "createFailed": "Kunde konnte nicht erstellt werden",
-      "deleted": "Kunde gelöscht",
+      "deleteAction": "{name} lösche",
       "delete": {
+        "confirm": "{name} lösche",
         "description": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Projekte, die diesem Kunden zugewiesen sind, funktionieren weiterhin, aber der Kundenbezug wird entfernt.",
         "title": "Kunde löschen"
       },
+      "deleted": "Kunde gelöscht",
       "deleteFailed": "Kunde konnte nicht gelöscht werden",
       "description": "Verwalten Sie Kundenkontakte für Projektzuweisungen",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Kunde bearbeiten",
         "save": "Änderungen speichern"
       },
+      "edit": "Chund bearbeite",
+      "editAction": "{name} bearbeite",
       "empty": {
         "description": "Fügen Sie Ihren ersten Kunden hinzu, um ihn Projekten zuzuweisen.",
         "title": "Noch keine Kunden vorhanden"
@@ -680,6 +714,7 @@
         "description": "{count} Chunde insgesamt",
         "title": "Alli Chunde"
       },
+      "loadFailed": "Chunde händ nöd chönne glade wärde. Prüefe Sie Ihri Verbindig und probiere Sie s nomal.",
       "managerNoProjects": "Kei verwalteti Projekt verfüegbar. Erstell oder verwalt es Projekt, bevor du Chunde hinzufüegsch.",
       "projectRequired": "Wähl zerscht es Projekt us",
       "title": "Chunde",
@@ -905,7 +940,7 @@
         "columnDate": "Datum",
         "columnSize": "Grössi",
         "columnStatus": "Status",
-        "deleteDialogDescription": "Bischt du sicher, dass du dä Export lösche wotsch? Die Aktion chan nöd rückgängig gmacht wärde.",
+        "deleteDialogDescriptionNamed": "De Export vom {date} um {time} lösche? Die Aktion chan nöd rückgängig gmacht wärde.",
         "deleteDialogTitle": "Export lösche",
         "deleteError": "Export-Löschig isch fählgschlage",
         "deleteSuccess": "Export glöscht",
@@ -914,7 +949,7 @@
         "downloadError": "Download isch fählgschlage",
         "downloadSuccess": "Download gstartet",
         "emptyDescription": "No kei Export vorhande",
-        "emptyHint": "Erstell dine erschte Export mit em Formular obe",
+        "emptyHintNewExportTab": "Erstelle Sie Ihre erschte Export uf em Tab «Neue Export».",
         "moreCategories": "+{count} meh",
         "statusCompleted": "Abgschlosse",
         "statusFailed": "Fählgschlage",
@@ -935,6 +970,7 @@
         "connectionFailed": "Verbindig fehlgschlage",
         "connectionSuccess": "Verbindig erfolgriich",
         "deleteDialogDescription": "Sind Sie sicher, dass Sie die Speicher-Konfiguration lösche wänd?",
+        "deleteDialogDescriptionNamed": "D Spiicherkonfiguration für de Bucket \"{bucket}\" lösche?",
         "deleteDialogTitle": "Konfiguration lösche",
         "deleteError": "Konfiguration hät nöd chöne glöscht werde",
         "deleteSuccess": "Konfiguration glöscht",
@@ -962,7 +998,7 @@
         "verified": "Verifiziert"
       },
       "storageNotConfigured": {
-        "description": "Konfiguriere Sie de S3-Speicher, bevor Sie Exporte erstellid",
+        "descriptionWithTab": "Konfiguriere Sie de S3-Spiicher uf em Tab «Spiicheristellige», bevor Sie Exporte erstelled.",
         "title": "Speicher nöd konfiguriert"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "Vergeh dur {actor} am {time}",
         "editor": "Prüfer-Beriich",
         "empty": "Kei Prüfer-Verantwortige zuegwise",
+        "failed": "D Zueständigkeit für d Füehreruuswiis-Prüefig hät nöd chönne aktualisiert oder abgruefe wärde. Prüefe Sie Ihri Berechtigunge und Uuswahle.",
         "formerEmployee": "Ehemaligi Mitarbeiter chönd nöd hinzugefüegt werde. Wähl Mitarbeiter us de aktuelle Lischte.",
         "history": "Verlauf vo de Verantwortig",
         "historyEntry": "Vergää dur {grantor} am {granted}; widerzoge dur {revoker} am {revoked}",
@@ -990,6 +1027,7 @@
         "myUntil": "Ihre Zuständigkeit endet nach dem {date} ({timezone}).",
         "none": "Du häsch aktuell kei Verantwortig für d Fahruuswiis-Prüefig.",
         "noTeams": "Kei Teams verfüegbar",
+        "notEnabled": "Füehreruuswiis-Prüefige sind für die Organisation nöd igschaltet.",
         "person": "Prüfer",
         "revoked": "Prüfer-Verantwortig widerzoge",
         "revokeDescription": "De Prüfer verlüürt sofort de Zuegriff uf Überprüefige i dem Beriich. Es brucht e neui Zueordnig, zum d Verantwortig widerherzstelle.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "E-Mail-Vorlage",
       "empty": "Es sind kei E-Mail-Vorlage für die Organisation verfüegbar.",
-      "eyebrow": "Operativi Kommunikation",
       "reset": "E-Mail-Vorlage uf System-Vorlage zruggsetzt",
+      "resetDialog": {
+        "confirm": "Vorlag zruggsetze",
+        "description": "Das löscht de eigeti Betreff und Text vo Ihrer Organisation für das E-Mail. E-Mails, wo nachher gschickt wärded, bruuched d Systemvorlag.",
+        "title": "“{template}” uf d Systemvorlag zruggsetze?"
+      },
       "resetFailed": "E-Mail-Vorlage hät nöd chöne zruggsetzt werde",
       "saved": "E-Mail-Vorlage gspycheret",
       "saveFailed": "E-Mail-Vorlage hät nöd chöne gspycheret werde",
@@ -1276,6 +1318,7 @@
       "savedPending": "Aastelligsdatum gspycheret. Arbetszeitsaldi werded aktualisiert.",
       "savedRefreshFailed": "Aastelligsdatum gspycheret. Ladid Si d Syte neu, zum d Aazeig z aktualisiere.",
       "saveFailed": "Korrektur hät nöd chöne gspycheret werde. Erstellid Si e neui Vorschou und probierid Si's nomal.",
+      "stalePreview": "S prüefte Aastelligsverhältnis oder d Konfiguration hät sich gänderet. Erstelle Sie e neui Vorschau.",
       "title": "Tatsächliche Aastelligsstart korrigiere",
       "total": "Total vor Bezug",
       "unknown": "Nöd erfasst",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {Kei usschtehendi Rückgabe} one {# usschtehendi Rückgab} other {# usschtehendi Rückgabe}}",
         "overdue": "{count, plural, other {# überfällig}}",
+        "returns": "Rückgäbe vo Mitarbeitende",
+        "scope": "Berechtigti Uusrüschtig für die aagstellti Person",
         "title": "Mitarbeiter-Uusrüschtig"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Uusrüschtigsübersicht öffne",
       "overview": {
+        "asOf": "Stand {date} ({timezone})",
         "description": "Wer jede Gägestand hät, was zruggchoo muess, und jedi erfassti Übergab.",
-        "failed": "D Uusrüschtig hät nöd chönne glade werde. Lad d Syte neu, zum's namal probiere."
+        "failed": "D Uusrüschtig hät nöd chönne glade werde. Lad d Syte neu, zum's namal probiere.",
+        "scope": "Ihri berechtigte Uusrüschtigs-Iiträg",
+        "summaryScope": "Rückgäbe und Iisatzbereitschaft i Ihrem Bereich"
       },
       "personal": {
         "closed": "Zrugggee & abgschlosse",
@@ -1701,6 +1749,7 @@
         "failed": "Dini Uusrüschtig hät nöd chönne glade werde. Lad d Syte neu, zum's namal probiere.",
         "keep": "Zum Bhalte",
         "quantity": "{count} usggää",
+        "remaining": "{count} zum zrugggäh",
         "title": "Myni Uusrüschtig",
         "toggleHistory": "Übergabeverlauf aazeige",
         "toReturn": "Zruggzgee"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Zrugg zu de Iistellige",
-        "tryAgain": "Nochli probiere"
+        "backToSettings": "Zrugg zu de Iistellige"
       },
       "description": "Es isch en Fehler bim Lade vo de Iistellige ufträtte. Das chönnt es vorübergehends Problem sii.",
-      "errorId": "Fehler-ID: {digest}",
       "title": "Es isch öppis schiefgange"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "D Zueordnig hät nöd chönne aktualisiert werde. Probier's nomal.",
       "noEmployees": "Kei mitarbeiterspezifischi Iistellige",
       "noTeams": "Kei teamspezifischi Iistellige",
+      "organizationDefaultRemoved": "Organisationsstandard glöscht",
       "orgDescription": "Standard-Iistellig für alli Mitarbeiter, usser si wird überschribe",
       "remove": "{target} entferne",
+      "removedFor": "Überschriibig für {name} entfernt",
       "valueFor": "{setting} für {target}"
+    },
+    "featureOff": {
+      "askAdmin": "Fröge Sie en Organisations-Admin, das izschalte.",
+      "status": "Für die Organisation usgschaltet",
+      "turnOn": "I de Organisations-Istellige ischalte"
     },
     "group": {
       "account": "Konto",
@@ -2221,12 +2275,21 @@
       "title": "Implementierungs-Checkliste"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "Übernahm wird gstartet…"
+      },
       "csv": {
         "acceptSelected": "Uusgwählti gültigi Zile akzeptiere",
         "applyMapping": "Zueordnig aawände",
         "chooseSource": "Wähl en Quellwert uus",
         "chooseTarget": "Wähl en bestehende Datensatz uus",
         "commit": "Akzeptierti Zile übernäh",
+        "commitConfirm": {
+          "confirm": "Ziile importiere",
+          "description": "Bim Importiere wird abgschlossni Arbet für die zuegordnete Mitarbeitende erstellt, mit de Fahrzügdate us de Ziile. Das lauft im Hindergrund. Ziile, wo sich mit bestehender Arbet überschniided, wärded nöd importiert: En Import überschriibt nie Arbet.",
+          "irreversible": "En Import chan nöd rückgängig gmacht wärde. Zum importierti Arbet nachher ändere, korrigiere Sie si i de Ziterfassig.",
+          "title": "{count, plural, other {# akzeptierti Ziile importiere?} }"
+        },
         "committing": "Akzeptierti Zile wärded importiert…",
         "description": "Importier pro Zile ei abgschlosseni Arbetsperiode. Pausene chasch als Luggene zwüsche de Zile aagee. Es wird nüt gspicheret, bis du's überprüeft und akzeptiert häsch.",
         "download": "CSV-Vorlage abelade",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "In Clockodo verrechebar, aber s Clockodo-Projekt isch keim Z8-Projekt zuegordnet."
         },
         "commitAccepted": "Akzeptierte Zeilen übernehmen",
+        "commitConfirm": {
+          "confirm": "Ziile überneh",
+          "description": "Bim Überneh wärded i dere Organisation die Iiträg erstellt, wo d akzeptierte Ziile beschriibed, wie Zitiiträg, Abwäseheite, Mitarbeitende, Chunde oder Istellige, oder si wärded verchnüpft, wo Sie das gwählt händ. Das lauft im Hindergrund. Abglehnti Ziile wärded nöd importiert.",
+          "irreversible": "En Import chan nöd rückgängig gmacht wärde. Zum übernoni Iiträg nachher ändere, bearbeite Sie si döt, wo si verwaltet wärded.",
+          "title": "{count, plural, other {# akzeptierti Ziile überneh?} }"
+        },
         "commitFailed": "Import-Übernahme konnte nicht gestartet werden",
         "commitQueued": "{count} akzeptierte Zeilen für die Übernahme in die Warteschlange gestellt",
         "committing": "Wird übernommen...",
@@ -2393,6 +2462,7 @@
         },
         "title": "Import-Überprüfung"
       },
+      "sourceTabs": "Importquelle",
       "supportedSources": "Importier Arbet us CSV-Dateie oder verbind unterstützti Abüter wie Clockodo und Clockin.",
       "title": "Daten importieren"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Neue Code erstelle",
       "listDescription": "Jede Kiosk ghört zu eim Standort. Kopple es Grät, indem d'Kiosk-Siite druf uftuesch und de Koppligscode iigibsch.",
-      "listTitle": "Kiosks",
       "loadFailed": "Kiosks händ nöd chönne glade werde.",
       "neverSeen": "Nie",
       "nfcFobReaderOn": "NFC-Fob-Leser ii",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Weisen Sie einen Mitarbeiter als Vorgesetzten für diesen Standort zu",
       "assignEmployeeToSubarea": "Mitarbeiter zum Unterbereich zuweisen",
       "assignEmployeeToSubareaDescription": "Weisen Sie einen Mitarbeiter als Vorgesetzten für {subareaName} zu",
+      "assignmentRemovedFrom": "{name} us {place} entfernt",
+      "assignmentRestored": "{name} widerhergstellt",
+      "assignmentRestoreFailed": "D Zueordnig hät nöd chönne widerhergstellt wärde",
       "backToList": "Zurück zu den Standorten",
       "create": "Standort erstellen",
       "created": "Standort erstellt",
@@ -2598,10 +2670,14 @@
       "deleted": "Standort gelöscht",
       "deleteDescription": "Sind Sie sicher, dass Sie diesen Standort löschen möchten? Dadurch werden auch alle Unterbereiche und Mitarbeiterzuweisungen gelöscht.",
       "deleteFailed": "Standort konnte nicht gelöscht werden",
+      "deleteNamedTitle": "Standort {name} lösche?",
       "deleteSubareaDescription": "Sind Sie sicher, dass Sie diesen Unterbereich löschen möchten? Dadurch werden auch alle Mitarbeiterzuweisungen entfernt.",
+      "deleteSubareaNamedTitle": "Underbereich {name} lösche?",
       "deleteSubareaTitle": "Unterbereich löschen",
       "deleteTitle": "Standort löschen",
       "description": "Organisationsstandorte und Unterbereiche verwalten",
+      "detailLoadFailed": "Dä Standort hät nöd chönne glade wärde",
+      "detailLoadFailedDescription": "Er isch vilicht glöscht worde oder d Verbindig isch fählgschlage. Probiere Sie s nomal oder gönd Sie zrugg zu de Standortlischte.",
       "details": "Standortdetails",
       "dialog": {
         "create": "Standort erstellen",
@@ -2614,7 +2690,6 @@
       "employee": "Mitarbeiter",
       "employeeAssigned": "Mitarbeiter zugewiesen",
       "employeeAssignFailed": "Mitarbeiter konnte nicht zugewiesen werden",
-      "employeeRemoved": "Mitarbeiter entfernt",
       "employeeRemoveFailed": "Mitarbeiter konnte nicht entfernt werden",
       "field": {
         "active": "Aktiv",
@@ -2635,7 +2710,10 @@
         "subareaName": "Name",
         "subareaNamePlaceholder": "z. B. Kasse, Lager, Bistro"
       },
+      "loadFailed": "Standört händ nöd chönne glade wärde",
+      "loadFailedDescription": "Prüefe Sie Ihri Verbindig und probiere Sie s dänn nomal.",
       "name": "Name",
+      "nameRequired": "Name isch erforderlich",
       "noAvailableEmployees": "Alle Mitarbeiter sind bereits diesem Standort zugewiesen",
       "noAvailableEmployeesSubarea": "Alle Mitarbeiter sind bereits diesem Unterbereich zugewiesen",
       "noLocations": "Noch keine Standorte vorhanden",
@@ -2671,6 +2749,9 @@
       "updated": "Standort aktualisiert",
       "updateFailed": "Standort konnte nöd aktualisiert wärde"
     },
+    "mobileNav": {
+      "open": "Einstellungsmenü"
+    },
     "myData": {
       "aboutDownload": "Lads da ab, während du aagmolde bisch. Dateie wärded nach 7 Täg glöscht.",
       "aboutEquipment": "Beinhaltet bhalteni Uusrüschtingszueordnige, Zueständ, Notize, Korrekture, physischi Empfäng und verloreni oder erlasseni Fäll, wobi Widerbeschaffige separat erfasst wärded.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "E ZIP-Datei mit allem, wo die Organisation über dich gspeicheret het, als JSON- und CSV-Dateie mit ere Erchlärig. Das betrifft nur die Organisation.",
       "exportTitle": "Export vo personebezogene Date",
       "listLabel": "Dini Export",
+      "loadFailed": "Ihre Datenexporte konnten nicht geladen werden. Versuchen Sie es erneut.",
       "noEmployeeRecord": "Du hesch kei Mitarbeiterdate bi dere Organisation. Für e Kopie vo dine personebezogene Date kontaktier bitte d Administratore vo de Organisation.",
+      "noExports": "Sie haben noch keinen Export angefordert. Fordern Sie einen an, um eine Kopie Ihrer Daten herunterzuladen.",
       "refusalDailyLimit": "Du chasch all 24 Stund en Export vo dine Date aafordere. Bitte probier's spöter nomal.",
       "refusalInProgress": "En Export vo dine Date wird bereits vorbereitet. Du wirsch benachrichtigt, sobald er parat isch.",
       "refusalStorage": "De Dateispeicher isch für die Organisation no nöd eingerichtet. Bitte kontaktier d Administratore.",
@@ -2697,7 +2780,14 @@
       "title": "Mini Date",
       "unavailable": "Mini Date sind für dis Konto i dere Organisation nöd verfüegbar."
     },
+    "nav": {
+      "disabledEntry": "{title} (deaktiviert)",
+      "label": "Einstellungsnavigation"
+    },
     "navigation": {
+      "approval": {
+        "title": "Genehmigung"
+      },
       "audit": {
         "activity": "Aktivität",
         "description": "Aktivitäte überprüefe und signierti Audit-Export konfiguriere",
@@ -2757,7 +2847,8 @@
       "description": "Wähl us, wie und wenn du benachrichtigt wärde wotsch",
       "digestTime": "Zytpunkt für Zämefassig",
       "discord": {
-        "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation."
+        "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation.",
+        "setupInstructions": "Die Verbindung zu Discord ist auf dieser Seite noch nicht verfügbar. Für die Verbindung werden der Bot-Token, die Anwendungs-ID und der öffentliche Schlüssel Ihrer Discord-Anwendung benötigt."
       },
       "escalations": "Eskalatione",
       "escalationsDescription": "Eskaliere unbeantworteti Gnehmigungs-Aafroge nach em konfigurierte Timeout.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "Benachrichtigungseistellige für {channelName} konnte nöd gspicheret wärde",
       "saveSettings": "Eistellige spichere",
       "slack": {
+        "connect": "Slack verbinden",
+        "connectFailed": "Die Slack-Verbindung konnte nicht gestartet werden. Versuchen Sie es erneut.",
+        "connectUnavailable": "Slack ist auf dieser Z8-Installation nicht verfügbar.",
         "description": "Konfiguriere Slack-Benachrichtigunge für dini Organisation."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Unbekannte Status"
       },
       "teams": {
-        "description": "Konfiguriere Microsoft Teams-Benachrichtigunge für dini Organisation."
+        "description": "Konfiguriere Microsoft Teams-Benachrichtigunge für dini Organisation.",
+        "setupInstructions": "Um Microsoft Teams zu verbinden, fügen Sie die Z8-App zu Ihrem Microsoft 365-Mandanten hinzu. Der Z8-Bot sendet dann einen Einrichtungslink, den ein Organisationsadministrator öffnet, um den Mandanten mit dieser Organisation zu verknüpfen."
       },
       "timeout": "Timeout",
+      "timeoutInvalid": "Geben Sie eine ganze Stundenzahl von 1 bis 168 ein.",
       "timezone": "Zytzone",
-      "timezonePlaceholder": "Europa/Berlin…",
       "title": "Benachrichtigungseistellige"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "Kei Passkeys konfiguriert",
       "emptyDescription": "Füeg en Passkey hii, zum passwortlosi Authentifizierig z'aktiviere",
       "loadError": "Lade vo de Passkeys isch fählgschlage",
+      "loading": "Passkeys werden geladen",
       "title": "Passkeys",
       "unnamed": "Unbenannte Passkey"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Wähl en Lohnabrechnigs-Verantwortliche us und leg fest, öb er uf alli oder en bestimmte Bereich Zuegriff hät.",
       "editTitle": "Lohnabrechnigs-Verantwortliche bearbeite",
       "employees": "Aagstellti",
+      "loading": "Einstellungen für Lohnverantwortliche werden geladen",
       "noGrants": "Es sind no kei Lohnabrechnigs-Verantwortlichi hizuefüegt worde.",
       "noScope": "Kei Lohnabrechnigs-Bereich zuegwise",
       "noTeams": "Kei Teams verfüegbar",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "D Zueordnig isch nöd gspicheret worde",
-      "assignmentRemoved": "Zueordnig entfernt",
       "assignmentRemoveFailed": "D Zueordnig isch nöd glöscht worde",
       "assignmentSaved": "Zueordnig gspicheret",
       "assignmentsDescription": "Die spezifischti Zueordnig zellt: Die eigeni Zueordnig vome Mitarbeiter vor dere vo sim primäre Team, und die vome Team vor dere vor ganze Organisation. Verwänd «Us», zum es Team oder en Mitarbeiter uszschliesse.",
@@ -2883,6 +2979,7 @@
       "description": "Positione bi de eigene Stämpligs-Ereignis vor Mitarbeiter erfasse, mit ihrere Iwilligung",
       "enabled": "Positione erfasse",
       "enabledDescription": "Wänn das usgschaltet wird, stoppt d Erfassig für alli. Erfassti Positione bliibed bis zu ihrem Löschdatum erhalte.",
+      "loadFailed": "Einstellungen zur Positionserfassung konnten nicht geladen werden",
       "noNotice": "Es isch no kei Hiwiis veröffentlicht. Bim Spichere vore Zwäck-Erchlärig wird Version 1 veröffentlicht.",
       "noticeDescription": "Was d Mitarbeiter zuestimmed: De fescht Text vo Z8 und dini Zwäck-Erchlärig. Wänn de Zwäck bearbeitet wird oder Positione länger bhalte wärded, wird e neui Version veröffentlicht; s Verchürze vor Ufbewahrig nöd.",
       "noticeTitle": "Positions-Hiwiis",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Jedes Mal, wenn öpper andersch dini erfasste Standort aazeigt bechunnt, wird das da ufglischtet.",
       "accessLogEmpty": "Niemert andersch hät dini Standort aazeigt becho.",
       "accessLogExport": "Dateexport",
+      "accessLogLoadFailed": "Die Liste, wer Ihre Positionen gesehen hat, konnte nicht geladen werden. Laden Sie die Seite neu, um es erneut zu versuchen.",
       "accessLogRemovedWorkPeriod": "E Arbetsperiode, wo nüme existiert",
       "accessLogTitle": "Wer dini Standort gseh hät",
       "accessLogWorkPeriod": "Arbetsperiode am {date}",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "Du häsch di nonig entschiede.",
       "consentWithdrawn": "Du häsch dini Zuestimmig am {date} zruggzoge.",
       "description": "Öb din Standort bi dine Stämpfelereignis erfasst wird, und dini Zuestimmig",
+      "loadFailed": "Ihre Einstellungen für Positionsstempel konnten nicht geladen werden.",
       "noNotice": "Dini Organisazion hät kein Standorthinwiis veröffentlicht.",
       "noticeDescription": "Dem stimmsch du zue. Es wird e neui Version veröffentlicht, wenn sich de Zweck änderet oder Standort länger bhalte werded.",
       "noticeTitle": "Standorthinwiis",
@@ -2954,6 +3053,7 @@
       "firstName": "Vorname",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Auswahl aufheben",
         "female": "Wiiblich",
         "label": "Gschlächt",
         "male": "Männlich",
@@ -2966,6 +3066,7 @@
       "lastName": "Nachname",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Profil hät nöd chönne glade werde",
+      "loadFailedDetail": "Ihr Profil konnte nicht geladen werden und kann daher derzeit nicht bearbeitet werden. Versuchen Sie es erneut.",
       "personalInformation": "Persönlechi Informatione",
       "pronouns": "Pronome",
       "pronouns.custom": "Eigeni Pronome",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Profilbild ufelade"
     },
     "projects": {
+      "budgetUsed": "Verbrauchtes Budget",
       "column": {
+        "actions": "Aktionen",
         "budget": "Budget",
         "customer": "Chunde",
         "deadline": "Frist",
@@ -3002,6 +3105,12 @@
       "created": "Projekt erstellt",
       "createFailed": "Projekt-Erstellig isch fählgschlage",
       "customerDeleted": "{name} (glöscht)",
+      "deadline": {
+        "overdue": "{count, plural, one {# Tag überfällig} other {# Tage überfällig}}",
+        "remaining": "{count, plural, one {# Tag verbleibend} other {# Tage verbleibend}}",
+        "today": "Heute fällig",
+        "tomorrow": "Morgen fällig"
+      },
       "description": "Projekte, Budget, Friste und Ziiterfassige verwalte",
       "dialog": {
         "create": "Projekt erstelle",
@@ -3011,6 +3120,8 @@
         "editTitle": "Projekt bearbeite",
         "save": "Änderige spychere"
       },
+      "edit": "Projekt bearbeiten",
+      "editAction": "{name} bearbeiten",
       "empty": {
         "description": "Erstell dis erschte Projekt, zum mit em Ziiterfasse aafange.",
         "title": "No kei Projekt vorhande"
@@ -3061,6 +3172,7 @@
         "description": "{count} Projekt insgesamt",
         "title": "Alli Projekt"
       },
+      "loadFailed": "Projekte konnten nicht geladen werden. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
       "members": {
         "addManager": "Projektleiter hinzufügen",
         "assignEmployee": "Mitarbeiter zuweisen",
@@ -3081,7 +3193,6 @@
         "noTeams": "Kei Teams zuegwise",
         "remove": "{name} entferne",
         "removed": "{name} entfernt",
-        "removeFailed": "Fähler bim Entferne vo {name}",
         "selectEmployee": "En Mitarbeiter uswähle",
         "selectTeam": "Es Team uswähle",
         "teamAssigned": "Team zuegwise",
@@ -3099,6 +3210,13 @@
         "saved": "Vorlag {name} gspeicheret",
         "submit": "Als Vorlag speichere",
         "title": "Als Vorlag speichere"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Archiviert",
+        "completed": "Abgeschlossen",
+        "paused": "Pausiert",
+        "planned": "Geplant"
       },
       "tabs": {
         "projects": "Projekt",
@@ -3118,6 +3236,16 @@
         "edit": "{name} bearbeite",
         "editAction": "{name} bearbeite",
         "empty": "No kei Ufgabe. Mit Ufgabe chönd Lüt aagee, für was im Projekt ihri Ziit bruucht worde isch.",
+        "errors": {
+          "booked": "Auf diese Aufgabe ist Zeit gebucht, daher kann sie nicht gelöscht werden.",
+          "descriptionTooLong": "Die Aufgabenbeschreibung ist zu lang.",
+          "duplicateName": "In diesem Projekt existiert bereits eine Aufgabe mit diesem Namen.",
+          "estimateInvalid": "Geben Sie die Schätzung als positive Stundenzahl ein.",
+          "nameRequired": "Geben Sie einen Aufgabennamen ein.",
+          "nameTooLong": "Der Aufgabenname ist zu lang.",
+          "notAllowed": "Sie haben keine Berechtigung, die Aufgaben dieses Projekts zu verwalten.",
+          "notFound": "Diese Aufgabe existiert nicht mehr."
+        },
         "estimate": "Schätzig: {hours} h",
         "field": {
           "description": "Beschriibig",
@@ -3167,7 +3295,6 @@
         "delete": "Lösche",
         "deleteAction": "{name} lösche",
         "deleted": "{name} glöscht",
-        "deleteFailed": "{name} hät nöd chönne glöscht werde",
         "deleteQuestion": "Die Vorlag lösche?",
         "description": "Vorlage für neui Projekt: Ufgabe, Budget, Frist, Manager und Mitglider.",
         "dialogDescription": "Neui Projekt, wo us dere Vorlag erstellt werded, kopiered de Inhalt eimol.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, one {# Vorlag} other {# Vorlage}}",
         "listTitle": "Alli Vorlage",
+        "loadFailed": "Projektvorlagen konnten nicht geladen werden. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
         "managers": {
           "empty": "Kei Projektleiter",
           "picker": "Projektleiter zum Hinzuefüege",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobil",
         "tablet": "Tablet"
       },
+      "loadFailed": "Ihre aktiven Sitzungen konnten nicht geladen werden. Versuchen Sie es erneut.",
       "none": "Kei aktive Sitzige",
       "othersRevoked": "Alli andere Sitzige erfolgriich beändet",
       "revoke": "Beände",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Alli andere Sitzige beände",
       "revoked": "Sitzig erfolgriich beändet",
       "revokeFailed": "Sitzig hät nöd chönne beändet werde",
+      "revokeOthersDescription": "{count, plural, one {Damit werden Sie auf # weiteren Gerät abgemeldet. Hier bleiben Sie angemeldet.} other {Damit werden Sie auf # weiteren Geräten abgemeldet. Hier bleiben Sie angemeldet.}}",
+      "revokeOthersTitle": "Alle anderen Sitzungen widerrufen?",
+      "revokeSession": "Sitzung widerrufen: {session}",
+      "revokeSessionDescription": "Damit wird {session} abgemeldet. Alle Personen, die diese Sitzung verwenden, müssen sich erneut anmelden.",
+      "revokeSessionTitle": "Diese Sitzung widerrufen?",
       "revoking": "Am beände…",
       "securityTip": "Wenn du e Sitzig gsehsch, wo du nöd kennsch, heb sie sofort uf und ändere dis Passwort.",
       "signedIn": "Agmäldet",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Verbinde",
       "connected": "Verbunde",
-      "connectedAs": "Verbunde als {accountId}",
+      "connectedOn": "Verbunden am {date}",
       "connectFailed": "Konto-Verbindig fehlgschlage",
       "connecting": "Verbinde…",
       "connectProvider": "Verbind dis {provider}-Konto",
@@ -3364,8 +3498,9 @@
       "disconnect": "Trenne",
       "disconnectDescription": "Das wird d'Verknüpfig zu dim soziale Konto ufhäbe. Du chasch sie jederziit wieder verbinde.",
       "disconnectFailed": "Konto konnte nöd trennt werde",
+      "disconnectProviderTitle": "{provider} trennen?",
       "disconnectSuccess": "Konto erfolgriich trennt",
-      "disconnectTitle": "Konto trenne?",
+      "linkedForSignIn": "Für die Anmeldung verknüpft",
       "loadFailed": "Konnte die verbundene Konti nöd lade",
       "title": "Soziali Konti",
       "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
@@ -3391,6 +3526,7 @@
       "description": "Statistike und Metrike zu dinere Instanz aaluege",
       "lastUpdated": "Zuletzt aktualisiert",
       "loadError": "Statistike konnted nöd glade werde",
+      "loadErrorRetry": "Laden Sie die Seite neu, um es erneut zu versuchen.",
       "managerDescription": "Lueg dir d'Analytik für d'Teams aa, wo du verwaltsch.",
       "sections": {
         "absenceBreakdown": "Absänz-Übersicht",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Gültig bis",
       "legacy": {
         "description": "Nume als Referenz bhalte. Die Iiträg sind nie für d Berächnig vo Spese bruucht worde und chönd nüme bearbeitet werde; richted Si obedra datierti Kilometersätz ii.",
+        "loadFailed": "Frühere Richtlinieneinträge konnten nicht geladen werden",
         "title": "Früeneri Richtlinie-Iiträg"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Archiviert",
       "archiveInstead": "Stattdessen archivieren",
       "archiveNamed": "{name} archivieren",
+      "count": "{count, plural, one {# Fahrzeug} other {# Fahrzeuge}}",
       "delete": "Löschen",
       "deleteConfirm": "Fahrzeug löschen",
       "deleted": "Fahrzeug gelöscht",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Jedem Mitglied eines zugewiesenen Teams wird dieses Fahrzeug zuerst vorgeschlagen."
       },
       "listDescription": "Archivierte Fahrzeuge können nicht mehr ausgewählt werden, bleiben aber bei den Arbeiten erhalten, bei denen sie erfasst wurden.",
-      "listTitle": "Fahrzeuge",
       "loadFailed": "Fahrzeuge konnten nicht geladen werden.",
       "logbookNotice": {
         "description": "Z8 erfasst, welches Fahrzeug während der Arbeit gefahren wurde, sowie dessen Kilometerstände. Es handelt sich nicht um ein steuerkonformes Fahrtenbuch: Zählerstände können korrigiert werden, und es werden weder Fahrtzweck noch Geschäftspartner erfasst.",
         "title": "Kein steuerliches Fahrtenbuch"
       },
+      "noActive": "Keine aktiven Fahrzeuge. Fügen Sie ein Fahrzeug hinzu oder stellen Sie ein archiviertes wieder her.",
       "noDrivers": "Keine zugewiesenen Fahrer",
       "photos": {
         "accessChanged": "Din Zuegriff hät sich gänderet. Mach d Fahrzüüg-Istellige nomal uf, zum dini Berächtigunge z überprüefe.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} isch bi Arbete erfasst worde"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Zueordnig glöscht",
       "assignmentSaved": "Zueordnig gspeicheret",
       "assignmentsDescription": "Gfragti Mitarbeiter chönd d'Fahrzügnutzig erfasse, wänn si stämple. Mitarbeiter, bi dene e Fahrzügnutzig erwartet wird, werded jedes Mal gfragt, und iri Arbet wird markiert, bis d'Date vollständig sind. Niemert wird jemals bim Stämple gstoppt. Die spezifischsti Zueordnig zellt: die eigeti vom Mitarbeiter vor dere vom primäre Team, und die vom Team vor dere vo de ganze Organisation.",
       "enabled": "Fahrzügnutzig erfasse",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Wähl us, für wen d'Zueordnig gilt.",
         "teamNotFound": "Das Team git es nüm."
       },
-      "loadFailed": "D'Iistellige für d'Fahrzügnutzig händ nöd chönne glade werde. Lad d'Site neu.",
+      "loadFailedRetry": "Die Einstellungen für die Fahrzeugnutzung konnten nicht geladen werden.",
       "mode": "Modus",
       "modeAsked": "Gfragt",
       "modeExpected": "Fahrzügnutzig erwartet",
@@ -3958,6 +4095,13 @@
       "description": "Wasser-Erinnerige und Flüssigkeitszufuhr während de Arbeitsziit konfiguriere",
       "glasses": "Gläser",
       "increaseDailyGoal": "Tagesziil erhöhe",
+      "loadFailed": "Ihre Einstellungen für die Wasser-Erinnerung konnten nicht geladen werden. Versuchen Sie es erneut.",
+      "presets": {
+        "active": "Aktiv",
+        "custom": "Benutzerdefiniert",
+        "light": "Leicht",
+        "moderate": "Moderat"
+      },
       "reminderFrequency": "Erinnerigs-Hüfigkeit",
       "saved": "Wellness-Iistellige gspycheret",
       "saveError": "Wellness-Iistellige händ nöd chönne gspycheret werde",
@@ -4095,6 +4239,9 @@
         "hidden": "Versteckt"
       },
       "absenceVisibility": "Sichtbarkeit vo Absänz",
+      "accessSectionTitle": "Auf Exporte zugreifen und sie überprüfen",
+      "addLocation": "Standort hinzufügen",
+      "addTeam": "Team hinzufügen",
       "description": "Konfiguriere dateschutzkonforme Zuegriff für de Betriibsrat und Überprüfig vo Export",
       "exportEnabled": "Überprüfigsexport aktiviere",
       "exportEnabledDescription": "Erlaube autorisierte Betriibsrat-Nutzer, datenschutzgfiltereti Überprüfigspakete z'erstelle.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Sichtbarkeit vo Identitäte",
       "minimumThreshold": "Mindest-Aggregationsschwellwert",
       "minimumThresholdDescription": "Gruppe unter dere Grössi wärded unterdrückt, zum s Risiko vo Re-Identifizierig z'verringere.",
+      "minimumThresholdInvalid": "Geben Sie eine ganze Zahl von mindestens 5 ein",
+      "noLocationFound": "Kein Standort gefunden",
+      "noLocationsAvailable": "Keine weiteren Standorte zum Hinzufügen",
+      "noTeamFound": "Kein Team gefunden",
+      "noTeamsAvailable": "Keine weiteren Teams zum Hinzufügen",
+      "removeScopeItem": "{name} entfernen",
       "save": "Iistellige spychere",
       "saved": "Betriibsrat-Iistellige gspycheret",
       "saveError": "Fehler bim Spychere vo de Betriibsrat-Iistellige",
+      "searchLocations": "Standorte suchen",
+      "searchTeams": "Teams suchen",
+      "selectedLocations": "Ausgewählte Standorte",
+      "selectedTeams": "Ausgewählte Teams",
       "title": "Betriibsrat-Modus",
-      "visibleLocationIds": "Sichtbari Standort-IDs",
-      "visibleLocationIdsDescription": "Optionali, mit Komma trennti Standort-IDs. Leer lah, zum alli Standort z'inkludiere.",
-      "visibleTeamIds": "Sichtbari Team-IDs",
-      "visibleTeamIdsDescription": "Optionali, mit Komma trennti Team-IDs. Leer lah, zum alli Teams z'inkludiere."
+      "unknownLocation": "Unbekannter Standort ({shortId})",
+      "unknownTeam": "Unbekanntes Team ({shortId})",
+      "visibleLocations": "Sichtbare Standorte",
+      "visibleLocationsDescription": "Leer lassen, um alle Standorte einzuschliessen.",
+      "visibleTeams": "Sichtbare Teams",
+      "visibleTeamsDescription": "Leer lassen, um alle Teams einzuschliessen."
     }
   }
 }

@@ -1,0 +1,249 @@
+{
+  "phase": "after",
+  "source": {
+    "head": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+    "localAI": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": {
+        "blob": "52439702d6149e019e7f5b543941ebdb356b0dcf",
+        "sha256": "c00602738a0b8d0442eb6cf7150c972f3e4fd6855ce7f62018a26a28d708d904"
+      },
+      "apps/webapp/src/app/[locale]/onboarding/welcome/actions.ts": {
+        "blob": "5b731f613806e0e26e1cb6f2f8e37275b116a44d",
+        "sha256": "ea581826cfdefd4b049103dcf1aa8fb3fc5e3e36274b7965c14f1591430355d8"
+      },
+      "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx": {
+        "blob": "5e1dc99993a3a53a46fefef393324404b70d439e",
+        "sha256": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1"
+      },
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+        "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+        "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+      },
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+        "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+        "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+      },
+      "apps/webapp/next.config.ts": {
+        "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+        "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+      }
+    }
+  },
+  "checks": [
+    "real Better Auth sign-in and organization activation",
+    "desktop-light fits viewport and saved font",
+    "phone-light fits viewport and saved font",
+    "wide-dark-large fits viewport and saved font",
+    "phone-dark-large fits viewport and saved font",
+    "one heading and stored organization context",
+    "three original capability descriptions"
+  ],
+  "captures": [
+    {
+      "file": "after-desktop-light.png",
+      "source": {
+        "head": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "localAI": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": {
+            "blob": "52439702d6149e019e7f5b543941ebdb356b0dcf",
+            "sha256": "c00602738a0b8d0442eb6cf7150c972f3e4fd6855ce7f62018a26a28d708d904"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/actions.ts": {
+            "blob": "5b731f613806e0e26e1cb6f2f8e37275b116a44d",
+            "sha256": "ea581826cfdefd4b049103dcf1aa8fb3fc5e3e36274b7965c14f1591430355d8"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx": {
+            "blob": "5e1dc99993a3a53a46fefef393324404b70d439e",
+            "sha256": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/next.config.ts": {
+            "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+            "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+          }
+        }
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "url": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "theme": "light",
+      "fontPreference": "default",
+      "scale": 1,
+      "dpr": 1
+    },
+    {
+      "file": "after-phone-light.png",
+      "source": {
+        "head": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "localAI": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": {
+            "blob": "52439702d6149e019e7f5b543941ebdb356b0dcf",
+            "sha256": "c00602738a0b8d0442eb6cf7150c972f3e4fd6855ce7f62018a26a28d708d904"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/actions.ts": {
+            "blob": "5b731f613806e0e26e1cb6f2f8e37275b116a44d",
+            "sha256": "ea581826cfdefd4b049103dcf1aa8fb3fc5e3e36274b7965c14f1591430355d8"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx": {
+            "blob": "5e1dc99993a3a53a46fefef393324404b70d439e",
+            "sha256": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/next.config.ts": {
+            "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+            "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+          }
+        }
+      },
+      "png": {
+        "width": 390,
+        "height": 890
+      },
+      "url": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "theme": "light",
+      "fontPreference": "default",
+      "scale": 1,
+      "dpr": 1
+    },
+    {
+      "file": "after-wide-dark-large.png",
+      "source": {
+        "head": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "localAI": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": {
+            "blob": "52439702d6149e019e7f5b543941ebdb356b0dcf",
+            "sha256": "c00602738a0b8d0442eb6cf7150c972f3e4fd6855ce7f62018a26a28d708d904"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/actions.ts": {
+            "blob": "5b731f613806e0e26e1cb6f2f8e37275b116a44d",
+            "sha256": "ea581826cfdefd4b049103dcf1aa8fb3fc5e3e36274b7965c14f1591430355d8"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx": {
+            "blob": "5e1dc99993a3a53a46fefef393324404b70d439e",
+            "sha256": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/next.config.ts": {
+            "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+            "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+          }
+        }
+      },
+      "png": {
+        "width": 2400,
+        "height": 1200
+      },
+      "url": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "theme": "dark",
+      "fontPreference": "large",
+      "scale": 1,
+      "dpr": 1
+    },
+    {
+      "file": "after-phone-dark-large.png",
+      "source": {
+        "head": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "localAI": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": {
+            "blob": "52439702d6149e019e7f5b543941ebdb356b0dcf",
+            "sha256": "c00602738a0b8d0442eb6cf7150c972f3e4fd6855ce7f62018a26a28d708d904"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/actions.ts": {
+            "blob": "5b731f613806e0e26e1cb6f2f8e37275b116a44d",
+            "sha256": "ea581826cfdefd4b049103dcf1aa8fb3fc5e3e36274b7965c14f1591430355d8"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx": {
+            "blob": "5e1dc99993a3a53a46fefef393324404b70d439e",
+            "sha256": "3d86d93f93d9f0d3c5351aaf4c469d3d7ae381f2ba2290c65f08dc620e12e4a1"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/next.config.ts": {
+            "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+            "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+          }
+        }
+      },
+      "png": {
+        "width": 390,
+        "height": 1027
+      },
+      "url": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "theme": "dark",
+      "fontPreference": "large",
+      "scale": 1,
+      "dpr": 1
+    }
+  ],
+  "errors": [],
+  "failed": [
+    "native keyboard focus returns to continuation"
+  ],
+  "qualification": "Default committed Next config, workspace-local offline copy dependencies; consumer-only historical comparison"
+}

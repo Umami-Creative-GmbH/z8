@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Onayla",
       "approveLabel": "{title} öğesini onayla",
+      "decided": "Karar kaydedildi. Güncel kuyruğu yüklemek için yenileyin.",
       "description": "Yönetici kararı bekleyen talepler.",
       "empty": "Bekleyen onay bulunmuyor.",
       "openInbox": "Gelen kutusunu aç",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Bekleyen onaylar",
       "reject": "Reddet",
       "rejectLabel": "{title} öğesini reddet",
+      "retry": "Onayları tekrar dene",
       "title": "Onaylar",
       "toast": {
         "approved": "Talep onaylandı",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Bugün",
-      "description": "Bugün işlem gerektiren öğeleri gözden geçirin, ardından doğrudan doğru iş akışına geçin.",
+      "accessUnavailable": "Bu bilgilendirme mevcut çalışan ve organizasyon için kullanılamıyor.",
+      "contextFailed": "Mevcut erişiminiz kontrol edilemedi. Tekrar deneyin.",
+      "drivingUnavailable": "Sürüş ayrıntıları kontrol edilemedi.",
+      "incomplete": "Bazı kontroller kullanılamıyor. Bölüm hatalarını gözden geçirin; bu sonuçlar eksik.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Çalışanlarınızın araç veya kilometre sayacı değeri eksik olan çalışma dönemleri.",
           "title": "Sürüş ayrıntıları eksik ({count})"
         }
       },
+      "loadFailed": "Bilgilendirme yüklenemedi. Tekrar deneyin.",
       "needsAction": {
         "description": "En acil operasyonel takipler için buradan başlayın.",
-        "empty": "Her şey yolunda. Şu an için yönetici müdahalesi gerekmiyor.",
+        "noExceptions": "Bu anlık görüntüde operasyonel takip tespit edilmedi. Bu durum çalışanın varlığını doğrulamaz.",
         "title": "İşlem Gerekiyor"
       },
+      "partial": "Kısmi",
+      "refreshFailed": "Yenilenemedi. Önceki sonuçlar gösteriliyor; işlem yapmadan önce tekrar deneyin.",
+      "refreshing": "Bilgilendirme yenileniyor. Önceki sonuçlar görünmeye devam ediyor.",
+      "retainedSection": "Önceki sonuçlar gösteriliyor. Değişiklikleri kontrol etmek için tekrar deneyin.",
+      "retry": "Bilgilendirmeyi tekrar dene",
+      "retrySection": "{title} öğesini tekrar dene",
+      "scope": "Aktif organizasyonda denetleyebileceğiniz çalışanlar için operasyonel takip.",
       "sections": {
         "empty": "Sorun algılanmadı."
       },
@@ -41,10 +53,11 @@
         "info": "Bilgi",
         "warning": "Uyarı"
       },
+      "snapshot": "Anlık görüntü {time} güncellendi. Değişiklikleri kontrol etmek için Verileri yenile seçeneğini kullanın.",
       "summaryAriaLabel": "Bugünün özeti",
       "supportingSectionsAriaLabel": "Destekleyici bölümler",
       "title": "Yönetici Günlük Bilgilendirmesi",
-      "updatedAt": "{date} - Güncellenme {time}"
+      "unavailable": "Kullanılamıyor"
     }
   }
 }

@@ -2,70 +2,26 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
-import { MetricsTableHeader } from "@/components/analytics/metrics-table-header";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
-import { Badge } from "@/components/ui/badge";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableRow,
-} from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
 import type { DateRange, WorkHoursAnalyticsData } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getWorkHoursAnalyticsData } from "../actions";
-
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), {
-	ssr: false,
-});
-const AreaChart = dynamic(
-	() => import("recharts").then((mod) => mod.AreaChart),
-	{ ssr: false },
-);
-const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
-	ssr: false,
-});
-const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
-	ssr: false,
-});
-const CartesianGrid = dynamic(
-	() => import("recharts").then((mod) => mod.CartesianGrid),
-	{
-		ssr: false,
-	},
-);
-const Line = dynamic(() => import("recharts").then((mod) => mod.Line), {
-	ssr: false,
-});
-const LineChart = dynamic(
-	() => import("recharts").then((mod) => mod.LineChart),
-	{ ssr: false },
-);
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
-	ssr: false,
-});
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
-	ssr: false,
-});
+import {
+	DailyWorkHoursCard,
+	EmployeeWorkHoursCard,
+	VarianceTrendCard,
+	WorkHoursDistributionCard,
+} from "./records";
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
@@ -74,319 +30,49 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 	);
 }
 
-type WorkHoursTranslate = ReturnType<typeof useTranslate>["t"];
-type WorkHoursEmployeeData = WorkHoursAnalyticsData["byEmployee"][number];
-type WorkHoursDistributionData = WorkHoursAnalyticsData["distribution"];
-type WorkHoursBarData = { employee: string; hours: number }[];
-
-function VarianceTrendCard({
-	data,
-	t,
-}: {
-	data: WorkHoursDistributionData;
-	t: WorkHoursTranslate;
-}) {
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					{t(
-						"analytics.workHours.varianceTrend.title",
-						"Overtime & Undertime Trend",
-					)}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"analytics.workHours.varianceTrend.description",
-						"Hours variance from expected work hours over time",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				{data.length > 0 ? (
-					<ChartContainer
-						config={{
-							overtime: {
-								label: t("analytics.common.overtime", "Overtime"),
-								color: "hsl(var(--chart-1))",
-							},
-							undertime: {
-								label: t("analytics.common.undertime", "Undertime"),
-								color: "hsl(var(--chart-2))",
-							},
-						}}
-						className="h-[300px]"
-					>
-						<AreaChart data={data}>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis
-								dataKey="date"
-								tickLine={false}
-								tickMargin={10}
-								axisLine={false}
-							/>
-							<YAxis tickLine={false} axisLine={false} />
-							<ChartTooltip content={<ChartTooltipContent />} />
-							<Area
-								type="monotone"
-								dataKey="overtime"
-								stackId="1"
-								stroke="var(--color-overtime)"
-								fill="var(--color-overtime)"
-								fillOpacity={0.6}
-							/>
-							<Area
-								type="monotone"
-								dataKey="undertime"
-								stackId="2"
-								stroke="var(--color-undertime)"
-								fill="var(--color-undertime)"
-								fillOpacity={0.6}
-							/>
-						</AreaChart>
-					</ChartContainer>
-				) : (
-					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t(
-							"analytics.workHours.varianceTrend.empty",
-							"No trend data available",
-						)}
-					</div>
-				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-function DailyWorkHoursCard({
-	data,
-	t,
-}: {
-	data: WorkHoursDistributionData;
-	t: WorkHoursTranslate;
-}) {
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					{t("analytics.workHours.daily.title", "Daily Work Hours")}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"analytics.workHours.daily.description",
-						"Actual vs expected work hours per day",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				{data.length > 0 ? (
-					<ChartContainer
-						config={{
-							actual: {
-								label: t("analytics.workHours.actualHours", "Actual Hours"),
-								color: "hsl(var(--primary))",
-							},
-							expected: {
-								label: t("analytics.workHours.expectedHours", "Expected Hours"),
-								color: "hsl(var(--muted-foreground))",
-							},
-						}}
-						className="h-[300px]"
-					>
-						<LineChart data={data}>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis
-								dataKey="date"
-								tickLine={false}
-								tickMargin={10}
-								axisLine={false}
-							/>
-							<YAxis tickLine={false} axisLine={false} />
-							<ChartTooltip content={<ChartTooltipContent />} />
-							<Line
-								type="monotone"
-								dataKey="actual"
-								stroke="var(--color-actual)"
-								strokeWidth={2}
-								dot={{ r: 3 }}
-							/>
-							<Line
-								type="monotone"
-								dataKey="expected"
-								stroke="var(--color-expected)"
-								strokeWidth={2}
-								strokeDasharray="5 5"
-								dot={{ r: 3 }}
-							/>
-						</LineChart>
-					</ChartContainer>
-				) : (
-					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t(
-							"analytics.workHours.daily.empty",
-							"No daily hours data available",
-						)}
-					</div>
-				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-function EmployeeWorkHoursCard({
-	employees,
-	t,
-}: {
-	employees: WorkHoursEmployeeData[];
-	t: WorkHoursTranslate;
-}) {
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					{t(
-						"analytics.workHours.employeeComparison.title",
-						"Employee Work Hours",
-					)}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"analytics.workHours.employeeComparison.description",
-						"Total hours and variance from expected by employee",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				{employees.length === 0 ? (
-					<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-						{t(
-							"analytics.common.noDataForPeriod",
-							"No data available for the selected period",
-						)}
-					</div>
-				) : (
-					<Table mobileLayout="stacked">
-						<MetricsTableHeader
-							name={t("analytics.common.employee", "Employee")}
-							metrics={[
-								t("analytics.common.totalHours", "Total Hours"),
-								t("analytics.workHours.expectedHours", "Expected Hours"),
-								t("analytics.workHours.variance", "Variance"),
-							]}
-							summary={t("common.status", "Status")}
-						/>
-						<TableBody>
-							{employees.map((employee) => (
-								<TableRow key={employee.employeeId}>
-									<TableCell className="font-medium">
-										{employee.employeeName}
-									</TableCell>
-									<TableCell className="text-right">{employee.totalHours.toFixed(1)}h</TableCell>
-									<TableCell className="text-right">
-										{(employee.totalHours + employee.overtimeHours).toFixed(1)}h
-									</TableCell>
-									<TableCell className="text-right">
-										<span
-											className={
-												employee.overtimeHours >= 0
-													? "text-green-600"
-													: "text-orange-600"
-											}
-										>
-											{employee.overtimeHours >= 0 ? "+" : ""}
-											{employee.overtimeHours.toFixed(1)}h
-										</span>
-									</TableCell>
-									<TableCell>
-										<Badge
-											variant={
-												employee.avgHoursPerWeek >= 35
-													? "default"
-													: employee.avgHoursPerWeek >= 30
-														? "secondary"
-														: "destructive"
-											}
-										>
-											{employee.avgHoursPerWeek.toFixed(0)}
-											{t(
-												"analytics.workHours.hoursPerWeekAbbreviation",
-												"h/wk",
-											)}
-										</Badge>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-function WorkHoursDistributionCard({
-	data,
-	t,
-}: {
-	data: WorkHoursBarData;
-	t: WorkHoursTranslate;
-}) {
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					{t(
-						"analytics.workHours.distribution.title",
-						"Work Hours Distribution",
-					)}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"analytics.workHours.distribution.description",
-						"Employee work hours comparison (horizontal bar)",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				{data.length > 0 ? (
-					<ChartContainer
-						config={{
-							hours: {
-								label: t("analytics.common.hours", "Hours"),
-								color: "hsl(var(--chart-4))",
-							},
-						}}
-						className="h-[300px]"
-					>
-						<BarChart data={data} layout="vertical">
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis type="number" tickLine={false} axisLine={false} />
-							<YAxis
-								dataKey="employee"
-								type="category"
-								tickLine={false}
-								tickMargin={10}
-								axisLine={false}
-								width={120}
-							/>
-							<ChartTooltip content={<ChartTooltipContent />} />
-							<Bar dataKey="hours" fill="var(--color-hours)" radius={4} />
-						</BarChart>
-					</ChartContainer>
-				) : (
-					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t(
-							"analytics.workHours.distribution.empty",
-							"No distribution data available",
-						)}
-					</div>
-				)}
-			</CardContent>
-		</Card>
-	);
+type LoadState = {
+	data: WorkHoursAnalyticsData | null;
+	requestKey: string | null;
+	loading: boolean;
+	refreshing: boolean;
+	failed: boolean;
+};
+type LoadAction =
+	| { type: "loading"; background: boolean }
+	| { type: "loaded"; data: WorkHoursAnalyticsData; requestKey: string }
+	| { type: "failed"; keep: boolean };
+function loadReducer(state: LoadState, action: LoadAction): LoadState {
+	if (action.type === "loading")
+		return {
+			...state,
+			loading: !action.background,
+			refreshing: action.background,
+		};
+	if (action.type === "loaded")
+		return {
+			data: action.data,
+			requestKey: action.requestKey,
+			loading: false,
+			refreshing: false,
+			failed: false,
+		};
+	return {
+		...state,
+		data: action.keep ? state.data : null,
+		loading: false,
+		refreshing: false,
+		failed: true,
+	};
 }
 
 export default function WorkHoursPage() {
+	const organizationId = useOrganizationSettings(
+		(state) => state.organizationId,
+	);
+	return <WorkHours key={organizationId ?? "pending"} />;
+}
+
+function WorkHours() {
 	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
@@ -396,9 +82,20 @@ export default function WorkHoursPage() {
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<DateRange | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [workHoursData, setWorkHoursData] =
-		useState<WorkHoursAnalyticsData | null>(null);
+	const [state, dispatch] = useReducer(loadReducer, {
+		data: null,
+		requestKey: null,
+		loading: true,
+		refreshing: false,
+		failed: false,
+	});
+	const { loading, refreshing, failed } = state;
+	const requestKey = JSON.stringify([
+		dateRange?.start.getTime(),
+		dateRange?.end.getTime(),
+		timezone,
+	]);
+	const workHoursData = state.requestKey === requestKey ? state.data : null;
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
@@ -428,54 +125,55 @@ export default function WorkHoursPage() {
 			}
 
 			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset(
-			"current_month",
-			{ timezone },
-		);
+				"current_month",
+				{ timezone },
+			);
 			if (
-			!hasUserChangedRange.current &&
-			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
-		) {
-			return;
-		}
+				!hasUserChangedRange.current &&
+				!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+			) {
+				return;
+			}
 			const range = dateRange;
 			const generation = ++refreshGeneration.current;
 
 			const isLatest = () => generation === refreshGeneration.current;
 
-			if (!background) setLoading(true);
-			await Promise.resolve()
-			.then(() => getWorkHoursAnalyticsData(range))
-			.then((result) => {
-					if (!isLatest()) {
-						return;
-					}
-
-					if (result.success && result.data) {
-						setWorkHoursData(result.data);
-					} else {
-						throw new Error("Failed to load analytics data");
-					}
-				})
-				.catch((error) => {
-					if (!isLatest()) {
-						return;
-					}
-
-					console.error("Failed to load work hours analytics data:", error);
-					toast.error(
+			dispatch({ type: "loading", background });
+			let succeeded = false;
+			try {
+				const result = await getWorkHoursAnalyticsData(range);
+				if (!isLatest()) return;
+				if (result.success && result.data) {
+					dispatch({ type: "loaded", data: result.data, requestKey });
+					succeeded = true;
+				} else {
+					const refused =
+						!result.success &&
+						[
+							"AuthenticationError",
+							"AuthorizationError",
+							"NotFoundError",
+							"BillingError",
+						].includes(result.code ?? "");
+					dispatch({ type: "failed", keep: background && !refused });
+				}
+			} catch (error) {
+				if (!isLatest()) return;
+				console.error("Failed to load work hours analytics data:", error);
+				dispatch({ type: "failed", keep: background });
+			}
+			if (!succeeded) {
+				toast.error(
 					t(
 						"analytics.workHours.errors.loadData",
 						"Failed to load work hours analytics data",
 					),
 				);
-				})
-				.finally(() => {
-					if (isLatest()) {
-						setLoading(false);
-					}
-				});
+				if (background) throw new Error("Team performance refresh failed");
+			}
 		},
-		[dateRange, isHydrated, timezone, t],
+		[dateRange, isHydrated, timezone, t, requestKey],
 	);
 	useViewRefresh(() => runAnalyticsLoad(true));
 	useEffect(() => {
@@ -491,23 +189,112 @@ export default function WorkHoursPage() {
 
 	const employees = workHoursData?.byEmployee || [];
 
-	// Prepare chart data
-	const trendData = workHoursData?.distribution || [];
-	const dailyHoursData = workHoursData?.distribution || [];
-	const distributionData = employees.map((emp) => ({
-		employee: emp.employeeName,
-		hours: emp.totalHours,
-	}));
-
 	return (
-		<div className="space-y-6 px-4 lg:px-6">
+		<div className="min-w-0 space-y-6">
 			{/* Controls */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				{dateRange ? (
-					<AnalyticsDateRangePicker
-						value={dateRange}
-						onChange={handleDateRangeChange}
+			<WorkHoursControls
+				dateRange={dateRange}
+				onChange={handleDateRangeChange}
+				workHoursData={workHoursData}
+				requestKey={requestKey}
+				pending={loading || refreshing}
+				failed={failed}
+			/>
+
+			{refreshing && (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t(
+						"analytics.workHours.refreshing",
+						"Refreshing work hours analytics data",
+					)}
+				</p>
+			)}
+			{failed && (
+				<Alert variant="destructive">
+					<AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+						<span>
+							{workHoursData
+								? t(
+										"analytics.workHours.refreshFailed",
+										"Refresh failed. Showing previously loaded data for this period. Export is unavailable until retry succeeds.",
+									)
+								: t(
+										"analytics.workHours.errors.loadData",
+										"Failed to load work hours analytics data",
+									)}
+						</span>
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={loading || refreshing}
+							onClick={() =>
+								void runAnalyticsLoad(Boolean(workHoursData)).catch(
+									() => undefined,
+								)
+							}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</AlertDescription>
+				</Alert>
+			)}
+
+			{loading && (
+				<LoadingRegion
+					className="flex items-center justify-center gap-2 py-12"
+					label={{
+						labelKey: "analytics.workHours.loading",
+						labelDefault: "Loading work hours analytics data",
+					}}
+				>
+					<IconLoader2
+						aria-hidden="true"
+						className="size-5 animate-spin text-muted-foreground motion-reduce:animate-none"
 					/>
+				</LoadingRegion>
+			)}
+
+			{!loading && workHoursData && (
+				<>
+					<div className="grid min-w-0 gap-6 xl:grid-cols-2">
+						<DailyWorkHoursCard data={workHoursData.distribution} t={t} />
+						<VarianceTrendCard data={workHoursData.distribution} t={t} />
+					</div>
+					<EmployeeWorkHoursCard employees={employees} t={t} />
+					<WorkHoursDistributionCard
+						data={employees.map((employee) => ({
+							employee: employee.employeeName,
+							hours: employee.totalHours,
+						}))}
+						t={t}
+					/>
+				</>
+			)}
+		</div>
+	);
+}
+
+function WorkHoursControls({
+	dateRange,
+	onChange,
+	workHoursData,
+	requestKey,
+	pending,
+	failed,
+}: {
+	dateRange: DateRange | null;
+	onChange: (range: DateRange) => void;
+	workHoursData: WorkHoursAnalyticsData | null;
+	requestKey: string;
+	pending: boolean;
+	failed: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<DataTableToolbar
+			filterControls={
+				dateRange ? (
+					<AnalyticsDateRangePicker value={dateRange} onChange={onChange} />
 				) : (
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -515,10 +302,12 @@ export default function WorkHoursPage() {
 							"Loading organization settings before enabling presets.",
 						)}
 					</p>
-				)}
+				)
+			}
+			actions={
 				<ExportButton
 					data={{
-						data: employees,
+						data: workHoursData?.byEmployee ?? [],
 						headers: [
 							{
 								key: "employeeName",
@@ -546,24 +335,10 @@ export default function WorkHoursPage() {
 						],
 						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
-					disabled={!workHoursData || !dateRange}
+					exportScope={requestKey}
+					disabled={!workHoursData || !dateRange || pending || failed}
 				/>
-			</div>
-
-			{loading && (
-				<div className="flex items-center justify-center py-12">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-				</div>
-			)}
-
-			{!loading && (
-				<>
-					<VarianceTrendCard data={trendData} t={t} />
-					<DailyWorkHoursCard data={dailyHoursData} t={t} />
-					<EmployeeWorkHoursCard employees={employees} t={t} />
-					<WorkHoursDistributionCard data={distributionData} t={t} />
-				</>
-			)}
-		</div>
+			}
+		/>
 	);
 }

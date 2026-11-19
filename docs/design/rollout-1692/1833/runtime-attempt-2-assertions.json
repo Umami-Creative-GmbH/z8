@@ -1,0 +1,78 @@
+{
+  "kind": "real local Next / Better Auth / disposable PostgreSQL; transport interception only holds or aborts real requests, never substitutes data",
+  "checks": [
+    {
+      "name": "one task heading; enable switch leads the form",
+      "passed": true
+    },
+    {
+      "name": "custom inherits moderate 45",
+      "passed": true
+    },
+    {
+      "name": "interval minimum 15",
+      "passed": true
+    },
+    {
+      "name": "interval maximum 120",
+      "passed": true
+    },
+    {
+      "name": "custom inherits light 60",
+      "passed": true
+    },
+    {
+      "name": "custom inherits active 30",
+      "passed": true
+    },
+    {
+      "name": "interval step 5",
+      "passed": true
+    },
+    {
+      "name": "goal maximum 20",
+      "passed": true
+    },
+    {
+      "name": "disabled hides the preference controls",
+      "passed": true
+    },
+    {
+      "name": "reenabling preserves custom interval and goal",
+      "passed": true
+    },
+    {
+      "name": "preset Escape restores trigger focus",
+      "passed": true
+    },
+    {
+      "name": "pending disables switch preset sliders and both actions",
+      "passed": true
+    },
+    {
+      "name": "native reactivation keeps one actual request",
+      "passed": true
+    },
+    {
+      "name": "aborted transport retains custom input",
+      "passed": true
+    },
+    {
+      "name": "real save continues to notifications",
+      "passed": true
+    },
+    {
+      "name": "real settings readback retains custom interval 35 and goal 20",
+      "passed": true
+    },
+    {
+      "name": "real skip preserves saved personal interval",
+      "passed": true
+    },
+    {
+      "name": "disabled save readback hides enabled-only controls",
+      "passed": false
+    }
+  ],
+  "errors": []
+}

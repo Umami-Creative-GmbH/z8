@@ -1,0 +1,19 @@
+{
+  "guideRead": true,
+  "version": "0.39.1",
+  "uniqueTransientSession": true,
+  "restore": false,
+  "restoreSave": "never",
+  "sameOwnedBrowserCdpAttach": true,
+  "authStateTransferred": false,
+  "open": {
+    "exit": 0,
+    "rawSha256": "c5c1368a9d839e83c8f4b7efe2ae89b79da2d540ab0dc575074551c1efef1627",
+    "cdpClosed": false
+  },
+  "react": null,
+  "close": {
+    "exit": 0,
+    "rawSha256": "6628ecc856c14dc93fbc6348e3c6c73b448812252f669cb3b492ba6108404cc8"
+  }
+}

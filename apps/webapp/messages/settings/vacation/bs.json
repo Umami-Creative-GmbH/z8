@@ -61,6 +61,7 @@
           "allowance": "Kvota",
           "allowanceForYear": "Pravo na godišnji odmor za {year}.",
           "assignedPolicy": "Dodijeljeno pravilo",
+          "backToAllowances": "Nazad na kvote zaposlenika",
           "cancel": "Otkaži",
           "carryover": "Prijenos",
           "carryoverDaysOptional": "Preneseni dani (opcionalno)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Zadano: {days} dana",
           "employeeInformation": "Informacije o zaposleniku",
           "errors": {
+            "adjustmentReasonRequired": "Unesite razlog za evidentiranje ovog prilagođavanja.",
             "createAdjustmentFailed": "Kreiranje prilagođavanja nije uspjelo",
-            "unexpected": "Došlo je do neočekivane greške",
+            "loadFailed": "Nije bilo moguće učitati kvotu godišnjeg odmora zaposlenika.",
             "updateAllowanceFailed": "Ažuriranje prava na godišnji odmor nije uspjelo",
             "updatePolicyAssignmentFailed": "Ažuriranje dodjele pravila nije uspjelo"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "upravljajte danima godišnjeg odmora zaposlenika",
           "managers": "Menadžeri",
           "overrideEffectivePolicy": "Preinači dodijeljenu kvotu iz pravila ({days} dana) za ovog uposlenika",
+          "partialSave": {
+            "description": "Vaši unosi su sačuvani. Ponovni pokušaj čuva samo ono što još nedostaje.",
+            "failed": {
+              "adjustment": "Ručno prilagođavanje nije moglo biti sačuvano: {reason}",
+              "allowance": "Prilagođena kvota nije mogla biti sačuvana: {reason}",
+              "policy": "Dodjela pravila nije mogla biti sačuvana: {reason}"
+            },
+            "pending": {
+              "adjustment": "Ručno prilagođavanje još nije sačuvano.",
+              "allowance": "Prilagođena kvota još nije sačuvana.",
+              "policy": "Dodjela pravila još nije sačuvana."
+            },
+            "retry": "Ponovo pokušaj sačuvati nesačuvane izmjene",
+            "saved": {
+              "adjustment": "Ručno prilagođavanje je sačuvano.",
+              "allowance": "Prilagođena kvota je sačuvana.",
+              "policy": "Dodjela pravila je sačuvana."
+            },
+            "title": "Neke izmjene nisu sačuvane",
+            "titleNothingSaved": "Izmjene nisu sačuvane"
+          },
           "policyOptionDays": "{name} ({days} dana)",
           "position": "Pozicija",
           "postingsSkipped": "Automatska knjiženja godišnjeg odmora se preskaču dok se ne riješi konfiguracija pravila.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Upozorenje: \"{name}\" je zadana politika kompanije. Morate postaviti drugu politiku kao zadanu prije brisanja ove.",
       "delete-description-v2": "Jeste li sigurni da želite izbrisati \"{name}\"? Ovo će također ukloniti sve dodjele za ovu politiku.",
       "deleteFailed": "Brisanje politike nije uspjelo",
+      "deleteLastDefault": "Ovo je jedino zadano pravilo kompanije. Prvo postavite drugo pravilo kao zadano.",
       "delete-title": "Izbriši politiku godišnjeg odmora",
       "header": {
         "accrual": "Sticanje",
@@ -334,6 +358,7 @@
       },
       "loadError": "Učitavanje politika nije uspjelo",
       "max-days": "Maks. {days} dana",
+      "no-end-date": "Bez datuma završetka",
       "none": "Nema",
       "no-policies-created": "Još nema kreiranih politika godišnjeg odmora. Kreirajte politiku kako biste definisali dane godišnjeg odmora za svoj tim.",
       "noSearchResults": "Nijedna politika ne odgovara vašoj pretrazi.",

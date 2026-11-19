@@ -7,6 +7,7 @@ import { getCurrentSettingsAccessTier } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getOrgExplorerData } from "./actions";
 import { OrgExplorerClient } from "./org-explorer-client";
+import { OrgExplorerHeader, OrgExplorerRetry } from "./org-explorer-header";
 
 async function OrganizationPageContent() {
 	// Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
@@ -16,77 +17,56 @@ async function OrganizationPageContent() {
 		getOrgExplorerData(),
 		getCurrentSettingsAccessTier(),
 	]);
-
 	if (!result.success) {
 		if (result.code === "NotFoundError") {
 			return (
-				<div className="@container/main flex flex-1 items-center justify-center p-6">
-					<NoEmployeeError
-						feature={t("organization.feature", "explore your organization")}
-					/>
-				</div>
+				<NoEmployeeError
+					feature={t("organization.feature", "explore your organization")}
+				/>
 			);
 		}
-
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<Alert variant="destructive" className="max-w-xl">
-					<AlertTitle>
-						{t("organization.error.title", "Unable to load organization")}
-					</AlertTitle>
-					<AlertDescription>
+			<Alert variant="destructive" className="max-w-xl">
+				<AlertTitle>
+					{t("organization.error.title", "Unable to load organization")}
+				</AlertTitle>
+				<AlertDescription className="space-y-3">
+					<p>
 						{t(
 							"organization.error.description",
 							"The organization chart could not be loaded. Please try again.",
 						)}
-					</AlertDescription>
-				</Alert>
-			</div>
+					</p>
+					<OrgExplorerRetry />
+				</AlertDescription>
+			</Alert>
 		);
 	}
-
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="px-4 lg:px-6">
-				<h1 className="text-3xl font-bold tracking-tight">
-					{t("organization.title", "Org Explorer")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"organization.description",
-						"Explore direct managers, teams, and reporting relationships in your organization.",
-					)}
-				</p>
-			</div>
-
-			<div className="min-h-[680px] px-4 lg:px-6">
-				<OrgExplorerClient
-					canManage={accessTier === "orgAdmin"}
-					initialData={result.data}
-				/>
-			</div>
-		</div>
+		<OrgExplorerClient
+			key={result.data.viewerEmployeeId}
+			canManage={accessTier === "orgAdmin"}
+			initialData={result.data}
+		/>
 	);
 }
 
 function OrganizationPageLoading() {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="space-y-3 px-4 lg:px-6">
-				<Skeleton className="h-9 w-48" />
-				<Skeleton className="h-5 w-full max-w-2xl" />
-			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton className="h-[680px] w-full" />
-			</div>
+		<div role="status" aria-busy="true" className="space-y-4">
+			<Skeleton className="h-12 w-full" />
+			<Skeleton className="h-[60dvh] w-full" />
 		</div>
 	);
 }
 
 export default function OrganizationPage() {
 	return (
-		<Suspense fallback={<OrganizationPageLoading />}>
-			<OrganizationPageContent />
-		</Suspense>
+		<div className="@container/main page-frame-full flex min-w-0 flex-1 flex-col gap-6">
+			<OrgExplorerHeader />
+			<Suspense fallback={<OrganizationPageLoading />}>
+				<OrganizationPageContent />
+			</Suspense>
+		</div>
 	);
 }

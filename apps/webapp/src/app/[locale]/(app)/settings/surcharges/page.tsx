@@ -30,7 +30,7 @@ async function SurchargeSettingsPageContent() {
 function SurchargeSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex flex-1 flex-col gap-4"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.surchargeSettings",

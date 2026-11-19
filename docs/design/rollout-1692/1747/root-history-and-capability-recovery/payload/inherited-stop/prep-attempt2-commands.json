@@ -1,0 +1,814 @@
+[
+  {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "exit": 0,
+    "stderr": "warning: unable to access 'C:\\Users\\KaiHentschel/.config/git/ignore': Permission denied\nwarning: unable to access 'C:\\Users\\KaiHentschel/.config/git/ignore': Permission denied\n"
+  },
+  {
+    "command": [
+      "git",
+      "branch",
+      "--show-current"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD:apps/webapp"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "ls-tree",
+      "-rz",
+      "--full-tree",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "ls-tree",
+      "-rz",
+      "--full-tree",
+      "cab40dcbb6ea69cefb7aa919228298a881a66060"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "ls-tree",
+      "-rz",
+      "--full-tree",
+      "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "show",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479:docs/design/rollout-1692/integration.json"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "382b8f5be837dad724d3a54274d3050b0104881f",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "bfacad421ffe77f50729ea5895c546698ef28383",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "416c04fc1b65f798422ddeecb8413249b064f715",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "f9769a74353ac6670c4a36401029faf805b2a899",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "f9769a74353ac6670c4a36401029faf805b2a899",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "6fa8147fae492939056a76e83e327e520d921ae1",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "a9b472e5864f386d881604605d593cffc189d61a",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "65b74963b69e9536af5e862199fa43a8583473cc",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "ced095089163e69b232c2bce96a40cba800186d8",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "752c500833e751df9988a3b2434d240124b89a51",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "8e3876c39725b7a8ef5218439766395401d64b80",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "769a2e7844ed1ff43d6a36145869b50cee921db6",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e59610bb265ef973c3df61f3d4de7ddf9e561833",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "f9769a74353ac6670c4a36401029faf805b2a899",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "e3957741a7f0f1aeeba748cce3af27a42870fcf1",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "show",
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479:apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "hash-object",
+      "-w",
+      "--stdin"
+    ],
+    "exit": 128,
+    "stderr": "error: insufficient permission for adding an object to repository database X:/Projects/umami/z8/.git/objects\nfatal: Unable to add (NULL) to database\n"
+  }
+]

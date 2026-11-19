@@ -1,0 +1,12 @@
+{
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "session": "next-dev-loop-1730-t3-abec2f0c-e8d469008a3d13b5",
+  "source": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "canonicalSha256": "afa04b979926aab57736aa04db8fb0720a8c43db396ec727c9286a4d925d2f64"
+    }
+  ],
+  "targetDocumentRequestsWorkspacePresent": true,
+  "qualification": "Loaded actual document requests tree; pending heading is checked separately through the actual held-session browser."
+}

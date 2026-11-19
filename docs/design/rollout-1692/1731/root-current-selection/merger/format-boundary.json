@@ -1,0 +1,23 @@
+{
+  "mergedExplicitCrlfExit": 1,
+  "mergedExplicitLintExit": 0,
+  "onlyExplicitCrlfFailure": "src/lib/navigation/route-metadata.test.ts",
+  "baselineRoot": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+  "baselineBlob": "3c20c0a2b83a9290cde741937ae3203329da14a9",
+  "baselineFormatCommand": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "biome",
+    "format",
+    "--config-path=./biome.jsonc",
+    "--line-ending=crlf",
+    "--stdin-file-path=src/lib/navigation/route-metadata.test.ts"
+  ],
+  "baselineFormatterExit": 0,
+  "baselineSourceAlreadyDiffersFromAppFormatter": true,
+  "rootFormattingPreserved": true,
+  "sourceNotReformattedToHideInheritedFormattingDifference": true
+}

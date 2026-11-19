@@ -1,0 +1,75 @@
+{
+  "mode": "after-final",
+  "store": [
+    {
+      "platform": "ios",
+      "file": "after-final-store-ios.png",
+      "emailEmpty": true,
+      "passwordAbsent": true,
+      "continuePresent": true,
+      "overflow": false,
+      "heading": "Sign in to Z8"
+    },
+    {
+      "platform": "android",
+      "file": "after-final-store-android.png",
+      "emailEmpty": true,
+      "passwordAbsent": true,
+      "continuePresent": true,
+      "overflow": false,
+      "heading": "Sign in to Z8"
+    }
+  ],
+  "actions": [
+    {
+      "label": "recovery",
+      "path": "/en/forgot-password",
+      "reached": true
+    },
+    {
+      "label": "signup",
+      "path": "/en/sign-up",
+      "reached": true
+    },
+    {
+      "label": "licenses",
+      "path": "/en/licenses",
+      "reached": true
+    }
+  ],
+  "preferences": {
+    "size": "large",
+    "font": "18px",
+    "dark": true
+  },
+  "keyboard": [
+    {
+      "tag": "BUTTON",
+      "name": "Toggle theme"
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Font size"
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Select language"
+    },
+    {
+      "tag": "INPUT",
+      "name": "email"
+    },
+    {
+      "tag": "INPUT",
+      "name": "password"
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Retry verification"
+    },
+    {
+      "tag": "A",
+      "name": "Forgot your password?"
+    }
+  ]
+}

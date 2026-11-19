@@ -1,0 +1,11 @@
+{
+  "axeVersion": "4.12.1",
+  "tool": "agent-browser a11y",
+  "counts": {
+    "inapplicable": 49,
+    "incomplete": 0,
+    "passes": 40,
+    "violations": 0
+  },
+  "scope": "Settled signed-in /en/mfa, small-admin, primary verification visible; disclosed/enrollment/provider branches require their own checks."
+}

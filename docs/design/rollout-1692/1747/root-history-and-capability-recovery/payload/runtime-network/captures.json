@@ -1,0 +1,52 @@
+{
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "currentOnly": true,
+  "captures": [
+    {
+      "file": "desktop-1600-expanded-corrected.png",
+      "bytes": 104523,
+      "sha256": "099a13825f0a0ce90acb29a1daba65c300d6b4deeab75b40cec6c5b31d5244dd",
+      "width": 1312,
+      "height": 1000,
+      "channels": 3,
+      "decodedPixelBytes": 3936000,
+      "decodedPixelsSha256": "46e587128e7ff84c075fbff8165ea39b497389dd055fe81ebf1ab7b3a3f51321",
+      "crcAllChunks": true
+    },
+    {
+      "file": "wide-2400-dark-corrected.png",
+      "bytes": 116232,
+      "sha256": "85b11dbea13b2b060ecb0321fb9ec07a9c4ee80596bc16b6a0b9b8bd226b97c0",
+      "width": 2112,
+      "height": 1200,
+      "channels": 3,
+      "decodedPixelBytes": 7603200,
+      "decodedPixelsSha256": "b0c3dbe87dcdc4dd9967d3b9e7510a1ef686124b1931f2514fda60c8e93a06d6",
+      "crcAllChunks": true
+    },
+    {
+      "file": "desktop-1600-large-reloaded-v2.png",
+      "bytes": 103839,
+      "sha256": "75795fdc9a012df2378d5938d94502fabc9ead2c1e2e81a4edc8dedbc3267fb5",
+      "width": 1312,
+      "height": 1000,
+      "channels": 3,
+      "decodedPixelBytes": 3936000,
+      "decodedPixelsSha256": "c726550500fe75317f9b8e640ddd48cf9daa748530783037ce3900c50f6cc36a",
+      "crcAllChunks": true
+    },
+    {
+      "file": "phone-390-large-v2.png",
+      "bytes": 46651,
+      "sha256": "58be82dee5849e448464bc197f6205ad346338e46178d5faee3942fca79f5399",
+      "width": 390,
+      "height": 844,
+      "channels": 3,
+      "decodedPixelBytes": 987480,
+      "decodedPixelsSha256": "ce670abb4986c3d528bf81529c6081979267f01fd862ce0b8034cdbf1089e087",
+      "crcAllChunks": true
+    }
+  ],
+  "qualification": "Current source viewport clips only. Main crop excludes account/sidebar identifiers; exact h1/main/sidebar bounds in associated JSON receipts. Accepted captures at saved 18px/dark. Baseline16px geometry also sampled. Dev overlays retained. Two earlier clipped PNG attempts excluded and preserved private; no historical matched pair or physical-device/zoom proof."
+}

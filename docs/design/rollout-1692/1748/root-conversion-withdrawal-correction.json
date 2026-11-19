@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 1,
+  "issue": 1748,
+  "status": "Provisional; corrected shared conversion reader requires a new independent review.",
+  "verifiedCommit": null,
+  "priorDetailCorrectionReceipt": "root-withdrawal-correction.json",
+  "independentReview": {
+    "candidate": "2404a1e0404e5079c56e51c290629455f798f9f5",
+    "appTree": "21de4ad559b7cfac4e8c168f8f7144f30e6780e5",
+    "thread": "[Recheck #1748 durable withdrawal and shared continuation](t3-thread://v2/42f11bbd-1656-4e5c-9291-18d6f1563c86/thread:delegated-task:command%3Amcp%3A5d61c313-e255-4999-a7b3-61782d9516f4%3Adelegate-task%3A1692-1748-withdrawal-independent-v2)",
+    "safeIndexSha256": "864b3a5a1ab722fcc3fb63352c507c0dc6a4ed642b9df517b27178c78ff5e04a",
+    "payloads": 21,
+    "payloadBytes": 129492,
+    "reportSha256": "1b4ed139e09d1edcf0a88405a3b97921529a5abb7019603f19ad1563e72a3b5f",
+    "handoffSha256": "25a758774eb0fa22d18fef63798b2b2c42d6ef10cb49f866c6ed0d557279181f",
+    "intakeAuditSha256": "f2ee24e8813a058c9cfe3f3ab68cf4e94b9f8bf9c38226e959e1ed3e9840bc4c",
+    "intake": {
+      "hashesMatched": true,
+      "jsonPayloads": 11,
+      "jsonIncludingManifest": 12,
+      "pythonAstChecks": 3,
+      "sourceTestsInspectedWithoutExecution": true,
+      "formalTsxParserNotRun": true,
+      "preservationAndCleanup": "Producer receipts; not fresh runtime acceptance."
+    },
+    "cases": {
+      "distinct": 42,
+      "files": 4,
+      "passed": 41,
+      "failed": 1,
+      "overlappingPriorRootCases": 36,
+      "newIndependentCases": 6,
+      "baselineControlCasesIncluded": 2
+    },
+    "finding": "A successful conversion read is followed by canonical Unauthorized and then a transient failure. The incoming reader displays the retained report link without a fresh success.",
+    "classification": "Incoming presentation regression relative to the pinned baseline, over inherited query cache retention. No live authorization bypass established.",
+    "baseline": "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4; both baseline refusal controls keep the report link hidden.",
+    "detailCorrection": "Original detail withdrawal reproduction and all eight permanent detail withdrawal cases pass.",
+    "stopBoundary": "Broader compatibility, canonical PostgreSQL, quality tooling and artifact-content acceptance deferred after first P1."
+  },
+  "correction": {
+    "commit": "4a6eaaa2f3f2ee5ac25055b0fdc11722028b3186",
+    "integrationCommit": "c696178cac11641eff69ce0cd3045204eb91059a",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "productionFiles": 1,
+    "permanentTestFiles": 1,
+    "behavior": "Canonical Unauthorized or Travel expense claim not found replaces cached conversion data with a withdrawn result. Later read failures retain withdrawal. Retry can restore the report link or continuation only after a fresh successful read.",
+    "authorizedOutageBehavior": "An existing authorized report link remains available during an ordinary transient read failure.",
+    "lateCompletion": "An earlier pending conversion completing after the read refusal neither restores the link nor navigates in the public test. Server persistence is not asserted.",
+    "canonicalOwnersChanged": false,
+    "exactRed": {
+      "passed": 5,
+      "failed": 1,
+      "baselineControlsIncluded": 2
+    },
+    "exactGreen": {
+      "passed": 6,
+      "failed": 0,
+      "nonadditive": true
+    },
+    "permanentPublicCases": 10,
+    "publicCoverage": [
+      "authorized retention and Retry",
+      "initial Unauthorized and not-found refusals",
+      "original canonical refusal followed by outage",
+      "repeated outage and network rejection after withdrawal",
+      "fresh report-link recovery",
+      "fresh null conversion permits continuation again",
+      "cache reset followed by outage",
+      "earlier conversion completion after refusal"
+    ]
+  },
+  "freshRootChecks": {
+    "passed": 518,
+    "failed": 0,
+    "skipped": 0,
+    "physicalFiles": 43,
+    "uniqueFileAndFullNameLabels": 518,
+    "rerunsNotAdded": true,
+    "overlap": "Exact six-case green, ten-case expanded run and prior 508-case selection are not added to the current 518-case total. The independent 42-case result remains a separate frozen review.",
+    "typecheck": {
+      "nextTypegen": 0,
+      "application": 0,
+      "workflowContracts": 0,
+      "smoke": 0
+    },
+    "lint": {
+      "files": 10,
+      "exit": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+      "files": 10,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null
+    },
+    "format": {
+      "ownedExplicit": {
+        "files": 2,
+        "lineWidth": 100,
+        "lineEnding": "crlf",
+        "exit": 0
+      },
+      "ownedOrdinary": {
+        "files": 2,
+        "exit": 1
+      },
+      "incomingExplicit": {
+        "files": 10,
+        "exit": 1,
+        "findings": [
+          "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+        ]
+      }
+    },
+    "postgresqlCases": 0,
+    "runtimeAssertions": 0
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "blob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "bytes": 1861,
+      "sha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "blob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "bytes": 7918,
+      "sha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "blob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "bytes": 6874,
+      "sha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "blob": "b6b904215b1d9801f0768d35eed520b7454b923a",
+      "bytes": 11065,
+      "sha256": "afb6b4335bd6bed8e2474f59f0584853fccfb0c501294789c82adb6d44d96659"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "blob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327",
+      "bytes": 13615,
+      "sha256": "0558860b7abf7f6053f69ab2650e607b3803d9ebfe10497a3cb5540190c30b0b"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "blob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "bytes": 18784,
+      "sha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "blob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "bytes": 13627,
+      "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "blob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "bytes": 9090,
+      "sha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "blob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "bytes": 12722,
+      "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "blob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "bytes": 7641,
+      "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39"
+    }
+  ],
+  "frozenOwnerPins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+      "blob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+      "blob": "502b9aa3e6336e7cef0885734c947170a15f5197"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+      "blob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+      "blob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751"
+    }
+  ],
+  "preservation": {
+    "originalReportPrefix": {
+      "bytes": 22126,
+      "sha256": "acba4965d16261f8472d92327eefd627a4cd82d40b290561c4b42a476a5a022c"
+    },
+    "changedPathsFromReviewedCandidate": [
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx"
+    ],
+    "internalDependencyLinks": 158,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "installationOrRepair": false
+  },
+  "commands": {
+    "environment": "pnpm_config_verify_deps_before_run=false",
+    "exactRed": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/test/review1748-independent-conversion.test.tsx --maxWorkers=1 --reporter=json --outputFile X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1748-conversion-withdrawal-root-checks/red.json",
+    "exactGreen": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/test/review1748-independent-conversion.test.tsx --maxWorkers=1 --reporter=json --outputFile X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1748-conversion-withdrawal-root-checks/green-exact.json",
+    "expanded": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx --maxWorkers=1 --reporter=json --outputFile X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1748-conversion-withdrawal-root-checks/green-expanded.json",
+    "typecheck": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1748-conversion-withdrawal-root-checks/doctor.json",
+    "compatibilityFiles": [
+      "apps/webapp/src/proxy.public-origin.test.ts",
+      "apps/webapp/src/proxy.saved-locale-query.test.tsx",
+      "apps/webapp/src/proxy.share.test.ts",
+      "apps/webapp/src/proxy.test.ts",
+      "apps/webapp/src/components/site-header.test.tsx",
+      "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "apps/webapp/src/components/dashboard/manager-today-widget.test.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-list.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "apps/webapp/src/components/webhooks/webhook-endpoint-card.test.tsx",
+      "apps/webapp/src/components/webhooks/webhook-form-dialog.test.tsx",
+      "apps/webapp/src/components/webhooks/webhook-lifetime.test.tsx",
+      "apps/webapp/src/components/webhooks/webhooks-edit-refusal.test.tsx",
+      "apps/webapp/src/components/webhooks/webhooks-refusal.test.tsx",
+      "apps/webapp/src/components/webhooks/webhooks-server-arrival.test.tsx",
+      "apps/webapp/src/lib/navigation/locale-redirect.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/app/[locale]/(app)/app-layout-content.test.tsx",
+      "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "apps/webapp/src/components/webhooks/webhook-delivery-logs-dialog/index.test.tsx",
+      "apps/webapp/src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts",
+      "apps/webapp/src/lib/manager-daily-briefing/__tests__/logic.test.ts",
+      "apps/webapp/src/lib/travel-expenses/__tests__/attachment-validation.test.ts",
+      "apps/webapp/src/lib/travel-expenses/__tests__/claim-validation.test.ts",
+      "apps/webapp/src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "apps/webapp/src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "apps/webapp/src/app/[locale]/(app)/today/today-approvals-panel.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/today/today-briefing.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/today/today-decision-arrival.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/today/today-population-arrival.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/today/today-producer-provenance.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/today/today-provider-arrival.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/today/today-workspace.test.tsx",
+      "apps/webapp/src/app/api/approvals/inbox/[id]/approve/route.test.ts",
+      "apps/webapp/src/app/api/approvals/inbox/[id]/reject/route.test.ts",
+      "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/actions.test.ts",
+      "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx"
+    ],
+    "compatibilityRunner": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit 'src/proxy' 'src/app/[locale]/(app)/app-layout-content.test.tsx' 'src/lib/navigation/locale-redirect.test.ts' 'src/i18n/route-locale.test.ts' 'src/app/[locale]/(app)/settings/enterprise/api-keys' 'src/components/api-key' 'src/components/webhooks' 'src/app/[locale]/(app)/today' 'src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts' 'src/lib/manager-daily-briefing/__tests__/logic.test.ts' 'src/lib/navigation/route-metadata.test.ts' 'src/components/dashboard/manager-today-widget.test.tsx' 'src/app/api/approvals/inbox/[id]/approve/route.test.ts' 'src/app/api/approvals/inbox/[id]/reject/route.test.ts' 'src/tolgee/extracted-key-defaults.test.ts' 'src/components/travel-expenses/travel-expense-claim-detail.test.tsx' 'src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx' 'src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts' 'src/lib/travel-expenses/__tests__/claim-validation.test.ts' 'src/lib/travel-expenses/__tests__/attachment-validation.test.ts' 'src/lib/travel-expenses/__tests__/expense-history.test.ts' 'src/components/site-header.test.tsx' 'src/components/travel-expenses/travel-expense-management.test.tsx' 'src/components/travel-expenses/travel-expense-list.test.tsx' 'src/components/travel-expenses/finance/settlement-panel.test.tsx' 'src/components/travel-expenses/travel-expenses-i18n.test.ts' --maxWorkers=1 --reporter=json --outputFile X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1748-conversion-withdrawal-root-checks/compatibility.json",
+    "qualityScope": [
+      "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "apps/webapp/src/components/site-header.test.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "lint": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --formatter-enabled=false 'src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx' 'src/components/site-header.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion.tsx' 'src/components/travel-expenses/travel-expense-claim-detail.test.tsx' 'src/components/travel-expenses/travel-expense-claim-detail.tsx' 'src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx' 'src/lib/navigation/route-metadata.test.ts' 'src/lib/navigation/route-metadata.ts'",
+    "explicitFormat": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf 'src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx' 'src/components/site-header.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx' 'src/components/travel-expenses/legacy-draft-conversion.tsx' 'src/components/travel-expenses/travel-expense-claim-detail.test.tsx' 'src/components/travel-expenses/travel-expense-claim-detail.tsx' 'src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx' 'src/lib/navigation/route-metadata.test.ts' 'src/lib/navigation/route-metadata.ts'"
+  },
+  "limits": [
+    "New independent corrected-source acceptance pending; verifiedCommit remains null.",
+    "No fresh PostgreSQL, browser, native, receipt-download or live authority assertion is claimed for this shared reader correction.",
+    "Historical worker and previous review results retain their snapshot, timeout, formatting and artifact qualifications.",
+    "Full generation, catalogs, providers, devices, true zoom and exhaustive live authority/transition matrices remain unpassed.",
+    "Only explicitly allowlisted public evidence was inspected; excluded hashes are receipts, not audited content."
+  ]
+}

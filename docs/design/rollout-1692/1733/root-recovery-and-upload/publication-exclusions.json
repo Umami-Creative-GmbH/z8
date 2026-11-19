@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "policy": "Explicit public allowlists and selected public source-check files only; no recursive scratch copying. The archived relative paths, obsolete claims, source pins and hash indexes remain historical facts.",
+  "allowlistPlacement": [
+    {
+      "archive": "runtime",
+      "originalBase": ".tmp/1733-final-runtime-checks/runtime",
+      "allowlistedFiles": 112,
+      "originalHashPins": 111,
+      "bytes": "raw byte exact",
+      "qualification": "Original public-allowlist.base describes the original scratch snapshot; wrapper placement changes no inner path or hash."
+    },
+    {
+      "archive": "stops/command",
+      "originalBase": ".tmp/1733-root-checks/runtime",
+      "allowlistedFiles": 24,
+      "originalHashPins": 23,
+      "bytes": "raw byte exact",
+      "qualification": "Original public-allowlist.base describes the original scratch snapshot; wrapper placement changes no inner path or hash."
+    },
+    {
+      "archive": "stops/upload",
+      "originalBase": ".tmp/1733-command-checks/runtime",
+      "allowlistedFiles": 71,
+      "originalHashPins": 70,
+      "bytes": "raw byte exact",
+      "qualification": "Original public-allowlist.base describes the original scratch snapshot; wrapper placement changes no inner path or hash."
+    }
+  ],
+  "excluded": [
+    "Private fixture input and manifests, credentials, cookies, tokens and browser profiles",
+    "Two accidentally emitted generated synthetic-contact inventories; attempts qualification retained in runtime/public/attempts.json",
+    "Raw runtime attempts, raw DOM inventories and private failed images, including previously rejected failure imagery",
+    "Compiled caller.js, PDF fixtures and runtime subdirectories outside each explicit allowlist",
+    "Raw Doctor stdout private diagnostic pointer, raw diagnostics JSON/file and raw private pointer hashes",
+    "Original executable harness replay, installs, application tests, provider calls and runtime setup"
+  ],
+  "rawEvidencePreserved": true,
+  "originalArchivesNotMovedOrModified": true,
+  "sanitizedScriptsAreReferenceOnly": true,
+  "doctor": "See doctor-attestations.json; explicitly labeled stdout clone, not raw JSON.",
+  "relativeLinkExclusions": []
+}

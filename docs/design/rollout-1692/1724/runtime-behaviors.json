@@ -1,0 +1,86 @@
+{
+  "results": [
+    {
+      "name": "one visible page heading after adoption",
+      "passed": true,
+      "detail": 1
+    },
+    {
+      "name": "real employee search selects URL, relationship detail, and admin settings destination",
+      "passed": true,
+      "detail": "small-admin / Person 3"
+    },
+    {
+      "name": "person panel closes on first Escape and clears employee selection",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "search no-match and first-Escape dismissal",
+      "passed": true,
+      "detail": "input retains focus; selection unchanged"
+    },
+    {
+      "name": "Teams URL view and No team record",
+      "passed": true,
+      "detail": "fixture small memberships are intentionally empty"
+    },
+    {
+      "name": "real team filtering narrows Teams and persists URL",
+      "passed": true,
+      "detail": "Fixture team 0"
+    },
+    {
+      "name": "Back restores unfiltered Teams URL",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "small-manager relationship reader has no management authority",
+      "passed": true,
+      "detail": "real detail and email visible, no settings link"
+    },
+    {
+      "name": "small-employee relationship reader has no management authority",
+      "passed": true,
+      "detail": "real detail and email visible, no settings link"
+    },
+    {
+      "name": "small-restricted relationship reader has no management authority",
+      "passed": true,
+      "detail": "real detail and email visible, no settings link"
+    },
+    {
+      "name": "foreign deep link opens no person",
+      "passed": true,
+      "detail": "small current-roster reader / large employee UUID"
+    },
+    {
+      "name": "failed real large branch retains roster and Retry loads the correct child",
+      "passed": true,
+      "detail": "200 current employees, Person 197 → Person 199 / phone outline"
+    },
+    {
+      "name": "large deep link resolves lazy person and manager path",
+      "passed": true,
+      "detail": "Person 199, manager Person 197; actual settled detail"
+    },
+    {
+      "name": "large teams consume actual membership records",
+      "passed": true,
+      "detail": "200 memberships seeded only in large fixture before this supplemental exercise"
+    },
+    {
+      "name": "held lazy read cannot repopulate another account roster",
+      "passed": true,
+      "detail": "large-admin held Person 199 → small-admin 8-person roster"
+    },
+    {
+      "name": "return after account change resolves the real deep link again",
+      "passed": true,
+      "detail": "fresh large-admin session context"
+    }
+  ],
+  "fixture": "Owned disposable fixture; unchanged small 8-person baseline. Supplemental large 200-person memberships + two deeper manager links only.",
+  "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37"
+}

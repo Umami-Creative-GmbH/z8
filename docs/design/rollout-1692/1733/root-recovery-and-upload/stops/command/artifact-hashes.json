@@ -1,0 +1,121 @@
+{
+  "algorithm": "SHA256",
+  "selfExcluded": true,
+  "files": [
+    {
+      "path": "HANDOFF-runtime.md",
+      "bytes": 4115,
+      "sha256": "a8daf5414b41aeb112a58e4c75e6de1f562f99c4e2543a9eca4c1bce29401f05"
+    },
+    {
+      "path": "STOP.json",
+      "bytes": 4427,
+      "sha256": "bd9065e2f82e104e43a499742e039a1105955121d2d9986b50a80c5cf63596af"
+    },
+    {
+      "path": "test-accounting.json",
+      "bytes": 8598,
+      "sha256": "50b80bb3dd930670b388007ae8e0074c598ad0697af83bc4b6e28507ef3d7ff3"
+    },
+    {
+      "path": "attempts.json",
+      "bytes": 3436,
+      "sha256": "2007f052d54cd7257ed1830cf6ab5c72a36c539790c1565a777896dac177af3e"
+    },
+    {
+      "path": "cleanup.json",
+      "bytes": 531,
+      "sha256": "b9c8f9379bfa99152f6f0aa560465fc5c323cff3115c22feb4da1fe0e6b21808"
+    },
+    {
+      "path": "preservation.json",
+      "bytes": 21285,
+      "sha256": "e703d81c26aeb42c3be6a4aa41a7560cfcc2d0cd8fd4307574bf0e75a2bc0b1c"
+    },
+    {
+      "path": "bridge-cleanup.json",
+      "bytes": 502,
+      "sha256": "49ba41895309a8ed70bdf82e345320e728e5710fe0adb581c45a1cf9889dd017"
+    },
+    {
+      "path": "bridge-ownership.json",
+      "bytes": 259,
+      "sha256": "6eec3e9ad9a16b7360693ec45c98cf9bee21ba35a31bdb36dfa779fe2eba0226"
+    },
+    {
+      "path": "command-probe.test.tsx",
+      "bytes": 8172,
+      "sha256": "8734c87e20992ee474365f55bc947a9adabd9d31cd2222adb5b25366600da2ab"
+    },
+    {
+      "path": "heading-probe.test.tsx",
+      "bytes": 3302,
+      "sha256": "98bb8eb174f01c33e07b55882b3c7e3755bbaa7b9da59a2c5e7094c5409b3b8b"
+    },
+    {
+      "path": "public-probes.json",
+      "bytes": 9628,
+      "sha256": "9ef627493c87c089e46f7d8408dc982ec6fe74ffddd3d6be5a7871c21fe0d78f"
+    },
+    {
+      "path": "public-probes.log",
+      "bytes": 564,
+      "sha256": "3cc801f5ea810913e3b89dadeb4643b6a8603259cc3569c75bd825c15e2e7616"
+    },
+    {
+      "path": "public-probe-command.json",
+      "bytes": 662,
+      "sha256": "4202b67c6b343d6d22748b798401eb63f6521ff605b60f08e91df09422d251f1"
+    },
+    {
+      "path": "minimal-repeat.json",
+      "bytes": 2467,
+      "sha256": "d8cb7688aaac0fa80c4fa7ed33389c26ed098c885ac0224df578883e5281e8bf"
+    },
+    {
+      "path": "minimal-repeat.log",
+      "bytes": 565,
+      "sha256": "aefe548f2195e2c1f0bbf2b3710cb5016e8429b00fd4d06e08c9cecfe6104dce"
+    },
+    {
+      "path": "minimal-repeat-command.json",
+      "bytes": 527,
+      "sha256": "6c983a16f6aebd767f3f65394e3818971aa59940cf1aba91b985eeb4e663f483"
+    },
+    {
+      "path": "build-public-probes.mjs",
+      "bytes": 4827,
+      "sha256": "93fe71ef6f583190231c4b75be4b5c3b8b8b04f2111c405dc9b99398b838e98d"
+    },
+    {
+      "path": "run-public-probes.mjs",
+      "bytes": 1372,
+      "sha256": "800344c24dc70844080ccd2d195a303108430c23e39f606d9341a641fb560fdb"
+    },
+    {
+      "path": "repeat-minimal-probe.mjs",
+      "bytes": 1308,
+      "sha256": "530896c35b145b63525df51f5ea76e336a0a24174a88b9f61e38d3a88dd66ae7"
+    },
+    {
+      "path": "clean-and-seal.mjs",
+      "bytes": 6639,
+      "sha256": "19f7443010e692d4e718b97407e04c5ae90a9d60d0ce3d2a0ae7d42612b7c42c"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 1123,
+      "sha256": "e0f1b2313c98f2e55c67384b01fb38f378bdad0d8a4e21acb74081c22dead067"
+    },
+    {
+      "path": "verification-manifest.json",
+      "bytes": 1632,
+      "sha256": "a08bea3c5ebaf4764ab4727edc1c3d02135e23b5e328613657244fe1080aebcc"
+    },
+    {
+      "path": "public-allowlist.json",
+      "bytes": 862,
+      "sha256": "59c87317ea8de22ac647dab564c4183a66efbf4370801adb091086f83e9686eb"
+    }
+  ]
+}

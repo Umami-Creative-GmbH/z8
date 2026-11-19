@@ -10,6 +10,9 @@ export const metadata: Metadata = {
 		"Create or connect your organization during Z8 workspace onboarding.",
 };
 
+// This step deliberately reads the creation policy and current-date suggestion per request.
+export const instant = false;
+
 export default async function OrganizationPage() {
 	// The onboarding tracking suggestion must use the current request time.
 	await connection();

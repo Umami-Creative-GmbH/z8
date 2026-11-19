@@ -1,0 +1,175 @@
+src\lib\effect\services\onboarding.service.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     48  48 │     OnboardingWorkTemplateFormValues,␍
+     49  49 │   } from "@/lib/validations/onboarding";␍
+     50     │ - import·{␍
+     51     │ - → type·OrganizationFormValues,␍
+     52     │ - → organizationSchema,␍
+     53     │ - }·from·"@/lib/validations/organization";␍
+         50 │ + import·{·type·OrganizationFormValues,·organizationSchema·}·from·"@/lib/validations/organization";␍
+     54  51 │   import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";␍
+     55  52 │   import { AuthService } from "./auth.service";␍
+    ······· │ 
+     77  74 │     {␍
+     78  75 │       // Step tracking␍
+     79     │ - → → readonly·startOnboarding:·()·=>·Effect.Effect<␍
+     80     │ - → → → void,␍
+     81     │ - → → → AuthenticationError·|·DatabaseError␍
+     82     │ - → → >;␍
+         76 │ + → → readonly·startOnboarding:·()·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError>;␍
+     83  77 │       readonly updateOnboardingStep: (␍
+     84  78 │         step: OnboardingStep,␍
+     85  79 │       ) => Effect.Effect<void, AuthenticationError | DatabaseError>;␍
+     86     │ - → → readonly·completeOnboarding:·()·=>·Effect.Effect<␍
+     87     │ - → → → void,␍
+     88     │ - → → → AuthenticationError·|·DatabaseError␍
+     89     │ - → → >;␍
+         80 │ + → → readonly·completeOnboarding:·()·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError>;␍
+     90  81 │   ␍
+     91  82 │       // Organization setup␍
+    ······· │ 
+     96  87 │         AuthenticationError | DatabaseError | ValidationError␍
+     97  88 │       >;␍
+     98     │ - → → readonly·skipOrganizationSetup:·()·=>·Effect.Effect<␍
+     99     │ - → → → void,␍
+    100     │ - → → → AuthenticationError·|·DatabaseError␍
+    101     │ - → → >;␍
+         89 │ + → → readonly·skipOrganizationSetup:·()·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError>;␍
+    102  90 │   ␍
+    103  91 │       // Profile setup␍
+    104  92 │       readonly updateProfile: (␍
+    105  93 │         data: OnboardingProfileFormValues,␍
+    106     │ - → → )·=>·Effect.Effect<␍
+    107     │ - → → → {·nextStep:·string·},␍
+    108     │ - → → → AuthenticationError·|·DatabaseError·|·ValidationError␍
+    109     │ - → → >;␍
+         94 │ + → → )·=>·Effect.Effect<{·nextStep:·string·},·AuthenticationError·|·DatabaseError·|·ValidationError>;␍
+    110  95 │       readonly skipProfileSetup: () => Effect.Effect<␍
+    111  96 │         { nextStep: string },␍
+    ······· │ 
+    116 101 │       readonly setWorkSchedule: (␍
+    117 102 │         data: OnboardingWorkScheduleFormValues,␍
+    118     │ - → → )·=>·Effect.Effect<␍
+    119     │ - → → → void,␍
+    120     │ - → → → AuthenticationError·|·DatabaseError·|·NotFoundError␍
+    121     │ - → → >;␍
+    122     │ - → → readonly·skipWorkScheduleSetup:·()·=>·Effect.Effect<␍
+    123     │ - → → → void,␍
+    124     │ - → → → AuthenticationError·|·DatabaseError␍
+    125     │ - → → >;␍
+        103 │ + → → )·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError·|·NotFoundError>;␍
+        104 │ + → → readonly·skipWorkScheduleSetup:·()·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError>;␍
+    126 105 │   ␍
+    127 106 │       // Admin setup - Vacation Policy␍
+    ······· │ 
+    132 111 │       readonly skipVacationPolicySetup: (␍
+    133 112 │         expected?: OnboardingOrganizationExpectation,␍
+    134     │ - → → )·=>·Effect.Effect<␍
+    135     │ - → → → void,␍
+    136     │ - → → → AuthenticationError·|·AuthorizationError·|·DatabaseError␍
+    137     │ - → → >;␍
+        113 │ + → → )·=>·Effect.Effect<void,·AuthenticationError·|·AuthorizationError·|·DatabaseError>;␍
+    138 114 │   ␍
+    139 115 │       // Admin setup - Work Schedule Templates␍
+    ······· │ 
+    156 132 │         data: OnboardingWellnessFormValues,␍
+    157 133 │       ) => Effect.Effect<void, AuthenticationError | DatabaseError>;␍
+    158     │ - → → readonly·skipWellnessSetup:·()·=>·Effect.Effect<␍
+    159     │ - → → → void,␍
+    160     │ - → → → AuthenticationError·|·DatabaseError␍
+    161     │ - → → >;␍
+        134 │ + → → readonly·skipWellnessSetup:·()·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError>;␍
+    162 135 │   ␍
+    163 136 │       // Notifications setup␍
+    ······· │ 
+    165 138 │         data: OnboardingNotificationsFormValues,␍
+    166 139 │       ) => Effect.Effect<void, AuthenticationError | DatabaseError>;␍
+    167     │ - → → readonly·skipNotificationsSetup:·()·=>·Effect.Effect<␍
+    168     │ - → → → void,␍
+    169     │ - → → → AuthenticationError·|·DatabaseError␍
+    170     │ - → → >;␍
+        140 │ + → → readonly·skipNotificationsSetup:·()·=>·Effect.Effect<void,·AuthenticationError·|·DatabaseError>;␍
+    171 141 │   ␍
+    172 142 │       // Completion␍
+    ······· │ 
+    183 153 │   ␍
+    184 154 │       // Check if user is admin of their organization␍
+    185     │ - → → readonly·isUserAdmin:·()·=>·Effect.Effect<␍
+    186     │ - → → → boolean,␍
+    187     │ - → → → AuthenticationError·|·DatabaseError␍
+    188     │ - → → >;␍
+        155 │ + → → readonly·isUserAdmin:·()·=>·Effect.Effect<boolean,·AuthenticationError·|·DatabaseError>;␍
+    189 156 │     }␍
+    190 157 │   >()("OnboardingService") {}␍
+    ······· │ 
+    282 249 │             if (␍
+    283 250 │               isOrganizationCreationDisabled(␍
+    284     │ - → → → → → → → normalizeOrganizationCreationFlag(␍
+    285     │ - → → → → → → → → env.DISABLE_ORGANIZATION_CREATION,␍
+    286     │ - → → → → → → → ),␍
+        251 │ + → → → → → → → normalizeOrganizationCreationFlag(env.DISABLE_ORGANIZATION_CREATION),␍
+    287 252 │               )␍
+    288 253 │             ) {␍
+    289 254 │               return yield* Effect.fail(␍
+    290 255 │                 new ValidationError({␍
+    291     │ - → → → → → → → → message:␍
+    292     │ - → → → → → → → → → "Organization·creation·is·disabled·for·this·deployment.",␍
+        256 │ + → → → → → → → → message:·"Organization·creation·is·disabled·for·this·deployment.",␍
+    293 257 │                   field: "organization",␍
+    294 258 │                 }),␍
+    ······· │ 
+    300 264 │               return yield* Effect.fail(␍
+    301 265 │                 new ValidationError({␍
+    302     │ - → → → → → → → → message:␍
+    303     │ - → → → → → → → → → parsed.error.issues[0]?.message·??␍
+    304     │ - → → → → → → → → → "Invalid·organization·setup",␍
+    305     │ - → → → → → → → → field:·String(␍
+    306     │ - → → → → → → → → → parsed.error.issues[0]?.path[0]·??·"organization",␍
+    307     │ - → → → → → → → → ),␍
+        266 │ + → → → → → → → → message:·parsed.error.issues[0]?.message·??·"Invalid·organization·setup",␍
+        267 │ + → → → → → → → → field:·String(parsed.error.issues[0]?.path[0]·??·"organization"),␍
+    308 268 │                 }),␍
+    309 269 │               );␍
+    ······· │ 
+    324 284 │               try: async () => {␍
+    325 285 │                 const hdrs = await headers();␍
+    326     │ - → → → → → → → const·orgResult·=·await·withOrganizationTrackingSetup(␍
+    327     │ - → → → → → → → → parsed.data,␍
+    328     │ - → → → → → → → → ()·=>␍
+    329     │ - → → → → → → → → → runAuthMutation(()·=>␍
+    330     │ - → → → → → → → → → → auth.api.createOrganization({␍
+    331     │ - → → → → → → → → → → → headers:·hdrs,␍
+    332     │ - → → → → → → → → → → → body:·{␍
+    333     │ - → → → → → → → → → → → → name:·data.name,␍
+    334     │ - → → → → → → → → → → → → slug:·data.slug,␍
+    335     │ - → → → → → → → → → → → },␍
+    336     │ - → → → → → → → → → → }),␍
+    337     │ - → → → → → → → → → ),␍
+        286 │ + → → → → → → → const·orgResult·=·await·withOrganizationTrackingSetup(parsed.data,·()·=>␍
+        287 │ + → → → → → → → → runAuthMutation(()·=>␍
+        288 │ + → → → → → → → → → auth.api.createOrganization({␍
+        289 │ + → → → → → → → → → → headers:·hdrs,␍
+        290 │ + → → → → → → → → → → body:·{␍
+        291 │ + → → → → → → → → → → → name:·data.name,␍
+        292 │ + → → → → → → → → → → → slug:·data.slug,␍
+        293 │ + → → → → → → → → → → },␍
+        294 │ + → → → → → → → → → }),␍
+        295 │ + → → → → → → → → ),␍
+    338 296 │                 );␍
+    339 297 │   ␍
+    ······· │ 
+    350 308 │   ␍
+    351 309 │                 return new ValidationError({␍
+    352     │ - → → → → → → → → message:␍
+  468 more lines truncated
+  
+
+Checked 1 file in 9ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

@@ -79,6 +79,15 @@ vi.mock("@/lib/query/use-time-clock", () => ({
 	}),
 }));
 
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: {
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+		},
+	}),
+}));
+
 vi.mock("@/lib/query/use-assigned-projects", () => ({
 	useAssignedProjects: () => ({
 		projects: projectsMock,
@@ -110,6 +119,12 @@ vi.mock("next-intl", () => ({
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
+}));
+vi.mock("@/lib/time-tracking/timezone-capture", () => ({
+	getBrowserTimezone: () => "Europe/Berlin",
+}));
+vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
+	updateTimezone: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -268,12 +283,8 @@ describe("TimeClockPopover", () => {
 				const addBreak = screen.getByRole("button", { name: "Add break" });
 				expect(startBreak.textContent).toBe("");
 				expect(startBreak.className).toContain("bg-amber-200");
-				expect(clockOut.compareDocumentPosition(startBreak)).toBe(
-					Node.DOCUMENT_POSITION_FOLLOWING,
-				);
-				expect(startBreak.compareDocumentPosition(addBreak)).toBe(
-					Node.DOCUMENT_POSITION_FOLLOWING,
-				);
+				expect(clockOut.compareDocumentPosition(startBreak)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+				expect(startBreak.compareDocumentPosition(addBreak)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 			});
 
 			it("starts a break in one click, without opening the clock", async () => {
@@ -302,7 +313,9 @@ describe("TimeClockPopover", () => {
 				working();
 				isOfflineMock = true;
 				const { unmount } = render(<TimeClockPopover />);
-				const offline = screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement;
+				const offline = screen.getByRole("button", {
+					name: "Start break",
+				}) as HTMLButtonElement;
 				expect(offline.disabled).toBe(true);
 				fireEvent.click(offline);
 				expect(startBreakMock).not.toHaveBeenCalled();
@@ -312,7 +325,11 @@ describe("TimeClockPopover", () => {
 				isMutatingMock = true;
 				render(<TimeClockPopover />);
 				expect(
-					(screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement).disabled,
+					(
+						screen.getByRole("button", {
+							name: "Start break",
+						}) as HTMLButtonElement
+					).disabled,
 				).toBe(true);
 			});
 
@@ -332,8 +349,11 @@ describe("TimeClockPopover", () => {
 
 				expect((getPopoverClockButton("Clock Out") as HTMLButtonElement).disabled).toBe(true);
 				expect(
-					(screen.getAllByRole("button", { name: "Start break" })[0] as HTMLButtonElement)
-						.disabled,
+					(
+						screen.getAllByRole("button", {
+							name: "Start break",
+						})[0] as HTMLButtonElement
+					).disabled,
 				).toBe(false);
 			});
 		});
@@ -358,7 +378,11 @@ describe("TimeClockPopover", () => {
 
 		it("says when a break could not be confirmed instead of reporting success", async () => {
 			onBreak();
-			resumeBreakMock.mockResolvedValue({ success: false, code: "unconfirmed", uncertain: true });
+			resumeBreakMock.mockResolvedValue({
+				success: false,
+				code: "unconfirmed",
+				uncertain: true,
+			});
 			render(<TimeClockPopover />);
 			fireEvent.click(screen.getByRole("button", { name: "On break" }));
 
@@ -401,7 +425,12 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
 		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save clock-in for review" }));
-		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
+		await waitFor(() =>
+			expect(clockInMock).toHaveBeenCalledWith({
+				browserTimezone: "Europe/Berlin",
+				workLocationType: "remote",
+			}),
+		);
 		await waitFor(() =>
 			expect(toastMocks.info).toHaveBeenCalledWith(
 				expect.stringContaining("not confirmed on the server"),
@@ -424,7 +453,12 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(mobileTrigger);
 		fireEvent.click(getPopoverClockButton("Clock In"));
 
-		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }));
+		await waitFor(() =>
+			expect(clockInMock).toHaveBeenCalledWith({
+				browserTimezone: "Europe/Berlin",
+				workLocationType: "office",
+			}),
+		);
 	});
 
 	it("explains a clock-in held for time history review without server details", async () => {
@@ -457,7 +491,12 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
 		fireEvent.click(getPopoverClockButton("Clock In"));
 
-		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
+		await waitFor(() =>
+			expect(clockInMock).toHaveBeenCalledWith({
+				browserTimezone: "Europe/Berlin",
+				workLocationType: "remote",
+			}),
+		);
 	});
 
 	it("shows an icon-only quick break trigger next to the header clock-out button while clocked in", () => {
@@ -514,6 +553,7 @@ describe("TimeClockPopover", () => {
 
 		await waitFor(() =>
 			expect(clockOutMock).toHaveBeenCalledWith({
+				browserTimezone: "Europe/Berlin",
 				projectId: "project-1",
 				workCategoryId: "category-1",
 			}),
@@ -541,6 +581,7 @@ describe("TimeClockPopover", () => {
 
 			await waitFor(() =>
 				expect(clockOutMock).toHaveBeenCalledWith({
+					browserTimezone: "Europe/Berlin",
 					projectId: "project-1",
 					billable: false,
 				}),
@@ -554,7 +595,12 @@ describe("TimeClockPopover", () => {
 			await screen.findByRole("switch", { name: "Billable" });
 			fireEvent.click(getPopoverClockButton("Clock Out"));
 
-			await waitFor(() => expect(clockOutMock).toHaveBeenCalledWith({ projectId: "project-1" }));
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith({
+					browserTimezone: "Europe/Berlin",
+					projectId: "project-1",
+				}),
+			);
 		});
 
 		it("disables the toggle for a project without a customer", async () => {
@@ -613,6 +659,7 @@ describe("TimeClockPopover", () => {
 
 			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
 			expect(clockOutMock.mock.calls[0]?.[0]).toEqual({
+				browserTimezone: "Europe/Berlin",
 				projectId: "project-2",
 			});
 		});
@@ -651,6 +698,7 @@ describe("TimeClockPopover", () => {
 
 			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
 			expect(clockOutMock.mock.calls[0]?.[0]).toEqual({
+				browserTimezone: "Europe/Berlin",
 				projectId: "project-1",
 			});
 		});
@@ -740,7 +788,10 @@ describe("TimeClockPopover", () => {
 
 				await waitFor(() =>
 					expect(clockOutMock).toHaveBeenCalledWith(
-						expect.objectContaining({ projectId: "project-1", taskId: "task-1" }),
+						expect.objectContaining({
+							projectId: "project-1",
+							taskId: "task-1",
+						}),
 					),
 				);
 			});
@@ -748,7 +799,12 @@ describe("TimeClockPopover", () => {
 			it("lets the running work's task satisfy it", async () => {
 				activeWorkPeriodMock = {
 					startTime: "2026-05-18T08:00:00.000Z",
-					currentTask: { id: "task-1", name: "Design", state: "open", projectId: "project-1" },
+					currentTask: {
+						id: "task-1",
+						name: "Design",
+						state: "open",
+						projectId: "project-1",
+					},
 				};
 				render(<TimeClockPopover />);
 				fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));

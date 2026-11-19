@@ -50,6 +50,7 @@
       "retry": "Ponów: {choice}",
       "unavailable": "{choice} – niedostępne"
     },
+    "clockedIn": "Zarejestrowano wejście",
     "clockedOutSuccess": "Wylogowano z systemu!",
     "clockIn": "Rozpocznij pracę",
     "clockingIn": "Rozpoczynanie pracy…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Zakończenie pracy zapisano na tym urządzeniu, ale nie zostało wysłane. Przejrzyj zapisane wpisy.",
     "clockOutSuccess": "Pomyślnie zakończono pracę",
     "clockStatus": {
+      "clockedOut": "Nie zarejestrowano wejścia",
       "loading": "Wczytywanie statusu rejestracji czasu",
       "retry": "Ponów sprawdzanie statusu rejestracji czasu",
       "unavailable": "Status rejestracji czasu jest niedostępny"
@@ -301,6 +303,8 @@
         "wrong": "Ten PIN jest nieprawidłowy. Spróbuj ponownie."
       },
       "queue": {
+        "awaiting": "Rejestracje oczekujące na potwierdzenie: {count}",
+        "checking": "Sprawdzanie przesłanych działań: {count}",
         "dismiss": "Odrzuć",
         "reason": {
           "contact": "Nie udało się potwierdzić ostatniego połączenia kiosku.",
@@ -311,6 +315,7 @@
           "pin": "PIN nie został zaakceptowany.",
           "time": "Nie udało się zaakceptować tego czasu."
         },
+        "recovery": "Kiosk ponowi próbę automatycznie, gdy uzyska połączenie z Z8. Nie powtarzaj czynności, której wynik jest nieznany.",
         "refused": "{name}: {action} o {time}, zapisano w trybie offline, nie zostało zaakceptowane. {reason}",
         "title": "Rejestracje offline nie są akceptowane"
       },
@@ -335,6 +340,9 @@
         "description": "Ten kiosk nie może być już używany do rejestracji czasu pracy. Skontaktuj się z administratorem.",
         "pairAgain": "Sparuj za pomocą nowego kodu",
         "title": "Kiosk unieważniony"
+      },
+      "scope": {
+        "zone": "Czas kiosku: {zone}"
       },
       "state": {
         "clockedIn": "W pracy od {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Brak kategorii (100%)",
     "noProject": "Brak projektu",
+    "notClockedIn": "Nie zarejestrowano wejścia",
     "notesPlaceholder": "Nad czym pracowałeś?",
     "notesSaved": "Notatki zapisane",
+    "onBreak": "Na przerwie",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Wniosek o nieobecność na {dates} nie został rozpatrzony.",
@@ -497,6 +507,14 @@
       "withdrawn": "Zgłoszenie zostało wycofane",
       "withdrawRefused": "To zgłoszenie zostało już rozpatrzone i nie można go wycofać."
     },
+    "policy": {
+      "fixedDays": "Stałe dni pracy w biurze: {days}",
+      "flexible": "Elastyczne zasady pracy w biurze w tym okresie",
+      "homeOfficeLeft": "Pozostałe dni pracy zdalnej",
+      "officeRequired": "Wymagane pozostałe dni w biurze",
+      "requirementWarning": "Wymóg pracy w biurze przekracza liczbę pozostałych dni roboczych",
+      "unavailable": "Zasady dotyczące miejsca pracy są niedostępne."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Dodaj przerwę",
@@ -535,6 +553,7 @@
       "title": "Przypomnienia o sesji"
     },
     "startedAt": "Rozpoczęto o",
+    "statusUnavailable": "Status rejestracji czasu jest niedostępny. Odśwież, aby spróbować ponownie.",
     "summary": {
       "dayOfRequired": "{date}: {worked} z {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} dopłaty",
       "thisMonth": "W tym miesiącu",
       "thisWeek": "W tym tygodniu",
+      "title": "Podsumowanie czasu pracy",
       "today": "Dzisiaj",
       "todayOfRequired": "{worked} z {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Teraz: przepracowano {worked} z {required} wymaganych do tej pory. Wtedy: przepracowano {previousWorked} z {previousRequired} wymaganych.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Aktualizowanie sumy… Użyj opcji Odśwież, aby spróbować ponownie, jeśli nadal będzie niedostępna.",
       "vsLastMonth": "w porównaniu z poprzednim miesiącem",
       "vsLastWeek": "w porównaniu z poprzednim tygodniem"
     },
+    "systemNote": {
+      "breakEnforcement": "Automatycznie dostosowano: wymuszenie przerwy"
+    },
     "table": {
       "active": "Aktywny",
+      "allEntries": "Wszystkie wpisy",
       "approved": "Wpis czasu został zatwierdzony",
       "approveEntry": "Zatwierdź wpis",
       "approveFailed": "Nie udało się zatwierdzić wpisu",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Brak szczegółów dotyczących jazdy",
       "duration": "Czas trwania",
       "emptyState": "Brak wpisów czasu dla tego tygodnia.",
+      "entryCount": "{count, plural, one {# wpis} few {# wpisy} other {# wpisów} }",
+      "groupedByDay": "Pogrupowane według dni",
+      "incompleteDay": "Obejmuje aktywne lub niekompletne wpisy",
       "missingTask": "Brak zadania",
       "missingTaskHint": "Ten projekt wymaga zadania: dodaj je do tego wpisu w kalendarzu.",
+      "offsetContext": "Godziny krańcowe korzystają z lokalnego przesunięcia UTC zarejestrowanego dla każdego wpisu. Nagłówki dni są zgodne ze strefą czasową Twojego kalendarza: {timezone}.",
       "recordedLocalTime": "Zarejestrowany czas lokalny",
       "rowActions": "Akcje wpisu czasu",
       "title": "Wpisy czasu",
@@ -586,62 +615,64 @@
       "search": "Szukaj zadań…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Popołudnie",
+        "fullDay": "Cały dzień",
+        "morning": "Przedpołudnie"
+      },
       "dayPicker": "Wybór dnia na osi czasu",
       "emptyDescription": "Dla wybranego dnia nie ma jeszcze żadnych zmian, nieobecności ani wpisów czasu pracy.",
       "emptyTitle": "Brak zarejestrowanej aktywności dla tego dnia.",
+      "link": {
+        "reviewRequest": "Przejrzyj wniosek",
+        "viewAbsence": "Wyświetl nieobecność"
+      },
+      "monthPicker": "Wybierz dzień z kalendarza",
       "nextDay": "Następny dzień",
       "previousDay": "Poprzedni dzień",
-      "title": "Oś czasu dnia pracy",
-      "today": "Dzisiaj",
-      "unavailableDescription": "Rejestrowanie czasu nadal działa. Spróbuj odświeżyć ten widok później.",
-      "unavailableTitle": "Oś czasu niedostępna",
-      "workPeriod": {
-        "title": "Zarejestrowana praca"
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Wniosek o nieobecność"
+        },
+        "timeCorrection": {
+          "subtitle": "Korekta wpisu czasu pracy",
+          "title": "Wniosek o korektę czasu pracy"
+        }
       },
       "shift": {
         "title": "Zaplanowana zmiana"
       },
       "status": {
-        "approved": "Zatwierdzone",
-        "pending": "Oczekujące",
-        "rejected": "Odrzucone",
-        "cancelled": "Anulowane",
-        "published": "Opublikowane",
-        "draft": "Szkic",
-        "active": "Aktywne"
+        "active": "Aktywny",
+        "approved": "Zatwierdzony",
+        "cancelled": "Anulowany",
+        "draft": "Wersja robocza",
+        "pending": "Oczekujący",
+        "published": "Opublikowany",
+        "rejected": "Odrzucony"
       },
-      "absence": {
-        "fullDay": "Cały dzień",
-        "morning": "Przedpołudnie",
-        "afternoon": "Popołudnie"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Wniosek o korektę czasu",
-          "subtitle": "Korekta wpisu czasu"
-        },
-        "absence": {
-          "title": "Wniosek o nieobecność",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Pokaż nieobecność",
-        "reviewRequest": "Sprawdź wniosek"
-      },
+      "title": "Oś czasu dnia pracy",
+      "today": "Dzisiaj",
+      "unavailableDescription": "Rejestrowanie czasu nadal działa. Spróbuj odświeżyć ten widok później.",
+      "unavailableTitle": "Oś czasu niedostępna",
       "warning": {
-        "pendingEdit": {
-          "title": "Oczekujący wniosek o zmianę",
-          "description": "Ten okres pracy ma zmiany oczekujące na zatwierdzenie."
+        "autoAdjusted": {
+          "description": "Reguły dotyczące przerw lub zgodności skorygowały ten okres pracy.",
+          "title": "Wpis skorygowany automatycznie"
         },
         "missingClockOut": {
-          "title": "Brak odbicia wyjścia",
-          "description": "Ten okres pracy jest nadal aktywny."
+          "description": "Ten okres pracy jest nadal aktywny.",
+          "title": "Brak zarejestrowania wyjścia"
         },
-        "autoAdjusted": {
-          "title": "Wpis automatycznie dostosowany",
-          "description": "Zasady dotyczące przerw lub zgodności dostosowały ten okres pracy."
+        "pendingEdit": {
+          "description": "Ten okres pracy ma zmiany oczekujące na zatwierdzenie.",
+          "title": "Oczekujący wniosek o edycję"
         }
+      },
+      "weekPicker": "Wybierz dzień tygodnia",
+      "workPeriod": {
+        "title": "Zarejestrowana praca"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Sprawdź użycie pojazdu"
       }
     },
-    "welcomeBack": "Witaj ponownie, {name}",
     "workCategory": "Kategoria pracy",
     "workLocation": "Miejsce pracy",
     "workLocationHome": "Dom",
     "workLocationOffice": "Biuro",
     "workLocationOther": "Inne",
-    "workLocationRemote": "Zdalnie",
-    "systemNote": {
-      "breakEnforcement": "Automatycznie dostosowano: egzekwowanie przerw"
-    }
+    "workLocationRemote": "Zdalnie"
   },
   "wellness": {
     "water": {

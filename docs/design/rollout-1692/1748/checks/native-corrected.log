@@ -1,0 +1,61 @@
+Own native session, no restore or state save. Public dummy Turnstile, normal development auth via private stdin.
+--args
+✓ z8 - time app
+  http://localhost:55913/en/sign-in
+
+eval
+{
+  "active": 200,
+  "login": 200
+}
+
+open
+✓ z8 - time app
+  http://localhost:55913/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054
+
+wait
+✓ Done
+
+snapshot
+- link "Skip to content" [ref=e1]
+- button "Switch Organization: Performance small" [expanded=false, ref=e12]
+- button "Search" [ref=e23]
+- navigation "Workplace" [ref=e13]
+  - link "Dashboard" [ref=e24]
+  - link "Time Tracking" [ref=e25]
+  - link "Calendar" [ref=e26]
+  - link "Absences" [ref=e27]
+  - link "Travel Expenses" [ref=e28]
+  - link "My Requests" [ref=e29]
+  - link "Reports" [ref=e30]
+  - link "Org Explorer" [ref=e31]
+- navigation "Settings & help" [ref=e14]
+  - link "Settings" [ref=e32]
+  - link "Get Help" [ref=e33]
+  - link "Feedback" [ref=e34]
+- button "Account: Person 2" [expanded=false, ref=e15]
+- button "Toggle Sidebar" [expanded=true, ref=e3]
+- button "Current timezone Europe/Berlin, 09:31, UTC+01:00" [expanded=false, ref=e4]
+- button "Clock In" [expanded=false, ref=e5]
+- button "Refresh data" [ref=e16]
+- button "Toggle theme" [expanded=false, ref=e17]
+- button "Notifications" [expanded=false, ref=e18]
+- link "Back to travel expenses" [ref=e19]
+- heading "Travel expense claim" [level=1, ref=e6]
+- heading "Receipt · Awaiting review" [level=2, ref=e7]
+- heading "Notes" [level=3, ref=e8]
+- heading "Receipts" [level=2, ref=e9]
+- link "Preview 2026-hotel-receipt.png" [ref=e20]
+- link "Download 2026-hotel-receipt.png" [ref=e21]
+- heading "Decision history" [level=2, ref=e10]
+- region "Notifications alt+T" [ref=e2]
+- button "Open Tanstack query devtools" [ref=e11]
+- button "Open Next.js Dev Tools" [expanded=false, ref=e22]
+
+download failed
+
+✗ Failed to read: Ein Verbindungsversuch ist fehlgeschlagen, da die Gegenstelle nach einer bestimmten Zeitspanne nicht richtig reagiert hat, oder die hergestellte Verbindung war fehlerhaft, da der verbundene Host nicht reagiert hat. (os error 10060) (the command reached the daemon but no response came back; it may or may not have run, so it was not retried)
+
+close
+✓ Browser closed
+

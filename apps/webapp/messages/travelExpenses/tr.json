@@ -96,21 +96,27 @@
       "rejectTitle": "Talebi Reddet"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Mevcut organizasyon ve çalışan doğrulanıyor…",
       "created": "Oluşturuldu",
       "decisionRecorded": "Karar kaydedildi",
       "destination": "Varış noktası",
       "history": "Karar geçmişi",
       "historyDescription": "Bu talebin her adımı, en eskiden başlayarak. Saatler UTC olarak gösterilmektedir.",
       "intermediateApproval": "Onay kaydedildi — ek onay bekleniyor",
+      "legacyClaim": "Eski talep",
       "legacyReceiptIdentity": "Eski fiş: içerik sağlama toplamı kaydedilmedi.",
       "loading": "Talep yükleniyor…",
       "noReceipts": "Kayıtlı fiş yok",
       "notRecorded": "Kaydedilmedi",
       "originalAmount": "Orijinal tutar",
       "receipts": "Fişler",
+      "receiptVersion": "Kayıtlı sürüm",
       "refreshing": "Talep yenileniyor…",
+      "scopeUnavailable": "Mevcut erişiminizi doğrulamak için bu talebi yenileyin.",
       "submitted": "Gönderildi",
       "title": "Seyahat masrafı talebi",
+      "unavailable": "Talep bulunamadı veya erişim artık mevcut değil.",
       "unknownDates": "Seyahat tarihi bağlamı kaydedilmedi (eski talep)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "{name} seçin",
         "selectAll": "Bu sayfadaki geri ödeme bekleyen tüm masrafları seçin",
         "selected": "{count} seçildi",
+        "selectionChanged": "Seçilen masraflardan biri veya birkaçı değişti. Bu iletişim kutusunu kapatın ve başka bir ödeme başlatmadan önce mevcut masrafları gözden geçirin.",
         "skipped": "Dahil değil ({count})",
         "submit": "{count} adedini geri ödendi olarak işaretle",
         "title": "Geri ödendi olarak işaretle"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Geri ödemeleri kaydedebilen hiçbir aktif masraf yetkilisinin kapsamında bunlar bulunmuyor. Sahipler ve yöneticiler bunları kaydetmeye devam edebilir veya bir yetkilinin kapsamını genişletebilir.",
         "empty": "Bir masraf yetkilisi, geri ödeme bekleyen onaylanmış her masrafı kapsar.",
+        "failed": "Kapsam kontrol edilemedi. Lütfen tekrar deneyin.",
         "queueFilter": "Hiçbir masraf yetkilisinin kapsamadığı, geri ödeme bekleyen onaylanmış masraflar.",
         "show": "Bu masrafları göster",
         "showAll": "Onaylanan tüm masrafları göster",
@@ -237,6 +245,7 @@
           "none": "Çalışan bulunamadı.",
           "search": "Çalışan ara…"
         },
+        "failed": "Filtre seçenekleri yüklenemedi. Lütfen tekrar deneyin.",
         "label": "Masrafları göster",
         "notExported": "Henüz dışa aktarılmadı",
         "open": "Açık",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Bu bordro çalıştırmaları, geri ödeme bekleyen masraf raporlarını içerir. Bordro bir çalıştırmayı ödedikten sonra, geri ödemeleri kaydetmek için bunu onaylayın.",
+        "failed": "Bordro onayları yüklenemedi. Lütfen tekrar deneyin.",
         "reports": "{count, plural, other {Onaylamanız gereken # masraf raporu, {amount}} }",
         "title": "Onay bekleyen bordro çalıştırmaları"
       },
       "queue": {
         "description": "Mutabakatını görmek ve geri ödeme kaydetmek için bir masrafı açın.",
+        "failed": "Finans kuyruğu yüklenemedi. Lütfen tekrar deneyin.",
         "title": "Onaylanan masraflar"
+      },
+      "scope": {
+        "failed": "Mevcut finans erişiminiz doğrulanamadı. Lütfen tekrar deneyin.",
+        "loading": "Finans erişimi doğrulanıyor…"
       },
       "title": "Masraf finansı"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Başlıksız kilometre"
     },
     "legacyDraft": {
+      "checking": "Taslak devamı kontrol ediliyor…",
       "continue": "Rapor olarak devam et",
       "converted": "Bu taslağa bir masraf raporu olarak devam ettiniz. Bu talep, referans amacıyla burada değiştirilmeden kalır.",
       "description": "Önceki talep formundaki taslaklar artık masraf raporu olarak tamamlanıyor. Tutarınız, tarihleriniz, notlarınız ve makbuzlarınız aktarılır; yeni formun gerektirdiği ancak bu taslakta hiç kaydedilmemiş olan alanları doldurmanız gerekir. Bu talebin kendisi değişmeden kalır.",
@@ -367,6 +383,7 @@
         "title": "Önceki bir talep taslağından devam ettirildi"
       },
       "openReport": "Raporu aç",
+      "readRefused": "Taslak devamı geçerli okuyucu için kullanılamıyor.",
       "receipt": {
         "mismatch": "depolanan dosya artık yüklenenle eşleşmiyor",
         "unreadable": "depolanan dosya şu anda okunamıyor",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Bu masraf için ödenmemiş tutar bulunmuyor.",
         "ownExpense": "Kendi masraflarınız için ödeme kaydedemezsiniz.",
         "referenceRequired": "Ödeme referansını girin; örn. banka havalesi referansı.",
+        "refresh": "Bakiye yenilenemedi. Önceden yüklenen kayıtlar gösteriliyor; ödeme kaydetmeden önce tekrar deneyin.",
         "refused": "Bu ödeme bu masraf için kaydedilemez.",
         "staleBalance": "Siz bu ödemeyi girerken bakiye değişti. Güncel bakiyeyi kontrol edip tekrar kaydedin.",
         "tooLong": "Bu metin çok uzun."
@@ -1149,7 +1167,13 @@
     },
     "title": "Seyahat Masrafları",
     "workspace": {
-      "description": "Seyahat masraflarını ve bağımsız masrafları toplayın, incelemeye gönderin ve geri ödemelerini takip edin."
+      "create": "Masraf raporu oluştur",
+      "description": "Seyahat masraflarını ve bağımsız masrafları toplayın, incelemeye gönderin ve geri ödemelerini takip edin.",
+      "mileageDescription": "Seyahat dışındaki bir iş sürüşünü kaydedin.",
+      "otherWork": "İnceleme ve finans",
+      "receiptDescription": "Fişiyle birlikte bir harcama kaydedin.",
+      "reconciling": "Mevcut kuruluş için harcamalarınız yükleniyor…",
+      "tripDescription": "Ortak seyahat ayrıntılarına sahip harcamaları toplayın."
     }
   }
 }

@@ -1,0 +1,95 @@
+{
+  "identity": {
+    "head": "3d5d0bc242b38eb5c14d3c736b2d0ba65b9da111",
+    "branch": "fix/1718-equipment-panel",
+    "override": {
+      "baseline": "b42187081b43ec85e1a15a53bec9064e6f2da160",
+      "files": [
+        "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx",
+        "apps/webapp/src/components/equipment/equipment-loading.tsx",
+        "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx"
+      ]
+    },
+    "hashes": {
+      "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx": "ac43680fb56161c19e45ea5a3ff9566091219d6f59eb62f579b9cd5f6c770998",
+      "apps/webapp/src/components/equipment/equipment-loading.tsx": "fe2115d366de4b24796d53f20f37162c55185454ffdab0def77b5068f0edf429",
+      "apps/webapp/src/lib/navigation/route-metadata.ts": "a55af3168e57c643bce16b50e09f23fdadff91da280b65af72023a715582e2a0",
+      "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx": "b5c83f40c8d893ceb49c22eed8810eeb0b3014349362e5735e53c53cbb0094b7"
+    }
+  },
+  "observation": {
+    "scope": "synthetic small-admin / Performance small / EQ-HELD",
+    "url": "/en/equipment/assignments/1632e9f1-9b63-421e-bb6e-0b0f2fc1520a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "dark": false,
+    "font": "16px",
+    "sidebar": null,
+    "headings": [
+      "Equipment",
+      "EQ-HELD"
+    ],
+    "record": "Back to equipment\nEQ-HELD\nOverdue\n\nFixture laptops · Serial SERIAL-EQ-HELD\n\nClose return\nTransfer\nRecord receipt\nIssued quantity\n1\nPhysically received quantity\n0\nOutstanding quantity\n1\nAgreed return terms\nReturn required\nEffective return deadline\nNov 1, 2026\n14 days overdue\nExplicit return deadline\nNov 1, 2026\nLatest recorded condition\nGood\nHandover history\nCorrect a record\n\nReturn deadline passed\n\nNov 1, 2026\nThe return is outstanding after its effective deadline.\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 1 · Good\n\nSynthetic baseline holding\n\nRecorded by Removed account · Nov 15, 2026, 8:09 AM Europe/Berlin\n\nHolder\n\nFixture Person 2\nRecord retention\nOutstanding\n\nProtected while a required return remains outstanding.\n\nLatest activity\nNov 15, 2026, 8:09 AM\nCase hold\nNone\n\nEurope/Berlin\n\nPlace case hold",
+    "holder": {
+      "x": 91,
+      "y": 1010,
+      "width": 116.4375,
+      "height": 24,
+      "bottom": 1034,
+      "right": 207.4375
+    },
+    "receipt": {
+      "x": 16,
+      "y": 253,
+      "width": 139.7421875,
+      "height": 36,
+      "bottom": 289,
+      "right": 155.7421875
+    },
+    "history": {
+      "x": 41,
+      "y": 672,
+      "width": 125.7890625,
+      "height": 16,
+      "bottom": 688,
+      "right": 166.7890625
+    },
+    "buttons": [
+      {
+        "text": "",
+        "label": "Reload equipment",
+        "disabled": false
+      },
+      {
+        "text": "Close return",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Transfer",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Record receipt",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Correct a record",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Place case hold",
+        "label": null,
+        "disabled": false
+      }
+    ],
+    "alerts": []
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "state": "SEALED_PUBLIC",
+  "source": "87b431bd6116ab90aed9d822db835dc78107bffb",
+  "latestDirectlyVerified": "8e3876c39725b7a8ef5218439766395401d64b80",
+  "classification": "Archive-ready proof for provisional #1731; root alone owns verification advancement",
+  "index": "evidence-index.json",
+  "rootChecks": "static/checks.json",
+  "runtime": {
+    "status": "audited-after-release",
+    "rawManifest": "runtime/verification-manifest.json",
+    "contractsImplemented": true,
+    "terminalDriverExits": {
+      "cap": 1,
+      "actions": 1,
+      "recovery": 0,
+      "roles": 1,
+      "rolesContinuation": 0,
+      "binary": 1,
+      "binaryContinuation": 0
+    },
+    "assertionCounts": {
+      "cap": 13,
+      "actions": 8,
+      "recovery": 2,
+      "roles": 4,
+      "rolesContinuation": 7,
+      "binary": 3,
+      "binaryContinuation": 7
+    },
+    "nonadditive": "No unique runtime-case sum. Binary initial before checks overlap with continuation. Earlier PG83 and focused unit/probe runs overlap."
+  },
+  "tests": {
+    "unit": {
+      "cases": 346,
+      "physicalFiles": 51,
+      "passed": 346
+    },
+    "postgres": {
+      "cases": 83,
+      "physicalFiles": 5,
+      "passed": 83
+    },
+    "distinctCases": 429,
+    "distinctPhysicalFiles": 56,
+    "rerunByArchiveVerifier": false
+  },
+  "quality": {
+    "rootExplicitCrlf": {
+      "log": "biome-final.log",
+      "files": 2,
+      "exit": 0
+    },
+    "allLint": {
+      "log": "biome-all-lint.log",
+      "files": 9,
+      "exit": 0
+    },
+    "allFormat": {
+      "log": "biome-all-format.log",
+      "files": 9,
+      "exit": 1,
+      "formattingFailures": [
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "boundary": "Both files are unchanged by this root correction. The merger handoff undercounted its own raw explicit-format log as one failing file; that log actually reports two. Existing #1730 proof also records both formatting boundaries. No formatter rewrite applied."
+    },
+    "doctor": {
+      "log": "doctor-final.log",
+      "files": 9,
+      "exit": 0,
+      "errors": 0,
+      "warnings": 1,
+      "review": "Existing Activity before-paint reset at line357; final correction adds no diagnostics and no suppressions."
+    },
+    "whitespace": {
+      "exit": 0,
+      "scope": "Root correction diff"
+    }
+  },
+  "types": {
+    "log": "typecheck-final.log",
+    "typegen": true,
+    "projects": 3,
+    "exit": 0,
+    "provenance": "Root observed completed shell session85542 exit0; this record attests the real tool result, not a reconstructed raw shell record."
+  },
+  "matched": {
+    "statesPerSource": 6,
+    "assertionsPerSource": 4,
+    "sameScope": true,
+    "scope": {
+      "actor": "small-admin",
+      "organizationId": "perf-small-0f725bdeb552",
+      "recordCount": 522,
+      "recordDigest": "7adbe19c6a134d50025ae3a2bbe9a47106f5149d9cd3454ad95ef1c44ea78587",
+      "policy": [
+        {
+          "category": "certificate",
+          "retention_years": 6
+        },
+        {
+          "category": "other",
+          "retention_years": 6
+        }
+      ],
+      "route": "/en/personnel-files/due-for-deletion"
+    },
+    "currentMainHeadings": 1,
+    "historicalMainHeadings": 2,
+    "digestScope": "Organization-scoped DB snapshot from SELECT id,employee_id,category,title,document_date::text FROM employee_document WHERE organization_id ORDER BY id; 522 is not visible due rows.",
+    "visibleDueRecords": 500,
+    "separateUnknownGroup": true,
+    "acceptedCaptures": 25,
+    "diagnosticCaptures": 1,
+    "rawMatchedReportsExcluded": true,
+    "sealedSummaryAndPublicPngsOnly": true,
+    "partialApplication": true
+  },
+  "physical": {
+    "actualPNGBytes": 68,
+    "protectedGET": [
+      200,
+      404
+    ],
+    "originalHEAD": [
+      200,
+      404
+    ],
+    "originalVersionId": null,
+    "rawPreviewBefore": {
+      "entries": 1,
+      "sizeBytes": 0,
+      "versionId": "null"
+    },
+    "rawPreviewAfter": {
+      "versions": 0,
+      "deleteMarkers": 0
+    },
+    "releasedSummaryPreviewBefore": 0,
+    "discrepancyPreserved": true,
+    "usableGeneratedPreviewProved": false,
+    "existingPreviewDeletionPassed": false,
+    "versionHistoryCleanupPassed": false,
+    "metadataCohortPhysicalStorageProved": false
+  },
+  "preservation": {
+    "sourceClean": true,
+    "allRawPinsAndConfigsUnchanged": true,
+    "physicalDependencyParents": 3,
+    "internalLeafLinks": 158,
+    "approvedLockSha256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "all54VerifiedTicketAncestors": true,
+    "prior1730CorrectionPaths": 8,
+    "prior1730ProofFiles": 201,
+    "priorGroups": {
+      "1728": 163,
+      "1729": 152,
+      "1736": 266,
+      "1737": 211,
+      "1835": 203
+    },
+    "allTrackedIndexEntriesUnchanged": true
+  },
+  "publication": {
+    "publicArtifacts": 159,
+    "runtimeAllowlisted": 128,
+    "runtimeHashIndexes": 1,
+    "static": 15,
+    "merger": 15,
+    "privateEvidenceRead": false,
+    "rawEvidenceRewritten": false,
+    "cloneMapping": "runtime/public-clones.json"
+  },
+  "scope": {
+    "wholeBranchVerified": false,
+    "wholeBranchReviewComplete": false,
+    "wholeAppReady": false,
+    "currentRosterFourPathGuard": "unresolved and unrun here"
+  },
+  "limits": [
+    "Broader unresolved four-path current-roster guard not rerun.",
+    "Root source checks are inherited; no new346-unit/type/quality run. Two pre-existing route-metadata formatting failures remain;9lint and2explicitCRLF checks are supplied passes.",
+    "No exhaustive runtime account/orgABA/hiddenActivity/allrace/allrole matrix; no separate runtime empty/loading/feature-off state matrix. Existing component/domain coverage remains inherited.",
+    "Initial fixture auth/memberships/employment adaptations are prerequisites, not production grant/offboarding/lifecycle acceptance; unrelated2025 benchmark workload was not migrated.",
+    "Physical cleanup proved only for one actual unversioned fixture original receipt. Metadata501cohort cannot prove storage. No preview existed before, so deletion of an existing preview/version history is unpassed.",
+    "Runtime audit covered public upload/read/purge descriptions; ZIP/title-edit/free-text and pay-period variants remain freshPG coverage, not claimed as new browser journeys.",
+    "No full production build/static generation, remote catalogs/Tolgee/providers/customer/payment/device/store-shell/screen-reader/true zoom/long-translation matrix.",
+    "Lower-right Pets and Next/Compiling/Rendering overlays remain visible. Viewports and actual18px text are not true device/zoom evidence.",
+    "One announced partial-result image precedes settled query refetch; diagnostic only, not accepted current canonical records. Later scoped readback and matched500due captures establish final refreshed state.",
+    "Earlier daemon timeout remains failed; final fresh restored session passed specific React/Next probes. No blanket all-native or notification-permission claim."
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "candidate": "3f22ce77ccc5219338237b9522f19b9405539355",
+  "actor": "canonical small-manager",
+  "conditions": "normal development form/widget; no authority changes; no request interference; bounded12s public navigation",
+  "events": [
+    {
+      "navigation": "/en/scheduling"
+    },
+    {
+      "navigation": "/en/scheduling"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getPendingShiftRequests",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getShifts",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getShiftTemplates",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getScheduleComplianceSummary",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getOwnPositionCaptureAction",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getClockVehicleUseStatus",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "name": "getShifts",
+      "status": 200,
+      "redirect": null
+    },
+    {
+      "navigation": "/en/"
+    },
+    {
+      "name": "getEmployeeClockStatuses",
+      "status": 200,
+      "redirect": null
+    }
+  ],
+  "state": {
+    "path": "/en/",
+    "visibleH1": [
+      "Good day, Person."
+    ],
+    "visibleAlerts": [],
+    "summary": [
+      "More widgets · Work location, birthdays and hydration"
+    ]
+  },
+  "rawResponsesCaptured": false
+}

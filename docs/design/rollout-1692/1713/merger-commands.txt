@@ -1,0 +1,24 @@
+git merge-tree --write-tree eec17c6b3a9442866b54bf64345ef7818ecf0dfb 4d89533232f376eee4e9c2e8f92aa38845e30cd2
+git merge --no-ff 4d89533232f376eee4e9c2e8f92aa38845e30cd2 -m 'Merge #1713 selected employee Calendar into UI refresh integration'
+gh issue view 1713 --json number,state,assignees
+pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/calendar src/hooks/use-calendar-data.test.tsx src/hooks/use-calendar-employees.test.ts src/lib/calendar 'src/app/[locale]/(app)/calendar' src/app/api/calendar/events/route.test.ts src/lib/navigation/route-metadata.test.ts src/components/site-header.test.tsx src/components/ui/sidebar.test.tsx src/components/errors 'src/app/[locale]/(app)/approvals/deputy-decisions/error.test.tsx' 'src/app/[locale]/(app)/approvals/review' src/tolgee/extracted-key-defaults.test.ts --reporter=json --outputFile=../../.tmp/merge1713-audit/exact.json
+pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 @calendarCompatibility --reporter=json --outputFile=../../.tmp/merge1713-audit/compatibility.json
+# @calendarCompatibility read from compatibility-selection.txt; full literal filters preserved there.
+pnpm --filter webapp typecheck
+pnpm --filter webapp exec biome check --line-ending=crlf @calendarFiles
+pnpm --filter webapp exec biome check @calendarFiles
+pnpm --filter webapp exec biome check --config-path=./biome.jsonc --line-ending=crlf @calendarFiles
+# @calendarFiles = audit.json.sourcePaths with apps/webapp/ prefix removed.
+pnpm exec react-doctor apps/webapp --scope changed --base eec17c6b3a9442866b54bf64345ef7818ecf0dfb --verbose --no-score --no-supply-chain --no-telemetry --max-duration 90
+pnpm node .tmp/merge1713-audit/audit.mjs
+pnpm node .tmp/merge1713-audit/test-summary.mjs
+pnpm node docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs
+pnpm node docs/design/rollout-1692/verify-route-inventory.mjs . HEAD .tmp/merge1713-audit/route-inventory.json
+pnpm node .tmp/merge1713-audit/make-repro.mjs
+pnpm --filter webapp exec vitest run --config ../../.tmp/merge1713-audit/repro.config.ts --project unit --maxWorkers 2 -t 'merge1713|keeps the latest employee selection' --reporter=json --outputFile=../../.tmp/merge1713-audit/selection-repro.json
+pnpm --filter webapp exec vitest run --config ../../.tmp/merge1713-audit/base.config.ts --project unit --maxWorkers 2 -t 'merge1713|keeps the latest employee selection' --reporter=json --outputFile=../../.tmp/merge1713-audit/baseline-repro.json
+git show --check --oneline 4d89533232f376eee4e9c2e8f92aa38845e30cd2
+git diff --check eec17c6b3a9442866b54bf64345ef7818ecf0dfb HEAD
+git diff --check 4d89533232f376eee4e9c2e8f92aa38845e30cd2 HEAD
+git diff --check
+git status --short --branch

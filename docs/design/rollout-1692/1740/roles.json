@@ -1,0 +1,24 @@
+{
+  "policy": "notifications-denied-for-fixture-origin",
+  "cases": [
+    {
+      "actor": "small-restricted",
+      "auth": {
+        "active": 200,
+        "signIn": 200
+      },
+      "path": "/en",
+      "status": "passed"
+    },
+    {
+      "actor": "small-admin",
+      "auth": {
+        "active": 200,
+        "signIn": 200
+      },
+      "path": "/en/team/absences",
+      "main": "Toggle Sidebar\n\nTeam Absences\n\n04:21\nUTC+01:00\nClock In\nToggle theme\nTeam absences\n\nReview allowances and record approved absences for your team.\n\nSearch\nAll teams\n2026\nYear calendar\nAnnual allowances\nYear calendar\n\nApproved and pending absences for the selected team and year.\n\n2026\n\n1 absent\n\n0\n\n0 pending\n\nApproved\nPending\nJanuary\nMo\nTu\nWe\nTh\nFr\nSa\nSu\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\nFebruary\nMo\nTu\nWe\nTh\nFr\nSa\nSu\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\nMarch\nMo\nTu\nWe\nTh\nFr\nSa\nSu\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\nApril\nMo\nTu\nWe\nTh\nFr\nSa\nSu\n1\n2\n3\n4\n5\n6\n7\n8\n9\n",
+      "status": "passed"
+    }
+  ]
+}

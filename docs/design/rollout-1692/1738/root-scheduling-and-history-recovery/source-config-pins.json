@@ -1,0 +1,232 @@
+{
+  "sourceCommit": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "appTree": "d5eb14eebaa958d12f238fe37faae8e18242bef0",
+  "verifiedCommit1738": null,
+  "verifiedCommit1739": null,
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "gitBlob": "060b7da6b557a57829d7a67c850fa5c25566784b",
+      "gitBytes": 444,
+      "gitSha256": "19746e7bec6588a616aee57a0cce9495bedd8d217fd5192a833676230b2da290",
+      "workingBytes": 453,
+      "workingSha256": "180094065da5e16dfbef45acf0854f1ffbd6777a61718f9f2eaba3d470d2a79f",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "gitBlob": "8b3443699f4cd49c80712705436546ca5934476a",
+      "gitBytes": 1672,
+      "gitSha256": "b0f8500d2fb0110c4ee2915ddf00fd12f9c146544f016b9422f651f93a029b68",
+      "workingBytes": 1756,
+      "workingSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "gitBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "gitBytes": 8339,
+      "gitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "workingBytes": 8541,
+      "workingSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "gitBlob": "2798fff14aa95ef8aa8a3b436a14933d289c6dbb",
+      "gitBytes": 12693,
+      "gitSha256": "97c022c7efaa6162f6fb5208d272c6c4f477117ed36a0544f2ef2ef5f3a36fea",
+      "workingBytes": 13116,
+      "workingSha256": "05b3b4fab2ad322d83628902cbf4aa087d9b2e677c20d1c677c4022e0158f297",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/actions.ts",
+      "gitBlob": "4d01ecadf30c0fa3118749801d08d723bb293c8f",
+      "gitBytes": 9902,
+      "gitSha256": "eae910208392de71a12f589833012e7f0d5cf0d26be5c6b42080e2f8d7300c49",
+      "workingBytes": 10231,
+      "workingSha256": "c4fcf48e87b2c473ee8b6329a31dd9ea3a4eeafb26cf8fe3de7b7d91a72a89c2",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "gitBlob": "0d778ec00c11a69351fd9a518b025af0f09ca641",
+      "gitBytes": 417,
+      "gitSha256": "79ed05585229c78c8bd2747839a5778fa58af1be96d7f5fe42b1c2e5db246e11",
+      "workingBytes": 432,
+      "workingSha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+      "gitBlob": "f0ad5f1c3c587688bf7409ab8391f76bdcfc6770",
+      "gitBytes": 12684,
+      "gitSha256": "77344c6c218e1586597e8db0df4e98bdebdf6466a73e243d7c1c2ebe409bb80f",
+      "workingBytes": 13000,
+      "workingSha256": "46faedd2778747bfd8967006293b230986520d49f1de6b4897d4477b1d5aba4a",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "gitBlob": "f2d71385744d0a396380eda65911ab73dfd7e078",
+      "gitBytes": 1403,
+      "gitSha256": "a6c5f0319ed15d61b8b2920a8bb2568bf709e998772962b2992c7ef80e97eb53",
+      "workingBytes": 1449,
+      "workingSha256": "f83a8d6ff156d84e7c4f854deafe746eb62ec84c5ec50ebd078fc073894bde58",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "gitBlob": "860294950506ddf320e64dc672ecbfd8f0136c3a",
+      "gitBytes": 4004,
+      "gitSha256": "1e2a3c324464fe6e4624ee38753404f4237d22eb987db114797d62748a6a61a2",
+      "workingBytes": 4122,
+      "workingSha256": "5fd544ce440e37cfa577b222ba986e48a28659a4f34c8ef27a08d66464f4b7c6",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+      "gitBlob": "6eae040de3183c08955052335de256a765cfdacc",
+      "gitBytes": 1476,
+      "gitSha256": "141326f9be37f4676c241cc321ee154b98953b320d9b94f06ad6c69609ca4685",
+      "workingBytes": 1520,
+      "workingSha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+      "gitBlob": "76c6b4c3e4e8c1552dd697c4ffc8274edca53049",
+      "gitBytes": 12093,
+      "gitSha256": "c986b280eaf54c5425074ba7bc4ee69c87d18187d24bcdc58ca82b437032d6dc",
+      "workingBytes": 12484,
+      "workingSha256": "38ac0a36cdc9013b0307f0492334cd7326100434a025663985e7e9a3ef25f7cd",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "gitBlob": "41ddba29220147d7d85677756460c4ef0e8ca58e",
+      "gitBytes": 20653,
+      "gitSha256": "469f38b29054a0818ce53903d7f808a6dfc770e43415ba167ed66685fc7b940e",
+      "workingBytes": 21337,
+      "workingSha256": "159f4de9e04320e577a5902e7a91c20b4eeb909fa09faa9f4bbbe883688e70bd",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "gitBytes": 7081,
+      "gitSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+      "workingBytes": 7321,
+      "workingSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+      "gitBlob": "359a579bb5fca3d2abd26ba32c655c0a8fa564f2",
+      "gitBytes": 735,
+      "gitSha256": "a0f5555b7268680054ad0c58d60bf82326b1ee905a234d44ba2e76c3e77342f0",
+      "workingBytes": 763,
+      "workingSha256": "94e88376217f64fb17e00b9c98241aa24f0b5c9a4e3d794e91b5d61ff4520a71",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+      "gitBlob": "b257db9075e3dff3f259128ca4d95dfebd9b30e7",
+      "gitBytes": 18904,
+      "gitSha256": "d89ec28745193c0924939caa7f3893a69b0dc24f8b410b2b1a695ef7d7656729",
+      "workingBytes": 19402,
+      "workingSha256": "188991dee5749baa4ee1fdd1669dddbff3e483b42c67aa92db22bfc541e9b923",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "gitBlob": "d6f2ff16165c48aacb5d7bff3d2ef1596de9994f",
+      "gitBytes": 13931,
+      "gitSha256": "e0e02a7599f299743000dbae525f8b784cfbf055c94d39b083fd748a4bb84ee9",
+      "workingBytes": 14370,
+      "workingSha256": "cdd767ab644c969bae1e0df72eddb29108b431db39ce142e8786f296d49b1e17",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "gitBlob": "a342c0add10f58d533c60cc3ff377089a298b68e",
+      "gitBytes": 6076,
+      "gitSha256": "105ccb9800b6607ec8ef7e6ebaace33367569e77e78e269402eb5c87f886a259",
+      "workingBytes": 6280,
+      "workingSha256": "a9faa045c4a19e5c49785fb668f148823bd53c4165bd8ccc2ea262d2b5b2a205",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+      "gitBlob": "52ff71ad22812b1aca95c87c85ceda97d608be48",
+      "gitBytes": 4812,
+      "gitSha256": "469d76b5fa75b4be0c112f937d187cf7dedd1696b035299c893b92f37a004f9c",
+      "workingBytes": 4938,
+      "workingSha256": "6b63ad017ccdafd4b10dd2c164f2789309df290fb30012f10180dcc3d0c67970",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+      "gitBlob": "d45b962f7ca0015f971b49d9d4bb43a9a7975848",
+      "gitBytes": 9825,
+      "gitSha256": "3e91551f695c63bd5487407a75e85679fdebd39976885ccf097fed4adfda27dd",
+      "workingBytes": 10106,
+      "workingSha256": "c2963cb3b9bedbaea30f14850373e086e1b021e69bb3668f5f877663fbb44ba5",
+      "currentSourceCheck": false
+    },
+    {
+      "path": "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+      "gitBlob": "72c7a046ae72a464188e6394d8b856c9c4d8fe8a",
+      "gitBytes": 3655,
+      "gitSha256": "aa0b70186cba549d8e62bfdffdddb8fdcb03453c17355932a9a53569550733d5",
+      "workingBytes": 3771,
+      "workingSha256": "daafd7d2b9ba347607a8bdbd8683bf346265f312211050b00351aa6213831c03",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/shift.service.ts",
+      "gitBlob": "9d73d9bcab0506c0b62a7571cfc4c0096ab8c717",
+      "gitBytes": 26241,
+      "gitSha256": "5c710659970c656c887ac293290d60e69ddd13680b471c2fb0ccb994ad60c410",
+      "workingBytes": 27195,
+      "workingSha256": "25b732991ba1a0c3126c275cc6754699775a0952df7d9552ee02230b816e6e88",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "package.json",
+      "gitBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "gitBytes": 5951,
+      "gitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "workingBytes": 6018,
+      "workingSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "currentSourceCheck": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "gitBytes": 771361,
+      "gitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "workingBytes": 771361,
+      "workingSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "currentSourceCheck": true
+    }
+  ],
+  "counts": {
+    "rootUnitCases": 392,
+    "rootUnitPhysicalFiles": 60,
+    "independentCases": 33,
+    "independentPhysicalFiles": 4,
+    "independentNonadditive": true,
+    "inheritedPgCases": 12,
+    "inheritedPgPhysicalFiles": 3,
+    "mixedSnapshotUnionCases": 404,
+    "mixedSnapshotUnionFiles": 63
+  },
+  "license": {
+    "entries": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "inherited": true
+  }
+}

@@ -162,7 +162,7 @@ export function OrganizationProfileCard({
 		<Card id="organization-profile">
 			<CardHeader>
 				<CardTitle>
-					{t("organization.profile.title", "Organization profile")}
+					<h2>{t("organization.profile.title", "Organization profile")}</h2>
 				</CardTitle>
 				<CardDescription>
 					{t(

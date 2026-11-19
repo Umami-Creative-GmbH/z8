@@ -1,0 +1,940 @@
+{
+  "stage": "completed",
+  "checks": [
+    "Public feature enable with organization-scoped readback",
+    "Actual public certificate-only specific-target grant matches scoped database rows",
+    "Officer sees exact target certificate link and zero other category/self/unsupported workflow links",
+    "Officer own file is actual not-found without upload",
+    "Separate administrator publicly revokes exact officer and scoped is_active readback confirms",
+    "Settled actual Request refuses revoked authority, retains full correct draft, and persists zero exact request rows",
+    "Officer directory reload refuses after grant revocation",
+    "Fresh normal nonofficer context denied actual directory",
+    "Public account Large font survives reload at 390px without width overflow"
+  ],
+  "captures": [
+    {
+      "file": "runtime-07-valid-retained-draft.png",
+      "sha256": "1b4e6e7e6853c101b89ca81943344a4696fd7f615d8ff1b2cd0d11e8599fd3b6",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 1,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-07-refused-retained-draft.png",
+      "sha256": "79c08beaf45c36e48c2cb509eedb12f46640d5e2f4033f2fc2976d7dc6554203",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 1,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-07-saved-large.png",
+      "sha256": "f65b1c062b817bed40c8d13be85637d21b7a446b1da3dd41df026cbbe5574554",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-07-saved-large-reload.png",
+      "sha256": "25037d85766ac4acd44473185cfec5ea1ddd7420875546cccb6caf1a5d09b627",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    }
+  ],
+  "errors": [
+    "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <div className=\"flex min-w...\" data-slot=\"card\" id=\"organizati...\">\n      <CardHeader>\n      <CardContent>\n        <div className=\"min-w-0 px-6\" data-slot=\"card-content\">\n          <form ref={{current:null}} noValidate={true} onSubmit={function OrganizationProfileCard[<form>.onSubmit]} ...>\n            <fieldset disabled={false} className=\"grid min-w...\">\n              <legend>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField name=\"country\">\n                <Field name=\"country\" form={{options:{...}, ...}}>\n                  <TFormItem className={undefined}>\n                    <div data-slot=\"form-item\" className=\"grid conte...\">\n                      <TFormLabel>\n                      <TFormControl hasError={false}>\n                        <Slot data-slot=\"form-control\" id=\"_R_1sql5et...\" aria-describedby=\"_R_1sql5et...\" ...>\n                          <select aria-label=\"Country\" className=\"rounded-md...\" name=\"country\" autoComplete=\"country\" ...>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option value=\"FK\">\n+                             Falkland Islands (Islas Malvinas)\n-                             Falkland Islands\n                            ...\n                      ...\n              ...\n            ...\n"
+  ],
+  "dialogs": [],
+  "transport": [
+    {
+      "kind": "request",
+      "stage": "feature",
+      "path": "/en/settings/organization",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/organization",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/organization",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "1057100d9e0eef0e6fce9717c448ad8abe0fc0d1be2a88d1513ba02ed6f01dce"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "1057100d9e0eef0e6fce9717c448ad8abe0fc0d1be2a88d1513ba02ed6f01dce"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "6bc31bcecb7709ac011d88aed4a610ab5274cf90c5e039c954d29f8804c3c22a"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "6bc31bcecb7709ac011d88aed4a610ab5274cf90c5e039c954d29f8804c3c22a"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "officer",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "officer",
+      "path": "/en/personnel-files/6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "draft",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "draft",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "draft",
+      "path": "/en/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "draft",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "response",
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "request",
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "1655f092de789ebd68ce64eb6573637a67cb7b0d6f54cc3e64f4689056a28939"
+    },
+    {
+      "kind": "request",
+      "stage": "late-submit",
+      "path": "/en/personnel-files",
+      "actionHash": "e91ec7325e4be198b72d6fb39345888b2cd189b14e85330c727e5203c7276094"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "1655f092de789ebd68ce64eb6573637a67cb7b0d6f54cc3e64f4689056a28939"
+    },
+    {
+      "kind": "request",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "e91ec7325e4be198b72d6fb39345888b2cd189b14e85330c727e5203c7276094"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "request",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "nonofficer",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "nonofficer",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "nonofficer",
+      "path": "/en/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "nonofficer",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "preferences",
+      "path": "/en/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "next",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    }
+  ],
+  "source": {
+    "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+        "raw": "9a1ae34792fe2cfadd2cc97ef47bbd1006b3a881dec2948f7074b235257ee05e",
+        "lf": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+        "raw": "a758ab83d397c1f49334d79a665cc33b10c9798e5b59a0894cb267e634b85758",
+        "lf": "801850c421b8a9614daf11d8c09ace80f03a8a1fac2bfea2f1dad2378d5f7fec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+        "raw": "00e4de9eb3fdc06cd4c9d679d2626cc7d15e1ae99f9fcbb48329ba19ef5ea2fa",
+        "lf": "e04ef8a44cc58b57c4d06413bf52d27955e73755c02a75f8be817b9e3be9c5ec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+        "raw": "c54cd9d2708e577f73e1ddb0b4a8316966c5f22f37bf480880e5070872364bdc",
+        "lf": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+        "raw": "fe6d1a86b3f6c822573d97dea3a142ee71b17dc420b6cc459235981bce3fe448",
+        "lf": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+        "raw": "d71740756a86b6a3c7649d1c896080b0e6b21e1f5684d20d0bc11e4a0bd7c7e5",
+        "lf": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+        "raw": "c1abaf5a5ac03431af714f975a12ac84be7a6e0062ec721a0c47340b544a673c",
+        "lf": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "ff1db242d925ff853cea55d4d84fcc1e5d5ab0f6c8b9227f91797e927202cfe0",
+        "lf": "ac07f792ef96ebc089f66a0ee27b9aa36efd3b3d7006a5da324a026854b1ac16"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "22a3056a3a2c4e4a588fdac5ec660e6845d9c61fb33c729c30bfcde5ad093797",
+        "lf": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+        "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+        "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+        "raw": "c0eb9eb607e42674c9a6c369ba2dc411d54cd40354f26eb7820af2bbe1505fa8",
+        "lf": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "bddbfb39533b78989c6657beecaf2f7fd86480afc154e421866c3cf4b512af73",
+        "lf": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/create-document-request-dialog.tsx",
+        "raw": "94cd97b0bc5d14366c85f15a473d694eaab3be12790832b29ab2df4246bc236c",
+        "lf": "703928863994c5d01f04f57d6657c096780b7007f4bdd6fcf2ac2552e9b76871"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/expiry-store.ts",
+        "raw": "5607dadd63e83ac000ff0f0237852b496ccf56ca245376fbb14b84d82389ea5b",
+        "lf": "ff96387241a071c9201af955b641435039660fb4bee9f285b7397a68791ba0ed"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/document-request-store.ts",
+        "raw": "1b42899f89ac49c1f891693bf91e76a9c7eb7fbff0c17e060b417042fa1d4cdc",
+        "lf": "2e55d521483f51d0f3625db130bd79d1b417d94abc0ffd3b0274f6277e32f392"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "raw": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "lf": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "f91a1bdcced8a4689ec8fd1733da012cc2d8049390be6a3c1380f2410797d8a2"
+  },
+  "harness": {
+    "runtime.mjs": "0e66e0affd9aee6e65a32334ed0c88bce345d4776f015d571adc06db246c4b64",
+    "common.mjs": "e40d8746ec7ca2ed5a48afd6de94fd1065c21dc56bc1b2f20b79100cbf11c182"
+  },
+  "auth": {
+    "signIn": 200,
+    "active": 200
+  },
+  "syntheticDocuments": [
+    {
+      "id": "b96a8a11-5cae-42a7-8d0c-d2d845aec852",
+      "employeeId": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "category": "certificate",
+      "title": "Root1728 certificate 1"
+    },
+    {
+      "id": "fe2c2210-b710-43d1-be59-034af3ab2ed6",
+      "employeeId": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "category": "other",
+      "title": "Root1728 other 1"
+    },
+    {
+      "id": "cbf304f1-5949-4393-95b9-a6358c1fcbff",
+      "employeeId": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "category": "certificate",
+      "title": "Root1728 certificate 2"
+    },
+    {
+      "id": "ce9eab70-5c32-4134-9e9c-14f432496d61",
+      "employeeId": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "category": "other",
+      "title": "Root1728 other 2"
+    },
+    {
+      "id": "7d809c72-2573-4416-9c7d-12ad3806875a",
+      "employeeId": "c209da12-528b-461b-beef-9009690793df",
+      "category": "certificate",
+      "title": "Root1728 certificate 3"
+    },
+    {
+      "id": "c3742782-89e4-4eff-bac5-8928707a554b",
+      "employeeId": "c209da12-528b-461b-beef-9009690793df",
+      "category": "other",
+      "title": "Root1728 other 3"
+    }
+  ],
+  "officerName": "Person 1",
+  "targetName": "Person 2",
+  "preEditGrant": [
+    {
+      "id": "5405bebf-fe9b-4b1c-97d0-77f066abeea1",
+      "scope": "specific",
+      "categories": [
+        "contract",
+        "payslip",
+        "sick_note",
+        "other"
+      ],
+      "is_active": true
+    }
+  ],
+  "categoryControls": [
+    {
+      "id": "personnel-file-officer-category-contract",
+      "tag": "INPUT",
+      "checked": false,
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-contract-label",
+      "tag": "LABEL",
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-payslip",
+      "tag": "INPUT",
+      "checked": false,
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-payslip-label",
+      "tag": "LABEL",
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-certificate",
+      "tag": "INPUT",
+      "checked": true,
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-certificate-label",
+      "tag": "LABEL",
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-sick_note",
+      "tag": "INPUT",
+      "checked": false,
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-sick_note-label",
+      "tag": "LABEL",
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-other",
+      "tag": "INPUT",
+      "checked": false,
+      "aria": null,
+      "data": false
+    },
+    {
+      "id": "personnel-file-officer-category-other-label",
+      "tag": "LABEL",
+      "aria": null,
+      "data": false
+    }
+  ],
+  "grant": {
+    "id": "5405bebf-fe9b-4b1c-97d0-77f066abeea1",
+    "scope": "specific",
+    "categories": [
+      "certificate"
+    ],
+    "is_active": true,
+    "employees": [
+      {
+        "employee_id": "83cd7482-3d57-42c3-bef0-198d2124374a"
+      }
+    ],
+    "teams": []
+  },
+  "officerAuth": {
+    "signIn": 200,
+    "active": 200
+  },
+  "officerLinks": [
+    "/en/personnel-files/83cd7482-3d57-42c3-bef0-198d2124374a?category=certificate",
+    "/en/personnel-files/83cd7482-3d57-42c3-bef0-198d2124374a",
+    "/en/personnel-files/document-requests",
+    "/en/personnel-files/due-for-deletion"
+  ],
+  "deadlineDay": "2026-11-20",
+  "beforeDraft": {
+    "title": "Root1728 retained bcf45169-1b1",
+    "note": "Retain this exact certificate renewal note after public access revocation.",
+    "deadline": "",
+    "category": "Certificate",
+    "categoryDisabled": true,
+    "renewal": "Renews Root1728 certificate 2",
+    "heading": "Request a renewal"
+  },
+  "requestIdentity": {
+    "organizationId": "perf-small-6c16dc7ede83",
+    "employeeId": "83cd7482-3d57-42c3-bef0-198d2124374a",
+    "title": "Root1728 retained bcf45169-1b1",
+    "renewedDocumentId": "cbf304f1-5949-4393-95b9-a6358c1fcbff"
+  },
+  "initialRequestRows": 0,
+  "revoked": [
+    {
+      "id": "5405bebf-fe9b-4b1c-97d0-77f066abeea1",
+      "is_active": false
+    }
+  ],
+  "refusalToast": [
+    "Document request not found"
+  ],
+  "afterDraft": {
+    "title": "Root1728 retained bcf45169-1b1",
+    "note": "Retain this exact certificate renewal note after public access revocation.",
+    "deadline": "",
+    "category": "Certificate",
+    "categoryDisabled": true,
+    "renewal": "Renews Root1728 certificate 2",
+    "heading": "Request a renewal"
+  },
+  "finalRequestRows": 0,
+  "lateTransport": [
+    {
+      "kind": "request",
+      "stage": "late-submit",
+      "path": "/en/personnel-files",
+      "actionHash": "e91ec7325e4be198b72d6fb39345888b2cd189b14e85330c727e5203c7276094"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "1655f092de789ebd68ce64eb6573637a67cb7b0d6f54cc3e64f4689056a28939"
+    },
+    {
+      "kind": "request",
+      "stage": "late-submit",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "response",
+      "stage": "late-submit",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "e91ec7325e4be198b72d6fb39345888b2cd189b14e85330c727e5203c7276094"
+    }
+  ],
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:56769\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_routes",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"appRouter\": [\n    \"/[locale]\",\n    \"/[locale]/absences\",\n    \"/[locale]/accept-invitation/[invitationId]\",\n    \"/[locale]/analytics\",\n    \"/[locale]/analytics/overtime-burn-down\",\n    \"/[locale]/analytics/team-performance\",\n    \"/[locale]/analytics/vacation-trends\",\n    \"/[locale]/analytics/work-hours\",\n    \"/[locale]/approvals\",\n    \"/[locale]/approvals/deputy-decisions/[absenceId]\",\n    \"/[locale]/approvals/inbox\",\n    \"/[locale]/approvals/review/[organizationId]/[kind]/[id]\",\n    \"/[locale]/billing/suspended\",\n    \"/[locale]/calendar\",\n    \"/[locale]/calendar/[employeeId]\",\n    \"/[locale]/compliance\",\n    \"/[locale]/driving-licence\",\n    \"/[locale]/driving-licence/checks/[employee]\",\n    \"/[locale]/equipment\",\n    \"/[locale]/equipment/assignments/[assignmentId]\",\n    \"/[locale]/equipment/employees/[employeeId]\",\n    \"/[locale]/forgot-password\",\n    \"/[locale]/init\",\n    \"/[locale]/join/[code]\",\n    \"/[locale]/kiosk\",\n    \"/[locale]/licenses\",\n    \"/[locale]/mfa\",\n    \"/[locale]/my-documents\",\n    \"/[locale]/my-equipment\",\n    \"/[locale]/my-requests\",\n    \"/[locale]/notifications\",\n    \"/[locale]/onboarding/complete\",\n    \"/[locale]/onboarding/notifications\",\n    \"/[locale]/onboarding/organization\",\n    \"/[locale]/onboarding/profile\",\n    \"/[locale]/onboarding/vacation-policy\",\n    \"/[locale]/onboarding/welcome\",\n    \"/[locale]/onboarding/wellness\",\n    \"/[locale]/onboarding/work-schedule\",\n    \"/[locale]/onboarding/work-templates\",\n    \"/[locale]/organization\",\n    \"/[locale]/payroll\",\n    \"/[locale]/payroll/work-balances\",\n    \"/[locale]/payroll/work-balances/[employeeId]\",\n    \"/[locale]/personnel-files\",\n    \"/[locale]/personnel-files/[employeeId]\",\n    \"/[locale]/personnel-files/document-requests\",\n    \"/[locale]/personnel-files/due-for-deletion\",\n    \"/[locale]/personnel-files/payslip-batches\",\n    \"/[locale]/personnel-files/payslip-batches/[batchId]\",\n    \"/[locale]/personnel-files/sick-leave\",\n    \"/[locale]/platform-admin\",\n    \"/[locale]/platform-admin/analytics\",\n    \"/[locale]/platform-admin/billing\",\n    \"/[locale]/platform-admin/diagnostics\",\n    \"/[locale]/platform-admin/organizations\",\n    \"/[locale]/platform-admin/settings\",\n    \"/[locale]/platform-admin/system-email-templates\",\n    \"/[locale]/platform-admin/users\",\n    \"/[locale]/platform-admin/worker-queue\",\n    \"/[locale]/reports\",\n    \"/[locale]/reports/projects\",\n    \"/[locale]/reports/vehicles\",\n    \"/[locale]/reset-password\",\n    \"/[locale]/scheduling\",\n    \"/[locale]/settings\",\n    \"/[locale]/settings/approval-escalation\",\n    \"/[locale]/settings/approval-policies\",\n    \"/[locale]/settings/audit-export\",\n    \"/[locale]/settings/audit-log\",\n    \"/[locale]/settings/avv\",\n    \"/[locale]/settings/billable-time\",\n    \"/[locale]/settings/billable-time/accounting\",\n    \"/[locale]/settings/billable-time/cost-rates\",\n    \"/[locale]/settings/billable-time/hand-off\",\n    \"/[locale]/settings/billable-time/rates\",\n    \"/[locale]/settings/billing\",\n    \"/[locale]/settings/calendar\",\n    \"/[locale]/settings/change-policies\",\n    \"/[locale]/settings/clocking\",\n    \"/[locale]/settings/clockodo-import\",\n    \"/[locale]/settings/closed-months\",\n    \"/[locale]/settings/compliance\",\n    \"/[locale]/settings/compliance/works-council\",\n    \"/[locale]/settings/coverage-rules\",\n    \"/[locale]/settings/custom-fields\",\n    \"/[locale]/settings/customers\",\n    \"/[locale]/settings/demo\",\n    \"/[locale]/settings/discord\",\n    \"/[locale]/settings/driving-licence\",\n    \"/[locale]/settings/email-templates\",\n    \"/[locale]/settings/employees\",\n    \"/[locale]/settings/employees/[employeeId]\",\n    \"/[locale]/settings/employees/new\",\n    \"/[locale]/settings/enterprise\",\n    \"/[locale]/settings/enterprise/api-keys\",\n    \"/[locale]/settings/enterprise/api-keys/[keyId]\",\n    \"/[locale]/settings/enterprise/audit-log\",\n    \"/[locale]/settings/enterprise/branding\",\n    \"/[locale]/settings/enterprise/domains\",\n    \"/[locale]/settings/enterprise/email\",\n    \"/[locale]/settings/enterprise/identity-setup\",\n    \"/[locale]/settings/enterprise/sso\",\n    \"/[locale]/settings/equipment\",\n    \"/[locale]/settings/export\",\n    \"/[locale]/settings/export-operations\",\n    \"/[locale]/settings/export/history/[organizationId]\",\n    \"/[locale]/settings/holidays\",\n    \"/[locale]/settings/implementation-checklist\",\n    \"/[locale]/settings/import\",\n    \"/[locale]/settings/import/[batchId]\",\n    \"/[locale]/settings/kiosks\",\n    \"/[locale]/settings/locations\",\n    \"/[locale]/settings/locations/[locationId]\",\n    \"/[locale]/settings/my-data\",\n    \"/[locale]/settings/notification-channels\",\n    \"/[locale]/settings/notifications\",\n    \"/[locale]/settings/organization\",\n    \"/[locale]/settings/organizations\",\n    \"/[locale]/settings/payroll-access\",\n    \"/[locale]/settings/payroll-export\",\n    \"/[locale]/settings/payroll-readiness\",\n    \"/[locale]/settings/permissions\",\n    \"/[locale]/settings/personnel-files\",\n    \"/[locale]/settings/position-capture\",\n    \"/[locale]/settings/position-stamps\",\n    \"/[locale]/settings/profile\",\n    \"/[locale]/settings/projects\",\n    \"/[locale]/settings/report-share-links\",\n    \"/[locale]/settings/roles\",\n    \"/[locale]/settings/scheduled-exports\",\n    \"/[locale]/settings/security\",\n    \"/[locale]/settings/shifts\",\n    \"/[locale]/settings/skills\",\n    \"/[locale]/settings/slack\",\n    \"/[locale]/settings/statistics\",\n    \"/[locale]/settings/surcharges\",\n    \"/[locale]/settings/teams\",\n    \"/[locale]/settings/teams-notifications\",\n    \"/[locale]/settings/teams/[teamId]\",\n    \"/[locale]/settings/telegram\",\n    \"/[locale]/settings/travel-expenses\",\n    \"/[locale]/settings/vacation\",\n    \"/[locale]/settings/vacation/employees\",\n    \"/[locale]/settings/vacation/employees/[employeeId]\",\n    \"/[locale]/settings/vehicle-use\",\n    \"/[locale]/settings/vehicles\",\n    \"/[locale]/settings/webhooks\",\n    \"/[locale]/settings/wellness\",\n    \"/[locale]/settings/work-categories\",\n    \"/[locale]/settings/work-diagnostics\",\n    \"/[locale]/settings/work-policies\",\n    \"/[locale]/setup\",\n    \"/[locale]/share/[token]\",\n    \"/[locale]/sign-in\",\n    \"/[locale]/sign-up\",\n    \"/[locale]/team\",\n    \"/[locale]/team/absences\",\n    \"/[locale]/team/driving\",\n    \"/[locale]/team/period-submissions\",\n    \"/[locale]/team/presence\",\n    \"/[locale]/team/presence/[locationId]\",\n    \"/[locale]/time-tracking\",\n    \"/[locale]/today\",\n    \"/[locale]/travel-expenses\",\n    \"/[locale]/travel-expenses/[claimId]\",\n    \"/[locale]/travel-expenses/finance\",\n    \"/[locale]/travel-expenses/reports/[reportId]\",\n    \"/[locale]/verify-2fa\",\n    \"/[locale]/verify-email\",\n    \"/[locale]/verify-email-pending\",\n    \"/[locale]/works-council\",\n    \"/[locale]/works-council/export\",\n    \"/api/analytics/export\",\n    \"/api/app-version\",\n    \"/api/approvals/inbox\",\n    \"/api/approvals/inbox/[id]\",\n    \"/api/approvals/inbox/[id]/approve\",\n    \"/api/approvals/inbox/[id]/reject\",\n    \"/api/approvals/inbox/bulk-approve\",\n    \"/api/approvals/inbox/bulk-reject\",\n    \"/api/approvals/inbox/counts\",\n    \"/api/audit-export/public-key\",\n    \"/api/audit-export/verify\",\n    \"/api/auth/[...all]\",\n    \"/api/auth/app-exchange\",\n    \"/api/auth/app-login\",\n    \"/api/auth/app-sign-in\",\n    \"/api/auth/callback/social-org/[provider]\",\n    \"/api/auth/context\",\n    \"/api/auth/desktop-login\",\n    \"/api/auth/providers\",\n    \"/api/auth/session-expired\",\n    \"/api/auth/social-org/[provider]\",\n    \"/api/auth/verify-turnstile\",\n    \"/api/billing/checkout\",\n    \"/api/billing/portal\",\n    \"/api/billing/subscription\",\n    \"/api/billing/webhook\",\n    \"/api/calendar/conflicts\",\n    \"/api/calendar/connections\",\n    \"/api/calendar/connections/[id]\",\n    \"/api/calendar/events\",\n    \"/api/calendar/ics-feeds\",\n    \"/api/calendar/ics-feeds/[id]\",\n    \"/api/calendar/ics-feeds/[id]/regenerate\",\n    \"/api/calendar/ics/[secret]\",\n    \"/api/calendar/oauth/[provider]\",\n    \"/api/calendar/oauth/callback/[provider]\",\n    \"/api/cron/[jobName]\",\n    \"/api/cron/status/[executionId]\",\n    \"/api/dashboard/layout\",\n    \"/api/dashboard/widgets/[widget]\",\n    \"/api/desktop/context\",\n    \"/api/desktop/open\",\n    \"/api/desktop/organizations\",\n    \"/api/desktop/vehicle-use-warnings\",\n    \"/api/discord/interactions/[token]\",\n    \"/api/discord/link\",\n    \"/api/discord/setup\",\n    \"/api/driving-licence/evidence\",\n    \"/api/driving-licence/operational-employees\",\n    \"/api/driving-licence/status\",\n    \"/api/health\",\n    \"/api/jobs/[jobId]/status\",\n    \"/api/kiosk/board\",\n    \"/api/kiosk/clock\",\n    \"/api/kiosk/clock/outcome\",\n    \"/api/kiosk/commands\",\n    \"/api/kiosk/commands/[operationId]\",\n    \"/api/kiosk/employee-status\",\n    \"/api/kiosk/employees\",\n    \"/api/kiosk/fob\",\n    \"/api/kiosk/fob/registration\",\n    \"/api/kiosk/pair\",\n    \"/api/kiosk/session\",\n    \"/api/location/countries\",\n    \"/api/location/regions\",\n    \"/api/location/states\",\n    \"/api/mcp\",\n    \"/api/notifications\",\n    \"/api/notifications/count\",\n    \"/api/notifications/preferences\",\n    \"/api/notifications/push/native-token\",\n    \"/api/notifications/push/subscribe\",\n    \"/api/notifications/push/subscriptions\",\n    \"/api/notifications/push/unsubscribe\",\n    \"/api/notifications/push/vapid-key\",\n    \"/api/org-admin/holiday-categories\",\n    \"/api/org-admin/holiday-categories/[id]\",\n    \"/api/org-admin/holiday-presets\",\n    \"/api/org-admin/holiday-presets/[id]\",\n    \"/api/org-admin/holidays\",\n    \"/api/org-admin/holidays/[id]\",\n    \"/api/org-admin/holidays/import\",\n    \"/api/org-admin/holidays/preview\",\n    \"/api/organization-mfa/policy\",\n    \"/api/organization/vehicles/[vehicleId]/photos/[photoId]\",\n    \"/api/organizations/list\",\n    \"/api/organizations/sso\",\n    \"/api/organizations/switch\",\n    \"/api/payroll/comparisons/[resultId]\",\n    \"/api/personnel-files/documents/[documentId]\",\n    \"/api/personnel-files/employees/[employeeId]/zip\",\n    \"/api/platform-admin/billing\",\n    \"/api/session/organization-status\",\n    \"/api/settings/employees/read/[dataset]\",\n    \"/api/settings/skills\",\n    \"/api/setup/authorize\",\n    \"/api/slack/commands\",\n    \"/api/slack/events\",\n    \"/api/slack/interactions\",\n    \"/api/slack/link\",\n    \"/api/slack/oauth/authorize\",\n    \"/api/slack/oauth/callback\",\n    \"/api/slack/setup\",\n    \"/api/teams/messages\",\n    \"/api/teams/setup\",\n    \"/api/telegram/link\",\n    \"/api/telegram/setup\",\n    \"/api/telegram/webhook/[token]\",\n    \"/api/time-clock\",\n    \"/api/time-clock/status\",\n    \"/api/time-entries\",\n    \"/api/time-entries/[entryId]\",\n    \"/api/time-entries/clock-out-on-behalf\",\n    \"/api/time-entries/commands\",\n    \"/api/time-entries/commands/[operationId]\",\n    \"/api/time-entries/corrections\",\n    \"/api/time-entries/diagnostics\",\n    \"/api/time-entries/diagnostics/proposals\",\n    \"/api/time-entries/diagnostics/repair\",\n    \"/api/time-entries/offline-context\",\n    \"/api/time-entries/status\",\n    \"/api/time-entries/verify\",\n    \"/api/travel-expenses/[claimId]\",\n    \"/api/travel-expenses/[claimId]/receipts/[attachmentId]\",\n    \"/api/travel-expenses/exports/[batchId]\",\n    \"/api/travel-expenses/reports/[reportId]/receipts/[receiptId]\",\n    \"/api/tus/[[...path]]\",\n    \"/api/upload/personnel-file\",\n    \"/api/upload/personnel-file/payslip-batch\",\n    \"/api/upload/process\",\n    \"/api/upload/travel-expense/process\",\n    \"/api/upload/travel-expense/report-receipt\",\n    \"/api/user/onboarding-status\",\n    \"/api/v1/[...path]\",\n    \"/api/v1/absences\",\n    \"/api/v1/customers\",\n    \"/api/v1/customers/custom-fields\",\n    \"/api/v1/employees\",\n    \"/api/v1/employees/custom-fields\",\n    \"/api/v1/openapi.json\",\n    \"/api/v1/projects\",\n    \"/api/v1/projects/custom-fields\",\n    \"/api/v1/work-periods\",\n    \"/api/wellness/water-action\",\n    \"/api/wellness/water-reminder\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/personnel-files\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]},{\"url\":\"/en/personnel-files\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"not-found\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "sourceEnd": {
+    "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+        "raw": "9a1ae34792fe2cfadd2cc97ef47bbd1006b3a881dec2948f7074b235257ee05e",
+        "lf": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+        "raw": "a758ab83d397c1f49334d79a665cc33b10c9798e5b59a0894cb267e634b85758",
+        "lf": "801850c421b8a9614daf11d8c09ace80f03a8a1fac2bfea2f1dad2378d5f7fec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+        "raw": "00e4de9eb3fdc06cd4c9d679d2626cc7d15e1ae99f9fcbb48329ba19ef5ea2fa",
+        "lf": "e04ef8a44cc58b57c4d06413bf52d27955e73755c02a75f8be817b9e3be9c5ec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+        "raw": "c54cd9d2708e577f73e1ddb0b4a8316966c5f22f37bf480880e5070872364bdc",
+        "lf": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+        "raw": "fe6d1a86b3f6c822573d97dea3a142ee71b17dc420b6cc459235981bce3fe448",
+        "lf": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+        "raw": "d71740756a86b6a3c7649d1c896080b0e6b21e1f5684d20d0bc11e4a0bd7c7e5",
+        "lf": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+        "raw": "c1abaf5a5ac03431af714f975a12ac84be7a6e0062ec721a0c47340b544a673c",
+        "lf": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "ff1db242d925ff853cea55d4d84fcc1e5d5ab0f6c8b9227f91797e927202cfe0",
+        "lf": "ac07f792ef96ebc089f66a0ee27b9aa36efd3b3d7006a5da324a026854b1ac16"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "22a3056a3a2c4e4a588fdac5ec660e6845d9c61fb33c729c30bfcde5ad093797",
+        "lf": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+        "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+        "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+        "raw": "c0eb9eb607e42674c9a6c369ba2dc411d54cd40354f26eb7820af2bbe1505fa8",
+        "lf": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "bddbfb39533b78989c6657beecaf2f7fd86480afc154e421866c3cf4b512af73",
+        "lf": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/create-document-request-dialog.tsx",
+        "raw": "94cd97b0bc5d14366c85f15a473d694eaab3be12790832b29ab2df4246bc236c",
+        "lf": "703928863994c5d01f04f57d6657c096780b7007f4bdd6fcf2ac2552e9b76871"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/expiry-store.ts",
+        "raw": "5607dadd63e83ac000ff0f0237852b496ccf56ca245376fbb14b84d82389ea5b",
+        "lf": "ff96387241a071c9201af955b641435039660fb4bee9f285b7397a68791ba0ed"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/document-request-store.ts",
+        "raw": "1b42899f89ac49c1f891693bf91e76a9c7eb7fbff0c17e060b417042fa1d4cdc",
+        "lf": "2e55d521483f51d0f3625db130bd79d1b417d94abc0ffd3b0274f6277e32f392"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "raw": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "lf": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "f91a1bdcced8a4689ec8fd1733da012cc2d8049390be6a3c1380f2410797d8a2"
+  }
+}

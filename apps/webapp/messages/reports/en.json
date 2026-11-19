@@ -13,9 +13,11 @@
       "yes": "Yes"
     },
     "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
+    "employeeNumber": "Employee number",
     "employeeSelector": {
       "error": "Unable to load team members",
       "label": "Employee",
+      "loading": "Loading team members",
       "placeholder": "Select employee..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Loading organization settings before enabling presets.",
       "period": "Period",
-      "selectPeriod": "Select period"
+      "selectPeriod": "Select period",
+      "settingsError": "Organization settings unavailable",
+      "settingsRequired": "Organization settings are required to use presets.",
+      "title": "Generate an employee report"
     },
     "generate": "Generate Report",
     "generating": "Generating Report…",
@@ -62,6 +67,7 @@
       "month": "Month",
       "noHomeOfficeDays": "No home office days recorded in this period.",
       "overtime": "Overtime",
+      "title": "Report preview",
       "total": "Total",
       "totalHomeOfficeDays": "Total Home Office Days",
       "totalHomeOfficeHours": "Total Hours Worked from Home",
@@ -266,6 +272,9 @@
         "noPermission": "You don't have permission to view project reports.",
         "title": "Project Reports"
       },
+      "refreshFailed": "Could not refresh project reports",
+      "scopeLoading": "Loading the current report scopeu2026",
+      "scopeUnavailable": "The current report scope could not be loaded.",
       "status": {
         "active": "Active",
         "archived": "Archived",
@@ -324,7 +333,6 @@
         "failedGenerate": "Failed to generate report",
         "failedPortfolio": "Failed to generate portfolio report",
         "failedProject": "Failed to generate project report",
-        "failedProjectReport": "Failed to generate project report",
         "portfolioGenerated": "Portfolio report generated",
         "projectGenerated": "Report generated for {name}",
         "unexpectedError": "An unexpected error occurred"
@@ -376,6 +384,8 @@
         "loading": "Loading share links…",
         "revokedAutomatically": "Revoked automatically on {date}: the creator no longer sees every project in it",
         "revokedBy": "Revoked by {name} on {date}",
+        "scopeLoading": "Loading the current share-link scopeu2026",
+        "scopeUnavailable": "The current share-link scope could not be loaded.",
         "someone": "someone",
         "title": "Links to this report",
         "views": "{count, plural, one {# view} other {# views}}",
@@ -398,7 +408,8 @@
         "description": "The link stops working at once and its snapshot is deleted. Its record and view log are kept.",
         "done": "Link revoked",
         "failed": "The link could not be revoked",
-        "title": "Revoke this link?"
+        "titleDeletedReport": "Revoke the share link for a deleted report, {period}?",
+        "titleNamed": "Revoke the share link for {report}, {period}?"
       },
       "status": {
         "active": "Active",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "archived",
       "archivedBadge": "Archived",
+      "comparison": "Monthly distance by vehicle and employee",
       "empty": {
         "description": "No completed work with a driven distance was recorded in this period.",
         "title": "No driving in this period"
@@ -457,6 +469,7 @@
         "period": "Period"
       },
       "generate": "Generate report",
+      "generated": "Generated on {time}",
       "generating": "Generating report…",
       "kilometres": "{distance} km",
       "noReportYet": "No report generated yet",
@@ -465,7 +478,11 @@
         "description": "Kilometres driven for work per vehicle and employee, by month",
         "feature": "view the distance per vehicle report"
       },
+      "scope": "Employees available to you in this organization",
+      "scopeLoading": "Confirming the current organization and employee…",
+      "scopeUnavailable": "The current vehicle report scope could not be loaded.",
       "selectPeriod": "Choose a period and generate the report.",
+      "staged": "Period changed. Generate report to update the results and downloads.",
       "table": {
         "employee": "Employee",
         "licencePlate": "Licence plate",
@@ -473,8 +490,7 @@
         "vehicle": "Vehicle",
         "vehicleAndEmployee": "Vehicle / employee"
       },
-      "title": "Distance per Vehicle",
-      "totalDriven": "{distance} driven"
+      "title": "Distance per Vehicle"
     }
   }
 }

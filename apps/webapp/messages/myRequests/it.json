@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Annulla",
+      "cancelled": "Richiesta annullata",
       "cancelling": "Annullamento in corso…",
+      "cancelRequest": "Annulla richiesta",
       "cancelRequestConfirmation": "Annullare questa richiesta?",
+      "cancelRequestDescription": "Viene ritirata dalla revisione e non può essere riaperta. Per richiederla di nuovo, invia una nuova richiesta.",
       "cancelRequestError": "Impossibile annullare la richiesta.",
       "fix": "Correggi",
-      "notAvailable": "Non disponibile",
+      "keepRequest": "Mantieni richiesta",
       "view": "Visualizza"
     },
     "all": {
-      "description": "Esamina le richieste relative ad assenze, correzioni orarie e spese.",
       "title": "Tutte le richieste"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Le richieste appariranno qui quando verranno inviate o caricate.",
+        "hint": "Prova con un altro termine di ricerca, stato o tipo.",
         "title": "Nessuna richiesta corrisponde ai tuoi filtri"
       },
       "none": {
         "description": "Le richieste appariranno qui quando verranno inviate o caricate.",
         "title": "Ancora nessuna richiesta"
+      },
+      "unavailable": {
+        "description": "Riprova le fonti non disponibili per controllare le tue richieste.",
+        "title": "Nessuna richiesta caricata"
       }
     },
     "featureName": "visualizza le tue richieste",
     "filters": {
       "allStatuses": "Tutti gli stati",
       "allTypes": "Tutti i tipi",
-      "approvedRequests": "Richieste approvate",
-      "cancelledRequests": "Richieste annullate",
-      "description": "Filtra ogni sezione di richiesta per testo, stato o tipo di richiesta.",
-      "pendingRequests": "Richieste in sospeso",
-      "rejectedRequests": "Richieste respinte",
+      "resultCount": "Visualizzazione di {visible} su {total} richieste",
       "search": "Cerca",
-      "searchPlaceholder": "Cerca per titolo…",
+      "searchRequestsPlaceholder": "Titolo, date, importo o motivo…",
       "status": "Stato",
       "title": "Trova richieste",
       "type": "Tipo"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Questa richiesta non è più in sospeso oppure non può essere mostrata qui. È in corso una nuova verifica della disponibilità del periodo."
     },
+    "history": {
+      "request": "Richiesta"
+    },
     "inReview": {
-      "description": "Richieste in attesa di approvazione o elaborazione.",
       "title": "In revisione"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Richiesta di rimborso spese di viaggio"
       }
     },
+    "scope": "Le tue richieste di assenza, correzione orario e spese legacy nell'organizzazione attiva",
     "sourceError": {
       "absence": "Impossibile caricare le richieste di assenza.",
       "timeCorrection": "Impossibile caricare le richieste di correzione oraria.",
       "title": "Impossibile caricare alcune richieste.",
       "travelExpense": "Impossibile caricare le richieste di rimborso spese di viaggio."
     },
-    "sourceTypes": {
-      "absence": "Assenza",
-      "timeCorrection": "Orario",
-      "travelExpense": "Spesa"
-    },
     "status": {
       "approved": "Approvato",
       "cancelled": "Annullato",
       "inReview": "In revisione",
-      "pending": "In sospeso",
       "rejected": "Respinto"
     },
-    "subtitle": "Tieni traccia delle richieste in sospeso, delle correzioni richieste e delle decisioni recenti in un unico posto.",
     "summary": {
       "ariaLabel": "Riepilogo richieste",
-      "pending": "In sospeso",
       "recentDecisions": "Decisioni recenti",
+      "recentWindow": "Ultimi 30 giorni",
       "requiredFixes": "Correzioni richieste",
       "totalLoaded": "Totale caricato"
     },
     "title": "Le mie richieste",
+    "types": {
+      "absence": "Assenza",
+      "timeCorrection": "Correzione orario",
+      "travelExpense": "Spesa di trasferta"
+    },
     "unavailableTitle": "Richieste non disponibili"
   }
 }

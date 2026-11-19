@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { PageHeader } from "@/components/ui/page-header";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
@@ -38,12 +39,9 @@ export function OrganizationsPageClient({
 	);
 
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-6xl">
-				<div className="mb-8">
-					<h1 className="text-3xl font-semibold mb-2">{organizationTitle}</h1>
-					<p className="text-muted-foreground">{organizationDescription}</p>
-				</div>
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-6">
+				<PageHeader title={organizationTitle} description={organizationDescription} />
 
 				<OrganizationTab
 					organizationProfile={organizationProfile}

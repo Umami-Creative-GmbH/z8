@@ -1,0 +1,41 @@
+{
+  "ownedPorts": [
+    61313,
+    61315,
+    61316,
+    61318
+  ],
+  "nextPidsAbsent": true,
+  "driverAbsent": true,
+  "services": [
+    {
+      "label": "z8-performance-fixture-1450",
+      "name": "z8_perf_862cd023eaa1_postgres"
+    },
+    {
+      "label": "z8-performance-fixture-1450",
+      "name": "z8_perf_862cd023eaa1_redis"
+    },
+    {
+      "label": "z8-performance-fixture-1450",
+      "name": "z8_perf_862cd023eaa1_storage"
+    }
+  ],
+  "browserAbsent": true,
+  "exactNamesAbsent": [
+    {
+      "absent": true,
+      "name": "z8_perf_862cd023eaa1_postgres"
+    },
+    {
+      "absent": true,
+      "name": "z8_perf_862cd023eaa1_redis"
+    },
+    {
+      "absent": true,
+      "name": "z8_perf_862cd023eaa1_storage"
+    }
+  ],
+  "allOwnedPortsClosed": true,
+  "ownedLiveResources": 0
+}

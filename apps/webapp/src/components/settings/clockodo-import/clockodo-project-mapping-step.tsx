@@ -92,7 +92,7 @@ export function ClockodoProjectMappingStep({
 						{ mapped: mappedCount, total: controller.projectMappings.length },
 					)}
 				</p>
-				<div className="flex justify-between pt-2">
+				<div className="flex flex-wrap justify-between gap-2 pt-2">
 					<Button variant="outline" onClick={() => controller.setStep("user-mapping")}>
 						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("common.back", "Back")}
@@ -157,7 +157,7 @@ function ClockodoProjectMappingRow({
 					</SelectContent>
 				</Select>
 				{selected && selected.customerName === null && (
-					<p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+					<p className="mt-1 text-xs text-warning">
 						{t(
 							"settings.clockodoImport.projectMapping.noCustomer",
 							"This project has no customer, so its imported time is non-billable.",

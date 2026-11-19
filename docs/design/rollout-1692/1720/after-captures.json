@@ -1,0 +1,77 @@
+{
+  "source": {
+    "head": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx": "5657f236c6398f7e3b5a0dc71613e0d41dbce23a391e61acdfee4e84b32f5603",
+      "apps/webapp/src/components/personnel-file/requested-documents.tsx": "936d13ce1cb38e6e5ec4195499b41cedaf882fa94f8f14bec4af87a1cf6bf3d3",
+      "apps/webapp/src/components/personnel-file/my-documents-list.tsx": "615038d8fd8833e9018a7fbf6854a5d80a39f555826615632d3a93bed676c5f2",
+      "apps/webapp/src/components/personnel-file/document-dialog.tsx": "824f2483fb62cb2d2242730dfa87697045e584e3b7bca2dd5535622d28a56ddc",
+      "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx": "dce044270c9142672058fe4bb1b9b6b75e756b51211d73e89971826c01e89309"
+    }
+  },
+  "results": [
+    {
+      "file": "after-desktop.png",
+      "css": [
+        1600,
+        1000
+      ],
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "16px",
+      "theme": "light bprogress-busy",
+      "headings": [
+        "My Documents",
+        "Requested documents",
+        "Shared documents"
+      ],
+      "privateAbsent": true,
+      "png": [
+        1600,
+        1000
+      ]
+    },
+    {
+      "file": "after-wide-dark.png",
+      "css": [
+        2200,
+        1100
+      ],
+      "dpr": 1,
+      "documentWidth": 2200,
+      "font": "16px",
+      "theme": "dark bprogress-busy",
+      "headings": [
+        "My Documents",
+        "Requested documents",
+        "Shared documents"
+      ],
+      "privateAbsent": true,
+      "png": [
+        2200,
+        1100
+      ]
+    },
+    {
+      "file": "after-phone-dark.png",
+      "css": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "16px",
+      "theme": "dark bprogress-busy",
+      "headings": [
+        "My Documents",
+        "Requested documents",
+        "Shared documents"
+      ],
+      "privateAbsent": true,
+      "png": [
+        390,
+        844
+      ]
+    }
+  ]
+}

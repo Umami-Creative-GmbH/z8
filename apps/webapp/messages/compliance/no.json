@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Tilgangskontroller oppsummerer kun sensitive revisjonslogghendelser som allerede er registrert i dag.",
         "auditEvidence": "Revisjonsbevis bruker oppdatert revisjonseksportkonfigurasjon, revisjonspakkeforespørsler og nylige verifiseringsresultater.",
+        "title": "Dekning",
         "workforceCompliance": "Arbeidsstyrkeetterlevelse bruker de siste 7 dagene med brudd på retningslinjer for arbeid og ventende unntaksforespørsler."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Sist oppdatert: {time}"
+        "lastRefreshed": "Sist oppdatert: {time}",
+        "refreshMeaning": "Oppdatering laster inn registrerte signaler på nytt; den revurderer ikke funn etter nye retningslinjer."
       },
       "links": {
         "inspectCompliance": "Inspiser samsvar",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Åpne samsvarsinnstillinger",
         "reviewAuditExport": "Gjennomgå revisjonseksport"
       },
+      "loading": "Laster inn samsvarssignaler",
       "overview": "Samsvarsoversikt",
       "recentEvents": {
         "empty": "Ingen nylige kritiske hendelser ble oppdaget.",
-        "title": "Nylige kritiske hendelser"
+        "partial": "Nylige hendelser er begrenset til tilgjengelige kilder. Enkelte signaler kunne ikke lastes inn.",
+        "title": "Nylige kritiske hendelser",
+        "unavailable": "Nylige hendelser kunne ikke bekreftes fordi signalkildene er utilgjengelige."
       },
+      "scope": "Aktiv organisasjon",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Sensitive kontrollendringer må gjennomgås",
             "healthy": "Ingen sensitive kontrollendringer ble logget nylig",
             "warning": "Nylige kontrollendringer ble oppdaget"
-          }
+          },
+          "title": "Tilgangskontroller"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Revisjonsbevis krever oppmerksomhet",
             "healthy": "Signaler for revisjonsbevis ser sunne ut",
             "warning": "Revisjonsbevis er bare delvis klart"
-          }
+          },
+          "title": "Revisjonsbevis"
         },
+        "title": "Samsvarsseksjoner",
         "unavailable": {
           "headline": "Signalet er midlertidig utilgjengelig"
         },
@@ -94,7 +103,8 @@
             "critical": "Brudd på personalretningslinjer må gjennomgås",
             "healthy": "Ingen nylige problemer med personalretningslinjer ble oppdaget",
             "warning": "Personalsamsvar avviker"
-          }
+          },
+          "title": "Samsvar for arbeidsstyrke"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Unntak godkjent",
       "approvedDescription": "Samsvarsunntaket er godkjent.",
       "approveFailed": "Kunne ikke godkjenne",
+      "approveFor": "Godkjenn unntak ({type}) for {name}",
+      "loadError": "Ventende unntaksforespørsler kunne ikke lastes inn.",
       "plannedDuration": "Planlagt",
       "plannedDurationHelp": "Estimer hvor mye ekstra tid du forventer å trenge utover grensen.",
       "reason": "Begrunnelse for unntak",
@@ -124,6 +136,7 @@
       "rejected": "Unntak avslått",
       "rejectedDescription": "Samsvarsunntaket har blitt avslått.",
       "rejectFailed": "Kunne ikke avvise",
+      "rejectFor": "Avvis unntak ({type}) for {name}",
       "rejectionPlaceholder": "Oppgi årsak til å avslå dette unntaket...",
       "rejectionReason": "Årsak til avslag",
       "rejectTitle": "Avslå unntaksforespørsel",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Lederen din blir varslet og kan godkjenne eller avslå forespørselen din.",
       "requestTitle": "Be om samsvarsunntak",
       "submit": "Send inn forespørsel",
-      "type": "Unntakstype"
+      "type": "Unntakstype",
+      "types": {
+        "overtimeDaily": "Daglig overtid",
+        "overtimeMonthly": "Månedlig overtid",
+        "overtimeWeekly": "Ukentlig overtid",
+        "restPeriod": "Hvileperiode"
+      }
     },
     "hasApprovedException": "Du har et godkjent unntak. Du kan fortsette.",
     "moreAlerts": "mer",

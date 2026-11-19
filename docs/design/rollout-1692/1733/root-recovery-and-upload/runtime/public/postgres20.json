@@ -1,0 +1,91 @@
+{
+  "passed": 20,
+  "failed": 0,
+  "physicalFiles": [
+    {
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "assertions": [
+        {
+          "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses displayed scope drift even when the actor administers both organizations",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses an officer whose grant does not include payslips",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) starting a batch shows a batch only to whoever started it",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) starting a batch holds at most 500 files, counting staged files whose objects expired",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) starting a batch takes PDF files only",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) matching matches the whole personnel number token, never part of a longer number",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) matching makes a number two employees share ambiguous, to be assigned by hand",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) matching leaves a file of an out-of-scope employee unmatched for the officer",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) matching never matches or assigns the officer's own payslip, even with their team in scope",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) matching lets the officer assign a file of an employee without a personnel number, or drop it",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation stores nothing as an employee document before confirmation",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation creates a payslip per included file with the batch's pay period and visibility",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation stores a confirmed payslip under the employee's key and cleans up the staged object",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation keeps the staged file when storing the payslip fails, and confirms it on retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation flags an employee who already has a payslip for the pay period and keeps both",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation creates no duplicates when a confirmation is retried after a partial failure",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation notifies each employee once per shared batch, however many files are theirs",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) confirmation audits every created document and one batch summary per confirmation",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) cleanup cleans up staged files that are never confirmed, after a day",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip batches matched by personnel number (#868) cleanup releases dropped files once every included file is a document",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

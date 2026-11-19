@@ -1,0 +1,104 @@
+{
+  "manifestsCompared": 22,
+  "mismatches": [],
+  "licenseHash": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+  "entries": 125,
+  "directLinks": 158,
+  "externalLinks": [],
+  "rootPhysical": true,
+  "appPhysical": true,
+  "virtualPhysical": true,
+  "pnpmVersion": "12.16.1",
+  "install": "offline frozen-lockfile ignore-scripts package-import-method=copy",
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "manifests": [
+    {
+      "path": "apps/desktop/package.json",
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2"
+    },
+    {
+      "path": "apps/docs/package.json",
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f"
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283"
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd"
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138"
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/package.json",
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/package.json",
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/package.json",
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/mobile/package.json",
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/package.json",
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/package.json",
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/package.json",
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    }
+  ]
+}

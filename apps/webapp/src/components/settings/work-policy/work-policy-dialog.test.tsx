@@ -120,6 +120,34 @@ describe("WorkPolicyDialog", () => {
 		expect(screen.getAllByDisplayValue("38").length).toBeGreaterThan(0);
 	});
 
+	it("labels its fields and keeps a blank name from being saved", async () => {
+		vi.mocked(updateWorkPolicy).mockClear();
+		renderWithQueryClient(
+			<WorkPolicyDialog
+				open={true}
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				editingPolicy={editablePolicy}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		const name = (await screen.findByLabelText("Name")) as HTMLInputElement;
+		expect(name.value).toBe("Retail 38h");
+		expect(screen.getByLabelText("Description")).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Work Schedule" })).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Time Regulation" })).toBeTruthy();
+		expect(screen.getByLabelText("Hours per Cycle")).toBeTruthy();
+		expect(screen.getByLabelText("Max Daily")).toBeTruthy();
+
+		fireEvent.change(name, { target: { value: "   " } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(await screen.findByText("Enter a policy name")).toBeTruthy();
+		expect(name.getAttribute("aria-invalid")).toBe("true");
+		expect(updateWorkPolicy).not.toHaveBeenCalled();
+	});
+
 	it("tells admins on a simple schedule that a latest clock-in needs a detailed schedule", async () => {
 		renderWithQueryClient(
 			<WorkPolicyDialog

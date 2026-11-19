@@ -1,0 +1,122 @@
+{
+  "at": "2026-11-18T03:48:25.851Z",
+  "controls": [
+    "New receipt",
+    "New mileage",
+    "New trip"
+  ],
+  "graphs": [
+    {
+      "alias": "receipt",
+      "report": [
+        {
+          "kind": "standalone",
+          "status": "draft",
+          "reimbursement_currency": "EUR",
+          "trip_purpose": null,
+          "trip_time_zone": null,
+          "trip_start_date": null,
+          "trip_end_date": null
+        }
+      ],
+      "items": [
+        {
+          "type": "receipt",
+          "expense_date": null
+        }
+      ],
+      "visible": {
+        "headings": [
+          "Travel Expenses",
+          "Untitled receipt",
+          "Travel Expenses",
+          "Your expenses"
+        ],
+        "labels": [
+          "Receipt date",
+          "Category",
+          "Description",
+          "Amount on the receipt",
+          "Currency",
+          "I paid (reimburse me)",
+          "The company paid (e.g. company card)",
+          "Accounting reference (optional)",
+          "Project (optional)"
+        ]
+      },
+      "listingLink": true
+    },
+    {
+      "alias": "mileage",
+      "report": [
+        {
+          "kind": "standalone",
+          "status": "draft",
+          "reimbursement_currency": "EUR",
+          "trip_purpose": null,
+          "trip_time_zone": null,
+          "trip_start_date": null,
+          "trip_end_date": null
+        }
+      ],
+      "items": [
+        {
+          "type": "mileage",
+          "expense_date": null
+        }
+      ],
+      "visible": {
+        "headings": [
+          "Travel Expenses",
+          "Untitled mileage",
+          "Travel Expenses",
+          "Your expenses"
+        ],
+        "labels": [
+          "Date of the drive",
+          "Kilometres driven",
+          "Route",
+          "Car",
+          "Other motor vehicle (e.g. motorcycle)",
+          "Accounting reference (optional)",
+          "Project (optional)"
+        ]
+      },
+      "listingLink": true
+    },
+    {
+      "alias": "trip",
+      "report": [
+        {
+          "kind": "trip",
+          "status": "draft",
+          "reimbursement_currency": "EUR",
+          "trip_purpose": null,
+          "trip_time_zone": "Europe/Berlin",
+          "trip_start_date": null,
+          "trip_end_date": null
+        }
+      ],
+      "items": [],
+      "visible": {
+        "headings": [
+          "Travel Expenses",
+          "Untitled trip",
+          "Trip details",
+          "Expenses",
+          "Travel Expenses",
+          "Your expenses"
+        ],
+        "labels": [
+          "Purpose of the trip",
+          "First travel day",
+          "Last travel day",
+          "Time zone of the travel dates",
+          "Trip project (optional)"
+        ]
+      },
+      "listingLink": true
+    }
+  ],
+  "listingReportLinks": 6
+}

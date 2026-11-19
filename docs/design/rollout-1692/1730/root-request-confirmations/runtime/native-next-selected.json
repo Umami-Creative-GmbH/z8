@@ -1,0 +1,62 @@
+[
+    {
+        "name":  "get_project_metadata",
+        "response":  {
+                         "result":  {
+                                        "content":  [
+                                                        {
+                                                            "type":  "text",
+                                                            "text":  "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:50964\"}"
+                                                        }
+                                                    ]
+                                    },
+                         "jsonrpc":  "2.0",
+                         "id":  1
+                     }
+    },
+    {
+        "name":  "get_page_metadata",
+        "response":  {
+                         "result":  {
+                                        "content":  [
+                                                        {
+                                                            "type":  "text",
+                                                            "text":  "{\"sessions\":[{\"url\":\"/en/personnel-files/document-requests?status=all\u0026pageSize=10\u0026retained=1730\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/document-requests/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+                                                        }
+                                                    ]
+                                    },
+                         "jsonrpc":  "2.0",
+                         "id":  1
+                     }
+    },
+    {
+        "name":  "get_compilation_issues",
+        "response":  {
+                         "result":  {
+                                        "content":  [
+                                                        {
+                                                            "type":  "text",
+                                                            "text":  "{\"issues\":[]}"
+                                                        }
+                                                    ]
+                                    },
+                         "jsonrpc":  "2.0",
+                         "id":  1
+                     }
+    },
+    {
+        "name":  "get_errors",
+        "response":  {
+                         "result":  {
+                                        "content":  [
+                                                        {
+                                                            "type":  "text",
+                                                            "text":  "{\"configErrors\":[],\"sessionErrors\":[]}"
+                                                        }
+                                                    ]
+                                    },
+                         "jsonrpc":  "2.0",
+                         "id":  1
+                     }
+    }
+]

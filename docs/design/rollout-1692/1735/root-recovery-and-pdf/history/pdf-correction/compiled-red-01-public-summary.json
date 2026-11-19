@@ -1,0 +1,27 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-pdf-checks/compiled-red-01.json",
+    "bytes": 2081,
+    "sha256": "16cc085298190fb8861895667a0523391c0c8dfe1354f04c5a5138f73ea3c186"
+  },
+  "reported": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+      "status": "failed",
+      "cases": [
+        {
+          "fullName": "exports employee report content as a real PDF after React Compiler optimization",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

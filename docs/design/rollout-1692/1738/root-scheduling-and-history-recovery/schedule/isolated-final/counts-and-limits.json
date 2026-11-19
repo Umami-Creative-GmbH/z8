@@ -1,0 +1,49 @@
+{
+  "fresh": {
+    "unitCases": 0,
+    "postgresTestCases": 0,
+    "scopedReadbacks": 9,
+    "browserLaunches": 4,
+    "contexts": 5,
+    "normalFormLogins": 5,
+    "nativeSessions": 0,
+    "acceptedImages": 8,
+    "fullMatchedWeekLayoutPairs": 2,
+    "publishedRecordDayPanelComparisons": 1,
+    "phoneDifferingRangeComparisons": 1,
+    "ownResourcesAfterCleanup": 0
+  },
+  "inherited": {
+    "unitCases": 313,
+    "unitFiles": 48,
+    "postgresCases": 6,
+    "postgresFiles": 2,
+    "mixedUnionCases": 319,
+    "mixedUnionFiles": 50,
+    "sameRunUnion": false,
+    "typesAndDoctor": true,
+    "roleNativeRangePointerEmployeeVisibility": true,
+    "safe50Seal": "163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637"
+  },
+  "qualifications": [
+    "supporting Retry hidden while pending, not visible/native-disabled PASS",
+    "stale action timed out before later settled unchanged readback; no raw response code assertion",
+    "Sidebar needs hydration settlement",
+    "two earlier aria-hidden hydration warnings; one bounded reload cleared",
+    "historical phone is Day-only, not identical range",
+    "detail background scroll/focus differ",
+    "DOM-button activation used where named pointer/focus harness waits failed"
+  ],
+  "unpassed": [
+    "full production generation",
+    "Tolgee/catalog sync",
+    "physical devices/true zoom",
+    "exhaustive races/locales/global transitions",
+    "broad roster",
+    "authority revocation/ABA/organization switch during writes",
+    "exhaustive skill override/request/pickup/swap matrices"
+  ],
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "verifiedCommit": null,
+  "readinessOwner": "root"
+}

@@ -1,0 +1,995 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[09:00:00 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[09:00:00 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[15:00:00 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[15:00:00 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a travel expense settlement
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at getTravelExpenseSettlement (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-actions.ts:224:22)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx:44:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+              at Object.start (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:159:20)
+    }
+[13:43:32 UTC] ERROR: Failed to load the reopen state of an expense report
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at reopenActor (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/report-reopen-actions.ts:57:28)
+              at getTravelExpenseReportReopenState (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/report-reopen-actions.ts:80:26)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-reopen.tsx:105:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a travel expense settlement
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at getTravelExpenseSettlement (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-actions.ts:224:22)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx:44:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+              at Object.start (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:159:20)
+    }
+[13:43:32 UTC] ERROR: Failed to load the reopen state of an expense report
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at reopenActor (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/report-reopen-actions.ts:57:28)
+              at getTravelExpenseReportReopenState (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/report-reopen-actions.ts:80:26)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-reopen.tsx:105:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:32 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load expense adjustments
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getTravelExpenseReportAdjustments (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/adjustment-actions.ts:70:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/report-adjustments.tsx:59:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:33 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:34 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:35 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:35 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:35 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:36 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:37 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:37 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:37 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:37 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:37 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+[13:43:37 UTC] ERROR: Failed to load a legacy draft conversion
+    error: {
+      "type": "Error",
+      "message": "`connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+      "stack":
+          Error: `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+              at throwForMissingRequestStore [contact removed]@[contact removed]
+              at connection [contact removed]@[contact removed]
+              at getRequestSession (WORKTREE_ROOT/apps/webapp/src/lib/auth/request-session.ts:20:8)
+              at WORKTREE_ROOT/apps/webapp/src/lib/auth-helpers.ts:84:24
+              at [contact removed]
+              at currentReportOwner (WORKTREE_ROOT/apps/webapp/src/lib/travel-expenses/current-owner.ts:10:28)
+              at getLegacyTravelExpenseConversion (WORKTREE_ROOT/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts:77:23)
+              at queryFn (WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/legacy-conversion-notice.tsx:87:25)
+              at Object.fetchFn [as fn] (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/query.js:399:11)
+              at run (file:///WORKTREE_ROOT/node_modules/.pnpm/@[contact removed]@tanstack/query-core/build/modern/retryer.js:123:46)
+    }
+ Test Files  22 passed (22)
+      Tests  194 passed (194)
+   Start at  13:43:23
+   Duration  18.77s (import 32%, environment 29%, tests 23%, transform 15%, setup 1%)
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.

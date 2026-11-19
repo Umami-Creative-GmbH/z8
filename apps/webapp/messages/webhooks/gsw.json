@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Aktione für {endpoint}",
+    "command-unknown": "De Befähl het nöd chönne bestätigt werde. Aktualisier dä Endpunkt, bevor es nomal probiersch.",
     "copy-failed": "Kopieren in die Zwischenablage fehlgeschlagen",
     "create": "Webhook hinzufügen",
     "create-failed": "Erstellen des Webhooks fehlgeschlagen",
     "delete-confirm": {
       "description": "Dies löscht den Webhook-Endpunkt und den gesamten Zustellungsverlauf unwiderruflich. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "title": "Webhook löschen?"
+      "title-named": "Webhook {name} lösche?"
     },
     "deleted": "Webhook gelöscht",
-    "delete-failed": "Löschen des Webhooks fehlgeschlagen",
     "deliveries": "Zustellungen",
-    "description": "Konfiguriere Webhook-Endpunkte, um Echtzeit-Benachrichtigungen zu erhalten, wenn Ereignisse in deiner Organisation auftreten.",
     "disabled": "Webhook deaktiviert",
     "empty": {
       "description": "Erstelle deinen ersten Webhook, um Ereignisbenachrichtigungen zu erhalten.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Erfolgrich",
       "time": "Ziit",
-      "title": "Übermittligs-Protokoll"
+      "title": "Übermittligs-Protokoll",
+      "toggle-details": "Details für {event} um {time}"
     },
-    "regenerate-failed": "Sicherheits-Schlüssel konnte nid neu generiert wärde",
     "regenerate-secret": "Schlüssel neu generiere",
+    "retry-help": "Aktualisier die Lischte, zum di aktuelle Endpünkt z bestätige. Vorher gladni Iiträg bliibed erhalte.",
     "secret-copied": "Schlüssel isch i d'Zwüscheablage kopiert worde",
     "secret-dialog": {
       "copy-secret": "Schlüssel i d'Zwüscheablage kopiere",
@@ -78,14 +79,15 @@
       "degraded": "Igschränkt",
       "failing": "Fehlerhaft",
       "healthy": "Iwandfrei",
-      "inactive": "Inaktiv"
+      "inactive": "Inaktiv",
+      "untried": "No kei Zuestellige"
     },
     "success-rate": "Erfolgrich",
     "test": "Test sende",
-    "test-failed": "Test-Webhook konnte nid versendet wärde",
-    "test-sent": "Test-Webhook isch versendet worde",
+    "test-queued": "Test-Webhook i d Warteschlange gstellt",
     "title": "Webhooks",
-    "toggle-active": "Webhook aktivierä/deaktivierä",
+    "toggle-active-named": "Aktiv: {endpoint}",
+    "unavailable": "Webhooks nöd verfügbar",
     "updated": "Webhook aktualisiert",
     "update-failed": "Webhook konnte nid aktualisiert wärde",
     "view-logs": "Protokoll aaluege"

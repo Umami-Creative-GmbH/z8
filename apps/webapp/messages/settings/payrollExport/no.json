@@ -96,11 +96,12 @@
         "year": "År"
       },
       "history": {
-        "description": "Se og last ned tidligere DATEV-eksporter",
+        "descriptionAllFormats": "Se og last ned tidligere lønnseksporter",
         "download": "Last ned eksport",
         "downloadError": "Kunne ikke hente nedlastings-URL",
         "employees": "ansatte",
         "noExports": "Ingen eksporter ennå",
+        "noExportsHint": "Start en lønnseksport i Eksport-fanen. Fullførte eksporter vises her for nedlasting.",
         "payrollRun": "{count, plural, one {Lønnskjøring: # utgiftsrapport} other {Lønnskjøring: # utgiftsrapporter}}",
         "periods": "perioder",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Behandler"
         },
         "table": {
+          "actions": "Handlinger",
           "createdAt": "Opprettet",
           "dateRange": "Datoperiode",
           "records": "Oppføringer",
@@ -151,7 +153,8 @@
         "configureFirst": "Konfigurer minst ett lønnseksportformat (DATEV, Lexware eller Sage) før du setter opp tilordninger.",
         "deleteDescription": "Er du sikker på at du vil slette denne lønnsarttilordningen?",
         "deleteError": "Kunne ikke slette tilordning",
-        "deleteMapping": "Slett tilordning",
+        "deleteMappingNamed": "Slett tilordning for {name}",
+        "deleteNamedDescription": "Slette lønnsarttilordningen for \"{name}\"?",
         "deleteSuccess": "Tilordning slettet",
         "deleteTitle": "Slett tilordning",
         "description": "Beskrivelse",
@@ -335,7 +338,8 @@
         "name": "Ansatt",
         "noNumber": "Ikke angitt",
         "personnelIdentifier": "Ansattidentifikator",
-        "personnelNumber": "Ansattnummer"
+        "personnelNumber": "Ansattnummer",
+        "unnamed": "Ansatt uten navn"
       },
       "checks": {
         "count": "Antall",
@@ -364,6 +368,13 @@
       },
       "description": "Sjekk om en lønnsperiode er klar før du eksporterer tids-, fraværs- og lønnsdata.",
       "openPayrollExport": "Åpne lønnseksport",
+      "period": {
+        "currentMonth": "Gjeldende måned",
+        "navLabel": "Lønnsperiode",
+        "previousMonth": "Forrige måned",
+        "scope": "Lønnsperiode: {period} (UTC)",
+        "showMonth": "Vis {month}"
+      },
       "status": {
         "blocked": "Blokkert",
         "ready": "Klar for lønn",

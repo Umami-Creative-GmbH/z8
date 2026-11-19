@@ -1,0 +1,118 @@
+{
+  "phase": "after",
+  "classification": "Real local auth and client navigation; held actual successful response, no provider requests",
+  "checks": [
+    {
+      "name": "primary verification renews through real endpoint",
+      "passed": true
+    },
+    {
+      "name": "held response is an actual successful TOTP",
+      "passed": true,
+      "details": {
+        "status": 200
+      }
+    },
+    {
+      "name": "real organization link enters B while TOTP response is held",
+      "passed": true
+    },
+    {
+      "name": "abandoned successful response sends no init navigation",
+      "passed": true,
+      "details": {
+        "cachedInputRestored": false
+      }
+    },
+    {
+      "name": "invalid TOTP after renewed primary verification is rejected cryptographically",
+      "passed": true
+    },
+    {
+      "name": "new explicit current verification succeeds",
+      "passed": true
+    },
+    {
+      "name": "new action follows existing init and safe callback",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "after-stale-success-discarded.png",
+      "codeFieldRedacted": true,
+      "head": "877b12279ec992cf282e0ba775ac4849579aef86",
+      "sources": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "67dd0e4848eecb58b616ad281be3e0e2b147ca1e93e2d07a6f7bd1d395575894",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "13779421003e8b828fcd5e38cc3752e223757bea9cf77980614b99ee23fb2286",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "e8a3e1a301e2ae50db0028ae12dab32087b1d2561ecab22c33b0d22ccece80bd",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "64bdc1135fd49f1c7b2ee28098919e9d124f16380538ccbc168120c2dcce743a"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1755
+      },
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "rootFont": "16px",
+      "fonts": "loaded",
+      "pathname": "/en/mfa"
+    },
+    {
+      "name": "after-invalid-code-refused.png",
+      "codeFieldRedacted": true,
+      "head": "877b12279ec992cf282e0ba775ac4849579aef86",
+      "sources": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "67dd0e4848eecb58b616ad281be3e0e2b147ca1e93e2d07a6f7bd1d395575894",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "13779421003e8b828fcd5e38cc3752e223757bea9cf77980614b99ee23fb2286",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "e8a3e1a301e2ae50db0028ae12dab32087b1d2561ecab22c33b0d22ccece80bd",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "64bdc1135fd49f1c7b2ee28098919e9d124f16380538ccbc168120c2dcce743a"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1795
+      },
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "rootFont": "16px",
+      "fonts": "loaded",
+      "pathname": "/en/mfa"
+    },
+    {
+      "name": "after-current-success.png",
+      "codeFieldRedacted": true,
+      "head": "877b12279ec992cf282e0ba775ac4849579aef86",
+      "sources": {
+        "apps/webapp/src/app/[locale]/mfa/page.tsx": "67dd0e4848eecb58b616ad281be3e0e2b147ca1e93e2d07a6f7bd1d395575894",
+        "apps/webapp/src/components/organization-mfa/requirements.tsx": "13779421003e8b828fcd5e38cc3752e223757bea9cf77980614b99ee23fb2286",
+        "apps/webapp/src/components/organization-mfa/verification.tsx": "e8a3e1a301e2ae50db0028ae12dab32087b1d2561ecab22c33b0d22ccece80bd",
+        "apps/webapp/src/components/organization-mfa/sign-out.tsx": "64bdc1135fd49f1c7b2ee28098919e9d124f16380538ccbc168120c2dcce743a"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "rootFont": "16px",
+      "fonts": "loaded",
+      "pathname": "/en/licenses"
+    }
+  ],
+  "pageErrors": [],
+  "cachedInputRestored": false,
+  "staleInitRequests": 0,
+  "staleCompletionPath": "/en/mfa"
+}

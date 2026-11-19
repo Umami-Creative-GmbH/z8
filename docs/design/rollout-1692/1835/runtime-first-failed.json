@@ -1,0 +1,52 @@
+{
+  "classification": "actual work-template page and actions; matched exact baseline consumer overlay on current infrastructure",
+  "source": {
+    "head": "3c7bc534edeb355d862c3f38759444658863af20",
+    "files": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "rawSha256": "a4f2b7b1eb84039738bbd11c3c75ccab6f8157149282f9afa9856daebe115843",
+        "lfSha256": "509b66905970a5ea7be2b7381e9f82b7eecc1744c83c2a95d12cc094480f9624",
+        "crlfSha256": "a4f2b7b1eb84039738bbd11c3c75ccab6f8157149282f9afa9856daebe115843",
+        "gitBlob": "e5889df50df43a9e39d6ec7682bd73b297747730"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+        "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+        "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+        "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "rawSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+        "lfSha256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+        "crlfSha256": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+        "gitBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+        "rawSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "lfSha256": "6f875056f531bc387da41e4910eb3206c7cfb0ecd9c984998b50c2d0b8c38159",
+        "crlfSha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "gitBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+        "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+      }
+    ]
+  },
+  "checks": [],
+  "captures": [],
+  "pageErrors": [],
+  "limitations": [
+    "Not full historical app execution",
+    "No real device or true browser zoom",
+    "Scope switch runtime and late authority scenarios qualified separately"
+  ],
+  "failure": "SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document."
+}

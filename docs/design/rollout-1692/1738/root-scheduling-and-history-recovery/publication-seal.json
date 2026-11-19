@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "recipe": "SHA256 of exact publication-file-index.json bytes, with only its explicitly recorded UTF8 materialization variants accepted; index hashes all other nonexcluded files",
+  "fileIndex": {
+    "bytes": 205600,
+    "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd",
+    "normalization": "valid-utf8-no-nul",
+    "lf": {
+      "bytes": 205600,
+      "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd"
+    },
+    "crlf": {
+      "bytes": 211495,
+      "sha256": "e16f93c42dec0c802793429b73eed99033655ba2eb881c5cb4a7ca8c0cb62c16"
+    }
+  },
+  "excluded": [
+    "publication-file-index.json",
+    "publication-seal.json",
+    "verification-results.json"
+  ],
+  "verificationResults": "Self-excluded receipt records this seal raw digest and repeated read-only stdout digests; not an independent readiness attestation",
+  "verifiedCommit1738": null,
+  "verifiedCommit1739": null
+}

@@ -1,0 +1,88 @@
+{
+  "base": "e597efc34bc2bdc1fa5369496781fe6bb0105888",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+      "bytes": 6242,
+      "sha256": "1710b1f98edf0247934973b85fe45057453c832d50bef0eba33d8da613bee52c"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "bytes": 6088,
+      "sha256": "42fbb75f558fb5a30ce4773bc351527f3ab34b37132da7f413f2700c225131ca"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+      "bytes": 5380,
+      "sha256": "c6c726bbc124ccb60121abf9ad4511c343ddd2fbdfa5370e4c316a843f58c440"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/attach-sick-note-dialog.tsx",
+      "bytes": 9396,
+      "sha256": "abb4835bb1560498aa477ecea3c55baf20e153701c4e9d89c58ef26418a14a28"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+      "bytes": 8173,
+      "sha256": "3e0b351f7b986f869b13f4cdb2636eb1d291ea2e4fd33513de29bfebb38dbc78"
+    }
+  ],
+  "unit": {
+    "passed": 589,
+    "selectedFiles": 74,
+    "passingFiles": 73,
+    "skipped": [
+      {
+        "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "name": "payslip upload transport uploads the same PDF again after an earlier batch consumed its temporary bytes",
+        "status": "skipped"
+      },
+      {
+        "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "name": "payslip upload transport still resumes unfinished bytes after a browser reload",
+        "status": "skipped"
+      },
+      {
+        "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "name": "payslip upload transport ignores a consumed completed URL retained by the previous client",
+        "status": "skipped"
+      }
+    ]
+  },
+  "http": {
+    "passed": 2,
+    "realBrowserDistribution": true,
+    "syntheticTransportOnly": true
+  },
+  "types": "all3+typegen PASS",
+  "doctor": {
+    "files": 5,
+    "errors": 0,
+    "warnings": 0
+  },
+  "lint": {
+    "files": 5,
+    "profile": "webapp explicit100CRLF",
+    "status": "PASS"
+  },
+  "oldReportPrefix": {
+    "bytes": 21757,
+    "sha256": "76a41ca8859fa49d2e2fa4fb70eec430329ca7167f623b7fa0ac511c92000cca"
+  },
+  "ownerMap": {
+    "staging": [
+      "RecordAbsenceDialog",
+      "RequestAbsenceDialog",
+      "AttachSickNoteDialog"
+    ],
+    "genericTus": [
+      "staging sick notes",
+      "DocumentDialog",
+      "ReceiptAttachments",
+      "SubmittedReportReceipts"
+    ]
+  },
+  "freshPG": 0,
+  "liveRuntime": false,
+  "verifiedCommit": null
+}

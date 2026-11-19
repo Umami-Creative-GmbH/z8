@@ -6,9 +6,13 @@
       "gapCount": "{count} personalbrist",
       "gaps": "luckor",
       "hideOverlay": "Dölj täckningsöverlägg",
+      "lastLoaded": "Senast inläst täckning",
+      "loading": "Läser in täckning…",
       "metSlots": "{count} tillräcklig",
       "overSlots": "{count} överbemannad",
       "overstaffed": "Överbemannad",
+      "readFailed": "Täckning kunde inte läsas in. Försök igen för att kontrollera bemanningen.",
+      "refreshing": "Uppdaterar täckning…",
       "showOverlay": "Visa överlägg för täckningsmål",
       "summary": "Täckningssammanfattning:",
       "toggleLabel": "Täckning",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Dina publicerade arbetspass, vecka för vecka",
       "employeeTitle": "Mitt schema",
-      "managerDescription": "Hantera och planera medarbetares arbetspass",
+      "planningDescription": "Planera och publicera pass. Planerade pass registrerar inte arbetstid.",
       "title": "Arbetsschema"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Avbryt",
       "complianceAcknowledgmentRequired": "Bekräftelse av regelefterlevnad krävs",
       "complianceWarnings": "{count, plural, one {Efterlevnadskontroller hittade # varning; du måste bekräfta den innan du publicerar.} other {Efterlevnadskontroller hittade # varningar; du måste bekräfta dem innan du publicerar.}}",
+      "coverageLoading": "Täckning läses in",
+      "coverageRulesCheckedOnPublish": "Publicering tillämpar aktuella bemanningsregler.",
+      "coverageUnavailable": "Täckning är inte tillgänglig",
+      "coverageUnloaded": "Täckning har inte kontrollerats",
       "coverageWarning": "Vissa tidsblock uppfyller inte minimikraven för bemanning.",
       "maxHours": "Max timmar: {count}",
       "notifyEmployees": "{count, plural, other {Publicera # utkast till arbetspass och meddela anställda} }",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Varningar upptäcktes före publicering"
     },
     "scheduler": {
+      "assigned": "Tilldelad",
       "complianceBanner": {
         "findingsDetected": "{count} avvikelse(r) upptäcktes innan publicering.",
         "maxHours": "Max timmar: {count}",
@@ -59,18 +68,24 @@
         "employee": "Visar arbetspass för {name}",
         "showAll": "Visa alla arbetspass"
       },
+      "loadFailed": "Pass kunde inte uppdateras. Inlästa pass behålls.",
       "loading": "Läser in schema...",
+      "open": "Öppet pass",
       "publish": {
         "failed": "Det gick inte att publicera arbetspassen",
         "published": "Publicerade {count} arbetspass"
       },
+      "retry": "Försök igen",
+      "shiftList": "Passlista",
       "shiftUpdate": {
         "failed": "Kunde inte uppdatera passet",
         "overlapDescription": "Det här passet överlappar med {count} annat/andra pass",
         "overlapWarning": "Passet sparades med överlappningsvarning",
         "skillOverrideReasonRequired": "Medarbetaren saknar en kompetens som krävs denna dag. Öppna passet för att ange ett skäl.",
         "updated": "Passet har uppdaterats"
-      }
+      },
+      "supportFailed": "Mallar eller efterlevnadsinformation kunde inte uppdateras. Kontrollera igen innan du publicerar.",
+      "templatesUnavailable": "Passmallar kunde inte läsas in."
     },
     "shiftDetails": {
       "close": "Stäng",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Dra en mall till kalendern för att skapa ett pass",
       "empty": "Inga mallar tillgängliga. Skapa mallar i Inställningar för att snabbt lägga till pass.",
+      "selectHint": "Välj en mall och ange sedan passets datum och tilldelning.",
       "title": "Passmallar"
     }
   }

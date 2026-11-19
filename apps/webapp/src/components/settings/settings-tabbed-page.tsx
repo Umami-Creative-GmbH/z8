@@ -2,7 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 export function SettingsTabbedPage<Tab extends string>({
 	title,
@@ -15,6 +17,11 @@ export function SettingsTabbedPage<Tab extends string>({
 		label: string;
 		description: string;
 		panel: ReactNode;
+		/**
+		 * Bounds a form or configuration panel at the settings measure. Leave it
+		 * off for table-heavy panels, which use the full page frame.
+		 */
+		measure?: boolean;
 	}[];
 	defaultTab: Tab;
 }) {
@@ -32,13 +39,11 @@ export function SettingsTabbedPage<Tab extends string>({
 		window.history.replaceState(null, "", url.pathname + url.search + url.hash);
 	}
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-2">
-				<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-				<p className="text-sm text-muted-foreground">
-					{tabs.find((tab) => tab.value === active)?.description}
-				</p>
-			</div>
+		<div className="page-frame flex min-w-0 flex-1 flex-col gap-6">
+			<PageHeader
+				title={title}
+				description={tabs.find((tab) => tab.value === active)?.description}
+			/>
 			<Tabs value={active} onValueChange={select} className="min-w-0 gap-4">
 				<div className="max-w-full overflow-x-auto">
 					<TabsList aria-label={title}>
@@ -54,7 +59,7 @@ export function SettingsTabbedPage<Tab extends string>({
 						key={tab.value}
 						value={tab.value}
 						keepMounted
-						className="min-w-0"
+						className={cn("min-w-0", tab.measure && "page-measure")}
 					>
 						{active === tab.value || visited.has(tab.value) ? tab.panel : null}
 					</TabsContent>

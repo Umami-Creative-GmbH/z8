@@ -1,0 +1,314 @@
+{
+  "base": "02cc68035aa335505742b38178b06842bb233a3e",
+  "incoming": "28ea28fa4026d0798d218c6cf9de89317b99ed00",
+  "merge": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "tree": "2a3ef74c3bf5f97aae51f8fcfa4dbc60d9085e0e",
+  "findings": [],
+  "qualifications": [
+    "Shared desktop sidebar clips left content in the matched directory captures; preserved as observed, not certified healthy.",
+    "Development Next/TanStack tooling overlays remain in images.",
+    "Scope capture top-level actor/org labels were initially constant; checks and actual records establish B-R043 and denied roles. See scope-context.json corrections.",
+    "Saved UI preference screenshot has decoded PNG dimensions; CLI viewport was not independently measured for that single image."
+  ],
+  "preservation": {
+    "unaffectedPaths": 12282,
+    "priorRolloutPaths": 2051,
+    "incomingArtifacts": 101,
+    "verifiedAncestors": 38,
+    "ownedPaths": [
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx",
+      "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx",
+      "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+      "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts"
+    ],
+    "headingOptIns": "prior file exact plus one directory path"
+  },
+  "parents": [
+    "02cc68035aa335505742b38178b06842bb233a3e",
+    "28ea28fa4026d0798d218c6cf9de89317b99ed00"
+  ],
+  "artifacts": {
+    "decodedPNGs": 25,
+    "parsedJSON": 26,
+    "syntaxCheckedScripts": 4,
+    "sourceSnapshots": 12,
+    "runPins": 32,
+    "captureRecords": 22,
+    "pairs": 4,
+    "phases": {
+      "comparison": {
+        "captures": 8,
+        "checks": 1
+      },
+      "actions": {
+        "captures": 6,
+        "checks": 5
+      },
+      "scope": {
+        "captures": 5,
+        "checks": 5
+      },
+      "recovery": {
+        "captures": 3,
+        "checks": 3
+      }
+    },
+    "reportLinks": 16,
+    "templateBytes": 183,
+    "readbackRows": 3
+  },
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx",
+      "snapshot": "final-source-0.txt",
+      "sha256": "080cdb186c00c6c01d01d5659712f026639e4a4c03d71c3005ebcef18add877b",
+      "incomingBlob": "33089413f5fc1dbe9890784ab26e71a9f3d53ba4",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "snapshot": "final-source-1.txt",
+      "sha256": "67e5e940047b3cc4e4935e9791b21c6c373cd0ad765ffc8f8fb62243618aacb3",
+      "incomingBlob": "465b62831d7808b60be8dd4513b7ba42a81f33da",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx",
+      "snapshot": "final-source-2.txt",
+      "sha256": "5b92931a0100487f6b2275f3c3bd8885d8d432c61dafba08e70f1e0d9d5228c8",
+      "incomingBlob": "a5fba4bf1a09bd02a609a050d367cbfe0536d349",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+      "snapshot": "final-source-3.txt",
+      "sha256": "7fb1249ba18bf417155fd84f4f93473b232aaec90ce8fd4d17b46c6b40d54be4",
+      "incomingBlob": "003aa8326f9234eb839cca66afe67cefad323f30",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx",
+      "snapshot": "final-source-4.txt",
+      "sha256": "41f926f08bc13bddeb7f5320bd0ae24f87896f5993918e4eef09801c88a4c562",
+      "incomingBlob": "b6517007c475e3499b05a336814284965923a9c7",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
+      "snapshot": "final-source-5.txt",
+      "sha256": "f37fcc6a5d0f01d11179b7fc66a5320eb0ab07934c5e7a60f1fac71472810714",
+      "incomingBlob": "805110659d57ac0374765bbc0a712ee5cff11a39",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "snapshot": "final-source-6.txt",
+      "sha256": "de817d21dc3ed1314aaa73885ea9801ff43b40b08e8f83c0b62827da8f08b7f1",
+      "incomingBlob": "af0da2fc0cd608edbb026e773c98d4b955c2ecd9",
+      "currentMatches": "root payroll optin retained in merge"
+    },
+    {
+      "path": "apps/webapp/src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts",
+      "snapshot": "final-source-7.txt",
+      "sha256": "54c6cbd40671ea0eb20bae41e03f601bcb36be929f20214552adbe4a3c0b2a31",
+      "incomingBlob": "cce069b7d9e45556ea91ce3b3c44553b2f3c1f77",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+      "snapshot": "final-source-8.txt",
+      "sha256": "2059589415f4ea05cf091d1a49626318ee27ac9615e5c1154638adf1d02fe031",
+      "incomingBlob": "80789f7fdccc6e91c82a78badadce3c41747f155",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/lib/payroll-access/adjustment-coverage.ts",
+      "snapshot": "final-source-9.txt",
+      "sha256": "72b089ccffd089b3aceb69b19d1a690b48aa5448926a55c87eaff0622812b4a7",
+      "incomingBlob": "4278748e41836ce2383c2d3457fc8e00b9bfa708",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/opening-balance-upload-actions.ts",
+      "snapshot": "final-source-10.txt",
+      "sha256": "52f7d68fd69df105319b25a90320b41cb34152f410c903986484cde7f7b94cb8",
+      "incomingBlob": "304e33771a4654cb99326b26d357ddb2db31bd4c",
+      "currentMatches": "exact normalized"
+    },
+    {
+      "path": "apps/webapp/src/lib/work-balance/adjustments/opening-balance-upload.ts",
+      "snapshot": "final-source-11.txt",
+      "sha256": "3a021fe25706f0892c6082b27aea7994d8c74047bbdd4b34e2bee8ea3a29f684",
+      "incomingBlob": "212fbf302c415ac85e3dedf57203e7e46d2b0acb",
+      "currentMatches": "exact normalized"
+    }
+  ],
+  "images": [
+    {
+      "path": "actions/committed.png",
+      "sha256": "91f17c25046952157fd14198ecbedb88367016e1bca90959fcb4299cae2e4e6d",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "actions/employee-readback.png",
+      "sha256": "465944aad514093ab0c71e2b8d7709c6983f98c0bbaad63329a74be6e0bf210f",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "actions/one-error-blocked.png",
+      "sha256": "702ba7ddc24c9cb9fcb4f676b407d18525723c40175f3a7307ea11ce2b6ffdfd",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "actions/phone-drawer-closed.png",
+      "sha256": "837a2e8b3d4da901490df4be42de1ea2ae3c4d299d2c66d1add7352add2268fa",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "actions/ready-two.png",
+      "sha256": "16a6cc7e074eb4e5fa4eea10b78abd38c831cbdfb7b429de740fce07c4f3f25e",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "actions/replacement-preview.png",
+      "sha256": "0b7aa3bc8a8e7c15b73709dd1784819e91fafce64a88ea7cdb837fb881f26d54",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "comparison/after-desktop-light.png",
+      "sha256": "a4733552ce2eb6b9e9e4bfbea98671ca88918ded18f1271b3a4d133d23db79d4",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "comparison/after-phone-dark-saved18.png",
+      "sha256": "39b4b2adbfffbc38a69f1003af8d8686e819aeb02582a64876bf2de3cf2617c6",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "comparison/after-phone-preview.png",
+      "sha256": "b8b0a501bbfe628ccfd487c1e10583fbc1fa71265c1da4614fd6c332b51462e4",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "comparison/after-wide-dark-saved18.png",
+      "sha256": "2b6810d8c88e5b7e563389d37cb6e36b1e0354cd40c0499d77f0ee8b58c74e87",
+      "width": 2560,
+      "height": 1200
+    },
+    {
+      "path": "comparison/before-desktop-light.png",
+      "sha256": "1684a47381571fd8a7b7b151bb4d7d44dea838c67b36cd1061316d038e3d5bbd",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "comparison/before-phone-dark-saved18.png",
+      "sha256": "1103e9052f85eda1b518b37531caf11786d23a09f9cc9d5ff599cda40ec399f0",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "comparison/before-phone-preview.png",
+      "sha256": "3872ad9ee8e2b91a04a446043c459690e194adb5b1b95cf7819fc05c452b3327",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "comparison/before-wide-dark-saved18.png",
+      "sha256": "f5cc4aae552d2620428c44abbc46ab6fdbeaea79a32b91d8e3fda0cb025779ad",
+      "width": 2560,
+      "height": 1200
+    },
+    {
+      "path": "recovery/empty-grant.png",
+      "sha256": "32266d8e95316cc54e30836e7a6df12b22da0bd534f586c4be8d276c35a24ddb",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "recovery/failed-preview-retained-file.png",
+      "sha256": "ec0d6f41d794e5e414191057f0be926ec57acd0ede01d1a87cccb0b0a8f69026",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "recovery/retried-preview.png",
+      "sha256": "a0bbf2a322a981b02ff190913bae4286c11bf562ce0f7a68ca7937fe3559b0f5",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "saved-ui-preferences-fixed.png",
+      "sha256": "86b20d55fb4063d3dcd62f8ca07ec1c56ba8138630112458e7f60621e2544017",
+      "width": 1264,
+      "height": 625
+    },
+    {
+      "path": "saved-ui-preferences.png",
+      "sha256": "f680f3ea6f6b1a47c8d874cc66fe478792ba8dfa1a3f933c0dc4a905026e56f7",
+      "width": 1264,
+      "height": 625
+    },
+    {
+      "path": "scope/failed.png",
+      "sha256": "3cb0cffd8b811455f29a396f9e199473490c2e689c99bdd2f864caaa1d47b858",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "scope/revoked-open-preview.png",
+      "sha256": "60ce2f622ce89dd9f06fc32c97b5865be7d2c1b1fc639bbf2d860b026eca16a3",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "scope/settled-B.png",
+      "sha256": "d9376815968a4ee76fbf9ec6fe680e4cda9df1271ff909ecc6f842978b440b83",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "scope/settled-return-A.png",
+      "sha256": "4f9e85b45dbdd8c4175922ca13c4f136423ddd6838031a70cd62def38a814f10",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "scope/small-manager-denied.png",
+      "sha256": "037161d3a657933f8a9914b545b90a4501ad547f12ba9350d3ca6142b7db8fac",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "scope/small-restricted-denied.png",
+      "sha256": "8aec0e66fca9ff6e15c41dfa17a2fc1f17f5662d2bf0dae7c77dcca4b977a11d",
+      "width": 1600,
+      "height": 1000
+    }
+  ],
+  "pairs": [
+    "desktop-light",
+    "wide-dark-saved18",
+    "phone-dark-saved18",
+    "phone-preview"
+  ],
+  "scripts": [
+    "fixture.mjs",
+    "runtime.mjs",
+    "start.mjs",
+    "verify-artifacts.mjs"
+  ]
+}

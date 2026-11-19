@@ -1,0 +1,10 @@
+file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/assert.js:15
+        throw new Error(message);
+              ^
+
+Error: No element found for selector: button[data-today="true"]
+    at assert (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/assert.js:15:15)
+    at CdpFrame.click (file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:753:17)
+    at async file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/.tmp/1728/after.mjs:33:1
+
+Node.js v26.9.0

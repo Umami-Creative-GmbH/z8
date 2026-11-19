@@ -1,0 +1,25 @@
+{
+  "selections": [
+    {
+      "name": "incoming-unit",
+      "files": 34,
+      "cases": 267,
+      "passed": 267,
+      "failed": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 137,
+      "cases": 1025,
+      "passed": 1025,
+      "failed": 0,
+      "overlapFiles": 34,
+      "overlapCases": 267
+    }
+  ],
+  "uniqueFiles": 137,
+  "uniqueCases": 1025,
+  "method": "File path and full test name multisets; equal-name parameterized cases retain multiplicity; repeated runs do not add cases."
+}

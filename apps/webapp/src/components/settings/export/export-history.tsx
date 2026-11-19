@@ -17,17 +17,8 @@ import {
 	deleteExportAction,
 	regenerateDownloadUrlAction,
 } from "@/app/[locale]/(app)/settings/export/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,24 +85,20 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 		setLoadingAction(null);
 	};
 
-	const handleDelete = async (exportId: string) => {
-		setLoadingAction(`delete-${exportId}`);
-		const result = await deleteExportAction({ exportId }).catch((error: unknown) => {
-			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
+	const deletion = useConfirmedAction<ExportRecord>();
+
+	// Resolves on success and throws the worded reason otherwise, so the confirmation
+	// dialog closes only once the export is gone and shows any failure inline.
+	const deleteExport = async (exp: ExportRecord) => {
+		const result = await deleteExportAction({ exportId: exp.id }).catch((error: unknown) => {
 			console.error("Delete error:", error);
-			return null;
+			throw new Error(
+				t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"),
+			);
 		});
 
-		if (!result) {
-			setLoadingAction(null);
-			return;
-		}
-
-		if (result.success) {
-			toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
-			router.refresh();
-		} else {
-			toast.error(
+		if (!result.success) {
+			throw new Error(
 				actionErrorMessage(t, result, {}, [
 					"settings.dataExport.history.deleteError",
 					"Failed to delete export",
@@ -119,8 +106,11 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 			);
 		}
 
-		setLoadingAction(null);
+		toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
+		router.refresh();
 	};
+
+	const deletionTarget = deletion.target;
 
 	if (exports.length === 0) {
 		return (
@@ -134,8 +124,8 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 				<CardContent>
 					<p className="text-muted-foreground text-sm">
 						{t(
-							"settings.dataExport.history.emptyHint",
-							"Create your first export using the form above",
+							"settings.dataExport.history.emptyHintNewExportTab",
+							"Create your first export on the New Export tab.",
 						)}
 					</p>
 				</CardContent>
@@ -145,15 +135,15 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 
 	return (
 		<Card>
-			<CardHeader className="flex flex-row items-center justify-between">
-				<div>
+			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+				<div className="min-w-0">
 					<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
 					<CardDescription>
 						{t("settings.dataExport.history.description", "Your previous data exports")}
 					</CardDescription>
 				</div>
 				<Button variant="outline" size="sm" onClick={() => router.refresh()}>
-					<IconRefresh className="mr-2 size-4" />
+					<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 					{t("common.refresh", "Refresh")}
 				</Button>
 			</CardHeader>
@@ -213,7 +203,9 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 								<TableCell>
 									<StatusBadge status={exp.status} errorMessage={exp.errorMessage} t={t} />
 								</TableCell>
-								<TableCell>{exp.fileSizeBytes ? formatFileSize(exp.fileSizeBytes) : "-"}</TableCell>
+								<TableCell className="tabular-nums">
+									{exp.fileSizeBytes ? formatFileSize(exp.fileSizeBytes) : "-"}
+								</TableCell>
 								<TableCell className="text-right">
 									<div className="flex justify-end gap-2">
 										{exp.status === "completed" && (
@@ -233,45 +225,20 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 												</span>
 											</Button>
 										)}
-										<AlertDialog>
-											<AlertDialogTrigger asChild>
-												<Button
-													variant="outline"
-													size="sm"
-													className="text-destructive hover:text-destructive"
-													disabled={loadingAction === `delete-${exp.id}`}
-												>
-													{loadingAction === `delete-${exp.id}` ? (
-														<IconLoader2 className="size-4 animate-spin" />
-													) : (
-														<IconTrash className="size-4" />
-													)}
-													<span className="sr-only">{t("common.delete", "Delete")}</span>
-												</Button>
-											</AlertDialogTrigger>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle>
-														{t("settings.dataExport.history.deleteDialogTitle", "Delete Export")}
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														{t(
-															"settings.dataExport.history.deleteDialogDescription",
-															"Are you sure you want to delete this export? This action cannot be undone.",
-														)}
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-													<AlertDialogAction
-														onClick={() => handleDelete(exp.id)}
-														className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-													>
-														{t("common.delete", "Delete")}
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
+										<Button
+											variant="outline"
+											size="sm"
+											className="text-destructive hover:text-destructive"
+											disabled={deletion.isPending && deletionTarget?.id === exp.id}
+											onClick={() => deletion.request(exp)}
+										>
+											{deletion.isPending && deletionTarget?.id === exp.id ? (
+												<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+											) : (
+												<IconTrash className="size-4" aria-hidden="true" />
+											)}
+											<span className="sr-only">{t("common.delete", "Delete")}</span>
+										</Button>
 									</div>
 								</TableCell>
 							</TableRow>
@@ -279,6 +246,33 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 					</TableBody>
 				</Table>
 			</CardContent>
+			<DeleteConfirmDialog
+				open={deletion.open}
+				onOpenChange={deletion.onOpenChange}
+				title={t("settings.dataExport.history.deleteDialogTitle", "Delete Export")}
+				description={
+					deletionTarget
+						? t(
+								"settings.dataExport.history.deleteDialogDescriptionNamed",
+								"Delete the export created on {date} at {time}? This action cannot be undone.",
+								{
+									date: formatDateOnly(new Date(deletionTarget.createdAt), { locale, timezone }),
+									time: formatTimeOnly(new Date(deletionTarget.createdAt), { locale, timezone }),
+								},
+							)
+						: ""
+				}
+				isDeleting={deletion.isPending}
+				error={deletion.error}
+				onConfirm={() =>
+					void deletion.confirm(deleteExport, (failure) =>
+						describeFailure(
+							failure,
+							t("settings.dataExport.history.deleteError", "Failed to delete export"),
+						),
+					)
+				}
+			/>
 		</Card>
 	);
 }
@@ -309,17 +303,25 @@ function StatusBadge({
 			);
 		case "completed":
 			return (
-				<Badge className="gap-1 bg-green-600 hover:bg-green-600">
-					<IconCheck className="size-3" />
+				<Badge className="gap-1">
+					<IconCheck className="size-3" aria-hidden="true" />
 					{t("settings.dataExport.history.statusCompleted", "Completed")}
 				</Badge>
 			);
 		case "failed":
+			// The reason stays visible: a tooltip alone is unreachable on touch.
 			return (
-				<Badge variant="destructive" className="gap-1" title={errorMessage || undefined}>
-					<IconX className="size-3" />
-					{t("settings.dataExport.history.statusFailed", "Failed")}
-				</Badge>
+				<div className="space-y-1">
+					<Badge variant="destructive" className="gap-1">
+						<IconX className="size-3" aria-hidden="true" />
+						{t("settings.dataExport.history.statusFailed", "Failed")}
+					</Badge>
+					{errorMessage ? (
+						<p className="line-clamp-2 max-w-64 break-words text-xs text-destructive" title={errorMessage}>
+							{errorMessage}
+						</p>
+					) : null}
+				</div>
 			);
 		default:
 			return <Badge variant="outline">{status}</Badge>;

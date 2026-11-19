@@ -1,0 +1,1373 @@
+src\app\[locale]\(app)\payroll\work-balances\[employeeId]\actions.integration.test.ts format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     10  10 │   ␍
+     11  11 │   const caller = vi.hoisted(() => ({ userId: "", organizationId: "" }));␍
+     12     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+         12 │ + vi.mock("next/headers",·async·()·=>␍
+         13 │ + → (await·import("@/test/integration-harness")).nextHeaders(),␍
+         14 │ + );␍
+     13  15 │   vi.mock("next/server", async (original) =>␍
+     14  16 │     (await import("@/test/integration-harness")).nextServer(original),␍
+    ······· │ 
+     35  37 │   }));␍
+     36  38 │   ␍
+     37     │ - const·actions·=·await·import("@/app/[locale]/(app)/settings/employees/work-balance-actions");␍
+         39 │ + const·actions·=·await·import(␍
+         40 │ + → "@/app/[locale]/(app)/settings/employees/work-balance-actions"␍
+         41 │ + );␍
+     38  42 │   const { getPayrollEmployeeBalanceAction: read } = await import("./actions");␍
+     39  43 │   const today = plainDateAt(systemClock.nowInstant(), "UTC");␍
+    ······· │ 
+     46  50 │   beforeAll(async () => {␍
+     47  51 │     fixture = await createLifecycleDatabaseFixture();␍
+     48     │ - → await·fixture.pool.query("update·organization·set·timezone='UTC'·where·id=$1",·[␍
+     49     │ - → → fixture.organizationId,␍
+     50     │ - → ]);␍
+         52 │ + → await·fixture.pool.query(␍
+         53 │ + → → "update·organization·set·timezone='UTC'·where·id=$1",␍
+         54 │ + → → [fixture.organizationId],␍
+         55 │ + → );␍
+     51  56 │     holder = await fixture.seedEmployee();␍
+     52  57 │     target = await fixture.seedEmployee({␍
+    ······· │ 
+     55  60 │     });␍
+     56  61 │     uncovered = await fixture.seedEmployee();␍
+     57     │ - → foreign·=·await·fixture.seedEmployee({·organizationId:·await·fixture.createOrganization()·});␍
+         62 │ + → foreign·=·await·fixture.seedEmployee({␍
+         63 │ + → → organizationId:·await·fixture.createOrganization(),␍
+         64 │ + → });␍
+     58  65 │     grant = randomUUID();␍
+     59  66 │     await fixture.pool.query(␍
+    ······· │ 
+     74  81 │       await fixture.pool.query(␍
+     75  82 │         "insert into time_entry(id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values($1,$2,$3,$4,$5,120,'Europe/Berlin','user_setting',$7,$6)",␍
+     76     │ - → → → [id,·target.employeeId,·fixture.organizationId,·type,·stamp,·fixture.ownerUserId,·id],␍
+         83 │ + → → → [␍
+         84 │ + → → → → id,␍
+         85 │ + → → → → target.employeeId,␍
+         86 │ + → → → → fixture.organizationId,␍
+         87 │ + → → → → type,␍
+         88 │ + → → → → stamp,␍
+         89 │ + → → → → fixture.ownerUserId,␍
+         90 │ + → → → → id,␍
+         91 │ + → → → ],␍
+     77  92 │       );␍
+     78  93 │     await withCanonicalRecords(fixture.pool, (client) =>␍
+    ······· │ 
+    101 116 │       data: { canManage: true },␍
+    102 117 │     });␍
+    103     │ - → for·(const·employeeId·of·[uncovered.employeeId,·foreign.employeeId,·holder.employeeId,·"invalid"])␍
+        118 │ + → for·(const·employeeId·of·[␍
+        119 │ + → → uncovered.employeeId,␍
+        120 │ + → → foreign.employeeId,␍
+        121 │ + → → holder.employeeId,␍
+        122 │ + → → "invalid",␍
+        123 │ + → ])␍
+    104 124 │       expect(await read({ employeeId })).toMatchObject({␍
+    105 125 │         success: false,␍
+    ······· │ 
+    121 141 │       reason: "R044 original opening",␍
+    122 142 │     };␍
+    123     │ - → expect(await·actions.setOpeningBalanceAction(opening)).toMatchObject({·success:·true·});␍
+        143 │ + → expect(await·actions.setOpeningBalanceAction(opening)).toMatchObject({␍
+        144 │ + → → success:·true,␍
+        145 │ + → });␍
+    124 146 │     expect(␍
+    125 147 │       await actions.setOpeningBalanceAction({␍
+    ······· │ 
+    137 159 │           expect.objectContaining({␍
+    138 160 │             reason: "R044 original opening",␍
+    139     │ - → → → → → cancellation:·expect.objectContaining({·reason:·"R044·reasoned·replacement"·}),␍
+        161 │ + → → → → → cancellation:·expect.objectContaining({␍
+        162 │ + → → → → → → reason:·"R044·reasoned·replacement",␍
+        163 │ + → → → → → }),␍
+    140 164 │           }),␍
+    141 165 │         ]),␍
+    ······· │ 
+    153 177 │       refusal: "exceeds_balance",␍
+    154 178 │     });␍
+    155     │ - → const·recorded·=·await·actions.recordOvertimePayoutAction({·...payout,·hours:·10·});␍
+        179 │ + → const·recorded·=·await·actions.recordOvertimePayoutAction({␍
+        180 │ + → → ...payout,␍
+        181 │ + → → hours:·10,␍
+        182 │ + → });␍
+    156 183 │     expect(recorded.success).toBe(true);␍
+    157 184 │     if (!recorded.success) throw Error("Payout refused");␍
+    ······· │ 
+    161 188 │     });␍
+    162 189 │     expect(␍
+    163     │ - → → await·actions.recordOvertimePayoutAction({·...payout,·hours:·0,·minutes:·1·}),␍
+        190 │ + → → await·actions.recordOvertimePayoutAction({␍
+        191 │ + → → → ...payout,␍
+        192 │ + → → → hours:·0,␍
+        193 │ + → → → minutes:·1,␍
+        194 │ + → → }),␍
+    164 195 │     ).toMatchObject({ success: false, refusal: "exceeds_balance" });␍
+    165 196 │     expect(␍
+    166     │ - → → await·actions.setOpeningBalanceAction({·...opening,·day:·today.toString()·}),␍
+        197 │ + → → await·actions.setOpeningBalanceAction({␍
+        198 │ + → → → ...opening,␍
+        199 │ + → → → day:·today.toString(),␍
+        200 │ + → → }),␍
+    167 201 │     ).toMatchObject({ success: false, refusal: "conflicting_payouts" });␍
+    168 202 │     const cancel = {␍
+    ······· │ 
+    171 205 │       reason: "R044 cancellation evidence",␍
+    172 206 │     };␍
+    173     │ - → expect(await·actions.cancelBalanceAdjustmentAction(cancel)).toMatchObject({·success:·true·});␍
+        207 │ + → expect(await·actions.cancelBalanceAdjustmentAction(cancel)).toMatchObject({␍
+        208 │ + → → success:·true,␍
+        209 │ + → });␍
+    174 210 │     expect(await actions.cancelBalanceAdjustmentAction(cancel)).toMatchObject({␍
+    175 211 │       success: false,␍
+    ······· │ 
+    209 245 │       reason: "Late request",␍
+    210 246 │     };␍
+    211     │ - → await·fixture.pool.query("update·payroll_access_grant·set·is_active=false·where·id=$1",·[grant]);␍
+    212     │ - → expect(await·read({·employeeId:·target.employeeId·})).toMatchObject({·success:·false·});␍
+        247 │ + → await·fixture.pool.query(␍
+        248 │ + → → "update·payroll_access_grant·set·is_active=false·where·id=$1",␍
+        249 │ + → → [grant],␍
+        250 │ + → );␍
+        251 │ + → expect(await·read({·employeeId:·target.employeeId·})).toMatchObject({␍
+        252 │ + → → success:·false,␍
+        253 │ + → });␍
+    213 254 │     expect(await actions.recordOvertimePayoutAction(input)).toMatchObject({␍
+    214 255 │       success: false,␍
+    215 256 │       refusal: "not_permitted",␍
+    216 257 │     });␍
+    217     │ - → await·fixture.pool.query("update·payroll_access_grant·set·is_active=true·where·id=$1",·[grant]);␍
+    218     │ - → await·fixture.pool.query("update·member·set·status='pending'·where·id=$1",·[holder.memberId]);␍
+        258 │ + → await·fixture.pool.query(␍
+        259 │ + → → "update·payroll_access_grant·set·is_active=true·where·id=$1",␍
+        260 │ + → → [grant],␍
+        261 │ + → );␍
+        262 │ + → await·fixture.pool.query("update·member·set·status='pending'·where·id=$1",·[␍
+        263 │ + → → holder.memberId,␍
+        264 │ + → ]);␍
+    219 265 │     expect(await actions.recordOvertimePayoutAction(input)).toMatchObject({␍
+    220 266 │       success: false,␍
+    221 267 │       code: "AuthorizationError",␍
+    222 268 │     });␍
+    223     │ - → await·fixture.pool.query("update·member·set·status='approved'·where·id=$1",·[holder.memberId]);␍
+        269 │ + → await·fixture.pool.query("update·member·set·status='approved'·where·id=$1",·[␍
+        270 │ + → → holder.memberId,␍
+        271 │ + → ]);␍
+    224 272 │     caller.organizationId = await fixture.createOrganization();␍
+    225     │ - → expect(await·read({·employeeId:·target.employeeId·})).toMatchObject({·success:·false·});␍
+        273 │ + → expect(await·read({·employeeId:·target.employeeId·})).toMatchObject({␍
+        274 │ + → → success:·false,␍
+        275 │ + → });␍
+    226 276 │     expect((await actions.recordOvertimePayoutAction(input)).success).toBe(false);␍
+    227 277 │     caller.organizationId = fixture.organizationId;␍
+  
+
+src\app\[locale]\(app)\payroll\work-balances\[employeeId]\actions.ts format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    18 18 │         !(await loadPayrollWorkBalanceEmployees(input.employeeId))?.length␍
+    19 19 │       )␍
+    20    │ - → → → return·{·success:·false,·code:·"AuthorizationError",·error:·"Work·balance·unavailable"·};␍
+       20 │ + → → → return·{␍
+       21 │ + → → → → success:·false,␍
+       22 │ + → → → → code:·"AuthorizationError",␍
+       23 │ + → → → → error:·"Work·balance·unavailable",␍
+       24 │ + → → → };␍
+    21 25 │       return await getEmployeeWorkBalanceSectionAction(input);␍
+    22 26 │     } catch {␍
+    23    │ - → → return·{·success:·false,·code:·"DatabaseError",·error:·"Work·balance·unavailable"·};␍
+       27 │ + → → return·{␍
+       28 │ + → → → success:·false,␍
+       29 │ + → → → code:·"DatabaseError",␍
+       30 │ + → → → error:·"Work·balance·unavailable",␍
+       31 │ + → → };␍
+    24 32 │     }␍
+    25 33 │   }␍
+  
+
+src\app\[locale]\(app)\payroll\work-balances\[employeeId]\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    10 10 │     useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),␍
+    11 11 │   }));␍
+    12    │ - vi.mock("../coverage",·()·=>·({·loadPayrollWorkBalanceEmployees:·mocks.coverage·}));␍
+       12 │ + vi.mock("../coverage",·()·=>·({␍
+       13 │ + → loadPayrollWorkBalanceEmployees:·mocks.coverage,␍
+       14 │ + }));␍
+    13 15 │   vi.mock("@/lib/auth-helpers", () => ({ getAuthContext: mocks.auth }));␍
+    14 16 │   vi.mock("next/navigation", () => ({␍
+    ····· │ 
+    38 40 │   ␍
+    39 41 │   it("keeps a safe task heading while the actual employee route is waiting for admission", () => {␍
+    40    │ - → render(Page({·params:·Promise.resolve({·employeeId:·"employee"·})·}).props.fallback);␍
+    41    │ - → expect(screen.getByRole("heading",·{·level:·1,·name:·"Work·balance"·})).toBeTruthy();␍
+    42    │ - → expect(screen.getByRole("status",·{·name:·"Loading·the·work·balance"·})).toBeTruthy();␍
+       42 │ + → render(␍
+       43 │ + → → Page({·params:·Promise.resolve({·employeeId:·"employee"·})·}).props␍
+       44 │ + → → → .fallback,␍
+       45 │ + → );␍
+       46 │ + → expect(␍
+       47 │ + → → screen.getByRole("heading",·{·level:·1,·name:·"Work·balance"·}),␍
+       48 │ + → ).toBeTruthy();␍
+       49 │ + → expect(␍
+       50 │ + → → screen.getByRole("status",·{·name:·"Loading·the·work·balance"·}),␍
+       51 │ + → ).toBeTruthy();␍
+    43 52 │     expect(screen.queryAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+    44 53 │   });␍
+    ····· │ 
+    52 61 │     const id = "109be870-c930-4e3a-b4b4-e35f2c0d8353";␍
+    53 62 │     mocks.coverage.mockResolvedValue([␍
+    54    │ - → → {·id,·name:·"Covered·former·person",·isActive:·false,·employeeNumber:·null·},␍
+       63 │ + → → {␍
+       64 │ + → → → id,␍
+       65 │ + → → → name:·"Covered·former·person",␍
+       66 │ + → → → isActive:·false,␍
+       67 │ + → → → employeeNumber:·null,␍
+       68 │ + → → },␍
+    55 69 │     ]);␍
+    56 70 │     mocks.auth.mockResolvedValue({␍
+    ····· │ 
+    68 82 │       session: { activeOrganizationId: "org" },␍
+    69 83 │     });␍
+    70    │ - → await·expect(content("109be870-c930-4e3a-b4b4-e35f2c0d8353")).rejects.toThrow("NOT_FOUND");␍
+       84 │ + → await·expect(content("109be870-c930-4e3a-b4b4-e35f2c0d8353")).rejects.toThrow(␍
+       85 │ + → → "NOT_FOUND",␍
+       86 │ + → );␍
+    71 87 │     await expect(content("malformed")).rejects.toThrow("NOT_FOUND");␍
+    72 88 │     expect(mocks.coverage).toHaveBeenCalledTimes(1);␍
+    ····· │ 
+    74 90 │   it("opts only the selected payroll route into page-heading ownership", () => {␍
+    75 91 │     expect(appPageOwnsHeading("/de/payroll/work-balances/employee")).toBe(true);␍
+    76    │ - → expect(appPageOwnsHeading("/de/payroll/work-balances/employee/other")).toBe(false);␍
+       92 │ + → expect(appPageOwnsHeading("/de/payroll/work-balances/employee/other")).toBe(␍
+       93 │ + → → false,␍
+       94 │ + → );␍
+    77 95 │     expect(appPageOwnsHeading("/en/payroll")).toBe(true);␍
+    78 96 │   });␍
+  
+
+src\app\[locale]\(app)\payroll\work-balances\[employeeId]\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    19 19 │    * left. Not found for everyone else.␍
+    20 20 │    */␍
+    21    │ - async·function·PayrollWorkBalanceContent({·params·}:·PayrollWorkBalancePageProps)·{␍
+       21 │ + async·function·PayrollWorkBalanceContent({␍
+       22 │ + → params,␍
+       23 │ + }:·PayrollWorkBalancePageProps)·{␍
+    22 24 │     const { employeeId } = await params;␍
+    23 25 │     if (!isCanonicalUuid(employeeId)) notFound();␍
+    ····· │ 
+    52 54 │   }␍
+    53 55 │   ␍
+    54    │ - export·default·function·PayrollWorkBalancePage(props:·PayrollWorkBalancePageProps)·{␍
+       56 │ + export·default·function·PayrollWorkBalancePage(␍
+       57 │ + → props:·PayrollWorkBalancePageProps,␍
+       58 │ + )·{␍
+    55 59 │     return (␍
+    56 60 │       <Suspense fallback={<PayrollWorkBalanceLoading />}>␍
+  
+
+src\app\[locale]\(app)\payroll\work-balances\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     7  7 │   import { WorkBalancesView } from "./work-balances-view";␍
+     8  8 │   ␍
+     9    │ - const·scope·=·vi.hoisted(()·=>·({·userId:·"actor",·activeOrganizationId:·"A"·}));␍
+        9 │ + const·scope·=·vi.hoisted(()·=>·({␍
+       10 │ + → userId:·"actor",␍
+       11 │ + → activeOrganizationId:·"A",␍
+       12 │ + }));␍
+    10 13 │   vi.mock("@/components/providers/organization-context-provider", () => ({␍
+    11 14 │     useOrganization: () => scope,␍
+    ····· │ 
+    18 21 │     useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),␍
+    19 22 │   }));␍
+    20    │ - vi.mock("./coverage",·()·=>·({·loadPayrollWorkBalanceEmployees:·async·()·=>·[]·}));␍
+       23 │ + vi.mock("./coverage",·()·=>·({␍
+       24 │ + → loadPayrollWorkBalanceEmployees:·async·()·=>·[],␍
+       25 │ + }));␍
+    21 26 │   vi.mock("@/lib/auth-helpers", () => ({ getAuthContext: vi.fn() }));␍
+    22 27 │   vi.mock("@/navigation", () => ({␍
+    ····· │ 
+    25 30 │     ),␍
+    26 31 │   }));␍
+    27    │ - vi.mock("@/components/settings/work-balance/opening-balance-upload-dialog",·()·=>·({␍
+    28    │ - → OpeningBalanceUploadDialog:·()·=>·<button·type="button">Upload·opening·balances</button>,␍
+    29    │ - }));␍
+       32 │ + vi.mock(␍
+       33 │ + → "@/components/settings/work-balance/opening-balance-upload-dialog",␍
+       34 │ + → ()·=>·({␍
+       35 │ + → → OpeningBalanceUploadDialog:·()·=>·(␍
+       36 │ + → → → <button·type="button">Upload·opening·balances</button>␍
+       37 │ + → → ),␍
+       38 │ + → }),␍
+       39 │ + );␍
+    30 40 │   ␍
+    31 41 │   it("keeps the pending directory heading and retains the independently adopted employee heading", () => {␍
+    32 42 │     render(Page().props.fallback);␍
+    33    │ - → expect(screen.getByRole("heading",·{·level:·1,·name:·"Work·balances"·})).toBeTruthy();␍
+       43 │ + → expect(␍
+       44 │ + → → screen.getByRole("heading",·{·level:·1,·name:·"Work·balances"·}),␍
+       45 │ + → ).toBeTruthy();␍
+    34 46 │     expect(appPageOwnsHeading("/de/payroll/work-balances")).toBe(true);␍
+    35 47 │     expect(appPageOwnsHeading("/en/payroll/work-balances/employee")).toBe(true);␍
+    ····· │ 
+    45 57 │       },␍
+    46 58 │     ];␍
+    47    │ - → const·view·=·render(<WorkBalancesView·employees={employees}·userId="actor"·organizationId="A"·/>);␍
+       59 │ + → const·view·=·render(␍
+       60 │ + → → <WorkBalancesView␍
+       61 │ + → → → employees={employees}␍
+       62 │ + → → → userId="actor"␍
+       63 │ + → → → organizationId="A"␍
+       64 │ + → → />,␍
+       65 │ + → );␍
+    48 66 │     expect(␍
+    49 67 │       screen␍
+    ····· │ 
+    53 71 │         .getAttribute("href"),␍
+    54 72 │     ).toBe("/payroll/work-balances/former");␍
+    55    │ - → expect(screen.getByRole("link",·{·name:·"Payroll"·}).getAttribute("href")).toBe("/payroll");␍
+    56    │ - → expect(screen.getByRole("button",·{·name:·"Upload·opening·balances"·})).toBeTruthy();␍
+       73 │ + → expect(␍
+       74 │ + → → screen.getByRole("link",·{·name:·"Payroll"·}).getAttribute("href"),␍
+       75 │ + → ).toBe("/payroll");␍
+       76 │ + → expect(␍
+       77 │ + → → screen.getByRole("button",·{·name:·"Upload·opening·balances"·}),␍
+       78 │ + → ).toBeTruthy();␍
+    57 79 │     scope.activeOrganizationId = "B";␍
+    58    │ - → view.rerender(<WorkBalancesView·employees={employees}·userId="actor"·organizationId="A"·/>);␍
+       80 │ + → view.rerender(␍
+       81 │ + → → <WorkBalancesView␍
+       82 │ + → → → employees={employees}␍
+       83 │ + → → → userId="actor"␍
+       84 │ + → → → organizationId="A"␍
+       85 │ + → → />,␍
+       86 │ + → );␍
+    59 87 │     expect(screen.queryByText("A long former employee identity")).toBeNull();␍
+    60 88 │     scope.activeOrganizationId = "A";␍
+    61    │ - → view.rerender(<WorkBalancesView·employees={[]}·userId="actor"·organizationId="A"·/>);␍
+    62    │ - → expect(screen.getByText("No·employees·are·in·your·payroll·access·scope·yet.")).toBeTruthy();␍
+    63    │ - → expect(screen.queryByRole("button",·{·name:·"Upload·opening·balances"·})).toBeNull();␍
+       89 │ + → view.rerender(␍
+       90 │ + → → <WorkBalancesView·employees={[]}·userId="actor"·organizationId="A"·/>,␍
+       91 │ + → );␍
+       92 │ + → expect(␍
+       93 │ + → → screen.getByText("No·employees·are·in·your·payroll·access·scope·yet."),␍
+       94 │ + → ).toBeTruthy();␍
+       95 │ + → expect(␍
+       96 │ + → → screen.queryByRole("button",·{·name:·"Upload·opening·balances"·}),␍
+       97 │ + → ).toBeNull();␍
+    64 98 │   });␍
+    65 99 │   
+  
+
+src\components\payroll\employee-balance-loading-heading.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     7  7 │   export function EmployeeBalanceLoadingHeading() {␍
+     8  8 │     const { t } = useTranslate();␍
+     9    │ - → return·<PageHeader·title={t("settings.employees.workBalance.title",·"Work·balance")}·/>;␍
+        9 │ + → return·(␍
+       10 │ + → → <PageHeader␍
+       11 │ + → → → title={t("settings.employees.workBalance.title",·"Work·balance")}␍
+       12 │ + → → />␍
+       13 │ + → );␍
+    10 14 │   }␍
+    11 15 │   
+  
+
+src\components\payroll\employee-balance-projection.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    15 15 │     balance: EmployeeWorkBalancePayload | null;␍
+    16 16 │     timezone: string;␍
+    17    │ - → actions:·{·enabled:·boolean;·open:·(task:·"opening"·|·"payout")·=>·void·}·|·null;␍
+       17 │ + → actions:·{␍
+       18 │ + → → enabled:·boolean;␍
+       19 │ + → → open:·(task:·"opening"·|·"payout")·=>·void;␍
+       20 │ + → }·|·null;␍
+    18 21 │   }) {␍
+    19 22 │     const { t } = useTranslate();␍
+    ····· │ 
+    21 24 │     return (␍
+    22 25 │       <section␍
+    23    │ - → → → aria-label={t("settings.employees.workBalance.current",·"Current·work·balance")}␍
+       26 │ + → → → aria-label={t(␍
+       27 │ + → → → → "settings.employees.workBalance.current",␍
+       28 │ + → → → → "Current·work·balance",␍
+       29 │ + → → → )}␍
+    24 30 │         className="flex flex-wrap items-center justify-between gap-5 rounded-lg border bg-card p-5 sm:p-6"␍
+    25 31 │       >␍
+    ····· │ 
+    54 60 │             >␍
+    55 61 │               <IconFlag className="size-4 shrink-0" aria-hidden="true" />␍
+    56    │ - → → → → → → {t("settings.employees.workBalance.setOpeningBalance",·"Set·opening·balance")}␍
+       62 │ + → → → → → → {t(␍
+       63 │ + → → → → → → → "settings.employees.workBalance.setOpeningBalance",␍
+       64 │ + → → → → → → → "Set·opening·balance",␍
+       65 │ + → → → → → → )}␍
+    57 66 │             </Button>␍
+    58 67 │             <Button␍
+    ····· │ 
+    64 73 │             >␍
+    65 74 │               <IconCash className="size-4 shrink-0" aria-hidden="true" />␍
+    66    │ - → → → → → → {t("settings.employees.workBalance.recordPayout",·"Record·overtime·payout")}␍
+       75 │ + → → → → → → {t(␍
+       76 │ + → → → → → → → "settings.employees.workBalance.recordPayout",␍
+       77 │ + → → → → → → → "Record·overtime·payout",␍
+       78 │ + → → → → → → )}␍
+    67 79 │             </Button>␍
+    68 80 │           </div>␍
+  
+
+src\components\payroll\employee-balance-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → cleanup,␍
+          6 │ + → fireEvent,␍
+          7 │ + → render,␍
+          8 │ + → screen,␍
+          9 │ + → waitFor,␍
+         10 │ + → within,␍
+         11 │ + }·from·"@testing-library/react";␍
+      4  12 │   import { Activity } from "react";␍
+      5  13 │   import { afterEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     21  29 │     cancelBalanceAdjustmentAction: mocks.cancel,␍
+     22  30 │   }));␍
+     23     │ - vi.mock("@/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions",·()·=>·({␍
+     24     │ - → getPayrollEmployeeBalanceAction:·mocks.read,␍
+     25     │ - }));␍
+     26     │ - vi.mock("@/hooks/use-organization",·()·=>·({·useOrganization:·()·=>·mocks.scope·}));␍
+         31 │ + vi.mock(␍
+         32 │ + → "@/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions",␍
+         33 │ + → ()·=>·({␍
+         34 │ + → → getPayrollEmployeeBalanceAction:·mocks.read,␍
+         35 │ + → }),␍
+         36 │ + );␍
+         37 │ + vi.mock("@/hooks/use-organization",·()·=>·({␍
+         38 │ + → useOrganization:·()·=>·mocks.scope,␍
+         39 │ + }));␍
+     27  40 │   vi.mock("@tolgee/react", () => ({␍
+     28  41 │     useTolgee: () => ({ getLanguage: () => "en" }),␍
+     29  42 │     useTranslate: () => ({␍
+     30  43 │       t: (_key: string, fallback: string, values?: Record<string, unknown>) =>␍
+     31     │ - → → → fallback.replace(/\{(\w+)\}/g,·(_,·key:·string)·=>·String(values?.[key]·??·key)),␍
+         44 │ + → → → fallback.replace(/\{(\w+)\}/g,·(_,·key:·string)·=>␍
+         45 │ + → → → → String(values?.[key]·??·key),␍
+         46 │ + → → → ),␍
+     32  47 │     }),␍
+     33  48 │   }));␍
+    ······· │ 
+     35  50 │     useDisplayContext: () => ({ locale: "en", timezone: "UTC" }),␍
+     36  51 │   }));␍
+     37     │ - vi.mock("@/navigation",·()·=>·({·Link:·(props:·React.ComponentProps<"a">)·=>·<a·{...props}·/>·}));␍
+         52 │ + vi.mock("@/navigation",·()·=>·({␍
+         53 │ + → Link:·(props:·React.ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+         54 │ + }));␍
+     38  55 │   ␍
+     39  56 │   const employee = {␍
+    ······· │ 
+     61  78 │   };␍
+     62  79 │   function mount() {␍
+     63     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false,·gcTime:·0·}·}·});␍
+         80 │ + → const·client·=·new·QueryClient({␍
+         81 │ + → → defaultOptions:·{·queries:·{·retry:·false,·gcTime:·0·}·},␍
+         82 │ + → });␍
+     64  83 │     return {␍
+     65  84 │       client,␍
+     66  85 │       ...render(␍
+     67  86 │         <QueryClientProvider client={client}>␍
+     68     │ - → → → → <EmployeeBalanceWorkspace·employee={employee}·organizationId="org"·userId="holder"·/>␍
+         87 │ + → → → → <EmployeeBalanceWorkspace␍
+         88 │ + → → → → → employee={employee}␍
+         89 │ + → → → → → organizationId="org"␍
+         90 │ + → → → → → userId="holder"␍
+         91 │ + → → → → />␍
+     69  92 │         </QueryClientProvider>,␍
+     70  93 │       ),␍
+    ······· │ 
+     74  97 │     cleanup();␍
+     75  98 │     vi.clearAllMocks();␍
+     76     │ - → mocks.scope·=·{·userId:·"holder",·activeOrganizationId:·"org",·isLoading:·false·};␍
+         99 │ + → mocks.scope·=·{␍
+        100 │ + → → userId:·"holder",␍
+        101 │ + → → activeOrganizationId:·"org",␍
+        102 │ + → → isLoading:·false,␍
+        103 │ + → };␍
+     77 104 │   });␍
+     78 105 │   ␍
+    ······· │ 
+     81 108 │     { userId: "holder", activeOrganizationId: "different-org", isLoading: false },␍
+     82 109 │     { userId: "different-holder", activeOrganizationId: "org", isLoading: false },␍
+     83     │ - ])("keeps·a·safe·task·heading·without·stale·identity·during·scope·arrival·%j",·(scope)·=>·{␍
+     84     │ - → mocks.scope·=·scope;␍
+     85     │ - → const·view·=·mount();␍
+     86     │ - → expect(screen.getByRole("heading",·{·level:·1,·name:·"Work·balance"·})).toBeTruthy();␍
+     87     │ - → expect(screen.queryAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+     88     │ - → expect(screen.getByRole("status").textContent).toContain("Loading·the·current·payroll·scope");␍
+     89     │ - → expect(screen.queryByText(employee.name)).toBeNull();␍
+     90     │ - → expect(mocks.read).not.toHaveBeenCalled();␍
+     91     │ - → view.client.clear();␍
+     92     │ - });␍
+        110 │ + ])(␍
+        111 │ + → "keeps·a·safe·task·heading·without·stale·identity·during·scope·arrival·%j",␍
+        112 │ + → (scope)·=>·{␍
+        113 │ + → → mocks.scope·=·scope;␍
+        114 │ + → → const·view·=·mount();␍
+        115 │ + → → expect(␍
+        116 │ + → → → screen.getByRole("heading",·{·level:·1,·name:·"Work·balance"·}),␍
+        117 │ + → → ).toBeTruthy();␍
+        118 │ + → → expect(screen.queryAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+        119 │ + → → expect(screen.getByRole("status").textContent).toContain(␍
+        120 │ + → → → "Loading·the·current·payroll·scope",␍
+        121 │ + → → );␍
+        122 │ + → → expect(screen.queryByText(employee.name)).toBeNull();␍
+        123 │ + → → expect(mocks.read).not.toHaveBeenCalled();␍
+        124 │ + → → view.client.clear();␍
+        125 │ + → },␍
+        126 │ + );␍
+     93 127 │   ␍
+     94 128 │   it("keeps unavailable projection distinct from zero and retains full ledger on failed refresh with retry", async () => {␍
+    ······· │ 
+     96 130 │     const view = mount();␍
+     97 131 │     await screen.findByText("Imported balance evidence");␍
+     98     │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toContain(employee.name);␍
+        132 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toContain(␍
+        133 │ + → → employee.name,␍
+        134 │ + → );␍
+     99 135 │     expect(screen.getByText("Former employee")).toBeTruthy();␍
+    100 136 │     expect(screen.getByText("Not calculated yet")).toBeTruthy();␍
+    ······· │ 
+    108 144 │     expect(screen.getByText("Imported balance evidence")).toBeTruthy();␍
+    109 145 │     expect(screen.queryByText("private diagnostic")).toBeNull();␍
+    110     │ - → expect(screen.getByRole("button",·{·name:·"Set·opening·balance"·}).hasAttribute("disabled")).toBe(␍
+    111     │ - → → true,␍
+    112     │ - → );␍
+    113     │ - → mocks.read.mockResolvedValueOnce({·success:·true,·data:·{·...data,·adjustments:·[]·}·});␍
+        146 │ + → expect(␍
+        147 │ + → → screen␍
+        148 │ + → → → .getByRole("button",·{·name:·"Set·opening·balance"·})␍
+        149 │ + → → → .hasAttribute("disabled"),␍
+        150 │ + → ).toBe(true);␍
+        151 │ + → mocks.read.mockResolvedValueOnce({␍
+        152 │ + → → success:·true,␍
+        153 │ + → → data:·{·...data,·adjustments:·[]·},␍
+        154 │ + → });␍
+    114 155 │     fireEvent.click(screen.getByRole("button", { name: "Retry work balance" }));␍
+    115 156 │     await screen.findByText("No balance adjustments yet.");␍
+    ······· │ 
+    128 169 │     );␍
+    129 170 │     mount();␍
+    130     │ - → fireEvent.click(await·screen.findByRole("button",·{·name:·"Set·opening·balance"·}));␍
+        171 │ + → fireEvent.click(␍
+        172 │ + → → await·screen.findByRole("button",·{·name:·"Set·opening·balance"·}),␍
+        173 │ + → );␍
+    131 174 │     const panel = await screen.findByRole("dialog");␍
+    132 175 │     expect(␍
+    133     │ - → → within(panel).getByText("The·opening·balance·in·effect·is·cancelled,·with·this·reason."),␍
+        176 │ + → → within(panel).getByText(␍
+        177 │ + → → → "The·opening·balance·in·effect·is·cancelled,·with·this·reason.",␍
+        178 │ + → → ),␍
+    134 179 │     ).toBeTruthy();␍
+    135 180 │     fireEvent.change(within(panel).getByRole("spinbutton", { name: /^Hours/ }), {␍
+    ······· │ 
+    160 205 │         refusal: "conflicting_payouts",␍
+    161 206 │         error: "diagnostic",␍
+    162     │ - → → → details:·{·conflictingPayouts:·[{·id:·"later",·day:·"2026-11-14",·minutes:·-60·}]·},␍
+        207 │ + → → → details:·{␍
+        208 │ + → → → → conflictingPayouts:·[{·id:·"later",·day:·"2026-11-14",·minutes:·-60·}],␍
+  132 more lines truncated
+  
+
+src\components\payroll\employee-balance-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     37  37 │   import { EmployeeBalanceProjection } from "./employee-balance-projection";␍
+     38  38 │   ␍
+     39     │ - type·Props·=·{·employee:·BalanceAdjustmentGrantEmployee;·organizationId:·string;·userId:·string·};␍
+         39 │ + type·Props·=·{␍
+         40 │ + → employee:·BalanceAdjustmentGrantEmployee;␍
+         41 │ + → organizationId:·string;␍
+         42 │ + → userId:·string;␍
+         43 │ + };␍
+     40  44 │   async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>) {␍
+     41  45 │     const result = await action;␍
+    ······· │ 
+     71  75 │           <EmployeeBalanceLoadingHeading />␍
+     72  76 │           <p role="status">␍
+     73     │ - → → → → → {t("payroll.workBalances.scopeChanged",·"Loading·the·current·payroll·scope…")}␍
+         77 │ + → → → → → {t(␍
+         78 │ + → → → → → → "payroll.workBalances.scopeChanged",␍
+         79 │ + → → → → → → "Loading·the·current·payroll·scope…",␍
+         80 │ + → → → → → )}␍
+     74  81 │           </p>␍
+     75  82 │         </div>␍
+    ······· │ 
+     77  84 │     return (␍
+     78  85 │       <EmployeeBalanceArrival␍
+     79     │ - → → → key={JSON.stringify([props.organizationId,·props.userId,·props.employee.id])}␍
+         86 │ + → → → key={JSON.stringify([␍
+         87 │ + → → → → props.organizationId,␍
+         88 │ + → → → → props.userId,␍
+         89 │ + → → → → props.employee.id,␍
+         90 │ + → → → ])}␍
+     80  91 │         {...props}␍
+     81  92 │       />␍
+    ······· │ 
+     98 109 │       queryKey,␍
+     99 110 │       queryFn: async ({ signal }) => {␍
+    100     │ - → → → const·data·=·await·unwrap(getPayrollEmployeeBalanceAction({·employeeId:·employee.id·}));␍
+        111 │ + → → → const·data·=·await·unwrap(␍
+        112 │ + → → → → getPayrollEmployeeBalanceAction({·employeeId:·employee.id·}),␍
+        113 │ + → → → );␍
+    101 114 │         signal.throwIfAborted();␍
+    102 115 │         return data;␍
+    ······· │ 
+    105 118 │     });␍
+    106 119 │     const [task, setTask] = useState<"opening" | "payout" | null>(null);␍
+    107     │ - → const·[cancelling,·setCancelling]·=·useState<{·id:·string;·summary:·string·}·|·null>(null);␍
+        120 │ + → const·[cancelling,·setCancelling]·=·useState<{␍
+        121 │ + → → id:·string;␍
+        122 │ + → → summary:·string;␍
+        123 │ + → }·|·null>(null);␍
+    108 124 │     const refused = section.isError && isRefusal(section.error);␍
+    109 125 │     const data = refused ? undefined : section.data;␍
+    ······· │ 
+    111 127 │     const canManage = !!data?.canManage;␍
+    112 128 │     const balance = data?.balance;␍
+    113     │ - → const·changed·=·async·<T,>(action:·()·=>·Promise<BalanceAdjustmentActionResult<T>>)·=>·{␍
+        129 │ + → const·changed·=·async·<T,>(␍
+        130 │ + → → action:·()·=>·Promise<BalanceAdjustmentActionResult<T>>,␍
+        131 │ + → )·=>·{␍
+    114 132 │       if (!fresh || !canManage) throw new BalanceAdjustmentActionError("failed");␍
+    115 133 │       return refreshAfter(action(), () =>␍
+    ······· │ 
+    150 168 │               type="button"␍
+    151 169 │               variant="outline"␍
+    152     │ - → → → → → → aria-label={t("payroll.workBalances.refresh",·"Refresh·work·balance")}␍
+        170 │ + → → → → → → aria-label={t(␍
+        171 │ + → → → → → → → "payroll.workBalances.refresh",␍
+        172 │ + → → → → → → → "Refresh·work·balance",␍
+        173 │ + → → → → → → )}␍
+    153 174 │               disabled={section.isFetching}␍
+    154 175 │               onClick={() => void section.refetch()}␍
+    ······· │ 
+    161 182 │         <EmployeeBalanceFeedback section={section} hasData={!!data} />␍
+    162 183 │         {section.isPending ? (␍
+    163     │ - → → → → <p·role="status">{t("settings.employees.workBalance.loading",·"Loading·work·balance")}</p>␍
+        184 │ + → → → → <p·role="status">␍
+        185 │ + → → → → → {t("settings.employees.workBalance.loading",·"Loading·work·balance")}␍
+        186 │ + → → → → </p>␍
+    164 187 │         ) : null}␍
+    165 188 │         {data ? (␍
+    ······· │ 
+    180 203 │             >␍
+    181 204 │               <h2 id="payroll-balance-ledger" className="text-lg font-semibold">␍
+    182     │ - → → → → → → → {t("settings.employees.workBalance.history",·"Balance·adjustments")}␍
+        205 │ + → → → → → → → {t(␍
+        206 │ + → → → → → → → → "settings.employees.workBalance.history",␍
+        207 │ + → → → → → → → → "Balance·adjustments",␍
+        208 │ + → → → → → → → )}␍
+    183 209 │               </h2>␍
+    184 210 │               <BalanceAdjustmentHistory␍
+    ······· │ 
+    205 231 │                   )}␍
+    206 232 │                   onSet={(input) =>␍
+    207     │ - → → → → → → → → → changed(()·=>·setOpeningBalanceAction({·...input,·employeeId:·employee.id·}))␍
+        233 │ + → → → → → → → → → changed(()·=>␍
+        234 │ + → → → → → → → → → → setOpeningBalanceAction({␍
+        235 │ + → → → → → → → → → → → ...input,␍
+        236 │ + → → → → → → → → → → → employeeId:·employee.id,␍
+        237 │ + → → → → → → → → → → }),␍
+        238 │ + → → → → → → → → → )␍
+    208 239 │                   }␍
+    209 240 │                 />␍
+    ······· │ 
+    213 244 │                   today={data.today}␍
+    214 245 │                   onRecord={(input) =>␍
+    215     │ - → → → → → → → → → changed(()·=>·recordOvertimePayoutAction({·...input,·employeeId:·employee.id·}))␍
+        246 │ + → → → → → → → → → changed(()·=>␍
+        247 │ + → → → → → → → → → → recordOvertimePayoutAction({␍
+        248 │ + → → → → → → → → → → → ...input,␍
+        249 │ + → → → → → → → → → → → employeeId:·employee.id,␍
+        250 │ + → → → → → → → → → → }),␍
+        251 │ + → → → → → → → → → )␍
+    216 252 │                   }␍
+    217 253 │                 />␍
+    ······· │ 
+    223 259 │                   onCancelAdjustment={(input) =>␍
+    224 260 │                     changed(() =>␍
+    225     │ - → → → → → → → → → → cancelBalanceAdjustmentAction({·...input,·employeeId:·employee.id·}),␍
+        261 │ + → → → → → → → → → → cancelBalanceAdjustmentAction({␍
+        262 │ + → → → → → → → → → → → ...input,␍
+        263 │ + → → → → → → → → → → → employeeId:·employee.id,␍
+        264 │ + → → → → → → → → → → }),␍
+    226 265 │                     )␍
+    227 266 │                   }␍
+  
+
+src\components\settings\work-balance\balance-form-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    10 10 │   import type { DialogContent } from "@/components/ui/dialog";␍
+    11 11 │   ␍
+    12    │ - export·function·BalancePanelContent({·children,·...props·}:·ComponentProps<typeof·DialogContent>)·{␍
+       12 │ + export·function·BalancePanelContent({␍
+       13 │ + → children,␍
+       14 │ + → ...props␍
+       15 │ + }:·ComponentProps<typeof·DialogContent>)·{␍
+    13 16 │     return (␍
+    14 17 │       <ActionPanelContent {...props}>␍
+    ····· │ 
+    18 21 │   }␍
+    19 22 │   export function BalancePanelHeader({ children }: { children?: ReactNode }) {␍
+    20    │ - → return·<ActionPanelHeader·className="-mx-6·-mt-5·mb-1">{children}</ActionPanelHeader>;␍
+       23 │ + → return·(␍
+       24 │ + → → <ActionPanelHeader·className="-mx-6·-mt-5·mb-1">␍
+       25 │ + → → → {children}␍
+       26 │ + → → </ActionPanelHeader>␍
+       27 │ + → );␍
+    21 28 │   }␍
+    22 29 │   export function BalancePanelFooter({ children }: { children?: ReactNode }) {␍
+    23    │ - → return·<ActionPanelFooter·className="-mx-6·-mb-5·mt-2">{children}</ActionPanelFooter>;␍
+       30 │ + → return·(␍
+       31 │ + → → <ActionPanelFooter·className="-mx-6·-mb-5·mt-2">␍
+       32 │ + → → → {children}␍
+       33 │ + → → </ActionPanelFooter>␍
+       34 │ + → );␍
+    24 35 │   }␍
+    25 36 │   
+  
+
+src\components\settings\work-balance\balance-form-surface.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    14 14 │     DialogTitle,␍
+    15 15 │   } from "@/components/ui/dialog";␍
+    16    │ - import·{·BalancePanelContent,·BalancePanelFooter,·BalancePanelHeader·}·from·"./balance-form-panel";␍
+       16 │ + import·{␍
+       17 │ + → BalancePanelContent,␍
+       18 │ + → BalancePanelFooter,␍
+       19 │ + → BalancePanelHeader,␍
+       20 │ + }·from·"./balance-form-panel";␍
+    17 21 │   ␍
+    18 22 │   /** Container composition only: existing form validation, values and commands stay with the form. */␍
+  
+
+src\components\settings\work-balance\cancel-balance-adjustment-dialog.tsx format ━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      7   7 │   import { toast } from "sonner";␍
+      8   8 │   import { Button } from "@/components/ui/button";␍
+      9     │ - import·{·TFormControl,·TFormItem,·TFormLabel,·TFormMessage·}·from·"@/components/ui/tanstack-form";␍
+          9 │ + import·{␍
+         10 │ + → TFormControl,␍
+         11 │ + → TFormItem,␍
+         12 │ + → TFormLabel,␍
+         13 │ + → TFormMessage,␍
+         14 │ + }·from·"@/components/ui/tanstack-form";␍
+     10  15 │   import { fieldHasError } from "@/components/ui/tanstack-form-utils";␍
+     11  16 │   import { Textarea } from "@/components/ui/textarea";␍
+    ······· │ 
+     33  38 │     adjustment: { id: string; summary: string } | null;␍
+     34  39 │     onOpenChange: (open: boolean) => void;␍
+     35     │ - → onCancelAdjustment:·(input:·{·adjustmentId:·string;·reason:·string·})·=>·Promise<unknown>;␍
+         40 │ + → onCancelAdjustment:·(input:·{␍
+         41 │ + → → adjustmentId:·string;␍
+         42 │ + → → reason:·string;␍
+         43 │ + → })·=>·Promise<unknown>;␍
+     36  44 │   }) {␍
+     37  45 │     const { t } = useTranslate();␍
+    ······· │ 
+     49  57 │     const form = useForm({␍
+     50  58 │       onSubmitInvalid: () => {␍
+     51     │ - → → → document.querySelector<HTMLElement>('[role="dialog"]·[aria-invalid="true"]')?.focus();␍
+         59 │ + → → → document␍
+         60 │ + → → → → .querySelector<HTMLElement>('[role="dialog"]·[aria-invalid="true"]')␍
+         61 │ + → → → → ?.focus();␍
+     52  62 │       },␍
+     53  63 │       defaultValues: { reason: "" },␍
+    ······· │ 
+     61  71 │         }␍
+     62  72 │         try {␍
+     63     │ - → → → → await·onCancelAdjustment({·adjustmentId:·adjustment.id,·reason:·value.reason·});␍
+         73 │ + → → → → await·onCancelAdjustment({␍
+         74 │ + → → → → → adjustmentId:·adjustment.id,␍
+         75 │ + → → → → → reason:·value.reason,␍
+         76 │ + → → → → });␍
+     64  77 │         } catch (error) {␍
+     65  78 │           if (!request.current(token)) return;␍
+    ······· │ 
+     75  88 │         request.finish(token);␍
+     76  89 │         toast.success(␍
+     77     │ - → → → → t("settings.employees.workBalance.adjustmentCancelled",·"Adjustment·cancelled"),␍
+         90 │ + → → → → t(␍
+         91 │ + → → → → → "settings.employees.workBalance.adjustmentCancelled",␍
+         92 │ + → → → → → "Adjustment·cancelled",␍
+         93 │ + → → → → ),␍
+     78  94 │         );␍
+     79  95 │         form.reset({ reason: "" });␍
+    ······· │ 
+    106 122 │             <DialogHeader>␍
+    107 123 │               <DialogTitle>␍
+    108     │ - → → → → → → → {t("settings.employees.workBalance.cancelTitle",·"Cancel·adjustment")}␍
+        124 │ + → → → → → → → {t(␍
+        125 │ + → → → → → → → → "settings.employees.workBalance.cancelTitle",␍
+        126 │ + → → → → → → → → "Cancel·adjustment",␍
+        127 │ + → → → → → → → )}␍
+    109 128 │               </DialogTitle>␍
+    110 129 │               <DialogDescription>␍
+    ······· │ 
+    123 142 │                   value.trim()␍
+    124 143 │                     ? undefined␍
+    125     │ - → → → → → → → → → :·t("settings.employees.workBalance.errors.reasonRequired",·"Enter·a·reason."),␍
+        144 │ + → → → → → → → → → :·t(␍
+        145 │ + → → → → → → → → → → → "settings.employees.workBalance.errors.reasonRequired",␍
+        146 │ + → → → → → → → → → → → "Enter·a·reason.",␍
+        147 │ + → → → → → → → → → → ),␍
+    126 148 │               }}␍
+    127 149 │             >␍
+    ······· │ 
+    129 151 │                 <TFormItem>␍
+    130 152 │                   <TFormLabel hasError={fieldHasError(field)} required>␍
+    131     │ - → → → → → → → → → {t("settings.employees.workBalance.cancellationReason",·"Why·is·it·cancelled?")}␍
+        153 │ + → → → → → → → → → {t(␍
+        154 │ + → → → → → → → → → → "settings.employees.workBalance.cancellationReason",␍
+        155 │ + → → → → → → → → → → "Why·is·it·cancelled?",␍
+        156 │ + → → → → → → → → → )}␍
+    132 157 │                   </TFormLabel>␍
+    133 158 │                   <TFormControl hasError={fieldHasError(field)}>␍
+    ······· │ 
+    153 178 │             ) : null}␍
+    154 179 │             <DialogFooter>␍
+    155     │ - → → → → → → <Button·type="button"·variant="outline"·onClick={()·=>·handleOpenChange(false)}>␍
+    156     │ - → → → → → → → {t("settings.employees.workBalance.keepAdjustment",·"Keep·adjustment")}␍
+        180 │ + → → → → → → <Button␍
+        181 │ + → → → → → → → type="button"␍
+        182 │ + → → → → → → → variant="outline"␍
+        183 │ + → → → → → → → onClick={()·=>·handleOpenChange(false)}␍
+        184 │ + → → → → → → >␍
+        185 │ + → → → → → → → {t(␍
+        186 │ + → → → → → → → → "settings.employees.workBalance.keepAdjustment",␍
+        187 │ + → → → → → → → → "Keep·adjustment",␍
+        188 │ + → → → → → → → )}␍
+    157 189 │               </Button>␍
+    158 190 │               <form.Subscribe<boolean> selector={(state) => state.isSubmitting}>␍
+    159 191 │                 {(isSubmitting: boolean) => (␍
+    160     │ - → → → → → → → → <Button·type="submit"·variant="destructive"·disabled={isSubmitting}>␍
+        192 │ + → → → → → → → → <Button␍
+        193 │ + → → → → → → → → → type="submit"␍
+        194 │ + → → → → → → → → → variant="destructive"␍
+        195 │ + → → → → → → → → → disabled={isSubmitting}␍
+        196 │ + → → → → → → → → >␍
+    161 197 │                     {isSubmitting ? (␍
+    162 198 │                       <IconLoader2␍
+    ······· │ 
+    165 201 │                       />␍
+    166 202 │                     ) : null}␍
+    167     │ - → → → → → → → → → {t("settings.employees.workBalance.cancelSubmit",·"Cancel·adjustment")}␍
+        203 │ + → → → → → → → → → {t(␍
+        204 │ + → → → → → → → → → → "settings.employees.workBalance.cancelSubmit",␍
+        205 │ + → → → → → → → → → → "Cancel·adjustment",␍
+        206 │ + → → → → → → → → → )}␍
+    168 207 │                   </Button>␍
+    169 208 │                 )}␍
+    ······· │ 
+    184 223 │     props: Omit<Parameters<typeof CancelBalanceAdjustmentForm>[0], "surface">,␍
+    185 224 │   ) {␍
+    186     │ - → return·<CancelBalanceAdjustmentForm·{...props}·surface={balancePanelSurface}·/>;␍
+        225 │ + → return·(␍
+        226 │ + → → <CancelBalanceAdjustmentForm·{...props}·surface={balancePanelSurface}·/>␍
+        227 │ + → );␍
+    187 228 │   }␍
+    188 229 │   
+  
+
+src\components\settings\work-balance\record-overtime-payout-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     91  91 │     const form = useForm({␍
+     92  92 │       onSubmitInvalid: () => {␍
+     93     │ - → → → document.querySelector<HTMLElement>('[role="dialog"]·[aria-invalid="true"]')?.focus();␍
+         93 │ + → → → document␍
+         94 │ + → → → → .querySelector<HTMLElement>('[role="dialog"]·[aria-invalid="true"]')␍
+         95 │ + → → → → ?.focus();␍
+     94  96 │       },␍
+     95  97 │       defaultValues,␍
+    ······· │ 
+    117 119 │         if (!request.current(token)) return;␍
+    118 120 │         request.finish(token);␍
+    119     │ - → → → toast.success(t("settings.employees.workBalance.payoutRecorded",·"Overtime·payout·recorded"));␍
+        121 │ + → → → toast.success(␍
+        122 │ + → → → → t(␍
+        123 │ + → → → → → "settings.employees.workBalance.payoutRecorded",␍
+        124 │ + → → → → → "Overtime·payout·recorded",␍
+        125 │ + → → → → ),␍
+        126 │ + → → → );␍
+    120 127 │         form.reset(defaultValues);␍
+    121 128 │         onOpenChange(false);␍
+    ······· │ 
+    148 155 │               <DialogTitle>␍
+    149 156 │                 {title ??␍
+    150     │ - → → → → → → → → t("settings.employees.workBalance.recordPayoutTitle",·"Record·overtime·payout")}␍
+        157 │ + → → → → → → → → t(␍
+        158 │ + → → → → → → → → → "settings.employees.workBalance.recordPayoutTitle",␍
+        159 │ + → → → → → → → → → "Record·overtime·payout",␍
+        160 │ + → → → → → → → → )}␍
+    151 161 │               </DialogTitle>␍
+    152 162 │               <DialogDescription>␍
+    ······· │ 
+    164 174 │                   value␍
+    165 175 │                     ? undefined␍
+    166     │ - → → → → → → → → → :·t("settings.employees.workBalance.dayRequired",·"Choose·a·day."),␍
+        176 │ + → → → → → → → → → :·t(␍
+        177 │ + → → → → → → → → → → → "settings.employees.workBalance.dayRequired",␍
+        178 │ + → → → → → → → → → → → "Choose·a·day.",␍
+        179 │ + → → → → → → → → → → ),␍
+    167 180 │               }}␍
+    168 181 │             >␍
+    ······· │ 
+    200 213 │                     payoutMinutes({␍
+    201 214 │                       hours: Number(value || 0),␍
+    202     │ - → → → → → → → → → → minutes:·Number(fieldApi.form.getFieldValue("minutes")·||·0),␍
+        215 │ + → → → → → → → → → → minutes:·Number(␍
+        216 │ + → → → → → → → → → → → fieldApi.form.getFieldValue("minutes")·||·0,␍
+        217 │ + → → → → → → → → → → ),␍
+    203 218 │                     }) === null␍
+    204     │ - → → → → → → → → → → ?·t("settings.employees.workBalance.hoursInvalid",·"Enter·whole·hours.")␍
+        219 │ + → → → → → → → → → → ?·t(␍
+        220 │ + → → → → → → → → → → → → "settings.employees.workBalance.hoursInvalid",␍
+        221 │ + → → → → → → → → → → → → "Enter·whole·hours.",␍
+        222 │ + → → → → → → → → → → → )␍
+    205 223 │                       : undefined,␍
+    206 224 │                 }}␍
+    ······· │ 
+    220 238 │                         autoComplete="off"␍
+    221 239 │                         value={field.state.value}␍
+    222     │ - → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+        240 │ + → → → → → → → → → → → onChange={(event)·=>␍
+        241 │ + → → → → → → → → → → → → field.handleChange(event.target.value)␍
+        242 │ + → → → → → → → → → → → }␍
+    223 243 │                         onBlur={field.handleBlur}␍
+    224 244 │                       />␍
+    ······· │ 
+    233 253 │                   onChange: ({ value }) => {␍
+    234 254 │                     const minutes = Number(value || 0);␍
+    235     │ - → → → → → → → → → return·Number.isInteger(minutes)·&&·minutes·>=·0·&&·minutes·<=·59␍
+        255 │ + → → → → → → → → → return·Number.isInteger(minutes)·&&␍
+        256 │ + → → → → → → → → → → minutes·>=·0·&&␍
+        257 │ + → → → → → → → → → → minutes·<=·59␍
+    236 258 │                       ? undefined␍
+    237 259 │                       : t(␍
+    ······· │ 
+    257 279 │                         autoComplete="off"␍
+    258 280 │                         value={field.state.value}␍
+    259     │ - → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+        281 │ + → → → → → → → → → → → onChange={(event)·=>␍
+        282 │ + → → → → → → → → → → → → field.handleChange(event.target.value)␍
+        283 │ + → → → → → → → → → → → }␍
+    260 284 │                         onBlur={field.handleBlur}␍
+    261 285 │                       />␍
+    ······· │ 
+    273 297 │                   value.trim()␍
+    274 298 │                     ? undefined␍
+    275     │ - → → → → → → → → → :·t("settings.employees.workBalance.errors.reasonRequired",·"Enter·a·reason."),␍
+        299 │ + → → → → → → → → → :·t(␍
+        300 │ + → → → → → → → → → → → "settings.employees.workBalance.errors.reasonRequired",␍
+        301 │ + → → → → → → → → → → → "Enter·a·reason.",␍
+        302 │ + → → → → → → → → → → ),␍
+    276 303 │               }}␍
+    277 304 │             >␍
+    ······· │ 
+    307 334 │             ) : null}␍
+    308 335 │             <DialogFooter>␍
+    309     │ - → → → → → → <Button·type="button"·variant="outline"·onClick={()·=>·handleOpenChange(false)}>␍
+        336 │ + → → → → → → <Button␍
+        337 │ + → → → → → → → type="button"␍
+        338 │ + → → → → → → → variant="outline"␍
+        339 │ + → → → → → → → onClick={()·=>·handleOpenChange(false)}␍
+        340 │ + → → → → → → >␍
+    310 341 │                 {t("common.cancel", "Cancel")}␍
+    311 342 │               </Button>␍
+    ······· │ 
+    319 350 │                       />␍
+    320 351 │                     ) : null}␍
+    321     │ - → → → → → → → → → {t("settings.employees.workBalance.recordPayoutSubmit",·"Record·payout")}␍
+        352 │ + → → → → → → → → → {t(␍
+        353 │ + → → → → → → → → → → "settings.employees.workBalance.recordPayoutSubmit",␍
+        354 │ + → → → → → → → → → → "Record·payout",␍
+        355 │ + → → → → → → → → → )}␍
+    322 356 │                   </Button>␍
+    323 357 │                 )}␍
+  
+
+src\components\settings\work-balance\set-opening-balance-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     86  86 │     const displayContext = useDisplayContext();␍
+     87  87 │     const errorMessage = useBalanceAdjustmentErrorMessage();␍
+     88     │ - → const·[conflictingPayouts,·setConflictingPayouts]·=·useState<ConflictingPayout[]>([]);␍
+         88 │ + → const·[conflictingPayouts,·setConflictingPayouts]·=·useState<␍
+         89 │ + → → ConflictingPayout[]␍
+         90 │ + → >([]);␍
+     89  91 │     const defaultValues: SetOpeningBalanceValues = {␍
+     90  92 │       day: today,␍
+    ······· │ 
+     96  98 │     const form = useForm({␍
+     97  99 │       onSubmitInvalid: () => {␍
+     98     │ - → → → document.querySelector<HTMLElement>('[role="dialog"]·[aria-invalid="true"]')?.focus();␍
+        100 │ + → → → document␍
+        101 │ + → → → → .querySelector<HTMLElement>('[role="dialog"]·[aria-invalid="true"]')␍
+        102 │ + → → → → ?.focus();␍
+     99 103 │       },␍
+    100 104 │       defaultValues,␍
+    ······· │ 
+    115 119 │           if (!request.current(token)) return;␍
+    116 120 │           request.finish(token);␍
+    117     │ - → → → → const·actionError·=·error·instanceof·BalanceAdjustmentActionError·?·error·:·null;␍
+        121 │ + → → → → const·actionError·=␍
+        122 │ + → → → → → error·instanceof·BalanceAdjustmentActionError·?·error·:·null;␍
+    118 123 │           if (actionError?.code === "conflicting_payouts") {␍
+    119 124 │             setConflictingPayouts(actionError.conflictingPayouts);␍
+    120 125 │           }␍
+    121 126 │           setFailure(␍
+    122     │ - → → → → → errorMessage(actionError?.code·??·null,·{·closedMonth:·actionError?.closedMonth·}),␍
+        127 │ + → → → → → errorMessage(actionError?.code·??·null,·{␍
+        128 │ + → → → → → → closedMonth:·actionError?.closedMonth,␍
+        129 │ + → → → → → }),␍
+    123 130 │           );␍
+    124 131 │           return;␍
+    ······· │ 
+    126 133 │         if (!request.current(token)) return;␍
+    127 134 │         request.finish(token);␍
+    128     │ - → → → toast.success(t("settings.employees.workBalance.openingBalanceSet",·"Opening·balance·set"));␍
+        135 │ + → → → toast.success(␍
+        136 │ + → → → → t(␍
+        137 │ + → → → → → "settings.employees.workBalance.openingBalanceSet",␍
+        138 │ + → → → → → "Opening·balance·set",␍
+        139 │ + → → → → ),␍
+        140 │ + → → → );␍
+    129 141 │         form.reset(defaultValues);␍
+    130 142 │         onOpenChange(false);␍
+    ······· │ 
+    168 180 │             <DialogHeader>␍
+    169 181 │               <DialogTitle>␍
+    170     │ - → → → → → → → {t("settings.employees.workBalance.setOpeningBalanceTitle",·"Set·opening·balance")}␍
+        182 │ + → → → → → → → {t(␍
+        183 │ + → → → → → → → → "settings.employees.workBalance.setOpeningBalanceTitle",␍
+        184 │ + → → → → → → → → "Set·opening·balance",␍
+        185 │ + → → → → → → → )}␍
+    171 186 │               </DialogTitle>␍
+    172 187 │               <DialogDescription>␍
+    ······· │ 
+    193 208 │                   value␍
+    194 209 │                     ? undefined␍
+    195     │ - → → → → → → → → → :·t("settings.employees.workBalance.dayRequired",·"Choose·a·day."),␍
+        210 │ + → → → → → → → → → :·t(␍
+        211 │ + → → → → → → → → → → → "settings.employees.workBalance.dayRequired",␍
+        212 │ + → → → → → → → → → → → "Choose·a·day.",␍
+        213 │ + → → → → → → → → → → ),␍
+    196 214 │               }}␍
+    197 215 │             >␍
+    ······· │ 
+    237 255 │                     value={field.state.value}␍
+    238 256 │                     onValueChange={(value) =>␍
+    239     │ - → → → → → → → → → → field.handleChange(value·===·"negative"·?·"negative"·:·"positive")␍
+        257 │ + → → → → → → → → → → field.handleChange(␍
+        258 │ + → → → → → → → → → → → value·===·"negative"·?·"negative"·:·"positive",␍
+        259 │ + → → → → → → → → → → )␍
+    240 260 │                     }␍
+    241 261 │                     className="flex flex-wrap gap-6"␍
+    ······· │ 
+    244 264 │                       <RadioGroupItem id={`${id}-positive`} value="positive" />␍
+    245 265 │                       <Label htmlFor={`${id}-positive`}>␍
+    246     │ - → → → → → → → → → → → {t("settings.employees.workBalance.positive",·"Overtime·(+)")}␍
+        266 │ + → → → → → → → → → → → {t(␍
+        267 │ + → → → → → → → → → → → → "settings.employees.workBalance.positive",␍
+        268 │ + → → → → → → → → → → → → "Overtime·(+)",␍
+        269 │ + → → → → → → → → → → → )}␍
+    247 270 │                       </Label>␍
+    248 271 │                     </div>␍
+    ······· │ 
+    250 273 │                       <RadioGroupItem id={`${id}-negative`} value="negative" />␍
+    251 274 │                       <Label htmlFor={`${id}-negative`}>␍
+    252     │ - → → → → → → → → → → → {t("settings.employees.workBalance.negative",·"Hours·owed·(−)")}␍
+        275 │ + → → → → → → → → → → → {t(␍
+        276 │ + → → → → → → → → → → → → "settings.employees.workBalance.negative",␍
+        277 │ + → → → → → → → → → → → → "Hours·owed·(−)",␍
+        278 │ + → → → → → → → → → → → )}␍
+    253 279 │                       </Label>␍
+    254 280 │                     </div>␍
+    ······· │ 
+    265 291 │                     amountIsValid(value, fieldApi.form.getFieldValue("minutes"))␍
+    266 292 │                       ? undefined␍
+    267     │ - → → → → → → → → → → :·t("settings.employees.workBalance.hoursInvalid",·"Enter·whole·hours."),␍
+        293 │ + → → → → → → → → → → :·t(␍
+        294 │ + → → → → → → → → → → → → "settings.employees.workBalance.hoursInvalid",␍
+        295 │ + → → → → → → → → → → → → "Enter·whole·hours.",␍
+        296 │ + → → → → → → → → → → → ),␍
+    268 297 │                 }}␍
+    269 298 │               >␍
+    ······· │ 
+    283 312 │                         placeholder="0"␍
+    284 313 │                         value={field.state.value}␍
+    285     │ - → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+        314 │ + → → → → → → → → → → → onChange={(event)·=>␍
+        315 │ + → → → → → → → → → → → → field.handleChange(event.target.value)␍
+        316 │ + → → → → → → → → → → → }␍
+    286 317 │                         onBlur={field.handleBlur}␍
+    287 318 │                       />␍
+    ······· │ 
+    296 327 │                   onChange: ({ value }) => {␍
+    297 328 │                     const minutes = Number(value || 0);␍
+    298     │ - → → → → → → → → → return·Number.isInteger(minutes)·&&·minutes·>=·0·&&·minutes·<=·59␍
+        329 │ + → → → → → → → → → return·Number.isInteger(minutes)·&&␍
+        330 │ + → → → → → → → → → → minutes·>=·0·&&␍
+        331 │ + → → → → → → → → → → minutes·<=·59␍
+    299 332 │                       ? undefined␍
+    300 333 │                       : t(␍
+    ······· │ 
+    320 353 │                         autoComplete="off"␍
+    321 354 │                         value={field.state.value}␍
+    322     │ - → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+        355 │ + → → → → → → → → → → → onChange={(event)·=>␍
+        356 │ + → → → → → → → → → → → → field.handleChange(event.target.value)␍
+        357 │ + → → → → → → → → → → → }␍
+    323 358 │                         onBlur={field.handleBlur}␍
+    324 359 │                       />␍
+    ······· │ 
+    336 371 │                   value.trim()␍
+    337 372 │                     ? undefined␍
+    338     │ - → → → → → → → → → :·t("settings.employees.workBalance.errors.reasonRequired",·"Enter·a·reason."),␍
+        373 │ + → → → → → → → → → :·t(␍
+        374 │ + → → → → → → → → → → → "settings.employees.workBalance.errors.reasonRequired",␍
+        375 │ + → → → → → → → → → → → "Enter·a·reason.",␍
+        376 │ + → → → → → → → → → → ),␍
+    339 377 │               }}␍
+    340 378 │             >␍
+    ······· │ 
+    382 420 │                     {conflictingPayouts.map((payout) => (␍
+    383 421 │                       <li key={payout.id} className="tabular-nums">␍
+    384     │ - → → → → → → → → → → → {formatDay(payout.day)}:·{formatSignedWorkBalance(payout.minutes)}␍
+        422 │ + → → → → → → → → → → → {formatDay(payout.day)}:{"·"}␍
+        423 │ + → → → → → → → → → → → {formatSignedWorkBalance(payout.minutes)}␍
+    385 424 │                       </li>␍
+    386 425 │                     ))}␍
+    ······· │ 
+    396 435 │             ) : null}␍
+    397 436 │             <DialogFooter>␍
+    398     │ - → → → → → → <Button·type="button"·variant="outline"·onClick={()·=>·handleOpenChange(false)}>␍
+        437 │ + → → → → → → <Button␍
+        438 │ + → → → → → → → type="button"␍
+        439 │ + → → → → → → → variant="outline"␍
+        440 │ + → → → → → → → onClick={()·=>·handleOpenChange(false)}␍
+        441 │ + → → → → → → >␍
+    399 442 │                 {t("common.cancel", "Cancel")}␍
+    400 443 │               </Button>␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+          2 │ + import·{␍
+          3 │ + → appPageOwnsHeading,␍
+          4 │ + → normalizeAppPath,␍
+          5 │ + → resolveAppRouteMetadata,␍
+          6 │ + }·from·"./route-metadata";␍
+      3   7 │   ␍
+      4   8 │   describe("route metadata", () => {␍
+    ······· │ 
+      6  10 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+      7  11 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+      8     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+      9     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+         12 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+         13 │ + → → → true,␍
+         14 │ + → → );␍
+         15 │ + → → expect(␍
+         16 │ + → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+         17 │ + → → ).toBe(false);␍
+     10  18 │     });␍
+     11  19 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     26  34 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     27  35 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     28     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+         36 │ + → → expect(␍
+         37 │ + → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+         38 │ + → → ).toBe(true);␍
+     29  39 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     30     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+         40 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+         41 │ + → → → false,␍
+         42 │ + → → );␍
+     31  43 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     32  44 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     38  50 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     39  51 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     41     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+         52 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+         53 │ + → → → true,␍
+         54 │ + → → );␍
+         55 │ + → → expect(␍
+         56 │ + → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+         57 │ + → → ).toBe(false);␍
+     42  58 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     43  59 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+     46  62 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     47  63 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     48     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+         64 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+         65 │ + → → → true,␍
+         66 │ + → → );␍
+     49  67 │     });␍
+     50  68 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+     51     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     52     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+         69 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+         70 │ + → → → true,␍
+         71 │ + → → );␍
+         72 │ + → → expect(␍
+         73 │ + → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+         74 │ + → → ).toBe(false);␍
+     53  75 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     54  76 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+     57  79 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     58  80 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     59     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+         81 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+         82 │ + → → → true,␍
+         83 │ + → → );␍
+     60  84 │     });␍
+     61  85 │     it("adopts only the complete review arrival route", () => {␍
+     62     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     63     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     64     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+         86 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+         87 │ + → → → true,␍
+         88 │ + → → );␍
+         89 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+         90 │ + → → → false,␍
+         91 │ + → → );␍
+         92 │ + → → expect(␍
+         93 │ + → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+         94 │ + → → ).toBe(false);␍
+     65  95 │     });␍
+     66  96 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+     67  97 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     68     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+         98 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+         99 │ + → → → false,␍
+        100 │ + → → );␍
+     69 101 │     });␍
+     70 102 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+     71 103 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     72     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+        104 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+        105 │ + → → → false,␍
+        106 │ + → → );␍
+     73 107 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     74     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+        108 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+        109 │ + → → → false,␍
+        110 │ + → → );␍
+     75 111 │     });␍
+     76 112 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    118 154 │   ␍
+    119 155 │     it("normalizes locale and trailing slash segments", () => {␍
+    120     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+        156 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+        157 │ + → → → "/settings/security",␍
+        158 │ + → → );␍
+    121 159 │     });␍
+    122 160 │   });␍
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+    171     │ - → → id:·`settings-${entry.id}`,␍
+    172     │ - → → href:·entry.href,␍
+    173     │ - → → titleKey:·entry.titleKey,␍
+    174     │ - → → titleDefault:·entry.titleDefault,␍
+    175     │ - → })),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+        171 │ + → → (entry)·=>·({␍
+        172 │ + → → → id:·`settings-${entry.id}`,␍
+        173 │ + → → → href:·entry.href,␍
+        174 │ + → → → titleKey:·entry.titleKey,␍
+        175 │ + → → → titleDefault:·entry.titleDefault,␍
+        176 │ + → → }),␍
+        177 │ + → ),␍
+    176 178 │     {␍
+    177 179 │       id: "settings",␍
+    ······· │ 
+    190 192 │   ␍
+    191 193 │   export function normalizeAppPath(pathname: string): string {␍
+    192     │ - → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+    193     │ - → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+        194 │ + → const·[firstSegment,·...remainingSegments]·=·pathname␍
+        195 │ + → → .split("/")␍
+        196 │ + → → .filter(Boolean);␍
+        197 │ + → const·segments·=·ALL_LANGUAGES.includes(␍
+        198 │ + → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+        199 │ + → )␍
+    194 200 │       ? remainingSegments␍
+    195 201 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    247 253 │       [...APP_ROUTE_METADATA]␍
+    248 254 │         .sort((left, right) => right.href.length - left.href.length)␍
+    249     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+        255 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+        256 │ + → → UNKNOWN_ROUTE_METADATA␍
+    250 257 │     );␍
+    251 258 │   }␍
+  
+
+Checked 17 files in 11ms. No fixes applied.
+Found 16 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

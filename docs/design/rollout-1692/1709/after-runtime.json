@@ -1,0 +1,35 @@
+{
+  "mode": "after",
+  "actor": "small-manager",
+  "scope": "owned disposable small organization; unchanged seeded records",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Approval Inbox"
+      ],
+      "main": "Toggle Sidebar\n\nApprovals\n\n03:31\nUTC+01:00\nClock In\nToggle theme\n4\nApproval Inbox\n\nReview and approve pending requests from your team\n\nStart approval sprint\nRefresh\nPending Requests\n4\nSelect requests to approve in bulk, or click a row for details\n4 pending\nType\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 13, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 20, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 27, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Feb 3, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Approval Inbox"
+      ],
+      "main": "Toggle Sidebar\n\nApprovals\n\n4\nMore actions\nApproval Inbox\n\nReview and approve pending requests from your team\n\nStart approval sprint\nRefresh\nPending Requests\n4\nSelect requests to approve in bulk, or click a row for details\n4 pending\nType\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 13, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 20, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 27, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Feb 3, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Approval Inbox"
+      ],
+      "main": "Toggle Sidebar\n\nApprovals\n\n03:31\nUTC+01:00\nClock In\nToggle theme\n4\nApproval Inbox\n\nReview and approve pending requests from your team\n\nStart approval sprint\nRefresh\nPending Requests\n4\nSelect requests to approve in bulk, or click a row for details\n4 pending\nType\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 13, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 20, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Jan 27, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday\nPerson 3\nperf-small-3-414a31179690@example.test\nTime Corrections\nmedium risk\nTime Correction\n8h on Feb 3, 2025\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nToday"
+    }
+  ],
+  "errors": []
+}

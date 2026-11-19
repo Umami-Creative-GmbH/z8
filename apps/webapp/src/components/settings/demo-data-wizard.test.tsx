@@ -155,6 +155,62 @@ describe("DemoDataWizard", () => {
 		);
 	});
 
+	it("explains a failed employee load, offers a retry and blocks generation", async () => {
+		const user = userEvent.setup();
+		render(<DemoDataWizard employees={[]} employeesLoadFailed />);
+
+		const alert = screen.getByRole("alert");
+		expect(alert.textContent).toContain("Employees could not be loaded");
+		expect(screen.queryByText("All employees (0)")).toBeNull();
+
+		const generate = screen.getByRole("button", { name: /generate data/i });
+		expect(generate).toHaveProperty("disabled", true);
+
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(refresh).toHaveBeenCalledTimes(1);
+		expect(actionMocks.generateTimeEntriesStepAction).not.toHaveBeenCalled();
+	});
+
+	it("does not show the employee load error once employees loaded", () => {
+		render(
+			<DemoDataWizard employees={[{ id: "emp_1", name: "Ada Lovelace" }]} />,
+		);
+
+		expect(screen.queryByText("Employees could not be loaded")).toBeNull();
+		expect(
+			screen.getByRole("button", { name: /generate data/i }),
+		).toHaveProperty("disabled", false);
+	});
+
+	it("offers the work-period assignment as a separate option below the Work Categories card", async () => {
+		const user = userEvent.setup();
+		render(
+			<DemoDataWizard employees={[{ id: "emp_1", name: "Ada Lovelace" }]} />,
+		);
+
+		expect(
+			screen.queryByRole("checkbox", { name: "Also assign to work periods" }),
+		).toBeNull();
+
+		const card = screen.getByRole("checkbox", { name: "Work Categories" });
+		await user.click(card);
+		expect(card.getAttribute("aria-checked")).toBe("true");
+
+		const assign = screen.getByRole("checkbox", {
+			name: "Also assign to work periods",
+		});
+		// The sub-option is not nested inside the selectable card.
+		expect(card.contains(assign)).toBe(false);
+		expect(assign.getAttribute("aria-checked")).toBe("true");
+
+		await user.click(assign);
+
+		expect(assign.getAttribute("aria-checked")).toBe("false");
+		// Toggling the sub-option leaves the Work Categories selection alone.
+		expect(card.getAttribute("aria-checked")).toBe("true");
+	});
+
 	it("re-enables employee generation and does not refresh when generation rejects", async () => {
 		const user = userEvent.setup();
 		actionMocks.generateDemoEmployeesAction.mockRejectedValue(
@@ -176,7 +232,7 @@ describe("DemoDataWizard", () => {
 		expect(refresh).not.toHaveBeenCalled();
 	});
 
-	it("re-enables clear after the action rejects", async () => {
+	it("keeps the clear confirmation open with the failure and re-enables a retry", async () => {
 		const user = userEvent.setup();
 		actionMocks.clearTimeDataAction.mockRejectedValue(
 			new Error("Network failed"),
@@ -184,20 +240,64 @@ describe("DemoDataWizard", () => {
 		render(<DemoDataWizard employees={[]} />);
 
 		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+		const confirm = screen.getByRole("button", { name: "Clear All Data" });
+		expect(confirm).toHaveProperty("disabled", true);
 		await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
-		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
-		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+		await user.click(confirm);
 
 		await waitFor(() =>
 			expect(
 				screen.getByRole("button", { name: "Clear All Data" }),
 			).toHaveProperty("disabled", false),
 		);
-		expect(screen.getByText("An unexpected error occurred")).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(
+			screen.getAllByRole("alert").some((alert) =>
+				alert.textContent?.includes("An unexpected error occurred"),
+			),
+		).toBe(true);
+		expect(screen.getByLabelText("Type DELETE to confirm")).toHaveProperty(
+			"value",
+			"DELETE",
+		);
+		expect(actionMocks.clearTimeDataAction).toHaveBeenCalledTimes(1);
 		expect(screen.queryByText("Data cleared successfully!")).toBeNull();
 	});
 
-	it("re-enables non-admin deletion and does not refresh when deletion rejects", async () => {
+	it("closes the clear confirmation once the data is cleared", async () => {
+		const user = userEvent.setup();
+		actionMocks.clearTimeDataAction.mockResolvedValue({
+			success: true,
+			data: {
+				timeEntriesDeleted: 1,
+				workPeriodsDeleted: 1,
+				absencesDeleted: 0,
+				vacationAllowancesReset: 0,
+				teamsDeleted: 0,
+				projectsDeleted: 0,
+				managerAssignmentsDeleted: 0,
+				locationsDeleted: 0,
+				subareasDeleted: 0,
+				vehiclesDeleted: 0,
+				workCategorySetsDeleted: 0,
+				workCategoriesDeleted: 0,
+				changePoliciesDeleted: 0,
+				shiftTemplatesDeleted: 0,
+				shiftsDeleted: 0,
+				shiftRequestsDeleted: 0,
+			},
+		});
+		render(<DemoDataWizard employees={[]} />);
+
+		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+		await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		expect(screen.getByText("Data cleared successfully!")).toBeTruthy();
+	});
+
+	it("keeps the non-admin deletion open with the failure and does not refresh", async () => {
 		const user = userEvent.setup();
 		actionMocks.deleteNonAdminDataAction.mockRejectedValue(
 			new Error("Network failed"),
@@ -211,16 +311,18 @@ describe("DemoDataWizard", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
 		);
-		await user.click(
-			screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
-		);
 
 		await waitFor(() =>
 			expect(
 				screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
 			).toHaveProperty("disabled", false),
 		);
-		expect(screen.getByText("An unexpected error occurred")).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(
+			screen.getAllByRole("alert").some((alert) =>
+				alert.textContent?.includes("An unexpected error occurred"),
+			),
+		).toBe(true);
 		expect(
 			screen.queryByText("Non-admin employees deleted successfully!"),
 		).toBeNull();

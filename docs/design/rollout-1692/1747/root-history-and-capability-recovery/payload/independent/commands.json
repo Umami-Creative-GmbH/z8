@@ -1,0 +1,115 @@
+[
+  {
+    "id": "priority-attempt1",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/r165-independent-priority.test.tsx --maxWorkers=1 --bail=1 --reporter=json --outputFile ../../.tmp/r165-independent-SAFE/priority-attempt1.json",
+    "start": "2026-11-18T03:03:26.859Z",
+    "end": "2026-11-18T03:03:30.933Z",
+    "exit": 1,
+    "signal": null
+  },
+  {
+    "id": "priority-attempt2",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/r165-independent-priority.test.tsx --maxWorkers=1 --bail=1 --reporter=json --outputFile ../../.tmp/r165-independent-SAFE/priority-attempt2.json",
+    "start": "2026-11-18T03:04:04.772Z",
+    "end": "2026-11-18T03:04:08.974Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "priority-final",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/r165-independent-priority.test.tsx --maxWorkers=1 --bail=1 --reporter=json --outputFile ../../.tmp/r165-independent-SAFE/priority-final.json",
+    "start": "2026-11-18T03:04:44.605Z",
+    "end": "2026-11-18T03:04:50.801Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "unit13",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit \"src/components/travel-expenses/travel-expense-management.test.tsx\" \"src/components/travel-expenses/travel-expenses-heading.test.ts\" \"src/app/[locale]/(app)/travel-expenses/page.test.tsx\" \"src/lib/travel-expenses/__tests__/expense-history.test.ts\" \"src/lib/navigation/route-metadata.test.ts\" \"src/components/travel-expenses/travel-expenses-i18n.test.ts\" \"src/components/travel-expenses/travel-expense-list.test.tsx\" \"src/components/travel-expenses/travel-expense-claim-detail.test.tsx\" \"src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx\" \"src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx\" \"src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx\" \"src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts\" \"src/components/travel-expenses/expense-history-withdrawal.test.tsx\" --maxWorkers=1 --reporter=json --outputFile ../../.tmp/r165-independent-SAFE/unit13.json",
+    "start": "2026-11-18T03:05:07.999Z",
+    "end": "2026-11-18T03:05:26.263Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "typegen",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec next typegen",
+    "start": "2026-11-18T03:05:50.075Z",
+    "end": "2026-11-18T03:05:50.605Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "main-types",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.typecheck.json --noEmit --incremental false",
+    "start": "2026-11-18T03:05:50.606Z",
+    "end": "2026-11-18T03:06:16.766Z",
+    "exit": 1,
+    "signal": null
+  },
+  {
+    "id": "workflow-types",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false",
+    "start": "2026-11-18T03:06:16.767Z",
+    "end": "2026-11-18T03:06:28.761Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "smoke-types",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.smoke.json --noEmit --incremental false",
+    "start": "2026-11-18T03:06:28.761Z",
+    "end": "2026-11-18T03:06:29.769Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "lint",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome lint --config-path=biome.jsonc src/components/travel-expenses/expense-history-withdrawal.test.tsx src/components/travel-expenses/expense-history.tsx src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx src/components/travel-expenses/travel-expense-management.test.tsx",
+    "start": "2026-11-18T03:06:29.769Z",
+    "end": "2026-11-18T03:06:30.703Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "format-ordinary",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc src/components/travel-expenses/expense-history-withdrawal.test.tsx src/components/travel-expenses/expense-history.tsx src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx src/components/travel-expenses/travel-expense-management.test.tsx",
+    "start": "2026-11-18T03:06:30.704Z",
+    "end": "2026-11-18T03:06:31.193Z",
+    "exit": 1,
+    "signal": null
+  },
+  {
+    "id": "format-explicit",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf src/components/travel-expenses/expense-history-withdrawal.test.tsx src/components/travel-expenses/expense-history.tsx src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx src/components/travel-expenses/travel-expense-management.test.tsx",
+    "start": "2026-11-18T03:06:31.194Z",
+    "end": "2026-11-18T03:06:32.437Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "doctor",
+    "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base c70858bfe507eb99f844a455230e312cc8247b61 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/r165-independent-SAFE/doctor.json",
+    "start": "2026-11-18T03:06:32.437Z",
+    "end": "2026-11-18T03:06:37.992Z",
+    "exit": 0,
+    "signal": null
+  },
+  {
+    "id": "pg6",
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp run test:integration src/lib/travel-expenses/expense-history.integration.test.ts src/lib/travel-expenses/report-draft.integration.test.ts src/lib/travel-expenses/trip-report-draft.integration.test.ts src/lib/travel-expenses/expense-officer-access.integration.test.ts src/lib/travel-expenses/export-reimbursement.integration.test.ts src/lib/travel-expenses/mileage-policy.integration.test.ts --maxWorkers=1 --reporter=json --outputFile ../../.tmp/r165-independent-SAFE/pg6.json",
+    "start": "2026-11-18T03:06:23.815Z",
+    "end": "2026-11-18T03:07:04.489Z",
+    "exit": 0,
+    "signal": null,
+    "nestedPnpm": "SAFE/bin/pnpm prepends --config.verify-deps-before-run=false; inherited pnpm_config_verify_deps_before_run=false",
+    "selection": [
+      "src/lib/travel-expenses/expense-history.integration.test.ts",
+      "src/lib/travel-expenses/report-draft.integration.test.ts",
+      "src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "src/lib/travel-expenses/mileage-policy.integration.test.ts"
+    ]
+  }
+]

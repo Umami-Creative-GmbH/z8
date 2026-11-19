@@ -1,0 +1,45 @@
+{
+  "filename": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+  "compiled": true,
+  "events": [
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileError",
+        "fnLoc": {
+          "start": {
+            "line": 55,
+            "column": 7,
+            "index": 2007
+          },
+          "end": {
+            "line": 155,
+            "column": 1,
+            "index": 5009
+          }
+        },
+        "detail": {
+          "options": {
+            "reason": "Support value blocks (conditional, logical, optional chaining, etc) within a try/catch statement",
+            "description": null,
+            "loc": {
+              "start": {
+                "line": 87,
+                "column": 10,
+                "index": 2990
+              },
+              "end": {
+                "line": 87,
+                "column": 17,
+                "index": 2997
+              },
+              "identifierName": "arrival"
+            },
+            "suggestions": null,
+            "category": "Todo"
+          }
+        }
+      }
+    }
+  ]
+}

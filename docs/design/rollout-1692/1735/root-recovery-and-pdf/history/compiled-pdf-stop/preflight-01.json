@@ -1,0 +1,6 @@
+﻿{
+    "attempt":  "preflight-01",
+    "exit":  1,
+    "result":  "PowerShell policy prevented direct local script invocation before any test or source bridge ran",
+    "kind":  "harness"
+}

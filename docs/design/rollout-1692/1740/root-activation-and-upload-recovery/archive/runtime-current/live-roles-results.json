@@ -1,0 +1,22 @@
+{
+  "checks": [
+    {
+      "name": "real admin admission exposes wider canonical workforce",
+      "status": "passed",
+      "detail": 8
+    },
+    {
+      "name": "actual admin record succeeds and calendar reads three absences",
+      "status": "passed"
+    },
+    {
+      "name": "real restricted employee is redirected and has no team mutation controls",
+      "status": "passed"
+    },
+    {
+      "name": "restricted direct route reload remains denied",
+      "status": "passed"
+    }
+  ],
+  "limits": "No SQL membership/grant/policy changes. Restricted role route denial; no direct forged action call or concurrent server-revocation claim."
+}

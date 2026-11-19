@@ -61,6 +61,7 @@
           "allowance": "Kuota e lejes",
           "allowanceForYear": "Ditët e lejuara të pushimit për {year}",
           "assignedPolicy": "Politika e caktuar",
+          "backToAllowances": "Kthehu te kuotat e punonjësve",
           "cancel": "Anulo",
           "carryover": "Bartja",
           "carryoverDaysOptional": "Ditët e bartura (Opsionale)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "E paracaktuar: {days} ditë",
           "employeeInformation": "Informacioni i punonjësit",
           "errors": {
+            "adjustmentReasonRequired": "Vendosni një arsye për të regjistruar këtë rregullim.",
             "createAdjustmentFailed": "Dështoi krijimi i rregullimit",
-            "unexpected": "Ndodhi një gabim i papritur",
+            "loadFailed": "Kuota e pushimeve të punonjësit nuk mund të ngarkohej.",
             "updateAllowanceFailed": "Dështoi përditësimi i ditëve të lejuara",
             "updatePolicyAssignmentFailed": "Përditësimi i caktimit të politikës dështoi"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "menaxhoni ditët e lejes vjetore të punonjësve",
           "managers": "Menaxherët",
           "overrideEffectivePolicy": "Mbishkruaj lejen e përcaktuar nga rregullorja ({days} ditë) për këtë punonjës",
+          "partialSave": {
+            "description": "Të dhënat tuaja ruhen. Riprovo ruan vetëm atë që mungon ende.",
+            "failed": {
+              "adjustment": "Rregullimi manual nuk mund të ruhej: {reason}",
+              "allowance": "Kuota e personalizuar nuk mund të ruhej: {reason}",
+              "policy": "Caktimi i politikës nuk mund të ruhej: {reason}"
+            },
+            "pending": {
+              "adjustment": "Rregullimi manual nuk është ruajtur ende.",
+              "allowance": "Kuota e personalizuar nuk është ruajtur ende.",
+              "policy": "Caktimi i politikës nuk është ruajtur ende."
+            },
+            "retry": "Riprovo ndryshimet e paruajtura",
+            "saved": {
+              "adjustment": "Rregullimi manual u ruajt.",
+              "allowance": "Kuota e personalizuar u ruajt.",
+              "policy": "Caktimi i politikës u ruajt."
+            },
+            "title": "Disa ndryshime nuk u ruajtën",
+            "titleNothingSaved": "Ndryshimet nuk u ruajtën"
+          },
           "policyOptionDays": "{name} ({days} ditë)",
           "position": "Pozicioni",
           "postingsSkipped": "Regjistrimet automatike të pushimeve anashkalohen derisa të zgjidhet konfigurimi i rregullores.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Paralajmërim: \"{name}\" është politika e parazgjedhur e kompanisë. Duhet të caktoni një politikë tjetër si të parazgjedhur para se të fshini këtë.",
       "delete-description-v2": "A jeni të sigurt që dëshironi të fshini \"{name}\"? Kjo gjithashtu do të heqë të gjitha caktimet për këtë politikë.",
       "deleteFailed": "Fshirja e politikës dështoi",
+      "deleteLastDefault": "Kjo është e vetmja politikë e parazgjedhur e kompanisë. Vendosni fillimisht një politikë tjetër si të parazgjedhur.",
       "delete-title": "Fshij politikën e pushimeve",
       "header": {
         "accrual": "Akumulimi",
@@ -334,6 +358,7 @@
       },
       "loadError": "Ngarkimi i politikave dështoi",
       "max-days": "Maks. {days} ditë",
+      "no-end-date": "Pa datë përfundimi",
       "none": "Asnjë",
       "no-policies-created": "Nuk është krijuar ende asnjë politikë pushimesh. Krijoni një politikë për të përcaktuar lejet e pushimeve për ekipin tuaj.",
       "noSearchResults": "Asnjë politikë nuk përputhet me kërkimin tuaj.",

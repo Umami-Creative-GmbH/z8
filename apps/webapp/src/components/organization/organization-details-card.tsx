@@ -24,11 +24,24 @@ interface OrganizationDetailsCardProps {
 	settingsAccess: SettingsAccess | null;
 }
 
-function getOrganizationDescription(metadata: unknown): string | null {
+function parseMetadata(metadata: unknown): unknown {
+	// The column is text holding JSON; the edit dialog writes it as a JSON string.
+	if (typeof metadata !== "string") return metadata;
+	try {
+		return JSON.parse(metadata);
+	} catch {
+		return null;
+	}
+}
+
+function getOrganizationDescription(rawMetadata: unknown): string | null {
+	const metadata = parseMetadata(rawMetadata);
 	if (typeof metadata !== "object" || metadata === null || !("description" in metadata)) {
 		return null;
 	}
-	return typeof metadata.description === "string" ? metadata.description : null;
+	return typeof metadata.description === "string" && metadata.description.trim()
+		? metadata.description
+		: null;
 }
 
 export function OrganizationDetailsCard({
@@ -127,15 +140,17 @@ export function OrganizationDetailsCard({
 								{/* Upload progress overlay */}
 								{isUploading && (
 									<div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-full bg-black/70">
-										<IconLoader2 className="size-5 animate-spin text-white" />
-										<span className="mt-0.5 text-[10px] font-medium text-white">
+										<IconLoader2 aria-hidden="true" className="size-5 animate-spin text-white" />
+										<span className="mt-0.5 text-[10px] font-medium tabular-nums text-white">
 											{uploadProgress}%
 										</span>
 									</div>
 								)}
 							</div>
 							<div className="min-w-0">
-								<CardTitle className="text-2xl">{organization.name}</CardTitle>
+								<CardTitle className="text-xl">
+									<h2>{organization.name}</h2>
+								</CardTitle>
 								<CardDescription className="mt-1">
 									{organization.slug && (
 										<span className="inline-block max-w-full truncate text-xs font-mono bg-muted px-2 py-1 rounded align-bottom">
@@ -192,7 +207,7 @@ export function OrganizationDetailsCard({
 				</CardHeader>
 				<CardContent>
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<IconUsers className="size-4" />
+						<IconUsers aria-hidden="true" className="size-4" />
 						<span>
 							{t(
 								"organization.members.count",
@@ -204,7 +219,9 @@ export function OrganizationDetailsCard({
 						</span>
 					</div>
 					{metadataDescription && (
-						<p className="mt-4 text-sm text-muted-foreground">{metadataDescription}</p>
+						<p className="mt-4 whitespace-pre-line break-words text-sm text-muted-foreground">
+							{metadataDescription}
+						</p>
 					)}
 				</CardContent>
 			</Card>

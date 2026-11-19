@@ -1,0 +1,209 @@
+{
+  "phase": "before",
+  "sourceMode": "11 exact base production consumers; new leaves present but unused; partial historical application",
+  "checkpoint": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+  "policy": "Fresh own isolated Chromium context, normal private fixture login; prepareFixtureBrowserContext explicitly denies notifications. Main-region captures exclude private fixture contact text. Native viewport only; no cookie/session/storage copy/save/restore.",
+  "observations": [
+    {
+      "name": "desktop",
+      "geometry": {
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "18px",
+        "dark": true,
+        "notifications": "denied",
+        "blockingDialogs": 0,
+        "overflow": false,
+        "headings": [
+          "Travel Expenses",
+          "Expense finance"
+        ],
+        "accounts": [
+          {
+            "href": "/en/travel-expenses/reports/7edd69b6-e3f7-418b-8927-0832d5280ec7",
+            "label": "Person 2 · Synthetic R167 trainOct 1, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €75.00€75.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/8884d36e-112c-4975-9d5e-0e6b0c3b4129",
+            "label": "Person 0 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €32.00€32.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/4f4e7759-569c-423b-add7-bd08cfbda66a",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid CHF 120.50CHF 120.50 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/10afc6bf-e3f1-4236-9beb-676c4f607817",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €42.00€42.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/06fe5fd8-b6d6-4bf6-b264-f025feac5ca5",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €89.90€69.40 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/api/travel-expenses/exports/9936cc3c-7ea9-4039-b375-be60e41e6aef",
+            "label": "Download"
+          }
+        ]
+      },
+      "screenshot": {
+        "file": "before-dark18-desktop.png",
+        "bytes": 154712,
+        "sha256": "5344a3e6ba7ed84dcf47da5f031700ee5f0bf1a71592fa9ec12f7944975ae1ed"
+      }
+    },
+    {
+      "name": "phone",
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "dark": true,
+        "notifications": "denied",
+        "blockingDialogs": 0,
+        "overflow": false,
+        "headings": [
+          "Travel Expenses",
+          "Expense finance"
+        ],
+        "accounts": [
+          {
+            "href": "/en/travel-expenses/reports/7edd69b6-e3f7-418b-8927-0832d5280ec7",
+            "label": "Person 2 · Synthetic R167 trainOct 1, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €75.00€75.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/8884d36e-112c-4975-9d5e-0e6b0c3b4129",
+            "label": "Person 0 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €32.00€32.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/4f4e7759-569c-423b-add7-bd08cfbda66a",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid CHF 120.50CHF 120.50 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/10afc6bf-e3f1-4236-9beb-676c4f607817",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €42.00€42.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/06fe5fd8-b6d6-4bf6-b264-f025feac5ca5",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €89.90€69.40 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/api/travel-expenses/exports/9936cc3c-7ea9-4039-b375-be60e41e6aef",
+            "label": "Download"
+          }
+        ]
+      },
+      "screenshot": {
+        "file": "before-dark18-phone.png",
+        "bytes": 45033,
+        "sha256": "b896cf8ad8deb7714642249e4c82aa79ea411bafc58447ff8ce8040e1e33bae2"
+      }
+    },
+    {
+      "name": "wide",
+      "geometry": {
+        "viewport": {
+          "width": 2400,
+          "height": 1200
+        },
+        "font": "18px",
+        "dark": true,
+        "notifications": "denied",
+        "blockingDialogs": 0,
+        "overflow": false,
+        "headings": [
+          "Travel Expenses",
+          "Expense finance"
+        ],
+        "accounts": [
+          {
+            "href": "/en/travel-expenses/reports/7edd69b6-e3f7-418b-8927-0832d5280ec7",
+            "label": "Person 2 · Synthetic R167 trainOct 1, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €75.00€75.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/8884d36e-112c-4975-9d5e-0e6b0c3b4129",
+            "label": "Person 0 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €32.00€32.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/4f4e7759-569c-423b-add7-bd08cfbda66a",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid CHF 120.50CHF 120.50 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/10afc6bf-e3f1-4236-9beb-676c4f607817",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €42.00€42.00 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/en/travel-expenses/06fe5fd8-b6d6-4bf6-b264-f025feac5ca5",
+            "label": "Person 2 · Legacy mileage claimOct 1, 2026 – Oct 2, 2026Approved Oct 4, 2026, 10:00 AM UTCEmployee-paid €89.90€69.40 outstandingAwaiting reimbursement"
+          },
+          {
+            "href": "/api/travel-expenses/exports/9936cc3c-7ea9-4039-b375-be60e41e6aef",
+            "label": "Download"
+          }
+        ]
+      },
+      "screenshot": {
+        "file": "before-dark18-wide.png",
+        "bytes": 181051,
+        "sha256": "4173b9a3f080fdef67705f8142951f1d83fd666795627f1ebd0956fa090aee5e"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.tsx",
+      "sha256": "b5a64ae5ee542cf811be1fe9a628244f3bd46f1fdaf9c576256af2836eeced62"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+      "sha256": "f8d240a1f4a29861e2c5467e287b42f48fffd89162000869f9a6d918ad081517"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/confirm-payroll-run-dialog.tsx",
+      "sha256": "a847298e487ea70f566dd98703f525a8f7f24cfa461968e42899fa2b589bfd09"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-exports.tsx",
+      "sha256": "904eec989467edf39d546511f846f23844f0f3f53d782e052099b842b596f313"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.tsx",
+      "sha256": "3fc31022e9757d803ac8b8b8bade2ccbd5587dff45e3715e16397b4ea7a60f8f"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.tsx",
+      "sha256": "ad6980b118cfb075f0c651683b37e74520f252b9317cd77931c0006fb54ff454"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/payroll-run-notice.tsx",
+      "sha256": "db4ec9cc66474d0e52d0091b870561a6d0e19014570fc3e4be88025d575799f5"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/payroll-runs-to-confirm.tsx",
+      "sha256": "94cf39af4e99dacc324c743a7d886e7521a9a98f54f47039d97d57475745c7b6"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/record-reimbursement-form.tsx",
+      "sha256": "f1e4a067ae7ec2f813e563da6f20fcea5e83574b5f85c53dd2474530b7b3afd0"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx",
+      "sha256": "5dacbc66b3430c7aafbc625b16ad1d61ce46a24e355d62da761d15af3fd8741a"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-heading.tsx",
+      "sha256": "f05b6ae15d3660e62608e474ca2b0fff1dd6a3b66208ffb040ac9dad649d54f5"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/use-finance-command.ts",
+      "sha256": "fa5a5b8bccaa14b6f7e44889879a85d968d54403d63585ca4d4b07a33ae5b48a"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Sanitized original seal binding; excluded private inventories are not published",
+  "originalSealSha256": "b766814091d5ba4899c15588ac9c2442dcb33aa5f878b00bd1b938c23dd45437",
+  "head": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+  "status": "CRITICAL_STOP_RELEASE_ALL",
+  "ownedLiveResources": 0,
+  "safeAllowlistSha256": "2cf99690e8339530b8c2f253d8dbbb6ee3d0baa6c4dab05a68eccec75aa841dc",
+  "originalSafeIndexRawSha256": "2cf99690e8339530b8c2f253d8dbbb6ee3d0baa6c4dab05a68eccec75aa841dc",
+  "excludes": "Original files/allFiles private inventory array and every nonallowlisted payload"
+}

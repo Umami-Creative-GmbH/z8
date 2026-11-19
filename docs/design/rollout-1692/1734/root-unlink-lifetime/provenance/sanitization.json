@@ -1,0 +1,253 @@
+{
+  "policy": "Only selected static clones are sanitized. Original root/runtime/STOP files are never rewritten. Clone JSON retains original JSON bytes except the exact path substitutions; log header is explicitly recorded.",
+  "reproducibility": "Replacement source values are obtained read-only as described, verified by length/SHA256. Their private literal content is excluded. No private diagnostics are opened. Apply ordered replaceAll for each matching source then prepend addedHeader.",
+  "replacements": [
+    {
+      "id": "wrapped-checkout-root",
+      "sourceUtf8Bytes": 60,
+      "sourceSha256": "6b2a182b2a04d0245993975119d6de32b0a18a9fa9398476a839ef70751379b5",
+      "replacement": "[CHECKOUT]",
+      "description": "Exact wrapped Windows checkout prefix through the continuation glyph and remaining checkout identifier."
+    },
+    {
+      "id": "json-pnpm-executable",
+      "sourceUtf8Bytes": 194,
+      "sourceSha256": "a7be6797433076d14f58318c4d162da1fc77fa6c080377622737cdeb18daecef",
+      "replacement": "[PINNED_PNPM_EXECUTABLE]",
+      "description": "JSON-escaped original unit-command executable; pinned pnpm12.16.1, no executable run by publisher."
+    },
+    {
+      "id": "json-checkout-root",
+      "sourceUtf8Bytes": 56,
+      "sourceSha256": "a512680e3bf533f79d072c7dda68caa137b3f5c09b8d5f4ec2bd3ca4ebbc8bf6",
+      "replacement": "[CHECKOUT]",
+      "description": "JSON-escaped checkout root resolved from publication process.cwd()."
+    },
+    {
+      "id": "slash-checkout-root",
+      "sourceUtf8Bytes": 52,
+      "sourceSha256": "cdbe82d7ba5f4266957492891b565af95303b235f4ed6bd7c6c925479d65b336",
+      "replacement": "[CHECKOUT]",
+      "description": "Forward-slash checkout root resolved from publication process.cwd()."
+    },
+    {
+      "id": "windows-checkout-root",
+      "sourceUtf8Bytes": 52,
+      "sourceSha256": "f7ab938771cead25df05c4a649f47798017b1f5fdd6163b758a68b5a35a1218f",
+      "replacement": "[CHECKOUT]",
+      "description": "Native Windows checkout root resolved from publication process.cwd()."
+    },
+    {
+      "id": "doctor-private-pointer",
+      "sourceUtf8Bytes": 86,
+      "sourceSha256": "0192b2c9db87ef3b33bbb52a1e2a58dd35b82d2e91835ef18592572c4112bb1f",
+      "replacement": "[PRIVATE_DIAGNOSTIC_PATH]",
+      "description": "Exact value after Full diagnostics written to; no diagnostics file was read."
+    }
+  ],
+  "records": [
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-red.json",
+      "originalBytes": 1472,
+      "originalRawSha256": "c8338049ed6351717c5b953b439e462629c58a767a2ff5dc6a1eb53f0feaed20",
+      "clone": "archive/static/unlink-red.sanitized.json",
+      "cloneBytes": 1346,
+      "cloneSha256": "958cbc492173bef6348c5e2dd44990d005054c4d2a82a1372b6e41c4c6fc8540",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 3
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-green.json",
+      "originalBytes": 1057,
+      "originalRawSha256": "11b1b18c10d4aaf1825fadc472ff9d2058cca4cb7d2796b78c3ba471b93438c3",
+      "clone": "archive/static/unlink-green.sanitized.json",
+      "cloneBytes": 1015,
+      "cloneSha256": "44655f5e185d4fdce16e9d3539c0685604e80abb184de73895780bd9ed446418",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-cross-consumer-red.json",
+      "originalBytes": 1803,
+      "originalRawSha256": "630fe7f114259044178251d643560706e88cb078b223ca65602b5eb67185d994",
+      "clone": "archive/static/unlink-cross-consumer-red.sanitized.json",
+      "cloneBytes": 1677,
+      "cloneSha256": "4db78ed5494e7c605551610be2e581cc5c7f493da6fdcda9b8bfc2c0b959f0e1",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 3
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-cross-consumer-green.json",
+      "originalBytes": 6854,
+      "originalRawSha256": "d3b3d0fe4d313e8e5073bd5cfaa9a468c6a4fbf3f4b7436dcbe174e824de94af",
+      "clone": "archive/static/unlink-cross-consumer-green.sanitized.json",
+      "cloneBytes": 6728,
+      "cloneSha256": "ba4afa392f51a0f74b236f101ceaef4fbaf5b7fa581cb59e143bcddfc48cc3db",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 3
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-observers-red.json",
+      "originalBytes": 11957,
+      "originalRawSha256": "e789d6735b3051291f3c1af2290a7137d52a4c0efaeca3a0d83a9f504b5fa84d",
+      "clone": "archive/static/unlink-observers-red.sanitized.json",
+      "cloneBytes": 11735,
+      "cloneSha256": "775cb5d019642ef9a5170b46c544b1367d29c51bb84df002d57968aa0ce92f68",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "json-checkout-root",
+          "occurrences": 3
+        },
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 2
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-observers-green.json",
+      "originalBytes": 7565,
+      "originalRawSha256": "6acecc13cc1b7b818c6edebb43c01c8b21d7fe38908188183ef81f82b9f3bd42",
+      "clone": "archive/static/unlink-observers-green.sanitized.json",
+      "cloneBytes": 7439,
+      "cloneSha256": "fe5d8bde00264d9e805e608a6a7f953722a60b704846b502460196cb83f19093",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 3
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-outcomes-and-scope.json",
+      "originalBytes": 3105,
+      "originalRawSha256": "36b907500c1ac6ff517ac7f21bb348c749b0a46c64cda0f8eac54b8a2bfc3f1e",
+      "clone": "archive/static/unlink-outcomes-and-scope.sanitized.json",
+      "cloneBytes": 3063,
+      "cloneSha256": "7cf89dd3eaa62a847ad3bc004441fdcbb834e15cd37e2d43117ad83a679f760b",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unlink-identity-red.log",
+      "originalBytes": 2155,
+      "originalRawSha256": "ca317b49cb80e94d4387ffc44acfa45aa88c19dc199a362d13fe404e88bf3e53",
+      "clone": "archive/static/unlink-identity-red.sanitized.log",
+      "cloneBytes": 2167,
+      "cloneSha256": "2e946522badc707eaec3cc1c03c628fd855b3625b43ced957ec202f5a52933e1",
+      "addedHeader": "[SANITIZED PUBLIC CLONE: original excluded; deterministic replacements in provenance/sanitization.json]\n",
+      "applied": [
+        {
+          "id": "wrapped-checkout-root",
+          "occurrences": 1
+        },
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unit-final.json",
+      "originalBytes": 179600,
+      "originalRawSha256": "de784ac9db9f1e629a88b0f1de7e7debe560cceb994efaff429f24c93234471e",
+      "clone": "archive/static/unit-final.sanitized.json",
+      "cloneBytes": 176660,
+      "cloneSha256": "9f556d38730da7e7c3d9bea1bbd04b459b5e80c3aeef5e1e4fd513872169b0ff",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 70
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unit-final.log",
+      "originalBytes": 2437,
+      "originalRawSha256": "bbd14a69db09b6e9f9d8e6c62de9f946b9b11be5210caf70227d794d1b742f9d",
+      "clone": "archive/static/unit-final.sanitized.log",
+      "cloneBytes": 2163,
+      "cloneSha256": "4a011599d87944ef69c3d0267ea2e93553d1e66c025b006bac29a97faa97bb5e",
+      "addedHeader": "[SANITIZED PUBLIC CLONE: original excluded; deterministic replacements in provenance/sanitization.json]\n",
+      "applied": [
+        {
+          "id": "slash-checkout-root",
+          "occurrences": 9
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/unit-command.json",
+      "originalBytes": 4766,
+      "originalRawSha256": "96fd51a8e9c626d3ae670a0cdc78bbdc8d80221356a74b9d49c5a7a9388a5913",
+      "clone": "archive/static/unit-command.sanitized.json",
+      "cloneBytes": 4596,
+      "cloneSha256": "847efaf10c4754eb7f94a195d0aee8f64a1a6454304a8aaaf1d62e3831509967",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "json-pnpm-executable",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/quality.json",
+      "originalBytes": 5264,
+      "originalRawSha256": "3dcc067b6495434a1f04d1be9c295b5276c59cbea9ef00e926b36d30cdcd160f",
+      "clone": "archive/static/quality.sanitized.json",
+      "cloneBytes": 4414,
+      "cloneSha256": "ef7cc9e0ebd4a35e5e5c9129cb504ec48c10f2b4cb939dcbea0d0340b2036a97",
+      "addedHeader": "",
+      "applied": [
+        {
+          "id": "json-pnpm-executable",
+          "occurrences": 5
+        }
+      ]
+    },
+    {
+      "originalPath": ".tmp/1734-root-checks/doctor.log",
+      "originalBytes": 2628,
+      "originalRawSha256": "5e70dffc95184ebcd3e9325c85e5900ba41f3bef1ab9bfc66ff3d6840ceb5f05",
+      "clone": "archive/static/doctor.sanitized.log",
+      "cloneBytes": 2671,
+      "cloneSha256": "fe757b8f281e5d4bd8d81e042db84c0eb9be68033a630058cd0d2bd373c230fc",
+      "addedHeader": "[SANITIZED PUBLIC CLONE: original excluded; deterministic replacements in provenance/sanitization.json]\n",
+      "applied": [
+        {
+          "id": "doctor-private-pointer",
+          "occurrences": 1
+        }
+      ]
+    }
+  ]
+}

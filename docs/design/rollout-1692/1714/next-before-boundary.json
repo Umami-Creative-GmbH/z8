@@ -1,0 +1,53 @@
+{
+  "get_compilation_issues": {
+    "issues": []
+  },
+  "get_errors": {
+    "configErrors": [],
+    "sessionErrors": [
+      {
+        "url": "/en/compliance",
+        "buildError": null,
+        "runtimeErrors": [
+          {
+            "type": "console",
+            "errorName": "Error",
+            "message": "Route \"/[locale]/compliance\": Next.js encountered uncached data during prerendering or a navigation.\n\n`fetch(...)` or `connection()` accessed outside of `<Suspense>` prevents the route from being prerendered or the navigation from being instant, leading to a slower user experience.\n\nWays to fix this:\n  - [stream] Provide a placeholder with `<Suspense fallback={...}>` around the data access\n  - [cache] Cache the data access with `\"use cache\"` (does not apply to `connection()`)\n  - [block] Set `export const instant = false` to allow a blocking route\n\nLearn more: https://nextjs.org/docs/messages/blocking-prerender-dynamic",
+            "stack": [
+              {
+                "file": "src\\lib\\auth\\request-session.ts",
+                "methodName": "getRequestSession",
+                "line": 20,
+                "column": 18
+              },
+              {
+                "file": "src\\lib\\auth-helpers.ts",
+                "methodName": "<anonymous>",
+                "line": 84,
+                "column": 41
+              },
+              {
+                "file": "src\\lib\\auth-helpers.ts",
+                "methodName": "requireUser",
+                "line": 156,
+                "column": 24
+              },
+              {
+                "file": "src\\lib\\auth-helpers.ts",
+                "methodName": "requireOrgAdminSettingsAccess",
+                "line": 804,
+                "column": 28
+              },
+              {
+                "file": "src\\app\\[locale]\\(app)\\compliance\\page.tsx",
+                "methodName": "CompliancePage",
+                "line": 11,
+                "column": 64
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

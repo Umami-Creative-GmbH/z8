@@ -1,0 +1,99 @@
+import { randomUUID } from "node:crypto";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { ExpiringDocumentsCard } from "@/components/personnel-file/expiring-documents";
+import {
+	PersonnelFilesHeading,
+	PersonnelFilesReadFailure,
+	PersonnelFilesWorkspace,
+} from "@/components/personnel-file/personnel-files-workspace";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	managesAnyDocuments,
+	managesCategory,
+	managesDocumentRequests,
+} from "@/lib/personnel-file/access";
+import { listManagedEmployees } from "@/lib/personnel-file/access-store";
+import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
+import { listExpiringDocuments, loadExpiryReminderWindow } from "@/lib/personnel-file/expiry-store";
+import { canRunPayslipBatches } from "@/lib/personnel-file/payslip-batch-store";
+import { getTranslate } from "@/tolgee/server";
+
+/** R045: retain canonical category AND employee scope, including own-file exclusion. */
+async function PersonnelFilesContent() {
+	const [t, current] = await Promise.all([getTranslate(), loadCurrentPersonnelFileAccess()]);
+	if (current.status !== "resolved" || !managesAnyDocuments(current.access)) notFound();
+	const { access } = current;
+	const now = systemClock.nowInstant();
+	// Independent sections can recover without calling an unavailable read empty.
+	const [employees, expiry] = await Promise.allSettled([
+		listManagedEmployees(db, access, { now }),
+		Promise.all([
+			listExpiringDocuments(db, access, { now }),
+			loadExpiryReminderWindow(db, {
+				organizationId: access.organizationId,
+				now,
+			}),
+		]),
+	]);
+	return (
+		<PersonnelFilesWorkspace
+			key={`${access.userId}:${access.organizationId}`}
+			readId={randomUUID()}
+			userId={access.userId}
+			organizationId={access.organizationId}
+			employees={employees.status === "fulfilled" ? employees.value : null}
+			capability={{
+				payslipBatches: canRunPayslipBatches(access),
+				documentRequests: managesDocumentRequests(access),
+				sickLeave: managesCategory(access, "sick_note"),
+				officerSettings: access.grants.some((grant) => grant.source === "organization_admin"),
+			}}
+			attention={
+				expiry.status === "fulfilled" ? (
+					<ExpiringDocumentsCard
+						documents={expiry.value[0]}
+						leadDays={expiry.value[1].leadDays}
+						today={expiry.value[1].today}
+					/>
+				) : (
+					<PersonnelFilesReadFailure>
+						{t(
+							"settings.personnelFiles.area.expiryFailed",
+							"Expiring documents could not be loaded. Try again.",
+						)}
+					</PersonnelFilesReadFailure>
+				)
+			}
+		/>
+	);
+}
+
+function PersonnelFilesLoading() {
+	return (
+		<div className="@container/main flex min-w-0 flex-1 flex-col gap-8 p-4 md:p-6">
+			<PersonnelFilesHeading />
+			<LoadingRegion
+				label={{
+					labelKey: "settings.personnelFiles.area.loading",
+					labelDefault: "Loading personnel files",
+				}}
+				className="space-y-4"
+				role="status"
+			>
+				<Skeleton aria-hidden="true" className="h-32 w-full" />
+				<Skeleton aria-hidden="true" className="h-64 w-full" />
+			</LoadingRegion>
+		</div>
+	);
+}
+export default function PersonnelFilesPage() {
+	return (
+		<Suspense fallback={<PersonnelFilesLoading />}>
+			<PersonnelFilesContent />
+		</Suspense>
+	);
+}

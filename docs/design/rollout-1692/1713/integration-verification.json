@@ -1,0 +1,70 @@
+{
+    "sourceHead":  "2c269b0b685640bb627a29f90c16322df8da4b0d",
+    "branch":  "feat/calendar-employee-view",
+    "worktree":  "X:\\t3-code\\worktrees\\z8\\t3-77162f0a-f779caa437aa73b9",
+    "integration":  "6bce36400e094702e650d6c24c38fc79a49623b6",
+    "latestLocalIntegration":  "6bce36400e094702e650d6c24c38fc79a49623b6",
+    "ancestors":  [
+                      {
+                          "sha":  "5d5229c18ee87c226819aa6a46e81bc097d34fa8",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "cca1977df820ef288a7910a4f9d44b464d289b3b",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "ccccad7a3512924e01941054f01283057dd62f00",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "382b8f5be837dad724d3a54274d3050b0104881f",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "bfacad421ffe77f50729ea5895c546698ef28383",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "273320a9376b4deb60b57ba3882fc17b37ae308a",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "8224968accfe22981f15c5ddefe3c179f67b8dc7",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+                          "passed":  true
+                      },
+                      {
+                          "sha":  "6bce36400e094702e650d6c24c38fc79a49623b6",
+                          "passed":  true
+                      }
+                  ],
+    "ownedSourcePaths":  [
+                             "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.test.tsx",
+                             "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.tsx",
+                             "apps/webapp/src/app/[locale]/(app)/calendar/page.test.tsx",
+                             "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx",
+                             "apps/webapp/src/components/calendar/calendar-employee-selector.test.tsx",
+                             "apps/webapp/src/components/calendar/calendar-employee-selector.tsx",
+                             "apps/webapp/src/components/calendar/calendar-main-content.tsx",
+                             "apps/webapp/src/components/calendar/calendar-view.test.tsx",
+                             "apps/webapp/src/components/calendar/calendar-view.tsx",
+                             "apps/webapp/src/components/site-header.test.tsx",
+                             "apps/webapp/src/lib/calendar/calendar-employee-context.test.ts",
+                             "apps/webapp/src/lib/calendar/calendar-employee-context.ts",
+                             "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                             "apps/webapp/src/lib/navigation/route-metadata.ts"
+                         ],
+    "ledgerAndReadmeIdentical":  true
+}

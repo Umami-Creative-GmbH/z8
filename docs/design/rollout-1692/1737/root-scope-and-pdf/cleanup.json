@@ -1,0 +1,19 @@
+{
+  "portClosed": true,
+  "port": 64135,
+  "ownedNextIdentityVerified": true,
+  "cacheMoved": false,
+  "stoppedPids": [
+    108980,
+    49964,
+    106816,
+    57876
+  ],
+  "ownedNextStopped": true,
+  "filteredProcessInventory": true,
+  "ownedContainers": 3,
+  "remainingOwnedContainers": 0,
+  "puppeteerBrowsersClosed": true,
+  "nativeBrowserClosed": true,
+  "credentialStateTransferred": false
+}

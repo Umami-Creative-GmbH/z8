@@ -1,0 +1,545 @@
+{
+  "before": {
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "fontSize": "16px",
+    "focus": {
+      "tag": "BODY",
+      "text": "Skip to contentPerformance smallAdminSearchCtrl+KWorkplaceDa"
+    },
+    "nodes": [
+      {
+        "tag": "DIV",
+        "text": "",
+        "expanded": null,
+        "style": {
+          "display": "block",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 256,
+          "width": 256,
+          "height": 1100
+        }
+      },
+      {
+        "tag": "MAIN",
+        "text": "",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 256,
+          "y": 0,
+          "right": 1600,
+          "width": 1344,
+          "height": 1100
+        }
+      },
+      {
+        "tag": "H1",
+        "text": "Employee Reports",
+        "expanded": null,
+        "style": {
+          "display": "block",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 280,
+          "y": -3057,
+          "right": 1373.9375,
+          "width": 1093.9375,
+          "height": 36
+        }
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Fixture Person 0",
+        "disabled": false,
+        "expanded": "false",
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 305,
+          "y": -2906,
+          "right": 920,
+          "width": 615,
+          "height": 36
+        }
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Last Year",
+        "disabled": false,
+        "expanded": "false",
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 936,
+          "y": -2898,
+          "right": 1136,
+          "width": 200,
+          "height": 36
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Last Month",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Current Month",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Last Year",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Current Year",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Year to Date",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q1 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q2 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q3 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q4 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Custom Range",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      }
+    ]
+  },
+  "geometry": {
+    "h1": [
+      {
+        "text": "Employee Reports",
+        "left": 280,
+        "right": 1373.9375,
+        "width": 1093.9375,
+        "height": 36
+      }
+    ],
+    "main": {
+      "left": 256,
+      "right": 1600,
+      "width": 1344,
+      "height": 1100
+    },
+    "sidebar": {
+      "left": 0,
+      "right": 256,
+      "width": 256,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "mainWidth": 1344,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "after": {
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "fontSize": "16px",
+    "focus": {
+      "tag": "BODY",
+      "text": "Skip to contentPerformance smallAdminSearchCtrl+KWorkplaceDa"
+    },
+    "nodes": [
+      {
+        "tag": "DIV",
+        "text": "",
+        "expanded": null,
+        "style": {
+          "display": "block",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 256,
+          "width": 256,
+          "height": 1100
+        }
+      },
+      {
+        "tag": "MAIN",
+        "text": "",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 256,
+          "y": 0,
+          "right": 1600,
+          "width": 1344,
+          "height": 1100
+        }
+      },
+      {
+        "tag": "H1",
+        "text": "Employee Reports",
+        "expanded": null,
+        "style": {
+          "display": "block",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 280,
+          "y": -3057,
+          "right": 1373.9375,
+          "width": 1093.9375,
+          "height": 36
+        }
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Fixture Person 0",
+        "disabled": false,
+        "expanded": "false",
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 305,
+          "y": -2906,
+          "right": 920,
+          "width": 615,
+          "height": 36
+        }
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Last Year",
+        "disabled": false,
+        "expanded": "false",
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 936,
+          "y": -2898,
+          "right": 1136,
+          "width": 200,
+          "height": 36
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Last Month",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Current Month",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Last Year",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Current Year",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Year to Date",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q1 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q2 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q3 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Q4 2026",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      },
+      {
+        "tag": "DIV",
+        "text": "Custom Range",
+        "expanded": null,
+        "style": {
+          "display": "flex",
+          "transform": "none"
+        },
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "right": 0,
+          "width": 0,
+          "height": 0
+        }
+      }
+    ]
+  },
+  "source": "Partial historical consumer only",
+  "redactedEmailOnlyForScreenshot": true
+}

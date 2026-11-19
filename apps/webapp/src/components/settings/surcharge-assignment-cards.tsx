@@ -84,22 +84,27 @@ export function SurchargeTeamAssignmentsCard({
 						{assignments.map((assignment) => (
 							<div
 								key={assignment.id}
-								className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+								className="flex items-center justify-between gap-2 rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 							>
-								<div className="flex items-center gap-3">
-									<IconUsers className="size-4 text-muted-foreground" />
-									<div>
+								<div className="flex min-w-0 items-center gap-3">
+									<IconUsers
+										aria-hidden="true"
+										className="size-4 shrink-0 text-muted-foreground"
+									/>
+									<div className="min-w-0 break-words">
 										<span className="font-medium">{assignment.team?.name}</span>
-										<span className="text-muted-foreground mx-2">→</span>
+										<span aria-hidden="true" className="text-muted-foreground mx-2">
+											→
+										</span>
 										<span className="text-sm">{assignment.model.name}</span>
 									</div>
 								</div>
 								{canManage ? (
 									<Button
-										aria-label={t(
+										aria-label={`${t(
 											"settings.surcharges.removeTeamAssignment",
 											"Remove team assignment",
-										)}
+										)}: ${assignment.team?.name ?? ""}`}
 										variant="ghost"
 										size="icon"
 										className="size-8 text-muted-foreground hover:text-destructive"
@@ -169,25 +174,30 @@ export function SurchargeEmployeeAssignmentsCard({
 						{assignments.map((assignment) => (
 							<div
 								key={assignment.id}
-								className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+								className="flex items-center justify-between gap-2 rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 							>
-								<div className="flex items-center gap-3">
-									<IconUser className="size-4 text-muted-foreground" />
-									<div>
+								<div className="flex min-w-0 items-center gap-3">
+									<IconUser
+										aria-hidden="true"
+										className="size-4 shrink-0 text-muted-foreground"
+									/>
+									<div className="min-w-0 break-words">
 										<span className="font-medium">
 											{assignment.employee?.firstName}{" "}
 											{assignment.employee?.lastName}
 										</span>
-										<span className="text-muted-foreground mx-2">→</span>
+										<span aria-hidden="true" className="text-muted-foreground mx-2">
+											→
+										</span>
 										<span className="text-sm">{assignment.model.name}</span>
 									</div>
 								</div>
 								{canManage ? (
 									<Button
-										aria-label={t(
+										aria-label={`${t(
 											"settings.surcharges.removeEmployeeAssignment",
 											"Remove employee assignment",
-										)}
+										)}: ${`${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim()}`}
 										variant="ghost"
 										size="icon"
 										className="size-8 text-muted-foreground hover:text-destructive"

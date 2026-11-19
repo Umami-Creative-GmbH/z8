@@ -8,12 +8,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TemplateSidebarProps {
 	templates: ShiftTemplate[];
-	onTemplateDrop: (template: ShiftTemplate, date: Date) => void;
+	onSelectTemplate: (template: ShiftTemplate) => void;
 }
 
 interface TemplateCardProps {
 	template: ShiftTemplate;
 	onDragStart: (e: React.DragEvent, template: ShiftTemplate) => void;
+	onSelect: (template: ShiftTemplate) => void;
 }
 
 function formatTime(time: string): string {
@@ -51,7 +52,7 @@ function handleDragStart(e: React.DragEvent, template: ShiftTemplate) {
 	e.dataTransfer.effectAllowed = "copy";
 }
 
-function TemplateCard({ template, onDragStart }: TemplateCardProps) {
+function TemplateCard({ template, onDragStart, onSelect }: TemplateCardProps) {
 	const duration = calculateDuration(template.startTime, template.endTime);
 
 	const backgroundColor = template.color || "#3b82f6";
@@ -60,17 +61,21 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 		<li
 			draggable
 			onDragStart={(e) => onDragStart(e, template)}
-			className="group cursor-grab active:cursor-grabbing rounded-lg border bg-card p-3 shadow-sm transition-[box-shadow,transform] hover:shadow-md hover:scale-[1.02]"
+			className="group rounded-lg border bg-card"
 			style={{
 				borderLeftWidth: "4px",
 				borderLeftColor: backgroundColor,
 			}}
 		>
-			<div className="flex items-start gap-2">
+			<button
+				type="button"
+				onClick={() => onSelect(template)}
+				className="flex w-full items-start gap-2 rounded-lg p-3 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			>
 				<IconGripVertical className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
 				<div className="flex-1 min-w-0">
-					<h4 className="font-medium text-sm truncate">{template.name}</h4>
-					<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+					<span className="block break-words font-medium text-sm">{template.name}</span>
+					<div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground tabular-nums">
 						<IconClock className="size-3" />
 						<span>
 							{formatTime(template.startTime)} - {formatTime(template.endTime)}
@@ -78,20 +83,14 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 						<span className="text-muted-foreground/60">({duration})</span>
 					</div>
 				</div>
-			</div>
+			</button>
 		</li>
 	);
 }
 
-export function TemplateSidebar({
-	templates,
-	onTemplateDrop: _onTemplateDrop,
-}: TemplateSidebarProps) {
+export function TemplateSidebar({ templates, onSelectTemplate }: TemplateSidebarProps) {
 	const { t } = useTranslate();
 	const activeTemplates = templates.filter((t) => t.isActive);
-
-	// Handle drop on calendar - this needs to be coordinated with Schedule-IconX
-	// For now, we'll use a simpler approach where clicking a template opens the dialog
 
 	if (activeTemplates.length === 0) {
 		return (
@@ -121,8 +120,8 @@ export function TemplateSidebar({
 				</CardTitle>
 				<p className="text-xs text-muted-foreground">
 					{t(
-						"scheduling:scheduling.templates.dragHint",
-						"Drag a template onto the calendar to create a shift",
+						"scheduling:scheduling.templates.selectHint",
+						"Choose a template, then set the shift date and assignment.",
 					)}
 				</p>
 			</CardHeader>
@@ -134,6 +133,7 @@ export function TemplateSidebar({
 								key={template.id}
 								template={template}
 								onDragStart={handleDragStart}
+								onSelect={onSelectTemplate}
 							/>
 						))}
 					</ul>

@@ -1,0 +1,140 @@
+{
+  "fixture": "Unique disposable small organization, synthetic employee as absent approver; three stored decisions, two deputies, genuine empty absence, deleted/cancelled and undated histories. Real server readers, no replaced responses.",
+  "before": {
+    "h1": [
+      "Approvals"
+    ],
+    "rows": [
+      "Absence RequestsPerson 0ApprovedPerson 1Nov 10, 2026, 15:07",
+      "Absence RequestsPerson 0RejectedPerson 0Nov 10, 2026, 16:07",
+      "historical_unknown_kindUnknownApprovedPerson 1Nov 10, 2026, 17:07"
+    ],
+    "viewport": 1600,
+    "documentWidth": 1600
+  },
+  "states": [
+    {
+      "kind": "empty",
+      "h1": [
+        "Decided by your deputy"
+      ],
+      "text": "Nov 9 – 13, 2026\nDecided by your deputy\nApprovals decided for you while you were away.\nBack to inbox\n\nNobody decided approvals for you during this absence.",
+      "rows": 0,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "kind": "cancelled",
+      "h1": [
+        "Decided by your deputy"
+      ],
+      "text": "Nov 9 – 13, 2026\nDecided by your deputy\nApprovals decided for you while you were away.\nBack to inbox\nRequest\nRequested by\nDecision\nDecided by\nDecided at\nAbsence Requests\nPerson 0\nApproved\nPerson 1\nNov 10, 2026, 18:07",
+      "rows": 1,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "kind": "undated",
+      "h1": [
+        "Decided by your deputy"
+      ],
+      "text": "Decided by your deputy\nApprovals decided for you while you were away.\nBack to inbox\nRequest\nRequested by\nDecision\nDecided by\nDecided at\nAbsence Requests\nPerson 0\nApproved\nPerson 1\nNov 10, 2026, 19:07",
+      "rows": 1,
+      "width": 390,
+      "documentWidth": 390
+    }
+  ],
+  "roles": [
+    {
+      "role": "small-admin",
+      "auth": {
+        "login": 200,
+        "active": 200
+      },
+      "h1": [
+        "Page not found"
+      ],
+      "rows": 0,
+      "hasPrivateText": false
+    },
+    {
+      "role": "small-manager",
+      "auth": {
+        "login": 200,
+        "active": 200
+      },
+      "h1": [
+        "Page not found"
+      ],
+      "rows": 0,
+      "hasPrivateText": false
+    },
+    {
+      "role": "small-restricted",
+      "auth": {
+        "login": 200,
+        "active": 200
+      },
+      "h1": [
+        "Page not found"
+      ],
+      "rows": 0,
+      "hasPrivateText": false
+    }
+  ],
+  "loading": {
+    "h1": [
+      "Decided by your deputy"
+    ],
+    "loading": "Loading...",
+    "rows": 0,
+    "returnLink": true
+  },
+  "outage": {
+    "h1": [
+      "Something went wrong"
+    ],
+    "text": "Error\nSomething went wrong\nWe couldn't load this page right now. Please try again or return to a safe place in the app.\nRetry\nGo to Dashboard\nSettings\nBack\n\nReference: 16567144",
+    "rows": 0
+  },
+  "recovered": {
+    "h1": [
+      "Decided by your deputy"
+    ],
+    "rows": 3
+  },
+  "inFlightOrganizationSwitch": {
+    "heading": "Page not found",
+    "rows": 0,
+    "privateText": false
+  },
+  "persistedPreferences": {
+    "times": [
+      "Nov 10, 2026, 3:07 PM",
+      "Nov 10, 2026, 4:07 PM",
+      "Nov 10, 2026, 5:07 PM"
+    ],
+    "sidebar": "collapsed"
+  },
+  "phoneLast": {
+    "last": "historical_unknown_kind\nUnknown\nApproved\nPerson 1\nNov 10, 2026, 5:07 PM",
+    "width": 390,
+    "documentWidth": 390,
+    "lastBottom": 975,
+    "drawer": false
+  },
+  "keyboard": {
+    "collapse": "Ctrl+B collapsed sidebar; collapsed state survived reload",
+    "search": "Ctrl+K opened Search or run command; Escape dismissed",
+    "drawer": "Phone drawer opened; a subsequent native Escape closed it and returned focus to Toggle Sidebar. Earlier immediate/first Escape probes did not close it; no blanket keyboard-tool reliability claim.",
+    "return": "Focused actual Back to inbox and pressed Enter; subsequent tool observed /en/approvals/inbox. The immediate pathname sample was still the source route."
+  },
+  "acceptedFinalRowReachability": {"lastBottom":819,"viewport":844,"scroll":156,"width":390,"documentWidth":390},
+  "postMergeRead": { "heading": "Decided by your deputy", "h1Count": 1, "rows": 3, "mobile": "stacked", "documentWidth": 390, "viewport": 390 },
+  "limits": [
+    "Physical devices and true browser zoom not run",
+    "Remote catalog sync and full production static generation not run",
+    "React session had notification panel on later phone probe; no passing phone assertion inferred from that session",
+    "Final Next diagnostics are separate from deliberately injected outage errors; no resolution of previous tickets' transition diagnostics is claimed"
+  ]
+}

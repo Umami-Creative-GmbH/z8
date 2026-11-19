@@ -1,0 +1,114 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-3368b2f7-878f9513f4a73411/apps/webapp
+
+(node:92800) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"level":30,"time":1794748341269,"pid":92800,"hostname":"be-kai-et","component":"EmailService","transport":"Console (Development)","msg":"System email transport initialized (using console fallback - configure RESEND_API_KEY or SMTP_* env vars for production)"}
+{"level":30,"time":1794748341269,"pid":92800,"hostname":"be-kai-et","component":"ConsoleTransport","to":"904***","subject":"Opening balance recorded","msg":"Email logged to console (no API key)"}
+{"level":30,"time":1794748341269,"pid":92800,"hostname":"be-kai-et","component":"EmailService","messageId":"console-1794748341269","transport":"Console (Development)","organizationId":"0b970f87-d40a-4236-a28a-74efa753cba1","msg":"Email sent successfully"}
+{"level":30,"time":1794748341333,"pid":92800,"hostname":"be-kai-et","component":"ConsoleTransport","to":"904***","subject":"Opening balance cancelled","msg":"Email logged to console (no API key)"}
+{"level":30,"time":1794748341333,"pid":92800,"hostname":"be-kai-et","component":"EmailService","messageId":"console-1794748341333","transport":"Console (Development)","organizationId":"0b970f87-d40a-4236-a28a-74efa753cba1","msg":"Email sent successfully"}
+{"level":30,"time":1794748341345,"pid":92800,"hostname":"be-kai-et","component":"ConsoleTransport","to":"904***","subject":"Opening balance recorded","msg":"Email logged to console (no API key)"}
+{"level":30,"time":1794748341345,"pid":92800,"hostname":"be-kai-et","component":"EmailService","messageId":"console-1794748341345","transport":"Console (Development)","organizationId":"0b970f87-d40a-4236-a28a-74efa753cba1","msg":"Email sent successfully"}
+{"level":30,"time":1794748341456,"pid":92800,"hostname":"be-kai-et","component":"ConsoleTransport","to":"904***","subject":"Overtime payout recorded","msg":"Email logged to console (no API key)"}
+{"level":30,"time":1794748341456,"pid":92800,"hostname":"be-kai-et","component":"EmailService","messageId":"console-1794748341456","transport":"Console (Development)","organizationId":"0b970f87-d40a-4236-a28a-74efa753cba1","msg":"Email sent successfully"}
+stderr | src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts > replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact
+stdout | src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts > replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact
+
+============================================================
+EMAIL (Console Transport - No API key configured)
+============================================================
+From: noreply@yourdomain.com
+To: 9041845b-703a-4a2c-a7de-45abef149d91@lifecycle.test
+Subject: Opening balance recorded
+------------------------------------------------------------
+HTML Length: 4175 characters
+[ServerAction Error] {
+  message: 'Overtime payout refused: exceeds_balance',
+  refusal: 'exceeds_balance',
+  _tag: 'ValidationError'
+}
+============================================================
+
+
+
+stdout | src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts > replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact
+
+============================================================
+EMAIL (Console Transport - No API key configured)
+============================================================
+From: noreply@yourdomain.com
+To: 9041845b-703a-4a2c-a7de-45abef149d91@lifecycle.test
+Subject: Opening balance cancelled
+------------------------------------------------------------
+HTML Length: 4146 characters
+============================================================
+
+
+stdout | src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts > replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact
+
+============================================================
+EMAIL (Console Transport - No API key configured)
+============================================================
+From: noreply@yourdomain.com
+To: 9041845b-703a-4a2c-a7de-45abef149d91@lifecycle.test
+Subject: Opening balance recorded
+------------------------------------------------------------
+HTML Length: 4177 characters
+============================================================
+
+
+stdout | src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts > replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact
+
+============================================================
+EMAIL (Console Transport - No API key configured)
+============================================================
+From: noreply@yourdomain.com
+To: 9041845b-703a-4a2c-a7de-45abef149d91@lifecycle.test
+Subject: Overtime payout recorded
+------------------------------------------------------------
+HTML Length: 4177 characters
+============================================================
+
+
+ ❯ |integration| src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts (3 tests | 1 failed) 772ms
+   × replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact 308ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |integration| src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts > replaces opening evidence, refuses payout bounds, cancels/readbacks and leaves original UTC work intact
+AssertionError: expected { success: true, data: { …(5) } } to match object { success: true, data: { …(1) } }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "data": {
+      "balance": {
+-       "balanceMinutes": 0,
++       "balanceMinutes": 600,
+      },
+    },
+    "success": true,
+  }
+
+ ❯ src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts:47:53
+     45|  expect(await actions.recordOvertimePayoutAction(payout)).toMatchObjec…
+     46|  const recorded=await actions.recordOvertimePayoutAction({...payout,ho…
+     47|  expect(await read({employeeId:target.employeeId})).toMatchObject({suc…
+       |                                                     ^
+     48|  expect(await actions.recordOvertimePayoutAction({...payout,hours:0,mi…
+     49|  expect(await actions.setOpeningBalanceAction({...opening,day:today.to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  13:12:19
+   Duration  2.25s (import 44%, tests 36%, transform 19%, setup 1%)
+

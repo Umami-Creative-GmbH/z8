@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Beispieldate für Tests generiere oder vorhandeni ziitbezogeni Date lösche",
+      "employeesLoadError": {
+        "description": "Demodaten werden für Ihre Mitarbeitenden generiert. Die Generierung ist daher erst verfügbar, wenn diese geladen sind.",
+        "retrying": "Erneuter Versuch…",
+        "title": "Mitarbeitende konnten nicht geladen werden"
+      },
       "errors": {
-        "generationFailed": "Generierig isch fehlgschlage. Bitte versuech es nomal.",
-        "noOrganization": "Kei Organisation usgwählt"
+        "generationFailed": "Generierig isch fehlgschlage. Bitte versuech es nomal."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Alli Mitarbeiter ({count})",
+          "allCountUnavailable": "Alle Mitarbeitenden",
           "label": "Mitarbeiter",
           "selectSpecific": "Bestimmti Mitarbeiter uswähle"
         }

@@ -251,18 +251,22 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 		expect(drivingSwitch().getAttribute("aria-checked")).toBe("true");
 	});
 
-	it("restores the switch and reports a refused change", async () => {
+	it("restores the switch and reports a refused change inside the open confirmation", async () => {
 		mocks.switchControl.mockResolvedValue({ success: false, error: "forbidden" });
 		renderCard({ drivingLicence: { ...active, enabled: false } });
 
 		fireEvent.click(drivingSwitch());
 		fireEvent.click(await screen.findByRole("button", { name: "Switch on" }));
 
-		await waitFor(() =>
-			expect(mocks.toastError).toHaveBeenCalledWith(
-				"You can't change driving licence control in this organization.",
-			),
+		expect((await screen.findByRole("alert")).textContent).toBe(
+			"You can't change driving licence control in this organization.",
 		);
-		expect(drivingSwitch().getAttribute("aria-checked")).toBe("false");
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(
+			screen
+				.getByRole("switch", { name: "Toggle driving licence control", hidden: true })
+				.getAttribute("aria-checked"),
+		).toBe("false");
 	});
 });

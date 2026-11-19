@@ -1,0 +1,155 @@
+[
+  {
+    "name": "desktop-light",
+    "actor": "small-admin",
+    "scope": "Performance small / 8 current employees / unchanged fixture",
+    "url": "/en/organization",
+    "width": 1600,
+    "height": 1000,
+    "documentWidth": 1600,
+    "theme": "light bprogress-busy",
+    "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "rootFont": "16px",
+    "visibleHeadings": [
+      "Org Explorer"
+    ],
+    "cards": 4,
+    "outline": false,
+    "dialogs": [],
+    "png": {
+      "width": 1600,
+      "height": 1000
+    },
+    "pin": {
+      "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+      "dirtySource": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "sha256": "0f33220c8e304ab2fe1cd29ce3f1989419e5a129f0227ab783bfce8132f30997"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "sha256": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "86d9d6dd35bf50dd5303d5ec00442d0c3bf92124d36d623fc6e70fe8e8f0c5f5"
+        }
+      ]
+    }
+  },
+  {
+    "name": "wide-dark",
+    "actor": "small-admin",
+    "scope": "Performance small / 8 current employees / unchanged fixture",
+    "url": "/en/organization",
+    "width": 2200,
+    "height": 1100,
+    "documentWidth": 2200,
+    "theme": "dark bprogress-busy",
+    "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "rootFont": "16px",
+    "visibleHeadings": [
+      "Org Explorer"
+    ],
+    "cards": 4,
+    "outline": false,
+    "dialogs": [],
+    "png": {
+      "width": 2200,
+      "height": 1100
+    },
+    "pin": {
+      "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+      "dirtySource": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "sha256": "0f33220c8e304ab2fe1cd29ce3f1989419e5a129f0227ab783bfce8132f30997"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "sha256": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "86d9d6dd35bf50dd5303d5ec00442d0c3bf92124d36d623fc6e70fe8e8f0c5f5"
+        }
+      ]
+    }
+  },
+  {
+    "name": "phone-light",
+    "actor": "small-admin",
+    "scope": "Performance small / 8 current employees / unchanged fixture",
+    "url": "/en/organization",
+    "width": 390,
+    "height": 844,
+    "documentWidth": 390,
+    "theme": "light bprogress-busy",
+    "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "rootFont": "16px",
+    "visibleHeadings": [
+      "Org Explorer"
+    ],
+    "cards": 0,
+    "outline": true,
+    "dialogs": [],
+    "png": {
+      "width": 390,
+      "height": 844
+    },
+    "pin": {
+      "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+      "dirtySource": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "sha256": "0f33220c8e304ab2fe1cd29ce3f1989419e5a129f0227ab783bfce8132f30997"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "sha256": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "86d9d6dd35bf50dd5303d5ec00442d0c3bf92124d36d623fc6e70fe8e8f0c5f5"
+        }
+      ]
+    }
+  },
+  {
+    "name": "detail",
+    "actor": "small-admin",
+    "scope": "same fixture, manager selection",
+    "url": "http://localhost:51175/en/organization?employee=48c69dfd-2861-456a-bed4-4e876e82b00d",
+    "text": "Person 1Reporting lines and teamsManagersNo managerDirect reportsPerson 3Person 5Person 7Team membershipsNo team membershipsEmailperf-small-1-717681b237a6@example.testEdit employeeManage teamsClose",
+    "png": {
+      "width": 1600,
+      "height": 1000
+    },
+    "pin": {
+      "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+      "dirtySource": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+          "sha256": "0f33220c8e304ab2fe1cd29ce3f1989419e5a129f0227ab783bfce8132f30997"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+          "sha256": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "86d9d6dd35bf50dd5303d5ec00442d0c3bf92124d36d623fc6e70fe8e8f0c5f5"
+        }
+      ]
+    },
+    "settledGeometry": {
+      "left": 1152,
+      "right": 1600,
+      "width": 448,
+      "viewport": 1600,
+      "title": "Person 1",
+      "closeVisible": true
+    }
+  }
+]

@@ -3,11 +3,14 @@
 import {
 	IconCheck,
 	IconClock,
+	IconCrown,
 	IconDots,
 	IconLoader2,
 	IconMail,
 	IconPencil,
 	IconRefresh,
+	IconShield,
+	IconUser,
 	IconX,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -67,15 +70,15 @@ interface MembersTableProps {
 	isRefreshing?: boolean;
 }
 
-function getRoleBadgeColor(role: string) {
-	switch (role) {
-		case "owner":
-			return "bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20";
-		case "admin":
-			return "bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20";
-		default:
-			return "bg-gray-500/10 text-gray-700 dark:text-gray-300 hover:bg-gray-500/20";
-	}
+/** Roles are categories, not statuses: a neutral badge told apart by its icon and label. */
+function RoleBadge({ role }: { role: string }) {
+	const Icon = role === "owner" ? IconCrown : role === "admin" ? IconShield : IconUser;
+	return (
+		<Badge variant={role === "member" ? "secondary" : "outline"} className="gap-1">
+			<Icon className="size-3" aria-hidden="true" />
+			{role}
+		</Badge>
+	);
 }
 
 function isInvitationExpired(expiresAt: Date) {
@@ -431,9 +434,7 @@ function useMembersTableController({
 			accessorKey: "role",
 			header: t("organization.members.role", "Role"),
 			cell: ({ row }) => (
-				<Badge className={getRoleBadgeColor(row.original.role || "member")}>
-					{row.original.role || "member"}
-				</Badge>
+				<RoleBadge role={row.original.role || "member"} />
 			),
 		},
 		{
@@ -616,11 +617,7 @@ function useMembersTableController({
 						</SelectContent>
 					</Select>
 				) : (
-					<Badge
-						className={getRoleBadgeColor(row.original.member.role || "member")}
-					>
-						{row.original.member.role || "member"}
-					</Badge>
+					<RoleBadge role={row.original.member.role || "member"} />
 				);
 			},
 		},
@@ -629,15 +626,15 @@ function useMembersTableController({
 			header: t("organization.members.emailVerified", "Email Verified"),
 			cell: ({ row }) =>
 				row.original.user.emailVerified ? (
-					<div className="flex items-center gap-1 text-green-600">
-						<IconCheck className="size-4" />
+					<div className="flex items-center gap-1 text-success">
+						<IconCheck className="size-4" aria-hidden="true" />
 						<span className="text-sm">
 							{t("organization.members.verified", "Verified")}
 						</span>
 					</div>
 				) : (
-					<div className="flex items-center gap-1 text-amber-600">
-						<IconClock className="size-4" />
+					<div className="flex items-center gap-1 text-warning">
+						<IconClock className="size-4" aria-hidden="true" />
 						<span className="text-sm">
 							{t("organization.members.pending", "Pending")}
 						</span>
@@ -650,14 +647,14 @@ function useMembersTableController({
 			cell: ({ row }) =>
 				row.original.employee?.isActive ? (
 					<div className="flex items-center gap-2">
-						<div className="size-2 rounded-full bg-green-500" />
+						<div aria-hidden="true" className="size-2 rounded-full bg-success" />
 						<span className="text-sm">
 							{t("organization.members.active", "Active")}
 						</span>
 					</div>
 				) : (
 					<div className="flex items-center gap-2">
-						<div className="size-2 rounded-full bg-gray-400" />
+						<div aria-hidden="true" className="size-2 rounded-full bg-muted-foreground/50" />
 						<span className="text-sm text-muted-foreground">
 							{t("organization.members.inactive", "Inactive")}
 						</span>

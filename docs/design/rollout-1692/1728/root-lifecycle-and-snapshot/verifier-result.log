@@ -1,0 +1,32 @@
+{
+  "status": "verified with explicit recorded qualifications",
+  "source": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+  "sourcePins": 19,
+  "sealedRecords": 109,
+  "publicIndexedArtifacts": 108,
+  "privateArtifactsOmitted": 1,
+  "pngsFullyDecoded": 33,
+  "parsedJSON": 77,
+  "checkedScripts": 28,
+  "parsedTypeScript": 2,
+  "preservedPaths": 15038,
+  "verifiedAncestors": 51,
+  "finalCases": 477,
+  "finalPassed": 476,
+  "finalKnownBaselineFailed": 1,
+  "currentSource": true,
+  "localDependencies": true,
+  "qualifications": [
+    "Final unit selection is 327 pass/1 known broad guard failure (four exact existing baseline blobs); not a wholly green unit selection. Full final PG149/11 pass. No additive counting of overlapping earlier red/green/payslip/worker suites.",
+    "Formatting read-only CRLF profile fails five preserved source paths. No global normalization; types/lint/Doctor pass.",
+    "Real expiry cancellation/retry passed; reverse directory read failure remains assembled-only, no safe selective real runtime seam was induced.",
+    "Fixture had no former employee. Canonical before/cutoff/materialized/rehire and deactivated controls are PostgreSQL proof, not an observed browser cutoff/former badge.",
+    "Scope/session/retired read ID and same-scope passive Activity coverage is 12 assembled workspace cases. No browser two-org/account race, queued-command retirement, fresh-read-on-Activity-return, or shared late-toast/dismissal/ABA ownership claim.",
+    "Public visible Title/note/Certificate/Nov20 deadline and zero scoped rows accepted from runtime08. Runtime07 BUTTON.value JSON was empty although its pixels show Nov20; its setup country-select locale hydration exception is retained. Runtime08 and fresh matched target errors are empty; current Next compilation/errors clean.",
+    "Native02 tree/close timed out; exact session daemon was stopped and later exact session close confirmed closed/no restore/save. Native03 renderer-ready target tree and close pass. First immediate post-stop cleanup assertion observed still-exiting descendants, then exact daemon/direct-descendant inventory was empty.",
+    "Historical comparison is only three exact whitelisted a5c7f741 consumer files over current application, never a full historical application. Before links have no category query; before main h1 DOM count2 is recorded (checkVisibility does not certify unclipped/screen-reader visibility). Current main h1 count1. Initial legacy-link/heading harness failures preserved.",
+    "Early current runtime captures caught shell transition clipping and Rendering/progress overlays. Final viewport-only captures have before/after geometry and bounded font/sidebar/animation/toast waits; persistent bprogress-busy and developer/Pets overlays remain. Full-page capture used initially could perturb geometry; final matched viewport captures are the accepted set. First successful bounded current captures were superseded at the same successful current filenames by final viewport-only captures; failed attempts were retained.",
+    "Keyboard category-link activation and visible focus style observed. First Escape/focus return, screen-reader/automated contrast/device safe-area/exhaustive accessibility, live binary download/storage delivery, production build, all locales/theme/feature combinations unpassed.",
+    "No product fixes, tracked reports/ledgers/README, Git tracker/PR/push/dev/deploy writes, dependency install/repair/borrow/upgrade, SQL auth/membership/grant changes, cookie mint/copy/save/restore, provider/customer/Phase calls."
+  ]
+}

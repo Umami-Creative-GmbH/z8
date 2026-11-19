@@ -96,11 +96,12 @@
         "year": "Anno"
       },
       "history": {
-        "description": "Visualizza e scarica le precedenti esportazioni DATEV",
+        "descriptionAllFormats": "Visualizza e scarica le esportazioni paghe precedenti",
         "download": "Scarica esportazione",
         "downloadError": "Impossibile ottenere l'URL di download",
         "employees": "dipendenti",
         "noExports": "Nessuna esportazione ancora",
+        "noExportsHint": "Avvia un'esportazione paghe nella scheda Esporta. Le esportazioni completate appariranno qui per il download.",
         "payrollRun": "{count, plural, one {Elaborazione paghe: # nota spese} other {Elaborazione paghe: # note spese}}",
         "periods": "periodi",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "In elaborazione"
         },
         "table": {
+          "actions": "Azioni",
           "createdAt": "Creato",
           "dateRange": "Intervallo di date",
           "records": "Record",
@@ -151,7 +153,8 @@
         "configureFirst": "Configura almeno un formato di esportazione buste paga (DATEV, Lexware o Sage) prima di impostare le mappature.",
         "deleteDescription": "Sei sicuro di voler eliminare questa mappatura del tipo di retribuzione?",
         "deleteError": "Impossibile eliminare la mappatura",
-        "deleteMapping": "Elimina mappatura",
+        "deleteMappingNamed": "Elimina mappatura per {name}",
+        "deleteNamedDescription": "Eliminare la mappatura della voce retributiva per \"{name}\"?",
         "deleteSuccess": "Mappatura eliminata",
         "deleteTitle": "Elimina mappatura",
         "description": "Descrizione",
@@ -335,7 +338,8 @@
         "name": "Dipendente",
         "noNumber": "Non impostato",
         "personnelIdentifier": "Identificativo del personale",
-        "personnelNumber": "Numero di matricola"
+        "personnelNumber": "Numero di matricola",
+        "unnamed": "Dipendente senza nome"
       },
       "checks": {
         "count": "Conteggio",
@@ -364,6 +368,13 @@
       },
       "description": "Verifica se un periodo di paga è pronto prima di esportare i dati relativi a orari, assenze e buste paga.",
       "openPayrollExport": "Apri esportazione buste paga",
+      "period": {
+        "currentMonth": "Mese corrente",
+        "navLabel": "Periodo paga",
+        "previousMonth": "Mese precedente",
+        "scope": "Periodo paga: {period} (UTC)",
+        "showMonth": "Mostra {month}"
+      },
       "status": {
         "blocked": "Bloccato",
         "ready": "Pronto per le buste paga",

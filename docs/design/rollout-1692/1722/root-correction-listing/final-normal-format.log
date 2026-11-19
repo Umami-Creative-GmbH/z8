@@ -1,0 +1,458 @@
+src\lib\approvals\server\time-approval-decision.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      44   44 │     (await import("@/test/integration-harness")).nextServer(importOriginal),␍
+      45   45 │   );␍
+      46      │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+           46 │ + vi.mock("next/headers",·async·()·=>␍
+           47 │ + → (await·import("@/test/integration-harness")).nextHeaders(),␍
+           48 │ + );␍
+      47   49 │   vi.mock("next/cache", async (importOriginal) =>␍
+      48   50 │     (await import("@/test/integration-harness")).nextCache(importOriginal),␍
+    ········· │
+      95   97 │         .limit(1);␍
+      96   98 │       return {␍
+      97      │ - → → → user:·{·id:·harness.userId,·name:·harness.userId,·email:·`${harness.userId}@example.test`·},␍
+           99 │ + → → → user:·{␍
+          100 │ + → → → → id:·harness.userId,␍
+          101 │ + → → → → name:·harness.userId,␍
+          102 │ + → → → → email:·`${harness.userId}@example.test`,␍
+          103 │ + → → → },␍
+      98  104 │         session: { activeOrganizationId: harness.organizationId },␍
+      99  105 │         employee: row␍
+     100      │ - → → → → ?·{·id:·row.id,·organizationId:·row.organizationId,·role:·row.role,·teamId:·row.teamId·}␍
+          106 │ + → → → → ?·{␍
+          107 │ + → → → → → → id:·row.id,␍
+          108 │ + → → → → → → organizationId:·row.organizationId,␍
+          109 │ + → → → → → → role:·row.role,␍
+          110 │ + → → → → → → teamId:·row.teamId,␍
+          111 │ + → → → → → }␍
+     101  112 │           : null,␍
+     102  113 │       };␍
+    ········· │
+     120  131 │           ? async (params: Record<string, unknown>) => {␍
+     121  132 │               harness.notifications.push({ name, params });␍
+     122      │ - → → → → → → if·(harness.failingTriggers.has(name))·throw·new·Error(`${name}·unavailable`);␍
+          133 │ + → → → → → → if·(harness.failingTriggers.has(name))␍
+          134 │ + → → → → → → → throw·new·Error(`${name}·unavailable`);␍
+     123  135 │             }␍
+     124  136 │           : value,␍
+    ········· │
+     143  155 │   vi.mock("@/lib/time-tracking/change-policy/verdict", async (original) =>␍
+     144  156 │     (␍
+     145      │ - → → await·import("@/lib/time-tracking/change-policy/testing/verdict.test.fixture")␍
+          157 │ + → → await·import(␍
+          158 │ + → → → "@/lib/time-tracking/change-policy/testing/verdict.test.fixture"␍
+          159 │ + → → )␍
+     146  160 │     ).stubChangePolicyVerdict(original, () => ({ type: "approval_required" })),␍
+     147  161 │   );␍
+    ········· │
+     149  163 │     (await import("@/test/integration-harness")).deliveryKick(harness.kicks),␍
+     150  164 │   );␍
+     151      │ - vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals",·async·(importOriginal)·=>·({␍
+     152      │ - → ...(await·importOriginal<␍
+     153      │ - → → typeof·import("@/app/[locale]/(app)/time-tracking/actions/approvals")␍
+     154      │ - → >()),␍
+     155      │ - → sendManualEntryApprovalNotifications:·async·()·=>·undefined,␍
+     156      │ - → sendManualEntryApprovedNotification:·async·()·=>·undefined,␍
+     157      │ - }));␍
+     158      │ - vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared",·async·(importOriginal)·=>·{␍
+     159      │ - → const·original·=␍
+     160      │ - → → await·importOriginal<typeof·import("@/app/[locale]/(app)/time-tracking/actions/shared")>();␍
+     161      │ - → return·{␍
+     162      │ - → → ...original,␍
+     163      │ - → → logger:·{␍
+     164      │ - → → → ...original.logger,␍
+     165      │ - → → → error:·()·=>·{},␍
+     166      │ - → → → warn:·()·=>·{},␍
+     167      │ - → → → info:·()·=>·{},␍
+     168      │ - → → → debug:·()·=>·{},␍
+     169      │ - → → },␍
+     170      │ - → };␍
+     171      │ - });␍
+          165 │ + vi.mock(␍
+          166 │ + → "@/app/[locale]/(app)/time-tracking/actions/approvals",␍
+          167 │ + → async·(importOriginal)·=>·({␍
+          168 │ + → → ...(await·importOriginal<␍
+          169 │ + → → → typeof·import("@/app/[locale]/(app)/time-tracking/actions/approvals")␍
+          170 │ + → → >()),␍
+          171 │ + → → sendManualEntryApprovalNotifications:·async·()·=>·undefined,␍
+          172 │ + → → sendManualEntryApprovedNotification:·async·()·=>·undefined,␍
+          173 │ + → }),␍
+          174 │ + );␍
+          175 │ + vi.mock(␍
+          176 │ + → "@/app/[locale]/(app)/time-tracking/actions/shared",␍
+          177 │ + → async·(importOriginal)·=>·{␍
+          178 │ + → → const·original·=␍
+          179 │ + → → → await·importOriginal<␍
+          180 │ + → → → → typeof·import("@/app/[locale]/(app)/time-tracking/actions/shared")␍
+          181 │ + → → → >();␍
+          182 │ + → → return·{␍
+          183 │ + → → → ...original,␍
+          184 │ + → → → logger:·{␍
+          185 │ + → → → → ...original.logger,␍
+          186 │ + → → → → error:·()·=>·{},␍
+          187 │ + → → → → warn:·()·=>·{},␍
+          188 │ + → → → → info:·()·=>·{},␍
+          189 │ + → → → → debug:·()·=>·{},␍
+          190 │ + → → → },␍
+          191 │ + → → };␍
+          192 │ + → },␍
+          193 │ + );␍
+     172  194 │   ␍
+     173      │ - const·{·clockIn,·clockOut·}·=·await·import("@/app/[locale]/(app)/time-tracking/actions/clocking");␍
+     174      │ - const·{·createManualTimeEntry·}·=·await·import("@/app/[locale]/(app)/time-tracking/actions");␍
+          195 │ + const·{·clockIn,·clockOut·}·=·await·import(␍
+          196 │ + → "@/app/[locale]/(app)/time-tracking/actions/clocking"␍
+          197 │ + );␍
+          198 │ + const·{·createManualTimeEntry·}·=·await·import(␍
+          199 │ + → "@/app/[locale]/(app)/time-tracking/actions"␍
+          200 │ + );␍
+     175  201 │   const { requestTimeCorrection, requestTimeEntryDeletion } = await import(␍
+     176  202 │     "@/app/[locale]/(app)/time-tracking/actions/corrections"␍
+    ········· │
+     179  205 │     "@/lib/time-tracking/__tests__/historical-policy-clock-out"␍
+     180  206 │   );␍
+     181      │ - const·{·processDueEscalations·}·=·await·import("@/lib/approvals/escalation/transfer");␍
+     182      │ - const·{·approvalRolloutLockScope·}·=·await·import("@/lib/approvals/authority/gate");␍
+          207 │ + const·{·processDueEscalations·}·=·await·import(␍
+          208 │ + → "@/lib/approvals/escalation/transfer"␍
+          209 │ + );␍
+          210 │ + const·{·approvalRolloutLockScope·}·=·await·import(␍
+          211 │ + → "@/lib/approvals/authority/gate"␍
+          212 │ + );␍
+     183  213 │   const { decideTimeApproval } = await import("./time-approval-decision");␍
+     184  214 │   type DecisionInput = Parameters<typeof decideTimeApproval>[0];␍
+     185  215 │   ␍
+     186      │ - const·TIME_KINDS·=·["manual_time_submission",·"policy_clock_out",·"time_correction"]·as·const;␍
+          216 │ + const·TIME_KINDS·=·[␍
+          217 │ + → "manual_time_submission",␍
+          218 │ + → "policy_clock_out",␍
+          219 │ + → "time_correction",␍
+          220 │ + ]·as·const;␍
+     187  221 │   type TimeKind = (typeof TIME_KINDS)[number];␍
+     188  222 │   const AUTHORITIES = ["legacy", "shadow", "canonical"] as const;␍
+    ········· │
+     233  267 │   } as const;␍
+     234  268 │   ␍
+     235      │ - const·DECISION_TRIGGERS:·Record<TimeKind,·{·approve:·string;·reject:·string·}>·=·{␍
+     236      │ - → manual_time_submission:·{·approve:·"onManualEntryApproved",·reject:·"onManualEntryRejected"·},␍
+     237      │ - → policy_clock_out:·{·approve:·"onClockOutApproved",·reject:·"onClockOutRejected"·},␍
+     238      │ - → time_correction:·{·approve:·"onTimeCorrectionApproved",·reject:·"onTimeCorrectionRejected"·},␍
+     239      │ - };␍
+          269 │ + const·DECISION_TRIGGERS:·Record<TimeKind,·{·approve:·string;·reject:·string·}>·=␍
+          270 │ + → {␍
+          271 │ + → → manual_time_submission:·{␍
+          272 │ + → → → approve:·"onManualEntryApproved",␍
+          273 │ + → → → reject:·"onManualEntryRejected",␍
+          274 │ + → → },␍
+          275 │ + → → policy_clock_out:·{␍
+          276 │ + → → → approve:·"onClockOutApproved",␍
+          277 │ + → → → reject:·"onClockOutRejected",␍
+          278 │ + → → },␍
+          279 │ + → → time_correction:·{␍
+          280 │ + → → → approve:·"onTimeCorrectionApproved",␍
+          281 │ + → → → reject:·"onTimeCorrectionRejected",␍
+          282 │ + → → },␍
+          283 │ + → };␍
+     240  284 │   ␍
+     241  285 │   function only<T>(rows: readonly T[]): T {␍
+  1856 more lines truncated
+
+
+src\lib\self-service-requests\__tests__\get-self-service-requests.test.ts format ━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      48   48 │   // The rollout snapshot read, resolved through the real authority table.␍
+      49   49 │   vi.mock("@/lib/approvals/authority", async () => {␍
+      50      │ - → const·{·resolveApprovalAuthority·}·=·await·import("@/lib/approvals/authority/resolution");␍
+           50 │ + → const·{·resolveApprovalAuthority·}·=·await·import(␍
+           51 │ + → → "@/lib/approvals/authority/resolution"␍
+           52 │ + → );␍
+      51   53 │     return {␍
+      52   54 │       readApprovalAuthoritySnapshot: async () =>␍
+      53      │ - → → → resolveApprovalAuthority((await·dbMocks.approvalWorkflowRollouts())?.lifecycleMode),␍
+           55 │ + → → → resolveApprovalAuthority(␍
+           56 │ + → → → → (await·dbMocks.approvalWorkflowRollouts())?.lifecycleMode,␍
+           57 │ + → → → ),␍
+      54   58 │     };␍
+      55   59 │   });␍
+    ········· │
+     788  792 │       ],␍
+     789  793 │       ["chain marker without chain identity", "chain_created", null],␍
+     790      │ - → ]·as·const)("fails·closed·for·a·%s",·async·(_label,·resultKind,·chainInstanceId)·=>·{␍
+     791      │ - → → const·cancelledAt·=·new·Date("2026-04-26T09:00:00.000Z");␍
+     792      │ - → → dbMocks.absenceEntries.mockResolvedValue([]);␍
+     793      │ - → → dbMocks.approvalRequests.mockResolvedValue([␍
+     794      │ - → → → timeCorrection({␍
+     795      │ - → → → → status:·"rejected",␍
+     796      │ - → → → → approvedAt:·cancelledAt,␍
+     797      │ - → → → → rejectionReason:·null,␍
+     798      │ - → → → → metadata:·{␍
+     799      │ - → → → → → timeCorrection:·{␍
+     800      │ - → → → → → → action:·"edit",␍
+     801      │ - → → → → → → clockInCorrectionId:·"10000000-0000-4000-8000-000000000001",␍
+     802      │ - → → → → → },␍
+     803      │ - → → → → → submission:·{␍
+     804      │ - → → → → → → key:·"submission-1",␍
+     805      │ - → → → → → → resultKind,␍
+     806      │ - → → → → → → originalStatus:·"pending",␍
+     807      │ - → → → → → },␍
+     808      │ - → → → → → cancellation:·requesterCancellationMarker({␍
+     809      │ - → → → → → → cancelledAt,␍
+     810      │ - → → → → → → chainInstanceId,␍
+     811      │ - → → → → → }),␍
+     812      │ - → → → → },␍
+     813      │ - → → → }),␍
+     814      │ - → → ]);␍
+          794 │ + → ]·as·const)(␍
+          795 │ + → → "fails·closed·for·a·%s",␍
+          796 │ + → → async·(_label,·resultKind,·chainInstanceId)·=>·{␍
+          797 │ + → → → const·cancelledAt·=·new·Date("2026-04-26T09:00:00.000Z");␍
+          798 │ + → → → dbMocks.absenceEntries.mockResolvedValue([]);␍
+          799 │ + → → → dbMocks.approvalRequests.mockResolvedValue([␍
+          800 │ + → → → → timeCorrection({␍
+          801 │ + → → → → → status:·"rejected",␍
+          802 │ + → → → → → approvedAt:·cancelledAt,␍
+          803 │ + → → → → → rejectionReason:·null,␍
+          804 │ + → → → → → metadata:·{␍
+          805 │ + → → → → → → timeCorrection:·{␍
+          806 │ + → → → → → → → action:·"edit",␍
+          807 │ + → → → → → → → clockInCorrectionId:·"10000000-0000-4000-8000-000000000001",␍
+          808 │ + → → → → → → },␍
+          809 │ + → → → → → → submission:·{␍
+          810 │ + → → → → → → → key:·"submission-1",␍
+          811 │ + → → → → → → → resultKind,␍
+          812 │ + → → → → → → → originalStatus:·"pending",␍
+          813 │ + → → → → → → },␍
+          814 │ + → → → → → → cancellation:·requesterCancellationMarker({␍
+          815 │ + → → → → → → → cancelledAt,␍
+          816 │ + → → → → → → → chainInstanceId,␍
+          817 │ + → → → → → → }),␍
+          818 │ + → → → → → },␍
+          819 │ + → → → → }),␍
+          820 │ + → → → ]);␍
+     815  821 │   ␍
+     816      │ - → → const·result·=·await·getSelfServiceRequests({␍
+     817      │ - → → → employeeId:·"employee-1",␍
+     818      │ - → → → organizationId:·"org-1",␍
+     819      │ - → → });␍
+          822 │ + → → → const·result·=·await·getSelfServiceRequests({␍
+          823 │ + → → → → employeeId:·"employee-1",␍
+          824 │ + → → → → organizationId:·"org-1",␍
+          825 │ + → → → });␍
+     820  826 │   ␍
+     821      │ - → → expect(␍
+     822      │ - → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+     823      │ - → → ).toMatchObject({·status:·"rejected",·availableActions:·["view"]·});␍
+     824      │ - → → expect(result.counts.requiredFixes).toBe(0);␍
+     825      │ - → });␍
+          827 │ + → → → expect(␍
+          828 │ + → → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+          829 │ + → → → ).toMatchObject({·status:·"rejected",·availableActions:·["view"]·});␍
+          830 │ + → → → expect(result.counts.requiredFixes).toBe(0);␍
+          831 │ + → → },␍
+          832 │ + → );␍
+     826  833 │   ␍
+     827  834 │     it.each([␍
+    ········· │
+     852  859 │           ),␍
+     853  860 │       ],␍
+     854      │ - → ]·as·const)("fails·closed·for·a·cancellation·marker·with·an·%s",·async·(_label,·mutate)·=>·{␍
+     855      │ - → → const·cancelledAt·=·new·Date("2026-04-26T09:00:00.000Z");␍
+     856      │ - → → const·marker·=·requesterCancellationMarker({␍
+     857      │ - → → → cancelledAt,␍
+     858      │ - → → → chainInstanceId:·null,␍
+     859      │ - → → });␍
+     860      │ - → → dbMocks.absenceEntries.mockResolvedValue([]);␍
+     861      │ - → → dbMocks.approvalRequests.mockResolvedValue([␍
+     862      │ - → → → timeCorrection({␍
+     863      │ - → → → → status:·"rejected",␍
+     864      │ - → → → → approvedAt:·cancelledAt,␍
+     865      │ - → → → → rejectionReason:·null,␍
+     866      │ - → → → → metadata:·{␍
+     867      │ - → → → → → timeCorrection:·{␍
+     868      │ - → → → → → → action:·"edit",␍
+     869      │ - → → → → → → clockInCorrectionId:·"10000000-0000-4000-8000-000000000001",␍
+     870      │ - → → → → → },␍
+     871      │ - → → → → → submission:·{␍
+     872      │ - → → → → → → key:·"submission-1",␍
+     873      │ - → → → → → → resultKind:·"default_created",␍
+     874      │ - → → → → → → originalStatus:·"pending",␍
+     875      │ - → → → → → },␍
+     876      │ - → → → → → cancellation:·mutate(marker),␍
+     877      │ - → → → → },␍
+     878      │ - → → → }),␍
+     879      │ - → → ]);␍
+          861 │ + → ]·as·const)(␍
+          862 │ + → → "fails·closed·for·a·cancellation·marker·with·an·%s",␍
+          863 │ + → → async·(_label,·mutate)·=>·{␍
+          864 │ + → → → const·cancelledAt·=·new·Date("2026-04-26T09:00:00.000Z");␍
+          865 │ + → → → const·marker·=·requesterCancellationMarker({␍
+          866 │ + → → → → cancelledAt,␍
+          867 │ + → → → → chainInstanceId:·null,␍
+          868 │ + → → → });␍
+          869 │ + → → → dbMocks.absenceEntries.mockResolvedValue([]);␍
+          870 │ + → → → dbMocks.approvalRequests.mockResolvedValue([␍
+          871 │ + → → → → timeCorrection({␍
+          872 │ + → → → → → status:·"rejected",␍
+          873 │ + → → → → → approvedAt:·cancelledAt,␍
+          874 │ + → → → → → rejectionReason:·null,␍
+          875 │ + → → → → → metadata:·{␍
+          876 │ + → → → → → → timeCorrection:·{␍
+          877 │ + → → → → → → → action:·"edit",␍
+          878 │ + → → → → → → → clockInCorrectionId:·"10000000-0000-4000-8000-000000000001",␍
+          879 │ + → → → → → → },␍
+          880 │ + → → → → → → submission:·{␍
+          881 │ + → → → → → → → key:·"submission-1",␍
+          882 │ + → → → → → → → resultKind:·"default_created",␍
+          883 │ + → → → → → → → originalStatus:·"pending",␍
+          884 │ + → → → → → → },␍
+          885 │ + → → → → → → cancellation:·mutate(marker),␍
+          886 │ + → → → → → },␍
+          887 │ + → → → → }),␍
+          888 │ + → → → ]);␍
+     880  889 │   ␍
+     881      │ - → → const·result·=·await·getSelfServiceRequests({␍
+     882      │ - → → → employeeId:·"employee-1",␍
+  169 more lines truncated
+
+
+src\lib\self-service-requests\get-self-service-requests.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    174 174 │       })) as TimeCorrectionRow[];␍
+    175 175 │       if (rows.length === 0) break;␍
+    176     │ - → → const·verifiedCorrectionEvidenceByPeriod·=·await·loadVerifiedCorrectionEvidenceByPeriod(␍
+    177     │ - → → → db,␍
+    178     │ - → → → input,␍
+    179     │ - → → → rows,␍
+    180     │ - → → );␍
+        176 │ + → → const·verifiedCorrectionEvidenceByPeriod·=␍
+        177 │ + → → → await·loadVerifiedCorrectionEvidenceByPeriod(db,·input,·rows);␍
+    181 178 │   ␍
+    182 179 │       for (const row of rows) {␍
+    ······· │
+    222 219 │         eq(approvalWorkflow.workflowType, "time_correction"),␍
+    223 220 │         eq(approvalWorkflow.sourceType, "time_entry"),␍
+    224     │ - → → → rollout.compatibilityWriting·?·eq(approvalWorkflow.status,·"cancelled")·:·undefined,␍
+        221 │ + → → → rollout.compatibilityWriting␍
+        222 │ + → → → → ?·eq(approvalWorkflow.status,·"cancelled")␍
+        223 │ + → → → → :·undefined,␍
+    225 224 │       ),␍
+    226 225 │       orderBy: [desc(approvalWorkflow.createdAt)],␍
+    ······· │
+    248 247 │   export async function findTimeCorrectionsListedInMyRequests(␍
+    249 248 │     database: SelfServiceDatabase,␍
+    250     │ - → input:·{·organizationId:·string;·employeeId:·string;·workPeriodIds:·readonly·string[]·},␍
+        249 │ + → input:·{␍
+        250 │ + → → organizationId:·string;␍
+        251 │ + → → employeeId:·string;␍
+        252 │ + → → workPeriodIds:·readonly·string[];␍
+        253 │ + → },␍
+    251 254 │   ): Promise<Set<string>> {␍
+    252 255 │     const listed = new Set<string>();␍
+    ······· │
+    265 268 │       ),␍
+    266 269 │     })) as TimeCorrectionRow[];␍
+    267     │ - → const·evidenceByPeriod·=·await·loadVerifiedCorrectionEvidenceByPeriod(database,·input,·rows);␍
+        270 │ + → const·evidenceByPeriod·=·await·loadVerifiedCorrectionEvidenceByPeriod(␍
+        271 │ + → → database,␍
+        272 │ + → → input,␍
+        273 │ + → → rows,␍
+        274 │ + → );␍
+    268 275 │     const legacyWorkflowIds = new Set<string>();␍
+    269 276 │     for (const row of rows) {␍
+    270     │ - → → const·listing·=·listLegacyTimeCorrection(row,·evidenceByPeriod.get(row.entityId));␍
+        277 │ + → → const·listing·=·listLegacyTimeCorrection(␍
+        278 │ + → → → row,␍
+        279 │ + → → → evidenceByPeriod.get(row.entityId),␍
+        280 │ + → → );␍
+    271 281 │       if (!listing) continue;␍
+    272 282 │       if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);␍
+    ······· │
+    294 304 │   }␍
+    295 305 │   ␍
+    296     │ - type·SelfServiceDatabase·=·typeof·db·|·Parameters<Parameters<typeof·db.transaction>[0]>[0];␍
+        306 │ + type·SelfServiceDatabase·=␍
+        307 │ + → |·typeof·db␍
+        308 │ + → |·Parameters<Parameters<typeof·db.transaction>[0]>[0];␍
+    297 309 │   ␍
+    298 310 │   /**␍
+    ······· │
+    334 346 │           : row.status;␍
+    335 347 │     const availableActions: SelfServiceRequestAction[] =␍
+    336     │ - → → metadata.cancellationState·===·"invalid"·?·["view"]·:·actionsFor(status,·"time_correction");␍
+        348 │ + → → metadata.cancellationState·===·"invalid"␍
+        349 │ + → → → ?·["view"]␍
+        350 │ + → → → :·actionsFor(status,·"time_correction");␍
+    337 351 │     return { workflowId: metadata.workflowId, status, availableActions };␍
+    338 352 │   }␍
+    ······· │
+    523 537 │       if (␍
+    524 538 │         !record(context) ||␍
+    525     │ - → → → (Object.hasOwn(context,·"organizationId")·&&·context.organizationId·!==·row.organizationId)·||␍
+        539 │ + → → → (Object.hasOwn(context,·"organizationId")·&&␍
+        540 │ + → → → → context.organizationId·!==·row.organizationId)·||␍
+    526 541 │         (Object.hasOwn(context, "requesterEmployeeId") &&␍
+    527 542 │           context.requesterEmployeeId !== row.requesterEmployeeId) ||␍
+    528     │ - → → → (Object.hasOwn(context,·"workflowType")·&&·context.workflowType·!==·row.workflowType)·||␍
+        543 │ + → → → (Object.hasOwn(context,·"workflowType")·&&␍
+        544 │ + → → → → context.workflowType·!==·row.workflowType)·||␍
+    529 545 │         (Object.hasOwn(context, "source") &&␍
+    530 546 │           (!record(context.source) ||␍
+    ······· │
+    625 641 │       namedProjection␍
+    626 642 │         ? ["requesterEmployeeId", "requesterName", "title", "action", "endpoints"]␍
+    627     │ - → → → :·["title",·"action",·"endpoints",·...(hasWorkMetadata·?·["workMetadata"]·:·[])],␍
+        643 │ + → → → :·[␍
+        644 │ + → → → → → "title",␍
+        645 │ + → → → → → "action",␍
+        646 │ + → → → → → "endpoints",␍
+        647 │ + → → → → → ...(hasWorkMetadata·?·["workMetadata"]·:·[]),␍
+        648 │ + → → → → ],␍
+    628 649 │     );␍
+    629 650 │     if (namedProjection) {␍
+    ······· │
+    635 656 │       }␍
+    636 657 │     } else if ("workLocationType" in correction) {␍
+    637     │ - → → const·work·=·strictOwnDataRecord(payload.workMetadata,·["original",·"requested"]);␍
+        658 │ + → → const·work·=·strictOwnDataRecord(payload.workMetadata,·[␍
+        659 │ + → → → "original",␍
+        660 │ + → → → "requested",␍
+        661 │ + → → ]);␍
+    638 662 │       const original = normalizeTimeCorrectionOriginalWorkMetadata(␍
+    639     │ - → → → strictOwnDataRecord(work.original,·["workLocationType",·"workCategoryId"]),␍
+        663 │ + → → → strictOwnDataRecord(work.original,·[␍
+        664 │ + → → → → "workLocationType",␍
+        665 │ + → → → → "workCategoryId",␍
+        666 │ + → → → ]),␍
+    640 667 │       );␍
+    641 668 │       const requested = normalizeTimeCorrectionOriginalWorkMetadata(␍
+    642     │ - → → → strictOwnDataRecord(work.requested,·["workLocationType",·"workCategoryId"]),␍
+        669 │ + → → → strictOwnDataRecord(work.requested,·[␍
+        670 │ + → → → → "workLocationType",␍
+        671 │ + → → → → "workCategoryId",␍
+        672 │ + → → → ]),␍
+    643 673 │       );␍
+    644     │ - → → const·recorded·=·normalizeTimeCorrectionOriginalWorkMetadata(originalWorkMetadata);␍
+        674 │ + → → const·recorded·=␍
+        675 │ + → → → normalizeTimeCorrectionOriginalWorkMetadata(originalWorkMetadata);␍
+    645 676 │       if (␍
+    646 677 │         original.workLocationType !== recorded.workLocationType ||␍
+
+
+Checked 3 files in 27ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp

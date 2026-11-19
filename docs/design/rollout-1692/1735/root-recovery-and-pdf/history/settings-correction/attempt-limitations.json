@@ -1,0 +1,23 @@
+{
+  "completeRawHistoryClaim": false,
+  "retained": [
+    "Original root differential: first-red.json/log, 4 passed and 2 failed; after-fix differential: 5 passed, 1 intentionally unchanged premerge control failed.",
+    "Permanent recovery-red.json/log, recovery-green.json/log, retained-settings-red.json/log and intermediate recovery-compatible-green/final/confirmed reports remain separate.",
+    "Final full unit and quality outputs are the actual latest runs; typecheck.log and typecheck-final.log are separate."
+  ],
+  "overwrittenIntermediateOutputs": [
+    {
+      "paths": ["unit-final.json", "unit-final.log", "unit-command.json"],
+      "boundary": "The first broader run reused these final filenames on rerun. Its complete raw report/log is unavailable.",
+      "recordedSummary": {"files": 51, "passedCases": 288, "failedCases": 1, "skippedCases": 0},
+      "observedFailure": "The unchanged DateRangePicker test expected the old loading sentence after the intentional neutral readiness-copy change. The assertion was updated to the new public description. Summary/diagnostic was captured in the tool transcript; no replacement original report is fabricated."
+    },
+    {
+      "paths": ["quality.json", "doctor.log", "format-explicit.log", "format-ordinary.log", "lint.log"],
+      "boundary": "The first quality run reused these filenames on final follow-up. Earlier full raw output is unavailable; final files describe the later run.",
+      "recordedSummary": {"files": 12, "lintExit": 0, "doctorExit": 0, "doctorErrors": 0, "doctorWarnings": 2, "explicitFormatterErrors": 7},
+      "observedWarnings": ["The added redundant DOM submit early-return confused the preventDefault rule despite cancellation preceding it. It was removed; the tested TanStack onSubmit hydration guard remains.", "The report-roster readiness layout-effect warning is inherited from the incoming implementation."],
+      "missingHistory": "No exact replacement of the overwritten outputs or intermediate source hash is claimed."
+    }
+  ]
+}

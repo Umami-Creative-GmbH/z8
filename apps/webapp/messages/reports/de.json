@@ -13,9 +13,11 @@
       "yes": "Ja"
     },
     "description": "Erstellen Sie umfassende Arbeitszeit- und Abwesenheitsberichte mit steuerrelevanten Homeoffice-Daten",
+    "employeeNumber": "Personalnummer",
     "employeeSelector": {
       "error": "Teammitglieder konnten nicht geladen werden",
       "label": "Mitarbeiter",
+      "loading": "Teammitglieder werden geladen",
       "placeholder": "Mitarbeiter auswählen..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Unternehmenseinstellungen werden geladen, bevor Voreinstellungen aktiviert werden.",
       "period": "Zeitraum",
-      "selectPeriod": "Zeitraum auswählen"
+      "selectPeriod": "Zeitraum auswählen",
+      "settingsError": "Organisationseinstellungen nicht verfügbar",
+      "settingsRequired": "Für die Verwendung von Voreinstellungen sind Organisationseinstellungen erforderlich.",
+      "title": "Mitarbeiterbericht erstellen"
     },
     "generate": "Bericht generieren",
     "generating": "Bericht wird generiert…",
@@ -62,6 +67,7 @@
       "month": "Monat",
       "noHomeOfficeDays": "Keine Home-Office-Tage in diesem Zeitraum erfasst.",
       "overtime": "Überstunden",
+      "title": "Berichtsvorschau",
       "total": "Gesamt",
       "totalHomeOfficeDays": "Home-Office-Tage gesamt",
       "totalHomeOfficeHours": "Gesamte Home-Office-Arbeitsstunden",
@@ -266,6 +272,9 @@
         "noPermission": "Sie haben keine Berechtigung, Projektberichte anzuzeigen.",
         "title": "Projektberichte"
       },
+      "refreshFailed": "Projektberichte konnten nicht aktualisiert werden",
+      "scopeLoading": "Aktueller Berichtsbereich wird geladen…",
+      "scopeUnavailable": "Der aktuelle Berichtsbereich konnte nicht geladen werden.",
       "status": {
         "active": "Aktiv",
         "archived": "Archiviert",
@@ -324,7 +333,6 @@
         "failedGenerate": "Bericht konnte nicht generiert werden",
         "failedPortfolio": "Portfoliobericht konnte nicht generiert werden",
         "failedProject": "Projektbericht konnte nicht generiert werden",
-        "failedProjectReport": "Projektbericht konnte nicht generiert werden",
         "portfolioGenerated": "Portfoliobericht generiert",
         "projectGenerated": "Bericht generiert für {name}",
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
@@ -376,6 +384,8 @@
         "loading": "Freigabelinks werden geladen…",
         "revokedAutomatically": "Automatisch widerrufen am {date}: Die erstellende Person sieht nicht mehr alle darin enthaltenen Projekte",
         "revokedBy": "Widerrufen von {name} am {date}",
+        "scopeLoading": "Aktueller Freigabelink-Bereich wird geladen…",
+        "scopeUnavailable": "Der aktuelle Freigabelink-Bereich konnte nicht geladen werden.",
         "someone": "jemand",
         "title": "Links zu diesem Bericht",
         "views": "{count, plural, one {# Aufruf} other {# Aufrufe}}",
@@ -398,7 +408,8 @@
         "description": "Der Link funktioniert ab sofort nicht mehr und sein Snapshot wird gelöscht. Sein Datensatz und das Aufrufprotokoll bleiben erhalten.",
         "done": "Link widerrufen",
         "failed": "Der Link konnte nicht widerrufen werden",
-        "title": "Diesen Link widerrufen?"
+        "titleDeletedReport": "Freigabelink für einen gelöschten Bericht, {period}, widerrufen?",
+        "titleNamed": "Freigabelink für {report}, {period}, widerrufen?"
       },
       "status": {
         "active": "Aktiv",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "archiviert",
       "archivedBadge": "Archiviert",
+      "comparison": "Monatliche Fahrstrecke nach Fahrzeug und Mitarbeiter",
       "empty": {
         "description": "In diesem Zeitraum wurden keine abgeschlossenen Arbeiten mit Fahrstrecke erfasst.",
         "title": "Keine Fahrten in diesem Zeitraum"
@@ -457,6 +469,7 @@
         "period": "Zeitraum"
       },
       "generate": "Bericht erstellen",
+      "generated": "Erstellt am {time}",
       "generating": "Bericht wird erstellt …",
       "kilometres": "{distance} km",
       "noReportYet": "Noch kein Bericht erstellt",
@@ -465,7 +478,11 @@
         "description": "Dienstlich gefahrene Kilometer pro Fahrzeug und Mitarbeiter, nach Monat",
         "feature": "Bericht „Strecke pro Fahrzeug“ ansehen"
       },
+      "scope": "Mitarbeiter, die Ihnen in dieser Organisation zur Verfügung stehen",
+      "scopeLoading": "Aktuelle Organisation und Mitarbeiter werden bestätigt…",
+      "scopeUnavailable": "Der aktuelle Fahrzeugbericht-Bereich konnte nicht geladen werden.",
       "selectPeriod": "Wählen Sie einen Zeitraum aus und erstellen Sie den Bericht.",
+      "staged": "Zeitraum geändert. Bericht erstellen, um die Ergebnisse und Downloads zu aktualisieren.",
       "table": {
         "employee": "Mitarbeiter",
         "licencePlate": "Kennzeichen",
@@ -473,8 +490,7 @@
         "vehicle": "Fahrzeug",
         "vehicleAndEmployee": "Fahrzeug / Mitarbeiter"
       },
-      "title": "Strecke pro Fahrzeug",
-      "totalDriven": "{distance} gefahren"
+      "title": "Strecke pro Fahrzeug"
     }
   }
 }

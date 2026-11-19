@@ -1,0 +1,25 @@
+{
+  "label": "owned-explicit100crlf",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "biome",
+    "check",
+    "--config-path=biome.jsonc",
+    "--line-width=100",
+    "--line-ending=crlf",
+    "src/components/travel-expenses/legacy-draft-conversion.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx"
+  ],
+  "exit": 0,
+  "seconds": 0.415,
+  "logBytes": 42,
+  "logSha256": "ea8da84394d5ebdf969f7e609674657186a865817df5f1fb6313a14101b57d1e"
+}

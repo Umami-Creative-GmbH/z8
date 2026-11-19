@@ -245,14 +245,14 @@ export function WorkComparison({
 											data-changed={changed ? "hand-off" : undefined}
 											className={cn(
 												"px-3 py-1.5 tabular-nums",
-												changed && "bg-amber-500/10 font-medium",
+												changed && "bg-warning/10 font-medium",
 											)}
 										>
 											{cellText(field, column.values)}
 											{since && (
 												<IconPointFilled
 													aria-hidden="true"
-													className="ml-1 inline size-3 text-amber-600 dark:text-amber-400"
+													className="ml-1 inline size-3 text-warning"
 												/>
 											)}
 											{changed && (
@@ -290,7 +290,7 @@ export function WorkComparison({
 					<p className="flex items-center gap-1">
 						<IconPointFilled
 							aria-hidden="true"
-							className="size-3 text-amber-600 dark:text-amber-400"
+							className="size-3 text-warning"
 						/>
 						{t(
 							"settings.billableTime.handOff.comparison.legendSinceResolution",

@@ -1,0 +1,8 @@
+{
+  "recorded": 22,
+  "stopped": 6,
+  "alreadyGone": 16,
+  "ownedProcessesRemaining": 0,
+  "ownedListenersRemaining": 0,
+  "guard": "exact PID, creation, executable, parent and command identity"
+}

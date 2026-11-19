@@ -1,0 +1,335 @@
+{
+  "status": "Provisional exact merge; root owns four EOF cleanup changes, evidence qualifications and readiness. No source correctness blocker found in reviewed delta.",
+  "merge": "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+  "parents": [
+    "bd548b0cdb00c71591f865609c1a6bac871c38e3",
+    "dc2a416a3672b1e506673c42679d41d390353921"
+  ],
+  "tree": "dded82ac0d18bfc568160382ab1822ec49c070ca",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "changedPaths": 62,
+  "verifiedLedgerAncestors": 28,
+  "preservation": {
+    "allIncomingChangedBlobs": true,
+    "priorRollout": 1197,
+    "unaffectedPrior": 11412,
+    "baselineAndRootCorrections": true
+  },
+  "freshTests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 10,
+        "cases": 73,
+        "passed": 73,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 80,
+        "cases": 751,
+        "passed": 751,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      }
+    ],
+    "uniqueFiles": 90,
+    "uniqueCases": 824,
+    "method": "File path and full test name multisets; equal-name parameterized cases retain multiplicity; repeated runs do not add cases."
+  },
+  "freshChecks": {
+    "exact": [
+      {
+        "name": "exact",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/join-organization-form.test.tsx",
+          "src/app/[locale]/(auth)/invite-code-actions.test.ts",
+          "src/lib/effect/services/invite-code.service.test.ts",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/components/auth-shell-controls.test.tsx",
+          "src/lib/employee-lifecycle/joining/employee-writers.test.ts",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "src/lib/auth/callback-url.test.ts",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/components/forgot-password-form.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1823-audit/exact.json"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/exact.log"
+      }
+    ],
+    "compatibility": [
+      {
+        "name": "compatibility",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/reset-password-form.test.tsx",
+          "src/components/accept-invitation-form.test.tsx",
+          "src/components/login/store-app-sign-in-form.test.tsx",
+          "src/lib/auth/load-auth-page-client.test.ts",
+          "src/app/[locale]/init/page-client.test.tsx",
+          "src/app/[locale]/(auth)/accept-invitation/[invitationId]/page.test.tsx",
+          "src/components/auth-background-image.test.tsx",
+          "src/app/[locale]/(auth)/layout-background.test.tsx",
+          "src/app/[locale]/(auth)/cookie-consent-script.test.ts",
+          "src/components/calendar",
+          "src/hooks/use-calendar-data.test.tsx",
+          "src/hooks/use-calendar-employees.test.ts",
+          "src/lib/calendar",
+          "src/app/[locale]/(app)/calendar",
+          "src/app/api/calendar/events/route.test.ts",
+          "src/components/equipment/equipment-workspace.test.tsx",
+          "src/components/equipment/equipment-assignment-detail.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/dialog.test.tsx",
+          "src/components/ui/alert-dialog.test.tsx",
+          "src/components/settings/location-dialog.test.tsx",
+          "src/components/ui/loading-region.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/ui/tooltip.test.tsx",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/nav-main.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/app/[locale]/(app)/app-layout-content.test.tsx",
+          "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+          "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "src/components/errors",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "src/app/[locale]/(auth)/primary-fallbacks.test.tsx",
+          "src/components/login/login-form-content.test.tsx",
+          "src/components/auth-form-wrapper.test.tsx",
+          "src/components/time-tracking/manual-time-entry-dialog.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1823-audit/compatibility.json"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/compatibility.log"
+      }
+    ],
+    "types": [
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/types.log"
+      }
+    ],
+    "biome": [
+      {
+        "name": "biome-current-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/app/[locale]/(auth)/join/[code]/page.tsx",
+          "src/components/join-organization-form-body.tsx",
+          "src/components/join-organization-form.test.tsx",
+          "src/components/join-organization-form.tsx",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/lib/auth/use-auth-page-session.ts"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/biome-current-crlf.log"
+      },
+      {
+        "name": "biome-strict-current-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "--line-ending=crlf",
+          "src/app/[locale]/(auth)/join/[code]/page.tsx",
+          "src/components/join-organization-form-body.tsx",
+          "src/components/join-organization-form.test.tsx",
+          "src/components/join-organization-form.tsx",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/lib/auth/use-auth-page-session.ts"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/biome-strict-current-crlf.log"
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "--error-on-warnings",
+          "src/app/[locale]/(auth)/join/[code]/page.tsx",
+          "src/components/join-organization-form-body.tsx",
+          "src/components/join-organization-form.test.tsx",
+          "src/components/join-organization-form.tsx",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/lib/auth/use-auth-page-session.ts"
+        ],
+        "exitCode": 1,
+        "log": ".tmp/merge1823-audit/biome-explicit-webapp.log"
+      },
+      {
+        "name": "biome-explicit-lint-import",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--formatter-enabled=false",
+          "--error-on-warnings",
+          "src/app/[locale]/(auth)/join/[code]/page.tsx",
+          "src/components/join-organization-form-body.tsx",
+          "src/components/join-organization-form.test.tsx",
+          "src/components/join-organization-form.tsx",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/lib/auth/use-auth-page-session.ts"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/biome-explicit-lint-import.log"
+      }
+    ],
+    "doctor": [
+      {
+        "name": "doctor",
+        "command": [
+          "pnpm",
+          "exec",
+          "react-doctor",
+          "apps/webapp",
+          "--scope",
+          "changed",
+          "--base",
+          "bd548b0cdb00c71591f865609c1a6bac871c38e3",
+          "--verbose",
+          "--no-score",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--no-parallel"
+        ],
+        "exitCode": 0,
+        "log": ".tmp/merge1823-audit/doctor.log"
+      }
+    ]
+  },
+  "whitespace": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "HEAD^1",
+        "HEAD"
+      ],
+      "exitCode": 2,
+      "stdout": "docs/design/rollout-1692/1823.md:202: new blank line at EOF.\ndocs/design/rollout-1692/1823/postgres.mjs:33: new blank line at EOF.\ndocs/design/rollout-1692/1823/quality.json:122: new blank line at EOF.\ndocs/design/rollout-1692/1823/runtime.mjs:301: new blank line at EOF.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "HEAD^2",
+        "HEAD"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "workingTreeClean": true,
+  "review": {
+    "scope": "Six TS/TSX delta, approved R024/shared/Testing Decisions, existing action/service/lifecycle owners and other shared session/auth consumers.",
+    "standards": "TanStack Form plus F3 controls; native buttons/form/link and visible labels; errors escaped, field-associated validation and safe caught transport errors; Tabler icons/decorative aria; reduced-motion spinners; encoded locale callback; request branding and shell controls kept; no new Date/business time, schema, endpoint, admission, employee writer or lifecycle ownership.",
+    "spec": "Editable uppercase code, stale validation guard, account+organization context and state boundary retained. Actual session/user/active-organization changes remount and ignore prior result. Pending explicitly denies access approval while preserving account destination; approved retains access/employment caveat. Existing service remains authority for membership/rehire/reactivation/afterCommit.",
+    "sharedSession": "Only joining opts into focus refresh; accepted-invitation and verify-email-pending retain false default matching existing query provider. Lazy auth client stays unchanged; no authorization inferred from client account string.",
+    "doctor": "One warning react-hooks-js/set-state-in-effect at join-organization-form.tsx:158; async initial validation returns through await, initial loading already established, stale/unmount guards present. Reviewed advisory,no compiler error,no suppression,no numeric score.",
+    "biome": "Default and strict CRLF-aware six-file checks pass. Explicit --config-path=biome.jsonc formatter reports five files differing at webapp lineWidth100; strict explicit lint/import check passes. No source rewrite/suppression/config change.",
+    "webGuidelines": "Fetched current primary guidelines https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md; existing translated loading defaults keep ellipses unchanged. No new material functional/a11y finding in delta. Exhaustive contrast/screen reader/device/keyboard acceptance unpassed."
+  },
+  "evidence": {
+    "decodedPng": 40,
+    "parsedJson": 12,
+    "syntaxCheckedDrivers": 3,
+    "relativeLinks": 24,
+    "pairedMetrics": 5,
+    "currentSourcePins": "continuation/final/branding/readback production blobs match Git/current checkout with LF/CRLF normalization only. Early before source pins match recorded base; early after form hash cannot be matched to a known committed feature-history blob.",
+    "archiveChecks": "R019 historical, R021 current, root equipment recovery and Calendar route-arrival archive verifiers pass; static source inventory172=153+19,all19alias templates unchanged. These are archive/static checks,not runtime/alias acceptance.",
+    "inspectedImages": [
+      "before-phone-light.png",
+      "final-phone-light.png",
+      "final-phone-dark-large.png",
+      "after-pending-action.png",
+      "after-request-sent.png",
+      "after-approved.png",
+      "branding-branded-phone.png"
+    ],
+    "fonts": "Raw measured root/body16 default and18 saved Large; h1 24/27; phone input16/18 and desktop14/15.75. Later branding/readback include computed system stack and document.fonts.ready. No inline style assignment accepted as font proof.",
+    "states": "Pending-action PNG shows disabled input/Joining. Request-sent and approved display domain outcome while dev Rendering indicator remains; final route shows public validated-code form,not final employee lifecycle replay. Repeated layout checks are counted by phase; not additional unique domain paths.",
+    "qualification": "CSSviewport390 observations remain no-overflow measurements; several full-page PNGs actually380px wide and981/881/931high. Do not relabel PNG dimensions. Code glyphs masked/private fixture code IDs omitted; paired lineage is documented by driver/shared fixture string and visible same synthetic organization,not a publicly restorable private manifest.",
+    "unmatchedEarlySourceHash": "cb6d6bdebc31daf518cea123e054c7dcc2c227e33e40888a98ae6aec37220acd",
+    "inheritedRuntime": "Implementer 3PG/78 plus existing migration recovery verifier; real browser actions/refusals/continuation, pending0employee403/approved1employee1usage/readback, scope-switch actual endpoints/cookies with explicitly simulated visibility notifications, 40captures and clean connected Next. Not freshly run by merger. Existing migration verifier is not new R024 domain implementation.",
+    "limits": [
+      "No services,Next,browser,PostgreSQL runtime or provider requests were started by merger.",
+      "Production build/static generation,remote Tolgee synchronization,physical device/store wrappers,true zoom,live email/provider delivery,usable native React tree remain unpassed.",
+      "Comfortable font,exhaustive keyboard/locale/long-name/reduced-motion runtime and all lifecycle flows remain as reported limits.",
+      "Preview timeouts and native Done-without-tree remain non-passes; fixture dummy CAPTCHA proves no production challenge behavior."
+    ]
+  },
+  "noOtherMutations": "No source/report/ledger/README/tracker/push/PR edits. Only exact no-ff merge and ignored audit artifacts. No dev merge or deploy.",
+  "exclusiveOwnership": "RELEASED after writing this handoff. Root may resume checkout/package operations."
+}

@@ -1,0 +1,253 @@
+{
+  "created": "2026-11-16T13:01:51.454Z",
+  "source": {
+    "head": "87b431bd6116ab90aed9d822db835dc78107bffb",
+    "tree": "ba5a7bec6d0fe7feaedcf7b2d93da359e3a41593",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "lastDirectlyVerified": "8e3876c39725b7a8ef5218439766395401d64b80",
+    "classification": "Fresh verification evidence for provisional1731. Root owns verification advancement; no source fix or commit by this verifier.",
+    "rootCorrection": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
+    "rootCorrectionIntegration": "4769c5f1a5daba7e87f81b6cc3f8cdffd865732c",
+    "selection": "Current-record-derived selection/capacity and event intersection; no new reconciliation effect."
+  },
+  "fresh": {
+    "postgres": {
+      "files": 5,
+      "cases": 83,
+      "passed": 83,
+      "failed": 0,
+      "skipped": 0,
+      "deduplication": "physical file/full case name/occurrence; nonadditive with earlier83"
+    },
+    "cap": {
+      "completedAssertions": 13,
+      "terminalDriverExit": 1,
+      "restorationRecoveredSeparately": true
+    },
+    "actions": {
+      "completedAssertions": 8,
+      "terminalDriverExit": 1,
+      "restorationAndReadRecoverySeparate": true
+    },
+    "recovery": {
+      "assertions": 2,
+      "exit": 0
+    },
+    "roles": {
+      "initialAssertions": 4,
+      "initialExit": 1,
+      "continuationAssertions": 7,
+      "continuationExit": 0
+    },
+    "binary": {
+      "initialAssertions": 3,
+      "initialExit": 1,
+      "continuationAssertions": 7,
+      "continuationExit": 0,
+      "overlap": "Before200/HEAD checks overlap; do not sum into unique test cases."
+    },
+    "matched": {
+      "statesPerSource": 6,
+      "assertionsPerSource": 4,
+      "sameScope": true,
+      "scope": {
+        "actor": "small-admin",
+        "organizationId": "perf-small-0f725bdeb552",
+        "recordCount": 522,
+        "recordDigest": "7adbe19c6a134d50025ae3a2bbe9a47106f5149d9cd3454ad95ef1c44ea78587",
+        "policy": [
+          {
+            "category": "certificate",
+            "retention_years": 6
+          },
+          {
+            "category": "other",
+            "retention_years": 6
+          }
+        ],
+        "route": "/en/personnel-files/due-for-deletion"
+      },
+      "currentMainHeadings": 1,
+      "historicalMainHeadings": 2
+    },
+    "native": [
+      {
+        "flavor": "current",
+        "actualTarget": "188 1501 1482 Forget(DueForDeletionList)",
+        "auth": {
+          "exit": 0,
+          "signIn": 200,
+          "active": 200
+        },
+        "compileIssues": 0,
+        "configErrors": 0,
+        "sessionErrors": 0,
+        "closed": true
+      },
+      {
+        "flavor": "before",
+        "actualTarget": "188 790 774 Forget(DueForDeletionList)",
+        "auth": {
+          "exit": 0,
+          "signIn": 200,
+          "active": 200
+        },
+        "compileIssues": 0,
+        "configErrors": 0,
+        "sessionErrors": 0,
+        "closed": true
+      },
+      {
+        "flavor": "restored-final",
+        "actualTarget": "188 769 750 Forget(DueForDeletionList)",
+        "auth": {
+          "exit": 0,
+          "signIn": 200,
+          "active": 200
+        },
+        "compileIssues": 0,
+        "configErrors": 0,
+        "sessionErrors": 0,
+        "closed": true
+      }
+    ]
+  },
+  "inherited": {
+    "unit": {
+      "files": 51,
+      "cases": 346,
+      "passed": 346
+    },
+    "types": {
+      "projects": 3,
+      "typegen": true
+    },
+    "quality": {
+      "explicitRootCRLFFiles": 2,
+      "lintFiles": 9,
+      "formatFailures": [
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "doctorFiles": 9,
+      "doctorErrors": 0,
+      "doctorWarnings": 1,
+      "warning": "Existing Activity synchronous before-paint reset; no suppressions/new diagnostics"
+    },
+    "earlierMergerPostgres": {
+      "files": 5,
+      "cases": 83,
+      "nonadditive": true
+    }
+  },
+  "historical": {
+    "pin": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+    "files": 3,
+    "partialApplication": true,
+    "ownNextStoppedBeforeEachMutation": true,
+    "restoredRawByteExact": true,
+    "newHelpersAndOtherApplicationSourceRemainCurrent": true
+  },
+  "physical": {
+    "actualPNGBytes": 68,
+    "protectedBefore": 200,
+    "protectedAfter": 404,
+    "originalHEADBefore": 200,
+    "originalHEADAfter": 404,
+    "recordedVersionId": null,
+    "previewBefore": 0,
+    "previewAfter": 0,
+    "existingPreviewDeletionPassed": false,
+    "all21UnselectedUnknownRetained": true
+  },
+  "preservation": {
+    "sourceClean": true,
+    "allRawPinsAndConfigsUnchanged": true,
+    "physicalDependencyParents": 3,
+    "internalLeafLinks": 158,
+    "approvedLockSha256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "all54VerifiedTicketAncestors": true,
+    "prior1730CorrectionPaths": 8,
+    "prior1730ProofFiles": 201,
+    "priorGroups": {
+      "1728": 163,
+      "1729": 152,
+      "1736": 266,
+      "1737": 211,
+      "1835": 203
+    },
+    "allTrackedIndexEntriesUnchanged": true
+  },
+  "acceptedCaptures": [
+    "public-cap-initial-populated.png",
+    "public-cap-confirmation500.png",
+    "public-cap-capacity-released-selectedOther.png",
+    "public-cap-unknown-explicit-review.png",
+    "public-actions-frozen-two-document-review.png",
+    "public-actions-held-pending-locked.png",
+    "public-actions-transport-refused-retained.png",
+    "public-recovery-real-read-failed.png",
+    "public-recovery-local-Retry-recovered.png",
+    "public-roles-specific-Certificate-current.png",
+    "public-roles-revoked-purge-refused.png",
+    "public-binary-explicit-unknown-actual-PNG-review.png",
+    "public-binary-real-purge-completed.png",
+    "public-current-desktop-light-16.png",
+    "public-current-desktop-collapsed-light-16.png",
+    "public-current-keyboard-focus.png",
+    "public-current-phone-light-16.png",
+    "public-current-wide-dark-18.png",
+    "public-current-phone-dark-18.png",
+    "public-before-desktop-light-16.png",
+    "public-before-desktop-collapsed-light-16.png",
+    "public-before-keyboard-focus.png",
+    "public-before-phone-light-16.png",
+    "public-before-wide-dark-18.png",
+    "public-before-phone-dark-18.png"
+  ],
+  "diagnosticCaptures": [
+    {
+      "file": "public-actions-partial-result-real-readback.png",
+      "qualification": "Announced1/1 result with stale pre-refetch list; not settled records acceptance."
+    }
+  ],
+  "privacy": {
+    "publicAllowlistOnly": true,
+    "excludedCategories": [
+      "New private fixture inputs/pointers/secrets",
+      "All private failure PNGs and raw native hook/context outputs",
+      "All unredacted accepted-state originals and excluded preliminary captures"
+    ],
+    "excludedPathsOrDigestsIncluded": false,
+    "contactRedactionsLabeled": true,
+    "privateFailureInspectionAutoReviewRejected": true,
+    "saferAlternative": "Fresh sanitized live DOM diagnosis and labeled accepted-state clones; no private failure image read."
+  },
+  "cleanup": {
+    "containersAbsent": 3,
+    "nativeActive": 0,
+    "ownNextProcesses": 0,
+    "ownListeners": 0,
+    "ownResources": 0,
+    "privateInputsAndRawFailuresPreserved": true
+  },
+  "limits": [
+    "Broader unresolved four-path current-roster guard not rerun.",
+    "Root source checks are inherited; no new346-unit/type/quality run. Two pre-existing route-metadata formatting failures remain;9lint and2explicitCRLF checks are supplied passes.",
+    "No exhaustive runtime account/orgABA/hiddenActivity/allrace/allrole matrix; no separate runtime empty/loading/feature-off state matrix. Existing component/domain coverage remains inherited.",
+    "Initial fixture auth/memberships/employment adaptations are prerequisites, not production grant/offboarding/lifecycle acceptance; unrelated2025 benchmark workload was not migrated.",
+    "Physical cleanup proved only for one actual unversioned fixture original receipt. Metadata501cohort cannot prove storage. No preview existed before, so deletion of an existing preview/version history is unpassed.",
+    "Runtime audit covered public upload/read/purge descriptions; ZIP/title-edit/free-text and pay-period variants remain freshPG coverage, not claimed as new browser journeys.",
+    "No full production build/static generation, remote catalogs/Tolgee/providers/customer/payment/device/store-shell/screen-reader/true zoom/long-translation matrix.",
+    "Lower-right Pets and Next/Compiling/Rendering overlays remain visible. Viewports and actual18px text are not true device/zoom evidence.",
+    "One announced partial-result image precedes settled query refetch; diagnostic only, not accepted current canonical records. Later scoped readback and matched500due captures establish final refreshed state.",
+    "Earlier daemon timeout remains failed; final fresh restored session passed specific React/Next probes. No blanket all-native or notification-permission claim."
+  ],
+  "artifacts": {
+    "allowlist": "public-allowlist.json",
+    "hashes": "artifact-hashes.json",
+    "count": 128,
+    "hashIndexSelfExcluded": true
+  },
+  "release": "RELEASE ALL checkout/index/package/runtime/process ownership to root. Zero owned processes, listeners, containers, browser/native sessions remain."
+}

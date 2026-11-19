@@ -1,0 +1,55 @@
+{
+  "at": "2026-11-18T04:22:40.768Z",
+  "prior": {
+    "path": "/en/travel-expenses",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 280,
+        "y": 89,
+        "w": 1296,
+        "h": 36
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": false,
+    "noMatch": false,
+    "rows": 2
+  },
+  "failure": {
+    "path": "/en/travel-expenses",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 280,
+        "y": 89,
+        "w": 1296,
+        "h": 36
+      }
+    ],
+    "statuses": [],
+    "alerts": [
+      "The expense could not be created. Please retry.Retry"
+    ],
+    "retry": true,
+    "empty": false,
+    "noMatch": false,
+    "rows": 2
+  },
+  "button": {
+    "disabled": false,
+    "busy": "false"
+  },
+  "failed": 1,
+  "requests": 1,
+  "zeroGraphDelta": true,
+  "events": [
+    {
+      "event": "one-create-transport-failure-before-dispatch",
+      "at": "2026-11-18T04:22:40.730Z"
+    }
+  ],
+  "scope": "Exact non-auth route POST at Request stage, one next POST armed only after settled history and immediately before trusted New receipt click. No payload/header inspection. Synthetic transport failure, not business rejection."
+}

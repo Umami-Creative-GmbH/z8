@@ -1,0 +1,7 @@
+{
+  "attempt": "normal Refresh data with /api/auth/context abort",
+  "contextRequests": 1,
+  "rscRefreshes": 1,
+  "initialWait": "15-second timeout waited for role=alert; actual context error is a local section with Retry and no alert role",
+  "result": "wrong harness selector; not a product failure"
+}

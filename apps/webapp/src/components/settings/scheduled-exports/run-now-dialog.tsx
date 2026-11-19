@@ -7,6 +7,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { runScheduledExportNowAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -120,8 +121,15 @@ export function RunNowDialog({
 	};
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
+		<AlertDialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				// Escape or an outside press must not hide a run that is still starting.
+				if (!nextOpen && isPending) return;
+				onOpenChange(nextOpen);
+			}}
+		>
+			<AlertDialogContent aria-busy={isPending}>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
 						{t("settings.scheduledExports.runNow.title", "Run Export Now")}
@@ -177,7 +185,10 @@ export function RunNowDialog({
 					</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={(e) => {
-							e.preventDefault();
+							// Base UI's Close ignores preventDefault; stop its handler so the dialog
+							// stays open until the run is queued (it closes itself on success).
+							keepAlertDialogOpen(e);
+							if (isPending) return;
 							handleRunNow();
 						}}
 						disabled={isPending || hasExecutionInProgress}

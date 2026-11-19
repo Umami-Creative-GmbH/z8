@@ -322,10 +322,15 @@ describe("IdentitySetupWizard behavior", () => {
 	it("renders all seven steps and accessible controls", () => {
 		renderWizard(setupResponse({ currentStep: "domain" }));
 
-		expect(screen.getByText("Unternehmensidentität")).toBeTruthy();
-		expect(screen.getByText("Operative Befehlscheckliste")).toBeTruthy();
+		// The page heading names the area: no decorative eyebrow, only the setup's status and progress.
+		expect(screen.queryByText("Unternehmensidentität")).toBeNull();
 		expect(screen.queryByText("Enterprise identity")).toBeNull();
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Operative Befehlscheckliste" }),
+		).toBeTruthy();
 		expect(screen.queryByText("Operational command checklist")).toBeNull();
+		expect(screen.getByText("1 of 7 steps complete")).toBeTruthy();
+		expect(screen.getByText("Draft")).toBeTruthy();
 		expect(screen.getAllByText("Anbieter").length).toBeGreaterThan(0);
 		expect(screen.getAllByText("Domäne").length).toBeGreaterThan(0);
 		expect(screen.getAllByText("SSO-Konfiguration").length).toBeGreaterThan(0);
@@ -383,10 +388,18 @@ describe("IdentitySetupWizard behavior", () => {
 			screen.queryByText("ssoTest is required before activation"),
 		).toBeNull();
 		expect(
-			screen.getByText(
-				"Configure SSO and enforcement for organization org_123 with guarded activation.",
+			screen.queryByText(
+				"Configure SSO and enforcement for this organization with guarded activation.",
 			),
-		).toBeTruthy();
+		).toBeNull();
+		expect(screen.queryByText(/org_123/)).toBeNull();
+	});
+
+	it("reports every step complete once the setup is activated", () => {
+		renderWizard(configuredSetup({ activatedAt: "2026-01-01T00:00:00.000Z" }));
+		expect(screen.getByText("7 of 7 steps complete")).toBeTruthy();
+		expect(screen.getByText("Activated")).toBeTruthy();
+		expect(screen.queryByText("Draft")).toBeNull();
 	});
 
 	it("saves provider setup with the expected payload", async () => {

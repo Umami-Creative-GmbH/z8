@@ -1,0 +1,148 @@
+{
+  "source": "f5d3b34e2e388c87c278633e7bf8f2be71da5185",
+  "fixture": "small-admin, selected 2026-11-02, canonical weekly cadence",
+  "policy": "notifications-denied-for-fixture-origin",
+  "checks": [
+    {
+      "width": 1600,
+      "documentWidth": 1600,
+      "headings": [
+        "Period submissions"
+      ],
+      "rows": 8,
+      "dialogs": 0,
+      "notificationPermission": "denied",
+      "theme": "light bprogress-busy",
+      "rootFont": "16px",
+      "calendarLinks": [
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        }
+      ],
+      "text": "Toggle Sidebar\n\nPeriod Submissions\n\n05:23\nUTC+01:00\nClock In\nToggle theme\nAll covered employees\nPeriod submissions\nSubmissions confirm records without freezing them. Changed records need resubmission. Review decisions in the approval inbox.\nRefresh submissions\nOpen the approval inbox\nSubmission period\nNov 2 – 8, 2026\n\nAwaiting submission\n\n8\n\nRejected\n\n0\n\nSent back after a change\n\n0\n\nSubmitted\n\n0\n\nApproved\n\n0\n\n8 employees have not submitted this period yet.\n\nEmployee\tPeriod\tStatus\t\nCalendar\n\n\nFixture Person 0\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 1\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 2\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 3\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 4\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 5\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 6\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 7\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar"
+    },
+    {
+      "width": 2400,
+      "documentWidth": 2400,
+      "headings": [
+        "Period submissions"
+      ],
+      "rows": 8,
+      "dialogs": 0,
+      "notificationPermission": "denied",
+      "theme": "bprogress-busy dark",
+      "rootFont": "16px",
+      "calendarLinks": [
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        }
+      ],
+      "text": "Toggle Sidebar\n\nPeriod Submissions\n\n05:23\nUTC+01:00\nClock In\nToggle theme\nAll covered employees\nPeriod submissions\nSubmissions confirm records without freezing them. Changed records need resubmission. Review decisions in the approval inbox.\nRefresh submissions\nOpen the approval inbox\nSubmission period\nNov 2 – 8, 2026\n\nAwaiting submission\n\n8\n\nRejected\n\n0\n\nSent back after a change\n\n0\n\nSubmitted\n\n0\n\nApproved\n\n0\n\n8 employees have not submitted this period yet.\n\nEmployee\tPeriod\tStatus\t\nCalendar\n\n\nFixture Person 0\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 1\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 2\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 3\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 4\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 5\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 6\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar\n\n\nFixture Person 7\nNot submitted\n\t\nNov 2 – 8, 2026\n\t\nAwaiting submission\n\t\nCalendar"
+    },
+    {
+      "width": 390,
+      "documentWidth": 390,
+      "headings": [
+        "Period submissions"
+      ],
+      "rows": 8,
+      "dialogs": 0,
+      "notificationPermission": "denied",
+      "theme": "bprogress-busy light",
+      "rootFont": "16px",
+      "calendarLinks": [
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        }
+      ],
+      "text": "Toggle Sidebar\n\nPeriod Submissions\n\nMore actions\nAll covered employees\nPeriod submissions\nSubmissions confirm records without freezing them. Changed records need resubmission. Review decisions in the approval inbox.\nRefresh submissions\nOpen the approval inbox\nSubmission period\nNov 2 – 8, 2026\n\nAwaiting submission\n\n8\n\nRejected\n\n0\n\nSent back after a change\n\n0\n\nSubmitted\n\n0\n\nApproved\n\n0\n\n8 employees have not submitted this period yet.\n\nEmployee\nPeriod\nStatus\nCalendar\nFixture Person 0\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 1\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 2\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 3\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 4\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 5\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 6\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar\nFixture Person 7\nNot submitted\nNov 2 – 8, 2026\nAwaiting submission\nCalendar"
+    }
+  ]
+}

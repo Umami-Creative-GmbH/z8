@@ -1,0 +1,9 @@
+{
+  "locationHeading": true,
+  "recordCount": true,
+  "canonicalCount": 1,
+  "names": true,
+  "employeeLinks": true,
+  "states": true,
+  "ownEmployeeOnly": true
+}

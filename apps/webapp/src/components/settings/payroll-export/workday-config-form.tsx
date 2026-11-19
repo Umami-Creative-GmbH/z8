@@ -19,17 +19,8 @@ import {
 	testWorkdayConnectionAction,
 	type WorkdayConfigResult,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { describeFailure, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -126,27 +117,27 @@ export function WorkdayConfigForm({
 			onConfigSaved?.();
 		});
 	};
-	const deleteCredentials = () =>
-		run(async () => {
-			const result = await deleteWorkdayCredentialsAction();
-			if (result.success) {
-				toast.success(
-					t(
-						"settings.payrollExport.workday.credentialsDeleted",
-						"Credentials deleted",
-					),
-				);
-				setShowCredentialsForm(true);
-				onConfigSaved?.();
-			} else
-				toast.error(
-					t(
-						"settings.payrollExport.workday.credentialsDeleteError",
-						"Failed to delete credentials",
-					),
-					{ description: actionErrorMessage(t, result) },
-				);
-		});
+	// Resolves once the credentials are gone and throws the worded reason otherwise,
+	// so the confirmation stays open with the failure inline.
+	const deleteCredentials = async () => {
+		const result = await deleteWorkdayCredentialsAction();
+		if (!result.success) {
+			throw new Error(
+				actionErrorMessage(t, result, {}, [
+					"settings.payrollExport.workday.credentialsDeleteError",
+					"Failed to delete credentials",
+				]),
+			);
+		}
+		toast.success(
+			t(
+				"settings.payrollExport.workday.credentialsDeleted",
+				"Credentials deleted",
+			),
+		);
+		setShowCredentialsForm(true);
+		onConfigSaved?.();
+	};
 	const cancelCredentials = () => {
 		setShowCredentialsForm(false);
 		setClientId("");
@@ -207,7 +198,7 @@ function WorkdayCredentialsCard({
 	onShowForm: () => void;
 	onSave: () => void;
 	onCancel: () => void;
-	onDelete: () => void;
+	onDelete: () => Promise<void>;
 }) {
 	return (
 		<Card>
@@ -257,7 +248,7 @@ function WorkdayCredentialsCard({
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex items-center gap-3">
 							<IconPlugConnected
-								className="size-5 text-green-600"
+								className="size-5 shrink-0 text-primary"
 								aria-hidden="true"
 							/>
 							<div>
@@ -360,49 +351,50 @@ function DeleteCredentialsButton({
 	onDelete,
 }: {
 	t: Translate;
-	onDelete: () => void;
+	onDelete: () => Promise<void>;
 }) {
+	const deletion = useConfirmedAction<"credentials">();
 	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					aria-label={t(
-						"settings.payrollExport.workday.deleteCredentials",
-						"Delete credentials",
-					)}
-				>
-					<IconTrash className="size-4 text-destructive" aria-hidden="true" />
-				</Button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t(
-							"settings.payrollExport.workday.deleteCredentialsTitle",
-							"Delete Workday credentials?",
-						)}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.payrollExport.workday.deleteCredentialsDescription",
-							"This removes stored Workday OAuth credentials for this organization.",
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={onDelete}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-					>
-						{t("common.delete", "Delete")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+		<>
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				aria-label={t(
+					"settings.payrollExport.workday.deleteCredentials",
+					"Delete credentials",
+				)}
+				disabled={deletion.isPending}
+				onClick={() => deletion.request("credentials")}
+			>
+				<IconTrash className="size-4 text-destructive" aria-hidden="true" />
+			</Button>
+			<DeleteConfirmDialog
+				open={deletion.open}
+				onOpenChange={deletion.onOpenChange}
+				title={t(
+					"settings.payrollExport.workday.deleteCredentialsTitle",
+					"Delete Workday credentials?",
+				)}
+				description={t(
+					"settings.payrollExport.workday.deleteCredentialsDescription",
+					"This removes stored Workday OAuth credentials for this organization.",
+				)}
+				isDeleting={deletion.isPending}
+				error={deletion.error}
+				onConfirm={() =>
+					void deletion.confirm(onDelete, (failure) =>
+						describeFailure(
+							failure,
+							t(
+								"settings.payrollExport.workday.credentialsDeleteError",
+								"Failed to delete credentials",
+							),
+						),
+					)
+				}
+			/>
+		</>
 	);
 }
 

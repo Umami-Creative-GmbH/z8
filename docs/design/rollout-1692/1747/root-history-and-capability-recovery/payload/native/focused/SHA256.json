@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "audit.json",
+      "bytes": 21948,
+      "sha256": "534fbd89e0285735b8c87d46a793e15e0ded2e4cb98e613823ea97896fa58427"
+    },
+    {
+      "path": "note.txt",
+      "bytes": 1619,
+      "sha256": "e87aff18cd0ca0e1ab32ee0afd4e14d2b6a99536dbc0a26fc4828df660630346"
+    }
+  ]
+}

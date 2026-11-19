@@ -1,0 +1,84 @@
+{
+  "head": "40492f6233feecfac214813f28e2f1f26b3175b2",
+  "sources": {
+    "apps/webapp/src/components/notifications/notifications-inbox.tsx": "c346877f55a7a64f7cd031a6858fbc285aee652feae9604499db062fe157d302",
+    "apps/webapp/src/components/notifications/notification-item.tsx": "03830a92e3648c3c449c1c7358b432c063e12dccf2846dfd2b0804b5d6014b5c",
+    "apps/webapp/src/hooks/use-notifications.ts": "1f39529fe6f1f7138d372f121fd69e9ab3db262601222cfd331ca4f1f0543484",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "46a8c990586d9bdf3e04629af838ed1d789a62d777fa871cd4a7b253da983694"
+  },
+  "observations": [
+    {
+      "name": "actual initial read",
+      "value": {
+        "total": 4,
+        "unread": 3
+      }
+    },
+    {
+      "name": "Unread filter",
+      "value": 3
+    },
+    {
+      "name": "Read filter",
+      "value": 1
+    },
+    {
+      "name": "visible-only mark read",
+      "value": {
+        "total": 4,
+        "unread": 2
+      }
+    },
+    {
+      "name": "per-item delete readback",
+      "value": {
+        "total": 3,
+        "unread": 1
+      }
+    }
+  ],
+  "errors": [],
+  "captures": [
+    {
+      "label": "no-match",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "sha256": "d2441ae9dfbadf188431a85c822ecfb72272a082bfd12f464b0f751e42274b2f",
+      "dom": {
+        "text": "Toggle Sidebar\n\nNotifications\n\n11:56\nUTC+01:00\nClock In\nToggle theme\n3\nNotifications\n3 unread\nRefresh\nSettings\nClear search\nAll\nUnread\nRead\nClear filters\n\n0 visible · latest 100 notifications\n\nNo matching notifications\nAdjust the search or read filter to widen this inbox view.",
+        "css": {
+          "width": 1600,
+          "height": 1000,
+          "documentWidth": 1600
+        },
+        "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontSize": "16px",
+        "theme": "light bprogress-busy"
+      }
+    },
+    {
+      "label": "failure-attempt",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "sha256": "c54f4ebc0b2eafe0045e0a8fe6b1d635bf4f854816b064701c44d2b45bdad3b5",
+      "dom": {
+        "text": "Toggle Sidebar\n\nNotifications\n\n11:57\nUTC+01:00\nClock In\nToggle theme\nNotifications\n0 unread\nRefresh\nSettings\nAll\nUnread\nRead\n\n1 visible · latest 100 notifications\n\nDeleted 2 notifications\n\nSelect all visible\nEarlier\nAbsence approved\nAbsence approved: review your workforce updates.\n4 days ago · Read",
+        "css": {
+          "width": 1600,
+          "height": 1000,
+          "documentWidth": 1600
+        },
+        "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontSize": "16px",
+        "theme": "light bprogress-busy"
+      }
+    }
+  ],
+  "failedExpectation": "1 deleted; 1 failed. Retry the remaining selection.",
+  "failedDom": "Toggle Sidebar\n\nNotifications\n\n11:57\nUTC+01:00\nClock In\nToggle theme\nNotifications\n0 unread\nRefresh\nSettings\nAll\nUnread\nRead\n\n1 visible · latest 100 notifications\n\nDeleted 2 notifications\n\nSelect all visible\nEarlier\nAbsence approved\nAbsence approved: review your workforce updates.\n4 days ago · Read",
+  "failure": "Waiting failed: 30000ms exceeded"
+}

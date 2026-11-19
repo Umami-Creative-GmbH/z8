@@ -57,7 +57,7 @@ describe("BillingPageClient", () => {
 		);
 
 		expect(source).toContain(
-			"<Suspense fallback={<SettingsContentLoading />}>",
+			'<Suspense fallback={<SettingsContentLoading variant="section" />}>',
 		);
 		expect(source).not.toContain("<Suspense fallback={null}>");
 	});
@@ -137,8 +137,9 @@ describe("BillingPageClient", () => {
 		expect(screen.queryByText("Manage Billing")).toBeNull();
 		expect(screen.getByText("Monthly")).toBeTruthy();
 		expect(screen.getByText("Yearly")).toBeTruthy();
-		expect(screen.getByText("€4")).toBeTruthy();
-		expect(screen.getByText("€3")).toBeTruthy();
+		// The app locale is "de": headline prices use the German currency format.
+		expect(screen.getByText("4 €")).toBeTruthy();
+		expect(screen.getByText("3 €")).toBeTruthy();
 		expect(
 			screen.getByText(
 				"Choose a billing cadence now. Your paid subscription starts only after the remaining trial period.",

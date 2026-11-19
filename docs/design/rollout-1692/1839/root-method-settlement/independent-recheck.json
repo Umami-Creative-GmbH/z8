@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "issue": 1839,
+  "readiness": null,
+  "verifiedCommit": null,
+  "reviewedCommit": "2310f3bfb83a5e529f22753e8932a8245a3aca5d",
+  "reviewedAppTree": "31eb3098b5e86baa32178e06d54ac39fd2cb6fe0",
+  "verdict": "No confirmed P1 in independent public/unit checks; overall type/runtime acceptance incomplete.",
+  "unit": {
+    "occurrences": 310,
+    "uniqueFileFullNameLabels": 308,
+    "physicalFiles": 31,
+    "passed": 310,
+    "failed": 0,
+    "newIndependentCases": 25,
+    "prior285Included": true,
+    "prior39PublicIncluded": true,
+    "postgresRerun": false
+  },
+  "static": {
+    "typegen": "passed",
+    "workflowTypes": "passed",
+    "smokeTypes": "passed",
+    "mainAppTypes": "failed: missing ignored licenses.json only",
+    "rootMainTypes": "All three root type projects passed on the same sign-in source and later developer-access correction; this does not convert the independent failure into a pass.",
+    "lint": "passed",
+    "explicit100CRLF": "passed: two files",
+    "ordinary": "failed: two files",
+    "doctor": {
+      "version": "0.9.22",
+      "base": "d672f5a4087ebaf36e104eba5d48c53f6736e6fa",
+      "files": 2,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null
+    }
+  },
+  "intake": {
+    "indexSHA256": "53bc3e88dbc16daec565f15a7343995b66e8a0e03c3764d62bb9893900580a54",
+    "allowlistedFiles": 14,
+    "allSizesAndHashesMatch": true,
+    "parsedJSON": 9,
+    "executedArchivedCode": false
+  },
+  "environmentQualifications": [
+    "Physical frozen offline install failed in PostHog postinstall unzip; package stage reported zero downloads, but postinstall attempted release fetching/unzipping. No repair was attempted. Local tools remained available; no complete install success claim.",
+    "Automatic review rejected deletion/replacement of the reviewer dependency directories with a root physical copy, citing recursive cleanup and borrowing risk. The operation was not executed.",
+    "Automatic review rejected the guarded root license copy as a source-tree mutation under the child no-root-edits constraint. It was not executed or retried."
+  ],
+  "preservation": {
+    "sealedOriginalPaths": 38,
+    "anchors": 64,
+    "uniqueAnchorCommits": 60,
+    "cleanCandidate": true,
+    "ownedRunningResources": 0
+  },
+  "limits": [
+    "No runtime or PostgreSQL allocation was reached; original worker actual sign-in remains inherited.",
+    "Normal dev sign-in/readback, live widget, native/browser departure and wider provider/device/zoom/full-generation/catalog acceptance remain pending.",
+    "Modelled provider/auth/navigation tests establish client behavior, not physical authenticator/real OAuth or a live authorization bypass."
+  ],
+  "sourceMatchAtRoot": {
+    "root": "f6ecee05c5f9e23c977a16a15ac6fbe3bffdaa6d",
+    "rootAppTree": "138aab92cde099756c13347827a90112763def68",
+    "signInSourceChangesSinceReviewedCommit": []
+  }
+}

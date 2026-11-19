@@ -1,0 +1,12 @@
+{
+  "scope": "Only exact own saved PID/executable/path/creation/parent/listener identities and exact own label services checked and removed; no global absence claimed",
+  "ownBridgeHashGuardedRemoved": true,
+  "privateManifestsPreserved": true,
+  "authStateSaved": false,
+  "ownedProcessesAbsent": true,
+  "ownedContainersAbsent": 3,
+  "ownedResourcesRemaining": 0,
+  "nativeSessionStarted": false,
+  "physicalDependenciesPreserved": true,
+  "ownedAllocatedListenersAbsent": 5
+}

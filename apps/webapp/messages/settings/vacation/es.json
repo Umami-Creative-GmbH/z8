@@ -61,6 +61,7 @@
           "allowance": "Asignación",
           "allowanceForYear": "Asignación de vacaciones para {year}",
           "assignedPolicy": "Política asignada",
+          "backToAllowances": "Volver a las asignaciones de empleados",
           "cancel": "Cancelar",
           "carryover": "Traslado",
           "carryoverDaysOptional": "Días de traslado (opcional)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Predeterminado: {days} días",
           "employeeInformation": "Información del empleado",
           "errors": {
+            "adjustmentReasonRequired": "Ingrese un motivo para registrar este ajuste.",
             "createAdjustmentFailed": "Error al crear el ajuste",
-            "unexpected": "Ocurrió un error inesperado",
+            "loadFailed": "No se pudo cargar la asignación de vacaciones del empleado.",
             "updateAllowanceFailed": "Error al actualizar la asignación",
             "updatePolicyAssignmentFailed": "Error al actualizar la asignación de política"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "gestionar asignaciones de vacaciones de los empleados",
           "managers": "Gerentes",
           "overrideEffectivePolicy": "Sobrescribir la asignación de la política ({days} días) para este empleado",
+          "partialSave": {
+            "description": "Sus datos se conservan. Al reintentar solo se guarda lo que aún falta.",
+            "failed": {
+              "adjustment": "No se pudo guardar el ajuste manual: {reason}",
+              "allowance": "No se pudo guardar la asignación personalizada: {reason}",
+              "policy": "No se pudo guardar la asignación de la política: {reason}"
+            },
+            "pending": {
+              "adjustment": "El ajuste manual aún no se ha guardado.",
+              "allowance": "La asignación personalizada aún no se ha guardado.",
+              "policy": "La asignación de la política aún no se ha guardado."
+            },
+            "retry": "Reintentar cambios no guardados",
+            "saved": {
+              "adjustment": "Ajuste manual guardado.",
+              "allowance": "Asignación personalizada guardada.",
+              "policy": "Asignación de la política guardada."
+            },
+            "title": "Algunos cambios no se guardaron",
+            "titleNothingSaved": "No se guardaron los cambios"
+          },
           "policyOptionDays": "{name} ({days} días)",
           "position": "Puesto",
           "postingsSkipped": "Los registros automáticos de vacaciones se omitirán hasta que se resuelva la configuración de la política.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Advertencia: \"{name}\" es la política predeterminada de la empresa. Debe establecer otra política como predeterminada antes de eliminar esta.",
       "delete-description-v2": "¿Está seguro de que desea eliminar \"{name}\"? Esto también eliminará todas las asignaciones para esta política.",
       "deleteFailed": "Error al eliminar la política",
+      "deleteLastDefault": "Esta es la única política predeterminada de la empresa. Establezca otra política como predeterminada primero.",
       "delete-title": "Eliminar política de vacaciones",
       "header": {
         "accrual": "Acumulación",
@@ -334,6 +358,7 @@
       },
       "loadError": "Error al cargar las políticas",
       "max-days": "Máx. {days} días",
+      "no-end-date": "Sin fecha de finalización",
       "none": "Ninguna",
       "no-policies-created": "Aún no se han creado políticas de vacaciones. Cree una política para definir los días de vacaciones de su equipo.",
       "noSearchResults": "No hay políticas que coincidan con su búsqueda.",

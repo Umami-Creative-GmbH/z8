@@ -13,9 +13,11 @@
       "yes": "Sí"
     },
     "description": "Genere informes completos de horas de trabajo y ausencias con datos de home office relevantes para impuestos",
+    "employeeNumber": "Número de empleado",
     "employeeSelector": {
       "error": "No se pudo cargar a los miembros del equipo",
       "label": "Empleado",
+      "loading": "Cargando miembros del equipo",
       "placeholder": "Seleccionar empleado..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Cargando la configuración de la organización antes de habilitar los ajustes preestablecidos.",
       "period": "Periodo",
-      "selectPeriod": "Seleccionar periodo"
+      "selectPeriod": "Seleccionar periodo",
+      "settingsError": "Configuración de la organización no disponible",
+      "settingsRequired": "Se requiere la configuración de la organización para usar los ajustes preestablecidos.",
+      "title": "Generar un informe de empleado"
     },
     "generate": "Generar informe",
     "generating": "Generando informe…",
@@ -62,6 +67,7 @@
       "month": "Mes",
       "noHomeOfficeDays": "No se han registrado días de teletrabajo en este periodo.",
       "overtime": "Horas extra",
+      "title": "Vista previa del informe",
       "total": "Total",
       "totalHomeOfficeDays": "Total de días de teletrabajo",
       "totalHomeOfficeHours": "Total de horas trabajadas desde casa",
@@ -266,6 +272,9 @@
         "noPermission": "No tiene permiso para ver informes de proyectos.",
         "title": "Informes de proyectos"
       },
+      "refreshFailed": "No se pudieron actualizar los informes de proyectos",
+      "scopeLoading": "Cargando el ámbito del informe actual…",
+      "scopeUnavailable": "No se pudo cargar el ámbito del informe actual.",
       "status": {
         "active": "Activo",
         "archived": "Archivado",
@@ -324,7 +333,6 @@
         "failedGenerate": "Error al generar informe",
         "failedPortfolio": "Error al generar informe de portafolio",
         "failedProject": "Error al generar informe del proyecto",
-        "failedProjectReport": "Error al generar informe del proyecto",
         "portfolioGenerated": "Informe de portafolio generado",
         "projectGenerated": "Informe generado para {name}",
         "unexpectedError": "Ocurrió un error inesperado"
@@ -376,6 +384,8 @@
         "loading": "Cargando enlaces para compartir…",
         "revokedAutomatically": "Revocado automáticamente el {date}: el creador ya no ve todos los proyectos incluidos",
         "revokedBy": "Revocado por {name} el {date}",
+        "scopeLoading": "Cargando el ámbito del enlace compartido actual…",
+        "scopeUnavailable": "No se pudo cargar el ámbito del enlace compartido actual.",
         "someone": "alguien",
         "title": "Enlaces a este informe",
         "views": "{count, plural, one {# visualización} other {# visualizaciones}}",
@@ -398,7 +408,8 @@
         "description": "El enlace dejará de funcionar de inmediato y su instantánea se eliminará. Se conservarán su registro y el historial de visualizaciones.",
         "done": "Enlace revocado",
         "failed": "No se pudo revocar el enlace",
-        "title": "¿Revocar este enlace?"
+        "titleDeletedReport": "¿Revocar el enlace compartido de un informe eliminado, {period}?",
+        "titleNamed": "¿Revocar el enlace compartido de {report}, {period}?"
       },
       "status": {
         "active": "Activo",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "archivado",
       "archivedBadge": "Archivado",
+      "comparison": "Distancia mensual por vehículo y empleado",
       "empty": {
         "description": "No se registraron trabajos completados con distancia recorrida en este periodo.",
         "title": "Sin conducción en este periodo"
@@ -457,6 +469,7 @@
         "period": "Período"
       },
       "generate": "Generar informe",
+      "generated": "Generado el {time}",
       "generating": "Generando informe…",
       "kilometres": "{distance} km",
       "noReportYet": "Aún no se ha generado ningún informe",
@@ -465,7 +478,11 @@
         "description": "Kilómetros recorridos por trabajo por vehículo y empleado, por mes",
         "feature": "ver el informe de distancia por vehículo"
       },
+      "scope": "Empleados disponibles para ti en esta organización",
+      "scopeLoading": "Confirmando la organización y el empleado actuales…",
+      "scopeUnavailable": "No se pudo cargar el ámbito del informe de vehículos actual.",
       "selectPeriod": "Elija un período y genere el informe.",
+      "staged": "El período ha cambiado. Genera el informe para actualizar los resultados y las descargas.",
       "table": {
         "employee": "Empleado",
         "licencePlate": "Matrícula",
@@ -473,8 +490,7 @@
         "vehicle": "Vehículo",
         "vehicleAndEmployee": "Vehículo / empleado"
       },
-      "title": "Distancia por vehículo",
-      "totalDriven": "{distance} recorridos"
+      "title": "Distancia por vehículo"
     }
   }
 }

@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "SLETT"
       },
       "description": "Generer eksempeldata for testing eller slett eksisterende tidsrelaterte data",
+      "employeesLoadError": {
+        "description": "Demodata genereres for dine ansatte, så generering er utilgjengelig til de er lastet inn.",
+        "retrying": "Prøver på nytt…",
+        "title": "Kunne ikke laste inn ansatte"
+      },
       "errors": {
-        "generationFailed": "Generering mislyktes. Prøv igjen.",
-        "noOrganization": "Ingen organisasjon valgt"
+        "generationFailed": "Generering mislyktes. Prøv igjen."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Alle ansatte ({count})",
+          "allCountUnavailable": "Alle ansatte",
           "label": "Ansatte",
           "selectSpecific": "Velg spesifikke ansatte"
         }

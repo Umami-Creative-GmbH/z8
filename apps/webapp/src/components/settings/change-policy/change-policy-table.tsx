@@ -11,7 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	type ChangePolicyRecord,
@@ -20,16 +20,7 @@ import {
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +49,8 @@ export function ChangePolicyTable({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const policyToDeleteRef = useRef<ChangePolicyRecord | null>(null);
+	const [policyToDelete, setPolicyToDelete] = useState<ChangePolicyRecord | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 
 	// Fetch policies
@@ -93,9 +85,9 @@ export function ChangePolicyTable({
 					queryKey: queryKeys.changePolicies.assignments(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				policyToDeleteRef.current = null;
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.changePolicies.deleteFailed",
 						"Failed to delete",
@@ -104,18 +96,20 @@ export function ChangePolicyTable({
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.changePolicies.deleteFailed", "Failed to delete policy"));
+			setDeleteError(t("settings.changePolicies.deleteFailed", "Failed to delete policy"));
 		},
 	});
 
 	const handleDeleteClick = (policy: ChangePolicyRecord) => {
-		policyToDeleteRef.current = policy;
+		setPolicyToDelete(policy);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (policyToDeleteRef.current) {
-			deleteMutation.mutate(policyToDeleteRef.current.id);
+		if (policyToDelete && !deleteMutation.isPending) {
+			setDeleteError(null);
+			deleteMutation.mutate(policyToDelete.id);
 		}
 	};
 
@@ -146,9 +140,11 @@ export function ChangePolicyTable({
 			accessorKey: "name",
 			header: t("settings.changePolicies.name", "Name"),
 			cell: ({ row }) => (
-				<div>
-					<div className="flex items-center gap-2">
-						<span className="font-medium">{row.original.name}</span>
+				<div className="min-w-0 max-w-[300px]">
+					<div className="flex min-w-0 flex-wrap items-center gap-2">
+						<span className="min-w-0 truncate font-medium" title={row.original.name}>
+							{row.original.name}
+						</span>
 						{row.original.noApprovalRequired && (
 							<Badge variant="outline" className="text-xs">
 								{t("settings.changePolicies.trustMode", "Trust Mode")}
@@ -156,7 +152,9 @@ export function ChangePolicyTable({
 						)}
 					</div>
 					{row.original.description && (
-						<p className="text-xs text-muted-foreground mt-0.5">{row.original.description}</p>
+						<p className="mt-0.5 break-words text-xs text-muted-foreground">
+							{row.original.description}
+						</p>
 					)}
 				</div>
 			),
@@ -171,7 +169,7 @@ export function ChangePolicyTable({
 			cell: ({ row }) => (
 				<div className="text-center">
 					{row.original.noApprovalRequired ? (
-						<span className="text-muted-foreground">N/A</span>
+						<span className="text-muted-foreground">{t("common.notApplicable", "N/A")}</span>
 					) : (
 						<Badge variant="secondary">{formatDays(row.original.selfServiceDays)}</Badge>
 					)}
@@ -188,7 +186,7 @@ export function ChangePolicyTable({
 			cell: ({ row }) => (
 				<div className="text-center">
 					{row.original.noApprovalRequired ? (
-						<span className="text-muted-foreground">N/A</span>
+						<span className="text-muted-foreground">{t("common.notApplicable", "N/A")}</span>
 					) : (
 						<Badge variant="outline">{formatDays(row.original.approvalDays)}</Badge>
 					)}
@@ -205,7 +203,7 @@ export function ChangePolicyTable({
 			cell: ({ row }) => (
 				<div className="text-center text-sm text-muted-foreground">
 					{row.original.noApprovalRequired ? (
-						<span>N/A</span>
+						<span>{t("common.notApplicable", "N/A")}</span>
 					) : row.original.notifyAllManagers ? (
 						t("settings.changePolicies.allManagers", "All managers")
 					) : (
@@ -220,9 +218,15 @@ export function ChangePolicyTable({
 				canManage ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="size-8">
-								<IconDots className="size-4" />
-								<span className="sr-only">{t("common.actions", "Actions")}</span>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="size-8"
+								aria-label={t("settings.changePolicies.actionsFor", "Actions for {name}", {
+									name: row.original.name,
+								})}
+							>
+								<IconDots className="size-4" aria-hidden="true" />
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
@@ -251,7 +255,7 @@ export function ChangePolicyTable({
 	if (isError) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 gap-4">
-				<p className="text-muted-foreground">
+				<p role="alert" className="text-destructive">
 					{t("settings.changePolicies.loadError", "Failed to load change policies")}
 				</p>
 				<Button variant="outline" onClick={() => refetch()}>
@@ -270,7 +274,13 @@ export function ChangePolicyTable({
 				searchPlaceholder={t("settings.changePolicies.searchPlaceholder", "Search policies...")}
 				actions={
 					<div className="flex items-center gap-2">
-						{isFetching && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+						{isFetching && (
+							<IconLoader2
+								className="size-4 animate-spin text-muted-foreground"
+								role="status"
+								aria-label={t("common.refreshing", "Refreshing...")}
+							/>
+						)}
 						{canManage ? (
 							<Button onClick={onCreateClick}>
 								<IconPlus className="size-4 mr-2" />
@@ -307,38 +317,29 @@ export function ChangePolicyTable({
 				<DataTable mobileLayout="stacked" columns={columns} data={filteredPolicies} />
 			)}
 
-			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.changePolicies.deleteTitle", "Delete Change Policy")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
+			<DeleteConfirmDialog
+				open={canManage && deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteError(null);
+				}}
+				title={t("settings.changePolicies.deleteTitle", "Delete Change Policy")}
+				description={
+					policyToDelete
+						? t(
+								"settings.changePolicies.deleteNamedDescription",
+								'Delete the change policy "{name}"? Any assignments using this policy will also be removed. Employees previously using this policy will have no restrictions until a new policy is assigned.',
+								{ name: policyToDelete.name },
+							)
+						: t(
 								"settings.changePolicies.deleteDescription",
 								"Are you sure you want to delete this policy? Any assignments using this policy will also be removed. Employees previously using this policy will have no restrictions until a new policy is assigned.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending ? (
-								<IconLoader2 className="size-4 mr-2 animate-spin" />
-							) : (
-								<IconTrash className="size-4 mr-2" />
-							)}
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+							)
+				}
+				isDeleting={deleteMutation.isPending}
+				error={deleteError}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</>
 	);
 }

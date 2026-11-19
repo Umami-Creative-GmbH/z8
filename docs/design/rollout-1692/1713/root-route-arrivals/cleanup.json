@@ -1,0 +1,8 @@
+{
+  "next": "Exact checkout/port/PID command verified; owned process tree stopped",
+  "portClosed": true,
+  "browsers": "All Puppeteer contexts closed in finally; owned Preview tab closed; worktree native session closed",
+  "privateFiles": "Retained outside Git; no shared cache or dependency cleanup",
+  "remainingOwnedContainers": 0,
+  "ownedContainers": 3
+}

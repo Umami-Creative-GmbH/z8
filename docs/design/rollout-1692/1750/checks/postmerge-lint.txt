@@ -1,0 +1,2 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+Checked 31 files in 55ms. No fixes applied.

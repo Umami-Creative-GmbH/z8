@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { Activity, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDocumentRequestsInBulkAction } from "@/app/[locale]/(app)/personnel-files/document-request-actions";
@@ -24,6 +25,52 @@ vi.mock("@/components/ui/action-panel", () => {
 		ActionPanelHeader: Pass,
 		ActionPanelTitle: ({ children }: { children?: ReactNode }) => <h2>{children}</h2>,
 	};
+});
+
+it("retires queued bulk validation on Activity return and accepts a fresh confirmation", async () => {
+	vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({
+		success: false,
+		error: "Refused",
+		code: "too_many_recipients",
+	});
+	const onCreated = vi.fn();
+	const page = (mode: "visible" | "hidden") => (
+		<Activity mode={mode}>
+			<BulkDocumentRequestsDialog
+				open
+				onOpenChange={vi.fn()}
+				options={certificateOptions}
+				today="2026-10-18"
+				onCreated={onCreated}
+			/>
+		</Activity>
+	);
+	const view = render(page("visible"));
+	fireEvent.click(screen.getByRole("switch", { name: "Berlin" }));
+	fillRequest();
+	const form = screen.getByRole("button", { name: "Request" }).closest("form");
+	if (!form) throw new Error("Bulk request form missing");
+	act(() => {
+		const submission = new Event("submit", { bubbles: true, cancelable: true });
+		fireEvent(form, submission);
+		expect(submission.defaultPrevented).toBe(true);
+		expect(createDocumentRequestsInBulkAction).not.toHaveBeenCalled();
+		flushSync(() => view.rerender(page("hidden")));
+		flushSync(() => view.rerender(page("visible")));
+	});
+	await act(async () => new Promise((resolve) => setTimeout(resolve, 30)));
+	expect(createDocumentRequestsInBulkAction).not.toHaveBeenCalled();
+	expect(onCreated).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByRole("button", { name: "Request" }));
+	await waitFor(() => expect(createDocumentRequestsInBulkAction).toHaveBeenCalledOnce());
+	expect(createDocumentRequestsInBulkAction).toHaveBeenCalledWith({
+		category: "certificate",
+		teamIds: ["berlin"],
+		employeeIds: [],
+		title: "First aid refresher",
+		note: "Please upload the new card.",
+		deadline: "2026-11-30",
+	});
 });
 vi.mock("@/components/ui/date-picker", () => ({
 	DatePicker: ({ value, onChange }: { value?: string | null; onChange: (v: string) => void }) => (
@@ -121,6 +168,80 @@ beforeEach(() => {
 });
 
 describe("requesting a document from several employees at once", () => {
+	it("retains an uncertain transport outcome and can retry without inventing success", async () => {
+		vi.mocked(createDocumentRequestsInBulkAction).mockRejectedValueOnce(new Error("offline"));
+		const { onCreated } = renderDialog();
+		fireEvent.click(screen.getByRole("switch", { name: "Berlin" }));
+		fillRequest();
+		fireEvent.click(screen.getByRole("button", { name: "Request" }));
+		expect((await screen.findByRole("alert")).textContent).toContain(
+			"outcome could not be confirmed",
+		);
+		expect(onCreated).not.toHaveBeenCalled();
+		expect((screen.getByRole("textbox", { name: /^Title/ }) as HTMLInputElement).value).toBe(
+			"First aid refresher",
+		);
+		vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValueOnce({
+			success: true,
+			data: {
+				created: 0,
+				skipped: 1,
+				skippedBy: { not_covered: 0, own_file: 0, former_employee: 0, already_requested: 1 },
+			},
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Request" }));
+		expect(await screen.findByText("No document requests created.")).toBeTruthy();
+	});
+	it("keeps the draft and offers an inline retry after a refused request", async () => {
+		vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({
+			success: false,
+			error: "Server wording",
+			code: "too_many_recipients",
+		});
+		renderDialog();
+		fireEvent.click(screen.getByRole("switch", { name: "Berlin" }));
+		fillRequest();
+		fireEvent.click(screen.getByRole("button", { name: "Request" }));
+		expect((await screen.findByRole("alert")).textContent).toContain("at most 500 employees");
+		expect((screen.getByRole("textbox", { name: /^Title/ }) as HTMLInputElement).value).toBe(
+			"First aid refresher",
+		);
+		vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({
+			success: true,
+			data: {
+				created: 1,
+				skipped: 0,
+				skippedBy: { not_covered: 0, own_file: 0, former_employee: 0, already_requested: 0 },
+			},
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Request" }));
+		expect(await screen.findByText("1 document request created.")).toBeTruthy();
+	});
+
+	it("keeps cancellation disabled and suppresses duplicate submissions while pending", async () => {
+		let finish!: (result: Awaited<ReturnType<typeof createDocumentRequestsInBulkAction>>) => void;
+		vi.mocked(createDocumentRequestsInBulkAction).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		const { onOpenChange } = renderDialog();
+		fireEvent.click(screen.getByRole("switch", { name: "Berlin" }));
+		fillRequest();
+		const submit = screen.getByRole("button", { name: "Request" });
+		fireEvent.click(submit);
+		await waitFor(() => expect(createDocumentRequestsInBulkAction).toHaveBeenCalledTimes(1));
+		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
+			true,
+		);
+		fireEvent.click(submit);
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(createDocumentRequestsInBulkAction).toHaveBeenCalledTimes(1);
+		finish({ success: false, error: "Refused", code: "too_many_recipients" });
+		await screen.findByRole("alert");
+	});
 	it("sends the chosen teams and employees with one request and shows how many were skipped", async () => {
 		vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({
 			success: true,

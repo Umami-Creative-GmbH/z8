@@ -183,8 +183,8 @@ function RemoveAssignmentButton({
 
 function AssignmentRow({ action, children }: { action: ReactNode; children: ReactNode }) {
 	return (
-		<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
-			<div className="flex items-center gap-3">{children}</div>
+		<div className="flex items-center justify-between gap-2 rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+			<div className="flex min-w-0 items-center gap-3 break-words">{children}</div>
 			{action}
 		</div>
 	);
@@ -203,14 +203,21 @@ function PresetYearBadge({ year }: { year: number | null }) {
 
 function CategoryBadges({ type }: { type: string }) {
 	const { t } = useTranslate();
+	// The same labels as the holiday categories table, never the stored enum value.
+	const typeLabels: Record<string, string> = {
+		public_holiday: t("settings.holidays.categories.types.public", "Public Holiday"),
+		company_holiday: t("settings.holidays.categories.types.company", "Company Holiday"),
+		training_day: t("settings.holidays.categories.types.training", "Training Day"),
+		custom: t("settings.holidays.categories.types.custom", "Custom"),
+	};
 
 	return (
 		<>
 			<Badge variant="outline" className="ml-2">
 				{t("settings.holidays.assignments.categoryBadge", "Category")}
 			</Badge>
-			<Badge variant="secondary" className="ml-2 capitalize">
-				{type}
+			<Badge variant="secondary" className="ml-2">
+				{typeLabels[type] ?? type}
 			</Badge>
 		</>
 	);
@@ -228,8 +235,8 @@ function SingleHolidayBadge() {
 
 function SectionHeading({ children, action }: { children: ReactNode; action: ReactNode }) {
 	return (
-		<div className="flex items-center justify-between mb-2">
-			<h4 className="text-sm font-medium text-muted-foreground">{children}</h4>
+		<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+			<h3 className="text-sm font-medium text-muted-foreground">{children}</h3>
 			{action}
 		</div>
 	);
@@ -271,9 +278,13 @@ function OrganizationPresetRow({
 			}
 		>
 			{preset.color && (
-				<div className="size-3 rounded-full shrink-0" style={{ backgroundColor: preset.color }} />
+				<div
+					aria-hidden="true"
+					className="size-3 rounded-full shrink-0"
+					style={{ backgroundColor: preset.color }}
+				/>
 			)}
-			<div>
+			<div className="min-w-0">
 				<span className="font-medium">{preset.name}</span>
 				<PresetYearBadge year={preset.year} />
 				{preset.countryCode && (
@@ -318,15 +329,16 @@ function OrganizationCategoryRow({
 		>
 			{category.color ? (
 				<span
+					aria-hidden="true"
 					className="size-3 rounded-full shrink-0"
 					style={{
 						backgroundColor: category.color,
 					}}
 				/>
 			) : (
-				<IconCalendarEvent className="size-4 text-muted-foreground" />
+				<IconCalendarEvent aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
 			)}
-			<div>
+			<div className="min-w-0">
 				<span className="font-medium">{category.name}</span>
 				<CategoryBadges type={category.type} />
 			</div>
@@ -361,8 +373,8 @@ function OrganizationHolidayRow({
 				/>
 			}
 		>
-			<IconCalendarEvent className="size-4 text-muted-foreground" />
-			<div>
+			<IconCalendarEvent aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+			<div className="min-w-0">
 				<span className="font-medium">{holiday.name}</span>
 				<SingleHolidayBadge />
 				<span className="text-sm text-muted-foreground ml-2">
@@ -496,10 +508,12 @@ function TargetAssignmentRow({
 }) {
 	return (
 		<AssignmentRow action={action}>
-			<TargetIcon className="size-4 text-muted-foreground" />
-			<div>
+			<TargetIcon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+			<div className="min-w-0">
 				<span className="font-medium">{targetName}</span>
-				<span className="text-muted-foreground mx-2">→</span>
+				<span aria-hidden="true" className="text-muted-foreground mx-2">
+					→
+				</span>
 				{children}
 			</div>
 		</AssignmentRow>

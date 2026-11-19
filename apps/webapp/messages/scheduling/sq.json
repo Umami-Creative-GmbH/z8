@@ -6,9 +6,13 @@
       "gapCount": "{count} mungesë stafi",
       "gaps": "boshllëqe",
       "hideOverlay": "Fshih mbivendosjen e mbulimit",
+      "lastLoaded": "Mbulimi i ngarkuar së fundi",
+      "loading": "Duke ngarkuar mbulimin…",
       "metSlots": "{count} të mjaftueshëm",
       "overSlots": "{count} me staf të tepërt",
       "overstaffed": "Me staf të tepërt",
+      "readFailed": "Mbulimi nuk mund të ngarkohej. Riprovo për të kontrolluar stafin.",
+      "refreshing": "Duke rifreskuar mbulimin…",
       "showOverlay": "Shfaq mbivendosjen e objektivave të mbulimit",
       "summary": "Përmbledhja e mbulimit:",
       "toggleLabel": "Mbulimi",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Turnet tuaja të publikuara, javë pas jave",
       "employeeTitle": "Orari im",
-      "managerDescription": "Menaxhoni dhe planifikoni turnet e punonjësve",
+      "planningDescription": "Planifikoni dhe publikoni turnet. Turnet e planifikuara nuk regjistrojnë orë pune.",
       "title": "Orari i turneve"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Anulo",
       "complianceAcknowledgmentRequired": "Kërkohet konfirmimi i përputhshmërisë",
       "complianceWarnings": "{count, plural, one {Kontrollet e përputhshmërisë gjetën # paralajmërim; do t'ju duhet ta konfirmoni atë përpara publikimit.} other {Kontrollet e përputhshmërisë gjetën # paralajmërime; do t'ju duhet t'i konfirmoni ato përpara publikimit.}}",
+      "coverageLoading": "Mbulimi po ngarkohet",
+      "coverageRulesCheckedOnPublish": "Publikimi do të zbatojë rregullat aktuale të personelit.",
+      "coverageUnavailable": "Mbulimi nuk është i disponueshëm",
+      "coverageUnloaded": "Mbulimi nuk është kontrolluar",
       "coverageWarning": "Disa blloqe kohore nuk i plotësojnë kërkesat minimale të personelit.",
       "maxHours": "Orët maksimale: {count}",
       "notifyEmployees": "{count, plural, one {Publiko # turn draft dhe njofto punonjësit} other {Publiko # turne draft dhe njofto punonjësit}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "U zbuluan paralajmërime përpara publikimit"
     },
     "scheduler": {
+      "assigned": "Caktuar",
       "complianceBanner": {
         "findingsDetected": "U zbulua(n) {count} gjetje para publikimit.",
         "maxHours": "Orët maksimale: {count}",
@@ -59,18 +68,24 @@
         "employee": "Po shfaqen turnet për {name}",
         "showAll": "Shfaq të gjitha turnet"
       },
+      "loadFailed": "Turnet nuk mund të rifreskoheshin. Turnet e ngarkuara janë ruajtur.",
       "loading": "Po ngarkohet orari...",
+      "open": "Turn i hapur",
       "publish": {
         "failed": "Publikimi i turneve dështoi",
         "published": "U publikua(n) {count} turn(e)"
       },
+      "retry": "Riprovo",
+      "shiftList": "Lista e turneve",
       "shiftUpdate": {
         "failed": "Përditësimi i turnit dështoi",
         "overlapDescription": "Ky turn mbivendoset me {count} turn(e) tjetër(tëra)",
         "overlapWarning": "Turni u ruajt me paralajmërim mbivendosjeje",
         "skillOverrideReasonRequired": "Punonjësit i mungon një aftësi e kërkuar në këtë ditë. Hapni turnin për të dhënë një arsye.",
         "updated": "Turni u përditësua"
-      }
+      },
+      "supportFailed": "Shabllonet ose informacioni i përputhshmërisë nuk mund të rifreskoheshin. Kontrolloni përsëri përpara se të publikoni.",
+      "templatesUnavailable": "Shabllonet e turneve nuk mund të ngarkoheshin."
     },
     "shiftDetails": {
       "close": "Mbyll",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Tërhiqni një shabllon mbi kalendar për të krijuar një turn",
       "empty": "Nuk ka shabllone të disponueshme. Krijoni shabllone te Cilësimet për të shtuar shpejt turne.",
+      "selectHint": "Zgjidhni një shabllon, më pas caktoni datën dhe caktimin e turnit.",
       "title": "Shabllonet e turneve"
     }
   }

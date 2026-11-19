@@ -9,8 +9,8 @@ import { CsvWorkUpload } from "./csv-work-upload";
 export function ImportHub() {
 	const { t } = useTranslate();
 	return (
-		<Tabs defaultValue="clockodo" className="space-y-6">
-			<TabsList>
+		<Tabs defaultValue="clockodo" className="min-w-0 space-y-6">
+			<TabsList aria-label={t("settings.import.sourceTabs", "Import source")}>
 				<TabsTrigger value="clockodo">Clockodo</TabsTrigger>
 				<TabsTrigger value="clockin">Clockin</TabsTrigger>
 				<TabsTrigger value="csv">{t("settings.import.csv.tab", "CSV work")}</TabsTrigger>

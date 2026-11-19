@@ -1,0 +1,14 @@
+{
+  "classification": "Retained failed live fixture destination, unchanged legacy migration code",
+  "cause": "RangeError: Maximum call stack size exceeded",
+  "function": "upsertCanonicalAbsenceRecords",
+  "file": "apps/webapp/src/lib/time-record/migration/backfill.ts",
+  "line": 356,
+  "chain": [
+    "runCanonicalBackfill",
+    "assertCanonicalCutoverReady",
+    "getPayrollWorkspaceSummary"
+  ],
+  "visibleState": "Payroll temporarily unavailable",
+  "qualification": "Observed in the owned private development log during the first large destination attempt. Public excerpt omits all authentication/env data. Root changes neither that migration nor its readiness gate; this is not large-org payroll acceptance."
+}

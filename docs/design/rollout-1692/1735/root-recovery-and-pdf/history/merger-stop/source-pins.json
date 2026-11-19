@@ -1,0 +1,174 @@
+{
+  "head": "1513a20116706380dd65a93b35104ca4eeea6066",
+  "tree": "8b725570a8bb238489ff446bc2128ce52c337a09",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "currentGitBlob": "8543bb5dd11bca9ad9816b14b0152b373ad11b35",
+      "parentGitBlob": "5715cc1f8dabd78a79a8c256b137c430ebfe98d5:apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "workingSHA256": "f1450162fdbf4e30e7bb069f68ce7d07cd5cc943b72074067ba99e559637e7f4",
+      "bytes": 8335,
+      "sourceArchive": "source-current/apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "currentGitBlob": "6a8e4c0aaa18f3c0ac3f0b24d1350dd092ff6209",
+      "parentGitBlob": "5715cc1f8dabd78a79a8c256b137c430ebfe98d5:apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "workingSHA256": "8ee12df8372595afd68231db0afde31e6dddd1fe25f2e3aad840cfbf0e8da0c5",
+      "bytes": 12406,
+      "sourceArchive": "source-current/apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page.tsx",
+      "currentGitBlob": "977c34254fe3b36d1249534ec7b91c230e722b51",
+      "parentGitBlob": "fe9756cfccee44b917004968fa4b729b54b00504",
+      "workingSHA256": "5637ce76f88ee36e10d7e9f8c408495fb18eb2aa331755b19e3e35672e54da67",
+      "bytes": 2689,
+      "sourceArchive": "source-current/apps/webapp/src/app/[locale]/(app)/reports/page.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/export-buttons.tsx",
+      "currentGitBlob": "11cbe067c5eff347efee9621ead21a8af0bed699",
+      "parentGitBlob": "a6fbf3aedde48bb7c53e5f1bd2f8482d963ca7cc",
+      "workingSHA256": "89dfa0642632c54e4f3da9f07f0b8c0a9f80563a2e9a0288054199d5e5b2fd1f",
+      "bytes": 5276,
+      "sourceArchive": "source-current/apps/webapp/src/components/reports/export-buttons.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "currentGitBlob": "383248776a6d955ea0fe7532fb108ab3dbaa7044",
+      "parentGitBlob": "ca858a961a51757d46e114521f2fca00e111ba63",
+      "workingSHA256": "83155f1fa3b0f75700cbd6677fafeb6ce5297e4e6709ac92554d2816a637bba1",
+      "bytes": 2301,
+      "sourceArchive": "source-current/apps/webapp/src/components/reports/report-employee-selector.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-filters.tsx",
+      "currentGitBlob": "4c289ca93e5bc5f6e7c4a1942798fe8784783b4a",
+      "parentGitBlob": "b262c40e813996e11952f28a2aac73e3945cbc2d",
+      "workingSHA256": "f0c846304d480ebfe7f9f5bf46b6e0e03f7c0c2b6fe6fc799ebc73a6101b065b",
+      "bytes": 4312,
+      "sourceArchive": "source-current/apps/webapp/src/components/reports/report-filters.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-preview-table.tsx",
+      "currentGitBlob": "50e99cd85e39ccea66952e41ecf9743fe3cb3911",
+      "parentGitBlob": "9b824a915ccd816ccd14fcb4e71739be75a9b368",
+      "workingSHA256": "2bcc1e298f9eba1ccbd7c170e35587dcc45b86af307b345f156901eb89e93465",
+      "bytes": 8213,
+      "sourceArchive": "source-current/apps/webapp/src/components/reports/report-preview-table.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-summary-cards.tsx",
+      "currentGitBlob": "945f0e469c39799cf451e37bbb3b525faa471eb6",
+      "parentGitBlob": "663e11e012d1992bf21f5b1a2daa79f74700b096",
+      "workingSHA256": "38de40605b8947b102b9cd911b1a695ef82dd27f275827d51d9bcffcef4ee4bf",
+      "bytes": 6163,
+      "sourceArchive": "source-current/apps/webapp/src/components/reports/report-summary-cards.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/reports-container.tsx",
+      "currentGitBlob": "0212c7748f0c5b7dc69dcb85e92bd5042ff8965a",
+      "parentGitBlob": "be499f13ba38d6ca63877a651d9ec4462f9676e4",
+      "workingSHA256": "a9d5c1794a903c90a9827f1514606bbcc83a199cfec2541b689d46d27a9faf5f",
+      "bytes": 10758,
+      "sourceArchive": "source-current/apps/webapp/src/components/reports/reports-container.tsx"
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-report-employees.ts",
+      "currentGitBlob": "e17cbf2288e54b372b304ab07282c78b7044c51a",
+      "parentGitBlob": "6a42ffa2574698edae3ef0e21dc646c234da9c4c",
+      "workingSHA256": "0bb62306d72fbe2d83839d29f05fece5b4313615119c7092424820b03761e1e5",
+      "bytes": 6209,
+      "sourceArchive": "source-current/apps/webapp/src/hooks/use-report-employees.ts"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "currentGitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "parentGitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "workingSHA256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "bytes": 7321,
+      "sourceArchive": "source-current/apps/webapp/src/components/providers/organization-context-provider.tsx"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-settings-provider.tsx",
+      "currentGitBlob": "a2d65032839ed823d645ca871772da2cfb6c06ae",
+      "parentGitBlob": "a2d65032839ed823d645ca871772da2cfb6c06ae",
+      "workingSHA256": "40bfbf9d460930c004c6d1fa61f9820bc258f43dad86eb0e1c3e14a748933c1d",
+      "bytes": 1198,
+      "sourceArchive": "source-current/apps/webapp/src/components/providers/organization-settings-provider.tsx"
+    },
+    {
+      "path": "apps/webapp/src/stores/organization-settings-store.ts",
+      "currentGitBlob": "35f3a4b3c58518f3178c46632c4de3b4614c4a2a",
+      "parentGitBlob": "35f3a4b3c58518f3178c46632c4de3b4614c4a2a",
+      "workingSHA256": "0c9955d7797b2e6ab991ceb078b4f2a11b3b85a0f1d207c6578a985b679f09c6",
+      "bytes": 4271,
+      "sourceArchive": "source-current/apps/webapp/src/stores/organization-settings-store.ts"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/keys.ts",
+      "currentGitBlob": "1563a863ad990995ff9f9a56aa56b28b124c9386",
+      "parentGitBlob": "1563a863ad990995ff9f9a56aa56b28b124c9386",
+      "workingSHA256": "c8b19ad609774388a6d68711c7f3b657467dbd9ec0cc891e8571b8edab6c9707",
+      "bytes": 37263,
+      "sourceArchive": "source-current/apps/webapp/src/lib/query/keys.ts"
+    },
+    {
+      "path": "apps/webapp/src/lib/fetch.ts",
+      "currentGitBlob": "b13312ab6e5955cba0fb51bce1adc0a784d56cfa",
+      "parentGitBlob": "b13312ab6e5955cba0fb51bce1adc0a784d56cfa",
+      "workingSHA256": "e7d855169712aaa68c8baed2c0ef14a14b5e38c53b4a9973bf432974207af5fa",
+      "bytes": 1359,
+      "sourceArchive": "source-current/apps/webapp/src/lib/fetch.ts"
+    },
+    {
+      "path": "apps/webapp/src/lib/api-error.ts",
+      "currentGitBlob": "bbf3c350607bcb48203469ba99a25340b4d8c776",
+      "parentGitBlob": "bbf3c350607bcb48203469ba99a25340b4d8c776",
+      "workingSHA256": "954fbe214d1b8fe9a16d538a8cdbdfbc3ee7879b8ea6d1d45d067d4f0cd3f288",
+      "bytes": 1500,
+      "sourceArchive": "source-current/apps/webapp/src/lib/api-error.ts"
+    },
+    {
+      "path": "apps/webapp/src/lib/auth/organization-display-context.ts",
+      "currentGitBlob": "f22497c4a9e101d5ba514de85d4bae8eb0362c0f",
+      "parentGitBlob": "f22497c4a9e101d5ba514de85d4bae8eb0362c0f",
+      "workingSHA256": "703fa5a7d0b1392a3a5e4456eb965d0b587696d000fa3cf8706b2b66cf821153",
+      "bytes": 626,
+      "sourceArchive": "source-current/apps/webapp/src/lib/auth/organization-display-context.ts"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/app-layout-content.tsx",
+      "currentGitBlob": "e22601bfacc56e6ff740d4215b7928c97bdbc664",
+      "parentGitBlob": "e22601bfacc56e6ff740d4215b7928c97bdbc664",
+      "workingSHA256": "411b95a2dd7e47bc6c21a409cadde5d9a72c1a934886ced07d6459bd8c650cd3",
+      "bytes": 11007,
+      "sourceArchive": "source-current/apps/webapp/src/app/[locale]/(app)/app-layout-content.tsx"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/actions.ts",
+      "currentGitBlob": "a87acfd36e7682a869bbdd3ac8d5aa0f9a2dafcc",
+      "parentGitBlob": "a87acfd36e7682a869bbdd3ac8d5aa0f9a2dafcc",
+      "workingSHA256": "7d21de0cd9b275d6659249e143c99e7a1abb297c59069eb9a89f99ad232857f5",
+      "bytes": 10065,
+      "sourceArchive": "source-current/apps/webapp/src/app/[locale]/(app)/reports/actions.ts"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+      "currentGitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+      "parentGitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+      "workingSHA256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+      "bytes": 4072,
+      "sourceArchive": "source-current/apps/webapp/src/components/providers/view-refresh-provider.tsx"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx",
+      "currentGitBlob": "1f535495ca763e3ee4d31a008d63e7410836e58c",
+      "parentGitBlob": "1f535495ca763e3ee4d31a008d63e7410836e58c",
+      "workingSHA256": "8025d89b577bade8564ee4a8d8e726b971c2b30b8720379cc54b04399f823788",
+      "bytes": 13187,
+      "sourceArchive": "source-current/apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx"
+    }
+  ]
+}

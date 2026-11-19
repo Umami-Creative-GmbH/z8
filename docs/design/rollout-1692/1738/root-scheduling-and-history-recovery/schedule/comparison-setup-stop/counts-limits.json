@@ -1,0 +1,36 @@
+{
+  "freshUnitCases": 0,
+  "freshPostgresCases": 0,
+  "freshProductRuntimeCases": 0,
+  "freshMatchedImagePairs": 0,
+  "freshAcceptedImages": 0,
+  "freshLogins": 0,
+  "blankIncognitoPreviewTabsOpened": 1,
+  "blankIncognitoPreviewTabsClosed": 1,
+  "ownFixturesCreated": 0,
+  "ownServersStarted": 0,
+  "ownContainersCreated": 0,
+  "inherited": {
+    "unitCases": 313,
+    "unitFiles": 48,
+    "postgresCases": 6,
+    "postgresFiles": 2,
+    "mixedCases": 319,
+    "mixedFiles": 50,
+    "freshUnionRun": false,
+    "typeProjects": 3,
+    "doctorDiagnostics": 0,
+    "formattingQualifications": 2
+  },
+  "unpassed": [
+    "serialized supporting Retry pending and recovery",
+    "online actual write refusal, retained draft, duplicate protection and retry readback",
+    "settled sidebar preference persistence",
+    "public-config coverage gaps and publish refusal",
+    "current versus stale compliance acknowledgment",
+    "matched exact historical/current screenshots and pixel geometry",
+    "restored-current connected route and Next checks"
+  ],
+  "reasonForUnpassed": "Own physical frozen/offline dependency installation blocked before fixture/server/browser login.",
+  "readinessDecision": "Reserved to root; no verifiedCommit or publication/readiness claim."
+}

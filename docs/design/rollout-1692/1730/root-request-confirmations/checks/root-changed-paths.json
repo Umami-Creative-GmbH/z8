@@ -1,0 +1,10 @@
+[
+  "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+  "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+  "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+  "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+  "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+  "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+  "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+  "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts"
+]

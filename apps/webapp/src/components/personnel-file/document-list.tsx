@@ -26,7 +26,10 @@ function DocumentThumbnail({ document }: { document: EmployeeDocumentView }) {
 	if (!document.mimeType.startsWith("image/")) {
 		return (
 			<div className="flex size-12 shrink-0 items-center justify-center rounded-md border bg-muted">
-				<IconFileText aria-hidden="true" className="size-5 text-muted-foreground" />
+				<IconFileText
+					aria-hidden="true"
+					className="size-5 text-muted-foreground"
+				/>
 			</div>
 		);
 	}
@@ -58,61 +61,90 @@ export function DocumentList({
 	return (
 		<ul className="divide-y rounded-md border">
 			{documents.map((document) => (
-				<li key={document.id} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap">
+				<li
+					key={document.id}
+					className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 p-3 sm:flex sm:items-center sm:flex-nowrap"
+				>
 					<DocumentThumbnail document={document} />
-					<div className="min-w-0 flex-1 space-y-1">
+					<div className="min-w-0 flex-1 space-y-1 break-words [overflow-wrap:anywhere]">
 						<div className="flex flex-wrap items-center gap-2">
-							<span className="truncate font-medium">{document.title}</span>
-							<Badge variant="secondary">{labels.categories[document.category]}</Badge>
+							<span className="min-w-0 font-medium">{document.title}</span>
+							<Badge variant="secondary">
+								{labels.categories[document.category]}
+							</Badge>
 							{showVisibility ? (
-								<Badge variant={document.visibility === "shared" ? "outline" : "secondary"}>
+								<Badge
+									variant={
+										document.visibility === "shared" ? "outline" : "secondary"
+									}
+								>
 									{labels.visibilities[document.visibility]}
 								</Badge>
 							) : null}
 						</div>
 						<p className="text-sm text-muted-foreground">
 							{document.payPeriod
-								? t("settings.personnelFiles.list.payPeriod", "Pay period {period}", {
-										period: formatPayPeriod(document.payPeriod, locale),
-									})
+								? t(
+										"settings.personnelFiles.list.payPeriod",
+										"Pay period {period}",
+										{
+											period: formatPayPeriod(document.payPeriod, locale),
+										},
+									)
 								: formatDateOnly(document.documentDate, locale)}
 							{document.expiryDate
-								? ` · ${t("settings.personnelFiles.list.expires", "Expires {date}", {
-										date: formatDateOnly(document.expiryDate, locale),
-									})}`
+								? ` · ${t(
+										"settings.personnelFiles.list.expires",
+										"Expires {date}",
+										{
+											date: formatDateOnly(document.expiryDate, locale),
+										},
+									)}`
 								: null}
 							{` · ${document.fileName} (${formatFileSize(document.sizeBytes, locale)})`}
 						</p>
 						{document.absence ? (
 							<p className="flex items-center gap-1 text-sm text-muted-foreground">
 								<IconCalendarOff aria-hidden="true" className="size-3.5" />
-								{t("settings.personnelFiles.list.absence", "For sick leave {dateRange}", {
-									dateRange: formatAbsenceDateRange(
-										document.absence.startDate,
-										document.absence.endDate,
-										locale,
-									),
-								})}
+								{t(
+									"settings.personnelFiles.list.absence",
+									"For sick leave {dateRange}",
+									{
+										dateRange: formatAbsenceDateRange(
+											document.absence.startDate,
+											document.absence.endDate,
+											locale,
+										),
+									},
+								)}
 							</p>
 						) : null}
 						{document.skill ? (
 							<p className="flex items-center gap-1 text-sm text-muted-foreground">
 								<IconCertificate aria-hidden="true" className="size-3.5" />
-								{t("settings.personnelFiles.list.provesSkill", "Proves {skill}", {
-									skill: document.skill.name,
-								})}
+								{t(
+									"settings.personnelFiles.list.provesSkill",
+									"Proves {skill}",
+									{
+										skill: document.skill.name,
+									},
+								)}
 							</p>
 						) : null}
 					</div>
-					<div className="flex items-center gap-1">
+					<div className="col-span-2 flex flex-wrap items-center justify-end gap-1 sm:shrink-0">
 						<Button asChild variant="ghost" size="icon">
 							<a
 								href={personnelDocumentUrl(document.id)}
 								target="_blank"
 								rel="noopener noreferrer"
-								aria-label={t("settings.personnelFiles.list.open", "Open {title}", {
-									title: document.title,
-								})}
+								aria-label={t(
+									"settings.personnelFiles.list.open",
+									"Open {title}",
+									{
+										title: document.title,
+									},
+								)}
 							>
 								<IconExternalLink aria-hidden="true" className="size-4" />
 							</a>
@@ -120,9 +152,13 @@ export function DocumentList({
 						<Button asChild variant="ghost" size="icon">
 							<a
 								href={personnelDocumentUrl(document.id, { download: true })}
-								aria-label={t("settings.personnelFiles.list.download", "Download {title}", {
-									title: document.title,
-								})}
+								aria-label={t(
+									"settings.personnelFiles.list.download",
+									"Download {title}",
+									{
+										title: document.title,
+									},
+								)}
 							>
 								<IconDownload aria-hidden="true" className="size-4" />
 							</a>

@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Evidentiraj odsutnost za {name}"
       },
+      "allowances": "Godišnje kvote",
       "calendar": {
         "approved": "Odobreno",
         "changeDeputy": "Promijeni zamjenika",
@@ -12,7 +13,6 @@
         "deputyMissing": "Nedostaje zamjenik",
         "description": "Odobrene odsutnosti i odsutnosti na čekanju za odabrani tim i godinu.",
         "error": {
-          "description": "Pokušajte ponovno za trenutak.",
           "title": "Nije moguće učitati kalendar"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Evidentiraj odsutnost",
         "titleForEmployee": "Evidentiraj odsutnost za {name}"
       },
+      "recordingUnavailable": "Nije moguće učitati opcije evidentiranja odsutnosti",
+      "retained": "Prikazani su prethodno učitani podaci. Pokušajte ponovno za dohvat aktualnih zapisa.",
+      "scopeChanged": "Opseg tima se promijenio. Ponovno učitajte za nastavak.",
+      "scopeLoading": "Učitavanje trenutačnog opsega tima…",
+      "scopeUnavailable": "Nije moguće učitati trenutačni opseg tima",
+      "sections": "Odjeljci stranice",
       "sort": {
         "ascending": "uzlazno",
         "by": "Poredaj po {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Nema stanja"
     },
-    "description": "Pregledajte i upravljajte zaposlenicima kojima ste izravno nadređeni",
+    "directory": {
+      "count": "{count, plural, one {# član u ovom opsegu} few {# člana u ovom opsegu} other {# članova u ovom opsegu}}",
+      "loading": "Učitavanje članova tima",
+      "retained": "Prikazuju se zadnje učitani članovi. Pokušajte ponovno kako biste ih ažurirali.",
+      "retry": "Pokušajte ponovno",
+      "retrying": "Ponovni pokušaj…",
+      "scope": "Vi i zaposlenici koje izravno nadzirete u aktivnoj organizaciji.",
+      "scopeChanged": "Vaša organizacija ili pristup su se promijenili. Osvježite za učitavanje tima."
+    },
     "driving": {
+      "clearFilters": "Očisti filtre",
       "columns": {
         "calendar": "Kalendar",
         "date": "Datum",
@@ -126,6 +141,8 @@
         "employee": "Zaposlenik",
         "team": "Tim"
       },
+      "guidance": "Otvorite kalendar zaposlenika kako biste dovršili dodjelu radnog razdoblja. Podaci koji nedostaju ne blokiraju evidentiranje radnog vremena i ne daju ovlaštenje za vožnju.",
+      "loadFailed": "Podatke o vožnji nije bilo moguće učitati.",
       "loading": "Učitavanje podataka o vožnji",
       "missing": {
         "endReading": "Nema završnog stanja",
@@ -133,10 +150,18 @@
         "startReading": "Nema početnog stanja",
         "vehicle": "Nema vozila"
       },
+      "noMatch": "Nema nedostajućih podataka o vožnji koji odgovaraju ovim filtrima.",
       "openCalendar": "Kalendar",
       "openCalendarOf": "Otvori kalendar korisnika {name}",
+      "refreshFailed": "Podatke o vožnji nije bilo moguće osvježiti. Prikazani su prethodno učitani zapisi.",
+      "restricted": "Podaci o vožnji nisu dostupni u vašem trenutačnom opsegu.",
+      "scopeAll": "Svi zaposlenici u ovoj organizaciji",
+      "scopeFailed": "Trenutačni opseg vožnje nije bilo moguće učitati.",
+      "scopeLoading": "Učitavanje trenutačnog opsega vožnje…",
+      "scopeManaged": "Zaposlenici kojima upravljate",
       "title": "Nedostaju podaci o vožnji",
-      "truncated": "Prikazuje se najnovijih {count} radnih razdoblja. Filtrirajte po timu ili zaposleniku da biste vidjeli ostala."
+      "truncated": "Prikazuje se najnovijih {count} radnih razdoblja. Filtrirajte po timu ili zaposleniku da biste vidjeli ostala.",
+      "updating": "Ažuriranje podataka o vožnji…"
     },
     "empty": {
       "action": "Idi na postavke zaposlenika",
@@ -148,9 +173,9 @@
       "title": "Nešto je pošlo po zlu"
     },
     "feature": "pregledajte svoj tim",
-    "member": "član",
-    "members": "članovi",
-    "member.you": "Vi",
+    "member": {
+      "you": "Vi"
+    },
     "noResults": {
       "action": "Očisti pretraživanje",
       "description": "Nijedan član tima ne odgovara upitu \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Razdoblje",
         "status": "Status"
       },
-      "descriptionAll": "Tko je predao odabrano razdoblje. Odobrite ili odbijte prijave u pristigloj pošti za odobrenja.",
-      "descriptionManaged": "Tko je od zaposlenika kojima upravljate predao odabrano razdoblje. Odobrite ili odbijte prijave u pristigloj pošti za odobrenja.",
+      "confirmationContext": "Predaje potvrđuju zapise bez zamrzavanja. Izmijenjene zapise potrebno je ponovno predati. Pregledajte odluke u ulaznoj pošti za odobrenja.",
+      "contextFailed": "Nije bilo moguće provjeriti vaš trenutačni pristup.",
       "empty": "Nitko koga možete vidjeti ne treba predati ovo razdoblje.",
       "loading": "Učitavanje prijava razdoblja",
       "notSubmitted": "Nije predano",
@@ -180,7 +205,12 @@
       "openInbox": "Otvorite pristiglu poštu za odobrenja",
       "owing": "{count, plural, one {# zaposlenik još nije predao ovo razdoblje.} few {# zaposlenika još nisu predala ovo razdoblje.} other {# zaposlenika još nije predalo ovo razdoblje.}}",
       "period": "Razdoblje predaje",
+      "readFailed": "Nije bilo moguće učitati predaje za razdoblje. Prethodno učitani zapisi možda su zastarjeli.",
+      "records": "Predaje zaposlenika",
+      "refresh": "Osvježi predaje",
       "running": "Ovo razdoblje još traje. Zaposlenici ga mogu predati od njegova zadnjeg dana.",
+      "scopeAll": "Svi obuhvaćeni zaposlenici",
+      "scopeManaged": "Zaposlenici kojima upravljate",
       "status": {
         "approved": "Odobreno",
         "awaiting": "Čeka predaju",
@@ -189,10 +219,13 @@
         "submitted": "Predano"
       },
       "summary": "Statusi",
-      "title": "Prijave razdoblja"
+      "title": "Prijave razdoblja",
+      "unavailable": "Slanja za razdoblje nisu dostupna za vaš trenutačni pristup. Osvježite za ponovnu provjeru pristupa."
     },
     "presence": {
       "allLocations": "Sve lokacije",
+      "assignmentContext": "Dodjela lokacije nije dokaz položaja uređaja. Vremena koriste zonu zabilježenu na početku rada ili pauze. Prisutnost se osvježava svake minute.",
+      "chooseLocation": "Odaberite lokaciju",
       "columns": {
         "name": "Ime",
         "since": "Od",
@@ -202,9 +235,19 @@
       "descriptionAll": "Zaposlenici dodijeljeni ovoj lokaciji koji su prijavljeni na radu ili na pauzi.",
       "descriptionManaged": "Zaposlenici kojima upravljate, a dodijeljeni su ovoj lokaciji i prijavljeni su na radu ili na pauzi.",
       "empty": "Nitko od vama vidljivih zaposlenika trenutačno nije prijavljen na ovoj lokaciji.",
+      "loadFailed": "Nismo mogli učitati prisutnost za ovu lokaciju. Pokušajte ponovno ili ponovno odaberite lokaciju.",
+      "loading": "Učitavanje prisutnosti na lokaciji…",
+      "loadingLocations": "Učitavanje lokacija za trenutačnu organizaciju…",
       "locationTitle": "Tko je prisutan: {location}",
+      "locationUnavailable": "Lokacija nije dostupna",
+      "locationUnavailableDescription": "Ova lokacija nije dostupna u vašoj trenutačnoj organizaciji. Odaberite aktivnu lokaciju za prikaz prisutnosti.",
       "noLocations": "Vaša organizacija još nema aktivnih lokacija.",
-      "title": "Tko je prisutan"
+      "refreshFailed": "Lokacije se nisu mogle osvježiti. Prikazuju se zadnje učitane lokacije.",
+      "refreshingLocations": "Osvježavanje lokacija…",
+      "scopeChanged": "Prisutnost zahtijeva novo očitavanje za trenutačni račun ili organizaciju.",
+      "title": "Tko je prisutan",
+      "unavailable": "Prisutnost nije dostupna",
+      "viewPresence": "Prikaži prisutnost"
     },
     "primaryManager": "Vi ste primarni voditelj",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Zaposlenik",
       "position": "Radno mjesto",
+      "region": "Tablica članova tima",
       "role": "Uloga",
       "sort": {
         "ascending": "uzlazno",

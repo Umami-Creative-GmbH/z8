@@ -1,0 +1,219 @@
+{
+  "fresh": {
+    "caseInstances": 27,
+    "physicalFiles": 4,
+    "passed": 26,
+    "failed": 1,
+    "overlapsProvidedRoot452": 24,
+    "newPublicProbeCases": 3,
+    "cases": [
+      {
+        "physicalFile": "src/components/personnel-file/independent1733-command-probe.test.tsx",
+        "fullName": "keeps an admitted matching session usable while its session refresh is pending",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733-command-probe.test.tsx",
+        "fullName": "recovers the batch through local organization Retry after the real provider read fails",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733-command-probe.test.tsx",
+        "fullName": "preserves the start-page control through the same provider failure and Retry",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733-command-probe.test.tsx",
+        "fullName": "prevents a duplicate pending confirmation with Activity resume=false",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733-command-probe.test.tsx",
+        "fullName": "prevents a duplicate pending confirmation with Activity resume=true",
+        "occurrence": 1,
+        "status": "failed",
+        "overlapsProvidedRoot452": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733-heading-probe.test.tsx",
+        "fullName": "renders one safe h1 from the actual detail Page fallback alongside SiteHeader",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps one start pending through Activity until its result settles",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "drops validation-queued work across an account switch and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "drops validation-queued work across an organization switch and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across account scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across error scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps invalid input, focuses its error, and never submits it",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps the draft through a same-scope refresh of calendar defaults",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "does not start a queued submission after Activity hides it during validation",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "ignores late success effects after an Activity hide/show lifetime",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "ignores late failure effects after an Activity hide/show lifetime",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "retains the pay period after a transport failure and allows an explicit retry",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "retries the authorized preview after a read failure",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not issue a preview command for an abandoned organization arrival",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "freezes file edits until the confirmed command and readback settle",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "requires resolving included unmatched files and preserves manual drop commands",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not publish an old preview after organization ABA",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not submit a queued match edit into a new Activity lifetime",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "offers retry only for included failed files in a confirmed batch",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot452": true
+      }
+    ]
+  },
+  "repeat": {
+    "selectedCases": 2,
+    "passed": 1,
+    "failed": 1,
+    "unselected": 3,
+    "nonadditive": true
+  },
+  "providedRoot": {
+    "caseInstances": 452,
+    "physicalFiles": 64,
+    "freshlyRerunHere": false
+  },
+  "freshPostgreSQL": {
+    "run": false,
+    "expectedCases": 20,
+    "reason": "Stopped after deterministic pending duplicate-request source blocker"
+  },
+  "combinedTotalClaimed": false
+}

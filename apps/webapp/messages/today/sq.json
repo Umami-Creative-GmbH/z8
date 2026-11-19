@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Mirato",
       "approveLabel": "Mirato {title}",
+      "decided": "Vendimi u ruajt. Rifreskoni për të ngarkuar radhën aktuale.",
       "description": "Kërkesa në pritje të një vendimi nga menaxheri.",
       "empty": "Nuk ka miratime në pritje.",
       "openInbox": "Hap kutinë hyrëse",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Miratimet në pritje",
       "reject": "Refuzo",
       "rejectLabel": "Refuzo {title}",
+      "retry": "Riprovo miratimet",
       "title": "Miratimet",
       "toast": {
         "approved": "Kërkesa u miratua",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Sot",
-      "description": "Rishikoni artikujt që kërkojnë veprim sot, pastaj kaloni drejtpërdrejt te procesi i duhur i punës.",
+      "accessUnavailable": "Ky informim nuk është i disponueshëm për punonjësin dhe organizatën aktuale.",
+      "contextFailed": "Nuk mund të kontrollohej qasja juaj aktuale. Provoni përsëri.",
+      "drivingUnavailable": "Detajet e drejtimit të automjetit nuk mund të kontrolloheshin.",
+      "incomplete": "Disa kontrolle nuk janë të disponueshme. Shqyrtoni gabimet e seksionit; këto rezultate janë të paplotë.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Periudhat e punës së punonjësve tuaj që nuk kanë një automjet ose një lexim të odometrit.",
           "title": "Mungojnë detajet e drejtimit ({count})"
         }
       },
+      "loadFailed": "Nuk mund të ngarkohej informimi. Provoni përsëri.",
       "needsAction": {
         "description": "Filloni këtu për ndjekjen më urgjente operacionale.",
-        "empty": "Çdo gjë në rregull. Nuk kërkohet asnjë veprim nga menaxheri për momentin.",
+        "noExceptions": "Nuk u zbulua asnjë ndjekje operacionale në këtë pamje të çastit. Kjo nuk konfirmon praninë e punonjësit.",
         "title": "Kërkon veprim"
       },
+      "partial": "I pjesshëm",
+      "refreshFailed": "Nuk mund të rifreskohej. Shfaqen rezultatet e mëparshme; provoni përsëri përpara se të veproni.",
+      "refreshing": "Po rifreskohet informimi. Rezultatet e mëparshme mbeten të dukshme.",
+      "retainedSection": "Shfaqen rezultatet e mëparshme. Riprovoni për të kontrolluar për ndryshime.",
+      "retry": "Riprovo informimin",
+      "retrySection": "Riprovo {title}",
+      "scope": "Ndjekje operacionale për punonjësit që mund të mbikëqyrni në organizatën aktive.",
       "sections": {
         "empty": "Nuk u zbulua asnjë problem."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Paralajmërim"
       },
+      "snapshot": "Pamja e çastit u përditësua më {time}. Përdorni «Rifresko të dhënat» për të kontrolluar për ndryshime.",
       "summaryAriaLabel": "Përmbledhja për sot",
       "supportingSectionsAriaLabel": "Seksionet mbështetëse",
       "title": "Informimi ditor i menaxherit",
-      "updatedAt": "{date} - Përditësuar më {time}"
+      "unavailable": "I padisponueshëm"
     }
   }
 }

@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-18T03:54:57.317Z",
+  "actualApprovalLinkClicked": true,
+  "path": "/en/approvals/inbox",
+  "query": "?types=travel_expense_report,travel_expense_claim",
+  "financeEntryOffered": false,
+  "grantSetupOfferedOnPersonalWorkspace": false,
+  "qualification": "No owner context, no authority SQL, no finance grant/revoke attempt. Manager approval entry and arrival only; not approval execution."
+}

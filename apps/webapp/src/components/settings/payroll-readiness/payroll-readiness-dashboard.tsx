@@ -24,14 +24,16 @@ type TranslateFn = (
 interface PayrollReadinessDashboardProps {
 	t: TranslateFn;
 	data: PayrollReadinessResult;
+	/** The period in the reader's locale; the readiness result's own label otherwise. */
+	periodLabel?: string;
 }
 
-export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboardProps) {
+export function PayrollReadinessDashboard({ t, data, periodLabel }: PayrollReadinessDashboardProps) {
 	const checks = getChecks(data);
 
 	return (
 		<div className="space-y-6">
-			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			<dl className="grid gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-2 xl:grid-cols-3">
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.status", "Status")}
 					value={
@@ -46,7 +48,7 @@ export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboard
 				/>
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.period", "Period")}
-					value={data.period.label}
+					value={periodLabel ?? data.period.label}
 					description={t(
 						"settings.payrollReadiness.summary.periodDescription",
 						"Payroll period being verified.",
@@ -68,9 +70,6 @@ export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboard
 						"Non-blocking issues to review before export.",
 					)}
 				/>
-			</div>
-
-			<div className="grid gap-4 md:grid-cols-2">
 				<SummaryCard
 					title={t("settings.payrollReadiness.summary.exportTargets", "Configured export targets")}
 					value={String(data.summary.configuredExportTargetCount)}
@@ -87,7 +86,7 @@ export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboard
 						"Employees linked to open readiness items.",
 					)}
 				/>
-			</div>
+			</dl>
 
 			<div className="flex flex-wrap items-center gap-3">
 				<Link className={`${actionLinkClassName} text-sm`} href="/settings/payroll-export">
@@ -113,16 +112,13 @@ function SummaryCard({
 	value: ReactNode;
 	description: string;
 }) {
+	// One shared summary surface rather than a card around every number.
 	return (
-		<Card>
-			<CardHeader>
-				<CardDescription>{description}</CardDescription>
-				<CardTitle>{title}</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<div className="text-2xl font-semibold tracking-tight">{value}</div>
-			</CardContent>
-		</Card>
+		<div className="min-w-0 space-y-1 bg-card p-4">
+			<dt className="font-medium text-sm">{title}</dt>
+			<dd className="break-words text-2xl font-semibold tracking-tight tabular-nums">{value}</dd>
+			<dd className="text-muted-foreground text-xs">{description}</dd>
+		</div>
 	);
 }
 
@@ -149,7 +145,7 @@ function ChecklistCard({ t, check }: { t: TranslateFn; check: PayrollReadinessCh
 					<span className="text-muted-foreground">
 						{t("settings.payrollReadiness.checks.count", "Count")}
 					</span>
-					<span className="font-medium">{check.count}</span>
+					<span className="font-medium tabular-nums">{check.count}</span>
 					{check.actionHref && actionLabel ? (
 						<Link className={actionLinkClassName} href={check.actionHref}>
 							{actionLabel}
@@ -201,7 +197,9 @@ function AffectedEmployeesTable({
 						<TableCell>
 							<div className="min-w-0 space-y-1">
 								<p className="break-words font-medium">
-									{employee.name ?? employee.email ?? employee.id}
+									{employee.name ??
+										employee.email ??
+										t("settings.payrollReadiness.affectedEmployees.unnamed", "Unnamed employee")}
 								</p>
 								{employee.email ? (
 									<p className="text-muted-foreground text-sm break-words">{employee.email}</p>

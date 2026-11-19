@@ -1,0 +1,31 @@
+{
+  "status": "released",
+  "ownership": false,
+  "owner": "1692-1747-focused-runtime-v3",
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "scope": "Exclusive ROOT package/runtime/process ownership for focused R165 initial read and capability-boundary checks in a fresh canonical fixture. Normal canonical verification outbound access approved; auth/config/source/Git/index/deps/license/prior evidence immutable.",
+  "artifactDirectory": ".tmp/1747-focused-runtime-20261118c",
+  "rootWillNotMutateUntilReleased": true,
+  "verifiedCommit": null,
+  "ownedLiveResources": 0,
+  "priorReleasedLeases": [
+    ".tmp/1747-current-runtime-coordination-20261118/LEASE.json",
+    ".tmp/1747-current-runtime-network-coordination-20261118/LEASE.json"
+  ],
+  "activatedAt": "2026-11-18T04:15:29.666Z",
+  "releasedAt": "2026-11-18T04:34:05.761Z",
+  "release": "ALL operational checkout/index/Git/package/runtime/process/browser/container/listener/profile ownership released",
+  "operationalOwnership": {
+    "checkout": false,
+    "index": false,
+    "git": false,
+    "package": false,
+    "runtime": false,
+    "process": false,
+    "browser": false,
+    "containers": false,
+    "listeners": false,
+    "profiles": false
+  }
+}

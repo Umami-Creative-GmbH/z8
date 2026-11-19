@@ -4,7 +4,7 @@ import { IconHistory, IconLoader2, IconReceipt } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useId } from "react";
 import { getMyTravelExpenseHistory } from "@/app/[locale]/(app)/travel-expenses/history-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ import { reportName } from "./report-name";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+type HistoryReadResult = { kind: "available"; rows: ExpenseHistoryRow[] } | { kind: "withdrawn" };
 
 const secondaryLinkClass =
 	"relative z-10 rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2";
@@ -117,7 +118,7 @@ function ReportRowContent({ row }: { row: ReportHistoryRow }) {
 				<p className="flex flex-wrap items-center gap-2">
 					<Link
 						href={row.href}
-						className="truncate font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
+						className="break-words font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
 					>
 						{reportName(t, row)}
 					</Link>
@@ -221,7 +222,7 @@ function ClaimRowContent({ row }: { row: LegacyClaimHistoryRow }) {
 				<p className="flex flex-wrap items-center gap-2">
 					<Link
 						href={row.href}
-						className="truncate font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
+						className="break-words font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
 					>
 						{claimTitle(t, row)}
 						{row.destination ? ` · ${row.destination}` : ""}
@@ -309,27 +310,48 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
  * The employee's travel expenses in one place (#617): drafts, returned,
  * submitted and decided reports and earlier claims, filterable by status and
  * by whether reimbursement is still awaited (#751), with reimbursable totals
- * and settlement balances. Loaded rows stay visible while
- * a refresh runs or fails.
+ * and settlement balances. Loaded rows stay visible through transient refresh
+ * failures; a canonical access refusal withdraws them.
  */
-export function ExpenseHistory(scope: { organizationId: string; employeeId: string }) {
+export function ExpenseHistory({
+	organizationId,
+	employeeId,
+	filter,
+	setFilter,
+}: {
+	organizationId: string;
+	employeeId: string;
+	filter: ExpenseHistoryFilter;
+	setFilter: (filter: ExpenseHistoryFilter) => void;
+}) {
 	const { t } = useTranslate();
-	const [filter, setFilter] = useState<ExpenseHistoryFilter>("all");
-	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.history(scope),
-		queryFn: async () => {
+	const arrival = useId();
+	const {
+		data: result,
+		isError,
+		isFetching,
+		isLoading,
+		refetch,
+	} = useQuery({
+		queryKey: [...queryKeys.travelExpenses.history({ organizationId, employeeId }), arrival],
+		queryFn: async ({ signal }): Promise<HistoryReadResult> => {
 			const result = await getMyTravelExpenseHistory();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
+			signal.throwIfAborted();
+			if (!result.success) {
+				if (result.error === "Unauthorized") return { kind: "withdrawn" };
+				throw new Error(result.error);
+			}
+			return { kind: "available", rows: result.data };
 		},
 		// Coming back from a report always shows its current status.
 		staleTime: 0,
 	});
+	const data = result?.kind === "available" ? result.rows : undefined;
 	const retry = () => {
 		void refetch();
 	};
 
-	if (isError && !data) {
+	if (result?.kind === "withdrawn" || (isError && !data)) {
 		return (
 			<TravelExpenseLoadError
 				message={t(
@@ -349,28 +371,6 @@ export function ExpenseHistory(scope: { organizationId: string; employeeId: stri
 				</span>
 				<Skeleton aria-hidden="true" className="h-48 w-full" />
 			</div>
-		);
-	}
-	if (data.length === 0) {
-		return (
-			<Card className="py-0">
-				<Empty>
-					<EmptyHeader>
-						<EmptyMedia variant="icon">
-							<IconReceipt aria-hidden="true" />
-						</EmptyMedia>
-						<EmptyTitle>
-							{t("travelExpenses.history.emptyTitle", "No travel expenses yet")}
-						</EmptyTitle>
-						<EmptyDescription>
-							{t(
-								"travelExpenses.history.emptyDescription",
-								"Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
-							)}
-						</EmptyDescription>
-					</EmptyHeader>
-				</Empty>
-			</Card>
 		);
 	}
 
@@ -428,7 +428,24 @@ export function ExpenseHistory(scope: { organizationId: string; employeeId: stri
 						</ToggleGroup>
 					</div>
 				</CardContent>
-				{visible.length === 0 ? (
+				{data.length === 0 ? (
+					<Empty className="rounded-none border-t md:p-10">
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<IconReceipt aria-hidden="true" />
+							</EmptyMedia>
+							<EmptyTitle>
+								{t("travelExpenses.history.emptyTitle", "No travel expenses yet")}
+							</EmptyTitle>
+							<EmptyDescription>
+								{t(
+									"travelExpenses.history.emptyDescription",
+									"Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
+								)}
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+				) : visible.length === 0 ? (
 					<Empty className="rounded-none border-t md:p-10">
 						<EmptyHeader>
 							<EmptyDescription>

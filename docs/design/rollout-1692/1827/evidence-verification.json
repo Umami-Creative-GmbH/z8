@@ -1,0 +1,8 @@
+{
+  "decodedPNGs": 22,
+  "parsedJSON": 19,
+  "matchingFinalCaptureSourcePins": 54,
+  "nativeTargetAndSourceMatch": true,
+  "successfulRuntimeChecks": 18,
+  "privateFixtureValuesExcluded": true
+}

@@ -1,0 +1,26 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "label": "z8-isolated-comparison-v2-1738-31887db0",
+  "organization": "manifest small synthetic organization",
+  "actor": "normally signed-in synthetic small-admin",
+  "sourceUnchanged": true,
+  "publicEditorOnly": true,
+  "rawBodies": false,
+  "originalDailyHours": 6,
+  "steps": [
+    {
+      "name": "before",
+      "dailyHours": 6,
+      "ackOpen": true
+    },
+    {
+      "name": "public editor readback",
+      "dailyHours": 5
+    }
+  ],
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 10000ms exceeded"
+  },
+  "restoredHours": "6"
+}

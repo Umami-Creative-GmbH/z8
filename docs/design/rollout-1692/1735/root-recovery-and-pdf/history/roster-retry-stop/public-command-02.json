@@ -1,0 +1,25 @@
+{
+  "kind": "safe-command-clone",
+  "original": "public-recovery-command-02.json",
+  "originalSha256": "302f49a3979600f86c789ee3c31b31242dc83d5e96a806806ad2511542e7e21d",
+  "executable": "Installed pinned pnpm 12.16.1 native executable",
+  "args": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "src/test/independent1735-recovery/public-recovery.test.tsx",
+    "--reporter=json",
+    "--outputFile=../../.tmp/1735-independent-checks/public-recovery-result-02.json"
+  ],
+  "env": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T21:47:26.254Z",
+  "exit": 1,
+  "signal": null
+}

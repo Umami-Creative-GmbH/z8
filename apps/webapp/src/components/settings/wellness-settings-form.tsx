@@ -35,6 +35,21 @@ const DAILY_GOAL_DROPLET_KEYS = Array.from(
 	(_, index) => `daily-goal-droplet-${index + 1}`,
 );
 
+/** The reminder preset a slider interval matches, as the save action derives it. */
+function IntervalPresetLabel({ minutes }: { minutes: number }) {
+	const { t } = useTranslate();
+	switch (minutes) {
+		case 30:
+			return t("settings.wellness.presets.active", "Active");
+		case 45:
+			return t("settings.wellness.presets.moderate", "Moderate");
+		case 60:
+			return t("settings.wellness.presets.light", "Light");
+		default:
+			return t("settings.wellness.presets.custom", "Custom");
+	}
+}
+
 interface WellnessSettingsFormProps {
 	initialSettings: WaterReminderSettings;
 }
@@ -107,16 +122,22 @@ export function WellnessSettingsForm({
 		>
 			<Card>
 				<CardHeader className="pb-4">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-3">
-							<div className="flex size-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-								<IconDropletFilled className="size-5 text-blue-500" />
+					<div className="flex items-center justify-between gap-4">
+						<div className="flex min-w-0 items-center gap-3">
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+								<IconDropletFilled
+									className="size-5 text-primary"
+									aria-hidden="true"
+								/>
 							</div>
-							<div>
-								<CardTitle>
+							<div className="min-w-0">
+								<CardTitle id="wellness-reminders-title">
 									{t("settings.wellness.cardTitle", "Water Reminders")}
 								</CardTitle>
-								<CardDescription className="mt-0.5">
+								<CardDescription
+									id="wellness-reminders-description"
+									className="mt-0.5"
+								>
 									{t(
 										"settings.wellness.cardDescShort",
 										"Stay hydrated while you work",
@@ -130,33 +151,31 @@ export function WellnessSettingsForm({
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={loading}
+									aria-labelledby="wellness-reminders-title"
+									aria-describedby="wellness-reminders-description"
 								/>
 							)}
 						</form.Field>
 					</div>
 				</CardHeader>
 
-				<CardContent
-					className={`space-y-6 transition-opacity ${!isEnabled ? "opacity-40 pointer-events-none" : ""}`}
-				>
+				<CardContent className="space-y-6">
+					<div
+						className={`space-y-6 transition-opacity ${!isEnabled ? "opacity-40" : ""}`}
+					>
 					{/* Frequency */}
 					<form.Field name="intervalMinutes">
 						{(field) => {
 							const value = field.state.value;
-							const presetLabel =
-								value === 30
-									? "Active"
-									: value === 45
-										? "Moderate"
-										: value === 60
-											? "Light"
-											: "Custom";
 							const isRecommended = value === 45;
 
 							return (
 								<div className="space-y-3">
-									<div className="flex items-center justify-between">
-										<Label className="text-sm font-medium">
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<Label
+											id="wellness-reminder-frequency-label"
+											className="text-sm font-medium"
+										>
 											{t(
 												"settings.wellness.reminderFrequency",
 												"Reminder Frequency",
@@ -171,16 +190,17 @@ export function WellnessSettingsForm({
 											<span
 												className={`rounded-full px-2 py-0.5 text-xs font-medium ${
 													isRecommended
-														? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+														? "bg-primary/10 text-primary"
 														: "bg-muted text-muted-foreground"
 												}`}
 											>
-												{presetLabel}
+												<IntervalPresetLabel minutes={value} />
 											</span>
 										</div>
 									</div>
 									<div className="relative pt-1 pb-6">
 										<Slider
+											aria-labelledby="wellness-reminder-frequency-label"
 											value={[value]}
 											onValueChange={(v) => {
 												field.handleChange(v[0]);
@@ -200,7 +220,10 @@ export function WellnessSettingsForm({
 											disabled={loading || !isEnabled}
 										/>
 										{/* Markers */}
-										<div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-muted-foreground">
+										<div
+											aria-hidden="true"
+											className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] tabular-nums text-muted-foreground"
+										>
 											<span>{CUSTOM_INTERVAL_RANGE.min}m</span>
 											{[30, 45, 60].map((val) => {
 												const percent =
@@ -231,12 +254,19 @@ export function WellnessSettingsForm({
 					{/* Daily Goal */}
 					<form.Field name="dailyGoal">
 						{(field) => (
-							<div className="space-y-3">
-								<div className="flex items-center justify-between">
-									<Label className="text-sm font-medium">
+							<div
+								role="group"
+								aria-labelledby="wellness-daily-goal-label"
+								className="space-y-3"
+							>
+								<div className="flex items-center justify-between gap-2">
+									<Label
+										id="wellness-daily-goal-label"
+										className="text-sm font-medium"
+									>
 										{t("settings.wellness.dailyGoal", "Daily Goal")}
 									</Label>
-									<span className="text-sm tabular-nums">
+									<span className="text-sm tabular-nums" aria-live="polite">
 										{field.state.value}{" "}
 										{t("settings.wellness.glasses", "glasses")}
 									</span>
@@ -264,12 +294,15 @@ export function WellnessSettingsForm({
 									>
 										<IconMinus className="size-4" aria-hidden="true" />
 									</Button>
-									<div className="flex flex-wrap gap-1 flex-1 justify-center">
+									<div
+										aria-hidden="true"
+										className="flex min-w-0 flex-1 flex-wrap justify-center gap-1"
+									>
 										{DAILY_GOAL_DROPLET_KEYS.slice(0, field.state.value).map(
 											(key) => (
 												<IconDropletFilled
 													key={key}
-													className="size-5 text-blue-500"
+													className="size-5 text-primary"
 												/>
 											),
 										)}
@@ -300,16 +333,22 @@ export function WellnessSettingsForm({
 							</div>
 						)}
 					</form.Field>
+					</div>
 
 					<div className="h-px bg-border" />
 
-					{/* Save Button */}
+					{/* Save stays operable while reminders are off, so turning them off can be saved. */}
 					<Button
 						type="submit"
 						disabled={loading || !isDirty}
 						className="w-full"
 					>
-						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+						{loading && (
+							<IconLoader2
+								className="mr-2 size-4 animate-spin"
+								aria-hidden="true"
+							/>
+						)}
 						{t("common.saveChanges", "Save Changes")}
 					</Button>
 				</CardContent>

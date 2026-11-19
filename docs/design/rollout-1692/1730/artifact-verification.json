@@ -1,0 +1,263 @@
+{
+  "head": "b8f54038f4720e7424d5b07b63ef4a2f584d2dc0",
+  "trackedDiff": "",
+  "jsonFiles": 58,
+  "scripts": 12,
+  "png": [
+    {
+      "name": "after-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "cf8c7b03a5123e799d3f38ae8457963b5bd8383cef914e2f7f272c954c0cfd36"
+    },
+    {
+      "name": "after-initial-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "eb53aaaaf510fcc3170b0904da76c0aa5c194ef4b7ee6299f4b499e9dba5fc6c"
+    },
+    {
+      "name": "after-initial-phone-dark.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d20269d626e9efebcd401bcfa6334b47402fae8bb1f277c75a5feb88efd4586e"
+    },
+    {
+      "name": "after-initial-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3c969b4813140681e9a05e6dcfc22d95cb1731e5d546f21444cc2147bafd4815"
+    },
+    {
+      "name": "after-initial-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "sha256": "a46ae80e239ed3cb5d4a19d2fcfb20c04f2d3b22208aa161c5bc493a146d0be8"
+    },
+    {
+      "name": "after-phone-dark.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9bd62be9fcf14b880517758df7467034e59e8a541ca33f8f9b2d211458cfa2b4"
+    },
+    {
+      "name": "after-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9b36233ddac42622296b1d5931f854ab53b194e027ba08ec4c9998ae016a9619"
+    },
+    {
+      "name": "after-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "sha256": "e3903367a47d8d660e63bdfea55a0f8a0889fd9848e19a6a12ca6bd5826cf421"
+    },
+    {
+      "name": "before-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "08348e09bf0f8c8e255bc3d52045ea1a241ba6592f1390fc7ec866f179ec3d1d"
+    },
+    {
+      "name": "before-phone-dark.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2465f2fff5eda1d67c23e4eecde845405b638ec6173c6b280089cf219fbe5a5b"
+    },
+    {
+      "name": "before-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fdf55db8406be399d1c8d6d3af83c7d6d7b1c1e6b51029cdac9d4b6333a9cf6a"
+    },
+    {
+      "name": "before-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "sha256": "e713d2a52abf3e2d7c2294ca3cdd962ec92a8a8ada3cbff48b312a59241b50f5"
+    },
+    {
+      "name": "bulk-created.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "fb0a9c1bbf6de68a4f17720e38cd7c21fe021f46b843ff2fbe400c1c83b0a854"
+    },
+    {
+      "name": "bulk-panel.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "3ad840dda0f80ea07d2d5e2cfb5d7ff4c51b03c9a6184fe0bd1ad2cc701c368d"
+    },
+    {
+      "name": "bulk-transport-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "fd4c2e18cacac0d5573e175c30c4d1c4c9b166a87124e13cc47f75fdf43079d7"
+    },
+    {
+      "name": "mixed-before-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "e6c1b34583803e08e9c5fefbee234242a8772642f7aec12f2fcda6d3f11b1ac0"
+    },
+    {
+      "name": "mixed-before-phone-dark.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "c619184219f367ef1b35ccea4dc074ad1fb67e799dd2b681e1deb63ae22e9cea"
+    },
+    {
+      "name": "mixed-before-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "c792f5963fad02b0a554fa93ef98df3bca0a4da74193d67b364b20e38a703527"
+    },
+    {
+      "name": "mixed-before-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "sha256": "d3696148a9cb63bd16fb18831404356afa489c968b263cae0cd4c02c925e6926"
+    },
+    {
+      "name": "pre-hook-after-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "85269edec25ed33af80a84b4cdde0b19ca65c2317d37975de063077d6f771e6d"
+    },
+    {
+      "name": "pre-hook-after-phone-dark.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "5707c793d8644a17af9ff2d0b50399a57aef7c7afce68a7640a38ec1967e3ad6"
+    },
+    {
+      "name": "pre-hook-after-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "20ee136e35bb0b2144e5555c07828c03b596f36c5ebd24f03226290aa6000389"
+    },
+    {
+      "name": "pre-hook-after-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "sha256": "916a01cf150baa313885c530da9020c5d47ff491705f0fd46a07dab58d510a03"
+    },
+    {
+      "name": "read-failed.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "8fb9afb105d85f5f4766778a4bfaf1298437ba11160061af415b044c85a29eb8"
+    },
+    {
+      "name": "read-recovered.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "93b4247c4fbce36d2effda78a150f2199e531dedc9e2c448033928f11b402ba7"
+    },
+    {
+      "name": "restricted-officer.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "21d9c49fb415f3276bee91bc9e08026f3f018e1acc0e28186463e2e5c4b74f5b"
+    },
+    {
+      "name": "saved18px-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "8e127f046d6f2943f100e43014e2a2b486a61472a74dbb1d5bf7eccd8a059bcb"
+    }
+  ],
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "rawSha256": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+      "canonicalLfSha256": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb",
+      "canonicalGitBlob": "428d83bd5201e7f03c111a31895d5d923b0e2e01",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "rawSha256": "561db3f33a7c5d38fe64f41fb9d0d0a802382bf1587107a778484f06350f02d6",
+      "canonicalLfSha256": "f57529d7c7e0dbba2c5f2d5bfccd5c40c05811d23ac3a1b779bc474f0dcd56fa",
+      "canonicalGitBlob": "fd7943770930be1ba918279495ee373f597525eb",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "rawSha256": "3c872d90fc3b7f874ffcfcb730adfc07643f187ef4d0bed68258dabd90339929",
+      "canonicalLfSha256": "f564a6b893f10d3b7ef0e94f1d83a1d3feee27ce153691131e968b1dbaae2887",
+      "canonicalGitBlob": "55f74ac6ee10712e86e65453a6749bc4735c2b07",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "rawSha256": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+      "canonicalLfSha256": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4",
+      "canonicalGitBlob": "876ad148bfcfb7b74a40dc06cd7e8ffd98b3435f",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "rawSha256": "f3e36a365c510bb356be12d0c41061e6107cea78bd72c2cca076956d81628aa5",
+      "canonicalLfSha256": "6d035d6e94a4859fa9572366e7ccaeebeb75dbac17b57bbcc09f45fc7e666495",
+      "canonicalGitBlob": "eb902538a3e1fc2cd336b36ce858671d3b83d01f",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "rawSha256": "ee8cde7d14d1a598bcc0e1be322e7c67a2d2e36b0a42e58831386669542eba5f",
+      "canonicalLfSha256": "88e4fef15854f0b44a707af9be0dcb92132861646a42ca1a459ff2c8987d36d2",
+      "canonicalGitBlob": "10f5223d05306ee69fc2db7737777b7bcdab8bf9",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "rawSha256": "3bbc2cdae05bac67fca3962408ee6379af02159df706fe9acde261c802778902",
+      "canonicalLfSha256": "6a88f4cf0525ee3a877287d3b8e145bc77d36e8a09675a561400e9b1dcd0f2d3",
+      "canonicalGitBlob": "9f6d1d986bc38ed894f63677595d1360ddff5f6e",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rawSha256": "03a3e6003d42e2f588981e94e09701cb3452333592543c4eacd37712e5bad561",
+      "canonicalLfSha256": "b1bf97dce03ca1601c74a99f8fe3d8827c6d89e7d1ae0593c9fd81ef17c88500",
+      "canonicalGitBlob": "de9c84e3f677ad6e45398f2c73002d33630e9c20",
+      "crlf": true
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+      "rawSha256": "4278b66a976ae5f60e31909863a071b2522eb283510a3cf4b900eb474ce4f2b4",
+      "canonicalLfSha256": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee",
+      "canonicalGitBlob": "4be86202a1a41cd9c5f2c1e88e13780e0291ec14",
+      "crlf": true
+    }
+  ],
+  "reconciliation": {
+    "verifiedBase": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+    "verifiedTree": "b3c2aa2f972dfac76153051fe957f24558a4f9b0",
+    "ownedDiffAfterMerge": "",
+    "ancestors": [
+      "8a13b755220124c4ea1d3fd1ccacb770aae31241",
+      "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "9f839b78f109b1f3eea1c40b959e76ae99efba3b"
+    ]
+  },
+  "unit": {
+    "files": 43,
+    "tests": 288
+  },
+  "postgres": {
+    "files": 6,
+    "tests": 99
+  },
+  "actions": {
+    "checks": 16
+  },
+  "recovery": {
+    "checks": 5
+  },
+  "variants": {
+    "checks": 7
+  },
+  "qualification": "Fresh post-merge artifact decoding/parsing and final owned-source hashes. Earlier raw attempts and corrected archive metadata remain distinct. Before replaces only exact historical route consumers. Captures/native are pinned to pre-merge5cfe; all nine owned source hashes still match after verified9f839 merge. PG ran before the UI-only extraction/verified onboarding-only merge. Final source is committed with report docs still untracked at this verification."
+}

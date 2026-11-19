@@ -50,6 +50,7 @@
       "retry": "Försök igen med {choice}",
       "unavailable": "{choice} är inte tillgängligt"
     },
+    "clockedIn": "Instämplad",
     "clockedOutSuccess": "Du har stämplat ut!",
     "clockIn": "Stämpla in",
     "clockingIn": "Stämplar in…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Utstämpling sparad på denna enhet men inte skickad. Granska sparade poster.",
     "clockOutSuccess": "Utstämpling lyckades",
     "clockStatus": {
+      "clockedOut": "Inte instämplad",
       "loading": "Läser in stämpelstatus",
       "retry": "Försök hämta stämpelstatus igen",
       "unavailable": "Stämpelstatus är inte tillgänglig"
@@ -301,6 +303,8 @@
         "wrong": "PIN-koden är inte korrekt. Försök igen."
       },
       "queue": {
+        "awaiting": "Stämplingar som väntar på bekräftelse: {count}",
+        "checking": "Kontrollerar skickade åtgärder: {count}",
         "dismiss": "Avfärda",
         "reason": {
           "contact": "Kioskens senaste anslutning kunde inte bekräftas.",
@@ -311,6 +315,7 @@
           "pin": "PIN-koden accepterades inte.",
           "time": "Dess tidpunkt kunde inte accepteras."
         },
+        "recovery": "Kiosken kontrollerar automatiskt igen när den når Z8. Upprepa inte en åtgärd vars resultat är okänt.",
         "refused": "{name}: {action} kl. {time}, sparad offline, accepterades inte. {reason}",
         "title": "Offline-stämplingar accepteras inte"
       },
@@ -335,6 +340,9 @@
         "description": "Denna kiosk kan inte längre användas för stämpling. Kontakta din administratör.",
         "pairAgain": "Parkoppla med en ny kod",
         "title": "Kiosk återkallad"
+      },
+      "scope": {
+        "zone": "Kiosktid: {zone}"
       },
       "state": {
         "clockedIn": "Instämplad sedan {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Ingen kategori (100 %)",
     "noProject": "Inget projekt",
+    "notClockedIn": "Inte instämplad",
     "notesPlaceholder": "Vad har du arbetat med?",
     "notesSaved": "Anteckningar sparade",
+    "onBreak": "På rast",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "En frånvaroansökan för {dates} är oavgjord.",
@@ -497,6 +507,14 @@
       "withdrawn": "Inskickningen har återkallats",
       "withdrawRefused": "Den här inskickningen har redan beslutats och kan inte längre återkallas."
     },
+    "policy": {
+      "fixedDays": "Fasta kontorsdagar: {days}",
+      "flexible": "Flexibel kontorspolicy för denna period",
+      "homeOfficeLeft": "Hemarbetsdagar kvar",
+      "officeRequired": "Kontorsdagar som fortfarande krävs",
+      "requirementWarning": "Kontorskravet överstiger återstående arbetsdagar",
+      "unavailable": "Arbetsplatspolicyn är inte tillgänglig."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Lägg till paus",
@@ -535,6 +553,7 @@
       "title": "Sessionspåminnelser"
     },
     "startedAt": "Startade kl.",
+    "statusUnavailable": "Stämplingsstatus är inte tillgänglig. Uppdatera för att försöka igen.",
     "summary": {
       "dayOfRequired": "{date}: {worked} av {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} tillägg",
       "thisMonth": "Denna månad",
       "thisWeek": "Denna vecka",
+      "title": "Sammanfattning av arbetstid",
       "today": "Idag",
       "todayOfRequired": "{worked} av {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Nu: {worked} arbetat av {required} obligatoriskt hittills. Då: {previousWorked} arbetat av {previousRequired} obligatoriskt.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Uppdaterar totalt… Använd Uppdatera för att försöka igen om det fortfarande inte är tillgängligt.",
       "vsLastMonth": "jämfört med förra månaden",
       "vsLastWeek": "jämfört med förra veckan"
     },
+    "systemNote": {
+      "breakEnforcement": "Automatiskt justerad: tillämpning av rast"
+    },
     "table": {
       "active": "Aktiv",
+      "allEntries": "Alla registreringar",
       "approved": "Tidsregistrering godkänd",
       "approveEntry": "Godkänn registrering",
       "approveFailed": "Det gick inte att godkänna registreringen",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Körningsuppgifter saknas",
       "duration": "Varaktighet",
       "emptyState": "Inga tidsregistreringar hittades för den här veckan.",
+      "entryCount": "{count, plural, one {# registrering} other {# registreringar}}",
+      "groupedByDay": "Grupperat efter dag",
+      "incompleteDay": "Inkluderar aktiva eller ofullständiga registreringar",
       "missingTask": "Uppgift saknas",
       "missingTaskHint": "Det här projektet kräver en uppgift: lägg till en till denna bokning i kalendern.",
+      "offsetContext": "Start- och sluttider använder varje registrerings sparade lokala UTC-förskjutning. Dagsrubriker följer din kalenders tidszon: {timezone}.",
       "recordedLocalTime": "Registrerad lokal tid",
       "rowActions": "Åtgärder för tidsregistrering",
       "title": "Tidsregistreringar",
@@ -586,62 +615,64 @@
       "search": "Sök uppgifter…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Eftermiddag",
+        "fullDay": "Heldag",
+        "morning": "Förmiddag"
+      },
       "dayPicker": "Dagväljare för tidslinje",
       "emptyDescription": "Det finns inga arbetspass, frånvarotillfällen eller tidsregistreringar för den valda dagen ännu.",
       "emptyTitle": "Ingen aktivitet registrerad för denna dag.",
+      "link": {
+        "reviewRequest": "Granska förfrågan",
+        "viewAbsence": "Visa frånvaro"
+      },
+      "monthPicker": "Välj en kalenderdag",
       "nextDay": "Nästa dag",
       "previousDay": "Föregående dag",
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Frånvaroansökan"
+        },
+        "timeCorrection": {
+          "subtitle": "Korrigering av tidsregistrering",
+          "title": "Begäran om tidskorrigering"
+        }
+      },
+      "shift": {
+        "title": "Schemalagt arbetspass"
+      },
+      "status": {
+        "active": "Aktiv",
+        "approved": "Godkänd",
+        "cancelled": "Avbruten",
+        "draft": "Utkast",
+        "pending": "Väntande",
+        "published": "Publicerad",
+        "rejected": "Avvisad"
+      },
       "title": "Tidslinje för arbetsdag",
       "today": "Idag",
       "unavailableDescription": "Tidsstämpling fungerar fortfarande. Prova att uppdatera den här vyn senare.",
       "unavailableTitle": "Tidslinjen är inte tillgänglig",
-      "workPeriod": {
-        "title": "Registrerat arbete"
-      },
-      "shift": {
-        "title": "Schemalagt pass"
-      },
-      "status": {
-        "approved": "Godkänd",
-        "pending": "Väntande",
-        "rejected": "Avvisad",
-        "cancelled": "Avbruten",
-        "published": "Publicerad",
-        "draft": "Utkast",
-        "active": "Aktiv"
-      },
-      "absence": {
-        "fullDay": "Heldag",
-        "morning": "Förmiddag",
-        "afternoon": "Eftermiddag"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Begäran om tidskorrigering",
-          "subtitle": "Korrigering av en tidspost"
-        },
-        "absence": {
-          "title": "Frånvaroansökan",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Visa frånvaro",
-        "reviewRequest": "Granska begäran"
-      },
       "warning": {
-        "pendingEdit": {
-          "title": "Väntande ändringsbegäran",
-          "description": "Den här arbetsperioden har ändringar som väntar på godkännande."
+        "autoAdjusted": {
+          "description": "Rast- eller efterlevnadsregler justerade denna arbetsperiod.",
+          "title": "Automatiskt justerad post"
         },
         "missingClockOut": {
-          "title": "Utstämpling saknas",
-          "description": "Den här arbetsperioden är fortfarande aktiv."
+          "description": "Denna arbetsperiod är fortfarande aktiv.",
+          "title": "Utstämpling saknas"
         },
-        "autoAdjusted": {
-          "title": "Automatiskt justerad post",
-          "description": "Rast- eller efterlevnadsregler justerade den här arbetsperioden."
+        "pendingEdit": {
+          "description": "Denna arbetsperiod har ändringar som väntar på godkännande.",
+          "title": "Väntande redigeringsförfrågan"
         }
+      },
+      "weekPicker": "Välj en veckodag",
+      "workPeriod": {
+        "title": "Registrerat arbete"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Kontrollera fordonsanvändningen"
       }
     },
-    "welcomeBack": "Välkommen tillbaka, {name}",
     "workCategory": "Arbetskategori",
     "workLocation": "Arbetsplats",
     "workLocationHome": "Hem",
     "workLocationOffice": "Kontor",
     "workLocationOther": "Annat",
-    "workLocationRemote": "Distans",
-    "systemNote": {
-      "breakEnforcement": "Automatiskt justerad: rastregler"
-    }
+    "workLocationRemote": "Distans"
   },
   "wellness": {
     "water": {

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "src/lib/personnel-file/retention.integration.test.ts",
+    "src/lib/personnel-file/audit-minimisation.integration.test.ts",
+    "src/lib/personnel-file/document-request-retention.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=../../docs/design/rollout-1692/1731/postgres.json"
+  ],
+  "code": 0,
+  "guarded": true,
+  "ownedLoopback": true
+}

@@ -13,9 +13,11 @@
       "yes": "Ja"
     },
     "description": "Generier umfassendi Arbetziit- und Absenzbricht mit stüürrelevante Home-Office-Date",
+    "employeeNumber": "Personalnummer",
     "employeeSelector": {
       "error": "Teammitglieder chönd nöd glade werde",
       "label": "Aagstellte",
+      "loading": "Teammitglieder werden geladen",
       "placeholder": "Aagstellte uswähle..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Lade Organisationseinstellungen, bevor Voreinstellungen aktiviert werden.",
       "period": "Zeitraum",
-      "selectPeriod": "Zeitraum auswählen"
+      "selectPeriod": "Zeitraum auswählen",
+      "settingsError": "Organisationseinstellungen nicht verfügbar",
+      "settingsRequired": "Für die Verwendung von Voreinstellungen sind Organisationseinstellungen erforderlich.",
+      "title": "Mitarbeiterbericht erstellen"
     },
     "generate": "Bericht erstellen",
     "generating": "Bericht wird erstellt…",
@@ -62,6 +67,7 @@
       "month": "Monat",
       "noHomeOfficeDays": "In diesem Zeitraum wurden keine Home-Office-Tage erfasst.",
       "overtime": "Überstunden",
+      "title": "Berichtsvorschau",
       "total": "Gesamt",
       "totalHomeOfficeDays": "Home-Office-Tage insgesamt",
       "totalHomeOfficeHours": "Gesamte Arbeitsstunden im Home-Office",
@@ -266,6 +272,9 @@
         "noPermission": "Du häsch kei Berechtigung, Projektbericht aazluege.",
         "title": "Projektbericht"
       },
+      "refreshFailed": "Projektberichte konnten nicht aktualisiert werden",
+      "scopeLoading": "Aktueller Berichtsbereich wird geladen…",
+      "scopeUnavailable": "Der aktuelle Berichtsbereich konnte nicht geladen werden.",
       "status": {
         "active": "Aktiv",
         "archived": "Archiviert",
@@ -324,7 +333,6 @@
         "failedGenerate": "Bricht het nöd chönne erstellt wärde",
         "failedPortfolio": "Portfolio-Bricht het nöd chönne erstellt wärde",
         "failedProject": "Projekt-Bricht het nöd chönne erstellt wärde",
-        "failedProjectReport": "Projekt-Bricht het nöd chönne erstellt wärde",
         "portfolioGenerated": "Portfolio-Bricht isch erstellt worde",
         "projectGenerated": "Bricht für {name} isch erstellt worde",
         "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
@@ -376,6 +384,8 @@
         "loading": "Freigaab-Links wärded glade…",
         "revokedAutomatically": "Automatisch widerruefe am {date}: D Person, wo's erstellt hät, gseht nümme alli Projekt dinne",
         "revokedBy": "Widerruefe vo {name} am {date}",
+        "scopeLoading": "Aktueller Freigabelink-Bereich wird geladen…",
+        "scopeUnavailable": "Der aktuelle Freigabelink-Bereich konnte nicht geladen werden.",
         "someone": "öpper",
         "title": "Links zu däm Bricht",
         "views": "{count, plural, one {# Ufruef} other {# Ufrüef}}",
@@ -398,7 +408,8 @@
         "description": "De Link funktioniert ab sofort nümme und sin Snapshot wird glöscht. Sin Iitrag und s Aasichtsprotokoll werded bhalte.",
         "done": "Link widerruefe",
         "failed": "De Link hät nöd chönne widerruefe werde",
-        "title": "Dä Link widerruefe?"
+        "titleDeletedReport": "Freigabelink für einen gelöschten Bericht ({period}) widerrufen?",
+        "titleNamed": "Freigabelink für {report}, {period} widerrufen?"
       },
       "status": {
         "active": "Aktiv",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "archiviert",
       "archivedBadge": "Archiviert",
+      "comparison": "Monatliche Fahrstrecke nach Fahrzeug und Mitarbeiter",
       "empty": {
         "description": "In däre Periode isch kei abgschlosseni Arbet mit gfahrener Strecki erfasst worde.",
         "title": "Kei Fahrte in däre Periode"
@@ -457,6 +469,7 @@
         "period": "Zitruum"
       },
       "generate": "Bricht generiere",
+      "generated": "Erstellt am {time}",
       "generating": "Bricht wird generiert…",
       "kilometres": "{distance} km",
       "noReportYet": "No kein Bricht generiert",
@@ -465,7 +478,11 @@
         "description": "Gfahreni gschäftlichi Kilometer pro Fahrzüüg und Mitarbeiter, nach Monet",
         "feature": "de Bricht über d Distanz pro Fahrzüüg aaluege"
       },
+      "scope": "Ihnen in dieser Organisation zur Verfügung stehende Mitarbeitende",
+      "scopeLoading": "Aktuelle Organisation und Mitarbeiter werden bestätigt…",
+      "scopeUnavailable": "Der aktuelle Fahrzeugbericht-Bereich konnte nicht geladen werden.",
       "selectPeriod": "Wähl en Zitruum und generier de Bricht.",
+      "staged": "Zeitraum geändert. Bericht erstellen, um Ergebnisse und Downloads zu aktualisieren.",
       "table": {
         "employee": "Mitarbeiter",
         "licencePlate": "Kontrollschild",
@@ -473,8 +490,7 @@
         "vehicle": "Fahrzüüg",
         "vehicleAndEmployee": "Fahrzüüg / Mitarbeiter"
       },
-      "title": "Distanz pro Fahrzüüg",
-      "totalDriven": "{distance} gfahre"
+      "title": "Distanz pro Fahrzüüg"
     }
   }
 }

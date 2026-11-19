@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "status": "provisional",
+  "verifiedCommit": null,
+  "incoming": "1816c3e7e00bec6d7f7612be82e3ca320e5db3e5",
+  "reviewedMerge": "14a39359b0e1418bdfbadff8d5b04954c4d9c011",
+  "correctionCommit": "39e5e92b0135c2135a16d9b020cb30c29501b79a",
+  "correctionTree": "838bf20a6c45eeb2e1a9f40f9cbf341779d78458",
+  "integrationCommit": "04aab8d94deeab033b77c188017a12b125152345",
+  "appTree": "e6d7246e7e6cba104ecbda99c4d0af423fc57fdf",
+  "independentStop": {
+    "safeIndexSha256": "17435e84538ba2623a10870fd9e35f8b6d78e4b61b019cb7c8ea3738859a7474",
+    "allowlistedFiles": 25,
+    "bytes": 147115,
+    "acceptedCases": 4,
+    "passed": 3,
+    "failed": 1,
+    "classification": "Incoming presentation/lifetime acceptance gap at real provider publication; no live authorization bypass or persisted unauthorized decision claimed.",
+    "finding": "Same-organization employee replacement kept old rows and admitted retired read and decision completions.",
+    "rootExactReproduction": {
+      "cases": 4,
+      "passed": 3,
+      "failed": 1,
+      "probeSha256": "57baa3a07e6c33883859637cc26559430dbd87907f8726526d5c75f9d9b5135a"
+    },
+    "independentIntakeAuditSha256": "0862e879b805dda2e0f05f7a30e639a97edf9d992b9c489997d4c8dc81ad18fe"
+  },
+  "changes": [
+    "Bind the initial page snapshot to its checked employee id and role.",
+    "Key the controller by account, organization, session id, and actual provider employee/role; retire the initial snapshot after any invalid arrival or identity change.",
+    "Remove retained content on provider failure and offer local Retry that actually refetches the real provider.",
+    "Preserve fresh server authorization, existing section readers, approval transport, and canonical timekeeping owners."
+  ],
+  "checks": {
+    "unit": {
+      "physicalFiles": 11,
+      "occurrences": 179,
+      "distinctFileFullnames": 179,
+      "passed": 179,
+      "failed": 0,
+      "skipped": 0
+    },
+    "actualProviderPublic": {
+      "physicalFiles": 1,
+      "passed": 11,
+      "includedIn179": true,
+      "externalSessionTransportNavigationTranslationModeled": true
+    },
+    "types": {
+      "staticNextTypegen": "pass",
+      "application": "pass",
+      "workflowContracts": "pass",
+      "smoke": "pass",
+      "existingLicenseUsed": true,
+      "noLicenseCopied": true
+    },
+    "quality": {
+      "ownedFiles": 4,
+      "explicit100ColumnCrlf": "pass",
+      "lintAndImports": "pass",
+      "ordinaryDiscovery": "fail: four formatter findings; one test-only non-null assertion warning retained from the copied independent repro",
+      "doctorVersion": "0.9.22",
+      "doctorBase": "14a39359b0e1418bdfbadff8d5b04954c4d9c011",
+      "doctorFinal": {
+        "errorCount": 0,
+        "warningCount": 0,
+        "affectedFileCount": 0,
+        "totalDiagnosticCount": 0,
+        "score": null,
+        "scoreLabel": null
+      },
+      "initialNewComplexityWarning": "one, resolved by extracting the pure access-status predicate; no suppression"
+    },
+    "postgres": {
+      "freshRootCases": 0,
+      "historicalWorkerCases": 12,
+      "historicalWorkerFiles": 3,
+      "addedToRootUnitCount": false
+    },
+    "runtime": {
+      "freshBrowser": 0,
+      "freshNext": 0,
+      "freshNative": 0,
+      "freshFixture": 0
+    }
+  },
+  "coverageNotes": [
+    "The first original control legitimately adds a read after manager-to-admin publication. Its current-result retention and Retry predicate remains, with the read count measured after that new arrival.",
+    "Eleven real-provider cases cover employee-only and role/both returns, late reads/decisions, Activity retirement, current decision lock/refusal/retry, first-snapshot mismatch, actual context failure/Retry, same-identity refresh, pending session, and no-employee refusal.",
+    "Historical worker156/10 and12PG/3 remain inherited, not added. Current compatible selection is168 cases excluding the11 new public cases.",
+    "Original reproduction is retained byte exact before test-fixture typing, required initialEmployee prop, button-type and formatting changes."
+  ],
+  "failedAttempts": [
+    "Unquoted PowerShell Git revision tree expression failed during metadata inspection; the normal import and branch creation completed once and were verified separately.",
+    "First root pnpm exec had no Vitest executable and ran zero tests; corrected webapp-scoped invocation reproduced3/4 pass with one product failure.",
+    "First formatter fixed formatting/imports but refused two test-only buttons missing explicit type; both corrected.",
+    "Initial bounded Doctor reported one new complexity warning; pure status extraction resolved it, followed by full unit/type/Doctor reruns."
+  ],
+  "preservation": {
+    "rootNonoverlapPathsAtMerge": 18450,
+    "exactIncomingNonoverlaps": 35,
+    "additiveMetadataResolutions": 2,
+    "unchangedParentPathsOutsideCorrection": 18484,
+    "verifiedTicketAnchors": 63,
+    "baselinePreserved": true,
+    "sourcePins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/today/page.tsx",
+        "bytes": 1756,
+        "sha256": "10c2e423e186fe559dfa3d5c4e89102b2971c2596b8a62c7c536c6acc1e2e2aa",
+        "gitBlob": "dd991656f6b419a07f6c222e58a8ada9b7c4d7ea",
+        "gitSha256": "e7e4ec138034ea51b63b7753efb36925cabbad5b25a45ee57b949b10a4c14594"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.tsx",
+        "bytes": 7720,
+        "sha256": "25125ea4a216d170248f5fc4ea307ea0dc87be0ffa95811619ca7d3b60a98ba8",
+        "gitBlob": "e1e39991956e0a2d8903454e211a5e6174eaee4f",
+        "gitSha256": "93006ee8e9c71b9addb62a705e550a51765426ea4494cae2e6ace1bf9d89e0de"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.test.tsx",
+        "bytes": 9709,
+        "sha256": "c81658c08aab305ded0724cce8c7d53ae1426e1a314235002bd1ffe5a329be96",
+        "gitBlob": "91b843b17c121e7ce2a25b4f02cb16fb9572ccca",
+        "gitSha256": "397f36c8a3d544c91dc59d70e63f015d46f0410b5c656f2987ebc9ba2f215d15"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/today/today-provider-arrival.test.tsx",
+        "bytes": 14190,
+        "sha256": "cfac0f6557eac8776f28146bac7d14cf177d1e167eb38fa70132bc376028ad0c",
+        "gitBlob": "d6ab387cb1498d75fd3b38fad8d03f073c0dd524",
+        "gitSha256": "31988f7dea4f7f5189d96dbfcba8a1818233a4ac72a6ec06653598f5da743271"
+      }
+    ],
+    "workerReportPrefix": {
+      "gitBytes": 19032,
+      "sha256": "dbfa9c717bc8698f330ffb0700a6d46d54640d662ee998b51ea26dddf3fa8555"
+    },
+    "oldProofArchives": "Preserved exactly; no prior seals rewritten.",
+    "dependencies": "Existing physical pinned dependencies used; no install/borrow/repair/copy.",
+    "authAndDomainOwners": "Unchanged by root correction."
+  },
+  "remaining": [
+    "Fresh independent correction review.",
+    "Role/provider pending/error variants beyond the bounded cases and narrowed managed relationships with partial-source failure.",
+    "Approval duplicate/settlement behavior across fresh remounts and exhaustive account/organization/Activity arrival matrices.",
+    "Current-source canonical PostgreSQL and browser/native/Next acceptance; worker evidence stays on its own source.",
+    "Full production generation, remote Tolgee/catalog/provider delivery, physical devices, true zoom and global transitions."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit 'src/app/[locale]/(app)/today' src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts src/lib/manager-daily-briefing/__tests__/logic.test.ts src/lib/navigation/route-metadata.test.ts src/components/dashboard/manager-today-widget.test.tsx 'src/app/api/approvals/inbox/[id]/approve/route.test.ts' 'src/app/api/approvals/inbox/[id]/reject/route.test.ts' src/tolgee/extracted-key-defaults.test.ts --maxWorkers=1 --reporter=json --outputFile <owned-absolute-path>/unit-final.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 14a39359b0e1418bdfbadff8d5b04954c4d9c011 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out <owned-path>/doctor-final.json",
+    "environment": "pnpm_config_verify_deps_before_run=false; Doctor REACT_DOCTOR_PARALLEL=1"
+  },
+  "cleanup": {
+    "temporaryBridge": "Removed only after exact SHA256 matched original probe",
+    "rootRuntimeServicesStarted": 0,
+    "allUnitTypeDoctorSessionsFinished": true,
+    "issuesOpen": true,
+    "noReadinessChange": true
+  }
+}

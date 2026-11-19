@@ -1,0 +1,430 @@
+{
+  "jsonCount": 38,
+  "json": [
+    "next-process-start.json",
+    "next-process-latest.json",
+    "next-process-20261116T124307987.json",
+    "next-process-20261116T124701387.json",
+    "next-stop-20261116T124234943.json",
+    "next-stop-20261116T124641534.json",
+    "next-stop-20261116T125505143.json",
+    "public-cap.json",
+    "public-actions.json",
+    "public-recovery.json",
+    "public-roles.json",
+    "public-roles-continuation.json",
+    "public-binary.json",
+    "public-binary-continuation.json",
+    "public-native-current.json",
+    "public-native-before.json",
+    "public-native-restored.json",
+    "public-native-restored-final.json",
+    "native-sessions-cleanup.json",
+    "source-start-public.json",
+    "source-end.json",
+    "initial-domain.json",
+    "final-scoped-readback.json",
+    "prepare-command.json",
+    "public-postgres-dedup.json",
+    "restore-policy.json",
+    "overlay-before.json",
+    "overlay-restored.json",
+    "cleanup.json",
+    "public-clones.json",
+    "inherited-source-checks.json",
+    "commands-and-attempts.json",
+    "cap-attempt01.json",
+    "cap-attempt02.json",
+    "cap-attempt03.json",
+    "actions-attempt01.json",
+    "verification-manifest.json",
+    "public-allowlist.json"
+  ],
+  "pngCount": 26,
+  "png": [
+    {
+      "file": "public-cap-initial-populated.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-cap-confirmation500.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-cap-capacity-released-selectedOther.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-cap-unknown-explicit-review.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-actions-frozen-two-document-review.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-actions-held-pending-locked.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-actions-transport-refused-retained.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-actions-partial-result-real-readback.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-recovery-real-read-failed.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-recovery-local-Retry-recovered.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-roles-specific-Certificate-current.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-roles-revoked-purge-refused.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 3,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-binary-explicit-unknown-actual-PNG-review.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 39,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-binary-real-purge-completed.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 33,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-current-desktop-light-16.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 34,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-current-desktop-collapsed-light-16.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 28,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-current-keyboard-focus.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 34,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-current-phone-light-16.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 16,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 987480
+    },
+    {
+      "file": "public-current-wide-dark-18.png",
+      "width": 2400,
+      "height": 1200,
+      "chunks": 40,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 8640000
+    },
+    {
+      "file": "public-current-phone-dark-18.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 16,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 987480
+    },
+    {
+      "file": "public-before-desktop-light-16.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 36,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-before-desktop-collapsed-light-16.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 30,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-before-keyboard-focus.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 35,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 4800000
+    },
+    {
+      "file": "public-before-phone-light-16.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 18,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 987480
+    },
+    {
+      "file": "public-before-wide-dark-18.png",
+      "width": 2400,
+      "height": 1200,
+      "chunks": 42,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 8640000
+    },
+    {
+      "file": "public-before-phone-dark-18.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 15,
+      "crcChecked": true,
+      "fullyInflated": true,
+      "decodedBytes": 987480
+    }
+  ],
+  "scriptCount": 29,
+  "scripts": [
+    {
+      "file": "baseline.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "prepare.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "postgres.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "seed.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "seed-attempt01.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "dev.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "common.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "common-pre-redaction.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "cap.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "cap-attempt01.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "cap-attempt02.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "cap-attempt03.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "restore-policy.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "actions.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "actions-attempt01.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "recovery.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "roles.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "roles-continuation.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "binary.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "binary-continuation.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "native.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "compare.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "overlay.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "png.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "public-clones.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "finish.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "discover.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "seal.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    },
+    {
+      "file": "verify-seal.mjs",
+      "exit": 0,
+      "execution": "syntax only; no imports or archived harness execution"
+    }
+  ],
+  "sourcePins": "Raw snapshots exactly match source-start/end and restored bytes.",
+  "noArchivedRuntimeHarnessExecuted": true
+}

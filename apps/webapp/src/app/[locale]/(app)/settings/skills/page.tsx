@@ -39,15 +39,21 @@ async function SkillsSettingsPageContent() {
 function SkillsSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex flex-1 flex-col gap-4"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.skillSettings",
 				labelDefault: "Loading skill settings",
 			}}
 		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
-			<Skeleton className="h-64 w-full" aria-hidden="true" />
+			{/* Same measure as the loaded page: heading, then the skill catalog. */}
+			<div className="page-measure space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-56" aria-hidden="true" />
+					<Skeleton className="h-5 w-full max-w-xl" aria-hidden="true" />
+				</div>
+				<Skeleton className="h-64 w-full" aria-hidden="true" />
+			</div>
 		</LoadingRegion>
 	);
 }

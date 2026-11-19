@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "react-doctor",
+    "apps/webapp",
+    "--scope",
+    "changed",
+    "--base",
+    "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+    "--verbose",
+    "--no-score",
+    "--no-parallel",
+    "--no-supply-chain",
+    "--no-telemetry",
+    "--max-duration",
+    "90",
+    "--json",
+    "--json-out",
+    "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1737-root-checks\\doctor.json"
+  ],
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "at": "2026-11-16T02:57:21.913Z",
+  "finishedAt": "2026-11-16T02:57:44.448Z",
+  "exitCode": 0,
+  "sourceHead": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx": "ee82f580d522f3c090da1d2a005a4776a6d338575a9bc09bcd6f3889e19d9ae6",
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.test.tsx": "5c7840140b30d39547860c25e78f91bf7627f6231113b742b42eff5166f6d84e",
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx": "7035a7a6c086d8b8f3a88fb2ed975ef29088efb7369a6a5a82b35cf00000599a",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx": "0874fce137d4d67a82f8cd63d4574e0af2bce37d357beaa71c404c7fd2350eba",
+    "apps/webapp/src/components/site-header.test.tsx": "481becd103cab876c9c9ee371b7bb84527a6710ea1cc4a946f4f053c61e129c6",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts": "b4cad6c3dd349e3d86c0056795a4992ab3f3d353a7a3ebb25a78ae0fe6cf23fa",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx": "e66f164beb7857c80cc56ac921519ec08df6ee99c783a20207768f2a0fed7a87"
+  }
+}

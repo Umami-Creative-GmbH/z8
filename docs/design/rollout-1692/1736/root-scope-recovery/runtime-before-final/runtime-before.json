@@ -1,0 +1,483 @@
+{
+  "phase": "before",
+  "status": "failed-run",
+  "setupComplete": true,
+  "checks": [
+    "project-reports: actual context transport failed",
+    "project-reports: exact historical consumer remains on scope loading after completed failed transport"
+  ],
+  "consumers": [
+    {
+      "name": "project-reports",
+      "path": "/en/reports/projects",
+      "heading": "Project Reports",
+      "loading": "Loading the current report scope",
+      "failure": "The current report scope could not be loaded.",
+      "status": "failed-run",
+      "setupComplete": true,
+      "requests": [
+        {
+          "method": "GET",
+          "mode": "abort",
+          "at": "2026-11-16T01:54:03.693Z"
+        },
+        {
+          "method": "GET",
+          "mode": "continue",
+          "at": "2026-11-16T01:54:06.299Z"
+        }
+      ],
+      "responses": [
+        {
+          "status": 200,
+          "method": "GET",
+          "at": "2026-11-16T01:54:07.555Z"
+        }
+      ],
+      "transportFailures": [
+        {
+          "method": "GET",
+          "error": "net::ERR_FAILED",
+          "at": "2026-11-16T01:54:03.707Z"
+        }
+      ],
+      "captures": [
+        {
+          "name": "before-project-reports-ready-desktop.png",
+          "state": "ready",
+          "sha256": "03002a47f9c324c1c80a80a56d330bfc274bd0d068422d3ec3dcbde180099699",
+          "measurement": {
+            "path": "/en/reports/projects",
+            "viewport": {
+              "width": 1600,
+              "height": 1000
+            },
+            "documentWidth": 1600,
+            "headings": [
+              {
+                "text": "Project Reports",
+                "x": 280,
+                "y": 89,
+                "width": 1296
+              }
+            ],
+            "mainText": "Toggle Sidebar\n\nProject Reports\n\n02:54\nUTC+01:00\nLoading clock status\nProject Reports\nAnalyze project hours, budget usage, and team contributions\nPeriod\nCurrent Month\nNov 1, 2026 - Nov 30, 2026\nStatus\nAll Statuses\nGenerate Report\n\nNo report generated yet\n\nSelect a period and click \"Generate Report\" to get started",
+            "rootFont": "16px",
+            "statuses": [],
+            "inlineRetries": []
+          },
+          "source": {
+            "head": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+            "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+            "expectedAfterRef": null,
+            "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+            "source": [
+              {
+                "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+                "bytesSha256": "6332458592c38661d96132b9c9b94c3df0a6926d0f16736962dd94176ce3fb8e",
+                "canonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+                "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+                "bytesSha256": "c0437a19cfde56f8047a06042cc7559d17b290b172dfd7a589a0c6e795017fb2",
+                "canonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+                "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+                "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+                "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+                "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+                "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+                "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+                "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+                "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+                "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+                "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+                "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+                "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+                "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+                "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+                "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+                "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+                "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+                "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+                "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+              }
+            ]
+          }
+        },
+        {
+          "name": "before-project-reports-ready-phone.png",
+          "state": "ready",
+          "sha256": "08af1be8344ed2434e13a2eae20642880062ad756195f4653a150e0939df0de2",
+          "measurement": {
+            "path": "/en/reports/projects",
+            "viewport": {
+              "width": 390,
+              "height": 844
+            },
+            "documentWidth": 390,
+            "headings": [
+              {
+                "text": "Project Reports",
+                "x": 16,
+                "y": 81,
+                "width": 358
+              }
+            ],
+            "mainText": "Toggle Sidebar\n\nProject Reports\n\nMore actions\nProject Reports\nAnalyze project hours, budget usage, and team contributions\nPeriod\nCurrent Month\nNov 1, 2026 - Nov 30, 2026\nStatus\nAll Statuses\nGenerate Report\n\nNo report generated yet\n\nSelect a period and click \"Generate Report\" to get started",
+            "rootFont": "16px",
+            "statuses": [],
+            "inlineRetries": []
+          },
+          "source": {
+            "head": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+            "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+            "expectedAfterRef": null,
+            "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+            "source": [
+              {
+                "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+                "bytesSha256": "6332458592c38661d96132b9c9b94c3df0a6926d0f16736962dd94176ce3fb8e",
+                "canonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+                "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+                "bytesSha256": "c0437a19cfde56f8047a06042cc7559d17b290b172dfd7a589a0c6e795017fb2",
+                "canonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+                "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+                "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+                "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+                "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+                "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+                "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+                "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+                "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+                "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+                "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+                "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+                "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+                "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+                "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+                "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+                "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+                "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+                "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+                "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+              }
+            ]
+          }
+        },
+        {
+          "name": "before-project-reports-scope-stuck-desktop.png",
+          "state": "scope-stuck",
+          "sha256": "700537afc2d5ef5f5e33170a7d5cbc78a53eb6edc3c6fe814f4ec181e1946722",
+          "measurement": {
+            "path": "/en/reports/projects",
+            "viewport": {
+              "width": 1600,
+              "height": 1000
+            },
+            "documentWidth": 1600,
+            "headings": [
+              {
+                "text": "Project Reports",
+                "x": 280,
+                "y": 89,
+                "width": 1296
+              }
+            ],
+            "mainText": "Toggle Sidebar\n\nProject Reports\n\n02:54\nUTC+01:00\nClock In\nToggle theme\nProject Reports\nAnalyze project hours, budget usage, and team contributions\n\nLoading the current report scope…",
+            "rootFont": "16px",
+            "statuses": [
+              "Loading the current report scope…"
+            ],
+            "inlineRetries": []
+          },
+          "source": {
+            "head": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+            "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+            "expectedAfterRef": null,
+            "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+            "source": [
+              {
+                "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+                "bytesSha256": "6332458592c38661d96132b9c9b94c3df0a6926d0f16736962dd94176ce3fb8e",
+                "canonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+                "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+                "bytesSha256": "c0437a19cfde56f8047a06042cc7559d17b290b172dfd7a589a0c6e795017fb2",
+                "canonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+                "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+                "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+                "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+                "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+                "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+                "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+                "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+                "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+                "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+                "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+                "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+                "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+                "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+                "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+                "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+                "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+                "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+                "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+                "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+              }
+            ]
+          }
+        },
+        {
+          "name": "before-project-reports-scope-stuck-phone.png",
+          "state": "scope-stuck",
+          "sha256": "e0700c3f3a9cbe8f0854a5dc7f6874e5cb91cd7526cc15502e4ee1b9e15a896e",
+          "measurement": {
+            "path": "/en/reports/projects",
+            "viewport": {
+              "width": 390,
+              "height": 844
+            },
+            "documentWidth": 390,
+            "headings": [
+              {
+                "text": "Project Reports",
+                "x": 16,
+                "y": 81,
+                "width": 358
+              }
+            ],
+            "mainText": "Toggle Sidebar\n\nProject Reports\n\nMore actions\nProject Reports\nAnalyze project hours, budget usage, and team contributions\n\nLoading the current report scope…",
+            "rootFont": "16px",
+            "statuses": [
+              "Loading the current report scope…"
+            ],
+            "inlineRetries": []
+          },
+          "source": {
+            "head": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+            "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+            "expectedAfterRef": null,
+            "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+            "source": [
+              {
+                "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+                "bytesSha256": "6332458592c38661d96132b9c9b94c3df0a6926d0f16736962dd94176ce3fb8e",
+                "canonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+                "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+                "bytesSha256": "c0437a19cfde56f8047a06042cc7559d17b290b172dfd7a589a0c6e795017fb2",
+                "canonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+                "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75",
+                "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+                "expectedCanonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1"
+              },
+              {
+                "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+                "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+                "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+                "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+                "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+                "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+                "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+              },
+              {
+                "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+                "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+                "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+                "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+                "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+                "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+                "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+                "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+                "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+                "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+              },
+              {
+                "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+                "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+                "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+                "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [],
+      "auth": {
+        "signIn": 200,
+        "active": 200
+      },
+      "refreshActivations": [
+        {
+          "focused": true,
+          "label": "Refresh data",
+          "disabled": false,
+          "busy": "false"
+        },
+        {
+          "focused": true,
+          "label": "Refresh data",
+          "disabled": false,
+          "busy": "false"
+        }
+      ]
+    }
+  ],
+  "browserErrors": [],
+  "interceptionErrors": [],
+  "cleanup": {
+    "browser": "Own launched Chromium closed"
+  },
+  "qualification": "Public header Refresh aborts only the actual GET /api/auth/context transport. No response body, query state, session or authority is invented. Corrected acceptance requires the local inline Retry to reissue the original GET, receive completed HTTP200 and recover its consumer. Historical phase reproduces settled scope-loading without Retry, then uses the public header Refresh to recover. Own ephemeral Chromium contexts use normal sign-in, with no cookie/state save, restore or transfer.",
+  "source": {
+    "head": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+    "beforeRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+    "expectedAfterRef": null,
+    "historicalQualification": "Before changes only the two report consumers to exact fe499a bytes. Current provider, shell, pages and canonical share transports remain recorded independently.",
+    "source": [
+      {
+        "path": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+        "bytesSha256": "6332458592c38661d96132b9c9b94c3df0a6926d0f16736962dd94176ce3fb8e",
+        "canonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+        "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8",
+        "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+        "expectedCanonicalSha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+        "bytesSha256": "c0437a19cfde56f8047a06042cc7559d17b290b172dfd7a589a0c6e795017fb2",
+        "canonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+        "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75",
+        "expectedRef": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+        "expectedCanonicalSha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/projects/report-scope-failure.tsx",
+        "bytesSha256": "b4201591e18b4adb61ec3cf3de56e4de43751289e91c43e0dfc9f7d59c562deb",
+        "canonicalSha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+        "gitBlob": "3750ae35af5151aa6ce26b4c3cda22ec5a73a426"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "bytesSha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+        "gitBlob": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "bytesSha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+        "gitBlob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx",
+        "bytesSha256": "19f68371d4a5806aaac343b1b4064477aceea9769c3e5387e6ddbc5de73657f9",
+        "canonicalSha256": "79f24e405f193291ccee08005da18ead0ea84abb3736c0d101bd58edbcccee6b",
+        "gitBlob": "fc2fb217e1e1805f69f84c828a0787da37d0f8ad"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/reports/projects/share-actions.ts",
+        "bytesSha256": "c2d81322a3eef0bbaaadef8a65b72b15aeadd68e014a5006fbc1370c1e7a551d",
+        "canonicalSha256": "c52f7daec0d87402f5b2019341ea3d51a440f30a92ecb553285867aa8e1f654e",
+        "gitBlob": "b55069ddbd45d6f03672817528e8add525ae6417"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx",
+        "bytesSha256": "aee198ad65775fded7893e684163033065606b63d0ff68a8da2ae4b84f9cf63f",
+        "canonicalSha256": "9087b0dcd7178994c71bd8d5cff462513b4fe937acebfaca27629dd8b9ca7645",
+        "gitBlob": "d3c2b374458c8d96d44ce75fa102068bdd953fcb"
+      }
+    ]
+  },
+  "actor": "small-admin",
+  "failure": {
+    "name": "TypeError",
+    "message": "response.finished is not a function",
+    "stack": "TypeError: response.finished is not a function\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-root-checks/drivers/recovery.mjs:112:92"
+  }
+}

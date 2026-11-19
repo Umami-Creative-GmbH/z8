@@ -1,0 +1,201 @@
+{
+  "sourceOnly": true,
+  "generatedInputsExcluded": true,
+  "pins": [
+    {
+      "path": "admin-read-01.mjs",
+      "bytes": 4460,
+      "sha256": "d61e53bb7b921f5b69959d132f9f90fd29c449434b0139738885a11fa63c1283"
+    },
+    {
+      "path": "admin-read-02.mjs",
+      "bytes": 4580,
+      "sha256": "1ef122031fd046c1ae34edc0372cf6da5465dd25bff5c6f1626a42609ef00281"
+    },
+    {
+      "path": "bootstrap-status-01.mjs",
+      "bytes": 350,
+      "sha256": "5c36934e4c4d264e4f995a67447cf43ad98173a886a042108f81818fa6fb9491"
+    },
+    {
+      "path": "browser-controller-01.private.mjs",
+      "bytes": 9104,
+      "sha256": "1f0cefd27547064cb7081dddc960e51e062f310d8a9b8b687ac7cde8e7f6a18c"
+    },
+    {
+      "path": "capture-series-01.mjs",
+      "bytes": 3012,
+      "sha256": "ca2876d7b9fab24b86a40ee672b01b8d52622f376a5e215266f75d5e8bebd63c"
+    },
+    {
+      "path": "cleanup-processes-01.ps1",
+      "bytes": 4479,
+      "sha256": "3f92cdd25e17cb07ec6e5585c12023cc705b688dea827c8c23949b321a45247e"
+    },
+    {
+      "path": "dev-01-private.mjs",
+      "bytes": 3704,
+      "sha256": "62586d1630fd7b58db93bc55b59ff5c99cff79468214ac1a6d74f26dbb58ecf2"
+    },
+    {
+      "path": "final-runtime-01.mjs",
+      "bytes": 3243,
+      "sha256": "8bf32ad5565f6c9824288f16c42873c1bdd5a2b7e62794606631762e4721a321"
+    },
+    {
+      "path": "finalize-safe-01.mjs",
+      "bytes": 17852,
+      "sha256": "443db5f647c2747c5fdf62749c6abe252138acba8f10bfa8b08fd3017e32deab"
+    },
+    {
+      "path": "fixture-helper-01.mjs",
+      "bytes": 28307,
+      "sha256": "e639e96bec4340b678a67afecc275963a8ff30cbb5402149a4f0e5a8e8b93330"
+    },
+    {
+      "path": "manager-create-01.mjs",
+      "bytes": 2305,
+      "sha256": "91daa536927c753655923fb3ec99a1381fc9394059aa762a5950c7b3ff4252b7"
+    },
+    {
+      "path": "manager-create-readback-01.mjs",
+      "bytes": 1112,
+      "sha256": "b3e4a8f0365d82af172737dcbcd09b362064afc0538120cbc1f34972075099c5"
+    },
+    {
+      "path": "manager-edit-01.mjs",
+      "bytes": 3002,
+      "sha256": "adeb086f48b98928714cfebfa25420eb44bbc8a70dd04e2597ccbbb34d4e97dc"
+    },
+    {
+      "path": "manager-edit-02.mjs",
+      "bytes": 1985,
+      "sha256": "8534271e89ea9e8a484a51a9beb2acf7f154e6c8e3739a3c00a219a243c87e89"
+    },
+    {
+      "path": "manager-finish-01.mjs",
+      "bytes": 3682,
+      "sha256": "e9750fad9c4f6e75d46c576ed0b3d62139399434fd0f7793c127507884307248"
+    },
+    {
+      "path": "manager-flow-01.mjs",
+      "bytes": 3903,
+      "sha256": "20f1a2b8fee586eac1b19ce38e1c651e5487a747050d5c2e9ebb3f54872cdff0"
+    },
+    {
+      "path": "manager-flow-02.mjs",
+      "bytes": 4278,
+      "sha256": "0a26099128052976f99c2f52c5fed589dfd96a700e7e3e37eb0983eba7611786"
+    },
+    {
+      "path": "manager-priority-01.mjs",
+      "bytes": 3170,
+      "sha256": "d91902d35cd510d7d16076ccd0fb19e99a4631b5424ed7c27e24351eb754450a"
+    },
+    {
+      "path": "manager-shell-01.mjs",
+      "bytes": 1279,
+      "sha256": "c3a0fd0902c16d6357e393d626eef98d744d068d96325254596027f052871d7b"
+    },
+    {
+      "path": "manager-shell-02.mjs",
+      "bytes": 3454,
+      "sha256": "bdb6ecdbcad13c3829e7e5638174526373960cb981cfa24965f4b1209ec0a53c"
+    },
+    {
+      "path": "native-next-01.mjs",
+      "bytes": 5734,
+      "sha256": "0d5552f872b7c09397a1a9425fd8d5cc17a052af8bf9b86c7529682d56fbbd0b"
+    },
+    {
+      "path": "native-target-02.mjs",
+      "bytes": 1744,
+      "sha256": "dd2c8eb56593e5a9cab57b5fa11e879dd3d43dbf5ec0618fcb28d53d9c205c6d"
+    },
+    {
+      "path": "native-target-03.mjs",
+      "bytes": 3008,
+      "sha256": "124ee878d9afafa7b839f9f005a7234e312638e57b1db46191f792a2ebbdd378"
+    },
+    {
+      "path": "native-target-04.mjs",
+      "bytes": 3008,
+      "sha256": "e03d099ba7926e129094cfa03eac5c0b0b9c21de4c4c24c6ced8905b203fae2b"
+    },
+    {
+      "path": "overlay-01.mjs",
+      "bytes": 2764,
+      "sha256": "ec8ebba77329e4846d9b796b4c68304cb8b39c8b38544df22bb939546714945f"
+    },
+    {
+      "path": "prepare-01.mjs",
+      "bytes": 5361,
+      "sha256": "fe35b505c6b4f1c34b25b88a5537752ffe15e6a89f80164f1a3989b4fe993ff3"
+    },
+    {
+      "path": "preservation-final-01.mjs",
+      "bytes": 2940,
+      "sha256": "0505b2ae27d77e7ce8c4fe4e8ab31cc254a389a23d99396e7442d22530730b96"
+    },
+    {
+      "path": "roles-01.mjs",
+      "bytes": 2735,
+      "sha256": "1da5dee013ad4c9302e0017ac143d502382b191b6b42c3ce64d3b4c0843436bd"
+    },
+    {
+      "path": "roles-02.mjs",
+      "bytes": 2776,
+      "sha256": "675c87e1868a2842daefcdc7754abff495a95fc5a671ecbaa680d42b2a72313d"
+    },
+    {
+      "path": "roles-03.mjs",
+      "bytes": 2345,
+      "sha256": "3829ca98101898b5a7089f0b4553fd759e97cd663aad957017dc159154bcf78e"
+    },
+    {
+      "path": "roles-04.mjs",
+      "bytes": 2349,
+      "sha256": "2953ffe65d28d67e12f2b2941e1e70e7d2f40ca076bd071c0311ed64de3d5c3f"
+    },
+    {
+      "path": "rpc-03.mjs",
+      "bytes": 1050,
+      "sha256": "6bde9680c7d5479b6822e60822c01f1b792830b8de0b636d403b16f040142ad1"
+    },
+    {
+      "path": "run-fixture-tool-03.mjs",
+      "bytes": 2259,
+      "sha256": "f94dfd5c35f0bce2c587192e09632cbd0176c24063e54e7cd692b417621a3e2d"
+    },
+    {
+      "path": "runtime-tools-01.mjs",
+      "bytes": 829,
+      "sha256": "0a5cf531186ae20cf22f579cbfadadb103df4a1cb12ea1045c246f15bbfd2abf"
+    },
+    {
+      "path": "scheduling-fixture-bridge-03.ts",
+      "bytes": 4567,
+      "sha256": "b21c282fc529094cdc7c69f86186bbf2cdb59e1cca0ee2ca6ed97e7d24f1d7d0"
+    },
+    {
+      "path": "start-browser-01.mjs",
+      "bytes": 837,
+      "sha256": "f44ba40843e72091ea5160a7a28f2eb14b486ff1952b9c404429339d7af0f8b0"
+    },
+    {
+      "path": "stop-next-only-01.ps1",
+      "bytes": 2812,
+      "sha256": "579db900d6d0ac0332319dc2665e2abe66367a5fb5912e0f9bfb671fc408b304"
+    },
+    {
+      "path": "summarize-01.mjs",
+      "bytes": 6624,
+      "sha256": "35b9f65ae02f684ad6895722da8f8d44db7015eeea24a0011418be5281216cf3"
+    },
+    {
+      "path": "verify-cleanup-01.ps1",
+      "bytes": 2456,
+      "sha256": "f608656aed34f7e96c36d6982bbeb7f4ebf867bbce2ce2fdd23895ff16557b2d"
+    }
+  ]
+}

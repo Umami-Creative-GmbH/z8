@@ -1,0 +1,641 @@
+{
+  "fresh": {
+    "instances": 62,
+    "physicalFiles": 6,
+    "allPassed": true,
+    "multiset": [
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "keeps an admitted matching session usable while its session refresh is pending",
+        "title": "keeps an admitted matching session usable while its session refresh is pending",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "recovers the batch through local organization Retry after the real provider read fails",
+        "title": "recovers the batch through local organization Retry after the real provider read fails",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "preserves the start-page control through the same provider failure and Retry",
+        "title": "preserves the start-page control through the same provider failure and Retry",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm / success / settle-hidden guards requests until current readback",
+        "title": "independent confirm / success / settle-hidden guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm / success / settle-resumed guards requests until current readback",
+        "title": "independent confirm / success / settle-resumed guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm / refusal / settle-hidden guards requests until current readback",
+        "title": "independent confirm / refusal / settle-hidden guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm / refusal / settle-resumed guards requests until current readback",
+        "title": "independent confirm / refusal / settle-resumed guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm / rejection / settle-hidden guards requests until current readback",
+        "title": "independent confirm / rejection / settle-hidden guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm / rejection / settle-resumed guards requests until current readback",
+        "title": "independent confirm / rejection / settle-resumed guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit / success / settle-hidden guards requests until current readback",
+        "title": "independent edit / success / settle-hidden guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit / success / settle-resumed guards requests until current readback",
+        "title": "independent edit / success / settle-resumed guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit / refusal / settle-hidden guards requests until current readback",
+        "title": "independent edit / refusal / settle-hidden guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit / refusal / settle-resumed guards requests until current readback",
+        "title": "independent edit / refusal / settle-resumed guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit / rejection / settle-hidden guards requests until current readback",
+        "title": "independent edit / rejection / settle-hidden guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit / rejection / settle-resumed guards requests until current readback",
+        "title": "independent edit / rejection / settle-resumed guards requests until current readback",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent confirm failed retired readback gates stale preview and uses local Retry",
+        "title": "independent confirm failed retired readback gates stale preview and uses local Retry",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+        "fullName": "independent edit failed retired readback gates stale preview and uses local Retry",
+        "title": "independent edit failed retired readback gates stale preview and uses local Retry",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/independent1733final-heading-probe.test.tsx",
+        "fullName": "renders one safe h1 from the actual detail Page fallback alongside SiteHeader",
+        "title": "renders one safe h1 from the actual detail Page fallback alongside SiteHeader",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps one start pending through Activity until its result settles",
+        "title": "keeps one start pending through Activity until its result settles",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "drops validation-queued work across an account switch and return",
+        "title": "drops validation-queued work across an account switch and return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "drops validation-queued work across an organization switch and return",
+        "title": "drops validation-queued work across an organization switch and return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+        "title": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across account scope changes and return",
+        "title": "hides stale arrivals and ignores a pending result across account scope changes and return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+        "title": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across error scope changes and return",
+        "title": "hides stale arrivals and ignores a pending result across error scope changes and return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps invalid input, focuses its error, and never submits it",
+        "title": "keeps invalid input, focuses its error, and never submits it",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps the draft through a same-scope refresh of calendar defaults",
+        "title": "keeps the draft through a same-scope refresh of calendar defaults",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "does not start a queued submission after Activity hides it during validation",
+        "title": "does not start a queued submission after Activity hides it during validation",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "ignores late success effects after an Activity hide/show lifetime",
+        "title": "ignores late success effects after an Activity hide/show lifetime",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "ignores late failure effects after an Activity hide/show lifetime",
+        "title": "ignores late failure effects after an Activity hide/show lifetime",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "retains the pay period after a transport failure and allows an explicit retry",
+        "title": "retains the pay period after a transport failure and allows an explicit retry",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "retries the authorized preview after a read failure",
+        "title": "retries the authorized preview after a read failure",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not issue a preview command for an abandoned organization arrival",
+        "title": "does not issue a preview command for an abandoned organization arrival",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "freezes file edits until the confirmed command and readback settle",
+        "title": "freezes file edits until the confirmed command and readback settle",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "requires resolving included unmatched files and preserves manual drop commands",
+        "title": "requires resolving included unmatched files and preserves manual drop commands",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not publish an old preview after organization ABA",
+        "title": "does not publish an old preview after organization ABA",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+        "title": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not submit a queued match edit into a new Activity lifetime",
+        "title": "does not submit a queued match edit into a new Activity lifetime",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "public39",
+        "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "offers retry only for included failed files in a confirmed batch",
+        "title": "offers retry only for included failed files in a confirmed batch",
+        "ancestorTitles": [],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses displayed scope drift even when the actor administers both organizations",
+        "title": "refuses displayed scope drift even when the actor administers both organizations",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "starting a batch"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses an officer whose grant does not include payslips",
+        "title": "refuses an officer whose grant does not include payslips",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "starting a batch"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch shows a batch only to whoever started it",
+        "title": "shows a batch only to whoever started it",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "starting a batch"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch holds at most 500 files, counting staged files whose objects expired",
+        "title": "holds at most 500 files, counting staged files whose objects expired",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "starting a batch"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch takes PDF files only",
+        "title": "takes PDF files only",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "starting a batch"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching matches the whole personnel number token, never part of a longer number",
+        "title": "matches the whole personnel number token, never part of a longer number",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "matching"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching makes a number two employees share ambiguous, to be assigned by hand",
+        "title": "makes a number two employees share ambiguous, to be assigned by hand",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "matching"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching leaves a file of an out-of-scope employee unmatched for the officer",
+        "title": "leaves a file of an out-of-scope employee unmatched for the officer",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "matching"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching never matches or assigns the officer's own payslip, even with their team in scope",
+        "title": "never matches or assigns the officer's own payslip, even with their team in scope",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "matching"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching lets the officer assign a file of an employee without a personnel number, or drop it",
+        "title": "lets the officer assign a file of an employee without a personnel number, or drop it",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "matching"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation stores nothing as an employee document before confirmation",
+        "title": "stores nothing as an employee document before confirmation",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation creates a payslip per included file with the batch's pay period and visibility",
+        "title": "creates a payslip per included file with the batch's pay period and visibility",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation stores a confirmed payslip under the employee's key and cleans up the staged object",
+        "title": "stores a confirmed payslip under the employee's key and cleans up the staged object",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation keeps the staged file when storing the payslip fails, and confirms it on retry",
+        "title": "keeps the staged file when storing the payslip fails, and confirms it on retry",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation flags an employee who already has a payslip for the pay period and keeps both",
+        "title": "flags an employee who already has a payslip for the pay period and keeps both",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation creates no duplicates when a confirmation is retried after a partial failure",
+        "title": "creates no duplicates when a confirmation is retried after a partial failure",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation notifies each employee once per shared batch, however many files are theirs",
+        "title": "notifies each employee once per shared batch, however many files are theirs",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation audits every created document and one batch summary per confirmation",
+        "title": "audits every created document and one batch summary per confirmation",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "confirmation"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) cleanup cleans up staged files that are never confirmed, after a day",
+        "title": "cleans up staged files that are never confirmed, after a day",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "cleanup"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "postgres20",
+        "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) cleanup releases dropped files once every included file is a document",
+        "title": "releases dropped files once every included file is a document",
+        "ancestorTitles": [
+          "payslip batches matched by personnel number (#868)",
+          "cleanup"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "browser3",
+        "file": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "fullName": "payslip upload transport uploads the same PDF again after an earlier batch consumed its temporary bytes",
+        "title": "uploads the same PDF again after an earlier batch consumed its temporary bytes",
+        "ancestorTitles": [
+          "payslip upload transport"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "browser3",
+        "file": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "fullName": "payslip upload transport still resumes unfinished bytes after a browser reload",
+        "title": "still resumes unfinished bytes after a browser reload",
+        "ancestorTitles": [
+          "payslip upload transport"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "run": "browser3",
+        "file": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+        "fullName": "payslip upload transport ignores a consumed completed URL retained by the previous client",
+        "title": "ignores a consumed completed URL retained by the previous client",
+        "ancestorTitles": [
+          "payslip upload transport"
+        ],
+        "occurrence": 1,
+        "status": "passed"
+      }
+    ]
+  },
+  "inherited": {
+    "rootCases": 460,
+    "rootPhysicalFiles": 65,
+    "file": "root unit-final.json at fixed candidate",
+    "notRerunHere": true,
+    "additive": false
+  },
+  "qualification": "Fresh39/4 public assembled probes,20/1 canonicalPG,3/1 real transport browser cases. Browser modeled transport is not canonical storage proof; separate real application journey supplies that. Repeated manual checks, assertions, captures and native runs are not counted as cases. Full names plus per-file occurrence preserve parameter repetitions."
+}

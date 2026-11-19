@@ -1,0 +1,12 @@
+{
+  "canonicalContextReads": 2,
+  "rscRefreshes": 1,
+  "historyReads": 1,
+  "staleReasonVisible": true,
+  "hasHistoryRefusal": false,
+  "forcedRereadControl": {
+    "historyReads": 2,
+    "refusalVisible": true,
+    "staleReasonVisible": false
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "issue": 1747,
+  "verifiedCommit": null,
+  "scope": "Bounded dependency handoff evidence only. Root Git-blob audit, proof commit and readiness decision are separate.",
+  "source": {
+    "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "implementation": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
+    "provisionalMerge": "c70858bfe507eb99f844a455230e312cc8247b61",
+    "correction": "20a7481f08b6156e912442492f8181ffe2650134",
+    "correctionMerge": "0a1048d64ae2a54292b454d757b4a1de306360c9"
+  },
+  "finding": {
+    "classification": "One inherited presentation gap, not a demonstrated live authorization bypass.",
+    "sequence": "Personal history success -> canonical Unauthorized -> transient failure retained old links in both incoming and pinned premerge consumers.",
+    "fix": "Explicit withdrawn query outcome replaces available rows; transient failures retain that withdrawal until fresh successful rows or empty result.",
+    "originalPublicCases": {
+      "distinct": 8,
+      "passed": 5,
+      "failed": 3,
+      "findings": 1
+    },
+    "rootExactAfterFix": {
+      "currentPassed": 7,
+      "unchangedBaselineFailed": 1,
+      "overallGreen": false,
+      "qualification": "Requested name filter did not exclude the premerge control; historical green-exact filename is not a passing overall result."
+    }
+  },
+  "testAccounting": {
+    "finalIndependent": {
+      "distinct": 253,
+      "unit": 203,
+      "unitFiles": 14,
+      "postgres": 50,
+      "postgresFiles": 6,
+      "totalFiles": 20,
+      "unitComposition": "183 committed root cases plus20 independent public probes",
+      "overlapFrozen1748": 172,
+      "rerunsNonadditive": true
+    },
+    "root": {
+      "selectedUnit": 183,
+      "files": 13,
+      "permanentWithdrawal": 9,
+      "allThreeTypes": "pass with existing genuine125-entry license"
+    },
+    "isolated": {
+      "mainTypes": "missing ignored licenses.json only; not copied/generated",
+      "workflowTypes": "pass",
+      "smokeTypes": "pass",
+      "typegen": "pass",
+      "lint4": "pass",
+      "explicit100CrLf4": "pass",
+      "ordinaryFormatting4": "failed, four findings",
+      "doctor": "0.9.22, four files,0 errors/0 warnings, score disabled"
+    },
+    "fixtures": {
+      "originalAssertionsRetained": 72,
+      "removed": 0,
+      "addedPublicEnabledButtonExpectation": 1,
+      "testNamesUnchanged": true,
+      "initialRoot183Result": "178 pass/5 fixture failures before actor/provider/session-store reconciliation; same final selection183/183."
+    }
+  },
+  "runtimeAccounting": {
+    "authStop": {
+      "producerProductTotal": 22,
+      "pass": 0,
+      "fail": 0,
+      "unpassed": 22,
+      "qualification": "Two correct public-form submissions failed verification; no product checks passed. Sealed cause-unproved evidence remains unchanged."
+    },
+    "transportDiagnosis": {
+      "normalSandbox": "Token-free HEAD failed EACCES",
+      "approvedNetwork": "Same token-free endpoint HEAD reached HTTP405",
+      "qualification": "Transport reachability only; no token/credential sent, auth validation unchanged. Subsequent normal real-widget sign-ins succeeded."
+    },
+    "current": {
+      "namedTotal": 22,
+      "declaredPass": 15,
+      "fail": 0,
+      "unpassed": 7,
+      "notAddedToFocused": true,
+      "qualifications": [
+        "R10 observed busy/disabled, one POST and one graph; no separately indexed second trusted pointer in this generation. FocusedF7 supplies it.",
+        "Editor/list headings include cached DOM; visible heading claims use current geometry/final visible receipts.",
+        "Four accepted current main-region images and sidebar geometry are not a matched historical whole-window comparison."
+      ]
+    },
+    "focused": {
+      "namedF1toF7Pass": 7,
+      "fail": 0,
+      "optionalF8Unpassed": 1,
+      "broaderToolingPixelUnpassed": 6,
+      "notAddedToCurrent": true,
+      "qualifications": [
+        "F1 is route-committed client history loading, not the earliest shared-shell fallback.",
+        "F2 scopes current-route non-auth POST failures and may overlap other reads, not exactly one identified reader.",
+        "F3 read-only grant flags and finance-only destination/click are proved; lack of settlement controls overlaps own-expense exclusion. No separate other-person API settlement admission proof.",
+        "F4 public revoke makes is_active false and direct fresh reload renders not-found denial with HTTP200 stream. Raw pass:false for expectedHTTP404 remains a harness predicate failure, not product failure.",
+        "F4 arrival destinations=[] is sampled while pathname already finance; no separately timestamped personal-listing-path receipt proves banner disappearance. Direct rendered denial remains supported.",
+        "F5 fresh foreign and peer arrivals show own populated rows and exclude creator drafts, not exhaustive direct-object matrices.",
+        "F6 is a synthetic pre-dispatch transport failure with actual Retry/one graph, not natural domain rejection.",
+        "F7 separate trusted pointer while busy plus one request/graph before unmodified completion closes the second-pointer observation.",
+        "Focused PNG is clipped; its raw settled-capture description is superseded by visual pixel-UNPASSED review."
+      ]
+    },
+    "noCombinedRuntimePassTotal": true,
+    "noNewUnitPgOrBuildCasesFromRuntime": true
+  },
+  "persistence": {
+    "current": "Five UI creates and one own-draft deletion leave exactly+4 reports/+2items; original5sets and6 populated timekeeping digests unchanged.",
+    "focused": "Seed creates3small-org and1foreign-org legacy claims/attachments plus1small decision log (four original alias groups). PostseedUI exactly+2reports/+2receiptitems and one normal-UI grant nowinactive; allfouroriginalgroups/fullforeignpostseednamespace/6populatedtimekeepingdigestsunchanged.",
+    "businessSeeds": "Explicitly seeded synthetic legacy claims/receipt objects, not UI-created claims.",
+    "noExternalMoney": true
+  },
+  "preservation": {
+    "verifiedAnchorOccurrences": 65,
+    "missingAnchors": 0,
+    "rootSourceAndIndexUnchangedAcrossRuntime": true,
+    "prior1748ArchiveFiles": 202,
+    "prior1748DefaultVerifier": "pass; immutable bytes unchanged",
+    "prior1748CurrentSource": "12/14 match; exact listing metadata and legitimate consumer-test reconciliation are expected source evolution, not resealed."
+  },
+  "traceability": [
+    "OriginalSTOP failed prepare-attempt3.py syntax preserved; final script parses. COMMANDS.md copying attribution differs from actual commit script but independently predicted trees match.",
+    "Independent commands-extra.json references unindexed docker-release.log; sealed pg6.log proves removal, later absence is a summary receipt.",
+    "RuntimeSTOP exact OS/fullpreservation and C20 transcript-only commands remain producer receipts; native intake freshly checks Git/pins/lease, not prior OS state.",
+    "Current and focused OS cleanup/full inventory remain producer receipts with fresh source/index/lease intakes."
+  ],
+  "remaining": [
+    "Optional exported/payroll-included-unpaid live scenario and broader accounting matrix. Current public component/model/canonical PG tests cover distinctions without promoting live acceptance.",
+    "Natural domain-refusal creation recovery; synthetic transport recovery is proved separately.",
+    "Earliest shared-shell/route-fallback and exhaustive live authority/Activity/account/organization/direct-object races.",
+    "Native React extension/agent-browser and axe remain unavailable; CDP names-only method accurately stated.",
+    "Full production generation, Tolgee/catalogs, external providers, physical devices, true zoom, global157-node/final user review."
+  ],
+  "resources": "All three fresh runtime generations have released leases ownershipfalse/resources0; root does not infer a new OS inventory from archived cleanup receipts.",
+  "readiness": "No issue closure,dev merge,deploy or future integration SHA. Root alone may record a bounded verified dependency commit after publication/index/blob audit."
+}

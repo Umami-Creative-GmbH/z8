@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { MyDataPanel } from "@/components/settings/my-data/my-data-panel";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -8,21 +10,31 @@ import { getMyDataOverview } from "./actions";
 async function MyDataPageContent() {
 	await requireUser();
 	const [t, overview] = await Promise.all([getTranslate(), getMyDataOverview()]);
+	// A refused access means My data is not available here; any other failure is a load error to retry.
+	const loadFailed =
+		!overview.success &&
+		overview.code !== "AuthorizationError" &&
+		overview.code !== "AuthenticationError";
 	const state = overview.success ? overview.data : { status: "unavailable" as const };
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">{t("settings.myData.title", "My data")}</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.myData.description",
-							"Download a copy of the personal data this organization keeps about you",
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
+				<PageHeader
+					title={t("settings.myData.title", "My data")}
+					description={t(
+						"settings.myData.description",
+						"Download a copy of the personal data this organization keeps about you",
+					)}
+				/>
+				{loadFailed ? (
+					<SettingsLoadError
+						message={t(
+							"settings.myData.loadFailed",
+							"Your data exports could not be loaded. Try again.",
 						)}
-					</p>
-				</div>
-				{state.status === "available" ? (
+					/>
+				) : state.status === "available" ? (
 					<MyDataPanel exports={state.exports} />
 				) : state.status === "no_employee_record" ? (
 					<p className="text-sm text-muted-foreground">
@@ -46,10 +58,10 @@ async function MyDataPageContent() {
 
 function MyDataPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
-					<Skeleton className="h-8 w-40" />
+					<Skeleton className="h-8 w-40 sm:h-9" />
 					<Skeleton className="h-5 w-full max-w-xl" />
 				</div>
 				<Skeleton className="h-56 w-full" />

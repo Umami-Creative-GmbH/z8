@@ -1,0 +1,53 @@
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9e91ce57-fc9997590e8a7cdb/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/r165-review-priority.test.tsx (5 tests | 1 failed) 395ms
+   ✓ healthy actual-provider personal history and distinct New receipt creation 121ms
+   ✓ healthy actual-provider personal history and distinct New mileage creation 78ms
+   ✓ healthy actual-provider personal history and distinct New trip creation 78ms
+   ✓ header refresh and local Retry reach the actual failed history owner; transport outage retains authorized rows 93ms
+   × canonical personal-history refusal withdraws formerly authorized rows 25ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  02:29:33
+   Duration  1.46s (tests 32%, environment 28%, import 24%, transform 14%, setup 2%)
+
+JSON report written to C:/Users/KAIHEN~1/AppData/Local/Temp/z8-r165-review-bceb0ee-SAFE/priority-vitest.json
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+stderr | src/components/travel-expenses/r165-review-priority.test.tsx > header refresh and local Retry reach the actual failed history owner; transport outage retains authorized rows
+An update to ExpenseHistory inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/r165-review-priority.test.tsx > canonical personal-history refusal withdraws formerly authorized rows
+AssertionError: expected <a …(2)></a> to be null
+
+- Expected:
+null
+
++ Received:
+<a
+  class="break-words font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
+  href="/travel-expenses/reports/fixture-report"
+>
+  Public fixture receipt
+</a>
+
+ ❯ src/components/travel-expenses/r165-review-priority.test.tsx:31:438
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

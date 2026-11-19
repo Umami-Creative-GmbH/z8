@@ -54,6 +54,12 @@ describe("OrganizationPeriodSubmissionsCard", () => {
 	});
 	afterEach(cleanup);
 
+	it("keeps the panel heading for assistive tech without repeating the tab name on screen", () => {
+		show();
+		const heading = screen.getByRole("heading", { level: 2, name: "Period submissions" });
+		expect(heading.className).toContain("sr-only");
+	});
+
 	it("shows period submissions off with the default reminder delay", () => {
 		show();
 		expect(screen.getByRole("radio", { name: "Off" }).getAttribute("aria-checked")).toBe("true");

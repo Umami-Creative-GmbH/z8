@@ -1,0 +1,103 @@
+[
+  {
+    "name": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "path": "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054",
+    "headings": [
+      "Travel expense claim",
+      "Receipt · Awaiting review",
+      "Receipts",
+      "Decision history"
+    ],
+    "horizontalOverflow": false,
+    "notification": "denied",
+    "dialogs": 0,
+    "rootFont": "16px"
+  },
+  {
+    "name": "phone",
+    "width": 390,
+    "height": 844,
+    "path": "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054",
+    "headings": [
+      "Travel expense claim",
+      "Receipt · Awaiting review",
+      "Receipts",
+      "Decision history"
+    ],
+    "horizontalOverflow": false,
+    "notification": "denied",
+    "dialogs": 0,
+    "rootFont": "16px"
+  },
+  {
+    "name": "wide-dark",
+    "width": 1920,
+    "height": 1080,
+    "path": "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054",
+    "headings": [
+      "Travel expense claim",
+      "Receipt · Awaiting review",
+      "Receipts",
+      "Decision history"
+    ],
+    "horizontalOverflow": false,
+    "notification": "denied",
+    "dialogs": 0,
+    "rootFont": "16px"
+  },
+  {
+    "font": {
+      "saved": "large",
+      "attribute": "large",
+      "pixels": "18px",
+      "overflow": false
+    },
+    "preferenceMethod": "canonical localStorage preference then real reload; setting via menu untested"
+  },
+  {
+    "sidebarState": "collapsed"
+  },
+  {
+    "receipt": {
+      "status": 200,
+      "disposition": "attachment; filename*=UTF-8''2026-hotel-receipt.png",
+      "cache": "private, no-store",
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+      "length": 68,
+      "width": 1,
+      "height": 1
+    },
+    "errors": []
+  },
+  {
+    "browserDownload": {
+      "state": "completed",
+      "totalBytes": 68,
+      "receivedBytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+      "sameParsedPng": true,
+      "nativeCliHelper": "timed out; separate CDP browser-completion evidence"
+    }
+  },
+  {
+    "keyboard": {
+      "focused": "Download 2026-hotel-receipt.png",
+      "outline": "solid"
+    }
+  },
+  {
+    "actualMenuSavedFontReload": {
+      "stored": "large",
+      "pixels": "18px"
+    }
+  },
+  {
+    "phoneEscape": {
+      "focused": "trigger",
+      "path": "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054",
+      "dialogs": 0
+    }
+  }
+]

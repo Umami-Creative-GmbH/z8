@@ -30,6 +30,7 @@ interface SortableWidgetGridProps {
 	onReorder: (newOrder: WidgetId[]) => void;
 	/** Children (widget components that wrap themselves in DashboardWidget) */
 	children: ReactNode;
+	className?: string;
 }
 
 /**
@@ -40,6 +41,7 @@ export function SortableWidgetGrid({
 	widgetOrder,
 	onReorder,
 	children,
+	className,
 }: SortableWidgetGridProps) {
 	const { t } = useTranslate();
 	const sortableId = useId();
@@ -109,7 +111,12 @@ export function SortableWidgetGrid({
 			sensors={sensors}
 		>
 			<SortableContext items={sortableItems} strategy={rectSortingStrategy}>
-				<div className="columns-1 @xl/main:columns-2 @5xl/main:columns-3 gap-4 px-4 lg:px-6">
+				<div
+					className={
+						className ??
+						"columns-1 @xl/main:columns-2 @5xl/main:columns-3 @[110rem]/main:columns-4 gap-4"
+					}
+				>
 					<DashboardWidgetDraggableProvider value={false}>
 						{children}
 					</DashboardWidgetDraggableProvider>

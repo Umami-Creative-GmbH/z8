@@ -28,6 +28,30 @@ export type FeatureFlag =
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 
+/**
+ * Where each organization feature is switched on: its switch in the Features
+ * card of the Organization settings page (the switch ids are the anchors).
+ */
+export const FEATURE_SWITCH_HREFS: Record<FeatureFlag, string> = {
+	shiftsEnabled: "/settings/organization#shifts-toggle",
+	projectsEnabled: "/settings/organization#projects-toggle",
+	surchargesEnabled: "/settings/organization#surcharges-toggle",
+	demoDataEnabled: "/settings/organization#demo-data-toggle",
+	worksCouncilEnabled: "/settings/organization#works-council-toggle",
+	billableTimeEnabled: "/settings/organization#billable-time-toggle",
+	personnelFilesEnabled: "/settings/organization#personnel-files-toggle",
+	equipmentEnabled: "/settings/organization#equipment-toggle",
+};
+
+/**
+ * Whether the viewer reaches the Organization settings page, where features are
+ * switched (an org-admin route). That page still decides which switches the
+ * viewer may change; this only chooses between a link and "ask an admin".
+ */
+export function canReachFeatureSwitches(accessTier: SettingsAccessTier): boolean {
+	return hasSettingsAccessTier(accessTier, "orgAdmin");
+}
+
 interface ResolveSettingsVisibilityInput {
 	accessTier: SettingsAccessTier;
 	billingEnabled?: boolean;
@@ -456,7 +480,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	},
 	{
 		id: "approval",
-		titleKey: "settings.approvalEscalation.attention.approvalType",
+		titleKey: "settings.navigation.approval.title",
 		titleDefault: "Approval",
 		descriptionKey: "settings.approvalPolicies.description",
 		descriptionDefault:

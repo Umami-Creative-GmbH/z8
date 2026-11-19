@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Åtgärder för {endpoint}",
+    "command-unknown": "Det gick inte att bekräfta kommandot. Uppdatera den här slutpunkten innan du försöker igen.",
     "copy-failed": "Kunde inte kopiera till urklipp",
     "create": "Lägg till webhook",
     "create-failed": "Kunde inte skapa webhook",
     "delete-confirm": {
       "description": "Detta tar permanent bort webhook-slutpunkten och all leveranshistorik. Denna åtgärd kan inte ångras.",
-      "title": "Ta bort webhook?"
+      "title-named": "Ta bort webhook {name}?"
     },
     "deleted": "Webhook borttagen",
-    "delete-failed": "Kunde inte ta bort webhook",
     "deliveries": "Leveranser",
-    "description": "Konfigurera webhook-slutpunkter för att ta emot aviseringar i realtid när händelser inträffar i din organisation.",
     "disabled": "Webhook inaktiverad",
     "empty": {
       "description": "Skapa din första webhook för att börja ta emot händelseaviseringar.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Lyckades",
       "time": "Tid",
-      "title": "Leveransloggar"
+      "title": "Leveransloggar",
+      "toggle-details": "Detaljer för {event} vid {time}"
     },
-    "regenerate-failed": "Kunde inte återskapa hemligheten",
     "regenerate-secret": "Återskapa hemlighet",
+    "retry-help": "Uppdatera den här listan för att bekräfta aktuella slutpunkter. Tidigare inlästa poster behålls.",
     "secret-copied": "Hemligheten kopierades till urklipp",
     "secret-dialog": {
       "copy-secret": "Kopiera hemlighet till urklipp",
@@ -78,14 +79,15 @@
       "degraded": "Försämrad",
       "failing": "Misslyckas",
       "healthy": "Felfri",
-      "inactive": "Inaktiv"
+      "inactive": "Inaktiv",
+      "untried": "Inga leveranser ännu"
     },
     "success-rate": "Lyckades",
     "test": "Skicka test",
-    "test-failed": "Det gick inte att skicka test-webhook",
-    "test-sent": "Test-webhook skickad",
+    "test-queued": "Test-webhook har lagts i kö",
     "title": "Webhooks",
-    "toggle-active": "Växla webhook aktiv",
+    "toggle-active-named": "Aktiv: {endpoint}",
+    "unavailable": "Webhooks är inte tillgängliga",
     "updated": "Webhook uppdaterad",
     "update-failed": "Det gick inte att uppdatera webhook",
     "view-logs": "Visa loggar"

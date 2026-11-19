@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-dialog";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	actionErrorMessage,
@@ -82,7 +84,10 @@ function consentStatusText(
 
 interface OwnPositionStampsPanelProps {
 	data: OwnPositionCaptureData;
-	/** Who was shown the employee's positions (#831); null when it could not be loaded. */
+	/**
+	 * Who was shown the employee's positions (#831); null when it could not be loaded
+	 * (the card then says so), left out to omit the card.
+	 */
 	accessLog?: OwnPositionStampAccessEntry[] | null;
 }
 
@@ -90,7 +95,7 @@ interface OwnPositionStampsPanelProps {
  * The employee's own "Position stamps" settings: status, current notice, agree
  * and withdraw, and the log of who was shown their positions.
  */
-export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionStampsPanelProps) {
+export function OwnPositionStampsPanel({ data, accessLog }: OwnPositionStampsPanelProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const router = useRouter();
@@ -225,7 +230,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				</CardContent>
 			</Card>
 
-			{accessLog ? (
+			{accessLog !== undefined ? (
 				<Card>
 					<CardHeader>
 						<CardTitle>
@@ -239,7 +244,14 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{accessLog.length === 0 ? (
+						{accessLog === null ? (
+							<p role="alert" className="text-sm text-destructive">
+								{t(
+									"settings.positionStamps.accessLogLoadFailed",
+									"The list of who saw your positions could not be loaded. Reload the page to try again.",
+								)}
+							</p>
+						) : accessLog.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
 								{t(
 									"settings.positionStamps.accessLogEmpty",
@@ -311,8 +323,12 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
+							className={buttonVariants({ variant: "destructive" })}
 							onClick={(event) => {
-								event.preventDefault();
+								// Base UI's Close ignores preventDefault; stop its handler so the dialog
+								// stays open until the withdrawal settles.
+								keepAlertDialogOpen(event);
+								if (pending !== null) return;
 								void withdraw();
 							}}
 							disabled={pending !== null}

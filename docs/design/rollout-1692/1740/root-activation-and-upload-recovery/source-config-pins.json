@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "derived": true,
+  "sourceCommit": "6757981b6844a2e497c055a1fa5cebd021987675",
+  "frozenReview": "3f7759880ea2b77c199507b8967a73915c48ec91",
+  "rootAtPublication": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+  "verifiedCommit": null,
+  "normalization": "UTF-8 CRLF to LF only; historical blobs remain literal Git bytes.",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+      "kind": "source",
+      "bytes": 6217,
+      "sha256": "16e2eeeed81175ead340e74630cafcd58bacda55b8f2c6bcbb8e0720f080764f",
+      "canonicalSha256": "3f8850e5b9ab10fe6ffab34b2b8eaa1d776239de3e787feb8d7305e40ae544f2",
+      "gitBlob": "4301740ad574c6182874f0fa3404e1a65f9e723f",
+      "blobSha256": "3f8850e5b9ab10fe6ffab34b2b8eaa1d776239de3e787feb8d7305e40ae544f2"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.tsx",
+      "kind": "source",
+      "bytes": 5642,
+      "sha256": "63bb81ae5fb704bf30c67e617a163f43e02945e397ff5dc9795e4d5cfc3be98c",
+      "canonicalSha256": "fc9eaddefa83144052a98714f673a70b686a90b08ebc5b7717231228c328da9f",
+      "gitBlob": "c1d281434bc7286bad10462355d9b916e675f7bf",
+      "blobSha256": "fc9eaddefa83144052a98714f673a70b686a90b08ebc5b7717231228c328da9f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "kind": "source",
+      "bytes": 19024,
+      "sha256": "93177e9a8f41c92a0507c98a18fb1b4688e629ba864aed56abf0234733b4b39d",
+      "canonicalSha256": "caf14f8782bad37bb62819a3202c2a13ca0b35f85bc1cd31f66c782fc6bb3425",
+      "gitBlob": "ab226e1bf98ac87774a1fbd9cc38b3222c3aa493",
+      "blobSha256": "caf14f8782bad37bb62819a3202c2a13ca0b35f85bc1cd31f66c782fc6bb3425"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+      "kind": "source",
+      "bytes": 12519,
+      "sha256": "809aecc7b327e9bcbd238a6e9992a50ed0733b136fabe1fe03efc44b2d399431",
+      "canonicalSha256": "54534d677edf349797efb1a76141c8863c73e6e421599b8fbc23ece7b8f03c9b",
+      "gitBlob": "5cf88271d03b5effa3d21171bac6800d3187f45f",
+      "blobSha256": "54534d677edf349797efb1a76141c8863c73e6e421599b8fbc23ece7b8f03c9b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "kind": "source",
+      "bytes": 25199,
+      "sha256": "9d21ed51ae96b643c83ea0a813ce7a1a06cbfdbe57aae2c9de3c1d17fd14a92b",
+      "canonicalSha256": "0bf4c99f023c0f721366d2cefc119bb5d779943ba33a3f7e24ee3e5d52c857bd",
+      "gitBlob": "aa39a3ae351b2f2bf4ce4234d05d3b85c68d1a70",
+      "blobSha256": "0bf4c99f023c0f721366d2cefc119bb5d779943ba33a3f7e24ee3e5d52c857bd"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.activation.test.tsx",
+      "kind": "source",
+      "bytes": 9416,
+      "sha256": "75d33d2e2c56e1a524776fc85a92ce2ad39f4bb042e909ad53a490410af61b6b",
+      "canonicalSha256": "fd11638f0627c1fb9ca2af7bc0459d606c2ed438d5cab413fe4d96c18844c966",
+      "gitBlob": "c89cd65c970fd6942dd84a7249e8e6072b3d2e6f",
+      "blobSha256": "fd11638f0627c1fb9ca2af7bc0459d606c2ed438d5cab413fe4d96c18844c966"
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+      "kind": "source",
+      "bytes": 6368,
+      "sha256": "4825e6d9d87d449540b7baea185a9b87c8748b599642f1ce57507fb61e25c481",
+      "canonicalSha256": "62a3b07c5d954e28c7827159d45d081b5103ae230b25aa6991df14423b1b451a",
+      "gitBlob": "d763b75e00a38ac87b797f6ba0657d53caf3b6f0",
+      "blobSha256": "62a3b07c5d954e28c7827159d45d081b5103ae230b25aa6991df14423b1b451a"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "kind": "source",
+      "bytes": 6166,
+      "sha256": "743a836a763f00b90ab13b2b2597fb144d9078c3eee8b760621aa6e517f8c3bd",
+      "canonicalSha256": "6fb4a6d6879cc8d95f2022c72a058d7a060193de2c3020c552556de4fbd93875",
+      "gitBlob": "6abca0be8ac329e02abeb330670d0c8cdeab7445",
+      "blobSha256": "6fb4a6d6879cc8d95f2022c72a058d7a060193de2c3020c552556de4fbd93875"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+      "kind": "source",
+      "bytes": 5427,
+      "sha256": "9cb3f3cf3272faea13839610d3b4fdfc1b3a13b6bb8f1682d036febc5b349ba0",
+      "canonicalSha256": "e01c56bff7e6574ec5ea536f65455848a4b34f415597dda14d04b1899e2d0f01",
+      "gitBlob": "e3e3b8c8e686f86dcdc86d5d0f5edcff2d2f0de4",
+      "blobSha256": "e01c56bff7e6574ec5ea536f65455848a4b34f415597dda14d04b1899e2d0f01"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/attach-sick-note-dialog.tsx",
+      "kind": "source",
+      "bytes": 9396,
+      "sha256": "abb4835bb1560498aa477ecea3c55baf20e153701c4e9d89c58ef26418a14a28",
+      "canonicalSha256": "82ecf102efcc3be5f12224f69fa6023f23c2ac5b23a9705f70928572f7ec7b56",
+      "gitBlob": "88f9eedfe44830f8b7cdab345f3a489d9e1283ae",
+      "blobSha256": "82ecf102efcc3be5f12224f69fa6023f23c2ac5b23a9705f70928572f7ec7b56"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+      "kind": "source",
+      "bytes": 9525,
+      "sha256": "f1fa39c97b4176991c0fe1da494cf069679f1ee24f43e2116fcdeabb9b927d21",
+      "canonicalSha256": "64564b793b365a9cf60b952f50531a4f5b3e6d58bcfe0e189f7379c1f36b701a",
+      "gitBlob": "14c196e96bd1069798d96b54d7dd8429305d8f6d",
+      "blobSha256": "64564b793b365a9cf60b952f50531a4f5b3e6d58bcfe0e189f7379c1f36b701a"
+    },
+    {
+      "path": "package.json",
+      "kind": "configuration",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "canonicalSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "gitBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "blobSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "kind": "configuration",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "canonicalSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "gitBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "blobSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "kind": "configuration",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "canonicalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "blobSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "kind": "configuration",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "canonicalSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "gitBlob": "72bd6c845fc48f077c52fd789d799cb0928b6873",
+      "blobSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "kind": "configuration",
+      "bytes": 1840,
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "canonicalSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "gitBlob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "blobSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "kind": "configuration",
+      "bytes": 4308,
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "canonicalSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+      "blobSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e"
+    }
+  ]
+}

@@ -35,6 +35,7 @@ import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/type
 import { formatTimeHours } from "@/lib/calendar/work-hours-summary";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { calendarEventComponents } from "./calendar-event-components";
+import { runningClockOutLabels, runningWorkPeriodTitle } from "./running-work-period-labels";
 import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import {
 	filterEventsForScheduleXView,
@@ -135,6 +136,8 @@ export function ScheduleXCalendarWrapper({
 		{
 			clockOutAllowedWorkPeriodIds,
 			editedByLabel: (event) => formatWorkPeriodEditedBy(event, timeZone, t),
+			runningTitle: (event) => runningWorkPeriodTitle(event, t),
+			runningClockOutLabels: runningClockOutLabels(t),
 		},
 	).map(({ _customContent, ...event }) => ({
 		...event,
@@ -209,13 +212,20 @@ export function ScheduleXCalendarWrapper({
 		return [];
 	})();
 
+	// Schedule-X retains its initial callbacks while React Query loads and replaces records.
+	const eventClickContext = useRef({ events: scheduleXEvents, onEventClick });
+	useLayoutEffect(() => {
+		eventClickContext.current = { events: scheduleXEvents, onEventClick };
+	}, [scheduleXEvents, onEventClick]);
+
 	// Handle event click - Schedule-X passes the event object
 	const handleEventClick = (event: { id: string }) => {
-		if (!onEventClick) return;
+		const current = eventClickContext.current;
+		if (!current.onEventClick) return;
 
-		const calendarEvent = resolveClickableCalendarEvent(scheduleXEvents, event);
+		const calendarEvent = resolveClickableCalendarEvent(current.events, event);
 		if (calendarEvent) {
-			onEventClick(calendarEvent);
+			current.onEventClick(calendarEvent);
 		}
 	};
 
@@ -340,27 +350,56 @@ export function ScheduleXCalendarWrapper({
 	);
 }
 
+/**
+ * The visible period in the viewer's language. Intl's range format orders day, month and year
+ * per locale ("16.–22. November 2026", "November 16 – 22, 2026"); hand-built patterns read as
+ * English everywhere. Dates are read in the calendar's zone.
+ */
+function formatPeriod(
+	currentDate: DateTime,
+	locale: string,
+	viewMode: ViewMode,
+	weekStartDay: "monday" | "sunday",
+	month: "long" | "short",
+) {
+	const format = (options: Intl.DateTimeFormatOptions) =>
+		new Intl.DateTimeFormat(locale, {
+			...options,
+			timeZone: currentDate.zoneName ?? undefined,
+		});
+	const date = currentDate.toJSDate();
+	switch (viewMode) {
+		case "day":
+			return format({
+				weekday: month === "long" ? "long" : "short",
+				day: "numeric",
+				month,
+				year: "numeric",
+			}).format(date);
+		case "week": {
+			const { start, end } = getWeekBounds(currentDate, weekStartDay);
+			// The compact (phone) range names the year only when the week crosses into another.
+			const withYear = month === "long" || start.year !== end.year;
+			return format({
+				day: "numeric",
+				month,
+				...(withYear ? { year: "numeric" as const } : {}),
+			}).formatRange(start.toJSDate(), end.toJSDate());
+		}
+		case "month":
+			return format({ month, year: "numeric" }).format(date);
+		default:
+			return format({ day: "numeric", month, year: "numeric" }).format(date);
+	}
+}
+
 function formatDateRange(
 	currentDate: DateTime,
 	locale: string,
 	viewMode: ViewMode,
 	weekStartDay: "monday" | "sunday",
 ) {
-	const localizedCurrentDate = currentDate.setLocale(locale);
-	switch (viewMode) {
-		case "day":
-			return localizedCurrentDate.toFormat("EEEE, MMMM d, yyyy");
-		case "week": {
-			const { start, end } = getWeekBounds(localizedCurrentDate, weekStartDay);
-			return start.month === end.month
-				? `${start.toFormat("MMMM d")} - ${end.toFormat("d, yyyy")}`
-				: `${start.toFormat("MMM d")} - ${end.toFormat("MMM d, yyyy")}`;
-		}
-		case "month":
-			return localizedCurrentDate.toFormat("MMMM yyyy");
-		default:
-			return localizedCurrentDate.toFormat("MMMM d, yyyy");
-	}
+	return formatPeriod(currentDate, locale, viewMode, weekStartDay, "long");
 }
 
 function formatMobileDateRange(
@@ -369,21 +408,7 @@ function formatMobileDateRange(
 	viewMode: ViewMode,
 	weekStartDay: "monday" | "sunday",
 ) {
-	const localizedCurrentDate = currentDate.setLocale(locale);
-	switch (viewMode) {
-		case "day":
-			return localizedCurrentDate.toFormat("ccc, d. LLL yyyy");
-		case "week": {
-			const { start, end } = getWeekBounds(localizedCurrentDate, weekStartDay);
-			return start.year === end.year
-				? `${start.toFormat("d. LLL")} - ${end.toFormat("d. LLL yyyy")}`
-				: `${start.toFormat("d. LLL yyyy")} - ${end.toFormat("d. LLL yyyy")}`;
-		}
-		case "month":
-			return localizedCurrentDate.toFormat("LLL yyyy");
-		default:
-			return localizedCurrentDate.toFormat("d. LLL yyyy");
-	}
+	return formatPeriod(currentDate, locale, viewMode, weekStartDay, "short");
 }
 
 function ScheduleXCalendarLoading({ t }: { t: ReturnType<typeof useTranslate>["t"] }) {

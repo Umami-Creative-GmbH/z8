@@ -1,0 +1,37 @@
+{
+  "selections": [
+    {
+      "name": "exact",
+      "files": 35,
+      "cases": 278,
+      "passed": 278,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "calendar-exact",
+      "files": 21,
+      "cases": 211,
+      "passed": 211,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 105,
+      "cases": 851,
+      "passed": 851,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 56,
+      "overlapCases": 489
+    }
+  ],
+  "uniqueFiles": 105,
+  "uniqueCases": 851,
+  "method": "File path and full test-name multisets; equal-name parameterized cases retain multiplicity; overlapping selections and repeated runs do not add cases."
+}

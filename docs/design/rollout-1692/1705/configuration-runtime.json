@@ -1,0 +1,72 @@
+{
+  "scope": "Post-comparison fixture source setup: original eight employees; configured zero and 25+3 stored allowances, current 2026 period has no absences",
+  "observations": {
+    "headings": [
+      "Vacation Trends"
+    ],
+    "summary": "Overall Utilization\n0.0%\nAllocated\n28 days\nTaken\n0 days\nRemaining\n28 days",
+    "rows": [
+      [
+        "Person 1",
+        "28",
+        "0",
+        "28",
+        "x0%"
+      ],
+      [
+        "Person 2Allowance not configured",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ],
+      [
+        "Person 4Allowance not configured",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ],
+      [
+        "Person 5Allowance not configured",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ],
+      [
+        "Person 6Allowance not configured",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ],
+      [
+        "Person 7Allowance not configured",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ],
+      [
+        "Person 3Allowance not configured",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ],
+      [
+        "Person 0",
+        "0",
+        "0",
+        "0",
+        "x0%"
+      ]
+    ],
+    "monthlyEmpty": true,
+    "peakEmpty": true,
+    "width": 1600,
+    "documentWidth": 1600
+  },
+  "errors": []
+}

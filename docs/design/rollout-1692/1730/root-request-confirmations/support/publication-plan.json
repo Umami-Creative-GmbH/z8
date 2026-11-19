@@ -1,0 +1,365 @@
+{
+  "staticFiles": [
+    "checks/all-changed-paths.json",
+    "checks/root-changed-paths.json",
+    "checks/quality-all.json",
+    "checks/biome-format-all.log",
+    "checks/biome-lint-all.log",
+    "checks/biome-root-final.log",
+    "checks/format-root.log",
+    "checks/doctor.log",
+    "checks/typecheck.log",
+    "checks/bulk-red.json",
+    "checks/bulk-red.log",
+    "checks/bulk-green.json",
+    "checks/bulk-green.log",
+    "checks/workspace-red.json",
+    "checks/workspace-red.log",
+    "checks/workspace-green.json",
+    "checks/workspace-green.log",
+    "checks/shared-pending-red.json",
+    "checks/shared-pending-red.log",
+    "checks/shared-pending-green.json",
+    "checks/shared-pending-green.log",
+    "checks/shared-activation-red.json",
+    "checks/shared-activation-red.log",
+    "checks/shared-retirement-red.json",
+    "checks/shared-retirement-red.log",
+    "checks/shared-activation-green.json",
+    "checks/shared-activation-green.log",
+    "checks/shared-recovery-red.json",
+    "checks/shared-recovery-red.log",
+    "checks/shared-recovery-green.json",
+    "checks/shared-recovery-green.log",
+    "checks/tolgee-isolated.json",
+    "checks/tolgee-isolated.log",
+    "checks/unit-final.json",
+    "checks/unit-final.log",
+    "checks/unit-final-02.json",
+    "checks/unit-final-02.log",
+    "support/merger/HANDOFF.md",
+    "support/merger/handoff.json",
+    "support/merger/independent-tree.json",
+    "support/merger/probes-first.json",
+    "support/merger/probes-first.txt",
+    "support/merger/probes-repeat.json",
+    "support/merger/probes-repeat.txt",
+    "support/merger/probes-baseline.json",
+    "support/merger/probes-baseline.txt",
+    "support/merger/merge1730-bulk-probe.test.tsx",
+    "support/merger/merge1730-workspace-probe.test.tsx",
+    "support/merger/merge1730-shared-probe.test.tsx",
+    "support/merger/first-merge1730-shared-probe.test.tsx",
+    "support/merger/merge1730-baseline-bulk-probe.test.tsx",
+    "support/merger/merge1730-baseline-bulk.tsx",
+    "support/merger/commands.txt"
+  ],
+  "runtimePublicFiles": [
+    "runtime/HANDOFF-runtime.md",
+    "runtime/actions-01-bulk-created.png",
+    "runtime/actions-01-bulk-pending.png",
+    "runtime/actions-01-failure-bulk.png",
+    "runtime/actions-01-queue-context.png",
+    "runtime/actions-01-source.mjs",
+    "runtime/actions-01.json",
+    "runtime/actions-02-bulk-created.png",
+    "runtime/actions-02-bulk-pending.png",
+    "runtime/actions-02-failure-bulk-transport.png",
+    "runtime/actions-02-queue-context.png",
+    "runtime/actions-02-source.mjs",
+    "runtime/actions-02.json",
+    "runtime/actions-03-bulk-created.png",
+    "runtime/actions-03-bulk-pending.png",
+    "runtime/actions-03-bulk-transport-retained.png",
+    "runtime/actions-03-cancel-pending.png",
+    "runtime/actions-03-cancel-transport-retained.png",
+    "runtime/actions-03-queue-context.png",
+    "runtime/actions-03-return-pending.png",
+    "runtime/actions-03-return-transport-retained.png",
+    "runtime/actions-03-source.mjs",
+    "runtime/actions-03.json",
+    "runtime/actions.mjs",
+    "runtime/attempt-01-engine-lock.txt",
+    "runtime/cleanup-audit-preparation-failure.txt",
+    "runtime/cleanup-audit.ps1",
+    "runtime/cleanup.json",
+    "runtime/common.mjs",
+    "runtime/compare-01-source.mjs",
+    "runtime/compare-02-source.mjs",
+    "runtime/compare-03-syntax-failed.txt",
+    "runtime/compare-03-syntax-failure.txt",
+    "runtime/compare-04-source.mjs",
+    "runtime/compare-05-source.mjs",
+    "runtime/compare-06-source.mjs",
+    "runtime/compare.mjs",
+    "runtime/dev.mjs",
+    "runtime/discover-public.json",
+    "runtime/discover.mjs",
+    "runtime/matched-before-05.json",
+    "runtime/matched-before-06-desktop-collapsed-light-16.png",
+    "runtime/matched-before-06-desktop-light-16.png",
+    "runtime/matched-before-06-phone-dark-18.png",
+    "runtime/matched-before-06-phone-light-16.png",
+    "runtime/matched-before-06-wide-dark-18.png",
+    "runtime/matched-before-06.json",
+    "runtime/matched-current-02-desktop-collapsed-light-16.png",
+    "runtime/matched-current-02-desktop-light-16.png",
+    "runtime/matched-current-02-phone-dark-18.png",
+    "runtime/matched-current-02-phone-light-16.png",
+    "runtime/matched-current-02-wide-dark-18.png",
+    "runtime/matched-current-02.json",
+    "runtime/matched-current-04.json",
+    "runtime/matched-current-05-desktop-collapsed-light-16.png",
+    "runtime/matched-current-05-desktop-light-16.png",
+    "runtime/matched-current-05-phone-dark-18.png",
+    "runtime/matched-current-05-phone-light-16.png",
+    "runtime/matched-current-05-wide-dark-18.png",
+    "runtime/matched-current-05.json",
+    "runtime/matched-current-desktop-collapsed-light-16.png",
+    "runtime/matched-current-desktop-light-16.png",
+    "runtime/matched-current-phone-light-16.png",
+    "runtime/matched-current.json",
+    "runtime/matched-restored-06-desktop.png",
+    "runtime/matched-restored-06.json",
+    "runtime/native-next-selected.json",
+    "runtime/native-public.json",
+    "runtime/native-restored-public.json",
+    "runtime/native-restored.mjs",
+    "runtime/native.mjs",
+    "runtime/overlay-applied.json",
+    "runtime/overlay-restored.json",
+    "runtime/overlay.mjs",
+    "runtime/pin.mjs",
+    "runtime/postgres-command.json",
+    "runtime/postgres.json",
+    "runtime/postgres.mjs",
+    "runtime/queue-initial.png",
+    "runtime/recovery-01-source.mjs",
+    "runtime/recovery-02-activity-return-failed.png",
+    "runtime/recovery-02-different-filter-failed.png",
+    "runtime/recovery-02-failure-failed-activity-return.png",
+    "runtime/recovery-02-same-filter-failed.png",
+    "runtime/recovery-02-same-filter-recovered.png",
+    "runtime/recovery-02-source.mjs",
+    "runtime/recovery-02.json",
+    "runtime/recovery-03-activity-return-failed.png",
+    "runtime/recovery-03-activity-return-recovered.png",
+    "runtime/recovery-03-different-filter-failed.png",
+    "runtime/recovery-03-same-filter-failed.png",
+    "runtime/recovery-03-same-filter-recovered.png",
+    "runtime/recovery-03-source.mjs",
+    "runtime/recovery-03.json",
+    "runtime/recovery-different-filter-failed.png",
+    "runtime/recovery-failure-failed-activity-return.png",
+    "runtime/recovery-same-filter-failed.png",
+    "runtime/recovery-same-filter-recovered.png",
+    "runtime/recovery.json",
+    "runtime/recovery.mjs",
+    "runtime/reload-probe-final.png",
+    "runtime/reload-probe.json",
+    "runtime/reload-probe.mjs",
+    "runtime/roles-01-source.mjs",
+    "runtime/roles-02-source.mjs",
+    "runtime/roles-02.json",
+    "runtime/roles-03-public-revoked-command-refused.png",
+    "runtime/roles-03-source.mjs",
+    "runtime/roles-03-specific-category-queue.png",
+    "runtime/roles-03.json",
+    "runtime/roles.json",
+    "runtime/roles.mjs",
+    "runtime/seal-01-failure.txt",
+    "runtime/seal-01-source.mjs",
+    "runtime/seal.mjs",
+    "runtime/seed.json",
+    "runtime/seed.mjs",
+    "runtime/source-start.json",
+    "runtime/stop-current-before-overlay.json",
+    "runtime/stop-final.json",
+    "runtime/stop-historical-before-restore.json",
+    "runtime/stop-next.ps1",
+    "runtime/upload-02-cancelled-keeps-both-documents.png",
+    "runtime/upload-02-returned-keeps-first-document.png",
+    "runtime/upload-failure-first-upload.png",
+    "runtime/uploads-01-source.mjs",
+    "runtime/uploads-02-source.mjs",
+    "runtime/uploads-02.json",
+    "runtime/uploads.json",
+    "runtime/uploads.mjs",
+    "runtime/verification-manifest.json"
+  ],
+  "additionalPublicFiles": [
+    "runtime/artifact-hashes.json",
+    "checks/typecheck-exit-attestation.json",
+    "support/prior-proof-groups.json",
+    "support/independent-correction-review.md",
+    "support/provenance.md"
+  ],
+  "helpers": [
+    {
+      "path": "runtime/actions-01-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "63d4c41f3c7ab89b4eb42b4daf9f0df51d87ec54236648d2953492fe4978ef6b"
+    },
+    {
+      "path": "runtime/actions-02-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "c2203c04175fbffaf8965117d75c21638b2357854c44e296f11c478a5c315a1c"
+    },
+    {
+      "path": "runtime/actions-03-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "b45502ca18e53229f28275b910175e1a30a37e962cb5d279b7394152cb791b98"
+    },
+    {
+      "path": "runtime/actions.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "b45502ca18e53229f28275b910175e1a30a37e962cb5d279b7394152cb791b98"
+    },
+    {
+      "path": "runtime/common.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "3ce0f934a085615a5b766bf5681e4d830961930c9db34e069a3510eb2b5f56a5"
+    },
+    {
+      "path": "runtime/compare-01-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "c58b05ec9a5c3ce1f9340f28d0a98bdc5188fef00b8ac50b7ba1f66404b723d8"
+    },
+    {
+      "path": "runtime/compare-02-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "7a323140a67e27d3b4cd83bcb5342a17e8288e27e908adf34605804469ed71fb"
+    },
+    {
+      "path": "runtime/compare-04-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "3393ae049a7fd877e35179a79ad53e131e8e538f8f7af63546638c1b73ffd7a3"
+    },
+    {
+      "path": "runtime/compare-05-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "47049dba49c2d44f29e4ad44e2e9e926dc4e61337fee36e94135d617e4b6a39d"
+    },
+    {
+      "path": "runtime/compare-06-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "08fc1acedbbd6db9da787af42bb2028d48061003babe9709a4e9460f3cac2bfb"
+    },
+    {
+      "path": "runtime/compare.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "08fc1acedbbd6db9da787af42bb2028d48061003babe9709a4e9460f3cac2bfb"
+    },
+    {
+      "path": "runtime/dev.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "9bb6c57f94a9907eaf0cc1ca60499a3cdd5b15b59ee4ced705f75b5bb6a00b58"
+    },
+    {
+      "path": "runtime/discover.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "66d23a26de9817e47bcfb3caec0b0756a469576300911e8c8b938102a5b10a16"
+    },
+    {
+      "path": "runtime/native-restored.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "a31e66237da8740757cbac81b823385b3807c6b96289af853d422c7e2b6db305"
+    },
+    {
+      "path": "runtime/native.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "db8883c40da40891fcd745946019c82542e2204eb87edd452a8867840510d1f9"
+    },
+    {
+      "path": "runtime/overlay.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "01d352b40bcf98a974b481877ecd59d4996efcc91d3d5875535a9e1e386feb5b"
+    },
+    {
+      "path": "runtime/pin.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "bffd588c88f08bb29952572408e5f556ead864ef35ae9872a197fa85db62fba5"
+    },
+    {
+      "path": "runtime/postgres.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "aedd0706837339b066f50bb5a23d689ab044d9d0dd541adc758c8c49d06f3983"
+    },
+    {
+      "path": "runtime/recovery-01-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "6b60e634384681aa07a86916d86e8abe086c413dfba19c26d7fb8219c8ef8a93"
+    },
+    {
+      "path": "runtime/recovery-02-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "63ff23c1949727fc5e88ece15a775f3901f2eb0e2d3abb058583f474b38cf9d0"
+    },
+    {
+      "path": "runtime/recovery-03-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "178b2ced0c8f3d8ce0bb8ec25c37d74a4211dfb1dc5c537b565e583a2f35036a"
+    },
+    {
+      "path": "runtime/recovery.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "178b2ced0c8f3d8ce0bb8ec25c37d74a4211dfb1dc5c537b565e583a2f35036a"
+    },
+    {
+      "path": "runtime/reload-probe.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "150e72984c1bd5ee590c1ebf5df37a36e1d4c01a2274785c82f2dbce039e9460"
+    },
+    {
+      "path": "runtime/roles-01-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "8e34e0022044749803533bfaf957a534465059a2edbe62998fc69bdd81b2b1d4"
+    },
+    {
+      "path": "runtime/roles-02-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "66c4f686f13a8a68aab6a9175148452f296c75b21936646c3db342354e6ced44"
+    },
+    {
+      "path": "runtime/roles-03-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "00d45aae8c59a7a7b4ef8e9264fef88b58cebc6cd8a2272534fd248699a36758"
+    },
+    {
+      "path": "runtime/roles.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "00d45aae8c59a7a7b4ef8e9264fef88b58cebc6cd8a2272534fd248699a36758"
+    },
+    {
+      "path": "runtime/seal-01-source.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "6db4cf01c42d17482864702ca166f97db0764cd5f759f01142fdcfa9fe001420"
+    },
+    {
+      "path": "runtime/seal.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "ee596ab6f4e55a9f4fd4872971a433c179fd14b671bf8c6d3e04dfc1a6ae0af4"
+    },
+    {
+      "path": "runtime/seed.mjs",
+      "classification": "operational helper; syntax only here",
+      "sha256": "e4e492bfabe1107ac91cecf3837eca8b034df85e5f1ca4ea59060aa84cd7813b"
+    },
+    {
+      "path": "runtime/uploads-01-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "98061fe9a35548cffe7dc45cb9f391c470b39b1ddee8364327e2c960b78b6587"
+    },
+    {
+      "path": "runtime/uploads-02-source.mjs",
+      "classification": "historical driver snapshot; syntax only here",
+      "sha256": "cb3341fca39cff9e6cf4bb72b225f7af7bc03a51fce9e2f59f7ad2291e66b881"
+    },
+    {
+      "path": "runtime/uploads.mjs",
+      "classification": "runtime driver; syntax only here",
+      "sha256": "cb3341fca39cff9e6cf4bb72b225f7af7bc03a51fce9e2f59f7ad2291e66b881"
+    }
+  ],
+  "rule": "Exact explicit files; no recursive evidence discovery or private artifact reads"
+}

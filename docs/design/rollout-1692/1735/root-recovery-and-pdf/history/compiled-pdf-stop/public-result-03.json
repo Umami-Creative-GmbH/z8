@@ -1,0 +1,56 @@
+{
+  "kind": "deterministic safe summary clone of raw Vitest JSON; absolute stacks and DOM diagnostics excluded",
+  "rawSha256": "4802f48b6498b21e85801a70bc713a5abaff420bdc54d1644843c2c036dc9e4d",
+  "attempt": "03",
+  "physicalFiles": 1,
+  "passed": 8,
+  "failed": 1,
+  "skipped": 0,
+  "cases": [
+    {
+      "name": "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent Activity retires pending roster Retry success and preserves exact peer cache",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+      "status": "passed",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+      "status": "failed",
+      "failureFirstLine": "Error: Test timed out in 5000ms."
+    },
+    {
+      "name": "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects",
+      "status": "passed",
+      "failureFirstLine": null
+    }
+  ]
+}

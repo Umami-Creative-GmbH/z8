@@ -48,7 +48,7 @@ export function usePerDiemItemDraft({
 					"Your latest changes to an expense could not be saved. Open it again to check it.",
 				),
 			),
-		save: async (values, expectedVersion): Promise<DraftSaveOutcome<ReportItemView>> => {
+		save: async (values, expectedVersion, isCurrent): Promise<DraftSaveOutcome<ReportItemView>> => {
 			const parsed = parsePerDiemDraft(values);
 			if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
 			const result = await savePerDiemDraftAction({
@@ -60,8 +60,10 @@ export function usePerDiemItemDraft({
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
-					setLastSaved(result.data.item);
-					onSaved?.(result.data.item);
+					if (isCurrent()) {
+						setLastSaved(result.data.item);
+						onSaved?.(result.data.item);
+					}
 					return { status: "saved", version: result.data.item.version };
 				case "conflict":
 					return { status: "conflict", version: result.data.item.version, item: result.data.item };

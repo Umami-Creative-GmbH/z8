@@ -1,0 +1,78 @@
+{
+  "decision": "STOPPED_AT_FIRST_CRITICAL; candidate clean but acceptance NOT GREEN; root owns reconciliation/readiness",
+  "branch": "review/1742-period-submissions-candidate",
+  "candidate": "39c2bdddadd820df9fffdc7633692f798a46a188",
+  "tree": "383ca30f52b25631ebf160949ab7bd91eed12450",
+  "appTree": "0f9c065a4d3301cafa6bb6e7367601edfd3fe399",
+  "parents": [
+    "7cf9871f8c782deb9ad279c9e2dfb5ed8e6fa60c",
+    "cfa34ce7ed2ea0d2df23929f4656b7fefdcd8e29"
+  ],
+  "commonBase": "cf0203c822ac2837de2c02bc4da816dc741a63e9",
+  "recipe": "Root recursive map + 31 exact incoming nonoverlap blobs + root metadata with one exact route literal + authorized root-only negative reconciliation. Not a pure merge-tree match.",
+  "pins": {
+    "preparedRoot": "7cf9871f8c782deb9ad279c9e2dfb5ed8e6fa60c",
+    "incoming": "cfa34ce7ed2ea0d2df23929f4656b7fefdcd8e29",
+    "presentationLiveNative": "f5d3b34e2e388c87c278633e7bf8f2be71da5185",
+    "finalAuthorityFence": "bd426bd055c576f25098e152745c6580ff5f946d",
+    "latestVerified1738And1739Only": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+    "directBlockerF2": "382b8f5be837dad724d3a54274d3050b0104881f",
+    "root1740": "6757981b6844a2e497c055a1fa5cebd021987675",
+    "root1741Candidate": "6ab5cca4b1827580eeff064cc47d36d4589f26aa",
+    "root1741Provisional": "bd6b804ccc6e7fa3c63fbf4c048200c3c303aab4"
+  },
+  "finding": "blocker.json",
+  "accounting": "test-accounting.json",
+  "preservation": "preservation.json",
+  "dependencies": "dependencies.json",
+  "reproduction": "reproduce.json",
+  "safeEvidenceIndex": "SAFE-index.json",
+  "freshChecks": {
+    "independentExpectedMapAndNormalTwoParentMerge": true,
+    "rootBlobAndAnchorPreservation": true,
+    "gitWhitespace": true,
+    "ownPhysicalFrozenOfflineCopyInstall": true,
+    "publicPriorityAssertions": {
+      "files": 1,
+      "occurrences": 7,
+      "passed": 6,
+      "failed": 1
+    },
+    "focusedBlockerControls": {
+      "files": 1,
+      "occurrences": 3,
+      "passed": 2,
+      "failed": 1
+    },
+    "countsNotSummedAcrossHarnessRevisions": true
+  },
+  "unpassed": [
+    "Full selected unit/shared compatibility and metadata occurrence reconciliation stopped at first critical.",
+    "Static Next typegen, application/workflow/smoke types not run after blocker. No license artifact copied.",
+    "Scoped lint/import, explicit 100-column CRLF and ordinary formatter, bounded Doctor vs 7cf not run after blocker. Inherited worker ordinary formatter has 10 formatting diagnostics; not green by implication.",
+    "PostgreSQL prohibited in this phase. Historical worker 35/6 not independently rerun.",
+    "No Next, browser/native, fixtures, PostgreSQL or capture resources started. #1740 runtime priority and #1770 separate implementation preserved.",
+    "Fresh selected public JSON/link/source-pin validation and full PNG decode not completed before stop. Hash/blob preservation does not imply artifact content acceptance.",
+    "Live canonical revocation/account/org switching, every live five-state/range variant, actual browser zoom/device/store wrapper/long translated journeys unpassed.",
+    "Production build/static generation and remote Tolgee catalog sync unpassed. Prior provider/system-credential limits remain.",
+    "Historical comparison was partial four-consumer overlay; mislabeled preliminary capture correction retained. Live/native source predates final bd426 authority fence; no repeated live revocation proof.",
+    "No future verified SHA, root readiness, tracker/push/PR/closure/dev merge/deploy advancement."
+  ],
+  "laterCanonicalPGOwnerCommand": {
+    "owner": "root after runtime priority released and authorized disposable DB fixture available",
+    "cwd": "apps/webapp",
+    "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false test:integration 'src/app/[locale]/(app)/team/period-submissions/actions.integration.test.ts' 'src/lib/time-tracking/period-submissions/overview-store.integration.test.ts' 'src/lib/time-tracking/period-submissions/employee-expected-periods.integration.test.ts' 'src/lib/time-tracking/period-submissions/submission-service.integration.test.ts' 'src/lib/time-tracking/period-submissions/writer-send-back.integration.test.ts' 'src/lib/approvals/inbox/period-submission-read.integration.test.ts'",
+    "note": "Uses repository disposable PostgreSQL integration runner and sentinel; never infer green from inherited counts."
+  },
+  "cleanup": {
+    "checkout": "t3-43ae2b20-e06668fa9f9f50e6",
+    "nodeProcessCount": 0,
+    "matchingProcesses": [],
+    "nextStarted": false,
+    "browserStarted": false,
+    "fixturesStarted": false,
+    "databaseStarted": false,
+    "allExecSessionsCompleted": true
+  },
+  "ownership": "Limited candidate-merger ownership released; no owned running resources. Root reconciles/imports and owns readiness."
+}

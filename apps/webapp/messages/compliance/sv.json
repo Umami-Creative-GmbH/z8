@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Åtkomstkontroller sammanfattar endast känsliga granskningslogghändelser som redan samlas in idag.",
         "auditEvidence": "Granskningsunderlag använder aktiv konfiguration för granskningsexport, granskningspaketbegäranden och senaste verifieringsresultat.",
+        "title": "Täckning",
         "workforceCompliance": "Efterlevnad för arbetsstyrkan använder de senaste 7 dagarnas överträdelser av arbetspolicyn och väntande undantagsbegäranden."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Senast uppdaterad: {time}"
+        "lastRefreshed": "Senast uppdaterad: {time}",
+        "refreshMeaning": "Uppdatera läser in registrerade signaler igen; det omvärderar inte upptäckter enligt en ny policy."
       },
       "links": {
         "inspectCompliance": "Granska efterlevnad",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Öppna inställningar för efterlevnad",
         "reviewAuditExport": "Granska granskningsexport"
       },
+      "loading": "Läser in efterlevnadssignaler",
       "overview": "Efterlevnadsöversikt",
       "recentEvents": {
         "empty": "Inga kritiska händelser upptäcktes nyligen.",
-        "title": "Senaste kritiska händelser"
+        "partial": "Senaste händelser är begränsade till tillgängliga källor. Vissa signaler kunde inte läsas in.",
+        "title": "Senaste kritiska händelser",
+        "unavailable": "Senaste händelser kunde inte bekräftas eftersom signalkällorna är otillgängliga."
       },
+      "scope": "Aktiv organisation",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Känsliga kontrolländringar behöver granskas",
             "healthy": "Inga känsliga kontrolländringar har loggats nyligen",
             "warning": "Nyligen gjorda kontrolländringar upptäcktes"
-          }
+          },
+          "title": "Åtkomstkontroller"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Granskningsbevis kräver uppmärksamhet",
             "healthy": "Signaler för granskningsbevis ser bra ut",
             "warning": "Granskningsbevis är endast delvis klart"
-          }
+          },
+          "title": "Revisionsbevis"
         },
+        "title": "Efterlevnadsavsnitt",
         "unavailable": {
           "headline": "Signalen är tillfälligt otillgänglig"
         },
@@ -94,7 +103,8 @@
             "critical": "Överträdelser av personalpolicy behöver granskas",
             "healthy": "Inga nyliga problem med personalpolicy upptäcktes",
             "warning": "Personalens efterlevnad avviker"
-          }
+          },
+          "title": "Efterlevnad för personalstyrkan"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Undantag godkänt",
       "approvedDescription": "Efterlevnadsundantaget har godkänts.",
       "approveFailed": "Kunde inte godkänna",
+      "approveFor": "Godkänn {type}-undantag för {name}",
+      "loadError": "Väntande undantagsförfrågningar kunde inte läsas in.",
       "plannedDuration": "Planerat",
       "plannedDurationHelp": "Uppskatta hur mycket ytterligare tid du förväntar dig att behöva utöver gränsen.",
       "reason": "Anledning till undantag",
@@ -124,6 +136,7 @@
       "rejected": "Undantag avslaget",
       "rejectedDescription": "Efterlevnadsundantaget har avslagits.",
       "rejectFailed": "Kunde inte avslå",
+      "rejectFor": "Avvisa {type}-undantag för {name}",
       "rejectionPlaceholder": "Ange anledning till att avslå detta undantag...",
       "rejectionReason": "Anledning till avslag",
       "rejectTitle": "Avslå begäran om undantag",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Din chef kommer att meddelas och kan godkänna eller avslå din begäran.",
       "requestTitle": "Begär efterlevnadsundantag",
       "submit": "Skicka begäran",
-      "type": "Typ av undantag"
+      "type": "Typ av undantag",
+      "types": {
+        "overtimeDaily": "Daglig övertid",
+        "overtimeMonthly": "Månatlig övertid",
+        "overtimeWeekly": "Veckovis övertid",
+        "restPeriod": "Viloperiod"
+      }
     },
     "hasApprovedException": "Du har ett godkänt undantag. Du kan fortsätta.",
     "moreAlerts": "mer",

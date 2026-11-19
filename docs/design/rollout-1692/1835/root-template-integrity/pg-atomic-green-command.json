@@ -1,0 +1,31 @@
+{
+  "mode": "atomic-green",
+  "argv": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+    "-t",
+    "second organization default|daily numeric overflow",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1835-root-checks\\pg-atomic-green.json"
+  ],
+  "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts": "b6c36b55a7b8be7e83498d5064853eb34626d8ac5705ec153972ba66f145f570",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts": "607efdd2e623f4ad480ab186513847c5f84e9ebf8a1b26e255e4b07054ab40b2",
+    "apps/webapp/src/lib/effect/services/onboarding.service.ts": "96a5cc075fd6c8586c9dc5f8e33fdc358a4aad95e464402d57f0f508344c9774",
+    "apps/webapp/src/lib/onboarding/work-template-mutation.ts": "4b13777a70e9ff672d6408f1b309ee4a838307324f5446083b952f7ad723a5e5",
+    "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5"
+  },
+  "started": "2026-11-16T04:20:42.378Z",
+  "ended": "2026-11-16T04:20:45.345Z",
+  "exitCode": 0
+}

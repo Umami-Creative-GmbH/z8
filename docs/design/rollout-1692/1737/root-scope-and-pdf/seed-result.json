@@ -1,0 +1,1 @@
+{"status":"seeded","scope":"own disposable small-admin organization only","expected":{"totalKm":147,"months":{"2026-01":101,"2026-02":46,"2026-03":0},"archivedVan":{"name":"Archived fixture van","plate":"FIX-1737","totalKm":118},"ownVehicleKm":29},"method":"verifySuiteDatabase + withCanonicalRecords; domain records only; identities/grants/memberships unchanged"}

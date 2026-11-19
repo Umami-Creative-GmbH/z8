@@ -1,0 +1,26 @@
+{
+  "componentId": "4618",
+  "successfulInspection": true,
+  "sourceDirty": [
+    "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "usableNativeTree": true,
+  "separateFrom": "DOM assertions and connected Next MCP",
+  "treeLines": [
+    "169 4604 4603 Forget(OrgExplorerHeader)",
+    "170 4611 4610 Forget(OrgExplorerClient) key=\"9bf719c4-201e-45b4-af53-2340c55b9a25\"",
+    "177 4618 4617 Forget(OrgExplorer)",
+    "179 4946 4619 Forget(PersonPanel)"
+  ],
+  "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+  "hookLines": [
+    "  Translate: undefined (2 sub)",
+    "  IsMobile: undefined (1 sub)",
+    "  OrgExplorerUrlState: undefined (1 sub)",
+    "  OrgExplorerPeople: undefined (17 sub)",
+    "  OrgExplorerLines: undefined (3 sub)",
+    "  OrgExplorerUrlLoads: undefined (4 sub)"
+  ]
+}

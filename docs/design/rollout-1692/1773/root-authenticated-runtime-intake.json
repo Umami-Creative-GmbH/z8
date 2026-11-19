@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "issue": 1773,
+  "aliasNode": "R148",
+  "status": "bounded-runtime-qualified",
+  "verifiedCommit": null,
+  "frozenCommit": "56120fa8903d95e3cc2db6798e44b01b48b2ac38",
+  "appTree": "440219039a3ec524a457da06145d319fa1d5f07d",
+  "safeIntake": {
+    "payloadFiles": 23,
+    "payloadBytes": 1829006,
+    "jsonParsed": 14,
+    "pngDecoded": 9,
+    "allowlistSha256": "1166835783ec277c79175a6988b1f282462bd3a89230aae3f64e09bebdc4f16f",
+    "independentAuditSha256": "c5f9057038550e73f25b211aaed27fde8c27dd74e897411bb9fd659339c930e2"
+  },
+  "results": {
+    "postgres": {
+      "passed": 100,
+      "unique": 100,
+      "files": 5,
+      "overlapsEarlierCanonicalRuns": true
+    },
+    "runtime": {
+      "unique": 37,
+      "passed": 36,
+      "failed": 1,
+      "attempts": 77,
+      "noConfirmedR096P1": true
+    },
+    "accepted": [
+      "Normal correct-password sign-in and admitted org-admin key list. One API key create, edit, disable and delete; final key count zero.",
+      "One-time reveal/copy privately compared; no full values in public evidence.",
+      "Held edit/delete Escape blocked; two delete activations produce one POST.",
+      "Failed key/webhook reads recover through local Retry and header Refresh.",
+      "Org-admin webhook-create refusal retains draft; employee and restricted custom role denied.",
+      "Saved 18px reload, desktop/collapsed/wide-dark/phone layout and mobile first Escape/focus checks.",
+      "Connected developer Next session reports no compilation/configuration/session errors."
+    ],
+    "unpassed": [
+      "Owner webhook commands, rotation/signing-value reveal, webhook delivery; fixture has no owner.",
+      "Actual manager denial after harness failure.",
+      "Key-edit transport failure/draft retry and injected context-reader recovery.",
+      "Native React and axe; historical matched comparisons.",
+      "Live org/account/revocation/former/no-employee matrices; production generation/catalog/providers/devices/true zoom/global transitions."
+    ]
+  },
+  "aliasObservation": {
+    "raw": "German request with saved locale en reached English API-key destination and dropped repeated query values; English repeated-query control passed.",
+    "classification": "Saved-locale enforcement is intentional and tested. Query loss is supported by the shared proxy/layout chain; alias-local causation is unestablished. Original 36/37 result is unchanged.",
+    "diagnosisSha256": "8fa67a8d368eb715092c4153d7b0a8be1f58ea0f5d5b37af77cd2c1ebe116749",
+    "next": "Public proxy-to-layout query-preservation regression and coordinated shared fix; German-alias control with saved German locale remains useful."
+  },
+  "qualifications": [
+    "Preservation receipt has unequal before/after digest strings despite its exactness flag; SAFE omits the source maps/algorithm needed to reconcile. Full preservation is an inherited receipt, not independently proved by this intake.",
+    "Runtime receipt reports exact-owned processes, containers and ports absent; intake did not perform a fresh process inventory.",
+    "Nine current captures show empty states, development overlays and qualified retained refresh-error feedback; no historical comparison claim.",
+    "Visible Next Issue wording is unclassified despite empty extracted error arrays.",
+    "One diagnostic hidden-result transition is not standalone acceptance."
+  ],
+  "release": {
+    "reportedProcessesAbsent": 13,
+    "reportedContainersAbsent": 4,
+    "reportedPortsAbsent": 5,
+    "allOwnershipReleased": true
+  },
+  "privateEvidence": ".tmp/1773-current-runtime-20261117c/safe/SAFE-ALLOWLIST.json"
+}

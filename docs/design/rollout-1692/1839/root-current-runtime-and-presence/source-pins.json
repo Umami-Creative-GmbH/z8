@@ -1,0 +1,437 @@
+{
+  "schema": 1,
+  "pinFormat": "SHA256 of filesystem bytes, including CRLF where present. No newline normalization.",
+  "derivation": [
+    {
+      "path": "runtime/1839-acceptance.json",
+      "records": 29
+    },
+    {
+      "path": "runtime/1744-acceptance.json",
+      "records": 27
+    }
+  ],
+  "recordsBeforeReconciliation": 56,
+  "uniquePins": 56,
+  "duplicateRecords": 0,
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/all-locations-link.tsx",
+      "sha256": "647591d60758a7097e34cfddce6dce36a249c87514b83e1bfd617300bc6c54bf",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/error.tsx",
+      "sha256": "b85bee01ae8123e019bf675e69d88b515046712c4c4722f11fb176c028e1f38f",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/heading.test.ts",
+      "sha256": "7d222132a66f47cbc630fb6f14f024736944349ff424cc9b76b37d9d945b64a6",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/location-presence-loading.tsx",
+      "sha256": "650a20fef595bdde9ff62ea17932989d6db46b1210fc73d3d4cd94c9b8f367b6",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/not-found.tsx",
+      "sha256": "86de1f113c3d2886cd6c9a5aa4d1cca1e2dd114e45c7979e04428602ba0e2a92",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "sha256": "87f64ef9dba9259fae34c1c789a210682972d491a7a250ae5e905b380aa57a3e",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx",
+      "sha256": "f9d17b56e51dd03f4eb6e4624cda5ca3c46b9c8ae81102c902448809f7bb437a",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-arrival.test.tsx",
+      "sha256": "1c72c58440a30fb56c536a8b3e02d965ca9bd31eeba310eecdc0c304f66529df",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx",
+      "sha256": "a6916fd0e80ecacf2ac0d66948e5a16c4435ec6bcd4ac43f6ad4318fbf2e6439",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+      "sha256": "221c4886712345a5541f0cdc4e313fcab50aeaa93d27d2b1164f0b91415d0f12",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-view.tsx",
+      "sha256": "30e2e12a624968b496cca2255231f0e1dcf13d4931f30e9282a5766a376ad233",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.test.tsx",
+      "sha256": "8b4893bf0b9351894a2cb3a22662696c33ccd477c2313815f176941c3eec1062",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.tsx",
+      "sha256": "cee05a75fc290d03b9c3c2ad02c8e2e4e09dad836c613e81cfca0abea8f0766d",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx",
+      "sha256": "699389bef9221ff28dd16bf987cac3f12ce0dcc0e4f4b1b1bcfdf24f9d7f27e8",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/presence-data.ts",
+      "sha256": "055bd7a939e701e327b55fda936e7651cd07f69c9864e69d2e18ce284bd3c036",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/provider-arrival.test.tsx",
+      "sha256": "fe58df1dc002b8a511b05eba6b62e8c3d1be576df7bf453ca0adb1de65706ebd",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/selection-actions.integration.test.ts",
+      "sha256": "987dab7c4737e742cb787c50afb45cbb430ffc8ea0a2e6a67a9e81bd7286ff26",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/selection-actions.ts",
+      "sha256": "03f7d83d57edc545a33d2289ab205f667523e58a6ab87c8bb116a954c34f3952",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/use-presence-view-arrival.ts",
+      "sha256": "eddcb3599ee9268e62522a4602cd14522058f8555c97abba25f82302c355ddb4",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(auth)/layout.tsx",
+      "sha256": "b205b8491b6ca44d91f141708fd8df1d111f41a8765cc2c4ece6377bd721ccbd",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/alternative-auth.tsx",
+      "sha256": "89193dda62a15b27c64832f4e15075093335ea22e33eaeb8e9902a5f9ecf99a5",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/credentials-fields.tsx",
+      "sha256": "e7ca681ecd517d7fa7b18cbc557e73584a7f9429ee5559570f13e2085e7f7885",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-actions.tsx",
+      "sha256": "bb64a6533052f45b8c09d714cb7796e5e4a2d310dd9f0d770164b5d1a0724bc3",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-client-arrival.test.tsx",
+      "sha256": "998294cfb352cc0d5f320412ebba53fd0e975a6691c9e4f7c72582f2923c9fbd",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "sha256": "1138a3f1c050a71eeca7c0de2ebce4fd47c0b5360f9822117af0901fb05d7812",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.tsx",
+      "sha256": "902304ed457b6c80065011fcc749b549edfa0f8fd96427a1e108f01a0d3349ef",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-method-lifetime.test.tsx",
+      "sha256": "d1f7251dce9c1580359b32f62c52eae47582ab457825a5348759c13820ad87b1",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-state.test.ts",
+      "sha256": "cd4ec542a1cdb92e044f5ce9adc5fbb6554c2e680384683e5571819389583e78",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-state.ts",
+      "sha256": "85af75a8d63c6847ac6c01b3f4e17574c70354031b19532ec945d32dc65d23e0",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "sha256": "9d0abb5a3d4505875ed7f37c222c80bba95b2ebf3bc6a3698fcd73fc7a3077cb",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-verification.tsx",
+      "sha256": "4052ce659c9a21ce66406980bc1b468875920b5d1f5815a413cd269d31b518c6",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form-lazy.tsx",
+      "sha256": "586379db3f37f0f81949caae71e0b07012d5947d79fd728182d65dbb20faf93f",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "sha256": "85298049b4e821bec6130912c0aaec6ce449b89d4c034d6baf78a3cb352e5db1",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form.tsx",
+      "sha256": "b4e8ef2a495234b0727eac8c0e1caa69516d6c4b3517a971521b84e45f5d5f9c",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/two-factor-form.tsx",
+      "sha256": "259e574238c8ba98d4dbca562ba175150b9127afd92c0e33ef8b8b3ba9246e35",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/components/login/use-login-auth.ts",
+      "sha256": "6f0aed33c9b0580c015a405f73cdd853e02cc534b7420ad5885df914b88c1aad",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/auth-domain-config.ts",
+      "sha256": "88d7c9882c874cb5bc645b4aed1007c6e76a722787280fcfa32f6f5e1c87fa8a",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/auth.ts",
+      "sha256": "6cb3d4e6f933a58626c0af9e72cf85ad259b47e85ae4c67556e03ad3274ff7f2",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/assigned-locations/queries.ts",
+      "sha256": "20ed8d2b974b18e218363e269dd20b9e238758d47d9532a4807b5c1473f26b9e",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/clock-presence.ts",
+      "sha256": "369af13e02f92bd78a2bd4f1ce5aabbe504311f18484cb06487ced4fafe35e6f",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/format.test.ts",
+      "sha256": "68208bd506226cdb2ac83188b09bf6e80b2b72df35a5e5ed87a864fd63ad1524",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/format.ts",
+      "sha256": "b3c49ef4a9e5c1deb5c567916540563dd55b8192282e4ad1febff1b0641a7328",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/queries.ts",
+      "sha256": "2215fd986dd75c59a17ff50f37b8f827703a4c9099c1fc57ba299cfc1fc16ff9",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/shape.test.ts",
+      "sha256": "6d230b5f1de6cb93cd8e3705e24e788cc0ec5abc7b6984817c7afcdf9e90b5c4",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/shape.ts",
+      "sha256": "5f8df5749fb9313947881117c273f460cff3e093aa0c8b3c74cb3c0f3b6b1d91",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/who-is-in/who-is-in.integration.test.ts",
+      "sha256": "5c3d39dcaea3aed6268c8b142021b651ffce89797f9d69f743989df0e4dd6b01",
+      "sourceIssues": [
+        1744
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "sha256": "43ad2cd078afd39fd609d57bcb7e555521462e1bc587befeabaf09fcbaee5a71",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/auth-plugin.ts",
+      "sha256": "5764ae8d034927f0e7e24ddbf9a5fb97a60096c0e153894a8cb4551fae6aae3e",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/auth-policy.ts",
+      "sha256": "0afa1cafe10cbe7671a2d2957c58ffdedb5ec6cf2d7f698418b885f5672ab40e",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "sha256": "8b4879dbb1bc50a2dbe4c3fc292f91ebb5154f7e80fb599ffe54d44834466e5a",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/development-keys.ts",
+      "sha256": "63ac9e3fe2a1c7baeb388d71009242f2193cada7b894c4bee4986b4e840d5fea",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/index.ts",
+      "sha256": "00e542ebeb53306f8d2103453518b3bea9f844ec75802c2a1527df9996d8f322",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "sha256": "3d0cee489f1d0f9460c3f8f80c802f03301abddd4d9b7826132b91b0f8789cc8",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/service.ts",
+      "sha256": "0cd123f12129bedc660a38833d392b6edbe8055f4eca9e543d9191c28232e645",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "sha256": "372b7e667447c01ab43ceb27e925e2f9768bb1e48faeabd4e725ef67d93f57b5",
+      "sourceIssues": [
+        1839
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/verify.ts",
+      "sha256": "e1358d4e248ac61840c1b0f003ada38b39ec4c2b82c269f5112654a996236768",
+      "sourceIssues": [
+        1839
+      ]
+    }
+  ],
+  "configurationPins": [],
+  "configurationContentVerification": "None: these acceptance payloads declare source pins only. The inherited eight dependency/license preservation observations do not provide configuration-content hashes.",
+  "actualRuntime": {
+    "head": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+    "appTree": "138aab92cde099756c13347827a90112763def68",
+    "tree": "c46bc8d4f045c8fff2d9a6f51c678784e0cb2f80",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "verifiedCommit": null,
+    "readiness": null
+  },
+  "publicationBoundary": {
+    "head": "d6a8863ddf6c9450848a85f88411825101ae13d6",
+    "appTree": "f3666bb7c8ff4b752eb316a78d02cfaeb895e51f",
+    "runtimeWasExecutedHere": false,
+    "wholeCurrentAppVerified": false,
+    "verifiedCommit": null,
+    "readiness": null
+  },
+  "fullAppTreeDrift": {
+    "expected": true,
+    "paths": [
+      "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "apps/webapp/src/components/webhooks/webhooks-server-arrival.test.tsx"
+    ],
+    "explanation": "The current full app tree differs at these two developer-access UI paths, outside all declared R155/R1744 pins. Source-pin equality carries the bounded historical runtime evidence; it is not a fresh runtime run on this publication HEAD or acceptance of the whole current app."
+  }
+}

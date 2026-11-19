@@ -1,0 +1,52 @@
+Started label-owned PostgreSQL 16 container: z8_approval_workflow_repository_test_1794750214762923600_24819
+PostgreSQL 16 is ready: z8_approval_workflow_repository_test_1794750214762923600_24819
+Created disposable database: approval_workflow_repository_test_1794750214762923600_24819
+Verifying approval migration incident recovery, retry, and fresh chain
+Migration recovery verification: probing custom schema refusal
+Migration recovery verification: recreating incident state
+Migration recovery verification: applying recovery migration
+Migration recovery verification: checking retry idempotency
+Migration recovery verification: checking anchor-present index recovery
+Migration recovery verification: checking fresh migration chain
+Migration recovery verification: passed
+Running the PostgreSQL integration project
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+{"level":30,"time":1794750232126,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","organizationId":"t1001x-org","formatId":"datev_lohn","msg":"Creating payroll export job"}
+{"level":30,"time":1794750232147,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","jobId":"4058e0b9-2485-46ac-84aa-75266185aa9f","isAsync":false,"workPeriodCount":0,"msg":"Payroll export job created"}
+{"level":30,"time":1794750232148,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","jobId":"4058e0b9-2485-46ac-84aa-75266185aa9f","organizationId":"t1001x-org","msg":"Processing payroll export job"}
+{"level":30,"time":1794750232158,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","filters":{"dateRange":{"start":"2026-07-01T00:00:00.000+00:00","end":"2026-07-31T00:00:00.000+00:00"},"employeeIds":["d1001100-0000-4000-8000-000000000001","d1001100-0000-4000-8000-000000000002","d1001100-0000-4000-8000-000000000003","d1001100-0000-4000-8000-000000000004","d1001100-0000-4000-8000-000000000005","d1001100-0000-4000-8000-000000000008"]},"msg":"Fetching work periods for payroll export"}
+{"level":30,"time":1794750232166,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","count":0,"msg":"Fetched work periods for payroll export"}
+{"level":30,"time":1794750232166,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","filters":{"dateRange":{"start":"2026-07-01T00:00:00.000+00:00","end":"2026-07-31T00:00:00.000+00:00"},"employeeIds":["d1001100-0000-4000-8000-000000000001","d1001100-0000-4000-8000-000000000002","d1001100-0000-4000-8000-000000000003","d1001100-0000-4000-8000-000000000004","d1001100-0000-4000-8000-000000000005","d1001100-0000-4000-8000-000000000008"]},"msg":"Fetching absences for payroll export"}
+{"level":30,"time":1794750232170,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","count":0,"msg":"Fetched absences for payroll export"}
+{"level":30,"time":1794750232173,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","count":3,"msg":"Fetched overtime payouts for payroll export"}
+{"level":30,"time":1794750232174,"pid":20056,"hostname":"be-kai-et","component":"DatevLohnFormatter","workPeriodCount":0,"absenceCount":0,"msg":"Transforming to DATEV Lohn format"}
+{"level":30,"time":1794750232175,"pid":20056,"hostname":"be-kai-et","component":"DatevLohnFormatter","lineCount":4,"employeeCount":3,"unmappedOvertimePayoutCount":0,"fileName":"datev_lohn_2026-07_20261115_134352.csv","msg":"DATEV Lohn export generated"}
+{"level":30,"time":1794750232482,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","organizationId":"t1001x-org","formatId":"datev_lohn","msg":"Creating payroll export job"}
+{"level":30,"time":1794750232493,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","jobId":"d9bb0b81-a14f-48b8-bf9b-27aea4b45674","isAsync":false,"workPeriodCount":0,"msg":"Payroll export job created"}
+{"level":30,"time":1794750232493,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","jobId":"d9bb0b81-a14f-48b8-bf9b-27aea4b45674","organizationId":"t1001x-org","msg":"Processing payroll export job"}
+{"level":30,"time":1794750232502,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","filters":{"dateRange":{"start":"2026-07-01T00:00:00.000+00:00","end":"2026-07-31T00:00:00.000+00:00"},"employeeIds":["d1001100-0000-4000-8000-000000000001","d1001100-0000-4000-8000-000000000002","d1001100-0000-4000-8000-000000000003","d1001100-0000-4000-8000-000000000004","d1001100-0000-4000-8000-000000000005","d1001100-0000-4000-8000-000000000008"]},"msg":"Fetching work periods for payroll export"}
+{"level":30,"time":1794750232502,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","filters":{"dateRange":{"start":"2026-07-01T00:00:00.000+00:00","end":"2026-07-31T00:00:00.000+00:00"},"employeeIds":["d1001100-0000-4000-8000-000000000001","d1001100-0000-4000-8000-000000000002","d1001100-0000-4000-8000-000000000003","d1001100-0000-4000-8000-000000000004","d1001100-0000-4000-8000-000000000005","d1001100-0000-4000-8000-000000000008"]},"msg":"Fetching absences for payroll export"}
+{"level":30,"time":1794750232505,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","count":0,"msg":"Fetched absences for payroll export"}
+{"level":30,"time":1794750232507,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","count":0,"msg":"Fetched work periods for payroll export"}
+{"level":30,"time":1794750232509,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","count":3,"msg":"Fetched overtime payouts for payroll export"}
+{"level":30,"time":1794750232510,"pid":20056,"hostname":"be-kai-et","component":"DatevLohnFormatter","workPeriodCount":0,"absenceCount":0,"msg":"Transforming to DATEV Lohn format"}
+{"level":30,"time":1794750232510,"pid":20056,"hostname":"be-kai-et","component":"DatevLohnFormatter","lineCount":1,"employeeCount":0,"unmappedOvertimePayoutCount":3,"fileName":"datev_lohn_2026-11_20261115_134352.csv","msg":"DATEV Lohn export generated"}
+{"level":30,"time":1794750232670,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","count":3,"msg":"Fetched overtime payouts for payroll export"}
+{"level":30,"time":1794750232678,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","count":3,"msg":"Fetched overtime payouts for payroll export"}
+{"level":30,"time":1794750232807,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","count":1,"msg":"Fetched overtime payouts for payroll export"}
+{"level":30,"time":1794750232981,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","organizationId":"t1001x-org","formatId":"datev_lohn","msg":"Creating payroll export job"}
+{"level":30,"time":1794750233004,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","jobId":"839497ea-dca7-4e8a-a9aa-3972f63352a4","isAsync":false,"workPeriodCount":0,"msg":"Payroll export job created"}
+{"level":30,"time":1794750233004,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportService","jobId":"839497ea-dca7-4e8a-a9aa-3972f63352a4","organizationId":"t1001x-org","msg":"Processing payroll export job"}
+{"level":30,"time":1794750233016,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","filters":{"dateRange":{"start":"2026-07-01T00:00:00.000+00:00","end":"2026-07-31T00:00:00.000+00:00"},"employeeIds":["d1001100-0000-4000-8000-000000000004"]},"msg":"Fetching work periods for payroll export"}
+{"level":30,"time":1794750233016,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","filters":{"dateRange":{"start":"2026-07-01T00:00:00.000+00:00","end":"2026-07-31T00:00:00.000+00:00"},"employeeIds":["d1001100-0000-4000-8000-000000000004"]},"msg":"Fetching absences for payroll export"}
+{"level":30,"time":1794750233020,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","count":0,"msg":"Fetched absences for payroll export"}
+{"level":30,"time":1794750233023,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","count":0,"msg":"Fetched work periods for payroll export"}
+{"level":30,"time":1794750233025,"pid":20056,"hostname":"be-kai-et","component":"PayrollExportDataFetcher","organizationId":"t1001x-org","count":1,"msg":"Fetched overtime payouts for payroll export"}
+{"level":30,"time":1794750233027,"pid":20056,"hostname":"be-kai-et","component":"DatevLohnFormatter","workPeriodCount":0,"absenceCount":0,"msg":"Transforming to DATEV Lohn format"}
+{"level":30,"time":1794750233027,"pid":20056,"hostname":"be-kai-et","component":"DatevLohnFormatter","lineCount":2,"employeeCount":1,"unmappedOvertimePayoutCount":0,"fileName":"datev_lohn_2026-07_20261115_134353.csv","msg":"DATEV Lohn export generated"}
+JSON report written to X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1725-root-checks/postgres-isolated-grant.json
+Verified container ownership label: z8.agent-owned=approval-workflow-repository-test
+z8_approval_workflow_repository_test_1794750214762923600_24819
+Removed disposable PostgreSQL container: z8_approval_workflow_repository_test_1794750214762923600_24819

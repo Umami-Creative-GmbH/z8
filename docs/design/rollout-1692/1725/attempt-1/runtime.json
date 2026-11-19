@@ -1,0 +1,845 @@
+{
+  "base": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+  "overlay": [
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx",
+    "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx",
+    "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "fixture": "generated disposable payroll fixture; no external delivery",
+  "role": "small-admin with all-employee payroll grant",
+  "organization": "perf-small-d39b40cca73b",
+  "captures": [
+    {
+      "name": "before-desktop-light",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "default",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 8,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…\n\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "decodedBytes": 4800000
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-wide-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "dpr": 1,
+      "documentWidth": 2200,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 8,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…\n\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll",
+      "png": {
+        "width": 2200,
+        "height": 1100,
+        "decodedBytes": 7260000
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-light-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 8,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…\n\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-light-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 8,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…\n\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 8,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…\n\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "before-phone-dark-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll",
+        "Payroll"
+      ],
+      "rows": 8,
+      "body": "Payroll\n\nReview payroll totals, readiness, and exports for the selected period.\n\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…\n\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "b3ed203de2ffc9590718703a69f7871012071b350ccf51462fbe5412320a4459",
+          "rawBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "normalizedBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "42a611f996af56b989c656b838d86697c8f2391e4f13c9ec6704b571a36e6a40",
+          "rawBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "normalizedBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "9e0a9798a6bbeecc6afd2b39d67b0e3989ee4d6c7b9b02c15fdb139a758c5de9",
+          "rawBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "normalizedBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "LF"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "rawBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "normalizedBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "LF"
+        }
+      }
+    },
+    {
+      "name": "after-desktop-light",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "default",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "decodedBytes": 4800000
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-wide-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "dpr": 1,
+      "documentWidth": 2200,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…",
+      "png": {
+        "width": 2200,
+        "height": 1100,
+        "decodedBytes": 7260000
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-light-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-light-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "light",
+      "theme": "light bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nNo successful Payroll baseline exports are available for this period.\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nNo compatible payroll baseline is available for this period and employee selection.",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-dark-saved18",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-dark-saved18-totals",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-team-panel",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "dpr": 1,
+      "documentWidth": 1600,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\n11/1/2026 - 11/30/2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nNo successful Payroll baseline exports are available for this period.\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nNo compatible payroll baseline is available for this period and employee selection.",
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "decodedBytes": 4800000
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    },
+    {
+      "name": "after-phone-drawer-closed",
+      "path": "/en/payroll",
+      "cssViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark bprogress-busy",
+      "h1": [
+        "Payroll"
+      ],
+      "rows": 8,
+      "totals": "Employees8Worked hours0.00 hReady8Blockers0",
+      "body": "Performance small\nPayroll\nReview payroll totals, readiness, and exports for the selected period.\nWork balances\nSelected period\nNovember 2026\n2026-11-01 to 2026-11-30\n\n8 employees in scope\n\nPrevious period\nNext period\nCurrent period\nMonth\nWeek\nCustom\nStart\nEnd\nApply\nPayroll export target\nDATEV Lohn & Gehalt\nDownload PDF\nTrigger export\n\nExport prepares payroll data. It does not make a payment.\n\nPayroll scope\nNarrow this payroll workspace by assigned employees or teams.\nCurrent scope\n\nAll employees and teams I manage\n\nSpecific teams\nSpecific employees\nEmployees\n8\nWorked hours\n0.00 h\nReady\n8\nBlockers\n0\nClosed months\nNovember 2026\nOpen\nNot every month in this range is closed\n\nWork and absences in these months can still change after the export. Close a month once its payroll is final.\n\nNovember 2026\nOpen\nClose this month\nEmployee totals\nWorked time, absence totals, contract type, and payroll status.\nEmployee\tTeam\tContract\tHours\tAbsences\tStatus\n\nPerson 0\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 1\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 2\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 3\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 4\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 5\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 6\nNo employee number\n\tFixture team 0\tFixed\t0 h\tNone\tReady for payroll\n\nPerson 7\nNo employee number\n\tFixture team 1\tFixed\t0 h\tNone\tReady for payroll\nPayroll baseline exports\nInspect the historical values retained from successful exports for 24 calendar months after completion, independently of the downloadable file.\n\nExpense reimbursements are excluded. Only supported work, absence and overtime payout hours are shown.\n\nRefresh baselines\n\nLoading baseline exports…\n\nCompare payroll\nReview the supported payroll changes since a successful export before preparing a correction.\n\nExpense reimbursements are excluded. This comparison covers supported work, absence and overtime payout hours only.\n\nRefresh compatible baselinesChoose retained export filters\n\nLoading compatible baseline exports…",
+      "png": {
+        "width": 390,
+        "height": 844,
+        "decodedBytes": 987480
+      },
+      "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+          "rawSha256": "1e327dcda155fd52ca792f3904ab50ad6891064ab1afc736a669894a44fca069",
+          "rawBlob": "aa0852f3d323a567d1aff460f67868440187af10",
+          "normalizedBlob": "d4aa65c1bbee165f70bfdd5f13db513801958bb4",
+          "baselineBlob": "80094af2785c5d9c5c7e33f2f20a6a4c494db5b8",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+          "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+          "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+          "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+          "baselineBlob": "ce2c08103a01164109ed7b1f5192890ebf565b6e",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+          "rawSha256": "f4196c1567a64a876b329e20c046eed9c1c9b3a25e540159232497ca148b2f46",
+          "rawBlob": "42af95c9e4cd79faeda7276693779512085ce304",
+          "normalizedBlob": "44a7c33aabe51faa2a8a0d35627a9a0a57653e84",
+          "baselineBlob": "9652e046b4ebdb95e7fa51e4236c25b9f5936a23",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        },
+        "apps/webapp/src/lib/navigation/route-metadata.ts": {
+          "rawSha256": "a0b0f4492267839fe92471352ccae7f88e876a20387f9fb7bda2199bfe87ecf1",
+          "rawBlob": "e9d22edac6373e588bb1621512d431b3063e36bb",
+          "normalizedBlob": "541028427c22140273dec5419c3c445d4edff556",
+          "baselineBlob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4",
+          "lineEndings": "CRLF (raw differs from normalized repository LF)"
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "matched comparison",
+      "actual": "same synthetic organization, actor, period and records; only four listed consumer files overlaid; baseline is not a full historical app"
+    },
+    {
+      "name": "global refresh retains custom draft",
+      "actual": true
+    },
+    {
+      "name": "scope panel first Escape and focus return",
+      "actual": "Specific teams"
+    },
+    {
+      "name": "current route phone first Escape and focus return",
+      "actual": true
+    }
+  ],
+  "errors": []
+}

@@ -17,12 +17,13 @@ export function AuthenticatedAppShell() {
 		<SidebarProvider
 			style={
 				{
-					"--sidebar-width": "calc(var(--spacing) * 72)",
-					"--header-height": "calc(var(--spacing) * 12)",
+					"--sidebar-width": "16rem",
+					"--sidebar-width-icon": "3.5rem",
+					"--header-height": "4rem",
 				} as React.CSSProperties
 			}
 		>
-			<Sidebar variant="inset">
+			<Sidebar variant="sidebar" collapsible="icon">
 				<SidebarHeader>
 					<Skeleton className="h-10 w-full" />
 				</SidebarHeader>
@@ -47,7 +48,7 @@ export function AuthenticatedAppShell() {
 					"Loading application",
 				)}
 			>
-				<header className="box-content flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-white dark:bg-background px-4 pt-[env(safe-area-inset-top)] lg:px-6">
+				<header className="box-content flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-card px-4 pt-[env(safe-area-inset-top)] lg:px-6">
 					<Skeleton className="size-7" />
 					<Skeleton className="h-5 w-36" />
 					<Skeleton className="ml-auto h-8 w-24" />

@@ -1,0 +1,82 @@
+{
+  "at": "2026-11-18T04:21:26.179Z",
+  "failed": 7,
+  "events": [
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:18.242Z"
+    },
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:18.251Z"
+    },
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:18.257Z"
+    },
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:19.261Z"
+    },
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:19.459Z"
+    },
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:21.276Z"
+    },
+    {
+      "event": "non-auth-route-POST-failed-before-dispatch",
+      "at": "2026-11-18T04:21:25.282Z"
+    },
+    {
+      "event": "initial-error-with-local-retry",
+      "at": "2026-11-18T04:21:25.289Z",
+      "view": {
+        "path": "/en/travel-expenses",
+        "h1": [
+          {
+            "text": "Travel Expenses",
+            "x": 280,
+            "y": 89,
+            "w": 1296,
+            "h": 36
+          }
+        ],
+        "statuses": [],
+        "alerts": [
+          "Unable to load your travel expenses. Please retry.Retry"
+        ],
+        "retry": true,
+        "empty": false,
+        "noMatch": false,
+        "rows": 0
+      }
+    },
+    {
+      "event": "actual-local-retry",
+      "at": "2026-11-18T04:21:25.327Z"
+    }
+  ],
+  "recovered": {
+    "path": "/en/travel-expenses",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 280,
+        "y": 89,
+        "w": 1296,
+        "h": 36
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": false,
+    "noMatch": false,
+    "rows": 2
+  },
+  "pass": true,
+  "qualification": "Synthetic transport failure, no Unauthorized simulation. New page has no prior history success; healthy-empty and no-match controls tested separately."
+}

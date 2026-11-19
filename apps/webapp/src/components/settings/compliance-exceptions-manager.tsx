@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconClock, IconShield, IconX } from "@tabler/icons-react";
+import { IconCheck, IconClock, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -19,6 +19,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { PageHeader } from "@/components/ui/page-header";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatDistance } from "@/lib/datetime/format";
@@ -32,8 +33,13 @@ import { Label } from "../ui/label";
 import { Skeleton } from "../ui/skeleton";
 import { Textarea } from "../ui/textarea";
 
-function formatExceptionEmployeeName(employeeRecord: ExceptionWithDetails["employee"]) {
-	return buildAuthUserDisplayName(employeeRecord) || "Unknown";
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function formatExceptionEmployeeName(
+	employeeRecord: ExceptionWithDetails["employee"],
+	t: Translate,
+) {
+	return buildAuthUserDisplayName(employeeRecord) || t("common.unknownEmployee", "Unknown Employee");
 }
 
 interface ComplianceExceptionsManagerProps {
@@ -42,19 +48,24 @@ interface ComplianceExceptionsManagerProps {
 	isAdmin: boolean;
 }
 
-const exceptionTypeLabels: Record<string, string> = {
-	rest_period: "Rest Period",
-	overtime_daily: "Daily Overtime",
-	overtime_weekly: "Weekly Overtime",
-	overtime_monthly: "Monthly Overtime",
-};
+function exceptionTypeLabel(exceptionType: string, t: Translate) {
+	switch (exceptionType) {
+		case "rest_period":
+			return t("compliance:compliance.exception.types.restPeriod", "Rest Period");
+		case "overtime_daily":
+			return t("compliance:compliance.exception.types.overtimeDaily", "Daily Overtime");
+		case "overtime_weekly":
+			return t("compliance:compliance.exception.types.overtimeWeekly", "Weekly Overtime");
+		case "overtime_monthly":
+			return t("compliance:compliance.exception.types.overtimeMonthly", "Monthly Overtime");
+		default:
+			return exceptionType;
+	}
+}
 
-const exceptionTypeColors: Record<string, string> = {
-	rest_period: "bg-blue-500",
-	overtime_daily: "bg-orange-500",
-	overtime_weekly: "bg-amber-500",
-	overtime_monthly: "bg-red-500",
-};
+function formatPlannedDuration(minutes: number) {
+	return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
 
 export function ComplianceExceptionsManager({
 	organizationId,
@@ -70,7 +81,13 @@ export function ComplianceExceptionsManager({
 	const [rejectionReason, setRejectionReason] = useState("");
 
 	// Query for pending exceptions
-	const { data: exceptionsResult, isLoading } = useQuery({
+	const {
+		data: exceptionsResult,
+		isLoading,
+		isError,
+		refetch,
+		isRefetching,
+	} = useQuery({
 		queryKey: queryKeys.compliance.pendingExceptions(organizationId),
 		queryFn: async () => {
 			const result = await getPendingExceptions();
@@ -143,6 +160,9 @@ export function ComplianceExceptionsManager({
 	};
 
 	const handleRejectClick = (exception: ExceptionWithDetails) => {
+		if (rejectingException?.id !== exception.id) {
+			setRejectionReason("");
+		}
 		setRejectingException(exception);
 		setRejectionDialogOpen(true);
 	};
@@ -159,26 +179,22 @@ export function ComplianceExceptionsManager({
 	const exceptions = exceptionsResult || [];
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex flex-col gap-2">
-				<h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-					<IconShield className="size-6" aria-hidden="true" />
-					{t("settings.compliance.title", "ArbZG Compliance")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.compliance.description",
-						"Review and manage compliance exception requests from team members",
-					)}
-				</p>
-			</div>
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+			<PageHeader
+				title={t("settings.compliance.title", "ArbZG Compliance")}
+				description={t(
+					"settings.compliance.description",
+					"Review and manage compliance exception requests from team members",
+				)}
+			/>
 
 			{/* Pending Exceptions Section */}
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2 text-lg">
 						<IconClock className="size-5" aria-hidden="true" />
-						{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}
+						<h2>{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}</h2>
 					</CardTitle>
 					<CardDescription>
 						{t(
@@ -201,25 +217,42 @@ export function ComplianceExceptionsManager({
 								</div>
 							))}
 						</div>
+					) : isError ? (
+						<div className="flex flex-col items-center gap-4 py-8 text-center">
+							<p role="alert" className="text-sm text-destructive">
+								{t(
+									"compliance:compliance.exception.loadError",
+									"Pending exception requests could not be loaded.",
+								)}
+							</p>
+							<Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
+								<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+								{t("common.retry", "Retry")}
+							</Button>
+						</div>
 					) : exceptions.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<IconCheck className="mb-3 size-12 text-muted-foreground/50" aria-hidden="true" />
+						<div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+							<IconCheck className="size-6 text-muted-foreground" aria-hidden="true" />
 							<p className="text-sm text-muted-foreground">
 								{t("compliance:compliance.noExceptions", "No pending exception requests")}
 							</p>
 						</div>
 					) : (
-						<div className="space-y-3">
+						<ul className="space-y-3">
 							{exceptions.map((exception) => (
-								<ExceptionCard
-									key={exception.id}
-									exception={exception}
-									onApprove={() => handleApprove(exception)}
-									onReject={() => handleRejectClick(exception)}
-									isApproving={approveMutation.isPending}
-								/>
+								<li key={exception.id}>
+									<ExceptionCard
+										exception={exception}
+										onApprove={() => handleApprove(exception)}
+										onReject={() => handleRejectClick(exception)}
+										isApproving={approveMutation.isPending}
+										isApprovingThis={
+											approveMutation.isPending && approveMutation.variables === exception.id
+										}
+									/>
+								</li>
 							))}
-						</div>
+						</ul>
 					)}
 				</CardContent>
 			</Card>
@@ -242,11 +275,11 @@ export function ComplianceExceptionsManager({
 					<ActionPanelBody className="space-y-4">
 						{rejectingException && (
 							<div className="rounded-lg border bg-muted/50 p-3">
-								<p className="text-sm font-medium">
-									{formatExceptionEmployeeName(rejectingException.employee)}
+								<p className="text-sm font-medium break-words">
+									{formatExceptionEmployeeName(rejectingException.employee, t)}
 								</p>
-								<p className="text-sm text-muted-foreground">
-									{exceptionTypeLabels[rejectingException.exceptionType]}:{" "}
+								<p className="text-sm text-muted-foreground break-words">
+									{exceptionTypeLabel(rejectingException.exceptionType, t)}:{" "}
 									{rejectingException.reason}
 								</p>
 							</div>
@@ -270,7 +303,11 @@ export function ComplianceExceptionsManager({
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button variant="outline" onClick={() => setRejectionDialogOpen(false)}>
+						<Button
+							variant="outline"
+							onClick={() => setRejectionDialogOpen(false)}
+							disabled={rejectMutation.isPending}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
@@ -285,6 +322,7 @@ export function ComplianceExceptionsManager({
 					</ActionPanelFooter>
 				</ActionPanelContent>
 			</ActionPanel>
+			</div>
 		</div>
 	);
 }
@@ -294,14 +332,22 @@ interface ExceptionCardProps {
 	onApprove: () => void;
 	onReject: () => void;
 	isApproving: boolean;
+	isApprovingThis: boolean;
 }
 
-function ExceptionCard({ exception, onApprove, onReject, isApproving }: ExceptionCardProps) {
+function ExceptionCard({
+	exception,
+	onApprove,
+	onReject,
+	isApproving,
+	isApprovingThis,
+}: ExceptionCardProps) {
 	const { t } = useTranslate();
-	const employeeName = formatExceptionEmployeeName(exception.employee);
+	const employeeName = formatExceptionEmployeeName(exception.employee, t);
+	const typeLabel = exceptionTypeLabel(exception.exceptionType, t);
 
 	return (
-		<div className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50">
+		<div className="flex flex-wrap items-start gap-4 rounded-lg border p-4">
 			<UserAvatar
 				seed={exception.employee.userId}
 				name={employeeName}
@@ -309,41 +355,62 @@ function ExceptionCard({ exception, onApprove, onReject, isApproving }: Exceptio
 				showClockStatus={false}
 			/>
 
-			<div className="flex-1 space-y-1">
-				<div className="flex items-center gap-2">
-					<span className="font-medium">{employeeName}</span>
+			<div className="min-w-0 flex-[1_1_14rem] space-y-1">
+				<div className="flex min-w-0 flex-wrap items-center gap-2">
+					<span className="min-w-0 truncate font-medium" title={employeeName}>
+						{employeeName}
+					</span>
 					<Badge variant="outline" className="text-xs">
-						<span
-							className={`mr-1.5 inline-block size-2 rounded-full ${exceptionTypeColors[exception.exceptionType] || "bg-gray-500"}`}
-						/>
-						{exceptionTypeLabels[exception.exceptionType] || exception.exceptionType}
+						{typeLabel}
 					</Badge>
 				</div>
 
-				<p className="text-sm text-muted-foreground">{exception.reason}</p>
+				<p className="break-words text-sm text-muted-foreground">{exception.reason}</p>
 
-				<div className="flex items-center gap-3 text-xs text-muted-foreground">
+				<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
 					<span>
 						{t("compliance:compliance.exception.requestedAt", "Requested")}{" "}
 						{formatDistance(exception.createdAt)}
 					</span>
-					{exception.plannedDurationMinutes && (
-						<span>
+					{exception.plannedDurationMinutes ? (
+						<span className="tabular-nums">
 							{t("compliance:compliance.exception.plannedDuration", "Planned")}:{" "}
-							{Math.floor(exception.plannedDurationMinutes / 60)}h{" "}
-							{exception.plannedDurationMinutes % 60}m
+							{formatPlannedDuration(exception.plannedDurationMinutes)}
 						</span>
-					)}
+					) : null}
 				</div>
 			</div>
 
-			<div className="flex gap-2">
-				<Button size="sm" variant="outline" onClick={onReject} disabled={isApproving}>
+			<div className="flex flex-wrap gap-2">
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={onReject}
+					disabled={isApproving}
+					aria-label={t(
+						"compliance:compliance.exception.rejectFor",
+						"Reject {type} exception for {name}",
+						{ type: typeLabel, name: employeeName },
+					)}
+				>
 					<IconX className="mr-1 size-4" aria-hidden="true" />
 					{t("common.reject", "Reject")}
 				</Button>
-				<Button size="sm" onClick={onApprove} disabled={isApproving}>
-					<IconCheck className="mr-1 size-4" aria-hidden="true" />
+				<Button
+					size="sm"
+					onClick={onApprove}
+					disabled={isApproving}
+					aria-label={t(
+						"compliance:compliance.exception.approveFor",
+						"Approve {type} exception for {name}",
+						{ type: typeLabel, name: employeeName },
+					)}
+				>
+					{isApprovingThis ? (
+						<IconLoader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconCheck className="mr-1 size-4" aria-hidden="true" />
+					)}
 					{t("common.approve", "Approve")}
 				</Button>
 			</div>

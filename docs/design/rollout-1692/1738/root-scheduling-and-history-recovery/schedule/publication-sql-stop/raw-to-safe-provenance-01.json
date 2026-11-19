@@ -1,0 +1,48 @@
+{
+  "screenshots": [
+    {
+      "safe": "current-publish-expanded-1600-03.png",
+      "sha256": "55a41620bb7084c78b52381d58f648136d8104e7e51bcbd1696e3d72fa00faee",
+      "process": "Exact candidate public scheduling pixels after temporary fixture actor text-node redaction; originals containing actor strings were never captured; no private failure image inspected."
+    },
+    {
+      "safe": "current-publish-collapsed-1600-03.png",
+      "sha256": "64172d8efab058b1ce29ed0877a6407496cd64477886cc791c0353a0999ce30f",
+      "process": "Exact candidate public scheduling pixels after temporary fixture actor text-node redaction; originals containing actor strings were never captured; no private failure image inspected."
+    },
+    {
+      "safe": "current-publish-expanded-390-03.png",
+      "sha256": "2edf409fc2d939b888408393c0eccd06c2792a1d32fcf0236482f0eaefda0cd1",
+      "process": "Exact candidate public scheduling pixels after temporary fixture actor text-node redaction; originals containing actor strings were never captured; no private failure image inspected."
+    },
+    {
+      "safe": "current-publish-expanded-2400-03.png",
+      "sha256": "73623f46ab47d39850fbf9d9a3d73fd37e2e258170fedd70a8a7013136d40abd",
+      "process": "Exact candidate public scheduling pixels after temporary fixture actor text-node redaction; originals containing actor strings were never captured; no private failure image inspected."
+    },
+    {
+      "safe": "current-dialog-above-publish-1600-03.png",
+      "sha256": "57c55d34d7f7063ddc4b153ebb40e1ae7f7b314d2fe06a7d1325ceb747ea885f",
+      "process": "Exact candidate public scheduling pixels after temporary fixture actor text-node redaction; originals containing actor strings were never captured; no private failure image inspected."
+    }
+  ],
+  "visibleRefusal": {
+    "safe": "publish-visible-refusal-05.json",
+    "process": "Actual DOM toast text, fixture strings/UUIDs stripped in memory; no response bodies collected."
+  },
+  "safeLog": {
+    "safe": "publish-log-safe-metadata-01.json",
+    "rawPrivateSha256": "7a9976aa4275dd0acd9c4cf05208128292fb37a8869179b01a00a47aacadc92a",
+    "process": "Derived only allowlisted SQLSTATE values, exact fixed array error marker counts and fixed publish query marker counts; raw query, params, IDs, headers, auth and private fields never exposed."
+  },
+  "readbacks": {
+    "safe": [
+      "scheduling-seed-01.json",
+      "scheduling-readback-01.json",
+      "scheduling-readback-02.json"
+    ],
+    "process": "Canonical-gated scoped helper emits only scope labels, known synthetic note/time/status values, booleans and row counts; no actor IDs or credentials."
+  },
+  "privateState": "Generated own fixture configuration/credentials and failed attempts remain ignored locally. No cookie/session/storage snapshots exist.",
+  "autoReview": "Raw response helper rejected, never run; visible UI-only safe alternative approved."
+}

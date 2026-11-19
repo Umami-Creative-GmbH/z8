@@ -4,6 +4,7 @@ import { TravelExpenseApprovalsEntry } from "@/components/travel-expenses/approv
 import { TravelExpenseFinanceEntry } from "@/components/travel-expenses/finance/finance-entry";
 import { TravelExpenseManagement } from "@/components/travel-expenses/travel-expense-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
@@ -18,7 +19,8 @@ async function TravelExpensesPageContent() {
 
 	if (!authContext?.employee) {
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+				<PageHeader title={t("travelExpenses.title", "Travel Expenses")} />
 				<NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />
 			</div>
 		);
@@ -29,6 +31,7 @@ async function TravelExpensesPageContent() {
 	const readsFinance = Boolean(financeActor?.canRead);
 	return (
 		<TravelExpenseManagement
+			userId={authContext.user.id}
 			organizationId={authContext.employee.organizationId}
 			employeeId={authContext.employee.id}
 			banners={
@@ -43,18 +46,19 @@ async function TravelExpensesPageContent() {
 	);
 }
 
-function TravelExpensesPageLoading() {
+async function TravelExpensesPageLoading() {
+	const t = await getTranslate();
 	return (
 		<LoadingRegion
 			label={{
 				labelKey: "common.loadingRegions.travelExpenses",
 				labelDefault: "Loading travel expenses",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<div className="space-y-4 px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-8 w-64" />
+			<div className="space-y-4">
+				<PageHeader title={t("travelExpenses.title", "Travel Expenses")} />
 				<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>

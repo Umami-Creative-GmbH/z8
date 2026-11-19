@@ -34,10 +34,7 @@ async function loadPeopleManagementData(input: {
 				employee: employee,
 			})
 			.from(authSchema.member)
-			.innerJoin(
-				authSchema.user,
-				eq(authSchema.member.userId, authSchema.user.id),
-			)
+			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
 			.leftJoin(
 				employee,
 				and(
@@ -64,21 +61,14 @@ async function loadPeopleManagementData(input: {
 
 	const targetTeamIds = Array.from(
 		new Set(
-			invitations
-				.map((invitation) => invitation.targetTeamId)
-				.filter((id): id is string => !!id),
+			invitations.map((invitation) => invitation.targetTeamId).filter((id): id is string => !!id),
 		),
 	);
 	const targetTeams = targetTeamIds.length
 		? await db
 				.select({ id: team.id, name: team.name })
 				.from(team)
-				.where(
-					and(
-						eq(team.organizationId, input.organizationId),
-						inArray(team.id, targetTeamIds),
-					),
-				)
+				.where(and(eq(team.organizationId, input.organizationId), inArray(team.id, targetTeamIds)))
 		: [];
 	const targetTeamsById = new Map(
 		targetTeams.map((team) => [team.id, { id: team.id, name: team.name }]),
@@ -110,8 +100,7 @@ export default async function EmployeesPage() {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		return redirectWithLocale("/settings");
@@ -119,8 +108,7 @@ export default async function EmployeesPage() {
 	const currentUserId = settingsRouteContext.authContext.user.id;
 	// Controls and people tabs follow the shared settings access resolver (ADR 0002, #1623).
 	const caller = await getCurrentSettingsAccess();
-	const settingsAccess =
-		caller?.organizationId === organizationId ? caller.settingsAccess : null;
+	const settingsAccess = caller?.organizationId === organizationId ? caller.settingsAccess : null;
 
 	if (!settingsAccess) {
 		return redirectWithLocale("/settings");
@@ -139,6 +127,7 @@ export default async function EmployeesPage() {
 			accessTier={settingsRouteContext.accessTier}
 			organizationId={organizationId}
 			currentUserId={currentUserId}
+			currentEmployee={caller?.employee ?? null}
 			settingsAccess={settingsAccess}
 			people={people}
 		/>

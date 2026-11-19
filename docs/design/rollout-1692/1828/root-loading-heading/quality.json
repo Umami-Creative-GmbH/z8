@@ -1,0 +1,112 @@
+{
+  "sourceCommit": "bfbfe29c5685e2de8e981ba76fd833bf48e782bf",
+  "provisionalMerge": "3c7bc534edeb355d862c3f38759444658863af20",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx": "2504d46d6cb68610a310660d0480ce598e5de92a3778e7c43d8a8cc82e661509",
+    "apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx": "b9dddaeb6f05d13033ea6fffa187ed71a42d387f35d0f33fabffec95b6842cbc"
+  },
+  "units": {
+    "selections": [
+      {
+        "name": "compatibility-unit.json",
+        "files": 42,
+        "tests": 348
+      },
+      {
+        "name": "adversarial-unit.json",
+        "files": 1,
+        "tests": 1
+      }
+    ],
+    "uniqueFiles": 43,
+    "uniqueTests": 349
+  },
+  "tdd": {
+    "newPermanentCases": 1,
+    "oldPageFailed": 1,
+    "independentProbeFailedBefore": 1,
+    "independentProbePassesAfter": true
+  },
+  "types": {
+    "exitCode": 0,
+    "profiles": [
+      "next typegen",
+      "application",
+      "workflow contracts",
+      "smoke"
+    ]
+  },
+  "biome": {
+    "files": 3,
+    "explicitWebappCRLF": 0,
+    "explicitLintImport": 0,
+    "default": 1,
+    "ordinaryCRLF": 1
+  },
+  "doctor": {
+    "files": 3,
+    "errors": 0,
+    "warnings": 0,
+    "sourceRevision": "bfbfe29c5685e2de8e981ba76fd833bf48e782bf"
+  },
+  "runtime": {
+    "baselineChecks": 2,
+    "finalChecks": 2,
+    "acceptedCaptures": 6,
+    "actualHeldSessionRequestsPerPhase": 1,
+    "baselineMainHeadings": 0,
+    "finalMainHeadings": 1,
+    "settledMainHeadings": 1,
+    "mutationsInvoked": 0,
+    "browserExceptions": 0,
+    "nextCompilationConfigSessionErrors": 0,
+    "qualification": "Actual generated account login and real session GET, continued unchanged after holding. Exact one-consumer baseline over same fixture/current infrastructure, each accepted phase on a freshly started positively owned Next process without moving cache. Random auth backgrounds may differ. Root check is light/default16px desktop+phone; broader original worker evidence remains inherited."
+  },
+  "attempts": {
+    "failedBrowserRuns": 4,
+    "acceptedFailedCaptures": 0,
+    "qualification": "Initial empty-status visibility wait timed out; subsequent live-overlay runs lost document context or ran before hydration/actual session request. Four failed JSON/logs retained. Warming alone did not establish a stable page. Cold-process baseline and correction passed without production config changes; this supports process stability but does not conclusively diagnose the historical reload cause."
+  },
+  "native": {
+    "actualLoadedTarget": true,
+    "pendingHeadingProbedNatively": false,
+    "qualification": "Normal BetterAuth sign-in and own organization selection via private stdin; accepted tree contains NotificationSetup. Native run is fresh and pinned to the code commit; no retrospective worker native upgrade."
+  },
+  "postgres": {
+    "freshOfficialSuite": false,
+    "inheritedTests": 18,
+    "qualification": "No server/query/permission/persistence owner changed; worker PostgreSQL checks inherited. Root session login/read is actual runtime, not a fresh official transaction suite."
+  },
+  "reviews": {
+    "guidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "outcome": "Existing F1 PageHeader/translation/tokens, one safe task heading outside status; no forms/actions before account known. No new state, permissions, generated translation or persistence."
+  },
+  "cleanup": {
+    "ownedNextStopped": true,
+    "portClosed": true,
+    "ownedNextIdentityVerified": true,
+    "cacheMoved": false,
+    "stoppedPids": [
+      92860,
+      82832,
+      18480,
+      109344
+    ],
+    "port": 59169,
+    "ownedContainers": 3,
+    "remainingOwnedContainers": 0,
+    "nativeBrowserClosed": true,
+    "puppeteerBrowsersClosed": true,
+    "sessionReadsReleased": true
+  },
+  "limits": [
+    "remote Tolgee",
+    "full production static generation",
+    "provider and physical-device flows",
+    "true zoom",
+    "live Activity/account/org switch",
+    "exhaustive accessibility/locale/domain matrix",
+    "global transition and historical runtime reload diagnosis",
+    "ordinary formatting and raw-log/snapshot whitespace"
+  ]
+}

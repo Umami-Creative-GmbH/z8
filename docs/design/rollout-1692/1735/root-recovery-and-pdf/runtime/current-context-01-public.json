@@ -1,0 +1,103 @@
+{
+  "rawSha256": "d8ce570bf925d5ce3316f6fa224bdd8cd1b0064e2989ee100904ecd924c85d61",
+  "ok": true,
+  "data": {
+    "timezone": "Europe/Berlin",
+    "language": "de-DE",
+    "htmlLang": "en",
+    "fontSize": "16px",
+    "dialogs": 0,
+    "buttons": [
+      {
+        "text": "Performance smallAdmin",
+        "aria": "Switch Organization: Performance small",
+        "disabled": false
+      },
+      {
+        "text": "SearchCtrl+K",
+        "aria": "Search",
+        "disabled": false
+      },
+      {
+        "text": "Person 0<synthetic-email>",
+        "aria": "Account: Person 0",
+        "disabled": false
+      },
+      {
+        "text": "Toggle Sidebar",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "00:11UTC+01:00",
+        "aria": "Current timezone Europe/Berlin, 00:11, UTC+01:00",
+        "disabled": false
+      },
+      {
+        "text": "Clock In",
+        "aria": "Clock In",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh data",
+        "disabled": false
+      },
+      {
+        "text": "Toggle theme",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "More actions",
+        "aria": "More actions",
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 0",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Last Year",
+        "aria": "Period",
+        "disabled": false
+      },
+      {
+        "text": "Generate Report",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Export PDF",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Export Excel",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Export CSV",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open Tanstack query devtools",
+        "disabled": false
+      }
+    ]
+  }
+}

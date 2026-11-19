@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "RADERA"
       },
       "description": "Generera exempeldata för testning eller rensa befintlig tidsrelaterad data",
+      "employeesLoadError": {
+        "description": "Demodata genereras för dina anställda, så genereringen är inte tillgänglig förrän de har lästs in.",
+        "retrying": "Försöker igen…",
+        "title": "Det gick inte att läsa in anställda"
+      },
       "errors": {
-        "generationFailed": "Genereringen misslyckades. Försök igen.",
-        "noOrganization": "Ingen organisation vald"
+        "generationFailed": "Genereringen misslyckades. Försök igen."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Alla medarbetare ({count})",
+          "allCountUnavailable": "Alla anställda",
           "label": "Medarbetare",
           "selectSpecific": "Välj specifika medarbetare"
         }

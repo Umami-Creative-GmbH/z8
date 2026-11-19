@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import {
 	getScheduleComplianceSummary,
@@ -16,6 +17,7 @@ import { filterShiftsForEmployee, shiftToEvent } from "./shift-scheduler-utils";
 
 interface UseShiftSchedulerDataOptions {
 	organizationId: string;
+	employeeId: string;
 	organizationTimezone: string;
 	dateRange: DateRange;
 	isManager: boolean;
@@ -34,6 +36,7 @@ export interface ShiftSchedulerUpdateInput {
 
 export function useShiftSchedulerData({
 	organizationId,
+	employeeId,
 	organizationTimezone,
 	dateRange,
 	isManager,
@@ -46,8 +49,16 @@ export function useShiftSchedulerData({
 		data: shiftsResult,
 		isLoading: shiftsLoading,
 		isError: shiftsFailed,
+		isFetching: shiftsFetching,
+		refetch: retryShifts,
 	} = useQuery({
-		queryKey: queryKeys.shifts.list(organizationId, dateRange),
+		// A planner's drafts must never hydrate an employee's published-only view.
+		queryKey: [
+			...queryKeys.shifts.list(organizationId, dateRange),
+			"scheduling-viewer",
+			employeeId,
+			isManager,
+		],
 		queryFn: async () => {
 			const result = await getShifts({
 				startDate: dateRange.startDate,
@@ -59,17 +70,35 @@ export function useShiftSchedulerData({
 		},
 	});
 
-	const { data: templatesResult } = useQuery({
+	const {
+		data: templatesResult,
+		isError: templatesFailed,
+		isFetching: templatesFetching,
+		refetch: retryTemplates,
+	} = useQuery({
 		queryKey: queryKeys.shiftTemplates.list(organizationId),
 		queryFn: async () => {
 			const result = await getShiftTemplates();
-			if (!result.success) throw new Error(result.error);
+			// Template settings may refuse an admitted planner. This supporting read
+			// is unavailable; its legacy "Unauthorized" text is not a session verdict.
+			if (!result.success)
+				throw new Error(
+					t(
+						"scheduling:scheduling.scheduler.templatesUnavailable",
+						"Shift templates could not be loaded.",
+					),
+				);
 			return result.data;
 		},
 		enabled: isManager,
 	});
 
-	const { data: complianceSummaryResult } = useQuery({
+	const {
+		data: complianceSummaryResult,
+		isError: complianceFailed,
+		isFetching: complianceFetching,
+		refetch: retryCompliance,
+	} = useQuery({
 		queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
 		queryFn: async () => {
 			const result = await getScheduleComplianceSummary(dateRange);
@@ -78,6 +107,17 @@ export function useShiftSchedulerData({
 		},
 		enabled: isManager,
 	});
+
+	// An initial failed query loses its error status while refetching. Retain
+	// the local Retry task until both supporting reads have settled.
+	const [supportingDataRetryPending, startSupportingRetry] = useTransition();
+	const retrySupportingData = () =>
+		startSupportingRetry(async () => {
+			await Promise.all([
+				retryTemplates({ cancelRefetch: false }),
+				retryCompliance({ cancelRefetch: false }),
+			]);
+		});
 
 	const updateShiftMutation = useMutation({
 		mutationFn: async (data: ShiftSchedulerUpdateInput) => {
@@ -147,6 +187,14 @@ export function useShiftSchedulerData({
 		events,
 		shiftsLoading,
 		shiftsFailed,
+		shiftsFetching,
+		hasLoadedShifts: shiftsResult !== undefined,
+		retryShifts,
+		templatesFailed,
+		complianceFailed,
+		supportingDataFetching: templatesFetching || complianceFetching || supportingDataRetryPending,
+		supportingDataRetryPending,
+		retrySupportingData,
 		complianceSummary,
 		draftCount,
 		complianceFindingsCount,

@@ -1,0 +1,123 @@
+{
+  "phase": "before",
+  "head": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+      "sha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+      "canonicalSha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+      "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+    }
+  ],
+  "checks": [
+    "Actual organization admission read is held",
+    "Pending title is absent before and safe/present after correction",
+    "Unchanged HTTP200 admission reveals the normal form",
+    "Admitted form retains exactly one task heading",
+    "No browser exceptions"
+  ],
+  "captures": [
+    {
+      "name": "before-desktop.png",
+      "path": "/en/onboarding/vacation-policy",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [],
+      "policyControls": 0,
+      "sha256": "ecd20f739c3cc67e0b8ff46f1702b6906f4a172c883032ca843e072fbaf451b0",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+          "sha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+          "canonicalSha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2"
+        },
+        {
+          "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+          "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+          "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+        }
+      ]
+    },
+    {
+      "name": "before-phone.png",
+      "path": "/en/onboarding/vacation-policy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [],
+      "policyControls": 0,
+      "sha256": "af1a722cf0309e28786173e99c40e570cef271ccc8f5f97a598a2c574a936580",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx",
+          "sha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2",
+          "canonicalSha256": "f4e706c44e6b0c0b289bb83f1d971eb2b386563f33231412068b84ec80406fc2"
+        },
+        {
+          "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+          "sha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+          "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "admissionResponses": [
+    200,
+    200
+  ],
+  "commands": {
+    "aborted": 0,
+    "held": 0,
+    "completed": []
+  },
+  "qualification": "Pending-heading comparison restores only the exact old client over the corrected server and current shared infrastructure. Public old-service security regression is separate real-PostgreSQL evidence. No browser credential state is transferred or saved.",
+  "actions": {
+    "checkIsAdmin": "00aa482560ba4c8c2f31cc009bcaa4feb5cd31d8f9",
+    "createVacationPolicyOnboarding": "60057375641fe8bbc0869d2c69fcf8097fc4443176",
+    "skipVacationPolicySetup": "40a91b416a103a2cb3f2353ab4d12ebe4283946fcb"
+  },
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

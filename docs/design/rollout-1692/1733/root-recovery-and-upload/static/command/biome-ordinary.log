@@ -1,0 +1,242 @@
+src\components\personnel-file\payslip-batch-workspace-scope.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → fireEvent,␍
+          6 │ + → render,␍
+          7 │ + → screen,␍
+          8 │ + → waitFor,␍
+          9 │ + }·from·"@testing-library/react";␍
+      4  10 │   import { Activity, type ReactNode } from "react";␍
+      5  11 │   import { beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     36  42 │   }));␍
+     37  43 │   vi.mock("@/stores/organization-settings-store", () => ({␍
+     38     │ - → OrganizationSettingsStoreProvider:·({·children·}:·{·children:·ReactNode·})·=>·children,␍
+         44 │ + → OrganizationSettingsStoreProvider:·({·children·}:·{·children:·ReactNode·})·=>␍
+         45 │ + → → children,␍
+     39  46 │     useOrganizationSettings: (selector: (store: unknown) => unknown) =>␍
+     40  47 │       selector({ hydrate: boundary.noop, reset: boundary.noop }),␍
+    ······· │ 
+     48  55 │     useTranslate: () => ({␍
+     49  56 │       t: (_key: string, fallback: string, values?: Record<string, unknown>) =>␍
+     50     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>·String(values?.[key]·??·match)),␍
+         57 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>␍
+         58 │ + → → → → String(values?.[key]·??·match),␍
+         59 │ + → → → ),␍
+     51  60 │     }),␍
+     52  61 │   }));␍
+    ······· │ 
+    114 123 │   function setup(␍
+    115 124 │     content: ReactNode = (␍
+    116     │ - → → <PayslipBatchWorkspace·batchId="batch"·userId="actor"·organizationId="org"·/>␍
+        125 │ + → → <PayslipBatchWorkspace␍
+        126 │ + → → → batchId="batch"␍
+        127 │ + → → → userId="actor"␍
+        128 │ + → → → organizationId="org"␍
+        129 │ + → → />␍
+    117 130 │     ),␍
+    118 131 │   ) {␍
+    ······· │ 
+    154 167 │     boundary.fetch.mockResolvedValue(contextResponse);␍
+    155 168 │     boundary.get.mockResolvedValue({ success: true, data: preview });␍
+    156     │ - → boundary.confirm.mockResolvedValue({·success:·false,·error:·"Unexpected·confirmation"·});␍
+    157     │ - → boundary.update.mockResolvedValue({·success:·false,·error:·"Unexpected·edit"·});␍
+        169 │ + → boundary.confirm.mockResolvedValue({␍
+        170 │ + → → success:·false,␍
+        171 │ + → → error:·"Unexpected·confirmation",␍
+        172 │ + → });␍
+        173 │ + → boundary.update.mockResolvedValue({␍
+        174 │ + → → success:·false,␍
+        175 │ + → → error:·"Unexpected·edit",␍
+        176 │ + → });␍
+    158 177 │   });␍
+    159 178 │   ␍
+    ······· │ 
+    174 193 │     try {␍
+    175 194 │       await screen.findByText("No files yet.");␍
+    176     │ - → → boundary.fetch.mockRejectedValueOnce(new·Error("Internal·read·diagnostics"));␍
+        195 │ + → → boundary.fetch.mockRejectedValueOnce(␍
+        196 │ + → → → new·Error("Internal·read·diagnostics"),␍
+        197 │ + → → );␍
+    177 198 │       await act(async () => {␍
+    178 199 │         await subject.client.refetchQueries({␍
+    ······· │ 
+    183 204 │       await waitFor(() => expect(screen.queryByText("No files yet.")).toBeNull());␍
+    184 205 │       const alert = screen.getByRole("alert");␍
+    185     │ - → → expect(alert.textContent).toContain("Your·current·organization·could·not·be·confirmed.");␍
+        206 │ + → → expect(alert.textContent).toContain(␍
+        207 │ + → → → "Your·current·organization·could·not·be·confirmed.",␍
+        208 │ + → → );␍
+    186 209 │       expect(alert.textContent).not.toContain("Internal read diagnostics");␍
+    187 210 │       fireEvent.click(screen.getByRole("button", { name: "Retry" }));␍
+    ······· │ 
+    202 225 │     try {␍
+    203 226 │       await screen.findByText("Admitted start-page records");␍
+    204     │ - → → boundary.fetch.mockRejectedValueOnce(new·Error("Internal·read·diagnostics"));␍
+        227 │ + → → boundary.fetch.mockRejectedValueOnce(␍
+        228 │ + → → → new·Error("Internal·read·diagnostics"),␍
+        229 │ + → → );␍
+    205 230 │       await act(async () => {␍
+    206 231 │         await subject.client.refetchQueries({␍
+    ······· │ 
+    233 258 │       const subject = setup();␍
+    234 259 │       try {␍
+    235     │ - → → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Save·1·payslips"·}));␍
+        260 │ + → → → fireEvent.click(␍
+        261 │ + → → → → await·screen.findByRole("button",·{·name:·"Save·1·payslips"·}),␍
+        262 │ + → → → );␍
+    236 263 │         fireEvent.click(screen.getByRole("button", { name: "Save payslips" }));␍
+    237 264 │         expect(boundary.confirm).toHaveBeenCalledTimes(1);␍
+    ······· │ 
+    241 268 │         subject.view.rerender(subject.tree("hidden"));␍
+    242 269 │         subject.view.rerender(subject.tree("visible"));␍
+    243     │ - → → → await·waitFor(()·=>·expect(boundary.get.mock.calls.length).toBeGreaterThanOrEqual(2));␍
+        270 │ + → → → await·waitFor(()·=>␍
+        271 │ + → → → → expect(boundary.get.mock.calls.length).toBeGreaterThanOrEqual(2),␍
+        272 │ + → → → );␍
+    244 273 │         await waitFor(() => expect(subject.client.isFetching()).toBe(0));␍
+    245 274 │         const reopen = screen.getByRole("button", { name: "Save 1 payslips" });␍
+    246 275 │         fireEvent.click(reopen);␍
+    247     │ - → → → const·repeatedDecision·=·screen.queryByRole("button",·{·name:·"Save·payslips"·});␍
+        276 │ + → → → const·repeatedDecision·=·screen.queryByRole("button",·{␍
+        277 │ + → → → → name:·"Save·payslips",␍
+        278 │ + → → → });␍
+    248 279 │         if (repeatedDecision) fireEvent.click(repeatedDecision);␍
+    249 280 │         expect(boundary.confirm).toHaveBeenCalledTimes(1);␍
+    ······· │ 
+    257 288 │         );␍
+    258 289 │         await act(async () => {␍
+    259     │ - → → → → if·(outcome·===·"rejection")·pending[0].reject(new·Error("Retired·transport·diagnostics"));␍
+        290 │ + → → → → if·(outcome·===·"rejection")␍
+        291 │ + → → → → → pending[0].reject(new·Error("Retired·transport·diagnostics"));␍
+    260 292 │           else␍
+    261 293 │             pending[0].resolve(␍
+    ······· │ 
+    263 295 │                 ? {␍
+    264 296 │                     success: true,␍
+    265     │ - → → → → → → → → → data:·{·batch:·readyPreview().batch,·created:·[],·failed:·[]·},␍
+        297 │ + → → → → → → → → → data:·{␍
+        298 │ + → → → → → → → → → → batch:·readyPreview().batch,␍
+        299 │ + → → → → → → → → → → created:·[],␍
+        300 │ + → → → → → → → → → → failed:·[],␍
+        301 │ + → → → → → → → → → },␍
+    266 302 │                   }␍
+    267 303 │                 : { success: false, error: "Retired refusal" },␍
+    ······· │ 
+    269 305 │         });␍
+    270 306 │         await waitFor(() => expect(boundary.get).toHaveBeenCalledTimes(3));␍
+    271     │ - → → → expect(screen.getByRole("button",·{·name:·"Save·1·payslips"·}).hasAttribute("disabled")).toBe(␍
+    272     │ - → → → → true,␍
+    273     │ - → → → );␍
+        307 │ + → → → expect(␍
+        308 │ + → → → → screen␍
+        309 │ + → → → → → .getByRole("button",·{·name:·"Save·1·payslips"·})␍
+        310 │ + → → → → → .hasAttribute("disabled"),␍
+        311 │ + → → → ).toBe(true);␍
+    274 312 │         expect(boundary.confirm).toHaveBeenCalledTimes(1);␍
+    275 313 │         await act(async () => {␍
+    276     │ - → → → → if·(!finishRead)·throw·new·Error("Authoritative·readback·did·not·start");␍
+        314 │ + → → → → if·(!finishRead)␍
+        315 │ + → → → → → throw·new·Error("Authoritative·readback·did·not·start");␍
+    277 316 │           finishRead({ success: true, data: readyPreview() });␍
+    278 317 │         });␍
+    279 318 │         await waitFor(() =>␍
+    280 319 │           expect(␍
+    281     │ - → → → → → screen.getByRole("button",·{·name:·"Save·1·payslips"·}).hasAttribute("disabled"),␍
+        320 │ + → → → → → screen␍
+        321 │ + → → → → → → .getByRole("button",·{·name:·"Save·1·payslips"·})␍
+        322 │ + → → → → → → .hasAttribute("disabled"),␍
+    282 323 │           ).toBe(false),␍
+    283 324 │         );␍
+    ······· │ 
+    292 333 │         await act(async () => {␍
+    293 334 │           finishRead?.({ success: true, data: readyPreview() });␍
+    294     │ - → → → → for·(const·{·resolve·}·of·pending)·resolve({·success:·false,·error:·"Cleanup·outcome"·});␍
+        335 │ + → → → → for·(const·{·resolve·}·of·pending)␍
+        336 │ + → → → → → resolve({·success:·false,·error:·"Cleanup·outcome"·});␍
+    295 337 │         });␍
+    296 338 │         subject.client.clear();␍
+    ······· │ 
+    310 352 │     const subject = setup();␍
+    311 353 │     try {␍
+    312     │ - → → fireEvent.click(await·screen.findByRole("checkbox",·{·name:·"Include·100.pdf"·}));␍
+  73 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      8   8 │   describe("route metadata", () => {␍
+      9   9 │     it("adopts the due-for-deletion review without adopting deeper or invalid personnel routes", () => {␍
+     10     │ - → → expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(true);␍
+     11     │ - → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(true);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail")).toBe(false);␍
+         10 │ + → → expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(␍
+         11 │ + → → → true,␍
+         12 │ + → → );␍
+         13 │ + → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(␍
+         14 │ + → → → true,␍
+         15 │ + → → );␍
+         16 │ + → → expect(␍
+         17 │ + → → → appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail"),␍
+         18 │ + → → ).toBe(false);␍
+     13  19 │       expect(appPageOwnsHeading("/en/personnel-files/requests")).toBe(false);␍
+     14  20 │     });␍
+     15  21 │     it("adopts the request queue without adopting its independent descendants", () => {␍
+     16     │ - → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);␍
+     17     │ - → → expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);␍
+         22 │ + → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(␍
+         23 │ + → → → true,␍
+         24 │ + → → );␍
+         25 │ + → → expect(␍
+         26 │ + → → → appPageOwnsHeading("/en/personnel-files/document-requests/extra"),␍
+         27 │ + → → ).toBe(false);␍
+     18  28 │       expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);␍
+     19  29 │     });␍
+    ······· │ 
+     21  31 │       expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);␍
+     22  32 │       expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);␍
+     23     │ - → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);␍
+         33 │ + → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(␍
+         34 │ + → → → false,␍
+         35 │ + → → );␍
+     24  36 │       expect(appPageOwnsHeading("/en/settings/other")).toBe(false);␍
+     25  37 │     });␍
+    ······· │ 
+     37  49 │     });␍
+     38  50 │     it("adopts the payslip batch start and detail headings", () => {␍
+     39     │ - → → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(true);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(true);␍
+         51 │ + → → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(␍
+         52 │ + → → → true,␍
+         53 │ + → → );␍
+         54 │ + → → expect(␍
+         55 │ + → → → appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id"),␍
+         56 │ + → → ).toBe(true);␍
+     41  57 │     });␍
+     42  58 │     it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {␍
+    ······· │ 
+     66  82 │     it("adopts the personnel file directory while preserving independently staged descendant owners", () => {␍
+     67  83 │       expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);␍
+     68     │ - → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(true);␍
+         84 │ + → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(␍
+         85 │ + → → → true,␍
+         86 │ + → → );␍
+     69  87 │       for (const path of [␍
+     70  88 │         "/en/personnel-files/id",␍
+  
+
+Checked 8 files in 12ms. No fixes applied.
+Found 2 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

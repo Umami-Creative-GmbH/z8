@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Aucun enregistrement de production n'a encore été importé.",
         "openReview": "Ouvrir l'examen",
-        "scanningDescription": "Le lot d'examen {reviewBatchId} est en cours d'analyse. Examinez et approuvez les enregistrements avant la validation.",
+        "scanningDescriptionWithoutId": "L'analyse de vérification est en cours. Examinez et approuvez les enregistrements avant leur importation.",
         "startedTitle": "Analyse d'examen d'importation démarrée",
         "starting": "Démarrage de l'analyse d'examen d'importation Clockin…",
         "startSuccess": "L'analyse d'examen d'importation a démarré. Un examen est requis avant que les enregistrements ne soient validés."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Le lot d'examen {batchId} est en cours d'analyse.",
         "description": "Un examen est requis avant que les enregistrements Clockodo ne soient validés en production.",
         "openReview": "Ouvrir l'examen",
+        "scanning": "L'analyse de vérification est en cours. Aucun enregistrement n'est importé tant que vous ne l'avez pas accepté lors de la vérification.",
         "successTitle": "Analyse d'examen d'importation démarrée"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Identifiants",
         "import": "Révision",
         "preview": "Aperçu",
+        "progressLabel": "Étapes d'importation",
         "projectMapping": "Association des projets",
         "selection": "Sélection",
         "userMapping": "Mappage utilisateur"
       },
       "userMapping": {
         "action": "Action",
+        "actionFor": "Action pour {name}",
         "autoMatched": "{count} auto-correspondances",
         "clockodoUser": "Utilisateur Clockodo",
         "continue": "Continuer",
@@ -248,14 +250,21 @@
       "linkError": "Échec de la génération du code de lien",
       "linking": {
         "botLink": "Bot : @{botUsername}",
+        "codeCopied": "Code de liaison copié",
+        "codeExpired": "Expiré — générez un nouveau code",
+        "copyCode": "Copier le code de liaison",
+        "copyFailed": "Impossible de copier le code de liaison. Sélectionnez-le et copiez-le manuellement.",
         "description": "Liez votre compte Telegram pour recevoir des notifications personnelles.",
+        "expiresIn": "{minutes, plural, one {Expire dans # minute} other {Expire dans # minutes}}",
         "generateCode": "Générer le code de lien",
         "instructions": "Envoyez cette commande au bot sur Telegram :",
         "linkedStatus": "Votre compte Telegram est lié",
+        "regenerateCode": "Générer un nouveau code",
         "title": "Compte Telegram"
       },
       "notConfigured": "Telegram n'est pas configuré pour cette organisation. Contactez votre administrateur.",
       "saved": "Paramètres Telegram enregistrés",
+      "saveError": "Impossible d'enregistrer les paramètres Telegram. Réessayez.",
       "status": {
         "active": "Actif"
       },

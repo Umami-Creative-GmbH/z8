@@ -1,0 +1,341 @@
+{
+  "phase": "before",
+  "permissionPolicy": "isolated context notifications denied for fixture origin",
+  "checks": [
+    "No blocking dialog desktop",
+    "No page overflow desktop",
+    "No blocking dialog wide",
+    "No page overflow wide",
+    "No blocking dialog phone",
+    "No page overflow phone",
+    "Canonical working and break records rendered",
+    "Public saved Large text survives reload at 18px",
+    "No blocking dialog large-desktop",
+    "No page overflow large-desktop",
+    "No blocking dialog large-phone",
+    "No page overflow large-phone",
+    "Public Dark preference survives reload",
+    "No blocking dialog dark-desktop",
+    "No page overflow dark-desktop",
+    "No blocking dialog dark-phone",
+    "No page overflow dark-phone",
+    "Actual saved 12h preference formats captured-event since values",
+    "No blocking dialog 12h",
+    "No page overflow 12h",
+    "Actual saved 24h preference restored"
+  ],
+  "captures": [
+    {
+      "file": "desktop.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 1600,
+      "documentWidth": 1600,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "16px",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "file": "wide.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 2200,
+      "documentWidth": 2200,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "16px",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "file": "phone.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 390,
+      "documentWidth": 390,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "16px",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "file": "large-desktop.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 1600,
+      "documentWidth": 1600,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "18px",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "file": "large-phone.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 390,
+      "documentWidth": 390,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "18px",
+      "theme": "light bprogress-busy"
+    },
+    {
+      "file": "dark-desktop.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 1600,
+      "documentWidth": 1600,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "18px",
+      "theme": "dark bprogress-busy"
+    },
+    {
+      "file": "dark-phone.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 390,
+      "documentWidth": 390,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t06:54",
+        "Fixture Person 3\t\nOn break\t06:54"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "18px",
+      "theme": "dark bprogress-busy"
+    },
+    {
+      "file": "12h.png",
+      "path": "/en/team/presence/8ae387f0-eb18-4932-bf5c-da61db613a89",
+      "width": 1600,
+      "documentWidth": 1600,
+      "heading": [
+        "Who Is In",
+        "Who is in: Berlin workshop"
+      ],
+      "rows": [
+        "Fixture Person 2\t\nClocked in\t6:54 AM",
+        "Fixture Person 3\t\nOn break\t6:54 AM"
+      ],
+      "notificationPermission": "denied",
+      "dialogs": 0,
+      "font": "16px",
+      "theme": "light bprogress-busy"
+    }
+  ],
+  "errors": [],
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "sha256": "fb018f3ae09c987a97811957b872600ff542315ab393fdcc60e797aecff70dec"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+      "sha256": "34cb053af281ae0afe33184b815ca2d02595496c1e0a19b24ab0c988a7f2ddae"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b"
+    }
+  ],
+  "qualification": "Before and after run the actual route and canonical read owners in this own normal development fixture; no mocked records or saved/copied/restored session state. Historical rerun overlays exactly the original three consumers on otherwise current supporting code; route-local state files remain unused in that phase. This is a consumer comparison, not full historical application execution.",
+  "nextTools": {
+    "result": {
+      "tools": [
+        {
+          "name": "get_project_metadata",
+          "description": "Returns the the metadata of this Next.js project, including project path, dev server URL, etc.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_errors",
+          "description": "Get the current error state from the Next.js dev server, including Next.js global errors (e.g., next.config validation), browser runtime errors, and build errors with source-mapped stack traces",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_page_metadata",
+          "description": "Get runtime metadata about what contributes to the current page render from active browser sessions.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_logs",
+          "description": "Get the path to the Next.js development log file. Returns the file path so the agent can read the logs directly.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        {
+          "name": "get_server_action_by_id",
+          "description": "Locates a Server Action by its ID in the server-reference-manifest.json. Returns the filename and export name for the action.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "actionId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "actionId"
+            ],
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_routes",
+          "description": "Get all routes that will become entry points in the Next.js application by scanning the filesystem. Returns routes grouped by router type (appRouter, pagesRouter). Dynamic segments appear as [param] or [...slug] patterns. API routes are included in their respective routers (e.g., /api/* routes from pages/ are in pagesRouter). Optional parameter: routerType (\"app\" | \"pages\") - filter by specific router type, omit to get all routes.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "routerType": {
+                "type": "string",
+                "enum": [
+                  "app",
+                  "pages"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_request_insights",
+          "description": "Get recent App Router request insights captured by the local Next.js span recorder. Useful for debugging slow renders, server fetches, cache behavior, and request timelines without an external OTEL collector. Requires experimental.requestInsights.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "requestId": {
+                "type": "string"
+              },
+              "htmlRequestId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "get_compilation_issues",
+          "description": "Build the module graph for all routes and return all compilation issues (resolve errors, missing modules, transform errors, etc.). Does not require a browser session. Covers all routes proactively.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        },
+        {
+          "name": "compile_route",
+          "description": "Compile a specific route (page or API route) without making an HTTP request. Triggers the same on-demand compilation the dev server uses when a route is first visited. Useful for warming up the module graph, measuring compile time, or pre-compiling routes for memory benchmarking. Returns { routeSpecifier, issues } on success where routeSpecifier is the resolved route and issues contains any compilation warnings or errors. Returns an error if no matching route exists.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "routeSpecifier": {
+                "type": "string",
+                "description": "A route specifier as returned by the get_routes tool (e.g. \"/\", \"/blog/[slug]\", \"/api/users/[id]\"). Mutually exclusive with `path`; provide exactly one."
+              },
+              "path": {
+                "type": "string",
+                "description": "A URL path on this site (e.g. \"/blog/hello-world\", \"/docs/a/b/c\"). Query strings are allowed and ignored. Do not include scheme/host/port. The path is resolved to its matching route specifier using the dev router's live route table. Mutually exclusive with `routeSpecifier`; provide exactly one."
+              }
+            },
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 1
+  },
+  "nextCompilation": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"issues\":[]}"
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 1
+  },
+  "nextErrors": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 1
+  },
+  "status": "completed"
+}

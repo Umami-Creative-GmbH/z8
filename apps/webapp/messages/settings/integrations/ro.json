@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Nu a fost importată încă nicio înregistrare de producție.",
         "openReview": "Deschide revizuirea",
-        "scanningDescription": "Lotul de revizuire {reviewBatchId} se scanează. Revizuiți și aprobați înregistrările înainte de aplicare.",
+        "scanningDescriptionWithoutId": "Scanarea de examinare este în curs de desfășurare. Examinați și aprobați înregistrările înainte de a fi importate.",
         "startedTitle": "Scanarea pentru revizuirea importului a început",
         "starting": "Se pornește scanarea pentru revizuirea importului Clockin…",
         "startSuccess": "Scanarea pentru revizuirea importului a început. Revizuirea este necesară înainte ca înregistrările să fie aplicate."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Lotul de revizuire {batchId} se scanează.",
         "description": "Revizuirea este necesară înainte ca înregistrările Clockodo să fie aplicate în producție.",
         "openReview": "Deschide revizuirea",
+        "scanning": "Scanarea de examinare este în curs de desfășurare. Nicio înregistrare nu este importată până când nu o aprobați la examinare.",
         "successTitle": "Scanarea pentru revizuirea importului a început"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Date de autentificare",
         "import": "Revizuire",
         "preview": "Previzualizare",
+        "progressLabel": "Pași de import",
         "projectMapping": "Asociere proiecte",
         "selection": "Selecție",
         "userMapping": "Asociere utilizatori"
       },
       "userMapping": {
         "action": "Acțiune",
+        "actionFor": "Acțiune pentru {name}",
         "autoMatched": "{count} asociate automat",
         "clockodoUser": "Utilizator Clockodo",
         "continue": "Continuă",
@@ -248,14 +250,21 @@
       "linkError": "Generarea codului de asociere a eșuat",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Codul de conectare a fost copiat",
+        "codeExpired": "Expirat — generați un cod nou",
+        "copyCode": "Copiați codul de conectare",
+        "copyFailed": "Codul de conectare nu a putut fi copiat. Selectați-l și copiați-l manual.",
         "description": "Asociați contul dvs. de Telegram pentru a primi notificări personale.",
+        "expiresIn": "{minutes, plural, one {Expiră în # minut} few {Expiră în # minute} other {Expiră în # de minute}}",
         "generateCode": "Generare cod de asociere",
         "instructions": "Trimiteți această comandă botului pe Telegram:",
         "linkedStatus": "Contul dvs. de Telegram este asociat",
+        "regenerateCode": "Generează un cod nou",
         "title": "Cont Telegram"
       },
       "notConfigured": "Telegram nu este configurat pentru această organizație. Contactați administratorul.",
       "saved": "Setările Telegram au fost salvate",
+      "saveError": "Setările Telegram nu au putut fi salvate. Încercați din nou.",
       "status": {
         "active": "Activ"
       },

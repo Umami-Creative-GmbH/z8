@@ -1,0 +1,83 @@
+{
+  "base": "5646e7b320376d2605b80e231b6b828f4b35f670",
+  "mergedCheckpoint": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "records": [
+    {
+      "name": "unit",
+      "cwd": "apps/webapp",
+      "command": "pnpm --config.verify-deps-before-run=false exec vitest run --project unit --maxWorkers 2 src/components/reports src/lib/reports src/lib/projects/report-share src/app/[locale]/(app)/reports/projects src/lib/navigation/route-metadata.test.ts src/lib/billable-time/hand-off/timesheet-document.test.ts",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "start": "2026-11-15T23:42:48.720Z",
+      "end": "2026-11-15T23:43:05.956Z",
+      "privateRawLog": ".tmp/1736-accepted-unit.log",
+      "rawSha256": "62ba09661c9a0cc37ec8bf1f3f74df43c38dad16db09b95a0136c22a5bf37b07"
+    },
+    {
+      "name": "postgres",
+      "cwd": ".",
+      "command": "pnpm --config.verify-deps-before-run=false node .tmp/1736-run.mjs exec vitest run --project integration src/app/[locale]/(app)/reports/projects src/lib/projects/report-share",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "start": "2026-11-15T23:42:48.721Z",
+      "end": "2026-11-15T23:43:09.256Z",
+      "privateRawLog": ".tmp/1736-accepted-postgres.log",
+      "rawSha256": "4e1a1b80e1ceb1ccd115bd1766d1f1f80c94fdc9b353fabf4135c9275b26e5e6"
+    },
+    {
+      "name": "doctor",
+      "cwd": ".",
+      "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope changed --base 5646e7b320376d2605b80e231b6b828f4b35f670 --include-untracked --no-score --no-supply-chain --max-duration 90 --no-parallel --verbose --json --json-out docs/design/rollout-1692/1736/doctor.json",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "start": "2026-11-15T23:43:09.257Z",
+      "end": "2026-11-15T23:43:33.327Z",
+      "privateRawLog": ".tmp/1736-accepted-doctor.log",
+      "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "types",
+      "cwd": "apps/webapp",
+      "command": "pnpm --config.verify-deps-before-run=false run typecheck",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "start": "2026-11-15T23:43:09.257Z",
+      "end": "2026-11-15T23:43:47.005Z",
+      "privateRawLog": ".tmp/1736-accepted-types.log",
+      "rawSha256": "80a6369094c4e192cbfb532326483de2951762042cfc9d56bde7e8f6c19b83e3"
+    },
+    {
+      "name": "biome",
+      "cwd": "apps/webapp",
+      "command": "pnpm --config.verify-deps-before-run=false exec biome check <14 explicit changed source/test files>",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "files": 14,
+      "privateRawLog": ".tmp/1736-accepted-biome.log",
+      "rawSha256": "a9b790bcbb2ed1f558f033be7492d9637190c7298a087ac320a0be25f30ab53d"
+    }
+  ],
+  "summary": {
+    "unitFiles": 39,
+    "unitTests": 201,
+    "postgresFiles": 6,
+    "postgresTests": 36,
+    "typeProjects": [
+      "application",
+      "workflow-contracts",
+      "smoke"
+    ],
+    "doctorErrors": 0,
+    "doctorReviewedWarnings": 6
+  }
+}

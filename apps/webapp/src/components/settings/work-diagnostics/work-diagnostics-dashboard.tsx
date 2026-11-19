@@ -69,7 +69,7 @@ export function WorkDiagnosticsDashboard({
 				) : null}
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			<dl className="grid gap-px overflow-hidden rounded-xl border bg-border md:grid-cols-2 xl:grid-cols-4">
 				<SummaryCard
 					title={t("settings.workDiagnostics.summary.status", "Completeness")}
 					value={
@@ -109,7 +109,7 @@ export function WorkDiagnosticsDashboard({
 						"Employees whose work in this scope cannot be established.",
 					)}
 				/>
-			</div>
+			</dl>
 
 			<Card>
 				<CardHeader>
@@ -422,14 +422,13 @@ function SummaryCard({
 	value: ReactNode;
 	description: string;
 }) {
+	// One cell of the shared summary strip: label, value and its context.
 	return (
-		<Card>
-			<CardHeader>
-				<CardDescription>{title}</CardDescription>
-				<CardTitle className="text-xl">{value}</CardTitle>
-			</CardHeader>
-			<CardContent className="text-sm text-muted-foreground">{description}</CardContent>
-		</Card>
+		<div className="min-w-0 space-y-1 bg-card p-4 text-card-foreground">
+			<dt className="text-sm text-muted-foreground">{title}</dt>
+			<dd className="break-words text-xl font-semibold tabular-nums">{value}</dd>
+			<dd className="break-words text-sm text-muted-foreground">{description}</dd>
+		</div>
 	);
 }
 

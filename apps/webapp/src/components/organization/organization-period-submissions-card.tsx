@@ -168,7 +168,10 @@ export function OrganizationPeriodSubmissionsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.periodSubmissions.title", "Period submissions")}</CardTitle>
+				{/* The tab already shows this name; keep it as the panel's heading for assistive tech only. */}
+				<CardTitle as="h2" className="sr-only">
+					{t("organization.periodSubmissions.title", "Period submissions")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.periodSubmissions.description",
@@ -279,6 +282,8 @@ export function OrganizationPeriodSubmissionsCard({
 											>
 												<Input
 													type="number"
+													inputMode="numeric"
+													className="tabular-nums"
 													min={MIN_SECOND_REMINDER_DELAY_DAYS}
 													max={MAX_SECOND_REMINDER_DELAY_DAYS}
 													step={1}
@@ -292,7 +297,15 @@ export function OrganizationPeriodSubmissionsCard({
 										</TFormItem>
 									)}
 								</form.Field>
-								{upcomingMessage && <p className="text-sm">{upcomingMessage}</p>}
+								{upcomingMessage && (
+									// A scheduled change is status the admin should notice, not help text.
+									<p
+										data-testid="period-submissions-upcoming"
+										className="rounded-md border bg-muted/40 p-3 text-sm"
+									>
+										{upcomingMessage}
+									</p>
+								)}
 								<p id={helpId} className="text-sm text-muted-foreground">
 									{t(
 										"organization.periodSubmissions.help",

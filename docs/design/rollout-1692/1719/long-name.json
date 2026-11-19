@@ -1,0 +1,15 @@
+{
+  "observations": [
+    {
+      "width": 390,
+      "viewport": 390,
+      "headingWidth": 269.0625
+    },
+    {
+      "width": 1600,
+      "viewport": 1600,
+      "headingWidth": 746.71875
+    }
+  ],
+  "errors": []
+}

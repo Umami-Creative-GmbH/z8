@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationSettings } from "@/components/notifications/notification-settings";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
@@ -42,6 +42,7 @@ const matrix = Object.fromEntries(
 
 function mockNotificationPreferences(
 	availableChannels: Record<NotificationChannel, boolean>,
+	overrides: Partial<ReturnType<typeof useNotificationPreferences>> = {},
 ) {
 	useNotificationPreferencesMock.mockReturnValue({
 		preferences: [],
@@ -49,12 +50,15 @@ function mockNotificationPreferences(
 		availableChannels,
 		isLoading: false,
 		error: null,
+		refetch: vi.fn(),
+		isRefetching: false,
 		updatePreference: vi.fn(),
 		updatePreferenceAsync: vi.fn(),
 		isUpdating: false,
 		bulkUpdatePreferences: vi.fn(),
 		bulkUpdatePreferencesAsync: vi.fn(),
 		isBulkUpdating: false,
+		...overrides,
 	});
 }
 
@@ -111,6 +115,28 @@ describe("NotificationSettings", () => {
 			discord: false,
 			slack: false,
 		});
+	});
+
+	it("retries a failed preferences load in place", () => {
+		const refetch = vi.fn();
+		mockNotificationPreferences(
+			{
+				in_app: true,
+				push: true,
+				email: true,
+				teams: false,
+				telegram: false,
+				discord: false,
+				slack: false,
+			},
+			{ matrix: null, error: new Error("load failed"), refetch },
+		);
+		render(<NotificationSettings />);
+		expect(
+			screen.getByRole("alert").textContent,
+		).toContain("Unable to load notification preferences");
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		expect(refetch).toHaveBeenCalledOnce();
 	});
 
 	it("offers separate channel switches for approved absence cancellations", () => {

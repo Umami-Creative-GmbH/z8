@@ -1,0 +1,72 @@
+{
+  "canonicalReadbacks": [
+    {
+      "path": "scheduling-seed-01.json",
+      "bytes": 5360,
+      "sha256": "dce0321e7c8ddb5748dcf3ae097d31f7a4a2bb8118d61d9cf91409601ed56b7f",
+      "projection": "Known domain note/time/status, audit actor boolean, counts and row digests only; no private IDs/credentials."
+    },
+    {
+      "path": "scheduling-readback-01.json",
+      "bytes": 5416,
+      "sha256": "3eeb5ad8329a6e235104f709e5a1a62ed91fd4d2f8dd47787408860e7ff8e377",
+      "projection": "Known domain note/time/status, audit actor boolean, counts and row digests only; no private IDs/credentials."
+    },
+    {
+      "path": "publication-readback-verdict-01.json",
+      "bytes": 1194,
+      "sha256": "aade3655a617d348d712b4557c293d8a33e00ea458378fa7b1283ab03f6af31e",
+      "projection": "Known domain note/time/status, audit actor boolean, counts and row digests only; no private IDs/credentials."
+    }
+  ],
+  "visibleStates": [
+    {
+      "safe": "planner-loaded-01.json",
+      "rawPrivateSha256": "e575eae83b8fe8dfe1015ef38c4694eaa19709aaa9b9c1d4c4b29ac6a382cf91",
+      "sanitizer": "Controller fixture email/password/actor/org/employee strings removed in memory, RPC UUID values stripped; visible DOM only, no network response bodies."
+    },
+    {
+      "safe": "publication-settled-01.json",
+      "rawPrivateSha256": "6c46418c3528ec707bbe2867f30ee168549d484e4f4356c4267497c3e64cd321",
+      "sanitizer": "Controller fixture email/password/actor/org/employee strings removed in memory, RPC UUID values stripped; visible DOM only, no network response bodies."
+    },
+    {
+      "safe": "employee-admitted-01.json",
+      "rawPrivateSha256": "2a7938738cb00fad4e4521f276085eb8685077781e5cfef7ca5499b5299f8299",
+      "sanitizer": "Controller fixture email/password/actor/org/employee strings removed in memory, RPC UUID values stripped; visible DOM only, no network response bodies."
+    },
+    {
+      "safe": "employee-phone-01.json",
+      "rawPrivateSha256": "b41ce76bdcd62a6742909642152e6d6b391d6de5e4c761de9538169f7470ca24",
+      "sanitizer": "Controller fixture email/password/actor/org/employee strings removed in memory, RPC UUID values stripped; visible DOM only, no network response bodies."
+    }
+  ],
+  "images": [
+    {
+      "path": "publish-before-1600-02.png",
+      "bytes": 97900,
+      "sha256": "2866e8d5ef53d3e312aa86eb2b740b19ffd6c52abf55e4a86dd651502e084ff4",
+      "decodedAndVisuallyReviewed": true,
+      "scope": "Current operational state; no historical pair or whole-page acceptance."
+    },
+    {
+      "path": "publish-success-1600-02.png",
+      "bytes": 126285,
+      "sha256": "61721b253d3ffbd6a36ae7d53f1b5e88ccc5f5334e338951232f589ef91169e6",
+      "decodedAndVisuallyReviewed": true,
+      "scope": "Current operational state; no historical pair or whole-page acceptance."
+    },
+    {
+      "path": "employee-published-details-390-01.png",
+      "bytes": 23489,
+      "sha256": "e4634b6d78403c77feb7cffa4fe2d255a4df24c8e4b0cf0d207dc24fd9d3fce1",
+      "decodedAndVisuallyReviewed": true,
+      "scope": "Current operational state; no historical pair or whole-page acceptance."
+    }
+  ],
+  "excludedImages": [
+    "publish-pending-1600-02.png"
+  ],
+  "helpers": "Copied source only, no peer manifests/credentials/services/auth; initial helper copy and extra fixture-helper02 are byte-identical after namespace adaptations.",
+  "privateInputs": "Only own freshly generated disposable runtime/fixture/private stdin. No cookie/session/storage snapshot files created or read. Private ignored logs/inputs preserved."
+}

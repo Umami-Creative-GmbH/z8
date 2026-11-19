@@ -18,17 +18,52 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import type { SelectableEmployee } from "../employees/actions";
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** Base roles are stored as codes; each label is a static literal for extraction. */
+function roleLabel(role: string, t: Translate) {
+	switch (role) {
+		case "admin":
+			return t("settings.permissions.roles.admin", "Admin");
+		case "manager":
+			return t("settings.permissions.roles.manager", "Manager");
+		case "employee":
+			return t("settings.permissions.roles.employee", "Employee");
+		default:
+			return role;
+	}
+}
+
+function scopeLabel(scope: "team" | "organization", t: Translate) {
+	return scope === "team"
+		? t("settings.permissions.scope.team", "Team-specific")
+		: t("settings.permissions.scope.organization", "Organization-wide");
+}
+
 export function PermissionsTableCard(props: {
 	loading: boolean;
+	/** The employee list failed to load: shown as an error with retry, not as "no employees". */
+	loadFailed?: boolean;
 	searchQuery: string;
 	onSearchChange: (value: string) => void;
 	onRefresh: () => void;
 	employees: SelectableEmployee[];
 	onEdit: (employee: SelectableEmployee) => void;
-	getSummary: (employeeId: string) => { count: number; scope: string } | null;
+	getSummary: (
+		employeeId: string,
+	) => { count: number; scope: "team" | "organization" } | null;
 }) {
 	const { t } = useTranslate();
-	const { loading, searchQuery, onSearchChange, onRefresh, employees, onEdit, getSummary } = props;
+	const {
+		loading,
+		loadFailed = false,
+		searchQuery,
+		onSearchChange,
+		onRefresh,
+		employees,
+		onEdit,
+		getSummary,
+	} = props;
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
 		{ polling: false },
@@ -37,20 +72,22 @@ export function PermissionsTableCard(props: {
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-wrap items-start justify-between gap-3">
+					<div className="min-w-0">
 						<CardTitle>
 							{t("settings.permissions.employeePermissions.title", "Employee Permissions")}
 						</CardTitle>
 						<CardDescription>
 							{t(
-								"settings.permissions.employeePermissions.description",
-								"Click on an employee to edit their permissions",
+								"settings.permissions.employeePermissions.editHint",
+								"Choose Edit next to an employee to change their team permissions.",
 							)}
 						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
-						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
+						{loading ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+						) : null}
 						{t("settings.permissions.refresh", "Refresh")}
 					</Button>
 				</div>
@@ -58,6 +95,7 @@ export function PermissionsTableCard(props: {
 			<CardContent>
 				<div className="space-y-4">
 					<Input
+						type="search"
 						aria-label={t("settings.permissions.searchLabel", "Search employees")}
 						placeholder={t(
 							"settings.permissions.searchPlaceholder",
@@ -69,12 +107,31 @@ export function PermissionsTableCard(props: {
 					/>
 
 					{loading ? (
-						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+						<div
+							className="flex items-center justify-center py-8"
+							role="status"
+							aria-label={t("settings.permissions.loading", "Loading employee permissions")}
+						>
+							<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
+						</div>
+					) : loadFailed ? (
+						<div
+							role="alert"
+							className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+						>
+							<p className="text-sm">
+								{t(
+									"settings.permissions.loadFailed",
+									"Employee permissions could not be loaded.",
+								)}
+							</p>
+							<Button variant="outline" size="sm" onClick={onRefresh}>
+								{t("common.retry", "Try again")}
+							</Button>
 						</div>
 					) : employees.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-8">
-							<IconUserCog className="mb-4 size-12 text-muted-foreground" />
+						<div className="flex flex-col items-start gap-2 py-6 sm:items-center sm:text-center">
+							<IconUserCog className="size-8 text-muted-foreground" aria-hidden="true" />
 							<p className="text-sm text-muted-foreground">
 								{t("settings.permissions.emptyState", "No employees found")}
 							</p>
@@ -100,8 +157,8 @@ export function PermissionsTableCard(props: {
 
 									return (
 										<TableRow key={employee.id}>
-											<TableCell>
-												<div className="flex items-center gap-3">
+											<TableCell className="max-w-xs">
+												<div className="flex min-w-0 items-center gap-3">
 													<UserAvatar
 														image={employee.user.image}
 														seed={employee.id}
@@ -109,9 +166,14 @@ export function PermissionsTableCard(props: {
 														size="sm"
 														clockStatus={presence.getStatus(employee.id)}
 													/>
-													<div>
-														<div className="font-medium">{employee.user.name}</div>
-														<div className="text-sm text-muted-foreground">
+													<div className="min-w-0">
+														<div className="truncate font-medium" title={employee.user.name}>
+															{employee.user.name}
+														</div>
+														<div
+															className="truncate text-sm text-muted-foreground"
+															title={employee.user.email}
+														>
 															{employee.user.email}
 														</div>
 													</div>
@@ -122,7 +184,7 @@ export function PermissionsTableCard(props: {
 											</TableCell>
 											<TableCell>
 												<Badge variant={employee.role === "admin" ? "default" : "secondary"}>
-													{employee.role}
+													{roleLabel(employee.role, t)}
 												</Badge>
 											</TableCell>
 											<TableCell>
@@ -131,8 +193,8 @@ export function PermissionsTableCard(props: {
 														{t("settings.permissions.badge.allPermissions", "All Permissions")}
 													</Badge>
 												) : permissionSummary ? (
-													<div className="flex gap-2">
-														<Badge variant="secondary">
+													<div className="flex flex-wrap gap-2">
+														<Badge variant="secondary" className="tabular-nums">
 															{t(
 																"settings.permissions.badge.permissionCount",
 																"{count} permission(s)",
@@ -141,7 +203,7 @@ export function PermissionsTableCard(props: {
 																},
 															)}
 														</Badge>
-														<Badge variant="outline">{permissionSummary.scope}</Badge>
+														<Badge variant="outline">{scopeLabel(permissionSummary.scope, t)}</Badge>
 													</div>
 												) : (
 													<span className="text-sm text-muted-foreground">
@@ -150,16 +212,23 @@ export function PermissionsTableCard(props: {
 												)}
 											</TableCell>
 											<TableCell className="text-right">
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => onEdit(employee)}
-													disabled={employee.role === "admin"}
-												>
-													{employee.role === "admin"
-														? "—"
-														: t("settings.permissions.actions.edit", "Edit")}
-												</Button>
+												{employee.role === "admin" ? (
+													// Admins already hold every permission; there is nothing to edit.
+													<span className="text-sm text-muted-foreground">—</span>
+												) : (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => onEdit(employee)}
+														aria-label={t(
+															"settings.permissions.actions.editNamed",
+															"Edit permissions for {name}",
+															{ name: employee.user.name },
+														)}
+													>
+														{t("settings.permissions.actions.edit", "Edit")}
+													</Button>
+												)}
 											</TableCell>
 										</TableRow>
 									);

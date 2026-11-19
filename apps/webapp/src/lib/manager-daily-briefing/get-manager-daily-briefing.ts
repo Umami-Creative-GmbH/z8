@@ -282,6 +282,9 @@ export async function getManagerDailyBriefingFromSources({
 	return {
 		generatedAt: now.toISO() ?? now.toUTC().toISO() ?? "",
 		date,
+		...(drivingResult.status === "rejected"
+			? { needsActionError: "Driving details could not be checked." }
+			: {}),
 		summary: buildSummaryCounts(sectionItems),
 		needsAction: sectionItems.needsAction,
 		sections,

@@ -1,0 +1,108 @@
+{
+  "kind": "Explicit allowlist with SHA256, no directory sweep",
+  "files": [
+    {
+      "path": "HANDOFF.json",
+      "bytes": 4936,
+      "sha256": "79707d96ac07862f896d4d54f55782eb6530ca31beac93154ebe5425d18b56d6"
+    },
+    {
+      "path": "blocker.json",
+      "bytes": 4905,
+      "sha256": "5a78dfa62e81c2dfd6fc1028c10fabe46ecf1538b23d04310b0066a88e53de37"
+    },
+    {
+      "path": "test-accounting.json",
+      "bytes": 4765,
+      "sha256": "77cc7fe86e8f2f82ff38c10ac861d126e91f6df71908dbef2e1c023adb2f4366"
+    },
+    {
+      "path": "reproduce.json",
+      "bytes": 1225,
+      "sha256": "9f1d20643c6636c7d51fedc5404bbf87655c1c6629a340f9d3ea70908d2b210e"
+    },
+    {
+      "path": "preservation.json",
+      "bytes": 19312,
+      "sha256": "da027cd4f4fb951bc884e378c5f554e677b15cc85daf76314716bd21c61001eb"
+    },
+    {
+      "path": "dependencies.json",
+      "bytes": 33903,
+      "sha256": "c237a7a858cd4952fcab1bb6c2464d3be83fa34ff1e443b5df36336f07708a21"
+    },
+    {
+      "path": "incoming-public-preservation.json",
+      "bytes": 6413,
+      "sha256": "0e809c04d1d3ba82cf66655bde1aa61c9dc81afa0410988206141c56f7225416"
+    },
+    {
+      "path": "premerge-classification.json",
+      "bytes": 1676,
+      "sha256": "2db258bedba6262316b09d64526e061657bdeaf8efda27f3b0b5b00e214c9299"
+    },
+    {
+      "path": "expected-map.json",
+      "bytes": 5892821,
+      "sha256": "b309b4ae04667a2a676922c608b954736687b916c95b37301444a942fd5e2263"
+    },
+    {
+      "path": "expected-metadata.ts",
+      "bytes": 7292,
+      "sha256": "209c86da4bac71af4a26f72df5b6903a5167a52a805099aa410e10824565ed7e"
+    },
+    {
+      "path": "expected-metadata.test.ts",
+      "bytes": 11337,
+      "sha256": "93bfe1f5dc5e64f088dda545a3869bb92ca35032436b64f27c1674261e51f36b"
+    },
+    {
+      "path": "public-contract.test.tsx",
+      "bytes": 14796,
+      "sha256": "fc91424c442748d68b7522003bb5cbc24e3b18e4028ad531601b6d4e18e19f3c"
+    },
+    {
+      "path": "public-contract-result.json",
+      "bytes": 3679,
+      "sha256": "8fc182cf853f80e089a09e9dbe5b5dc063ec981085fa1ceffe3286330db39f89"
+    },
+    {
+      "path": "minimal-arrival.test.tsx",
+      "bytes": 8677,
+      "sha256": "7a4bc4fd5c2eb2f1c445e06b1c89c3e5ce3e07848aef5d528d0bbfb85c8f1e91"
+    },
+    {
+      "path": "minimal-header-confirmed.json",
+      "bytes": 2401,
+      "sha256": "010190da35cecf3533b9b278ffbfac0f93845607ff42720ec248b0cb7517b250"
+    },
+    {
+      "path": "cleanup.json",
+      "bytes": 254,
+      "sha256": "92a256f2982f5584bd84d6252917bfda42ffd2511c0b1241e242616495ccf5d5"
+    },
+    {
+      "path": "prepare_expected.py",
+      "bytes": 2620,
+      "sha256": "03dfee31de9e864800a3904a85d7298cf819eb36a0c2dbb746534c996baf46dc"
+    },
+    {
+      "path": "seal.py",
+      "bytes": 9001,
+      "sha256": "c616d1653612ea7aced1dfb3a343f3eba698cff83e092aed5ad0cdf572d317c6"
+    },
+    {
+      "path": "finalize.py",
+      "bytes": 11127,
+      "sha256": "7bf58769723f2c3cd7aa2c8c6e2457aa1492a7b8e5d10834a87abcf29c2f858b"
+    },
+    {
+      "path": "make_minimal.py",
+      "bytes": 3385,
+      "sha256": "775c435d4c33e192caf1c49f062218f7ea206d76f987edc89892c916e026e801"
+    }
+  ],
+  "excluded": "Everything not explicitly allowlisted: raw install/run logs, initial failed harness attempts, temporary Git index, private driver/session/profiles, failure images/raw action/RSC bodies. No private input copied or indexed.",
+  "sourceAndConfigPins": "preservation.json",
+  "noNewVisualEvidence": true
+}

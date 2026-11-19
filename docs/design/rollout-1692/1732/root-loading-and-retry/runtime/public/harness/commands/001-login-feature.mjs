@@ -1,0 +1,1 @@
+await h.login(p,'small-admin');await h.go(p,'/settings/organization');await p.waitForSelector('#personnel-files-toggle');return {toggle:await p.$eval('#personnel-files-toggle',e=>({checked:e.getAttribute('aria-checked'),role:e.getAttribute('role')})),buttons:(await dom()).buttons};

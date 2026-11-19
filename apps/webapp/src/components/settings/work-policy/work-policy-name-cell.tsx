@@ -11,14 +11,19 @@ export function WorkPolicyNameCell({
 	t: TFnType;
 }) {
 	return (
-		<div className="max-w-[300px]">
-			<div className="flex items-center gap-2">
-				<span className="min-w-0 font-medium truncate">{policy.name}</span>
+		<div className="max-w-[300px] min-w-0">
+			<div className="flex min-w-0 items-center gap-2">
+				<span className="min-w-0 font-medium truncate" title={policy.name}>
+					{policy.name}
+				</span>
 				{policy.isDefault ? (
 					<TooltipProvider>
 						<Tooltip>
-							<TooltipTrigger>
-								<IconStar className="size-4 text-yellow-500 fill-yellow-500 shrink-0" />
+							<TooltipTrigger
+								className="shrink-0 rounded-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+								aria-label={t("settings.workPolicies.defaultPolicy", "Default policy")}
+							>
+								<IconStar className="size-4 fill-current" aria-hidden="true" />
 							</TooltipTrigger>
 							<TooltipContent>
 								{t("settings.workPolicies.defaultPolicy", "Default policy")}

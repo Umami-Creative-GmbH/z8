@@ -89,7 +89,13 @@
       "slugLabel": "Organisations-Slug",
       "title": "Organisation bearbeite",
       "updateError": "Organisation hät nöd chöne aktualisiert werde",
-      "updateSuccess": "Organisation erfolgriich aktualisiert"
+      "updateSuccess": "Organisation erfolgriich aktualisiert",
+      "validation": {
+        "nameMax": "Der Name darf maximal 100 Zeichen lang sein",
+        "nameMin": "Der Name muss mindestens 2 Zeichen lang sein",
+        "slugMax": "Der Slug darf maximal 50 Zeichen lang sein",
+        "slugMin": "Der Slug muss mindestens 2 Zeichen lang sein"
+      }
     },
     "error": {
       "description": "S'Organigramm hät nöd chöne glade werde. Bitte versuech es no einisch.",
@@ -395,6 +401,7 @@
     "switchTo": "Organisation wechseln",
     "teams": {
       "card": {
+        "actionsFor": "Aktionen für {name}",
         "deleteTeam": "Team löschen",
         "editTeam": "Team bearbeiten",
         "fallbackManager": "Fallback-Manager",
@@ -406,10 +413,10 @@
       "delete": "Team löschen",
       "deleteDialogDescription": "Dies löscht das Team \"{teamName}\" dauerhaft.",
       "deleteDialogMembersWarning": "Warnung: Dieses Team hat {count} Mitglied(er). Sie werden aus dem Team entfernt.",
+      "deleteDialogNamedTitle": "Team {name} löschen?",
       "deleteDialogTitle": "Bist du sicher?",
       "deleteError": "Löschen des Teams fehlgeschlagen",
       "deleteSuccess": "Team erfolgreich gelöscht",
-      "description": "Organisiere deine Mitarbeitenden in Teams für eine bessere Zusammenarbeit",
       "edit": {
         "description": "Teamname und Beschreibung aktualisieren",
         "descriptionLabel": "Beschreibung (optional)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Mitglied aus dem Team entfernt",
         "selectEmployee": "Wähle einen Mitarbeitenden zum Hinzufügen aus",
         "title": "{teamName} - Teammitglieder"
-      },
-      "title": "Teams"
+      }
     },
     "timezone": {
       "balances-recalculating": "Arbetssaldi werded für die neui Zytzone neu berächnet und blybed usblendet, bis si parat sind.",

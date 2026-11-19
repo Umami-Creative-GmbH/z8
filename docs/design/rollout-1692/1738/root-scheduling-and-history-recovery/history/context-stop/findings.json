@@ -1,0 +1,82 @@
+{
+  "status": "STOP_CRITICAL_ACCEPTANCE_BLOCKER",
+  "candidate": {
+    "head": "31625ce088b22f27fbff338b09867d4a7883d35d",
+    "tree": "0c56dd5ee4a7dbc3c1cb21331337bf00e59d468b",
+    "parent": "0948378b7803926ed61eb5bdeab915c45bcad5ca",
+    "incoming": "1ea5804a0d7f6125406b2eecec121fa1949ded90"
+  },
+  "finding": {
+    "priority": "P1",
+    "title": "Team directory local Retry does not recover canonical context failure",
+    "publicSeam": "Real OrganizationContextProvider + QueryClient + TeamDirectory + TeamDirectoryRecords + TeamMembersList; real hooks/UI. Only session, server action, fetch, navigation, translation system boundaries stubbed. No implementation hooks mocked.",
+    "trigger": "GET /api/auth/context returns synthetic 503, then boundary restored. Click visible local Retry. Navigation seam delivers another successful TeamDirectory server result while keeping the same provider and QueryClient.",
+    "observed": {
+      "contextFetches": 1,
+      "successfulRscRefreshes": 1,
+      "managedReads": 2,
+      "scopeFeedbackVisible": true,
+      "employeeVisible": false
+    },
+    "expected": "Second actual canonical context request and admitted employee link",
+    "source": {
+      "retry": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx:34",
+      "gate": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx:78",
+      "provider": "apps/webapp/src/components/providers/organization-context-provider.tsx"
+    },
+    "causalExplanation": "Directory Retry calls router.refresh only. The actual provider query has retry:false/refetchOnWindowFocus:false and discards context when isError; successful RSC directory props do not call context.refetch. The new scope gate consequently continues hiding records.",
+    "classification": "Fresh candidate public-seam failure. Retry/gate added by #1739; shared provider not changed. No controlled full historical-provider/browser differential was run; do not claim inherited versus introduced end-to-end behavior beyond these source facts.",
+    "security": "No disclosure demonstrated or claimed.",
+    "testLimits": [
+      "Synthetic session and server-action boundaries; not a live browser/authorization proof.",
+      "RSC refresh completion modeled by rerendering actual server component output without remounting provider/client.",
+      "Initial provider bootstrap null; actual errored QueryClient state retained.",
+      "Healthy control also emitted one Base UI button diagnostic; failure case emitted a React act warning. Preserved verbatim, not counted as empty diagnostics."
+    ]
+  },
+  "freshCounts": {
+    "physicalFiles": 1,
+    "distinctCases": 2,
+    "parameterOccurrences": 2,
+    "passed": 1,
+    "failed": 1,
+    "attempts": 1,
+    "reruns": 0,
+    "additiveWithInherited": false,
+    "assertions": [
+      {
+        "fullName": "healthy real provider admits the public team directory and its employee link",
+        "status": "passed",
+        "failureMessages": []
+      },
+      {
+        "fullName": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+        "status": "failed",
+        "failureMessages": [
+          "AssertionError: expected \"vi.fn()\" to be called 2 times, but got 1 times\n\nIgnored nodes: comments, script, style\n\u001b[36m<html>\u001b[39m\n  \u001b[36m<head />\u001b[39m\n  \u001b[36m<body>\u001b[39m\n    \u001b[36m<div>\u001b[39m\n      \u001b[36m<div\u001b[39m\n        \u001b[33mclass\u001b[39m=\u001b[32m\"@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6\"\u001b[39m\n      \u001b[36m>\u001b[39m\n        \u001b[36m<div\u001b[39m\n          \u001b[33mclass\u001b[39m=\u001b[32m\"flex flex-wrap items-end justify-between gap-4\"\u001b[39m\n        \u001b[36m>\u001b[39m\n          \u001b[36m<div\u001b[39m\n            \u001b[33mclass\u001b[39m=\u001b[32m\"min-w-0 flex-[1_1_18rem] space-y-2 break-words\"\u001b[39m\n          \u001b[36m>\u001b[39m\n            \u001b[36m<h1\u001b[39m\n              \u001b[33mclass\u001b[39m=\u001b[32m\"text-balance text-2xl font-semibold tracking-tight sm:text-3xl\"\u001b[39m\n            \u001b[36m>\u001b[39m\n              \u001b[0mYour Team\u001b[0m\n            \u001b[36m</h1>\u001b[39m\n          \u001b[36m</div>\u001b[39m\n        \u001b[36m</div>\u001b[39m\n        \u001b[36m<p\u001b[39m\n          \u001b[33mclass\u001b[39m=\u001b[32m\"text-sm text-muted-foreground\"\u001b[39m\n          \u001b[33mrole\u001b[39m=\u001b[32m\"status\"\u001b[39m\n        \u001b[36m>\u001b[39m\n          \u001b[0mYour organization or access changed. Refresh to load your team.\u001b[0m\n        \u001b[36m</p>\u001b[39m\n        \u001b[36m<div>\u001b[39m\n          \u001b[36m<button\u001b[39m\n            \u001b[33mclass\u001b[39m=\u001b[32m\"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3\"\u001b[39m\n            \u001b[33mdata-slot\u001b[39m=\u001b[32m\"button\"\u001b[39m\n          \u001b[36m>\u001b[39m\n            \u001b[0mRetry\u001b[0m\n          \u001b[36m</button>\u001b[39m\n        \u001b[36m</div>\u001b[39m\n      \u001b[36m</div>\u001b[39m\n    \u001b[36m</div>\u001b[39m\n  \u001b[36m</body>\u001b[39m\n\u001b[36m</html>\u001b[39m...\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/test/.tmp/merge1739-audit/context-retry.test.tsx:56:43\n    at runWithExpensiveErrorDiagnosticsDisabled (X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+dom@10.4.2\\node_modules\\@testing-library\\dom\\dist\\config.js:47:12)\n    at checkCallback (X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+dom@10.4.2\\node_modules\\@testing-library\\dom\\dist\\wait-for.js:124:77)\n    at Timeout.checkRealTimersCallback (X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+dom@10.4.2\\node_modules\\@testing-library\\dom\\dist\\wait-for.js:118:16)\n    at listOnTimeout (node:internal/timers:685:17)\n    at process.processTimers (node:internal/timers:618:7)"
+        ]
+      }
+    ]
+  },
+  "historical": {
+    "baseUiMessages": 3,
+    "source": "historical-next-qualification.json",
+    "freshAssembled": "Healthy control log emits Base UI nativeButton=false warning from DialogTrigger -> BalanceAdjustmentHistoryDialog -> TimeBalanceBadge. Not a fresh Next/browser classification.",
+    "historyRecovery": "UNRUN after first confirmed blocker. Shared HistoryBody source renders failure alert without Retry; worker runtime-extra retry:false remains inherited evidence, not a fresh local Retry/refetch demonstration."
+  },
+  "unrun": [
+    "Fresh shared-history failed read/local Retry and successful-empty comparison",
+    "Fresh 84 relevant units/8 files and6 canonical PostgreSQL cases/1 file",
+    "Compatibility suites, route/app/workflow/smoke types",
+    "Ordinary and explicit100 CRLF/lint profiles",
+    "Bounded React Doctor",
+    "Full incoming artifact syntax/link/PNG/source-pin audit",
+    "Disposable fixture, form login, current-role/browser/runtime/history/source-pinned images"
+  ],
+  "inheritedOnly": [
+    "Worker84 unit/8files and6 PostgreSQL/1file; zero of those counts claimed fresh",
+    "Latest verified769a2e7844ed1ff43d6a36145869b50cee921db6;59anchors+baseline",
+    "#1738 remains provisional; isolated comparison untouched"
+  ],
+  "rootAuthority": "Root owns small source fixes, final whole-branch review, ledger/README/tracker/publication/readiness. No verifiedCommit invented."
+}

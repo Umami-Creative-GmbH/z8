@@ -1,0 +1,16 @@
+{
+  "validatedBeforeIndex": 51,
+  "jsonParsed": 49,
+  "pngDecode": {
+    "width": 1300,
+    "height": 915,
+    "channels": 3,
+    "decodedBytes": 3568500,
+    "sha256": "4dc8625735233abcd9666ab8829500b355adbba2c3f27dc51df3532b605b1d51"
+  },
+  "privateActorLiteralScan": "pass for actor email/password/ID values; private source inputs never admitted",
+  "visualReview": "Pixel acceptance unpassed; clipped-left crop",
+  "allFrozenPreservationPassed": true,
+  "allOperationalOwnershipReleased": true,
+  "qualification": "Index subsequently hashes all explicit payloads including this verification receipt; final readback verifies bytes+hashes and parses every JSON."
+}

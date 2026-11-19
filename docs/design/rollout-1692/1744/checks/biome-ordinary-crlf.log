@@ -1,0 +1,310 @@
+src\app\[locale]\(app)\team\presence\[locationId]\heading.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     5  5 │     expect(appPageOwnsHeading("/en/team/presence/location-1")).toBe(true);␍
+     6  6 │     expect(appPageOwnsHeading("/team/presence")).toBe(false);␍
+     7    │ - → expect(appPageOwnsHeading("/en/team/presence/location-1/history")).toBe(false);␍
+        7 │ + → expect(appPageOwnsHeading("/en/team/presence/location-1/history")).toBe(␍
+        8 │ + → → false,␍
+        9 │ + → );␍
+     8 10 │     expect(appPageOwnsHeading("/team")).toBe(false);␍
+     9 11 │   });␍
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\location-presence-loading.tsx format ━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    10 10 │     return (␍
+    11 11 │       <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:px-6">␍
+    12    │ - → → → <PageHeader·title={t("team.presence.title",·"Who·is·in")}·scope={<AllLocationsLink·/>}·/>␍
+       12 │ + → → → <PageHeader␍
+       13 │ + → → → → title={t("team.presence.title",·"Who·is·in")}␍
+       14 │ + → → → → scope={<AllLocationsLink·/>}␍
+       15 │ + → → → />␍
+    13 16 │         <div␍
+    14 17 │           role="status"␍
+    ····· │ 
+    17 20 │         >␍
+    18 21 │           <Skeleton className="h-64 w-full" />␍
+    19    │ - → → → → <span·className="sr-only">{t("team.presence.loading",·"Loading·location·presence…")}</span>␍
+       22 │ + → → → → <span·className="sr-only">␍
+       23 │ + → → → → → {t("team.presence.loading",·"Loading·location·presence…")}␍
+       24 │ + → → → → </span>␍
+    20 25 │         </div>␍
+    21 26 │       </div>␍
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     7  7 │   import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";␍
+     8  8 │   import { getTranslate } from "@/tolgee/server";␍
+     9    │ - import·{·LocationPresenceList,·type·LocationPresenceRow·}·from·"../location-presence-list";␍
+        9 │ + import·{␍
+       10 │ + → LocationPresenceList,␍
+       11 │ + → type·LocationPresenceRow,␍
+       12 │ + }·from·"../location-presence-list";␍
+    10 13 │   import { getLocationPresence } from "../presence-data";␍
+    11 14 │   import { AllLocationsLink } from "./all-locations-link";␍
+    ····· │ 
+    16 19 │   }␍
+    17 20 │   ␍
+    18    │ - async·function·LocationPresencePageContent({·params·}:·LocationPresencePageProps)·{␍
+    19    │ - → const·[{·locale,·locationId·},·t]·=·await·Promise.all([params,·getTranslate()]);␍
+       21 │ + async·function·LocationPresencePageContent({␍
+       22 │ + → params,␍
+       23 │ + }:·LocationPresencePageProps)·{␍
+       24 │ + → const·[{·locale,·locationId·},·t]·=·await·Promise.all([␍
+       25 │ + → → params,␍
+       26 │ + → → getTranslate(),␍
+       27 │ + → ]);␍
+    20 28 │     const result = await getLocationPresence(locationId);␍
+    21 29 │   ␍
+    ····· │ 
+    33 41 │       name: entry.name,␍
+    34 42 │       state: entry.state,␍
+    35    │ - → → sinceText:·formatPresenceSince(entry.since,·entry.sinceZone,·{·locale,·timeFormat,·now·}),␍
+       43 │ + → → sinceText:·formatPresenceSince(entry.since,·entry.sinceZone,·{␍
+       44 │ + → → → locale,␍
+       45 │ + → → → timeFormat,␍
+       46 │ + → → → now,␍
+       47 │ + → → }),␍
+    36 48 │     }));␍
+    37 49 │   ␍
+    ····· │ 
+    55 67 │           }␍
+    56 68 │         />␍
+    57    │ - → → → <section·aria-label={t("team.presence.title",·"Who·is·in")}·className="min-w-0·space-y-3">␍
+       69 │ + → → → <section␍
+       70 │ + → → → → aria-label={t("team.presence.title",·"Who·is·in")}␍
+       71 │ + → → → → className="min-w-0·space-y-3"␍
+       72 │ + → → → >␍
+    58 73 │           <LocationPresenceList rows={rows} />␍
+    59 74 │           <p className="max-w-3xl text-pretty text-sm text-muted-foreground">␍
+    ····· │ 
+    68 83 │   }␍
+    69 84 │   ␍
+    70    │ - export·default·function·LocationPresencePage({·params·}:·LocationPresencePageProps)·{␍
+       85 │ + export·default·function·LocationPresencePage({␍
+       86 │ + → params,␍
+       87 │ + }:·LocationPresencePageProps)·{␍
+    71 88 │     return (␍
+    72 89 │       <Suspense fallback={<LocationPresenceLoading />}>␍
+  
+
+src\app\[locale]\(app)\team\presence\[locationId]\states.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    20 20 │   it("names the task while presence is pending without pretending the roster is empty", () => {␍
+    21 21 │     render(<LocationPresenceLoading />);␍
+    22    │ - → expect(screen.getAllByRole("heading",·{·level:·1·}).map((node)·=>·node.textContent)).toEqual([␍
+    23    │ - → → "Who·is·in",␍
+    24    │ - → ]);␍
+    25    │ - → expect(screen.getByRole("status",·{·name:·"Loading·location·presence…"·})).toBeTruthy();␍
+       22 │ + → expect(␍
+       23 │ + → → screen␍
+       24 │ + → → → .getAllByRole("heading",·{·level:·1·})␍
+       25 │ + → → → .map((node)·=>·node.textContent),␍
+       26 │ + → ).toEqual(["Who·is·in"]);␍
+       27 │ + → expect(␍
+       28 │ + → → screen.getByRole("status",·{·name:·"Loading·location·presence…"·}),␍
+       29 │ + → ).toBeTruthy();␍
+    26 30 │     expect(screen.queryByRole("table")).toBeNull();␍
+    27 31 │     expect(screen.queryByText(/Nobody you can see/)).toBeNull();␍
+    28    │ - → expect(screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href")).toBe(␍
+    29    │ - → → "/team/presence",␍
+    30    │ - → );␍
+       32 │ + → expect(␍
+       33 │ + → → screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href"),␍
+       34 │ + → ).toBe("/team/presence");␍
+    31 35 │   });␍
+    32 36 │   ␍
+    33 37 │   it("offers local Retry and the location selector after a read failure without exposing error details", () => {␍
+    34 38 │     const retry = vi.fn();␍
+    35    │ - → render(<LocationPresenceError·error={new·Error("private·database·details")}·retry={retry}·/>);␍
+    36    │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe("Presence·unavailable");␍
+       39 │ + → render(␍
+       40 │ + → → <LocationPresenceError␍
+       41 │ + → → → error={new·Error("private·database·details")}␍
+       42 │ + → → → retry={retry}␍
+       43 │ + → → />,␍
+       44 │ + → );␍
+       45 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(␍
+       46 │ + → → "Presence·unavailable",␍
+       47 │ + → );␍
+    37 48 │     expect(screen.queryByText("private database details")).toBeNull();␍
+    38 49 │     fireEvent.click(screen.getByRole("button", { name: "Retry" }));␍
+    39 50 │     expect(retry).toHaveBeenCalledOnce();␍
+    40    │ - → expect(screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href")).toBe(␍
+    41    │ - → → "/team/presence",␍
+    42    │ - → );␍
+       51 │ + → expect(␍
+       52 │ + → → screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href"),␍
+       53 │ + → ).toBe("/team/presence");␍
+    43 54 │   });␍
+    44 55 │   ␍
+    45 56 │   it("keeps unavailable locations indistinguishable and returns to the authorized selector", () => {␍
+    46 57 │     render(<LocationPresenceNotFound />);␍
+    47    │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe("Location·unavailable");␍
+       58 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(␍
+       59 │ + → → "Location·unavailable",␍
+       60 │ + → );␍
+    48 61 │     expect(screen.queryByRole("table")).toBeNull();␍
+    49    │ - → expect(screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href")).toBe(␍
+    50    │ - → → "/team/presence",␍
+    51    │ - → );␍
+       62 │ + → expect(␍
+       63 │ + → → screen.getByRole("link",·{·name:·"All·locations"·}).getAttribute("href"),␍
+       64 │ + → ).toBe("/team/presence");␍
+    52 65 │   });␍
+    53 66 │   
+  
+
+src\app\[locale]\(app)\team\presence\location-presence-list.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    25 25 │       <LocationPresenceList␍
+    26 26 │         rows={[␍
+    27    │ - → → → → {·employeeId:·"anna",·name:·"Anna·Berger",·state:·"clocked_in",·sinceText:·"08:30"·},␍
+    28    │ - → → → → {·employeeId:·"ben",·name:·"Ben·West",·state:·"on_break",·sinceText:·"11:45"·},␍
+       27 │ + → → → → {␍
+       28 │ + → → → → → employeeId:·"anna",␍
+       29 │ + → → → → → name:·"Anna·Berger",␍
+       30 │ + → → → → → state:·"clocked_in",␍
+       31 │ + → → → → → sinceText:·"08:30",␍
+       32 │ + → → → → },␍
+       33 │ + → → → → {␍
+       34 │ + → → → → → employeeId:·"ben",␍
+       35 │ + → → → → → name:·"Ben·West",␍
+       36 │ + → → → → → state:·"on_break",␍
+       37 │ + → → → → → sinceText:·"11:45",␍
+       38 │ + → → → → },␍
+    29 39 │         ]}␍
+    30 40 │       />,␍
+    ····· │ 
+    45 55 │     const view = render(␍
+    46 56 │       <LocationPresenceList␍
+    47    │ - → → → rows={[{·employeeId:·"anna",·name:·"Anna·Berger",·state:·"clocked_in",·sinceText:·"08:30"·}]}␍
+       57 │ + → → → rows={[␍
+       58 │ + → → → → {␍
+       59 │ + → → → → → employeeId:·"anna",␍
+       60 │ + → → → → → name:·"Anna·Berger",␍
+       61 │ + → → → → → state:·"clocked_in",␍
+       62 │ + → → → → → sinceText:·"08:30",␍
+       63 │ + → → → → },␍
+       64 │ + → → → ]}␍
+    48 65 │       />,␍
+    49 66 │     );␍
+    ····· │ 
+    53 70 │     expect(screen.queryByRole("link", { name: "Anna Berger" })).toBeNull();␍
+    54 71 │     expect(␍
+    55    │ - → → screen.getByText("Nobody·you·can·see·is·clocked·in·at·this·location·right·now."),␍
+       72 │ + → → screen.getByText(␍
+       73 │ + → → → "Nobody·you·can·see·is·clocked·in·at·this·location·right·now.",␍
+       74 │ + → → ),␍
+    56 75 │     ).toBeTruthy();␍
+    57 76 │     view.unmount();␍
+  
+
+src\app\[locale]\(app)\team\presence\location-presence-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     27  27 │   ␍
+     28  28 │   /** The manager view's list of who is in at one location (#863), refreshed every minute. */␍
+     29     │ - export·function·LocationPresenceList({·rows·}:·{·rows:·LocationPresenceRow[]·})·{␍
+         29 │ + export·function·LocationPresenceList({␍
+         30 │ + → rows,␍
+         31 │ + }:·{␍
+         32 │ + → rows:·LocationPresenceRow[];␍
+         33 │ + })·{␍
+     30  34 │     const { t } = useTranslate();␍
+     31  35 │     const router = useRouter();␍
+     32  36 │   ␍
+     33  37 │     useEffect(() => {␍
+     34     │ - → → const·timer·=·window.setInterval(()·=>·router.refresh(),·PRESENCE_REFRESH_MS);␍
+         38 │ + → → const·timer·=·window.setInterval(␍
+         39 │ + → → → ()·=>·router.refresh(),␍
+         40 │ + → → → PRESENCE_REFRESH_MS,␍
+         41 │ + → → );␍
+     35  42 │       return () => window.clearInterval(timer);␍
+     36  43 │     }, [router]);␍
+    ······· │ 
+     39  46 │       return (␍
+     40  47 │         <div className="rounded-lg border bg-card px-6 py-12 text-center text-muted-foreground text-sm">␍
+     41     │ - → → → → {t("team.presence.empty",·"Nobody·you·can·see·is·clocked·in·at·this·location·right·now.")}␍
+         48 │ + → → → → {t(␍
+         49 │ + → → → → → "team.presence.empty",␍
+         50 │ + → → → → → "Nobody·you·can·see·is·clocked·in·at·this·location·right·now.",␍
+         51 │ + → → → → )}␍
+     42  52 │         </div>␍
+     43  53 │       );␍
+    ······· │ 
+     46  56 │     return (␍
+     47  57 │       <div className="min-w-0 rounded-lg border bg-card">␍
+     48     │ - → → → <Table·mobileLayout="stacked"·aria-label={t("team.presence.title",·"Who·is·in")}>␍
+         58 │ + → → → <Table␍
+         59 │ + → → → → mobileLayout="stacked"␍
+         60 │ + → → → → aria-label={t("team.presence.title",·"Who·is·in")}␍
+         61 │ + → → → >␍
+     49  62 │           <TableHeader className="bg-muted/40">␍
+     50  63 │             <TableRow>␍
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+    171     │ - → → id:·`settings-${entry.id}`,␍
+    172     │ - → → href:·entry.href,␍
+    173     │ - → → titleKey:·entry.titleKey,␍
+    174     │ - → → titleDefault:·entry.titleDefault,␍
+    175     │ - → })),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+        171 │ + → → (entry)·=>·({␍
+        172 │ + → → → id:·`settings-${entry.id}`,␍
+        173 │ + → → → href:·entry.href,␍
+        174 │ + → → → titleKey:·entry.titleKey,␍
+        175 │ + → → → titleDefault:·entry.titleDefault,␍
+        176 │ + → → }),␍
+        177 │ + → ),␍
+    176 178 │     {␍
+    177 179 │       id: "settings",␍
+    ······· │ 
+    190 192 │   ␍
+    191 193 │   export function normalizeAppPath(pathname: string): string {␍
+    192     │ - → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+    193     │ - → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+        194 │ + → const·[firstSegment,·...remainingSegments]·=·pathname␍
+        195 │ + → → .split("/")␍
+        196 │ + → → .filter(Boolean);␍
+        197 │ + → const·segments·=·ALL_LANGUAGES.includes(␍
+        198 │ + → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+        199 │ + → )␍
+    194 200 │       ? remainingSegments␍
+    195 201 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    250 256 │       [...APP_ROUTE_METADATA]␍
+    251 257 │         .sort((left, right) => right.href.length - left.href.length)␍
+    252     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+        258 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+        259 │ + → → UNKNOWN_ROUTE_METADATA␍
+    253 260 │     );␍
+    254 261 │   }␍
+  
+
+Checked 10 files in 6ms. No fixes applied.
+Found 7 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

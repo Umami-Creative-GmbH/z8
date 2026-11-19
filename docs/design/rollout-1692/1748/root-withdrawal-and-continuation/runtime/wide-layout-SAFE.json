@@ -1,0 +1,48 @@
+{
+  "h1Count": 1,
+  "h1": {
+    "x": 754.5,
+    "y": 145,
+    "width": 954,
+    "height": 40.5
+  },
+  "main": {
+    "x": 63,
+    "y": 0,
+    "width": 2337,
+    "height": 1200
+  },
+  "sidebar": {
+    "x": 0,
+    "y": 0,
+    "width": 62,
+    "height": 1200
+  },
+  "fontSize": "18px",
+  "viewport": {
+    "width": 2400,
+    "height": 1200
+  },
+  "scrollWidth": 2400,
+  "identity": true,
+  "notes": true,
+  "filename": true,
+  "originalAmount": true,
+  "calculatedAmount": true,
+  "capturedZone": true,
+  "missingDestination": true,
+  "checksumUnavailable": false,
+  "statusDraft": false,
+  "statusSubmitted": true,
+  "utc": true,
+  "backLink": true,
+  "continueButton": false,
+  "reportLink": false,
+  "retry": false,
+  "timeOrder": [
+    "2025-03-09T09:00:00.000Z",
+    "2025-03-10T16:00:00.000Z"
+  ],
+  "dialogs": 0,
+  "dark": true
+}

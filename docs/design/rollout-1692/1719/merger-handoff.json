@@ -1,0 +1,183 @@
+{
+  "merge": "a9b472e5864f386d881604605d593cffc189d61a",
+  "parents": [
+    "cbc070ff393a0297cc99212b8a6c93100e531990",
+    "63d8a75d52a1c24dabfd8c2397b76fabf8310607"
+  ],
+  "tree": "c51d2c404a138fc9416a74ac704a3e5951a8f5b5",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 35,
+        "cases": 277,
+        "passed": 277,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 143,
+        "cases": 1182,
+        "passed": 1182,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 35,
+        "overlapCases": 277
+      }
+    ],
+    "uniqueFiles": 143,
+    "uniqueCases": 1182,
+    "method": "File path and full test name multisets; equal-name parameterized cases retain multiplicity; repeated runs do not add cases."
+  },
+  "quality": {
+    "types": {
+      "passed": true,
+      "scope": [
+        "Next route types",
+        "application",
+        "workflow contracts",
+        "smoke"
+      ]
+    },
+    "biome": {
+      "changedFiles": 8,
+      "actualCheckoutCrlfAware": "passed",
+      "explicitWebappLintImport": "passed",
+      "explicitWebappFormatting": {
+        "passed": false,
+        "formattingOnlyFiles": [
+          "src/app/[locale]/(app)/equipment/employees/[employeeId]/page.tsx",
+          "src/components/equipment/equipment-employee-header.tsx",
+          "src/components/equipment/equipment-employee.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/equipment/equipment-workspace.test.tsx",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "qualification": "Additional explicit 100-column webapp profile is unpassed; no mass formatting rewrite or rule change."
+      }
+    },
+    "doctor": {
+      "files": 8,
+      "diagnostics": 0,
+      "scope": "changed",
+      "base": "cbc070ff393a0297cc99212b8a6c93100e531990",
+      "telemetry": false,
+      "supplyChain": false
+    }
+  },
+  "preservation": {
+    "verifiedAncestors": 25,
+    "priorRolloutPathsUnchanged": 1011,
+    "unaffectedPriorPathsUnchanged": 11224,
+    "changedPaths": 61,
+    "nonMetadataIncomingPathsPreserved": 59,
+    "combinedMetadataOnly": true
+  },
+  "artifacts": {
+    "pngsFullyDecoded": 29,
+    "jsonParsed": 13,
+    "scriptsSyntaxChecked": 10,
+    "relativeLinksResolved": 31,
+    "matchedPairs": 3,
+    "rowsRetained": 3,
+    "exactCaptureSource": "412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150",
+    "pinnedSourceFiles": 5,
+    "archives": [
+      {
+        "name": "r019-historical",
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "output": "Verified matched scope/viewport/row/title evidence, retained raw hashes against captured source f043d581e481a984a54da81b967bf5e6cfdfcd5e, 24 core + 11 final variant assertions, retained historical messages, native tree and Next diagnostics. This does not constitute a fresh browser run."
+      },
+      {
+        "name": "r019-current-qualified",
+        "exitCode": 1,
+        "expectedExitCode": 1,
+        "qualification": "Optional strict current-source check fails on legitimate subsequent shared heading opt-ins; historical pinned evidence remains valid."
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "output": "{\"commit\":\"a9b472e5864f386d881604605d593cffc189d61a\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+      }
+    ]
+  },
+  "diffChecks": [
+    {
+      "command": "git diff --check cbc070ff393a0297cc99212b8a6c93100e531990 HEAD",
+      "passed": true
+    },
+    {
+      "command": "git diff --check 63d8a75d52a1c24dabfd8c2397b76fabf8310607 HEAD",
+      "passed": true
+    },
+    {
+      "command": "git diff --check",
+      "passed": true
+    },
+    {
+      "command": "git -C X:/t3-code/worktrees/z8/t3-a08957e0-f0030f7a35c144b1 diff --check eec17c6b3a9442866b54bf64345ef7818ecf0dfb HEAD",
+      "passed": true
+    },
+    {
+      "command": "git -C X:/t3-code/worktrees/z8/t3-a08957e0-f0030f7a35c144b1 diff --check",
+      "passed": true
+    }
+  ],
+  "findings": {
+    "sourceBlockers": [],
+    "eof": [],
+    "provenance": [],
+    "formattingQualification": "Seven explicit-profile formatting-only differences retained. Historical R019 strict current-source mismatch is expected from legitimate later heading opt-ins, while pinned historical evidence passes."
+  },
+  "freshVsInherited": {
+    "fresh": "Merge/tree/ancestry/preservation;143 suites/1182 tests;types;8-file CRLF-aware Biome,8-file explicit lint/import;8-file Doctor;static inventory;source hash/archive/full PNG decode/script/JSON/link checks.",
+    "inherited": "Implementer 6 PostgreSQL suites/47 tests;28 current-route assertions+6 preferences+8 merged pointer retry;actual HTTP200 org switch;native tree/Next diagnostics and all runtime/browser observations. Root Calendar12 assertions/45 suites489 archive and equipment recovery archive inspected only."
+  },
+  "limits": [
+    "No fresh runtime, PostgreSQL, live provider, full production build, Tolgee publication/catalog, physical device, native zoom or performance benchmark run in merger.",
+    "Org-menu keyboard activation is uncertified; actual pointer switch is retained evidence.",
+    "Independent Next Rendering layer may reappear after hover; no framework suppression was applied.",
+    "Earlier retained harness, transition, capture-grid/panel-teardown/native-inspection and wider shared-shell qualifications remain with their existing reports."
+  ],
+  "commands": [
+    "git merge-tree --write-tree cbc070ff393a0297cc99212b8a6c93100e531990 63d8a75d52a1c24dabfd8c2397b76fabf8310607",
+    "git merge --no-ff --no-edit -m \"Merge #1719 employee equipment into UI refresh integration\" 63d8a75d52a1c24dabfd8c2397b76fabf8310607",
+    "pnpm --filter webapp exec vitest run --project unit src/components/equipment src/components/driving-licence src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/sidebar.test.tsx --maxWorkers=2 --reporter=json --outputFile=../../.tmp/merge1719-audit/exact.json",
+    "pnpm --filter webapp exec vitest run --project unit <compatibility-selection.txt entries> --maxWorkers=2 --reporter=json --outputFile=../../.tmp/merge1719-audit/compatibility.json",
+    "pnpm --filter webapp typecheck",
+    "pnpm --filter webapp exec biome check --line-ending=crlf <eight changed source files>",
+    "pnpm --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf <eight changed source files>",
+    "pnpm --filter webapp exec biome check --config-path=biome.jsonc --formatter-enabled=false <eight changed source files>",
+    "pnpm exec react-doctor apps/webapp --scope changed --base cbc070ff393a0297cc99212b8a6c93100e531990 --verbose --no-score --no-supply-chain --no-telemetry --no-parallel",
+    "pnpm node .tmp/merge1719-audit/audit.mjs",
+    "pnpm node docs/design/rollout-1692/1719/verify-evidence.mjs --current-source",
+    "pnpm node .tmp/merge1719-audit/check-archives.mjs",
+    "pnpm node .tmp/merge1719-audit/test-summary.mjs"
+  ],
+  "packageManagerEnvironment": "pnpm only;pnpm_config_verify_deps_before_run=false;maxWorkers=2;initial sandbox Git object/pnpm lock denials succeeded under authorized escalations;no automatic approval rejection.",
+  "noServicesStarted": true,
+  "noSourceFixes": true,
+  "noTrackerWrites": true,
+  "noLedgerReportReadmeChanges": true,
+  "noPushOrPrChanges": true
+}

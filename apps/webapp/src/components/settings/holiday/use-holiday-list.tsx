@@ -68,11 +68,9 @@ export function useHolidayDeletion() {
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [holidayToDelete, setHolidayToDelete] = useState<HolidayWithCategory | null>(null);
 	const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
-
-	const closeDeleteConfirm = () => {
-		setDeleteConfirmOpen(false);
-		setHolidayToDelete(null);
-	};
+	// A failed deletion keeps its dialog open with the reason, so it can be retried.
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
 
 	const deleteMutation = useMutation({
 		mutationFn: (holidayId: string) => deleteHoliday(holidayId),
@@ -80,19 +78,18 @@ export function useHolidayDeletion() {
 			if (result.success) {
 				toast.success(t("settings.holidays.deleted", "Holiday deleted successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.holidays.all });
+				setDeleteConfirmOpen(false);
 			} else {
-				toast.error(
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.holidays.deleteFailed",
 						"Failed to delete holiday",
 					]),
 				);
 			}
-			closeDeleteConfirm();
 		},
 		onError: () => {
-			toast.error(t("settings.holidays.deleteFailed", "Failed to delete holiday"));
-			closeDeleteConfirm();
+			setDeleteError(t("settings.holidays.deleteFailed", "Failed to delete holiday"));
 		},
 	});
 
@@ -107,19 +104,18 @@ export function useHolidayDeletion() {
 				);
 				queryClient.invalidateQueries({ queryKey: queryKeys.holidays.all });
 				setRowSelection({});
+				setBulkDeleteConfirmOpen(false);
 			} else {
-				toast.error(
+				setBulkDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.holidays.bulkDeleteFailed",
 						"Failed to delete holidays",
 					]),
 				);
 			}
-			setBulkDeleteConfirmOpen(false);
 		},
 		onError: () => {
-			toast.error(t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"));
-			setBulkDeleteConfirmOpen(false);
+			setBulkDeleteError(t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"));
 		},
 	});
 
@@ -130,23 +126,40 @@ export function useHolidayDeletion() {
 		setRowSelection,
 		selectedCount: selectedIds.length,
 		deleteConfirmOpen,
-		setDeleteConfirmOpen,
+		setDeleteConfirmOpen: (open: boolean) => {
+			setDeleteConfirmOpen(open);
+			if (!open) setDeleteError(null);
+		},
 		holidayToDelete,
 		deleteMutation,
+		deleteError,
 		bulkDeleteConfirmOpen,
-		setBulkDeleteConfirmOpen,
+		setBulkDeleteConfirmOpen: (open: boolean) => {
+			setBulkDeleteConfirmOpen(open);
+			if (!open) setBulkDeleteError(null);
+		},
 		bulkDeleteMutation,
+		bulkDeleteError,
 		requestDelete: (holiday: HolidayWithCategory) => {
 			setHolidayToDelete(holiday);
+			setDeleteError(null);
 			setDeleteConfirmOpen(true);
 		},
 		confirmDelete: () => {
-			if (holidayToDelete) deleteMutation.mutate(holidayToDelete.id);
+			if (!holidayToDelete || deleteMutation.isPending) return;
+			setDeleteError(null);
+			deleteMutation.mutate(holidayToDelete.id);
 		},
 		requestBulkDelete: () => {
-			if (selectedIds.length > 0) setBulkDeleteConfirmOpen(true);
+			if (selectedIds.length === 0) return;
+			setBulkDeleteError(null);
+			setBulkDeleteConfirmOpen(true);
 		},
-		confirmBulkDelete: () => bulkDeleteMutation.mutate(selectedIds),
+		confirmBulkDelete: () => {
+			if (bulkDeleteMutation.isPending || selectedIds.length === 0) return;
+			setBulkDeleteError(null);
+			bulkDeleteMutation.mutate(selectedIds);
+		},
 	};
 }
 

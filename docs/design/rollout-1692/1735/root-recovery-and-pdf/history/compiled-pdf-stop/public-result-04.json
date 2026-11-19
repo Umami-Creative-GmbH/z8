@@ -1,0 +1,56 @@
+{
+  "kind": "deterministic safe summary clone of raw Vitest JSON; absolute stacks and DOM diagnostics excluded",
+  "rawSha256": "f400651de353b8546d8fe45e9e150874351ec5fca43a6bfaa55618521383b404",
+  "attempt": "04",
+  "physicalFiles": 1,
+  "passed": 0,
+  "failed": 1,
+  "skipped": 8,
+  "cases": [
+    {
+      "name": "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent Activity retires pending roster Retry success and preserves exact peer cache",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+      "status": "skipped",
+      "failureFirstLine": null
+    },
+    {
+      "name": "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+      "status": "failed",
+      "failureFirstLine": "Error: Test timed out in 5000ms."
+    },
+    {
+      "name": "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects",
+      "status": "skipped",
+      "failureFirstLine": null
+    }
+  ]
+}

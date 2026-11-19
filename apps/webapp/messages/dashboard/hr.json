@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Odsutnost",
-      "all-caught-up": "Sve je riješeno!",
-      "approved-recently": "{count} {request} nedavno odobreno",
       "by": "od {name}",
       "description": "Najnoviji odobreni zahtjevi",
       "description-count": "Zadnjih {count} odobrenih {request}",
@@ -123,11 +121,27 @@
       "title": "Nedavno odobreno",
       "view-all": "Prikaži sva odobrenja"
     },
+    "refresh": {
+      "activity": "Najnovija aktivnost",
+      "attention": "Današnji pregled",
+      "balanceRetry": "Osvježite za ponovni pokušaj učitavanja stanja.",
+      "balanceUnavailable": "Stanje nije dostupno",
+      "currentSession": "Trenutna sesija",
+      "dayUnavailable": "Današnji zbroj nije dostupan. Osvježite za ponovni pokušaj.",
+      "employee": "Zaposlenik",
+      "greeting": "Dobar dan, {name}.",
+      "noAbsences": "Za danas nema zabilježenih izostanaka.",
+      "openTimeTracking": "Idi na praćenje vremena",
+      "overview": "Brzi pregled vašeg rada",
+      "personalDay": "Vaš radni dan",
+      "status": "Status",
+      "summary": "Sažetak",
+      "team": "Tim",
+      "todayTarget": "Danas · potrebno: {target}"
+    },
     "team-overview": {
       "avg-hours": "Prosj. sati",
       "current-employees": "Trenutačni zaposlenici",
-      "current-employees-description": "Svi koji sada ovdje rade",
-      "description": "Pregled statistike tima",
       "employees-button": "Zaposlenici",
       "per-week": "/tjedno",
       "teams": "Timovi",
@@ -175,9 +189,6 @@
       "used": "{days} iskorišteno"
     },
     "whos-out": {
-      "everyone-in": "Danas su svi u uredu",
-      "everyones-in": "Svi su tu!",
-      "full-team": "Cijeli tim je dostupan!",
       "member": "član",
       "members": "članovi",
       "members-out": "{count} {member} tima odsutno",

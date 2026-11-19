@@ -1,0 +1,1 @@
+Seal01 rejected discover.json because raw failure body text contained a generated synthetic sign-in email. No public hash manifest was written. Raw discovery output stays ignored and excluded even hash-only; a contact-redacted public clone replaces it in the allowlist.

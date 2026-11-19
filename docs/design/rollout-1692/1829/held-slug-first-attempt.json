@@ -1,0 +1,8 @@
+{
+  "classification": "Failed harness assumption: B transport did not dispatch while A was held",
+  "state": {
+    "slug": "r034-bravo-568f36a5",
+    "status": "Checking availability…"
+  },
+  "sourceSha256": "9df607ebb765684a58fb14f3f1cb44aa9a3d30708ce86a6d1aea936445e0689c"
+}

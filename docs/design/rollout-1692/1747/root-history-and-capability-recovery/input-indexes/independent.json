@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "frozenHead": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "fileCount": 60,
+  "payloadBytes": 632791,
+  "files": [
+    {
+      "path": "archive-verifier.log",
+      "bytes": 806,
+      "sha256": "1e481ac8364f64bd32316f752164f66cdcc0110dd50c0fc2494fc7a7a11a8f13"
+    },
+    {
+      "path": "audit.cjs",
+      "bytes": 7311,
+      "sha256": "61f7d81871cd5bc8c9d45df62aa00c02ad20e6c78fb8722b35347bde27454d97"
+    },
+    {
+      "path": "bin/pnpm",
+      "bytes": 156,
+      "sha256": "78073d4af76b5b7847f6471520d272d61e09b972b5829739a664cb4aa8c20a2b"
+    },
+    {
+      "path": "bridge-removal.json",
+      "bytes": 270,
+      "sha256": "70ad8e51999fb22f98dc8125f2154df09f19e0e4b5fa4044fad58b8e4754beb5"
+    },
+    {
+      "path": "bridge-source-7bc9f3a093d3dd12f7730b37b98ed1e73730f419ed70037572ef9f4757bd0512.tsx",
+      "bytes": 14950,
+      "sha256": "7bc9f3a093d3dd12f7730b37b98ed1e73730f419ed70037572ef9f4757bd0512"
+    },
+    {
+      "path": "bridge.json",
+      "bytes": 356,
+      "sha256": "7c247d74f85fa1625d09b76d611b96d1e0bc6a46f5e37b831784311938ea3b06"
+    },
+    {
+      "path": "case-multiset.json",
+      "bytes": 125429,
+      "sha256": "8a2200ae3959fb3d7a4c09bce9fa47a38f5534d7a89a13b6d0f377206c77dd2a"
+    },
+    {
+      "path": "commands-extra.json",
+      "bytes": 3044,
+      "sha256": "6f8372d716f3709def1bebc65afc8f6e3baad14ccf281e441af02450d820ed46"
+    },
+    {
+      "path": "commands.json",
+      "bytes": 7020,
+      "sha256": "b50ccc9600f91e3dc2e48b0189900a742d8e1a7f1955aa047fec88020f00cef5"
+    },
+    {
+      "path": "dependency-receipt.json",
+      "bytes": 2475,
+      "sha256": "6e6a8a2378dc2c6cb7396e1603e1e70c7546e48a79114f59f2bcaac3798395b3"
+    },
+    {
+      "path": "doctor.json",
+      "bytes": 3722,
+      "sha256": "c1650a05ef6942fd09bf57161011530488d5cd6f0872f7930ba699fe2c038bf8"
+    },
+    {
+      "path": "doctor.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "fixture-audit-attempt1.cjs",
+      "bytes": 2241,
+      "sha256": "b6b7cdbf5e3ae091c96f3cda3012f5a26031930051cbbab5a4cacb6801e01636"
+    },
+    {
+      "path": "fixture-audit-attempt1.log",
+      "bytes": 3178,
+      "sha256": "bcaa64281c04bc994ef12213a5c442d38745684d3af9ae88815a79115579a578"
+    },
+    {
+      "path": "fixture-audit-final.log",
+      "bytes": 686,
+      "sha256": "ac6620c696601c50a62f7e95ac1f42eed3abad3ea5d7138e0c924ab0d3eafe57"
+    },
+    {
+      "path": "fixture-audit.cjs",
+      "bytes": 2575,
+      "sha256": "e189e1f414f14ac172efb67d5ac69793ea41a088ed55a853d4a7a4ed9e890be5"
+    },
+    {
+      "path": "fixture-reconciliation.json",
+      "bytes": 2807,
+      "sha256": "7902b185c145e33efc88806cf5522dc7e13b03d5513e19ad01bb08fdcbd1dc63"
+    },
+    {
+      "path": "format-explicit.log",
+      "bytes": 42,
+      "sha256": "74f98f75b8a414bb0af52833db367665a806f7270c572be5b32742ea5319a0ae"
+    },
+    {
+      "path": "format-ordinary.log",
+      "bytes": 37944,
+      "sha256": "9ecdb071b5e146cc062078a29d48c0d03c97076913dc4235444fca14ceb8067b"
+    },
+    {
+      "path": "handoff.cjs",
+      "bytes": 10142,
+      "sha256": "c7475c0e7131683b9e8f05a5b4a04da975d73bd063d34a7da25fe4ddb8c35dff"
+    },
+    {
+      "path": "handoff.json",
+      "bytes": 8880,
+      "sha256": "b079611dda9bb7d1bc69eeec6aec6e53f55a07b9ca5742526a9931206bc8f2c7"
+    },
+    {
+      "path": "install-attempt1.log",
+      "bytes": 1260,
+      "sha256": "5ebb4a7116df2c8ee3c68b34352d7378a848097b23c5fc3217f03a52ab942b39"
+    },
+    {
+      "path": "install-attempt2.log",
+      "bytes": 4831,
+      "sha256": "b02917f8b7a69aa6f7cccb3122fa8e5f73bcf86afecebfd4f28f0312618a5a8e"
+    },
+    {
+      "path": "lint.log",
+      "bytes": 42,
+      "sha256": "74f98f75b8a414bb0af52833db367665a806f7270c572be5b32742ea5319a0ae"
+    },
+    {
+      "path": "main-types.log",
+      "bytes": 145,
+      "sha256": "86ee5b0fa2e18d754caedc8a79c364d2d5638ce8711fa13dfd8a41920ca5c8e1"
+    },
+    {
+      "path": "metadata.diff",
+      "bytes": 713,
+      "sha256": "f66bda83c8d1233e4de013397773a2b52e31ff3694b377f1ac389ebf9921c613"
+    },
+    {
+      "path": "multiset.cjs",
+      "bytes": 2589,
+      "sha256": "c50d90bfe2425f225ab472890170e85b62ec9f1cec3b5422474d0d05865e386f"
+    },
+    {
+      "path": "pg6.json",
+      "bytes": 20904,
+      "sha256": "82bd97307ff6778469140b7b095dfb21ddb03f59d793416922df7a161b1c95d4"
+    },
+    {
+      "path": "pg6.log",
+      "bytes": 98633,
+      "sha256": "1fb6f2183315613b643cc55f2efb81fdb92f63825166e3d9db1626c00599b919"
+    },
+    {
+      "path": "pnpm-version-escalated.log",
+      "bytes": 9,
+      "sha256": "ca9c5b9470562281b82da9e480aa47b79105e4fba3fa05ef2b99d4a9b738324d"
+    },
+    {
+      "path": "pnpm-version.log",
+      "bytes": 1322,
+      "sha256": "e2e5ec031dd89fad7157c4c4efede071d925f8fe0e37a680be7c880e28f4a224"
+    },
+    {
+      "path": "preservation.json",
+      "bytes": 12937,
+      "sha256": "a97e5a5f526969775f96402fb8756923cd35c79123fc479b13c845a4a58892fd"
+    },
+    {
+      "path": "priority-attempt1-source.tsx",
+      "bytes": 14950,
+      "sha256": "d0dccdf4431034176b1d62ba8b87112d68d62e8e97e0000be1cf39765f9fa674"
+    },
+    {
+      "path": "priority-attempt1.json",
+      "bytes": 36794,
+      "sha256": "0ad44f5976bf8df9d644ba507319d7f0a6da92a67b1d381a63ccf0f3b0c2cabb"
+    },
+    {
+      "path": "priority-attempt1.log",
+      "bytes": 501,
+      "sha256": "040bac08a6df2b5d8641e516689fb0101b43ec2d458d74d295cabfaa52ce5bdf"
+    },
+    {
+      "path": "priority-attempt2.json",
+      "bytes": 5061,
+      "sha256": "6d88791e1c7949862f73f14dbaafc97babab433e5e2372a158e906a04d320279"
+    },
+    {
+      "path": "priority-attempt2.log",
+      "bytes": 501,
+      "sha256": "dd194cb7f5987509dffae3a2073180975443b27dd88fd6c01dfc3e4d5d792d97"
+    },
+    {
+      "path": "priority-final.json",
+      "bytes": 7425,
+      "sha256": "3843ef9aa5af23a6de6d6637d9e035683e1129a71f6dae345837d6ea3ed4a934"
+    },
+    {
+      "path": "priority-final.log",
+      "bytes": 498,
+      "sha256": "e10cbd5954b546c5c210149fce4b42e0c1abdd11b9f2c8beee9e53c00ca58cbb"
+    },
+    {
+      "path": "priority.test.tsx",
+      "bytes": 17924,
+      "sha256": "68b3b4d6df8c4752fbb254ca756b5f1fca8faafab0d72ad392c9316c68a61ec0"
+    },
+    {
+      "path": "resource-release-attempt1.json",
+      "bytes": 572,
+      "sha256": "b524652e8777b014bc8dc3cfabed6d76323bf3c14dc0eac64d5c840ad2b8d6be"
+    },
+    {
+      "path": "resource-release.json",
+      "bytes": 491,
+      "sha256": "19437c7d44d490cf718bb9b5c0e5168519d1615bee437ea197a43df467e1885f"
+    },
+    {
+      "path": "run.cjs",
+      "bytes": 4942,
+      "sha256": "82b9f954c86b471fda3a1cc15b6f65d655a0fddbe621f1c2b424c27a47c8a146"
+    },
+    {
+      "path": "seal.cjs",
+      "bytes": 1773,
+      "sha256": "4bbecb3d2f389501ec2f30c9cc3587f1e6572aa9fc72ea3bad35d67e8da138ef"
+    },
+    {
+      "path": "smoke-types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source/apps/webapp/src/components/header-refresh-button.tsx.txt",
+      "bytes": 1337,
+      "sha256": "48cf0dac8ae3fcaa3f53ed926fa7af56f4c8f9e21a06709ec34e91bd2d7a492b"
+    },
+    {
+      "path": "source/apps/webapp/src/components/providers/organization-context-provider.tsx.txt",
+      "bytes": 7321,
+      "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8"
+    },
+    {
+      "path": "source/apps/webapp/src/components/providers/view-refresh-provider.tsx.txt",
+      "bytes": 4072,
+      "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193"
+    },
+    {
+      "path": "source/apps/webapp/src/components/travel-expenses/expense-history-withdrawal.test.tsx.txt",
+      "bytes": 11256,
+      "sha256": "7e8834367a7ebb7e99706840fd6de5f123833951b6795a8740507aa88a45eb2b"
+    },
+    {
+      "path": "source/apps/webapp/src/components/travel-expenses/expense-history.tsx.txt",
+      "bytes": 15696,
+      "sha256": "1ddadfc3d6a820f38a1d7ca422cef1cd608fae41dae81078597eeb991c566871"
+    },
+    {
+      "path": "source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx.txt",
+      "bytes": 8325,
+      "sha256": "11b44207ea69f90b8ec53eecf46ed730d0be6b89e921259b27477f5146eab485"
+    },
+    {
+      "path": "source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx.txt",
+      "bytes": 14025,
+      "sha256": "d3beb9f9d704b56617c7048fa94f6f904398982bcf7f5acf112a06895d46e385"
+    },
+    {
+      "path": "source/apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx.txt",
+      "bytes": 25148,
+      "sha256": "7c1851c0e921e2825af7f62e22adee7a80981bc61e53bae6d257ffead9e3193c"
+    },
+    {
+      "path": "source/apps/webapp/src/components/travel-expenses/travel-expense-management.tsx.txt",
+      "bytes": 3809,
+      "sha256": "bde3b8bcecc010b342b87148bf17eecbf5be1bf32281c9fb80d78336cd8c08c5"
+    },
+    {
+      "path": "source/apps/webapp/src/lib/navigation/route-metadata.ts.txt",
+      "bytes": 7957,
+      "sha256": "81ee37601797f32da4885033ad0dd28048c7cdd8d222e922a1376e8e8697a83b"
+    },
+    {
+      "path": "typegen.log",
+      "bytes": 59,
+      "sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+    },
+    {
+      "path": "unit13.json",
+      "bytes": 61826,
+      "sha256": "bdf4c46c5de3c0c626b72bf919b3f60d0a7933816fcfa373a68f4d391c1ba62b"
+    },
+    {
+      "path": "unit13.log",
+      "bytes": 490,
+      "sha256": "57501f97aadf4b0d50b710c0048ed936b5b1510e81d8a7ec1d9ac42c9ba5ccc7"
+    },
+    {
+      "path": "verify-safe.cjs",
+      "bytes": 2619,
+      "sha256": "2ce9fe00fcfe4d29989359c939b6a4b23174a620d5b8a4922b5f4366ce2f3a0d"
+    },
+    {
+      "path": "workflow-types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

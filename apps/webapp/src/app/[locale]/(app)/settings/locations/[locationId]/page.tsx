@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { LocationDetail } from "@/components/settings/location-detail";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
@@ -35,13 +36,23 @@ async function LocationDetailPageContent({ params }: LocationDetailPageProps) {
 
 function LocationDetailPageLoading() {
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-5 w-80" />
-				<Skeleton className="h-[420px] w-full" />
+		<LoadingRegion
+			className="page-frame flex flex-1 flex-col gap-6"
+			label={{
+				labelKey: "common.loadingRegions.locationSettings",
+				labelDefault: "Loading location settings",
+			}}
+		>
+			<div className="space-y-2">
+				<Skeleton className="h-5 w-36" aria-hidden="true" />
+				<Skeleton className="h-8 w-56" aria-hidden="true" />
+				<Skeleton className="h-5 w-full max-w-sm" aria-hidden="true" />
 			</div>
-		</div>
+			<div className="grid gap-4 lg:grid-cols-2">
+				<Skeleton className="h-64" aria-hidden="true" />
+				<Skeleton className="h-64" aria-hidden="true" />
+			</div>
+		</LoadingRegion>
 	);
 }
 

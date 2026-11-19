@@ -1,6 +1,5 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
 import { type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -16,17 +15,8 @@ import {
 	getPresetAssignments,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
@@ -107,6 +97,13 @@ function useHolidayAssignmentData(organizationId: string) {
 		employee: levelAssignments("employee"),
 		isLoading: presetQuery.isLoading || holidayQuery.isLoading || categoryQuery.isLoading,
 		error: presetQuery.error || holidayQuery.error || categoryQuery.error,
+		isRefetching: presetQuery.isFetching || holidayQuery.isFetching || categoryQuery.isFetching,
+		/** Retries only the reads that failed. */
+		retry: () => {
+			if (presetQuery.isError) void presetQuery.refetch();
+			if (holidayQuery.isError) void holidayQuery.refetch();
+			if (categoryQuery.isError) void categoryQuery.refetch();
+		},
 	};
 }
 
@@ -114,12 +111,14 @@ function useRemoveAssignmentMutation({
 	mutationFn,
 	queryKey,
 	onRemoved,
+	onFailed,
 	successMessage,
 	failureMessage,
 }: {
 	mutationFn: (assignmentId: string) => Promise<ServerActionResult<unknown>>;
 	queryKey: QueryKey;
 	onRemoved: () => void;
+	onFailed: (message: string) => void;
 	successMessage: () => string;
 	failureMessage: () => string;
 }) {
@@ -134,11 +133,11 @@ function useRemoveAssignmentMutation({
 				queryClient.invalidateQueries({ queryKey });
 				onRemoved();
 			} else {
-				toast.error(actionErrorMessage(t, result, {}, () => failureMessage()));
+				onFailed(actionErrorMessage(t, result, {}, () => failureMessage()));
 			}
 		},
 		onError: () => {
-			toast.error(failureMessage());
+			onFailed(failureMessage());
 		},
 	});
 }
@@ -147,16 +146,17 @@ function useHolidayAssignmentDeletion(organizationId: string) {
 	const { t } = useTranslate();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selection, setSelection] = useState<DeleteSelection | null>(null);
-	// A removal clears the selection only while it is still of the removed kind.
-	const onRemovedFor = (kind: DeleteSelection["kind"]) => () => {
-		setDeleteDialogOpen(false);
-		setSelection((current) => (current?.kind === kind ? null : current));
-	};
+	// A failed removal keeps the dialog open with the reason, so it can be retried.
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	// The selection is kept after closing so the text does not blank out while it animates away.
+	const onRemoved = () => setDeleteDialogOpen(false);
+	const onFailed = (message: string) => setDeleteError(message);
 
 	const deletePresetMutation = useRemoveAssignmentMutation({
 		mutationFn: (assignmentId) => deletePresetAssignment(assignmentId),
 		queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
-		onRemoved: onRemovedFor("preset"),
+		onRemoved,
+		onFailed,
 		successMessage: () => t("settings.holidays.assignments.deleted", "Assignment removed"),
 		failureMessage: () =>
 			t("settings.holidays.assignments.deleteFailed", "Failed to remove assignment"),
@@ -165,7 +165,8 @@ function useHolidayAssignmentDeletion(organizationId: string) {
 	const deleteHolidayMutation = useRemoveAssignmentMutation({
 		mutationFn: (assignmentId) => deleteHolidayAssignment(assignmentId),
 		queryKey: queryKeys.holidayAssignments.list(organizationId),
-		onRemoved: onRemovedFor("holiday"),
+		onRemoved,
+		onFailed,
 		successMessage: () =>
 			t("settings.holidays.assignments.holidayDeleted", "Holiday assignment removed"),
 		failureMessage: () =>
@@ -175,7 +176,8 @@ function useHolidayAssignmentDeletion(organizationId: string) {
 	const deleteHolidayCategoryMutation = useRemoveAssignmentMutation({
 		mutationFn: (assignmentId) => deleteHolidayCategoryAssignment(assignmentId),
 		queryKey: queryKeys.holidayCategoryAssignments.list(organizationId),
-		onRemoved: onRemovedFor("category"),
+		onRemoved,
+		onFailed,
 		successMessage: () =>
 			t("settings.holidays.assignments.categoryDeleted", "Holiday category assignment removed"),
 		failureMessage: () =>
@@ -185,12 +187,20 @@ function useHolidayAssignmentDeletion(organizationId: string) {
 			),
 	});
 
+	const isDeleting =
+		deletePresetMutation.isPending ||
+		deleteHolidayMutation.isPending ||
+		deleteHolidayCategoryMutation.isPending;
+
 	const select = (next: DeleteSelection) => {
 		setSelection(next);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
+		if (isDeleting) return;
+		setDeleteError(null);
 		if (selection?.kind === "preset") {
 			deletePresetMutation.mutate(selection.assignment.id);
 		} else if (selection?.kind === "holiday") {
@@ -202,12 +212,13 @@ function useHolidayAssignmentDeletion(organizationId: string) {
 
 	return {
 		deleteDialogOpen,
-		setDeleteDialogOpen,
+		setDeleteDialogOpen: (open: boolean) => {
+			setDeleteDialogOpen(open);
+			if (!open) setDeleteError(null);
+		},
 		selection,
-		isDeleting:
-			deletePresetMutation.isPending ||
-			deleteHolidayMutation.isPending ||
-			deleteHolidayCategoryMutation.isPending,
+		deleteError,
+		isDeleting,
 		handleDeletePresetClick: (assignment: PresetAssignmentData) =>
 			select({ kind: "preset", assignment }),
 		handleDeleteHolidayClick: (assignment: HolidayAssignmentData) =>
@@ -225,8 +236,9 @@ function PresetDeleteDescription({ assignment }: { assignment: PresetAssignmentD
 		<>
 			{assignment.assignmentType === "organization" &&
 				t(
-					"settings.holidays.assignments.deleteOrgDescription",
-					"This will remove the organization default preset. Employees will only see custom holidays.",
+					"settings.holidays.assignments.deleteOrgNamedDescription",
+					'This will remove "{preset}" as the organization default preset. Employees will only see custom holidays.',
+					{ preset: assignment.preset.name },
 				)}
 			{assignment.assignmentType === "team" &&
 				t(
@@ -275,40 +287,19 @@ function DeleteAssignmentDialog({
 	deletion: ReturnType<typeof useHolidayAssignmentDeletion>;
 }) {
 	const { t } = useTranslate();
-	const { isDeleting } = deletion;
 
 	return (
-		<AlertDialog open={deletion.deleteDialogOpen} onOpenChange={deletion.setDeleteDialogOpen}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.holidays.assignments.deleteTitle", "Remove Assignment?")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						<DeleteSelectionDescription selection={deletion.selection} />
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isDeleting}>
-						{t("common.cancel", "Cancel")}
-					</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={deletion.handleDeleteConfirm}
-						disabled={isDeleting}
-						className="bg-destructive hover:bg-destructive/90"
-					>
-						{isDeleting ? (
-							<>
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-								{t("common.removing", "Removing...")}
-							</>
-						) : (
-							t("common.remove", "Remove")
-						)}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+		<ConfirmActionDialog
+			open={deletion.deleteDialogOpen}
+			onOpenChange={deletion.setDeleteDialogOpen}
+			title={t("settings.holidays.assignments.deleteTitle", "Remove Assignment?")}
+			description={<DeleteSelectionDescription selection={deletion.selection} />}
+			confirmLabel={t("common.remove", "Remove")}
+			pendingLabel={t("common.removing", "Removing...")}
+			isPending={deletion.isDeleting}
+			error={deletion.deleteError}
+			onConfirm={deletion.handleDeleteConfirm}
+		/>
 	);
 }
 
@@ -328,13 +319,11 @@ export function AssignmentManager({
 
 	if (data.error) {
 		return (
-			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
-						{t("settings.holidays.assignments.loadError", "Failed to load assignments")}
-					</p>
-				</CardContent>
-			</Card>
+			<SettingsLoadError
+				message={t("settings.holidays.assignments.loadError", "Failed to load assignments")}
+				onRetry={data.retry}
+				isRetrying={data.isRefetching}
+			/>
 		);
 	}
 

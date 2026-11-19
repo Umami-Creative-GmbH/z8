@@ -2,6 +2,10 @@ import { Suspense } from "react";
 import { DrivingLicenceVerifierWorklist } from "@/components/driving-licence/check-worklist";
 import { MyDrivingLicence } from "@/components/driving-licence/my-licence";
 import { OperationalDrivingStatusPanel } from "@/components/driving-licence/operational-status";
+import {
+	DrivingLicencePageLoading,
+	DrivingLicencePageScope,
+} from "@/components/driving-licence/page-scope";
 import { DrivingLicencePersonalReminderTasks } from "@/components/driving-licence/reminder-tasks";
 import { DrivingLicenceRoleTabs } from "@/components/driving-licence/role-tabs";
 import { VerifierResponsibility } from "@/components/driving-licence/verifier-settings";
@@ -26,41 +30,51 @@ async function DrivingLicenceContent() {
 			: null;
 	const identity = `${actor.organizationId}:${actor.userId}`;
 	return (
-		<DrivingLicenceRoleTabs
-			roles={roles}
-			panels={{
-				myLicence:
-					roles.myLicence &&
-					(record?.success && actor.employeeId ? (
-						<MyDrivingLicence
-							key={`${identity}:${actor.employeeId}`}
-							record={record.data}
-							employeeId={actor.employeeId}
-							intendedDriver={visibility.intendedDriver}
-						/>
-					) : (
-						<p role="status">
-							{t(
-								"drivingLicence.noEmployeeRecord",
-								"No employee driving licence record is available in this organization.",
-							)}
-						</p>
-					)),
-				checks: roles.checks && (
-					<div className="space-y-6">
-						<VerifierResponsibility />
-						<DrivingLicencePersonalReminderTasks key={`tasks:${identity}`} />
-						<DrivingLicenceVerifierWorklist key={identity} />
-					</div>
-				),
-				planning: roles.planning && <OperationalDrivingStatusPanel />,
-			}}
-		/>
+		<DrivingLicencePageScope
+			organizationId={actor.organizationId}
+			userId={actor.userId}
+		>
+			<DrivingLicenceRoleTabs
+				key={identity}
+				roles={roles}
+				panels={{
+					myLicence:
+						roles.myLicence &&
+						(record?.success && actor.employeeId ? (
+							<MyDrivingLicence
+								key={`${identity}:${actor.employeeId}`}
+								record={record.data}
+								employeeId={actor.employeeId}
+								intendedDriver={visibility.intendedDriver}
+							/>
+						) : (
+							<p role="status">
+								{t(
+									"drivingLicence.noEmployeeRecord",
+									"No employee driving licence record is available in this organization.",
+								)}
+							</p>
+						)),
+					checks: roles.checks && (
+						<div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+							<DrivingLicenceVerifierWorklist key={identity} />
+							<div className="min-w-0 space-y-6">
+								<DrivingLicencePersonalReminderTasks
+									key={`tasks:${identity}`}
+								/>
+								<VerifierResponsibility />
+							</div>
+						</div>
+					),
+					planning: roles.planning && <OperationalDrivingStatusPanel />,
+				}}
+			/>
+		</DrivingLicencePageScope>
 	);
 }
 export default function DrivingLicencePage() {
 	return (
-		<Suspense fallback={<div className="p-6" aria-busy="true" />}>
+		<Suspense fallback={<DrivingLicencePageLoading />}>
 			<DrivingLicenceContent />
 		</Suspense>
 	);

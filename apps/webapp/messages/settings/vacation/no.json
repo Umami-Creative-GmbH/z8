@@ -61,6 +61,7 @@
           "allowance": "Kvote",
           "allowanceForYear": "Feriekvote for {year}",
           "assignedPolicy": "Tildelt policy",
+          "backToAllowances": "Tilbake til ansattes kvoter",
           "cancel": "Avbryt",
           "carryover": "Overføring",
           "carryoverDaysOptional": "Overføringsdager (valgfritt)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Standard: {days} dager",
           "employeeInformation": "Ansattinformasjon",
           "errors": {
+            "adjustmentReasonRequired": "Angi en årsak for å registrere denne justeringen.",
             "createAdjustmentFailed": "Kunne ikke opprette justering",
-            "unexpected": "En uventet feil oppstod",
+            "loadFailed": "Kunne ikke laste inn den ansattes feriekvote.",
             "updateAllowanceFailed": "Kunne ikke oppdatere kvote",
             "updatePolicyAssignmentFailed": "Kunne ikke oppdatere policytildeling"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "administrere ansattes feriekvoter",
           "managers": "Ledere",
           "overrideEffectivePolicy": "Overstyr den tildelte retningslinjekvoten ({days} dager) for denne ansatte",
+          "partialSave": {
+            "description": "Oppføringene dine beholdes. Nytt forsøk lagrer bare det som fortsatt mangler.",
+            "failed": {
+              "adjustment": "Kunne ikke lagre manuell justering: {reason}",
+              "allowance": "Kunne ikke lagre tilpasset kvote: {reason}",
+              "policy": "Kunne ikke lagre retningslinjetildeling: {reason}"
+            },
+            "pending": {
+              "adjustment": "Manuell justering er ikke lagret ennå.",
+              "allowance": "Tilpasset kvote er ikke lagret ennå.",
+              "policy": "Retningslinjetildeling er ikke lagret ennå."
+            },
+            "retry": "Prøv ulagrede endringer på nytt",
+            "saved": {
+              "adjustment": "Manuell justering lagret.",
+              "allowance": "Tilpasset kvote lagret.",
+              "policy": "Retningslinjetildeling lagret."
+            },
+            "title": "Enkelte endringer ble ikke lagret",
+            "titleNothingSaved": "Endringene ble ikke lagret"
+          },
           "policyOptionDays": "{name} ({days} dager)",
           "position": "Stilling",
           "postingsSkipped": "Automatiske ferieposteringer hoppes over frem til retningslinjekonfigurasjonen er løst.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Advarsel: \"{name}\" er bedriftens standardretningslinje. Du må angi en annen retningslinje som standard før du kan slette denne.",
       "delete-description-v2": "Er du sikker på at du vil slette \"{name}\"? Dette vil også fjerne alle tildelinger for denne retningslinjen.",
       "deleteFailed": "Kunne ikke slette retningslinje",
+      "deleteLastDefault": "Dette er selskapets eneste standardretningslinje. Angi en annen retningslinje som standard først.",
       "delete-title": "Slett ferieretningslinje",
       "header": {
         "accrual": "Opptjening",
@@ -334,6 +358,7 @@
       },
       "loadError": "Kunne ikke laste inn retningslinjer",
       "max-days": "Maks {days} dager",
+      "no-end-date": "Ingen sluttdato",
       "none": "Ingen",
       "no-policies-created": "Ingen ferieretningslinjer er opprettet ennå. Opprett en retningslinje for å definere feriekvoter for teamet ditt.",
       "noSearchResults": "Ingen retningslinjer samsvarer med søket ditt.",

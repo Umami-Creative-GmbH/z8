@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"origin\":\"http://localhost:65378/en/onboarding/vacation-policy\",\"result\":{\"headings\":[\"Set up vacation policy\"],\"held\":1,\"path\":\"/en/onboarding/vacation-policy\",\"policyControls\":0,\"statuses\":[200]}},\"error\":null}\n",
+  "err": ""
+}

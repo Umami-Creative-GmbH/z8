@@ -49,6 +49,24 @@ const counts = {
 };
 
 describe("the period submission overview", () => {
+	it("names the employee records and preserves a clipped employee-local range", () => {
+		render(
+			<PeriodSubmissionOverview
+				periods={[period]}
+				selected={period}
+				running={false}
+				rows={[{ ...row("New joiner", "sent_back_after_change", true), startDate: "2026-03-05" }]}
+				counts={{ ...counts, awaiting_submission: 0, submitted: 0, sent_back_after_change: 1 }}
+			/>,
+		);
+		const records = screen.getByRole("table", { name: "Employee submissions" });
+		expect(
+			within(records)
+				.getByRole("link", { name: "Open the calendar of New joiner" })
+				.getAttribute("href"),
+		).toBe("/calendar/id-New joiner?date=2026-03-05");
+		expect(within(records).getByText("Sent back after a change")).toBeTruthy();
+	});
 	it("marks employees who have not submitted and links each one's calendar", () => {
 		render(
 			<PeriodSubmissionOverview

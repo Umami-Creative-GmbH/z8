@@ -1,0 +1,46 @@
+{
+  "captures": [
+    {
+      "file": "draft-panel-current.png",
+      "bytes": 94760,
+      "sha256": "f0957343f749f1b86d3350ba649f4fdcafdaae1e259427b5adcb35f14cdde8ac",
+      "width": 1184,
+      "height": 1300,
+      "visuallyReviewed": true,
+      "method": "actual unmasked main element screenshot in fixed primary page",
+      "qualification": "Entire conversion panel including action and page heading visible."
+    },
+    {
+      "file": "report-editor-open-current.png",
+      "bytes": 123146,
+      "sha256": "a45109abe49b98c3c2508de8d20f2a55359e4fc1deed5f52dcb5eae8a81ef316",
+      "width": 1184,
+      "height": 1300,
+      "visuallyReviewed": true,
+      "method": "actual unmasked main element screenshot in fixed primary page",
+      "qualification": "Development rendering indicator remains visible; focused editor facts settled."
+    },
+    {
+      "file": "report-editor-reload-current.png",
+      "bytes": 117921,
+      "sha256": "6fe448844d198be270f9ee2eba0b48d29235b039db1296383b60b159cc37bdb5",
+      "width": 1184,
+      "height": 1300,
+      "visuallyReviewed": true,
+      "method": "actual unmasked main element screenshot in fixed primary page",
+      "qualification": "Header clock status loading remains visible; focused editor facts settled."
+    },
+    {
+      "file": "retirement-settled-current.png",
+      "bytes": 77945,
+      "sha256": "45db4b6678fbf7c375730f0cdedbd3114b8bb10560dae2469754d37bf01a1d0f",
+      "width": 1184,
+      "height": 1300,
+      "visuallyReviewed": true,
+      "method": "actual unmasked main element screenshot in fixed primary page",
+      "qualification": "Current list capture crops a few leftmost title pixels; no layout acceptance assertion."
+    }
+  ],
+  "comparison": "current only; no historical overlay or matched comparison",
+  "domMasks": false
+}

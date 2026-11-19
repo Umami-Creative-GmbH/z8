@@ -1,0 +1,23 @@
+{
+  "command": [
+    "pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "src/components/travel-expenses/r165-review-priority.test.tsx",
+    "--maxWorkers=1",
+    "--bail=1",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile.json=C:/Users/KAIHEN~1/AppData/Local/Temp/z8-r165-review-bceb0ee-SAFE/priority-vitest.json"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "exit": 1
+}

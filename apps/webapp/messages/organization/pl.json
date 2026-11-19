@@ -89,7 +89,13 @@
       "slugLabel": "Slug organizacji",
       "title": "Edytuj organizację",
       "updateError": "Nie udało się zaktualizować organizacji",
-      "updateSuccess": "Organizacja została pomyślnie zaktualizowana"
+      "updateSuccess": "Organizacja została pomyślnie zaktualizowana",
+      "validation": {
+        "nameMax": "Nazwa nie może przekraczać 100 znaków",
+        "nameMin": "Nazwa musi zawierać co najmniej 2 znaki",
+        "slugMax": "Slug nie może przekraczać 50 znaków",
+        "slugMin": "Slug musi zawierać co najmniej 2 znaki"
+      }
     },
     "error": {
       "description": "Nie udało się załadować schematu organizacyjnego. Spróbuj ponownie.",
@@ -395,6 +401,7 @@
     "switchTo": "Przełącz organizację",
     "teams": {
       "card": {
+        "actionsFor": "Działania dla: {name}",
         "deleteTeam": "Usuń zespół",
         "editTeam": "Edytuj zespół",
         "fallbackManager": "Zapasowy menedżer",
@@ -406,10 +413,10 @@
       "delete": "Usuń zespół",
       "deleteDialogDescription": "To działanie trwale usunie zespół „{teamName}”.",
       "deleteDialogMembersWarning": "Ostrzeżenie: Ten zespół ma {count} członka(-ów). Zostaną oni usunięci z zespołu.",
+      "deleteDialogNamedTitle": "Usunąć zespół {name}?",
       "deleteDialogTitle": "Czy na pewno?",
       "deleteError": "Nie udało się usunąć zespołu",
       "deleteSuccess": "Zespół został pomyślnie usunięty",
-      "description": "Organizuj pracowników w zespoły dla lepszej współpracy",
       "edit": {
         "description": "Zaktualizuj nazwę i opis zespołu",
         "descriptionLabel": "Opis (opcjonalnie)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Członek usunięty z zespołu",
         "selectEmployee": "Wybierz pracownika do dodania",
         "title": "{teamName} – Członkowie zespołu"
-      },
-      "title": "Zespoły"
+      }
     },
     "timezone": {
       "balances-recalculating": "Salda czasu pracy są przeliczane dla nowej strefy czasowej i pozostaną ukryte, dopóki nie będą gotowe.",

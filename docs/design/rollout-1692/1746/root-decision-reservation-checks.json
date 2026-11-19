@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "status": "provisional",
+  "verifiedCommit": null,
+  "correctionCommit": "a224b4c7f34e433e56b8d0844cdfc1372417b950",
+  "integrationCommit": "4cc47063828e9677b9c2fe24d15f4f5117d5ce99",
+  "appTree": "440219039a3ec524a457da06145d319fa1d5f07d",
+  "independentStop": {
+    "candidate": "0814d3d5519992bc86de4820a4c21175a4771378",
+    "cases": 21,
+    "files": 2,
+    "passed": 20,
+    "failed": 1,
+    "rootProviderCasesOverlapping": 11,
+    "independentNewCases": 10,
+    "repeatNonadditive": true,
+    "safeIndexSha256": "ac96b342f605bc3e66711aa941c046e4b0ea78c3ed3b456f4ba6314e668cf0f2",
+    "safeFiles": 16,
+    "safeBytes": 109662,
+    "probeSha256": "f3e1f47937d011af8228ebd4571e8a89243bfab5651f1a7bbcd2dd8fe93da751",
+    "classification": "Synthetic public transport/UI race: opposing POSTs before first response settlement. No live authorization bypass, actual database race or persisted decision claimed.",
+    "intakeAuditSha256": "52822035010d42deba1c22be0d99e80a613e9b1cebc6f436810c4c97830d6bf4",
+    "intakeAudit": "All16payloads/109662bytes and9JSON,21case multiset,22Git pins,18,492entry tree digest and63anchors+baseline independently checked; no tests rerun. Working/resource receipts inherited."
+  },
+  "rootExactRed": {
+    "cases": 10,
+    "passed": 9,
+    "failed": 1
+  },
+  "changes": [
+    "Production workspace provides a QueryClient-lifetime reservation store, separated by account and organization.",
+    "A request reserves synchronously before POST. UI snapshot stays busy across Activity, controller/panel recreation, keyed remount and same-client organization return.",
+    "Only the matching reservation token releases at actual Promise settlement. UI retirement independently suppresses late success/refusal/rejection feedback and refresh.",
+    "Store holds only scope IDs, pending approval ID/token and subscribers, not rows, responses, secrets or authorization grants.",
+    "Direct standalone panel uses a component-local reservation for existing isolated rendering; production cross-remount guarantee requires the supplied workspace context."
+  ],
+  "checks": {
+    "units": {
+      "passed": 196,
+      "physicalFiles": 13,
+      "distinctFileFullNames": 196,
+      "failed": 0,
+      "skipped": 0,
+      "reconciliation": "Prior183 plus13 new permanent public cases. Earlier21 includes11 provider cases already in183; no reruns or old counts added."
+    },
+    "publicSubset": {
+      "passed": 28,
+      "physicalFiles": 3,
+      "includedIn196": true,
+      "provider": 11,
+      "population": 4,
+      "decisionAndAdditionalPopulation": 13
+    },
+    "newDecisionFile": {
+      "cases": 13,
+      "originalIndependentCases": 10,
+      "additionalCases": [
+        "Real unmount/success settlement blocks opposing POST then permits current action.",
+        "Keyed remount/refusal settlement blocks opposing POST and suppresses old error before current action.",
+        "Organization return/rejected transport settlement preserves reservation and permits current action."
+      ]
+    },
+    "types": "Static Next typegen and all3complete TypeScript projects pass",
+    "lintImports": "5owned files pass",
+    "explicitFormatting": "100column CRLF5files pass",
+    "ordinaryFormatting": "5formatter findings and4copied-test nonnull assertion warnings; failed",
+    "doctor": {
+      "errorCount": 0,
+      "warningCount": 0,
+      "affectedFileCount": 0,
+      "totalDiagnosticCount": 0,
+      "score": null,
+      "scoreLabel": null
+    },
+    "postgresFresh": 0,
+    "browserFresh": 0,
+    "nextRuntimeFresh": 0,
+    "nativeFresh": 0
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.tsx",
+      "sha256": "1447345d573edf521701ccdc5409a719e0d10daff9518278627699542f0f1394",
+      "gitBlob": "2e8d37ec77e6573ba045926c997319bac8dee1c9",
+      "gitSha256": "9fe8816a75790266c4e58ac2b225490f1469dab65f810b12d74ac5dae548348b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-workspace.test.tsx",
+      "sha256": "aa904451a9e5436c81062815413d4e4075037a3a888ac8b9dcfa451f4e45fbc2",
+      "gitBlob": "960afc0616790e7c97124371f90c4da5a0a6f2de",
+      "gitSha256": "765b2804e98e8c311a880d6e14336f5d8ab6c91ceb6ad76070cd7c14efa69825"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-approvals-panel.tsx",
+      "sha256": "aa6a00bb8661650f7895408f085f499071df1b681bb567ffbefb30cfe6c03de1",
+      "gitBlob": "c32f8db2496c7c0dc5614c5dbd4acdf10de4137d",
+      "gitSha256": "1c4121cde88894af5cd1f4b66b0b9fd8357f983ca649d717b6c75bf95b95deb8"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-decision-reservations.tsx",
+      "sha256": "4c420871d4e96e7f72684be266ed90df4eff5a2f2364b6698e434aa199b40391",
+      "gitBlob": "5a02790969588c9798174daff3a5744e1e9bae25",
+      "gitSha256": "b2b192d8fdeeddfafae089800f8fdbec6f68a99202ce6a15fa4d2ec3c1595ef6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/today/today-decision-arrival.test.tsx",
+      "sha256": "52aa7642ebd9346728eafd851c5e3e8bd1ddc21ae2231d9e6a5f98ca3d7857d7",
+      "gitBlob": "1311bfcbe1e5378e25584eecc51505b309e6dc28",
+      "gitSha256": "2c4cac792db068e2fc5bfa2a29fdeef789308483338c9311bdb543b7dc6bc054"
+    }
+  ],
+  "preservation": {
+    "outside5SourcePaths": 18489,
+    "all63TicketAnchorsPlusBaseline": true,
+    "developerAccessSourceAndProofsUnchanged": true,
+    "earlierTodayProviderPartialCorrectionsPreserved": true,
+    "canonicalDecisionEndpointsAndAuthTimekeepingOwnersUnchanged": true,
+    "dependenciesAndLicenseUnchanged": true,
+    "priorProofSealsNotRewritten": true,
+    "reportPrefix": {
+      "gitBytes": 23681,
+      "sha256": "925730f0234ff3f3cbde5d9d2dcbba73df8c19efc700b5ad43961a80d9cbab56"
+    }
+  },
+  "limits": [
+    "Reservation lifetime is the supplied QueryClient/account/organization. No cross-browser, fresh QueryClient, navigation reload or backend idempotency guarantee is invented.",
+    "Fresh independent review of remount/actor/session/QueryClient isolation and page/read provenance remains pending.",
+    "Canonical PostgreSQL and current-source browser/native/Next acceptance remain unpassed; earlier worker12PG remains inherited.",
+    "Full production generation, catalog/provider, physical devices, truezoom and global transitions remain unpassed."
+  ],
+  "cleanup": {
+    "temporaryBridgeRemovedAfterExactHash": true,
+    "allHeldSyntheticPromisesSettled": true,
+    "allRootTestTypeDoctorCommandsExited": true,
+    "noRuntimeServicesCreated": true,
+    "issuesOpen": true,
+    "noReadinessAdvance": true
+  }
+}

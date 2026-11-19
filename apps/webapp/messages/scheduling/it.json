@@ -6,9 +6,13 @@
       "gapCount": "{count} carenza di personale",
       "gaps": "lacune",
       "hideOverlay": "Nascondi sovrapposizione copertura",
+      "lastLoaded": "Ultima copertura caricata",
+      "loading": "Caricamento copertura…",
       "metSlots": "{count} adeguato",
       "overSlots": "{count} con personale in eccesso",
       "overstaffed": "Personale in eccesso",
+      "readFailed": "Impossibile caricare la copertura. Riprova per verificare il personale.",
+      "refreshing": "Aggiornamento copertura…",
       "showOverlay": "Mostra sovrapposizione obiettivi di copertura",
       "summary": "Riepilogo copertura:",
       "toggleLabel": "Copertura",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "I tuoi turni pubblicati, settimana per settimana",
       "employeeTitle": "La mia programmazione",
-      "managerDescription": "Gestisci e pianifica i turni dei dipendenti",
+      "planningDescription": "Pianifica e pubblica i turni. I turni pianificati non registrano l'orario di lavoro.",
       "title": "Programmazione turni"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Annulla",
       "complianceAcknowledgmentRequired": "Conferma di conformità richiesta",
       "complianceWarnings": "{count, plural, one {I controlli di conformità hanno rilevato # avviso; dovrai confermarlo prima di pubblicare.} other {I controlli di conformità hanno rilevato # avvisi; dovrai confermarli prima di pubblicare.}}",
+      "coverageLoading": "Caricamento della copertura in corso",
+      "coverageRulesCheckedOnPublish": "La pubblicazione applicherà le regole sul personale attuali.",
+      "coverageUnavailable": "Copertura non disponibile",
+      "coverageUnloaded": "La copertura non è stata verificata",
       "coverageWarning": "Alcuni blocchi orari non soddisfano i requisiti minimi di personale.",
       "maxHours": "Ore massime: {count}",
       "notifyEmployees": "{count, plural, one {Pubblica # turno in bozza e notifica i dipendenti} other {Pubblica # turni in bozza e notifica i dipendenti}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Avvisi rilevati prima della pubblicazione"
     },
     "scheduler": {
+      "assigned": "Assegnato",
       "complianceBanner": {
         "findingsDetected": "{count} problema/i rilevato/i prima della pubblicazione.",
         "maxHours": "Ore massime: {count}",
@@ -59,18 +68,24 @@
         "employee": "Visualizzazione dei turni per {name}",
         "showAll": "Mostra tutti i turni"
       },
+      "loadFailed": "Impossibile aggiornare i turni. I turni caricati vengono mantenuti.",
       "loading": "Caricamento programmazione...",
+      "open": "Turno aperto",
       "publish": {
         "failed": "Pubblicazione turni non riuscita",
         "published": "Pubblicato/i {count} turno/i"
       },
+      "retry": "Riprova",
+      "shiftList": "Elenco turni",
       "shiftUpdate": {
         "failed": "Aggiornamento turno non riuscito",
         "overlapDescription": "Questo turno si sovrappone ad altri {count} turno/i",
         "overlapWarning": "Turno salvato con avviso di sovrapposizione",
         "skillOverrideReasonRequired": "Il dipendente non possiede una competenza richiesta per questo giorno. Apri il turno per specificare un motivo.",
         "updated": "Turno aggiornato"
-      }
+      },
+      "supportFailed": "Impossibile aggiornare i modelli o le informazioni di conformità. Verifica di nuovo prima di pubblicare.",
+      "templatesUnavailable": "Impossibile caricare i modelli di turno."
     },
     "shiftDetails": {
       "close": "Chiudi",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Trascina un modello sul calendario per creare un turno",
       "empty": "Nessun modello disponibile. Crea dei modelli nelle Impostazioni per aggiungere rapidamente i turni.",
+      "selectHint": "Scegli un modello, quindi imposta la data e l'assegnazione del turno.",
       "title": "Modelli di turno"
     }
   }

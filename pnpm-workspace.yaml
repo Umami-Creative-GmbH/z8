@@ -1,11 +1,11 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 
 allowBuilds:
-  '@parcel/watcher': true
-  '@posthog/cli': true
-  '@swc/core': true
+  "@parcel/watcher": true
+  "@posthog/cli": true
+  "@swc/core": true
   core-js: false
   esbuild: true
   msgpackr-extract: true
@@ -14,84 +14,84 @@ allowBuilds:
   sharp: true
 
 minimumReleaseAgeExclude:
-  - '@turbo/darwin-64@2.9.15'
-  - '@turbo/darwin-arm64@2.9.15'
-  - '@turbo/linux-64@2.9.15'
-  - '@turbo/linux-arm64@2.9.15'
-  - '@turbo/windows-64@2.9.15'
-  - '@turbo/windows-arm64@2.9.15'
+  - "@turbo/darwin-64@2.9.15"
+  - "@turbo/darwin-arm64@2.9.15"
+  - "@turbo/linux-64@2.9.15"
+  - "@turbo/linux-arm64@2.9.15"
+  - "@turbo/windows-64@2.9.15"
+  - "@turbo/windows-arm64@2.9.15"
   - turbo@2.9.15
   - tmp@0.2.6
   - oxlint-plugin-react-doctor@0.5.1
   - react-doctor@0.5.1
   - bullmq@6.0.7
-  - '@better-auth/api-key@1.7.2'
-  - '@better-auth/core@1.7.2'
-  - '@better-auth/drizzle-adapter@1.7.2'
-  - '@better-auth/kysely-adapter@1.7.2'
-  - '@better-auth/memory-adapter@1.7.2'
-  - '@better-auth/mongo-adapter@1.7.2'
-  - '@better-auth/passkey@1.7.2'
-  - '@better-auth/prisma-adapter@1.7.2'
-  - '@better-auth/scim@1.7.2'
-  - '@better-auth/sso@1.7.2'
-  - '@better-auth/telemetry@1.7.2'
+  - "@better-auth/api-key@1.7.2"
+  - "@better-auth/core@1.7.2"
+  - "@better-auth/drizzle-adapter@1.7.2"
+  - "@better-auth/kysely-adapter@1.7.2"
+  - "@better-auth/memory-adapter@1.7.2"
+  - "@better-auth/mongo-adapter@1.7.2"
+  - "@better-auth/passkey@1.7.2"
+  - "@better-auth/prisma-adapter@1.7.2"
+  - "@better-auth/scim@1.7.2"
+  - "@better-auth/sso@1.7.2"
+  - "@better-auth/telemetry@1.7.2"
   - better-auth@1.7.2
-  - '@next/env@16.4.0'
-  - '@next/swc-darwin-arm64@16.4.0'
-  - '@next/swc-darwin-x64@16.4.0'
-  - '@next/swc-linux-arm64-gnu@16.4.0'
-  - '@next/swc-linux-arm64-musl@16.4.0'
-  - '@next/swc-linux-x64-gnu@16.4.0'
-  - '@next/swc-linux-x64-musl@16.4.0'
-  - '@next/swc-win32-arm64-msvc@16.4.0'
-  - '@next/swc-win32-x64-msvc@16.4.0'
+  - "@next/env@16.4.0"
+  - "@next/swc-darwin-arm64@16.4.0"
+  - "@next/swc-darwin-x64@16.4.0"
+  - "@next/swc-linux-arm64-gnu@16.4.0"
+  - "@next/swc-linux-arm64-musl@16.4.0"
+  - "@next/swc-linux-x64-gnu@16.4.0"
+  - "@next/swc-linux-x64-musl@16.4.0"
+  - "@next/swc-win32-arm64-msvc@16.4.0"
+  - "@next/swc-win32-x64-msvc@16.4.0"
   - next@16.4.0
-  - '@oxfmt/binding-android-arm-eabi@0.79.0'
-  - '@oxfmt/binding-android-arm64@0.79.0'
-  - '@oxfmt/binding-darwin-arm64@0.79.0'
-  - '@oxfmt/binding-darwin-x64@0.79.0'
-  - '@oxfmt/binding-freebsd-x64@0.79.0'
-  - '@oxfmt/binding-linux-arm-gnueabihf@0.79.0'
-  - '@oxfmt/binding-linux-arm-musleabihf@0.79.0'
-  - '@oxfmt/binding-linux-arm64-gnu@0.79.0'
-  - '@oxfmt/binding-linux-arm64-musl@0.79.0'
-  - '@oxfmt/binding-linux-ppc64-gnu@0.79.0'
-  - '@oxfmt/binding-linux-riscv64-gnu@0.79.0'
-  - '@oxfmt/binding-linux-riscv64-musl@0.79.0'
-  - '@oxfmt/binding-linux-s390x-gnu@0.79.0'
-  - '@oxfmt/binding-linux-x64-gnu@0.79.0'
-  - '@oxfmt/binding-linux-x64-musl@0.79.0'
-  - '@oxfmt/binding-openharmony-arm64@0.79.0'
-  - '@oxfmt/binding-win32-arm64-msvc@0.79.0'
-  - '@oxfmt/binding-win32-ia32-msvc@0.79.0'
-  - '@oxfmt/binding-win32-x64-msvc@0.79.0'
-  - '@oxlint/binding-android-arm-eabi@1.94.0'
-  - '@oxlint/binding-android-arm64@1.94.0'
-  - '@oxlint/binding-darwin-arm64@1.94.0'
-  - '@oxlint/binding-darwin-x64@1.94.0'
-  - '@oxlint/binding-freebsd-x64@1.94.0'
-  - '@oxlint/binding-linux-arm-gnueabihf@1.94.0'
-  - '@oxlint/binding-linux-arm-musleabihf@1.94.0'
-  - '@oxlint/binding-linux-arm64-gnu@1.94.0'
-  - '@oxlint/binding-linux-arm64-musl@1.94.0'
-  - '@oxlint/binding-linux-ppc64-gnu@1.94.0'
-  - '@oxlint/binding-linux-riscv64-gnu@1.94.0'
-  - '@oxlint/binding-linux-riscv64-musl@1.94.0'
-  - '@oxlint/binding-linux-s390x-gnu@1.94.0'
-  - '@oxlint/binding-linux-x64-gnu@1.94.0'
-  - '@oxlint/binding-linux-x64-musl@1.94.0'
-  - '@oxlint/binding-openharmony-arm64@1.94.0'
-  - '@oxlint/binding-win32-arm64-msvc@1.94.0'
-  - '@oxlint/binding-win32-ia32-msvc@1.94.0'
-  - '@oxlint/binding-win32-x64-msvc@1.94.0'
+  - "@oxfmt/binding-android-arm-eabi@0.79.0"
+  - "@oxfmt/binding-android-arm64@0.79.0"
+  - "@oxfmt/binding-darwin-arm64@0.79.0"
+  - "@oxfmt/binding-darwin-x64@0.79.0"
+  - "@oxfmt/binding-freebsd-x64@0.79.0"
+  - "@oxfmt/binding-linux-arm-gnueabihf@0.79.0"
+  - "@oxfmt/binding-linux-arm-musleabihf@0.79.0"
+  - "@oxfmt/binding-linux-arm64-gnu@0.79.0"
+  - "@oxfmt/binding-linux-arm64-musl@0.79.0"
+  - "@oxfmt/binding-linux-ppc64-gnu@0.79.0"
+  - "@oxfmt/binding-linux-riscv64-gnu@0.79.0"
+  - "@oxfmt/binding-linux-riscv64-musl@0.79.0"
+  - "@oxfmt/binding-linux-s390x-gnu@0.79.0"
+  - "@oxfmt/binding-linux-x64-gnu@0.79.0"
+  - "@oxfmt/binding-linux-x64-musl@0.79.0"
+  - "@oxfmt/binding-openharmony-arm64@0.79.0"
+  - "@oxfmt/binding-win32-arm64-msvc@0.79.0"
+  - "@oxfmt/binding-win32-ia32-msvc@0.79.0"
+  - "@oxfmt/binding-win32-x64-msvc@0.79.0"
+  - "@oxlint/binding-android-arm-eabi@1.94.0"
+  - "@oxlint/binding-android-arm64@1.94.0"
+  - "@oxlint/binding-darwin-arm64@1.94.0"
+  - "@oxlint/binding-darwin-x64@1.94.0"
+  - "@oxlint/binding-freebsd-x64@1.94.0"
+  - "@oxlint/binding-linux-arm-gnueabihf@1.94.0"
+  - "@oxlint/binding-linux-arm-musleabihf@1.94.0"
+  - "@oxlint/binding-linux-arm64-gnu@1.94.0"
+  - "@oxlint/binding-linux-arm64-musl@1.94.0"
+  - "@oxlint/binding-linux-ppc64-gnu@1.94.0"
+  - "@oxlint/binding-linux-riscv64-gnu@1.94.0"
+  - "@oxlint/binding-linux-riscv64-musl@1.94.0"
+  - "@oxlint/binding-linux-s390x-gnu@1.94.0"
+  - "@oxlint/binding-linux-x64-gnu@1.94.0"
+  - "@oxlint/binding-linux-x64-musl@1.94.0"
+  - "@oxlint/binding-openharmony-arm64@1.94.0"
+  - "@oxlint/binding-win32-arm64-msvc@1.94.0"
+  - "@oxlint/binding-win32-ia32-msvc@1.94.0"
+  - "@oxlint/binding-win32-x64-msvc@1.94.0"
   - oxfmt@0.79.0
   - oxlint@1.94.0
 
 overrides:
   # Keep React types aligned across workspace packages.
-  '@types/react': 19.3.0
-  '@types/react-dom': 19.3.0
+  "@types/react": 19.3.0
+  "@types/react-dom": 19.3.0
   # Patch legacy esbuild-kit and retain desktop Safari-target build compatibility.
   esbuild: 0.25.12
   # React PDF relies on pako's internal lib/zlib paths.
@@ -101,5 +101,19 @@ overrides:
 
 patchedDependencies:
   drizzle-kit@0.31.11: patches/drizzle-kit@0.31.11.patch
-  next@16.4.3: patches/next@16.4.3.patch
   next@16.4.6: patches/next@16.4.6.patch
+
+permissions:
+  "@tanstack/react-hotkeys":
+    skills: true
+  "@tanstack/react-table":
+    skills: [getting-started, migrate-v8-to-v9, table-state]
+
+skills:
+  dirs:
+    - .agent/skills
+    - .agents/skills
+    - .claude/skills
+    - .cursor/skills
+    - .gemini/skills
+    - .github/skills

@@ -177,12 +177,12 @@ export function ExecutionHistoryDialog({
 					{!visibleLoading &&
 						!visibleError &&
 						visibleExecutions.length === 0 && (
-							<div className="text-center py-12 text-muted-foreground">
+							<div className="space-y-1 py-8 text-center text-muted-foreground">
 								<IconClock
-									className="size-12 mx-auto mb-4 opacity-50"
+									className="mx-auto mb-2 size-6"
 									aria-hidden="true"
 								/>
-								<p>
+								<p className="font-medium text-foreground">
 									{t(
 										"settings.scheduledExports.history.noExecutions",
 										"No executions yet",
@@ -340,14 +340,14 @@ function ExecutionStatusBadge({ status, t }: { status: string; t: Translate }) {
 	switch (status) {
 		case "completed":
 			return (
-				<Badge variant="secondary" className="bg-green-100 text-green-700">
+				<Badge>
 					<IconCircleCheck className="mr-1 size-3" aria-hidden="true" />
 					{t("settings.scheduledExports.history.statusCompleted", "Completed")}
 				</Badge>
 			);
 		case "processing":
 			return (
-				<Badge variant="secondary" className="bg-blue-100 text-blue-700">
+				<Badge variant="secondary">
 					<IconLoader2
 						className="mr-1 size-3 animate-spin"
 						aria-hidden="true"
@@ -360,7 +360,7 @@ function ExecutionStatusBadge({ status, t }: { status: string; t: Translate }) {
 			);
 		case "pending":
 			return (
-				<Badge variant="secondary">
+				<Badge variant="outline">
 					<IconClock className="mr-1 size-3" aria-hidden="true" />
 					{t("settings.scheduledExports.history.statusPending", "Pending")}
 				</Badge>

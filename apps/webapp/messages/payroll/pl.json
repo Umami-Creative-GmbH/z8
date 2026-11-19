@@ -274,6 +274,7 @@
       "formatAccessCheck": "Sprawdzenie dostępu do formatu",
       "nobodyEmployedInPeriod": "Żadna z osób w Twoim dostępie płacowym nie była zatrudniona w tym okresie.",
       "noConfiguredTarget": "Brak skonfigurowanego celu eksportu płac",
+      "notPayment": "Eksport przygotowuje dane płacowe. Nie powoduje wykonania płatności.",
       "queued": "Eksport płac został dodany do kolejki",
       "selectFormat": "Wybierz format",
       "target": "Cel eksportu płac",
@@ -374,6 +375,7 @@
       "blockers": "Blokady",
       "employees": "Pracownicy",
       "ready": "Gotowe",
+      "title": "Podsumowanie gotowości płacowej",
       "workedHours": "Przepracowane godziny"
     },
     "title": "Lista płac",
@@ -383,6 +385,7 @@
       "title": "Płace tymczasowo niedostępne"
     },
     "workBalances": {
+      "accessChanged": "To saldo czasu pracy nie jest już dostępne w Twoim zakresie płacowym.",
       "back": "Salda czasu pracy",
       "backToPayroll": "Płace",
       "description": "Rejestruj i anuluj wypłaty za nadgodziny dla pracowników objętych Twoimi uprawnieniami płacowymi, w tym byłych pracowników.",
@@ -391,6 +394,13 @@
       "loading": "Wczytywanie bilansów czasu pracy",
       "loadingEmployee": "Wczytywanie bilansu czasu pracy",
       "open": "Bilanse czasu pracy",
+      "openEmployee": "Otwórz saldo pracownika",
+      "projectionUnavailable": "Prognoza salda jest niedostępna. Wpisy korygujące znajdują się poniżej.",
+      "refresh": "Odśwież bilans czasu pracy",
+      "refreshing": "Odświeżanie bilansu czasu pracy…",
+      "retry": "Ponów bilans czasu pracy",
+      "scopeChanged": "Wczytywanie bieżącego zakresu płac…",
+      "stale": "Nie udało się odświeżyć. Wyświetlane są wcześniej wczytane rekordy; odśwież przed wprowadzeniem zmian.",
       "title": "Bilanse czasu pracy"
     }
   }

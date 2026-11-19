@@ -233,6 +233,8 @@ export type KioskClockRefusal =
 export type KioskDeviceInfo = {
 	id: string;
 	name: string;
+	/** Absent on devices whose offline description predates organization scope display. */
+	organizationName?: string;
 	locationId: string;
 	locationName: string;
 	timezone: string;

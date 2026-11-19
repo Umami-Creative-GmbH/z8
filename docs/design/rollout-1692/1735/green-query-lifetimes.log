@@ -1,0 +1,78 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-26f93436-9113146a88895020/apps/webapp
+
+ ❯ |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx (5 tests | 4 failed) 456ms
+   × retires a deferred roster success on Activity return under StrictMode without clearing peer caches 160ms
+   × retires a deferred roster refusal on Activity return under StrictMode without clearing peer caches 48ms
+   × retires a deferred roster rejection on Activity return under StrictMode without clearing peer caches 42ms
+   × retains current roster during same-arrival refetch and rerenders, but hides it while session is disabled 47ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx > retires a deferred roster success on Activity return under StrictMode without clearing peer caches
+AssertionError: expected [ …(2) ] to have a length of +0 but got 2
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ src/app/[locale]/(app)/reports/employee-scope.test.tsx:165:95
+    163|  expect(client.getQueryData(["reports", "peer"])).toBe("retained peer"…
+    164|  mounted.unmount();
+    165|  expect(client.getQueryCache().findAll({ queryKey: ["reports", "employ…
+       |                                                                                               ^
+    166|  client.clear();
+    167| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx > retires a deferred roster refusal on Activity return under StrictMode without clearing peer caches
+ FAIL  |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx > retires a deferred roster rejection on Activity return under StrictMode without clearing peer caches
+AssertionError: expected [ …(2) ] to have a length of +0 but got 2
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ src/app/[locale]/(app)/reports/employee-scope.test.tsx:165:95
+    163|  expect(client.getQueryData(["reports", "peer"])).toBe("retained peer"…
+    164|  mounted.unmount();
+    165|  expect(client.getQueryCache().findAll({ queryKey: ["reports", "employ…
+       |                                                                                               ^
+    166|  client.clear();
+    167| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/employee-scope.test.tsx > retains current roster during same-arrival refetch and rerenders, but hides it while session is disabled
+AssertionError: expected [ Query{ options: { …(10) }, …(5) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/app/[locale]/(app)/reports/employee-scope.test.tsx:184:95
+    182|  mocks.session = { ...mocks.session, isPending: true }; mounted.rerend…
+    183|  expect(screen.queryByText("Refreshed actor A")).toBeNull();
+    184|  expect(client.getQueryCache().findAll({ queryKey: ["reports", "employ…
+       |                                                                                               ^
+    185|  client.clear();
+    186| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 1 passed (5)
+   Start at  22:14:56
+   Duration  5.25s (import 56%, transform 24%, environment 11%, tests 9%, setup 1%)
+

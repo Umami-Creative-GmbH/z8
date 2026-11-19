@@ -1,0 +1,7 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[DOMException [TimeoutError]: The operation was aborted due to timeout]
+
+Node.js v26.9.0

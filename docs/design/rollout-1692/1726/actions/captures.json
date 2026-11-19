@@ -1,0 +1,247 @@
+[
+  {
+    "name": "one-error-blocked",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\nFix the rows with errors\n1 of 2 rows has an error. Correct the file and upload it again.\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n\n2\n\t\nFixture Person 4\nR043-1\n\t\nMar 31, 2026\n\t\n+2:30h\n\t\nCarry forward\n\t\nReady\n\n\n3\n\t\nFixture Person 0\nR043-3\nFormer employee\n\t\n—\n\t\n+1:00h\n\t\nBad day\n\t\nEnter the day as YYYY-MM-DD or DD.MM.YYYY.\nCancel\nSet 2 opening balances\nClose",
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "702ba7ddc24c9cb9fcb4f676b407d18525723c40175f3a7307ea11ce2b6ffdfd"
+    }
+  },
+  {
+    "name": "ready-two",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\n\nAll 2 rows are ready; none replaces an opening balance in effect.\n\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n\n2\n\t\nFixture Person 4\nR043-1\n\t\nMar 31, 2026\n\t\n+2:30h\n\t\nCarry forward\n\t\nReady\n\n\n3\n\t\nFixture Person 0\nR043-3\nFormer employee\n\t\nMar 31, 2026\n\t\n-1:15h\n\t\nFormer carry forward\n\t\nReady\nCancel\nSet 2 opening balances\nClose",
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "16a6cc7e074eb4e5fa4eea10b78abd38c831cbdfb7b429de740fce07c4f3f25e"
+    }
+  },
+  {
+    "name": "committed",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "91f17c25046952157fd14198ecbedb88367016e1bca90959fcb4299cae2e4e6d"
+    }
+  },
+  {
+    "name": "replacement-preview",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\n\n1 row is ready; 1 replaces an opening balance in effect.\n\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n\n2\n\t\nFixture Person 4\nR043-1\n\t\nMar 31, 2026\n\t\n+3:00h\n\t\nReplace prior carry forward\n\t\nReplaces the opening balance of +2:30h on Mar 31, 2026\nCancel\nSet 1 opening balance\nClose",
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "0b7aa3bc8a8e7c15b73709dd1784819e91fafce64a88ea7cdb837fb881f26d54"
+    }
+  },
+  {
+    "name": "employee-readback",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+    "css": {
+      "width": 1600,
+      "height": 1000
+    },
+    "dpr": 1,
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Payroll",
+      "Fixture Person 4",
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4R043-1Open employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5R043-2Open employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0R043-3Former employeeOpen employee balance"
+      }
+    ],
+    "png": {
+      "width": 1600,
+      "height": 1000,
+      "sha256": "465944aad514093ab0c71e2b8d7709c6983f98c0bbaad63329a74be6e0bf210f"
+    }
+  },
+  {
+    "name": "phone-drawer-closed",
+    "actor": "small-employee",
+    "organizationId": "perf-small-a9e0d836f768",
+    "path": "/en/payroll/work-balances",
+    "css": {
+      "width": 390,
+      "height": 844
+    },
+    "dpr": 1,
+    "documentWidth": 390,
+    "font": "16px",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontStatus": "loaded",
+    "savedFont": null,
+    "savedTheme": null,
+    "theme": "light bprogress-busy",
+    "h1": [
+      "Work balances"
+    ],
+    "records": [
+      {
+        "href": "/en/payroll/work-balances/12b265bf-5fbb-4fd2-aba3-c55db6246ee7",
+        "text": "Fixture Person 4\nR043-1\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/188f07d4-0c94-4802-bcca-b3f5983561a0",
+        "text": "Fixture Person 5\nR043-2\nOpen employee balance"
+      },
+      {
+        "href": "/en/payroll/work-balances/2f4087a4-b9f5-4e33-9b3b-33002d5ae379",
+        "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
+      }
+    ],
+    "png": {
+      "width": 390,
+      "height": 844,
+      "sha256": "837a2e8b3d4da901490df4be42de1ea2ae3c4d299d2c66d1add7352add2268fa"
+    }
+  }
+]

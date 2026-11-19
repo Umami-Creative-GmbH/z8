@@ -1,0 +1,81 @@
+{
+  "skills": [
+    "vercel-react-best-practices",
+    "vercel-composition-patterns",
+    "web-design-guidelines",
+    "react-doctor"
+  ],
+  "freshGuidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+  "domain": "Time Tracking work-balance glossary and ADR0008; payroll-export glossary/ADRs; current organization membership and independent active payroll grant remain distinct from personnel files and expense snapshots.",
+  "authority": {
+    "directory": "coverage.ts calls real organization-scoped listBalanceAdjustmentGrantEmployees; approved current member and active non-departed holder required. Explicit/team/all coverage includes former employees and excludes own profiles. No grant is sensitive not-found; covered empty is distinct.",
+    "upload": "Existing organizationAction derives current organization/actor. openingBalanceUploaderAuthority and row resolution independently authorize both preview and commit; client sends only CSV. Commit reparses/rechecks inside one transaction and rejects all rows when any row is erroneous. Existing immutable adjustments/audit/rebuild/notifications and UTC/offset/date/calculation owners are unchanged.",
+    "scope": "WorkBalancesView hides stamped server arrivals that differ from current provider account/organization. Upload keys lifetime by account/organization. This is presentation protection; server commit remains authoritative. Current provider no-employee admin support is retained. No already-produced late RSC browser proof is added."
+  },
+  "preservation": "Root #1725 required PayrollWorkspaceSummary.organizationId and lifetime correction are byte-identical to tested base; every prior tracked path except the eight incoming owned paths, all rollout archives and all 38 verified ancestors are preserved. Metadata adds only exact directory ownership; R044 remains shell-owned.",
+  "actionAndTransport": "Synchronous file-read/commit locks, native preventDefault and stopPropagation, pending dismissal veto, inline retry with retained File, commit failure retaining preview/CSV/reason and safe translated errors inspected. Fresh assembled commit transport retry, portal isolation, late File-read suppression and same-scope draft controls pass. Template BOM183 bytes and immutable replacement readback are validated as archives, not new actions.",
+  "findings": [
+    {
+      "priority": "P1",
+      "file": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+      "line": 133,
+      "title": "Hidden cached Activity can strand upload permanently busy",
+      "cause": "Effect cleanup sets alive=false. If preview or commit settles while hidden, run discards its result and finishPending returns without releasing busy or clearing pending. Reconnect sets alive=true but never clears either. Returning keeps CSV/Cancel disabled and Escape/outside/close blocked.",
+      "evidence": "Two fresh scratch actual-component cases fail for preview and successful commit. Five controls pass, including hidden/visible ready draft with no pending operation. No source change or browser route-cache reproduction by merger."
+    },
+    {
+      "priority": "P2",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "line": 7,
+      "title": "Prior payroll test still expects the converted directory to be shell-owned",
+      "cause": "R043 correctly opts in exact /payroll/work-balances, but inherited #1725 assertion expects false. Employee descendant false remains appropriate until R044.",
+      "evidence": "Same one failure in exact13/134 and expanded106/1129; retain and reconcile after release."
+    }
+  ],
+  "visualReview": {
+    "pairs": 4,
+    "inspectedImages": 8,
+    "desktop": "before-desktop-light has fully visible title/row left edges outside expanded sidebar; after-desktop-light clips them beneath sidebar. Incoming wording that both sides clip is not supported by this pair. Cause is unestablished; qualify image and keep final settled-layout acceptance open.",
+    "wide": "Both wide dark saved18 captures show complete title/identities and three records; new action text visible.",
+    "phone": "Both phone directory captures show three actual employees including former status. Refreshed phone upload preview uses stacked rows and real local vertical scroll; footer/second-row evidence requires scrolling. No hidden-field pass inferred from initial viewport.",
+    "other": "Developer overlays retained. System font stack and font-loading status are evidence, not proof of a separately installed font face. Stored large18px is not actual zoom. Scope helper corrections remain explicit; B admission is based on B-R043 destination record."
+  },
+  "doctor": {
+    "files": 8,
+    "errors": 0,
+    "warnings": 3,
+    "triage": "Complexity warning is a maintainability limitation. preventDefault warning reflects chosen JS file-upload boundary; handler explicitly calls preventDefault and stopPropagation. Missing-preventDefault claim is false for the actual handler and its native assembled regressions. No suppressions, numeric score or supply-chain claim."
+  },
+  "qualityProfiles": [
+    {
+      "name": "biome-default",
+      "exitCode": 1
+    },
+    {
+      "name": "biome-crlf",
+      "exitCode": 1
+    },
+    {
+      "name": "biome-explicit-crlf",
+      "exitCode": 0
+    },
+    {
+      "name": "biome-lint-import",
+      "exitCode": 0
+    },
+    {
+      "name": "biome-explicit-lint",
+      "exitCode": 0
+    },
+    {
+      "name": "doctor",
+      "exitCode": 0
+    }
+  ],
+  "retainedLimits": [
+    "No fresh services, PostgreSQL, browser, Next diagnostics, axe, native React tree, physical device or true zoom in this merger. Worker 2PG suites/18 cases and real actions/native/axe/Next evidence are inherited.",
+    "Worker actions/scope/recovery precede final field-help/reduced-motion presentation; final comparison/snapshots and fresh assembled/types/profiles/Doctor cover final source. Metadata advances by the independent root payroll opt-in only.",
+    "Shared-shell desktop clipping/cause, late already-produced RSC, automatic external-session detection, initial reader outage/retry, full static generation/build, remote catalog, provider/customer/payment, all locales/features/permissions and global transition acceptance remain open.",
+    "Root1725 PostgreSQL combined49pass/1fail/1skip and fresh isolated7pass resolves same label case only as union50distinctpass/1skip; large fixture legacy absence stack overflow remains recorded. Archive validators do not rerun those behaviors."
+  ]
+}

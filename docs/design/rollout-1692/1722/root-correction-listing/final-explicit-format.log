@@ -1,0 +1,519 @@
+src\lib\approvals\server\time-approval-decision.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     588  588 │         );␍
+     589  589 │         // Parallel reviewers: the stage's assignment of the approver.␍
+     590      │ - → → → return·rows.length·>·1·?·only(rows.filter((row)·=>·row.approver_id·===·ids.approver))·:·only(rows);␍
+          590 │ + → → → return·rows.length·>·1␍
+          591 │ + → → → → ?·only(rows.filter((row)·=>·row.approver_id·===·ids.approver))␍
+          592 │ + → → → → :·only(rows);␍
+     591  593 │       }␍
+     592  594 │       const { rows } = await admin.query<{␍
+    ········· │
+    1026 1028 │           if (kind !== "time_correction") expect(await periodStatus(workPeriodId)).toBe("approved");␍
+    1027 1029 │           // Shadow mirroring decides the observed workflow in the same transaction.␍
+    1028      │ - → → → → if·(authority·!==·"legacy")·expect((await·workflowOf(workPeriodId)).status).toBe("approved");␍
+         1030 │ + → → → → if·(authority·!==·"legacy")␍
+         1031 │ + → → → → → expect((await·workflowOf(workPeriodId)).status).toBe("approved");␍
+    1029 1032 │           // Legacy authority notifies from here; canonical authority through the outbox.␍
+    1030 1033 │           expect(decisionNotifications().map((entry) => entry.name)).toEqual(␍
+    ········· │
+    1232 1235 │           const repeat = await decide(actors.approver, approval.id, { as: "approver" });␍
+    1233 1236 │   ␍
+    1234      │ - → → → → expect(repeat).toMatchObject({·status:·"decided",·kind,·workPeriodId,·outcome:·"approved"·});␍
+         1237 │ + → → → → expect(repeat).toMatchObject({␍
+         1238 │ + → → → → → status:·"decided",␍
+         1239 │ + → → → → → kind,␍
+         1240 │ + → → → → → workPeriodId,␍
+         1241 │ + → → → → → outcome:·"approved",␍
+         1242 │ + → → → → });␍
+    1235 1243 │           expect(await workflowOf(workPeriodId)).toEqual(decided);␍
+    1236 1244 │           expect(harness.kicks).toEqual([]);␍
+    ········· │
+    1305 1313 │   ␍
+    1306 1314 │     describe("an unbound bot card (#1679)", () => {␍
+    1307      │ - → → async·function·press(␍
+    1308      │ - → → → employeeId:·string,␍
+    1309      │ - → → → approvalId:·string,␍
+    1310      │ - → → → action:·"approve"·|·"reject",␍
+    1311      │ - → → )·{␍
+         1315 │ + → → async·function·press(employeeId:·string,·approvalId:·string,·action:·"approve"·|·"reject")·{␍
+    1312 1316 │         const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");␍
+    1313 1317 │         return attemptBotApproval({␍
+    ········· │
+    1495 1499 │         "a changed fast-lane assessment refuses the decision under %s authority and writes nothing",␍
+    1496 1500 │         async (authority) => {␍
+    1497      │ - → → → for·(const·kind·of·TIME_KINDS)·{␍
+    1498      │ - → → → → const·{·approval·}·=·await·submitted(kind,·authority);␍
+         1501 │ + → → → → for·(const·kind·of·TIME_KINDS)·{␍
+         1502 │ + → → → → → const·{·approval·}·=·await·submitted(kind,·authority);␍
+    1499 1503 │   ␍
+    1500      │ - → → → → const·result·=·await·decide(␍
+    1501      │ - → → → → → actors.approver,␍
+    1502      │ - → → → → → approval.id,␍
+    1503      │ - → → → → → {·as:·"approver"·},␍
+    1504      │ - → → → → → {␍
+    1505      │ - → → → → → → fastLaneGuard:·async·()·=>·{␍
+    1506      │ - → → → → → → → throw·new·ConflictError({␍
+    1507      │ - → → → → → → → → message:·"This·fast-lane·assessment·changed.·Review·the·request·again.",␍
+    1508      │ - → → → → → → → → conflictType:·"approval_triage",␍
+    1509      │ - → → → → → → → });␍
+    1510      │ - → → → → → → },␍
+    1511      │ - → → → → → },␍
+    1512      │ - → → → → );␍
+         1504 │ + → → → → → const·result·=·await·decide(␍
+         1505 │ + → → → → → → actors.approver,␍
+         1506 │ + → → → → → → approval.id,␍
+         1507 │ + → → → → → → {·as:·"approver"·},␍
+         1508 │ + → → → → → → {␍
+         1509 │ + → → → → → → → fastLaneGuard:·async·()·=>·{␍
+         1510 │ + → → → → → → → → throw·new·ConflictError({␍
+         1511 │ + → → → → → → → → → message:·"This·fast-lane·assessment·changed.·Review·the·request·again.",␍
+         1512 │ + → → → → → → → → → conflictType:·"approval_triage",␍
+         1513 │ + → → → → → → → → });␍
+         1514 │ + → → → → → → → },␍
+         1515 │ + → → → → → → },␍
+         1516 │ + → → → → → );␍
+    1513 1517 │   ␍
+    1514      │ - → → → → expect(result,·kind).toEqual({·status:·"refused",·reason:·"guard_failed"·});␍
+    1515      │ - → → → → //·Nothing·committed,·so·nothing·runs·after·commit.␍
+    1516      │ - → → → → expect(decisionNotifications(),·kind).toEqual([]);␍
+    1517      │ - → → → → expect(harness.kicks,·kind).toEqual([]);␍
+    1518      │ - → → → → expect(await·approvalStatus(approval.id),·kind).toBe("pending");␍
+    1519      │ - → → → }␍
+    1520      │ - → → },␍
+         1518 │ + → → → → → expect(result,·kind).toEqual({·status:·"refused",·reason:·"guard_failed"·});␍
+         1519 │ + → → → → → //·Nothing·committed,·so·nothing·runs·after·commit.␍
+         1520 │ + → → → → → expect(decisionNotifications(),·kind).toEqual([]);␍
+         1521 │ + → → → → → expect(harness.kicks,·kind).toEqual([]);␍
+         1522 │ + → → → → → expect(await·approvalStatus(approval.id),·kind).toBe("pending");␍
+         1523 │ + → → → → }␍
+         1524 │ + → → → },␍
+    1521 1525 │       );␍
+    1522 1526 │   ␍
+    ········· │
+    1660 1664 │   ␍
+    1661 1665 │     describe("a failure inside the decision", () => {␍
+    1662      │ - → → it.each(␍
+    1663      │ - → → → AUTHORITIES.flatMap((authority)·=>·TIME_KINDS.map((kind)·=>·({·authority,·kind·}))),␍
+    1664      │ - → → )(␍
+         1666 │ + → → it.each(AUTHORITIES.flatMap((authority)·=>·TIME_KINDS.map((kind)·=>·({·authority,·kind·}))))(␍
+    1665 1667 │         "rolls back every write of a $authority $kind decision and runs nothing after commit",␍
+    1666 1668 │         async ({ authority, kind }) => {␍
+    ········· │
+    1758 1760 │   ␍
+    1759 1761 │     describe("two stages", () => {␍
+    1760      │ - → → it.each(␍
+    1761      │ - → → → AUTHORITIES.flatMap((authority)·=>·TIME_KINDS.map((kind)·=>·({·authority,·kind·}))),␍
+    1762      │ - → → )(␍
+         1762 │ + → → it.each(AUTHORITIES.flatMap((authority)·=>·TIME_KINDS.map((kind)·=>·({·authority,·kind·}))))(␍
+    1763 1763 │         "a $authority $kind advances on its first stage and is decided on its second",␍
+    1764 1764 │         async ({ authority, kind }) => {␍
+    ········· │
+    1794 1794 │           expect(await approvalStatus(next.id)).toBe("approved");␍
+    1795 1795 │           if (kind !== "time_correction") expect(await periodStatus(workPeriodId)).toBe("approved");␍
+    1796      │ - → → → → if·(authority·!==·"legacy")·expect((await·workflowOf(workPeriodId)).status).toBe("approved");␍
+         1796 │ + → → → → if·(authority·!==·"legacy")␍
+         1797 │ + → → → → → expect((await·workflowOf(workPeriodId)).status).toBe("approved");␍
+    1797 1798 │         },␍
+    1798 1799 │       );␍
+    ········· │
+    1831 1832 │         const { workPeriodId, approval } = await submitted("time_correction", "canonical");␍
+    1832 1833 │         const request = await compatibilityRequest(workPeriodId);␍
+    1833      │ - → → → await·admin.query("update·approval_request·set·metadata·=·metadata·#-·'{stage,assignmentId}'·where·id·=·$1",·[␍
+    1834      │ - → → → → request.id,␍
+    1835      │ - → → → ]);␍
+         1834 │ + → → → await·admin.query(␍
+         1835 │ + → → → → "update·approval_request·set·metadata·=·metadata·#-·'{stage,assignmentId}'·where·id·=·$1",␍
+         1836 │ + → → → → [request.id],␍
+         1837 │ + → → → );␍
+    1836 1838 │   ␍
+    1837 1839 │         expect(await decide(actors.approver, request.id, { as: "approver" })).toMatchObject({␍
+    ········· │
+    1846 1848 │         ["a foreign workflow", `jsonb_set(metadata, '{workflow,id}', to_jsonb($2::text))`],␍
+    1847 1849 │         ["a foreign stage", `jsonb_set(metadata, '{stage,id}', to_jsonb($2::text))`],␍
+    1848      │ - → → → ["another·stage·sequence",·`jsonb_set(metadata,·'{stage,sequence}',·'99')·||·jsonb_build_object('t1681',·$2::text)`],␍
+    1849      │ - → → ]·as·const)(␍
+    1850      │ - → → → "a·compatibility·request·naming·%s·decides·nothing",␍
+    1851      │ - → → → async·(_label,·metadata)·=>·{␍
+    1852      │ - → → → → const·{·workPeriodId,·approval·}·=·await·submitted("time_correction",·"canonical");␍
+    1853      │ - → → → → const·request·=·await·compatibilityRequest(workPeriodId);␍
+    1854      │ - → → → → await·admin.query(`update·approval_request·set·metadata·=·${metadata}·where·id·=·$1`,·[␍
+    1855      │ - → → → → → request.id,␍
+    1856      │ - → → → → → randomUUID(),␍
+    1857      │ - → → → → ]);␍
+         1850 │ + → → → [␍
+         1851 │ + → → → → "another·stage·sequence",␍
+         1852 │ + → → → → `jsonb_set(metadata,·'{stage,sequence}',·'99')·||·jsonb_build_object('t1681',·$2::text)`,␍
+         1853 │ + → → → ],␍
+         1854 │ + → → ]·as·const)("a·compatibility·request·naming·%s·decides·nothing",·async·(_label,·metadata)·=>·{␍
+         1855 │ + → → → const·{·workPeriodId,·approval·}·=·await·submitted("time_correction",·"canonical");␍
+         1856 │ + → → → const·request·=·await·compatibilityRequest(workPeriodId);␍
+         1857 │ + → → → await·admin.query(`update·approval_request·set·metadata·=·${metadata}·where·id·=·$1`,·[␍
+         1858 │ + → → → → request.id,␍
+         1859 │ + → → → → randomUUID(),␍
+         1860 │ + → → → ]);␍
+    1858 1861 │   ␍
+    1859      │ - → → → → expect(await·decide(actors.approver,·request.id,·{·as:·"approver"·})).toMatchObject({␍
+    1860      │ - → → → → → status:·"refused",␍
+    1861      │ - → → → → });␍
+    1862      │ - → → → → expect(await·approvalStatus(approval.id)).toBe("pending");␍
+    1863      │ - → → → → expect((await·workflowOf(workPeriodId)).status).toBe("pending");␍
+    1864      │ - → → → },␍
+  69 more lines truncated
+
+
+src\lib\self-service-requests\__tests__\get-self-service-requests.test.ts format ━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     126  126 │   }␍
+     127  127 │   ␍
+     128      │ - function·requesterCancellationMarker(input:·{␍
+     129      │ - → cancelledAt:·Date;␍
+     130      │ - → chainInstanceId:·string·|·null;␍
+     131      │ - })·{␍
+          128 │ + function·requesterCancellationMarker(input:·{·cancelledAt:·Date;·chainInstanceId:·string·|·null·})·{␍
+     132  129 │     return buildRequesterCancellationMarker({␍
+     133  130 │       organizationId: "org-1",␍
+    ········· │
+     223  220 │   }␍
+     224  221 │   ␍
+     225      │ - async·function·realOrdinaryDisplay(␍
+     226      │ - → kind:·"manual_time_submission"·|·"policy_clock_out",␍
+     227      │ - )·{␍
+          222 │ + async·function·realOrdinaryDisplay(kind:·"manual_time_submission"·|·"policy_clock_out")·{␍
+     228  223 │     const adapter = createOrdinaryWorkPeriodApprovalAdapter(kind, {␍
+     229  224 │       finalizeTerminal: vi.fn(),␍
+    ········· │
+     399  394 │       });␍
+     400  395 │       const displaySnapshot = await realCanonicalDisplay();␍
+     401      │ - → → dbMocks.approvalWorkflows.mockResolvedValue([␍
+     402      │ - → → → canonicalTimeCorrection({·displaySnapshot·}),␍
+     403      │ - → → ]);␍
+          396 │ + → → dbMocks.approvalWorkflows.mockResolvedValue([canonicalTimeCorrection({·displaySnapshot·})]);␍
+     404  397 │   ␍
+     405  398 │       const result = await getSelfServiceRequests({␍
+    ········· │
+     409  402 │       });␍
+     410  403 │   ␍
+     411      │ - → → expect(␍
+     412      │ - → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+     413      │ - → → ).toEqual({␍
+          404 │ + → → expect(result.items.find((item)·=>·item.sourceType·===·"time_correction")).toEqual({␍
+     414  405 │         id: "10000000-0000-4000-8000-000000000010",␍
+     415  406 │         sourceType: "time_correction",␍
+    ········· │
+     491  482 │         total: 3,␍
+     492  483 │       });␍
+     493      │ - → → expect(␍
+     494      │ - → → → result.items.find((item)·=>·item.status·===·"pending")?.availableActions,␍
+     495      │ - → → ).toEqual(["cancel",·"view"]);␍
+     496      │ - → → expect(␍
+     497      │ - → → → result.items.find((item)·=>·item.status·===·"approved"),␍
+     498      │ - → → ).toMatchObject({·resolvedAt:·approvedAt,·availableActions:·["view"]·});␍
+     499      │ - → → expect(␍
+     500      │ - → → → result.items.find((item)·=>·item.status·===·"cancelled"),␍
+     501      │ - → → ).toMatchObject({·resolvedAt:·cancelledAt,·availableActions:·["view"]·});␍
+          484 │ + → → expect(result.items.find((item)·=>·item.status·===·"pending")?.availableActions).toEqual([␍
+          485 │ + → → → "cancel",␍
+          486 │ + → → → "view",␍
+          487 │ + → → ]);␍
+          488 │ + → → expect(result.items.find((item)·=>·item.status·===·"approved")).toMatchObject({␍
+          489 │ + → → → resolvedAt:·approvedAt,␍
+          490 │ + → → → availableActions:·["view"],␍
+          491 │ + → → });␍
+          492 │ + → → expect(result.items.find((item)·=>·item.status·===·"cancelled")).toMatchObject({␍
+          493 │ + → → → resolvedAt:·cancelledAt,␍
+          494 │ + → → → availableActions:·["view"],␍
+          495 │ + → → });␍
+     502  496 │       const serialized = JSON.stringify(result);␍
+     503  497 │       for (const privateValue of [␍
+    ········· │
+     519  513 │         searchText: "independent safe display index",␍
+     520  514 │       };␍
+     521      │ - → → dbMocks.approvalWorkflows.mockResolvedValue([␍
+     522      │ - → → → canonicalTimeCorrection({·displaySnapshot·}),␍
+     523      │ - → → ]);␍
+          515 │ + → → dbMocks.approvalWorkflows.mockResolvedValue([canonicalTimeCorrection({·displaySnapshot·})]);␍
+     524  516 │   ␍
+     525  517 │       const result = await getSelfServiceRequests({␍
+    ········· │
+     528  520 │       });␍
+     529  521 │   ␍
+     530      │ - → → expect(␍
+     531      │ - → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+     532      │ - → → ).toMatchObject({␍
+          522 │ + → → expect(result.items.find((item)·=>·item.sourceType·===·"time_correction")).toMatchObject({␍
+     533  523 │         title: "Time correction",␍
+     534  524 │         subtitle: "edit · Clock in",␍
+    ········· │
+     595  585 │       });␍
+     596  586 │   ␍
+     597      │ - → → expect(␍
+     598      │ - → → → result.items.filter((item)·=>·item.sourceType·===·"time_correction"),␍
+     599      │ - → → ).toEqual([]);␍
+          587 │ + → → expect(result.items.filter((item)·=>·item.sourceType·===·"time_correction")).toEqual([]);␍
+     600  588 │       expect(JSON.stringify(result)).not.toContain("private-projection");␍
+     601  589 │       expect(JSON.stringify(result)).not.toContain("inherited-private");␍
+    ········· │
+     627  615 │         organizationId: "org-1",␍
+     628  616 │       });␍
+     629      │ - → → const·timeItems·=·result.items.filter(␍
+     630      │ - → → → (item)·=>·item.sourceType·===·"time_correction",␍
+     631      │ - → → );␍
+          617 │ + → → const·timeItems·=·result.items.filter((item)·=>·item.sourceType·===·"time_correction");␍
+     632  618 │   ␍
+     633  619 │       expect(timeItems).toEqual([␍
+    ········· │
+     663  649 │       });␍
+     664  650 │   ␍
+     665      │ - → → expect(␍
+     666      │ - → → → result.items.filter((item)·=>·item.sourceType·===·"time_correction"),␍
+     667      │ - → → ).toEqual([]);␍
+          651 │ + → → expect(result.items.filter((item)·=>·item.sourceType·===·"time_correction")).toEqual([]);␍
+     668  652 │     });␍
+     669  653 │   ␍
+    ········· │
+     691  675 │       });␍
+     692  676 │   ␍
+     693      │ - → → expect(␍
+     694      │ - → → → result.items.filter((item)·=>·item.sourceType·===·"time_correction"),␍
+     695      │ - → → ).toEqual([]);␍
+          677 │ + → → expect(result.items.filter((item)·=>·item.sourceType·===·"time_correction")).toEqual([]);␍
+     696  678 │     });␍
+     697  679 │   ␍
+    ········· │
+     727  709 │         now: new Date("2026-04-28T12:00:00.000Z"),␍
+     728  710 │       });␍
+     729      │ - → → const·item·=·result.items.find(␍
+     730      │ - → → → (candidate)·=>·candidate.sourceType·===·"time_correction",␍
+     731      │ - → → );␍
+          711 │ + → → const·item·=·result.items.find((candidate)·=>·candidate.sourceType·===·"time_correction");␍
+     732  712 │   ␍
+     733  713 │       expect(item).toMatchObject({␍
+    ········· │
+     772  752 │       });␍
+     773  753 │   ␍
+     774      │ - → → expect(␍
+     775      │ - → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+     776      │ - → → ).toMatchObject({␍
+          754 │ + → → expect(result.items.find((item)·=>·item.sourceType·===·"time_correction")).toMatchObject({␍
+     777  755 │         status: "cancelled",␍
+     778  756 │         resolvedAt: cancelledAt,␍
+    ········· │
+     819  797 │       });␍
+     820  798 │   ␍
+     821      │ - → → expect(␍
+     822      │ - → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+     823      │ - → → ).toMatchObject({·status:·"rejected",·availableActions:·["view"]·});␍
+          799 │ + → → expect(result.items.find((item)·=>·item.sourceType·===·"time_correction")).toMatchObject({␍
+          800 │ + → → → status:·"rejected",␍
+          801 │ + → → → availableActions:·["view"],␍
+          802 │ + → → });␍
+     824  803 │       expect(result.counts.requiredFixes).toBe(0);␍
+     825  804 │     });␍
+    ········· │
+     847  826 │         "inherited field",␍
+     848  827 │         (marker: Record<string, unknown>) =>␍
+     849      │ - → → → → Object.assign(␍
+     850      │ - → → → → → Object.create({·privateNote:·"secret-inherited"·}),␍
+     851      │ - → → → → → marker,␍
+     852      │ - → → → → ),␍
+          828 │ + → → → → Object.assign(Object.create({·privateNote:·"secret-inherited"·}),·marker),␍
+     853  829 │       ],␍
+     854  830 │     ] as const)("fails closed for a cancellation marker with an %s", async (_label, mutate) => {␍
+    ········· │
+     884  860 │       });␍
+     885  861 │   ␍
+     886      │ - → → expect(␍
+     887      │ - → → → result.items.find((item)·=>·item.sourceType·===·"time_correction"),␍
+     888      │ - → → ).toMatchObject({·status:·"rejected",·availableActions:·["view"]·});␍
+          862 │ + → → expect(result.items.find((item)·=>·item.sourceType·===·"time_correction")).toMatchObject({␍
+          863 │ + → → → status:·"rejected",␍
+          864 │ + → → → availableActions:·["view"],␍
+  293 more lines truncated
+
+
+src\lib\self-service-requests\get-self-service-requests.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    116 116 │   ␍
+    117 117 │   const SOURCE_QUERY_LIMIT = 100;␍
+    118     │ - const·UUID·=␍
+    119     │ - → /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;␍
+        118 │ + const·UUID·=·/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;␍
+    120 119 │   ␍
+    121 120 │   export async function getSelfServiceRequests(␍
+    ······· │
+    145 144 │       return {␍
+    146 145 │         items: [],␍
+    147     │ - → → → sourceErrors:·[␍
+    148     │ - → → → → {·sourceType,·message:·SOURCE_ERROR_MESSAGES[sourceType]·},␍
+    149     │ - → → → ],␍
+        146 │ + → → → sourceErrors:·[{·sourceType,·message:·SOURCE_ERROR_MESSAGES[sourceType]·}],␍
+    150 147 │       };␍
+    151 148 │     }␍
+    ······· │
+    231 228 │       ...legacyItems,␍
+    232 229 │       ...canonicalRows.flatMap((row) =>␍
+    233     │ - → → → legacyWorkflowIds.has(row.id)␍
+    234     │ - → → → → ?·[]␍
+    235     │ - → → → → :·mapCanonicalTimeCorrection(row,·input),␍
+        230 │ + → → → legacyWorkflowIds.has(row.id)·?·[]·:·mapCanonicalTimeCorrection(row,·input),␍
+    236 231 │       ),␍
+    237 232 │     ];␍
+    ······· │
+    390 385 │           and(eq(timeEntry.isSuperseded, true), isNull(timeEntry.supersededById)),␍
+    391 386 │         ),␍
+    392     │ - → → → or(␍
+    393     │ - → → → → inArray(timeEntry.id,·endpointIds),␍
+    394     │ - → → → → inArray(timeEntry.replacesEntryId,·endpointIds),␍
+    395     │ - → → → ),␍
+        387 │ + → → → or(inArray(timeEntry.id,·endpointIds),·inArray(timeEntry.replacesEntryId,·endpointIds)),␍
+    396 388 │       ),␍
+    397 389 │       columns: { id: true, replacesEntryId: true },␍
+    ······· │
+    401 393 │       const endpoint =␍
+    402 394 │         endpointToPeriod.get(correction.id) ??␍
+    403     │ - → → → (correction.replacesEntryId␍
+    404     │ - → → → → ?·endpointToPeriod.get(correction.replacesEntryId)␍
+    405     │ - → → → → :·undefined);␍
+        395 │ + → → → (correction.replacesEntryId·?·endpointToPeriod.get(correction.replacesEntryId)·:·undefined);␍
+    406 396 │       if (!endpoint) continue;␍
+    407 397 │       const evidence = result.get(endpoint.periodId) ?? {␍
+    ······· │
+    434 424 │     let workflowId: string | null = null;␍
+    435 425 │     if (workflow) {␍
+    436     │ - → → if·(␍
+    437     │ - → → → !workflow.enumerable·||␍
+    438     │ - → → → !("value"·in·workflow)·||␍
+    439     │ - → → → !record(workflow.value)␍
+    440     │ - → → )·{␍
+        426 │ + → → if·(!workflow.enumerable·||·!("value"·in·workflow)·||·!record(workflow.value))·{␍
+    441 427 │         throw new Error();␍
+    442 428 │       }␍
+    ······· │
+    482 468 │       );␍
+    483 469 │       if (␍
+    484     │ - → → → (cancellation.chainInstanceId·===·null·&&␍
+    485     │ - → → → → submission.resultKind·!==·"default_created")·||␍
+    486     │ - → → → (cancellation.chainInstanceId·!==·null·&&␍
+    487     │ - → → → → submission.resultKind·!==·"chain_created")␍
+        470 │ + → → → (cancellation.chainInstanceId·===·null·&&·submission.resultKind·!==·"default_created")·||␍
+        471 │ + → → → (cancellation.chainInstanceId·!==·null·&&·submission.resultKind·!==·"chain_created")␍
+    488 472 │       ) {␍
+    489 473 │         throw new Error();␍
+    490 474 │       }␍
+    491 475 │       const approvedAt = instantFromDB(row.approvedAt);␍
+    492     │ - → → if·(␍
+    493     │ - → → → !approvedAt·||␍
+    494     │ - → → → compareInstants(parseInstant(cancellation.cancelledAt),·approvedAt)·!==·0␍
+    495     │ - → → )·{␍
+        476 │ + → → if·(!approvedAt·||·compareInstants(parseInstant(cancellation.cancelledAt),·approvedAt)·!==·0)·{␍
+    496 477 │         throw new Error();␍
+    497 478 │       }␍
+    ······· │
+    569 550 │       value !== null &&␍
+    570 551 │       !Array.isArray(value) &&␍
+    571     │ - → → (Object.getPrototypeOf(value)·===·Object.prototype·||␍
+    572     │ - → → → Object.getPrototypeOf(value)·===·null)␍
+        552 │ + → → (Object.getPrototypeOf(value)·===·Object.prototype·||·Object.getPrototypeOf(value)·===·null)␍
+    573 553 │     );␍
+    574 554 │   }␍
+    ······· │
+    584 564 │     if (␍
+    585 565 │       keys.length !== (hasSubmissionId ? 4 : 3) ||␍
+    586     │ - → → !keys.every((key)·=>␍
+    587     │ - → → → ["key",·"submissionId",·"resultKind",·"originalStatus"].includes(key),␍
+    588     │ - → → )·||␍
+        566 │ + → → !keys.every((key)·=>·["key",·"submissionId",·"resultKind",·"originalStatus"].includes(key))·||␍
+    589 567 │       typeof submission.key !== "string" ||␍
+    590 568 │       submission.key.length === 0 ||␍
+    591 569 │       (hasSubmissionId &&␍
+    592     │ - → → → (typeof·submission.submissionId·!==·"string"·||␍
+    593     │ - → → → → !UUID.test(submission.submissionId)))·||␍
+        570 │ + → → → (typeof·submission.submissionId·!==·"string"·||·!UUID.test(submission.submissionId)))·||␍
+    594 571 │       (submission.resultKind !== "default_created" &&␍
+    595 572 │         submission.resultKind !== "chain_created" &&␍
+    596 573 │         submission.resultKind !== "auto_completed") ||␍
+    597     │ - → → (submission.originalStatus·!==·"pending"·&&␍
+    598     │ - → → → submission.originalStatus·!==·"approved")·||␍
+    599     │ - → → (submission.resultKind·===·"auto_completed")·!==␍
+    600     │ - → → → (submission.originalStatus·===·"approved")␍
+        574 │ + → → (submission.originalStatus·!==·"pending"·&&·submission.originalStatus·!==·"approved")·||␍
+        575 │ + → → (submission.resultKind·===·"auto_completed")·!==·(submission.originalStatus·===·"approved")␍
+    601 576 │     ) {␍
+    602 577 │       throw new Error();␍
+    ······· │
+    607 582 │   function parseCanonicalTimeCorrectionDisplay(␍
+    608 583 │     value: unknown,␍
+    609     │ - → correction:·ReturnType<␍
+    610     │ - → → typeof·normalizeTimeCorrectionWorkflowPayload␍
+    611     │ - → >["timeCorrection"],␍
+        584 │ + → correction:·ReturnType<typeof·normalizeTimeCorrectionWorkflowPayload>["timeCorrection"],␍
+    612 585 │     requesterEmployeeId: string,␍
+    613 586 │     originalWorkMetadata: unknown,␍
+    ······· │
+    693 666 │   }␍
+    694 667 │   ␍
+    695     │ - function·safeDisplayString(␍
+    696     │ - → value:·unknown,␍
+    697     │ - → maxLength:·number,␍
+    698     │ - → allowEmpty:·boolean,␍
+    699     │ - ):·string·{␍
+        668 │ + function·safeDisplayString(value:·unknown,·maxLength:·number,·allowEmpty:·boolean):·string·{␍
+    700 669 │     if (␍
+    701 670 │       typeof value !== "string" ||␍
+    ······· │
+    712 681 │   }␍
+    713 682 │   ␍
+    714     │ - function·strictStringArrayEquals(␍
+    715     │ - → value:·unknown,␍
+    716     │ - → expected:·readonly·string[],␍
+    717     │ - ):·boolean·{␍
+        683 │ + function·strictStringArrayEquals(value:·unknown,·expected:·readonly·string[]):·boolean·{␍
+    718 684 │     if (␍
+    719 685 │       !Array.isArray(value) ||␍
+    ······· │
+    734 700 │     return expected.every((item, index) => {␍
+    735 701 │       const descriptor = Object.getOwnPropertyDescriptor(value, String(index));␍
+    736     │ - → → return·(␍
+    737     │ - → → → descriptor?.enumerable·&&␍
+    738     │ - → → → "value"·in·descriptor·&&␍
+    739     │ - → → → descriptor.value·===·item␍
+    740     │ - → → );␍
+        702 │ + → → return·descriptor?.enumerable·&&·"value"·in·descriptor·&&·descriptor.value·===·item;␍
+    741 703 │     });␍
+    742 704 │   }␍
+    743 705 │   ␍
+    744     │ - async·function·loadAbsences(␍
+    745     │ - → input:·GetSelfServiceRequestsInput,␍
+    746     │ - ):·Promise<SelfServiceRequestItem[]>·{␍
+        706 │ + async·function·loadAbsences(input:·GetSelfServiceRequestsInput):·Promise<SelfServiceRequestItem[]>·{␍
+    747 707 │     const rows = (await db.query.absenceEntry.findMany({␍
+    748 708 │       where: and(␍
+    ······· │
+    809 769 │           title: "travel_expense",␍
+    810 770 │           subtitle: travelExpenseSubtitle(row),␍
+    811     │ - → → → → decisionReason:␍
+    812     │ - → → → → → latestDecisionLog?.reason·??·latestDecisionLog?.comment·??·null,␍
+        771 │ + → → → → decisionReason:·latestDecisionLog?.reason·??·latestDecisionLog?.comment·??·null,␍
+    813 772 │           availableActions: actionsFor(status),␍
+    814 773 │           sourceHref: "/travel-expenses",␍
+  67 more lines truncated
+
+
+Checked 3 files in 26ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp

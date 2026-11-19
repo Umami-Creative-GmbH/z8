@@ -1,0 +1,873 @@
+{
+  "schema": 1,
+  "role": "Read-only independent #1742 bounded-proof intake; no readiness decision",
+  "scope": {
+    "repositoryMutations": 0,
+    "indexMutations": 0,
+    "runtimeOrFixturesStarted": 0,
+    "dependencyWrites": 0,
+    "trackerCalls": 0,
+    "otherPrivateArtifactsRead": 0,
+    "onlyNewSystemTempWritten": true,
+    "archivedCodeExecuted": false
+  },
+  "sourceNamespace": "X:/t3-code/worktrees/z8/t3-3f71886f-a70d401b2ed88574/.tmp/1742-provider-arrival-independent-checks",
+  "validation": {
+    "payload": {
+      "files": 20,
+      "bytes": 432490,
+      "hashesAndBytes": true,
+      "entries": [
+        {
+          "path": "artifact-validation.json",
+          "bytes": 1331,
+          "sha256": "4bb265c14ec50e02c6a8357781feb06aed436eebfa709aa30394e1c5469278c9",
+          "verified": true
+        },
+        {
+          "path": "bounded-results.json",
+          "bytes": 2897,
+          "sha256": "031bba4ff8a1f9267d451e770237bbb59e14fc71b28ba3771495983728a72556",
+          "verified": true
+        },
+        {
+          "path": "browser-layout.json",
+          "bytes": 1094,
+          "sha256": "97880e4f3eace6a0ee4eb5d31e4b1c0c1dd90c5d6d34315573066f1dac74048b",
+          "verified": true
+        },
+        {
+          "path": "browser-manager.json",
+          "bytes": 109,
+          "sha256": "b1b8721de8608427e5e2dcab9b38aba21f48ccbd913f9c31bcee1d08bb569f01",
+          "verified": true
+        },
+        {
+          "path": "browser-primary.json",
+          "bytes": 1082,
+          "sha256": "7ed4ff93a252986fc3b92be784874f9e479775d7f881cc342cdcc76bf1901d2e",
+          "verified": true
+        },
+        {
+          "path": "browser-restricted.json",
+          "bytes": 126,
+          "sha256": "19ba11c361e2417bdd361a3041637decb180410a065d83175a8acf2c71b21fe8",
+          "verified": true
+        },
+        {
+          "path": "case-accounting.json",
+          "bytes": 9596,
+          "sha256": "7c6988e50d2d502105e228de04ca6f706b35d7ea1194dbed3595f3c22f2a3063",
+          "verified": true
+        },
+        {
+          "path": "cleanup-containers.json",
+          "bytes": 343,
+          "sha256": "a0f3077ed41adc2b73cfa8e3ec49443f96a387b5201bdc4457f9314b05180382",
+          "verified": true
+        },
+        {
+          "path": "cleanup-processes.json",
+          "bytes": 408,
+          "sha256": "33da7d72cc6dd72bbb347b2143a3b64ec5550fbde3f1028732941340346e1e0c",
+          "verified": true
+        },
+        {
+          "path": "desktop-light.png",
+          "bytes": 136134,
+          "sha256": "ece644465f00658d138d988570e1ebd23d43f125ad935ba6e33c72515d2e7457",
+          "verified": true
+        },
+        {
+          "path": "independent-arrival-review.test.tsx",
+          "bytes": 16592,
+          "sha256": "5dd04096f1532ea37ed9b8e40cd7f57274d1b2259d98ba53e0aecd839cf05f3a",
+          "verified": true
+        },
+        {
+          "path": "independent-final-tests.json",
+          "bytes": 4286,
+          "sha256": "af3f31ca265888fb8c4eaa681cda84688d7c2470635a22a6fa0d5f79154cc639",
+          "verified": true
+        },
+        {
+          "path": "native-current-target.json",
+          "bytes": 433,
+          "sha256": "80bcec0cd1f89749e7bef412ab8c0851961fdd74e0d67b35968d67f119a21f4d",
+          "verified": true
+        },
+        {
+          "path": "next-current.json",
+          "bytes": 4513,
+          "sha256": "b1f2d5747d8053402c55263382a363ba2fd3a42d7c4e6dc9f29021e0fd529f2e",
+          "verified": true
+        },
+        {
+          "path": "phone-axe.json",
+          "bytes": 518,
+          "sha256": "0e928eb0b2529cc462963fe92dc09b3a0258ca5ed8930e6a38a41037ebd4cf4c",
+          "verified": true
+        },
+        {
+          "path": "phone-dark-large.png",
+          "bytes": 46909,
+          "sha256": "46f947f17511f6feff191b77ee2eec8e2ec5ff2225d61a1fb72e610265fdda40",
+          "verified": true
+        },
+        {
+          "path": "phone-records-dark-large.png",
+          "bytes": 45539,
+          "sha256": "689c109ed4d4235593fd108df472a5f40e6d9a8cf7d956c866bc97cb2d87e195",
+          "verified": true
+        },
+        {
+          "path": "priority-tests.json",
+          "bytes": 11272,
+          "sha256": "b81fb9d7660d958f6f2a67f59f1d457e9229f72dd3f278311a1c4ff30105b954",
+          "verified": true
+        },
+        {
+          "path": "source-and-config-pins.json",
+          "bytes": 11619,
+          "sha256": "41abe7424622ced56843aeea99cfc2260b0ae019ac30b1265e48708bb2e6483f",
+          "verified": true
+        },
+        {
+          "path": "wide-dark-large-collapsed.png",
+          "bytes": 137689,
+          "sha256": "929b26a6b9e27cf9d5cc976a4af9ad3196a7235d92011ac59d4b2c0fa4f67d0a",
+          "verified": true
+        }
+      ]
+    },
+    "controls": [
+      {
+        "path": "safe-allowlist.json",
+        "bytes": 3435,
+        "sha256": "f4fe0f3a0fedfa17cd984b90459f14c9c9b26267549a603148a6ea68b03828b4"
+      },
+      {
+        "path": "SHA256SUMS",
+        "bytes": 1877,
+        "sha256": "dbb0bb122b99f0b653f2393501ce86057e301d306ffe9794677103f649589423"
+      }
+    ],
+    "totalFiles": 22,
+    "totalBytes": 437802,
+    "checksumEntries": 21,
+    "checksumCoverageExact": true,
+    "canonical22EntryIndexDigest": "3c581f3f6bfbb61fbb988a31f9b48336f951402f48aff0e19bef6edd3fc11fa3",
+    "json": {
+      "artifactFiles": 15,
+      "controlIndexFiles": 1,
+      "totalArtifactAndIndexParsed": 16,
+      "parsed": true
+    },
+    "syntax": {
+      "file": "independent-arrival-review.test.tsx",
+      "sha256": "5dd04096f1532ea37ed9b8e40cd7f57274d1b2259d98ba53e0aecd839cf05f3a",
+      "parser": "Already installed Next bundled Babel parseSync; configFile=false,babelrc=false,TypeScript+JSX",
+      "syntaxOnly": true,
+      "executed": false,
+      "diagnostics": 0
+    },
+    "pngs": [
+      {
+        "path": "desktop-light.png",
+        "fileSha256": "ece644465f00658d138d988570e1ebd23d43f125ad935ba6e33c72515d2e7457",
+        "width": 1600,
+        "height": 1000,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "decodedBytes": 4800000,
+        "decodedPixelFormat": "PNG channel bytes after complete scanline unfiltering",
+        "pixelsSha256": "c8d8ef3c6d6c6af7b21795527ea74290b5248d4a9ce847ea9b3dae64c7732c6b",
+        "filters": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "chunks": 37,
+        "crc": true,
+        "fullyDecoded": true
+      },
+      {
+        "path": "phone-dark-large.png",
+        "fileSha256": "46f947f17511f6feff191b77ee2eec8e2ec5ff2225d61a1fb72e610265fdda40",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "decodedBytes": 987480,
+        "decodedPixelFormat": "PNG channel bytes after complete scanline unfiltering",
+        "pixelsSha256": "7b37772d21f024d9791405cad4ef7bf99b944e45218a7e4a5d6164b14428862a",
+        "filters": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "chunks": 15,
+        "crc": true,
+        "fullyDecoded": true
+      },
+      {
+        "path": "phone-records-dark-large.png",
+        "fileSha256": "689c109ed4d4235593fd108df472a5f40e6d9a8cf7d956c866bc97cb2d87e195",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "decodedBytes": 987480,
+        "decodedPixelFormat": "PNG channel bytes after complete scanline unfiltering",
+        "pixelsSha256": "ef4afee2ea248df3ba7e509470c72dfab601c6c8c8851e7ebc427df1c512aba9",
+        "filters": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "chunks": 15,
+        "crc": true,
+        "fullyDecoded": true
+      },
+      {
+        "path": "wide-dark-large-collapsed.png",
+        "fileSha256": "929b26a6b9e27cf9d5cc976a4af9ad3196a7235d92011ac59d4b2c0fa4f67d0a",
+        "width": 2400,
+        "height": 1200,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "decodedBytes": 8640000,
+        "decodedPixelFormat": "PNG channel bytes after complete scanline unfiltering",
+        "pixelsSha256": "265fcade22b17ca764831778452ba7b6a4d7a32a68ce01af71ed67247cbd352c",
+        "filters": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "chunks": 37,
+        "crc": true,
+        "fullyDecoded": true
+      }
+    ],
+    "pins": {
+      "files": 20,
+      "source": 15,
+      "configuration": 5,
+      "sourceCommits": [
+        "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+        "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9"
+      ],
+      "currentAppTree": "36930b073418c8f624d0f94b74de02e2497f726b",
+      "allWorkingAndGitBlobsMatch": true,
+      "entries": [
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/actions.integration.test.ts",
+          "blob": "fc1396feb37a577cd85f73758a1e1b71e9ea6f37",
+          "sha256": "20d02314493aac502e7b6fdde574004e7eddcc71dd6255dea56fb3816cdc8d2c",
+          "bytes": 2884,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "41cc48ff15ae0a7ea96ac28d1d5e16bfdf430950e4923975be3a410dbb783f05",
+          "gitBlobBytes": 2813,
+          "gitBlobSha256": "41cc48ff15ae0a7ea96ac28d1d5e16bfdf430950e4923975be3a410dbb783f05"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/actions.ts",
+          "blob": "260ae86dae2d891e7d5e4eb74c8f23b13ae90564",
+          "sha256": "c35358b0bb3ede4e196e5c90846c6329c1fda2d1741c7371b355efac5448c7ea",
+          "bytes": 605,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "e46c8440fdd21330867520d48678d2ba1d3854255b19f0affc5203122e502749",
+          "gitBlobBytes": 586,
+          "gitBlobSha256": "e46c8440fdd21330867520d48678d2ba1d3854255b19f0affc5203122e502749"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/heading.test.tsx",
+          "blob": "9f0034863c85a92c83b3b899355527c9c0aefc09",
+          "sha256": "40d149841e0f846261f5168fa4d02c303456abd2793f03a184256735d327d16c",
+          "bytes": 1061,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "78bda93b4ca7f69e0f0207526a213905cd7e8d8a36977c3ec0df412ff04c2975",
+          "gitBlobBytes": 1036,
+          "gitBlobSha256": "78bda93b4ca7f69e0f0207526a213905cd7e8d8a36977c3ec0df412ff04c2975"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx",
+          "blob": "79e8cb3662bce41af141f69196e7ca23f0227ee3",
+          "sha256": "a918fe7e262ca4e2b652a484e4a82f944441c788e65a3e14ccdcec8168738c34",
+          "bytes": 892,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "b18d637b9701c78a29227b17172037009d674b7a9d1b9285ad27e178129c2e42",
+          "gitBlobBytes": 867,
+          "gitBlobSha256": "b18d637b9701c78a29227b17172037009d674b7a9d1b9285ad27e178129c2e42"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.test.tsx",
+          "blob": "d1fd83fb942cea346ec6231094b2b6d59cccd795",
+          "sha256": "eb2171037f9172b14412f342b29713b96efc6564219c2ea601788335a3ebba9e",
+          "bytes": 3670,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "7e352efd717b50c6ca77dbf0797b54380d5cb92af9cf8f0e26f698986832d29d",
+          "gitBlobBytes": 3562,
+          "gitBlobSha256": "7e352efd717b50c6ca77dbf0797b54380d5cb92af9cf8f0e26f698986832d29d"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submission-overview.tsx",
+          "blob": "1eeff48598413167a3fe7a46b8f542856aa5d80f",
+          "sha256": "acdd6312fded3bf6915fc2a2146c520ed21d1f3a26af76c5f61f1fc3d3a6b275",
+          "bytes": 8448,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "fbde13631dad6ce3e64188e64904c4b4fbca1166e6dac904cbbcba50417c0740",
+          "gitBlobBytes": 8196,
+          "gitBlobSha256": "fbde13631dad6ce3e64188e64904c4b4fbca1166e6dac904cbbcba50417c0740"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "blob": "544b56106bb913c7ad1c688cf1cf77b775a60557",
+          "sha256": "94b2b60789a30ef228951811580ba85b13c0c630d0ada6cb4e24a97ffc22d1d4",
+          "bytes": 9791,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "530aa3aa8a1646fa4a82bb6f0383a904fe54daa5b82de7e4e5df306571187b76",
+          "gitBlobBytes": 9563,
+          "gitBlobSha256": "530aa3aa8a1646fa4a82bb6f0383a904fe54daa5b82de7e4e5df306571187b76"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-client.tsx",
+          "blob": "aec44c277e185569cba970cb3de7efe5375ea220",
+          "sha256": "053668e91e1376a7587d7470c701308bad4cc945b63a08bdff0ba970a740dfd6",
+          "bytes": 8417,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "6d46830d8b0668b2cbc041fa6a3036cc3a2f3834e71389847c60a888b7c10e90",
+          "gitBlobBytes": 8142,
+          "gitBlobSha256": "6d46830d8b0668b2cbc041fa6a3036cc3a2f3834e71389847c60a888b7c10e90"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/period-submissions-data.ts",
+          "blob": "a179f6f504d6af7be65c0e9a4531b67765608d71",
+          "sha256": "48fe2cecbb4f482d44418da97e6712504fa808bf4692924ec1acbd5ee12445da",
+          "bytes": 2445,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "7b7c78d802e0cdc364812e67aa170ba96e0f130ebc349450a84e105ca9f89170",
+          "gitBlobBytes": 2383,
+          "gitBlobSha256": "7b7c78d802e0cdc364812e67aa170ba96e0f130ebc349450a84e105ca9f89170"
+        },
+        {
+          "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "blob": "d287df9d43a388c51dcff4a50a3ae93d3a4b8481",
+          "sha256": "e336c6493f90eaf1d12d0e5df09579687ca477fdd11fb8f80abd2e9014e950d2",
+          "bytes": 12783,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "1395fa907b266331f69bd275fb72e3d4c22274c5899b51e6cdc3aa5ee6c1fe12",
+          "gitBlobBytes": 12455,
+          "gitBlobSha256": "1395fa907b266331f69bd275fb72e3d4c22274c5899b51e6cdc3aa5ee6c1fe12"
+        },
+        {
+          "file": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+          "blob": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+          "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+          "bytes": 7321,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789",
+          "gitBlobBytes": 7081,
+          "gitBlobSha256": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789"
+        },
+        {
+          "file": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+          "blob": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+          "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+          "bytes": 4072,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6",
+          "gitBlobBytes": 3941,
+          "gitBlobSha256": "e2fbfb7b6a89c9ceee861dd5dda7d5816b36f1cedd062f54cf3ca4fe010223d6"
+        },
+        {
+          "file": "apps/webapp/src/components/header-refresh-button.tsx",
+          "blob": "aaa9fcf47bfad91043d978408f4e860389dc5ddd",
+          "sha256": "48cf0dac8ae3fcaa3f53ed926fa7af56f4c8f9e21a06709ec34e91bd2d7a492b",
+          "bytes": 1337,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "565fb841d6c91cae2930dd260dce1edd8a0b1bcc2dced8d313448c1ef3d4e195",
+          "gitBlobBytes": 1285,
+          "gitBlobSha256": "565fb841d6c91cae2930dd260dce1edd8a0b1bcc2dced8d313448c1ef3d4e195"
+        },
+        {
+          "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "blob": "61531e71e0d18c385346a827a434dfddc97588ed",
+          "sha256": "d4f0396aeedf6f048cc8f0b5f6c680df9f15ee7cf883999a7cc166340679e1e1",
+          "bytes": 7566,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "209c86da4bac71af4a26f72df5b6903a5167a52a805099aa410e10824565ed7e",
+          "gitBlobBytes": 7292,
+          "gitBlobSha256": "209c86da4bac71af4a26f72df5b6903a5167a52a805099aa410e10824565ed7e"
+        },
+        {
+          "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "blob": "ae691d85d94b9cddbd46e54969f0afe5ee445410",
+          "sha256": "93dc06146bf521b4c7b488004347f3e4f4e047cbdf0b1fd8a8ee4ad232da8067",
+          "bytes": 11587,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "93bfe1f5dc5e64f088dda545a3869bb92ca35032436b64f27c1674261e51f36b",
+          "gitBlobBytes": 11337,
+          "gitBlobSha256": "93bfe1f5dc5e64f088dda545a3869bb92ca35032436b64f27c1674261e51f36b"
+        },
+        {
+          "file": "apps/webapp/vitest.config.ts",
+          "blob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+          "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+          "bytes": 1840,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+          "gitBlobBytes": 1782,
+          "gitBlobSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2"
+        },
+        {
+          "file": "apps/webapp/next.config.ts",
+          "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+          "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+          "bytes": 4308,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+          "gitBlobBytes": 4154,
+          "gitBlobSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e"
+        },
+        {
+          "file": "package.json",
+          "blob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+          "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+          "bytes": 6018,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+          "gitBlobBytes": 5951,
+          "gitBlobSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c"
+        },
+        {
+          "file": "apps/webapp/package.json",
+          "blob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+          "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+          "bytes": 8541,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+          "gitBlobBytes": 8339,
+          "gitBlobSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5"
+        },
+        {
+          "file": "pnpm-lock.yaml",
+          "blob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+          "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+          "bytes": 771361,
+          "rootWorking": true,
+          "frozenGit": true,
+          "currentGit": true,
+          "canonicalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+          "gitBlobBytes": 771361,
+          "gitBlobSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+        }
+      ]
+    },
+    "protectedAncestry": {
+      "frozenAnchors": 61,
+      "baseline": "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+      "allInCurrentRoot": true,
+      "qualification": "61 is the frozen D28 anchor count; current root later added #1740 readiness. This audit does not recast the frozen reviewer as checking that later count."
+    },
+    "secretPatterns": {
+      "files": 22,
+      "rules": [
+        "private-key",
+        "aws-access-key",
+        "github-token",
+        "api-key",
+        "slack-token",
+        "jwt",
+        "literal-bearer",
+        "credential-url",
+        "literal-credential"
+      ],
+      "findings": [],
+      "matchesPrinted": false
+    },
+    "publicSeam": {
+      "mockedModules": [
+        "./actions",
+        "@/lib/auth-client",
+        "@tolgee/react",
+        "next-intl",
+        "next/navigation",
+        "@/navigation"
+      ],
+      "internalHooksOrQueryStateMocked": false
+    }
+  },
+  "reportPrefix": {
+    "path": "docs/design/rollout-1692/1742.md",
+    "bytes": 22325,
+    "sha256": "8474e59a976010379183692f842ad68b7c3e0c1abd5a2b278dd1c05bd9276afc",
+    "currentRoot": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9",
+    "appendOnlyRequired": true,
+    "gitBytes": 22217,
+    "gitSha256": "df4fab56644255cb6d8cd37343b868213ff862d15d410166409258b8f3275e4f",
+    "materialization": "Raw working bytes versus current Git blob differ only by CRLF/LF normalization"
+  },
+  "accounting": {
+    "fresh": {
+      "uniqueCases": 33,
+      "physicalFiles": [
+        "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx"
+      ],
+      "executions": 43,
+      "reruns": 10,
+      "failures": 0,
+      "allCasesMatchReceipt": true,
+      "cases": [
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: employee removal retires a read and null display role accepts canonical all",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: retained raw pending IDs retire both rows and outstanding rejection",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: actor ABA invalidates old success with actual provider",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: organization ABA invalidates old success with actual provider",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: provider employee and role ABA never reuses the earlier read",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: hidden Activity rejects header refresh and old success then reads current provider",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: period navigation retires a pending read, preserves canonical local deep link",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: all distinguishes initial failure, healthy empty, off and serialized retry",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: managed distinguishes initial failure, healthy empty, off and serialized retry",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: unchanged provider plus header refresh retains stale rows through read failure",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "retains a same-period record after rejected refresh and retries its real read",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "blocks retained pending session data and drops late A reads across A to B to A",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "refuses an old actor snapshot and clears records on an authoritative read refusal",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "invalidates Activity reads, refuses hidden queued refreshes, and reads freshly on reactivation",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "does not duplicate a pending retry and retains rows across the server refresh of its access envelope",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "keeps cadence-disabled guidance distinct and shows settings only to all-employee scope",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "does not turn an unavailable first read into zero counts and recovers locally",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+          "name": "drops the previous wider snapshot when the server narrows the admitted scope",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retains the current reader when the actual provider refreshes unchanged authority",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued success after canonical employee changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued refusal after canonical employee changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued rejection after canonical employee changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued success after canonical role changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued refusal after canonical role changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued rejection after canonical role changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued success after canonical employee and role changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued refusal after canonical employee and role changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "retires queued rejection after canonical employee and role changes before RSC arrival",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "reconciles a fresh server scope after the provider retires the old wider reader",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "recovers an initial canonical-context failure through its real local Retry",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "does not revive cached rows after provider failure and a changed-authority recovery",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+          "name": "allows the canonical read for an approved administrator without an employee",
+          "status": "passed"
+        },
+        {
+          "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+          "name": "independent: the actual provider route preserves all five canonical outcomes and frozen employee date",
+          "status": "passed"
+        }
+      ]
+    },
+    "overlapRootPermanent": 22,
+    "newIndependent": 11,
+    "inheritedRoot": {
+      "unitCases": 546,
+      "unitFiles": 44,
+      "postgresCases": 35,
+      "postgresFiles": 6,
+      "types": "All3+typegen PASS inherited",
+      "doctor": "12 files complete0/0 inherited",
+      "format": "Two shared metadata findings; correction explicit100CRLF passes",
+      "qualification": "Root summary/preservation and pinned source checked; no new unit/PG/type/Doctor run. Child reports9 duplicate fullname occurrences within546; that inherited label-level number was not independently recomputed from a raw root test report in this limited intake."
+    },
+    "liveReceiptRecords": {
+      "primary": 8,
+      "layout": 6,
+      "manager": 1,
+      "restricted": 1,
+      "qualification": "Labeled check records, not an asserted grand total of individual assertions; axe/native/Next and off-state summary are separate."
+    },
+    "noAggregateAcrossRunsOrEvidenceKinds": true
+  },
+  "provenance": {
+    "frozenSource": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+    "tree": "419b2a03e5519e0da2156792d85ae469624b3ad7",
+    "appTree": "36930b073418c8f624d0f94b74de02e2497f726b",
+    "currentRoot": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9",
+    "sourceFixes": false,
+    "canonicalFixtureClockQualification": "Canonical savePeriodSubmissionSettings with explicit 2026-10-01 fixture clock, checked existing approved fixture admin; no authority mutation",
+    "nativeExactCurrentTarget": {
+      "source": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+      "exactCurrentTarget": true,
+      "nativeVersion": "0.39.1",
+      "observed": [
+        "187 576 575 Forget(PeriodSubmissionsClient)",
+        "188 1313 576 Forget(Workspace)",
+        "190 1407 1314 Forget(PeriodSubmissionOverview)",
+        "192 1409 1408 Forget(DataTableToolbar)"
+      ]
+    },
+    "next": {
+      "issues": [],
+      "configErrors": [],
+      "sessionErrors": [],
+      "routePresent": true
+    },
+    "phoneAxe": {
+      "source": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "selector": "main",
+      "axeVersion": "4.12.1",
+      "counts": {
+        "inapplicable": 58,
+        "incomplete": 0,
+        "passes": 30,
+        "violations": 0
+      },
+      "violations": [],
+      "incomplete": []
+    },
+    "cleanup": {
+      "processes": {
+        "recordedCreationMatchesExpected": true,
+        "recordedOwnedTreeCount": 27,
+        "remainingOwnedPids": [],
+        "listeners": 0,
+        "remainingNative": [],
+        "cleanupQualification": "Pre-stop readback confirmed exact executable, parent, creation and listener. Stop script date parser raised nonterminating culture errors; recorded creation independently rechecked here. Only exact owned tree was stopped."
+      },
+      "containers": {
+        "label": "z8-performance-fixture-1450",
+        "exactNames": [
+          "z8_perf_6d1a7f656a15_postgres",
+          "z8_perf_6d1a7f656a15_redis",
+          "z8_perf_6d1a7f656a15_storage"
+        ],
+        "confirmedAbsent": [
+          "z8_perf_6d1a7f656a15_postgres",
+          "z8_perf_6d1a7f656a15_redis",
+          "z8_perf_6d1a7f656a15_storage"
+        ],
+        "allAbsent": true
+      }
+    },
+    "fixtureQualification": "The safe bounded-results receipt reports canonical savePeriodSubmissionSettings with an explicit 2026-10-01 fixture clock and an existing approved admin. This is fixture setup provenance, not a newly exercised live browser policy-setting journey; no executable seed was included in the permitted payload."
+  },
+  "visualInspection": {
+    "desktopLight": true,
+    "phoneRecordsDarkLarge": true,
+    "desktopHeadingClearOfSidebar": true,
+    "phoneRecordLabelsAndCalendarVisible": true,
+    "qualification": "The records phone capture is scrolled below the main heading/controls. Persistent progress/developer/Pets overlays remain; the Pets overlay partially obscures a lower phone row Calendar area. Companion top-of-page capture is separate; these are current operational captures, not matched historical pairs."
+  },
+  "limitations": [
+    "Final whole157-node branch review",
+    "Live owner/admin without employee (public provider and inherited canonical PG pass; standard fixture has employee actors)",
+    "Exhaustive live actor/org/employee/role revocation/ABA/Activity matrix (bounded public actual-provider probes pass)",
+    "All five live workflow outcomes (assembled provider route passed all five)",
+    "Physical devices/store wrapper and true browser zoom",
+    "Long translated-locale journeys and remote Tolgee synchronization",
+    "External provider/service journeys",
+    "Full production static generation and whole application build",
+    "Two shared metadata formatter findings remain"
+  ],
+  "attemptQualifications": [
+    "Initial store-lock denial followed by approved same-command install/test",
+    "Native sandbox daemon mismatch required reconnect of own session; no shared/default browser touched",
+    "Initial sign-in input raced hydration; retained-field and hydration-controlled normal sign-in passed",
+    "Combined pointer picker attempts timed out/could not reach an offscreen option; current native explicit option passed",
+    "Pillow unavailable; System.Drawing LockBits decoded every full PNG buffer instead",
+    "One own Next diagnostic script syntax error corrected before successful runtime query",
+    "Cleanup date parser emitted nonterminating culture errors; earlier exact pre-stop readback and independent recorded timestamp recheck confirm only the owned tree was stopped"
+  ],
+  "recommendation": {
+    "status": "INTAKE_PASS_WITH_QUALIFICATIONS",
+    "exactCurrentPayload": "Copy only the20 artifacts and two exact explicit checksum/index controls; preserve all byte hashes.",
+    "report": "Append only after exact22325-byte prefix; preserve old null verifiedCommit snapshots.",
+    "pins": "Historical20pins bind source. Recommend optional current-source check exclude the two shared route-metadata source/test pins from strict hashes, retaining those20 historical pins and semantics/ancestry checks; legitimate later route heading opt-ins should not invalidate current mode.",
+    "accounting": "Show root546unit/44 +35PG/6 and fresh33/3 separately,22 overlap and10reruns. Do not add43executions or live receipt records to unique cases. If using child combined592 case occurrences/51files, retain583 unique file/fullname labels and9 parameterized duplicate occurrences and independently verify root raw accounting first.",
+    "publication": "New labeled archive, readonly verifier only, no archived driver execution, root staged Git-blob audit before proof/readiness."
+  },
+  "verifiedCommit": null
+}

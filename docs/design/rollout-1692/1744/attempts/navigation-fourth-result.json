@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "Actual employee link opens the existing employee settings destination",
+    "Browser Back restores selected presence location",
+    "Phone navigation drawer opens and first Escape preserves the selected location"
+  ],
+  "employeeHref": "/en/settings/employees/9a7b03f1-9a10-48df-ad22-acfa62e85814",
+  "status": "failed",
+  "failure": {
+    "message": "Visible current-route All locations return",
+    "stack": "AssertionError [ERR_ASSERTION]: Visible current-route All locations return\n    at file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/.tmp/1744/navigation.mjs:13:409"
+  }
+}

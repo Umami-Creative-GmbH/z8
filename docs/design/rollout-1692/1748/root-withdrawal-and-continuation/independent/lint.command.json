@@ -1,0 +1,32 @@
+{
+  "label": "lint",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "biome",
+    "check",
+    "--config-path=biome.jsonc",
+    "--formatter-enabled=false",
+    "src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+    "src/components/site-header.test.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion.tsx",
+    "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+    "src/components/travel-expenses/travel-expense-claim-detail.tsx",
+    "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/navigation/route-metadata.ts"
+  ],
+  "exit": 0,
+  "seconds": 0.723,
+  "logBytes": 44,
+  "logSha256": "bf23302970f71286aa0aee1631965dcf915bfdd3c3df2414a68c2636c9ca0d0f"
+}

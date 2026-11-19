@@ -2,7 +2,6 @@
 
 import { IconAlertTriangle, IconBriefcase, IconClock, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProjectInfo } from "@/lib/reports/project-types";
 import { useProjectHoursFormat } from "./use-project-hours-format";
 
@@ -37,51 +36,55 @@ export function ProjectSummaryCards({
 
 	if (isSingleProject && project && summary) {
 		return (
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<dl className="grid grid-cols-1 overflow-hidden rounded-xl border bg-card sm:grid-cols-2 xl:grid-cols-4">
 				{/* Total Hours */}
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
+				<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+					<div className="flex items-start justify-between gap-2">
+						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.totalHours", "Total Hours")}
-						</CardTitle>
-						<IconClock className="size-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">{format.hours(summary.totalHours)}</div>
+						</dt>
+						<IconClock aria-hidden="true" className="size-4 text-muted-foreground" />
+					</div>
+					<dd>
+						<div className="text-2xl font-semibold tracking-tight tabular-nums">
+							{format.hours(summary.totalHours)}
+						</div>
 						<p className="text-xs text-muted-foreground">
 							{t("reports.projects.cards.workPeriods", "{count} work periods", {
 								count: summary.workPeriodCount,
 							})}
 						</p>
-					</CardContent>
-				</Card>
+					</dd>
+				</div>
 
 				{/* Team Members */}
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
+				<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+					<div className="flex items-start justify-between gap-2">
+						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.teamMembers", "Team Members")}
-						</CardTitle>
-						<IconUsers className="size-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">{summary.uniqueEmployees}</div>
+						</dt>
+						<IconUsers aria-hidden="true" className="size-4 text-muted-foreground" />
+					</div>
+					<dd>
+						<div className="text-2xl font-semibold tracking-tight tabular-nums">
+							{summary.uniqueEmployees}
+						</div>
 						<p className="text-xs text-muted-foreground">
 							{t("reports.projects.cards.activeContributors", "Active contributors")}
 						</p>
-					</CardContent>
-				</Card>
+					</dd>
+				</div>
 
 				{/* Budget Status */}
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
+				<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+					<div className="flex items-start justify-between gap-2">
+						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.budgetUsed", "Budget Used")}
-						</CardTitle>
-						<IconBriefcase className="size-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">
+						</dt>
+						<IconBriefcase aria-hidden="true" className="size-4 text-muted-foreground" />
+					</div>
+					<dd>
+						<div className="text-2xl font-semibold tracking-tight tabular-nums">
 							{summary.percentBudgetUsed !== null
 								? `${summary.percentBudgetUsed.toFixed(0)}%`
 								: t("reports.projects.cards.na", "N/A")}
@@ -94,111 +97,123 @@ export function ProjectSummaryCards({
 									})
 								: t("reports.projects.cards.noBudgetSet", "No budget set")}
 						</p>
-					</CardContent>
-				</Card>
+					</dd>
+				</div>
 
 				{/* Daily Average */}
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
+				<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+					<div className="flex items-start justify-between gap-2">
+						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.dailyAverage", "Daily Average")}
-						</CardTitle>
-						<IconClock className="size-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">{format.hours(summary.averageHoursPerDay)}</div>
+						</dt>
+						<IconClock aria-hidden="true" className="size-4 text-muted-foreground" />
+					</div>
+					<dd>
+						<div className="text-2xl font-semibold tracking-tight tabular-nums">
+							{format.hours(summary.averageHoursPerDay)}
+						</div>
 						<p className="text-xs text-muted-foreground">
 							{t("reports.projects.cards.hoursPerDay", "Hours per day")}
 						</p>
-					</CardContent>
-				</Card>
-			</div>
+					</dd>
+				</div>
+			</dl>
 		);
 	}
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+		<dl className="grid grid-cols-1 overflow-hidden rounded-xl border bg-card sm:grid-cols-2 xl:grid-cols-5">
 			{/* Total Projects */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">
+			<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+				<div className="flex items-start justify-between gap-2">
+					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.totalProjects", "Total Projects")}
-					</CardTitle>
-					<IconBriefcase className="size-4 text-muted-foreground" />
-				</CardHeader>
-				<CardContent>
-					<div className="text-2xl font-bold">{data.totalProjects}</div>
+					</dt>
+					<IconBriefcase aria-hidden="true" className="size-4 text-muted-foreground" />
+				</div>
+				<dd>
+					<div className="text-2xl font-semibold tracking-tight tabular-nums">
+						{data.totalProjects}
+					</div>
 					<p className="text-xs text-muted-foreground">
 						{t("reports.projects.cards.activeCount", "{count} active", {
 							count: data.activeProjects,
 						})}
 					</p>
-				</CardContent>
-			</Card>
+				</dd>
+			</div>
 
 			{/* Total Hours */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">
+			<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+				<div className="flex items-start justify-between gap-2">
+					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.totalHours", "Total Hours")}
-					</CardTitle>
-					<IconClock className="size-4 text-muted-foreground" />
-				</CardHeader>
-				<CardContent>
-					<div className="text-2xl font-bold">{format.hours(data.totalHours)}</div>
+					</dt>
+					<IconClock aria-hidden="true" className="size-4 text-muted-foreground" />
+				</div>
+				<dd>
+					<div className="text-2xl font-semibold tracking-tight tabular-nums">
+						{format.hours(data.totalHours)}
+					</div>
 					<p className="text-xs text-muted-foreground">
 						{t("reports.projects.cards.acrossAllProjects", "Across all projects")}
 					</p>
-				</CardContent>
-			</Card>
+				</dd>
+			</div>
 
 			{/* Active Projects */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">
+			<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+				<div className="flex items-start justify-between gap-2">
+					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.activeProjects", "Active Projects")}
-					</CardTitle>
-					<IconBriefcase className="size-4 text-muted-foreground" />
-				</CardHeader>
-				<CardContent>
-					<div className="text-2xl font-bold">{data.activeProjects}</div>
+					</dt>
+					<IconBriefcase aria-hidden="true" className="size-4 text-muted-foreground" />
+				</div>
+				<dd>
+					<div className="text-2xl font-semibold tracking-tight tabular-nums">
+						{data.activeProjects}
+					</div>
 					<p className="text-xs text-muted-foreground">
 						{t("reports.projects.cards.currentlyInProgress", "Currently in progress")}
 					</p>
-				</CardContent>
-			</Card>
+				</dd>
+			</div>
 
 			{/* Over Budget */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">
+			<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+				<div className="flex items-start justify-between gap-2">
+					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.overBudget", "Over Budget")}
-					</CardTitle>
-					<IconAlertTriangle className="size-4 text-muted-foreground" />
-				</CardHeader>
-				<CardContent>
-					<div className="text-2xl font-bold text-amber-600">{data.projectsOverBudget}</div>
+					</dt>
+					<IconAlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
+				</div>
+				<dd>
+					<div className="text-2xl font-semibold tracking-tight tabular-nums text-amber-600">
+						{data.projectsOverBudget}
+					</div>
 					<p className="text-xs text-muted-foreground">
 						{t("reports.projects.cards.exceededBudget", "Exceeded budget")}
 					</p>
-				</CardContent>
-			</Card>
+				</dd>
+			</div>
 
 			{/* Overdue */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between gap-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">
+			<div className="min-w-0 space-y-2 border-b border-r p-4 last:border-b-0 sm:last:border-r-0">
+				<div className="flex items-start justify-between gap-2">
+					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.overdue", "Overdue")}
-					</CardTitle>
-					<IconAlertTriangle className="size-4 text-muted-foreground" />
-				</CardHeader>
-				<CardContent>
-					<div className="text-2xl font-bold text-red-600">{data.projectsOverdue}</div>
+					</dt>
+					<IconAlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
+				</div>
+				<dd>
+					<div className="text-2xl font-semibold tracking-tight tabular-nums text-red-600">
+						{data.projectsOverdue}
+					</div>
 					<p className="text-xs text-muted-foreground">
 						{t("reports.projects.cards.pastDeadline", "Past deadline")}
 					</p>
-				</CardContent>
-			</Card>
-		</div>
+				</dd>
+			</div>
+		</dl>
 	);
 }

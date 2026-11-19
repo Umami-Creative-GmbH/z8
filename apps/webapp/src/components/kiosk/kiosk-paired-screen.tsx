@@ -27,10 +27,12 @@ import {
 	KEEP_ATTRIBUTION,
 	kioskAttributionRequest,
 } from "./kiosk-attribution";
+import { KioskDeviceHeader } from "./kiosk-device-header";
 import type { KioskPanelAction } from "./kiosk-employee-panel";
 import { KioskHome } from "./kiosk-home";
-import { useKioskLanguage } from "./kiosk-language";
+import { KioskLanguageSwitch, useKioskLanguage } from "./kiosk-language";
 import { KioskQueueNotices } from "./kiosk-queue-notices";
+import { KioskQueueStatus } from "./kiosk-queue-status";
 import { KIOSK_ACTION_TIMEOUT_MS } from "./kiosk-timing";
 import {
 	actedFlow,
@@ -141,11 +143,15 @@ export function KioskPairedScreen({
 	function kioskChanged(next: KioskDeviceInfo) {
 		setKiosk(next);
 		if (!kioskAcceptsBadgeInput(next, "camera")) {
-			setFlow((current) => (current.step === "camera" ? { step: "home" } : current));
+			setFlow((current) =>
+				current.step === "camera" ? { step: "home" } : current,
+			);
 		}
 		// Fobs (#1505): a reader switched off ends a registration in progress (Z8 would refuse it).
 		if (next.nfcFobReaderEnabled !== true) {
-			setFlow((current) => (isFobRegistrationStep(current) ? { step: "home" } : current));
+			setFlow((current) =>
+				isFobRegistrationStep(current) ? { step: "home" } : current,
+			);
 		}
 	}
 
@@ -399,44 +405,68 @@ export function KioskPairedScreen({
 
 	return (
 		<div
-			className="flex flex-1 flex-col gap-4"
+			className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6"
 			onPointerDownCapture={touched}
 			onKeyDownCapture={touched}
 		>
-			{offlineNow ? <KioskOfflineBanner queueing={contact.connection === "queueing"} /> : null}
+			<KioskDeviceHeader kiosk={kiosk}>
+				{flow.step === "home" ? (
+					<KioskLanguageSwitch
+						locale={language.locale}
+						disabled={kiosk.offlineMode && offlineNow}
+						onChoose={language.choose}
+					/>
+				) : null}
+			</KioskDeviceHeader>
+			{offlineNow ? (
+				<KioskOfflineBanner queueing={contact.connection === "queueing"} />
+			) : null}
+			<KioskQueueStatus
+				kioskId={kiosk.id}
+				reloadKey={`${flow.step}:${contact.contacts}`}
+				unresolved={uncertain.unresolvedCount}
+			/>
+			<KioskQueueNotices
+				notices={contact.notices}
+				zone={kiosk.timezone}
+				locale={language.locale}
+				onDismiss={contact.dismissNotices}
+			/>
 			{flow.step === "home" ? (
-				<>
-					<KioskQueueNotices
-						notices={contact.notices}
-						zone={kiosk.timezone}
-						locale={language.locale}
-						onDismiss={contact.dismissNotices}
-					/>
-					<KioskHome
-						token={token}
-						kiosk={kiosk}
-						contacts={contact.contacts}
-						offline={kiosk.offlineMode && offlineNow}
-						locale={language.locale}
-						notice={flow.notice ?? null}
-						{...(scanner
-							? {
-									onBadge: (badge: string) => void identifyBadge(badge),
-									onBadgeUnreadable: () =>
-										setFlow({ step: "home", notice: { code: "badge_unreadable" } }),
-								}
-							: {})}
-						{...(fobReader ? { onFob: (serial: string) => void identifyFob(serial) } : {})}
-						{...(camera ? { onScanBadge: scanWithCamera } : {})}
-						onChooseLanguage={language.choose}
-						onPick={(employee) => {
-							const held = uncertain.pendingFor(employee.id);
-							if (held) uncertain.hold(held);
-							else setFlow({ step: "pin", employee, attempt: 0, busy: false, error: null });
-						}}
-						onKioskRefused={kioskRefused}
-					/>
-				</>
+				<KioskHome
+					token={token}
+					kiosk={kiosk}
+					contacts={contact.contacts}
+					offline={kiosk.offlineMode && offlineNow}
+					notice={flow.notice ?? null}
+					{...(scanner
+						? {
+								onBadge: (badge: string) => void identifyBadge(badge),
+								onBadgeUnreadable: () =>
+									setFlow({
+										step: "home",
+										notice: { code: "badge_unreadable" },
+									}),
+							}
+						: {})}
+					{...(fobReader
+						? { onFob: (serial: string) => void identifyFob(serial) }
+						: {})}
+					{...(camera ? { onScanBadge: scanWithCamera } : {})}
+					onPick={(employee) => {
+						const held = uncertain.pendingFor(employee.id);
+						if (held) uncertain.hold(held);
+						else
+							setFlow({
+								step: "pin",
+								employee,
+								attempt: 0,
+								busy: false,
+								error: null,
+							});
+					}}
+					onKioskRefused={kioskRefused}
+				/>
 			) : (
 				<KioskTurnScreen
 					flow={flow}

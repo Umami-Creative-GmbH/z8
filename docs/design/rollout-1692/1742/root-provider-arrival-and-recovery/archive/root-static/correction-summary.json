@@ -1,0 +1,78 @@
+{
+  "base": "7cf9871f8c782deb9ad279c9e2dfb5ed8e6fa60c",
+  "candidate": "39c2bdddadd820df9fffdc7633692f798a46a188",
+  "import": "1c8cff670bd4bb243a1892459f323208e967d531",
+  "expectedImportTree": "383ca30f52b25631ebf160949ab7bd91eed12450",
+  "diagnosis": "Provider employee/role changes did not retire route-local reader. Header refresh kept the old read pending before RSC arrival.",
+  "red": {
+    "passed": 2,
+    "failed": 1,
+    "file": "provider-red-02.json"
+  },
+  "green": {
+    "passed": 22,
+    "files": 2,
+    "file": "provider-green-02.json"
+  },
+  "unit": {
+    "passed": 546,
+    "files": 44,
+    "pending": 0,
+    "file": "units-final-01.json"
+  },
+  "types": "all3+typegen PASS",
+  "doctor": {
+    "analyzed": 12,
+    "errors": 0,
+    "warnings": 0,
+    "complete": true
+  },
+  "canonicalOwnersChanged": false,
+  "workingFiles": [
+    {
+      "file": "period-submissions-client.tsx",
+      "bytes": 8417,
+      "sha256": "053668e91e1376a7587d7470c701308bad4cc945b63a08bdff0ba970a740dfd6"
+    },
+    {
+      "file": "period-submissions-client.test.tsx",
+      "bytes": 9791,
+      "sha256": "94b2b60789a30ef228951811580ba85b13c0c630d0ada6cb4e24a97ffc22d1d4"
+    },
+    {
+      "file": "provider-arrival.test.tsx",
+      "bytes": 12783,
+      "sha256": "e336c6493f90eaf1d12d0e5df09579687ca477fdd11fb8f80abd2e9014e950d2"
+    }
+  ],
+  "failures": [
+    "sandbox pnpm engine-lock denial, ordinary approved escalation used",
+    "original public P1 red",
+    "first extended recovery wait observed the route error before context settled; corrected external wait only"
+  ],
+  "verifiedCommit": null,
+  "postgres": {
+    "passed": 35,
+    "files": 6,
+    "skipped": 0,
+    "migrationVerifier": "PASS",
+    "container": "z8_approval_workflow_repository_test_1794911734093771600_21928"
+  },
+  "unitAndPg": {
+    "distinctCases": 581,
+    "physicalFiles": 50
+  },
+  "lint": {
+    "all12": "PASS",
+    "owned3ExplicitCRLF": "PASS",
+    "full12ExplicitCRLF": "FAIL: two pre-existing metadata formatting findings"
+  },
+  "sourceCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424",
+  "mergeCommit": "1578b6c8d52c23839ec405e7dc0a370d30877169",
+  "mergeTree": "b47c206970418552848a9e5139fc3c98344c480b",
+  "appTree": "36930b073418c8f624d0f94b74de02e2497f726b",
+  "reportPrefix": {
+    "bytes": 17476,
+    "sha256": "5a5e642c3f633bba3f5271e26e615d459ae12da512ef79161b97cacc524236c9"
+  }
+}

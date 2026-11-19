@@ -1,0 +1,107 @@
+Scope: all 6 workspace projects
+✓ Lockfile passes supply-chain policies (verified 2d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: X:\PackageStores\pnpm\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 89, reused 89, downloaded 0, added 74
+Progress: resolved 140, reused 140, downloaded 0, added 125
+Progress: resolved 175, reused 175, downloaded 0, added 160
+Progress: resolved 200, reused 200, downloaded 0, added 185
+Progress: resolved 235, reused 235, downloaded 0, added 220
+Progress: resolved 252, reused 252, downloaded 0, added 237
+Progress: resolved 298, reused 298, downloaded 0, added 283
+Progress: resolved 327, reused 327, downloaded 0, added 312
+Progress: resolved 343, reused 343, downloaded 0, added 328
+Progress: resolved 364, reused 364, downloaded 0, added 349
+Progress: resolved 388, reused 388, downloaded 0, added 373
+Progress: resolved 424, reused 424, downloaded 0, added 409
+Progress: resolved 447, reused 447, downloaded 0, added 432
+Progress: resolved 492, reused 492, downloaded 0, added 477
+Progress: resolved 502, reused 502, downloaded 0, added 487
+Progress: resolved 535, reused 535, downloaded 0, added 520
+Progress: resolved 571, reused 571, downloaded 0, added 556
+Progress: resolved 622, reused 622, downloaded 0, added 607
+Progress: resolved 668, reused 668, downloaded 0, added 653
+Progress: resolved 693, reused 693, downloaded 0, added 678
+Progress: resolved 740, reused 740, downloaded 0, added 725
+Progress: resolved 789, reused 789, downloaded 0, added 774
+Progress: resolved 815, reused 815, downloaded 0, added 800
+Progress: resolved 859, reused 859, downloaded 0, added 844
+Progress: resolved 891, reused 891, downloaded 0, added 876
+Progress: resolved 919, reused 919, downloaded 0, added 904
+Progress: resolved 940, reused 940, downloaded 0, added 925
+Progress: resolved 969, reused 969, downloaded 0, added 954
+Progress: resolved 992, reused 992, downloaded 0, added 977
+Progress: resolved 1013, reused 1013, downloaded 0, added 998
+Progress: resolved 1034, reused 1034, downloaded 0, added 1019
+Progress: resolved 1059, reused 1059, downloaded 0, added 1044
+Progress: resolved 1079, reused 1079, downloaded 0, added 1065
+Progress: resolved 1098, reused 1098, downloaded 0, added 1082
+Progress: resolved 1129, reused 1129, downloaded 0, added 1113
+Progress: resolved 1141, reused 1141, downloaded 0, added 1125
+Progress: resolved 1170, reused 1170, downloaded 0, added 1154
+Progress: resolved 1188, reused 1188, downloaded 0, added 1172
+Progress: resolved 1205, reused 1205, downloaded 0, added 1189
+Progress: resolved 1214, reused 1214, downloaded 0, added 1198
+Progress: resolved 1226, reused 1226, downloaded 0, added 1210
+Progress: resolved 1238, reused 1238, downloaded 0, added 1222
+Progress: resolved 1251, reused 1251, downloaded 0, added 1235
+Progress: resolved 1257, reused 1257, downloaded 0, added 1241
+Progress: resolved 1263, reused 1263, downloaded 0, added 1247
+Progress: resolved 1271, reused 1271, downloaded 0, added 1255
+Progress: resolved 1287, reused 1287, downloaded 0, added 1271
+Progress: resolved 1292, reused 1292, downloaded 0, added 1276
+Progress: resolved 1296, reused 1296, downloaded 0, added 1280
+Progress: resolved 1316, reused 1316, downloaded 0, added 1300
+Progress: resolved 1328, reused 1328, downloaded 0, added 1312
+Progress: resolved 1347, reused 1347, downloaded 0, added 1331
+Progress: resolved 1360, reused 1360, downloaded 0, added 1344
+Progress: resolved 1377, reused 1377, downloaded 0, added 1361
+Progress: resolved 1386, reused 1386, downloaded 0, added 1370
+Progress: resolved 1394, reused 1394, downloaded 0, added 1378
+Progress: resolved 1405, reused 1405, downloaded 0, added 1389
+Progress: resolved 1419, reused 1419, downloaded 0, added 1403
+Progress: resolved 1447, reused 1447, downloaded 0, added 1431
+Progress: resolved 1471, reused 1471, downloaded 0, added 1455
+Progress: resolved 1492, reused 1492, downloaded 0, added 1476
+Progress: resolved 1501, reused 1501, downloaded 0, added 1485
+Progress: resolved 1521, reused 1521, downloaded 0, added 1504
+Progress: resolved 1539, reused 1539, downloaded 0, added 1522
+Progress: resolved 1556, reused 1556, downloaded 0, added 1539
+Progress: resolved 1587, reused 1587, downloaded 0, added 1570
+Progress: resolved 1599, reused 1599, downloaded 0, added 1582
+Progress: resolved 1606, reused 1606, downloaded 0, added 1589
+Progress: resolved 1620, reused 1620, downloaded 0, added 1604
+Progress: resolved 1638, reused 1638, downloaded 0, added 1622
+Progress: resolved 1652, reused 1652, downloaded 0, added 1635
+Progress: resolved 1670, reused 1670, downloaded 0, added 1653
+Progress: resolved 1685, reused 1685, downloaded 0, added 1668
+Progress: resolved 1699, reused 1699, downloaded 0, added 1682
+Progress: resolved 1709, reused 1709, downloaded 0, added 1692
+Progress: resolved 1723, reused 1723, downloaded 0, added 1706
+Progress: resolved 1732, reused 1732, downloaded 0, added 1716
+Progress: resolved 1738, reused 1738, downloaded 0, added 1726
+Progress: resolved 1745, reused 1745, downloaded 0, added 1733
+Progress: resolved 1753, reused 1753, downloaded 0, added 1741
+Progress: resolved 1768, reused 1767, downloaded 0, added 1755
+Progress: resolved 1785, reused 1785, downloaded 0, added 1774
+Progress: resolved 1803, reused 1803, downloaded 0, added 1787
+Progress: resolved 1815, reused 1815, downloaded 0, added 1810
+Progress: resolved 1821, reused 1821, downloaded 0, added 1819
+Progress: resolved 1823, reused 1823, downloaded 0, added 1823
+Packages: +1823
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1823, reused 1823, downloaded 0, added 1823, done
+Agent skills awaiting approval: @tanstack/react-hotkeys, @tanstack/react-table, ultracite.
+Run "pnpm approve" to review them.
+
+devDependencies:
++ @esbuild/win32-x64 0.28.2
++ puppeteer-core 25.17.0
++ react-doctor 0.9.22
++ shadcn 4.23.0
++ turbo 2.11.11
+
+Done in 1m 46.2s using pnpm v12.16.1

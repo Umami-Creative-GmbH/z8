@@ -1,0 +1,32 @@
+{
+  "priority": "P1",
+  "title": "Withdraw cached personal history after canonical access refusal",
+  "file": "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+  "lines": [
+    333,
+    343,
+    366,
+    451
+  ],
+  "classification": "inherited premerge gap retained by incoming R165; not introduced by metadata composition; not the historical shared-conversion pending failure",
+  "mechanism": "All unsuccessful action responses, including Unauthorized, throw; React Query retains previous success data and the rendering branch uses it alongside refresh error. No durable canonical withdrawal is recorded.",
+  "evidence": {
+    "firstRun": "priority-vitest.json",
+    "minimalRepeatAndBaseline": "classification-vitest.json",
+    "incomingRefusalStillVisible": true,
+    "incomingLaterOutageStillVisible": true,
+    "premergeRefusalStillVisible": true,
+    "premergeLaterOutageStillVisible": true,
+    "bothFreshSuccessRecover": true,
+    "initialRefusalUnknownAndRetryRecovers": true,
+    "transportOnlyAuthorizedRetentionPass": true
+  },
+  "boundary": "assembled React with actual OrganizationContextProvider, QueryClient, ViewRefreshProvider, actual incoming management/history/buttons; external session/fetch/actions/navigation translated at public boundary. No real auth bypass, cross-tenant server read or server write proved.",
+  "axes": {
+    "spec": 1,
+    "standardsSeparateConfirmedFindings": 0,
+    "overlap": 0,
+    "uniqueFindings": 1
+  },
+  "stop": "First confirmed P1 after one minimal repeat and premerge/positive controls. Only preservation/sealing/cleanup afterward."
+}

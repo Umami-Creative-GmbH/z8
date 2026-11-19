@@ -33,6 +33,9 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("@/components/settings/timezone-picker", () => ({
@@ -86,11 +89,15 @@ function refusal(overrides: Partial<KioskRefusalData> = {}): KioskRefusalData {
 
 function renderSettings(
 	kiosks: KioskData[] = [],
-	options: { organizationAdopted?: boolean; refusals?: KioskRefusalData[] } = {},
+	options: {
+		organizationAdopted?: boolean;
+		refusals?: KioskRefusalData[];
+		locations?: KioskAdminData["locations"];
+	} = {},
 ) {
 	const data: KioskAdminData = {
 		kiosks,
-		locations: [store],
+		locations: options.locations ?? [store],
 		organizationTimezone: "America/New_York",
 		organizationAdopted: options.organizationAdopted ?? false,
 		refusals: options.refusals ?? [],
@@ -105,6 +112,25 @@ describe("KioskSettings", () => {
 
 	afterEach(() => {
 		cleanup();
+	});
+
+	it("leads with the page heading and puts Add kiosk in its actions", () => {
+		renderSettings();
+
+		expect(screen.getByRole("heading", { level: 1, name: "Kiosks" })).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(screen.getByText("No kiosks yet.")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Add kiosk" })).toHaveProperty("disabled", false);
+	});
+
+	it("explains that a location comes first and links to locations when there is none", () => {
+		renderSettings([], { locations: [] });
+
+		expect(screen.getByRole("button", { name: "Add kiosk" })).toHaveProperty("disabled", true);
+		expect(screen.getByText(/Create a location first/)).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Locations" }).getAttribute("href")).toBe(
+			"/settings/locations",
+		);
 	});
 
 	it("shows each kiosk's location, zone, state and when it was last seen in its own zone", () => {

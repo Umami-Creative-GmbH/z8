@@ -1,0 +1,4 @@
+const{pathToFileURL}=await import('node:url'),{readFile}=await import('node:fs/promises');
+const pdfjs=await import(pathToFileURL(h.req.resolve('pdfjs-dist/legacy/build/pdf.mjs')).href),bytes=await readFile(results.download.privatePath),pdf=await pdfjs.getDocument({data:new Uint8Array(bytes),useSystemFonts:true}).promise,page=await pdf.getPage(1),text=(await page.getTextContent()).items.map(x=>x.str).join(' ');
+check('completed protected PDF parses as one page with expected synthetic content',pdf.numPages===1&&text==='Synthetic extra payslip');results.download.parsed={engine:'installed pdfjs-dist',pages:pdf.numPages,text};await pdf.destroy();
+await h.go(p,'/settings/personnel-files');await p.waitForFunction(()=>document.querySelector('main')?.innerText.includes('Add personnel file officer'));return{pdfParsed:results.download.parsed,grantControls:await dom()};

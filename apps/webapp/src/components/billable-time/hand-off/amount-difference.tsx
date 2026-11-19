@@ -133,8 +133,8 @@ export function AmountDifference({ difference }: { difference: ItemAmountDiffere
 				)}
 			</p>
 			{difference.notOnHandOffForNewCustomer && (
-				<p className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs">
-					<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+				<p className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-foreground">
+					<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
 					<span>
 						{t(
 							"settings.billableTime.handOff.amount.notOnHandOff",

@@ -1,0 +1,50 @@
+[
+  {
+    "path": "current-manager-desktop-dark-18.png",
+    "sha256": "9eedeebbaafd0cd27922186165eb9a9211beb1700529f00c6a39aa0883dbd6b6",
+    "width": 1600,
+    "height": 1000,
+    "source": "3f7759880ea2b77c199507b8967a73915c48ec91",
+    "scope": "fresh fixture small-manager; real records; no historical source overlay; CSS pixels only"
+  },
+  {
+    "path": "current-manager-phone-dark-18.png",
+    "sha256": "1d76ee948b798b79ec58390a4b3a70e626cd4876db932f2d1e2e71cf49116184",
+    "width": 390,
+    "height": 844,
+    "source": "3f7759880ea2b77c199507b8967a73915c48ec91",
+    "scope": "fresh fixture small-manager; real records; no historical source overlay; CSS pixels only"
+  },
+  {
+    "path": "current-manager-phone-light-18.png",
+    "sha256": "ea2c51fdfd80ef394dae6019cc3da9e448dacadecbde3f22c92879114c3db252",
+    "width": 390,
+    "height": 844,
+    "source": "3f7759880ea2b77c199507b8967a73915c48ec91",
+    "scope": "fresh fixture small-manager; real records; no historical source overlay; CSS pixels only"
+  },
+  {
+    "path": "current-manager-wide-light-18.png",
+    "sha256": "8ed8dd3faee24b87c856445b978dc6907af23d661978f3d3eed5aa8a7301edcb",
+    "width": 2400,
+    "height": 1100,
+    "source": "3f7759880ea2b77c199507b8967a73915c48ec91",
+    "scope": "fresh fixture small-manager; real records; no historical source overlay; CSS pixels only"
+  },
+  {
+    "path": "current-manager-collapsed-light-18.png",
+    "sha256": "c21c2b0c2ec95cd79962ab5130716b34c4575d818fd1774cfee63040b6f030a5",
+    "width": 1600,
+    "height": 1000,
+    "source": "3f7759880ea2b77c199507b8967a73915c48ec91",
+    "scope": "fresh fixture small-manager; real records; no historical source overlay; CSS pixels only"
+  },
+  {
+    "path": "current-manager-phone-allowances-18.png",
+    "sha256": "3061fd6bb476780477318f15ee53d18efbff9569faf2309a103b7c1786ced78f",
+    "width": 390,
+    "height": 844,
+    "source": "3f7759880ea2b77c199507b8967a73915c48ec91",
+    "scope": "fresh fixture small-manager; real records; no historical source overlay; CSS pixels only"
+  }
+]

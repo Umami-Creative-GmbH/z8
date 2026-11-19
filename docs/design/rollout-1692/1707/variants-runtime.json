@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "label": "small-admin",
+      "path": "/en/approvals",
+      "h1": [
+        "Approvals"
+      ],
+      "rows": 0,
+      "empty": true,
+      "brand": true
+    },
+    {
+      "label": "small-employee",
+      "path": "/en",
+      "h1": [
+        "Good day, Person."
+      ],
+      "rows": 0,
+      "empty": false,
+      "brand": true
+    },
+    {
+      "label": "small-restricted",
+      "path": "/en",
+      "h1": [
+        "Good day, Person."
+      ],
+      "rows": 0,
+      "empty": false,
+      "brand": true
+    },
+    {
+      "label": "small-manager",
+      "path": "/en/approvals",
+      "h1": [
+        "Approvals"
+      ],
+      "rows": 14,
+      "empty": false,
+      "brand": true
+    },
+    {
+      "noMatch": true
+    },
+    {
+      "failedRefreshRetainsRows": true,
+      "searchIdentity": true
+    },
+    {
+      "darkLargePersisted": true,
+      "rootFont": "18px",
+      "collapsed": true
+    },
+    {
+      "name": "phone-dark-large",
+      "width": 390,
+      "documentWidth": 390,
+      "font": "18px",
+      "dark": true
+    },
+    {
+      "name": "wide-dark-large",
+      "width": 2400,
+      "documentWidth": 2400,
+      "font": "18px",
+      "dark": true
+    },
+    {
+      "name": "zoom-equivalent",
+      "width": 800,
+      "documentWidth": 800,
+      "font": "18px",
+      "dark": true
+    },
+    {
+      "phoneDrawerEscape": false,
+      "outsideDismissalRecovered": true
+    },
+    {
+      "keyboardNext": "Refresh"
+    },
+    {
+      "sameMountedActionAcrossResize": true
+    }
+  ],
+  "errors": [],
+  "zoomLimit": "800px CSS viewport is zoom-equivalent layout coverage, not actual browser/OS zoom or physical-device certification"
+}

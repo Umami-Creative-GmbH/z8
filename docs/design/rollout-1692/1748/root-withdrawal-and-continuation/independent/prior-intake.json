@@ -1,0 +1,111 @@
+{
+  "indexSha256": "864b3a5a1ab722fcc3fb63352c507c0dc6a4ed642b9df517b27178c78ff5e04a",
+  "payloads": [
+    {
+      "name": "baseline-legacy-draft-conversion.tsx.txt",
+      "bytes": 7767,
+      "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16"
+    },
+    {
+      "name": "baseline-travel-expense-claim-detail.tsx.txt",
+      "bytes": 11048,
+      "sha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635"
+    },
+    {
+      "name": "bridge-cleanup.json",
+      "bytes": 828,
+      "sha256": "d91107cef3fb64ace1914924c21c2b68a69bcfb2c38033f18b6a2858d006ebaa"
+    },
+    {
+      "name": "bridges.json",
+      "bytes": 1071,
+      "sha256": "a8a1846c09cb689211382e53eea8c9cc13eb8039f9ef9cc5ddf36436965d6062"
+    },
+    {
+      "name": "candidate-legacy-draft-conversion.tsx.txt",
+      "bytes": 13289,
+      "sha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8"
+    },
+    {
+      "name": "candidate-travel-expense-claim-detail.tsx.txt",
+      "bytes": 13627,
+      "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3"
+    },
+    {
+      "name": "cleanup.json",
+      "bytes": 552,
+      "sha256": "d322baa94f834c7eac50bc5e5362599480708b58cb57e1e6716e16c59b7ef10c"
+    },
+    {
+      "name": "commands.json",
+      "bytes": 8012,
+      "sha256": "4903d9acce54bc0e6250119d74284ab535275a31d8ddc919736e0e0be2e9bd94"
+    },
+    {
+      "name": "conversion-review.test.tsx",
+      "bytes": 7341,
+      "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63"
+    },
+    {
+      "name": "excluded-hash-only.json",
+      "bytes": 1776,
+      "sha256": "dee6f211125fb66fa6e1a42209caf4c856bfecbe120515c3816a268fed542622"
+    },
+    {
+      "name": "HANDOFF.md",
+      "bytes": 2303,
+      "sha256": "25a758774eb0fa22d18fef63798b2b2c42d6ef10cb49f866c6ed0d557279181f"
+    },
+    {
+      "name": "pins-after.json",
+      "bytes": 8529,
+      "sha256": "cd3ef0cda777f175e5726049fc01358317acad20f12cc0ea4931abb2bade0d00"
+    },
+    {
+      "name": "pins-before.json",
+      "bytes": 4703,
+      "sha256": "f000c5016b9b87ad8bfc10b6786d4d771b8e434cd54accc0b8d3dfd0e9beccde"
+    },
+    {
+      "name": "prepare.py",
+      "bytes": 3481,
+      "sha256": "7322ab1da8d4ca8123aad43f131fbad00a84783168735a14e0c6b3d566b43d49"
+    },
+    {
+      "name": "preservation.json",
+      "bytes": 730,
+      "sha256": "80587257011fc5a9665b16fb4644ea6323f2bd57b12ef87ba0eb99d550c53943"
+    },
+    {
+      "name": "preserve.py",
+      "bytes": 7561,
+      "sha256": "b7d156a50f851fbb7d7bbf3fd73e2debfe3a7f60f9e2703e30aa943c27044315"
+    },
+    {
+      "name": "prior-safe-receipt.json",
+      "bytes": 2621,
+      "sha256": "d935757c0a748ffe9654060a5ded30371a8167465eb4e1117da7fc8f52757ebc"
+    },
+    {
+      "name": "process-cleanup.json",
+      "bytes": 158,
+      "sha256": "2f5dcf25923783a41a0bab41e786fae7d2a1d24a6942d7451e866371817fb756"
+    },
+    {
+      "name": "REPORT.md",
+      "bytes": 10960,
+      "sha256": "1b4ed139e09d1edcf0a88405a3b97921529a5abb7019603f19ad1563e72a3b5f"
+    },
+    {
+      "name": "seal.py",
+      "bytes": 9773,
+      "sha256": "f46b15bb5680bafddfff67484b50102fdeda75d096d878df964c4bfc2a7ad762"
+    },
+    {
+      "name": "test-multiset.json",
+      "bytes": 13362,
+      "sha256": "cc8cf7750b8df53e91cc123d4c74a932c7aba63db411262e665637e952a7f389"
+    }
+  ],
+  "contentBoundary": "Explicit 21 allowlisted payloads only; hash verification, no archived script execution."
+}

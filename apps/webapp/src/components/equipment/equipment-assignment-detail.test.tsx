@@ -83,6 +83,26 @@ async function correct(
 }
 
 describe("Assignment page", () => {
+	it("identifies the holder and permitted operations before supporting history", () => {
+		detail({
+			...partialAssignment,
+			canCorrect: true,
+			canCloseException: true,
+		});
+		const history = screen.getByRole("heading", { name: "Handover history" });
+		for (const element of [
+			screen.getByRole("link", { name: "Alex Current" }),
+			screen.getByRole("button", { name: "Record receipt" }),
+			screen.getByRole("button", { name: "Close return" }),
+			screen.getByRole("button", { name: "Correct a record" }),
+		]) {
+			expect(
+				element.compareDocumentPosition(history) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+			).toBeTruthy();
+		}
+		expect(screen.getByText(/As of .*Europe\/Berlin/)).toBeTruthy();
+	});
 	it("heads the page with the item and its status, and leads back to the list it came from", () => {
 		detail(
 			{ ...heldAssignment, serialNumber: "C02XK1" },
@@ -389,7 +409,8 @@ describe("Handover history", () => {
 			exceptionId: waiver.id,
 			quantity: 1,
 		});
-		expect(api.toast.error).toHaveBeenCalled();
+		expect(await panel.findByRole("alert")).toBeTruthy();
+		expect(api.toast.error).not.toHaveBeenCalled();
 	});
 });
 
@@ -436,8 +457,8 @@ describe("Corrections", () => {
 			condition: "worn",
 			reason: "Signed agreement lists worn condition",
 		});
-		expect(api.toast.error).toHaveBeenCalledWith(
-			expect.stringContaining("Reload equipment"),
+		expect((await panel.findByRole("alert")).textContent).toContain(
+			"Reload equipment",
 		);
 		expect(panel.getByLabelText(/^Amendment reason/)).toHaveProperty(
 			"value",

@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Anuluj",
+      "cancelled": "Wniosek anulowany",
       "cancelling": "Anulowanie…",
+      "cancelRequest": "Anuluj wniosek",
       "cancelRequestConfirmation": "Anulować ten wniosek?",
+      "cancelRequestDescription": "Wniosek zostaje wycofany z rozpatrywania i nie można go ponownie otworzyć. Aby wystąpić ponownie, złóż nowy wniosek.",
       "cancelRequestError": "Nie udało się anulować wniosku.",
       "fix": "Popraw",
-      "notAvailable": "Niedostępne",
+      "keepRequest": "Zachowaj wniosek",
       "view": "Wyświetl"
     },
     "all": {
-      "description": "Przeglądaj wnioski dotyczące nieobecności, korekt czasu i wydatków.",
       "title": "Wszystkie wnioski"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Wnioski pojawią się tutaj po ich przesłaniu lub załadowaniu.",
+        "hint": "Spróbuj użyć innego hasła wyszukiwania, statusu lub typu.",
         "title": "Brak wniosków spełniających wybrane filtry"
       },
       "none": {
         "description": "Wnioski pojawią się tutaj po ich przesłaniu lub załadowaniu.",
         "title": "Brak wniosków"
+      },
+      "unavailable": {
+        "description": "Ponów próbę dla niedostępnych źródeł, aby sprawdzić swoje wnioski.",
+        "title": "Nie załadowano żadnych wniosków"
       }
     },
     "featureName": "zobacz swoje wnioski",
     "filters": {
       "allStatuses": "Wszystkie statusy",
       "allTypes": "Wszystkie typy",
-      "approvedRequests": "Zatwierdzone wnioski",
-      "cancelledRequests": "Anulowane wnioski",
-      "description": "Filtruj każdą sekcję wniosków według tekstu, statusu lub typu wniosku.",
-      "pendingRequests": "Oczekujące wnioski",
-      "rejectedRequests": "Odrzucone wnioski",
+      "resultCount": "Wyświetlono {visible} z {total} wniosków",
       "search": "Szukaj",
-      "searchPlaceholder": "Szukaj według tytułu…",
+      "searchRequestsPlaceholder": "Tytuł, daty, kwota lub powód…",
       "status": "Status",
       "title": "Znajdź wnioski",
       "type": "Typ"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Ten wniosek nie oczekuje już na rozpatrzenie lub nie można go tutaj wyświetlić. Trwa ponowne sprawdzanie gotowości okresu."
     },
+    "history": {
+      "request": "Wniosek"
+    },
     "inReview": {
-      "description": "Wnioski oczekujące na zatwierdzenie lub przetworzenie.",
       "title": "W trakcie weryfikacji"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Wniosek o zwrot kosztów podróży"
       }
     },
+    "scope": "Twoje wnioski o nieobecność, korektę czasu pracy i archiwalne wydatki w aktywnej organizacji",
     "sourceError": {
       "absence": "Nie udało się załadować wniosków o nieobecność.",
       "timeCorrection": "Nie udało się załadować wniosków o korektę czasu pracy.",
       "title": "Nie udało się załadować niektórych wniosków.",
       "travelExpense": "Nie udało się załadować wniosków o zwrot kosztów podróży."
     },
-    "sourceTypes": {
-      "absence": "Nieobecność",
-      "timeCorrection": "Czas",
-      "travelExpense": "Wydatki"
-    },
     "status": {
       "approved": "Zatwierdzone",
       "cancelled": "Anulowane",
       "inReview": "W trakcie weryfikacji",
-      "pending": "Oczekujące",
       "rejected": "Odrzucone"
     },
-    "subtitle": "Śledź oczekujące wnioski, wymagane poprawki i ostatnie decyzje w jednym miejscu.",
     "summary": {
       "ariaLabel": "Podsumowanie wniosków",
-      "pending": "Oczekujące",
       "recentDecisions": "Ostatnie decyzje",
+      "recentWindow": "Ostatnie 30 dni",
       "requiredFixes": "Wymagane poprawki",
       "totalLoaded": "Łącznie załadowano"
     },
     "title": "Moje wnioski",
+    "types": {
+      "absence": "Nieobecność",
+      "timeCorrection": "Korekta czasu pracy",
+      "travelExpense": "Koszty podróży"
+    },
     "unavailableTitle": "Wnioski niedostępne"
   }
 }

@@ -1,0 +1,46 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9b0f468b-151f714db384cc36/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/sick-leave-overview.test.tsx (7 tests | 1 failed | 6 skipped) 190ms
+   ❯ SickLeaveOverview (7)
+     × requires a fresh note read when reopening after the displayed organization changed 188ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/sick-leave-overview.test.tsx > SickLeaveOverview > requires a fresh note read when reopening after the displayed organization changed
+AssertionError: expected <span class="min-w-0 font-medium"></span> to be null
+
+- Expected:
+null
+
++ Received:
+<span
+  class="min-w-0 font-medium"
+>
+  Retired health note
+</span>
+
+ ❯ src/components/personnel-file/sick-leave-overview.test.tsx:110:53
+    108|   scope.activeOrganizationId="organization";view.rerender(content());
+    109|   fireEvent.click(screen.getByRole("button", {name:/Attach or link sic…
+    110|   expect(screen.queryByText("Retired health note")).toBeNull();
+       |                                                     ^
+    111|  });
+    112|  it("keeps a failed panel read distinct from an absence with no note",…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  20:48:45
+   Duration  5.20s (import 63%, transform 17%, environment 15%, tests 4%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-9b0f468b-
+  │ 151f714db384cc36\apps\webapp
+

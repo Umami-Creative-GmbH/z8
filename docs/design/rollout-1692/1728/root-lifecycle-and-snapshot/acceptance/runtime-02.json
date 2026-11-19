@@ -1,0 +1,613 @@
+{
+  "stage": "grant",
+  "checks": [
+    "Public feature enable with organization-scoped readback",
+    "Administrator canonical six expired category links and one task heading",
+    "Administrator self is excluded from directory and expiry links",
+    "Directory includes exact scoped current employee 6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+    "Directory includes exact scoped current employee 83cd7482-3d57-42c3-bef0-198d2124374a",
+    "Directory includes exact scoped current employee c209da12-528b-461b-beef-9009690793df",
+    "Directory includes exact scoped current employee 6923d068-673e-4005-91e6-27412c0a4a5d",
+    "Directory includes exact scoped current employee 5435096c-875b-47e7-af8d-88f280a9d062",
+    "Directory includes exact scoped current employee b0da1513-9fff-4e58-a4dc-ec213b4e2ea6",
+    "Directory includes exact scoped current employee a2e345f8-5ad9-49b7-b419-9aa3b3e9ab5c",
+    "Real scoped expiry query cancellation shows unavailable without category links",
+    "Independent directory retains all canonical record links during expiry failure",
+    "Actual pointer Retry restores canonical expiry without removing directory"
+  ],
+  "captures": [
+    {
+      "file": "runtime-02-current-desktop.png",
+      "sha256": "652a406d5a11c9ed1dee53c9193891cc518915004ebf7709c11edf8ceb76c04e",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-02-current-phone.png",
+      "sha256": "69eaa8917525da8289d689a9e9f88003ed68fb9ec1e97d0cfec12b44ac56f3e5",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-02-current-wide-dark.png",
+      "sha256": "bce61a3ee7ea2da643f799a52500de6e0c43a2a51988bf371cb0cdb439d1f5aa",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "bprogress-busy dark",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-02-pending.png",
+      "sha256": "b0ca75ed0aae9f4c4cc56d019a98b35396c6b0c0cab43d6ee1d937b42ef640e6",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "dark bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-02-expiry-unavailable.png",
+      "sha256": "a01ecdffe4a2e1b1b561980fb0459898e4e587ee1259fa44792b3c25eb099f83",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "dark bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-02-recovered.png",
+      "sha256": "9286b04b3fd10a3645bae0c5d52c21e6e5a12ac273e401623638674b3b1f5057",
+      "path": "/en/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files"
+      ],
+      "theme": "dark bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "runtime-02-failure-grant.png",
+      "sha256": "49786db1cffe64f569eeca7a11273a4ca5cae88196d35fed75033e3ee118138c",
+      "path": "/en/settings/personnel-files",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files",
+        "Personnel Files"
+      ],
+      "theme": "dark bprogress-busy",
+      "dialogs": 1,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    }
+  ],
+  "errors": [],
+  "dialogs": [],
+  "transport": [
+    {
+      "kind": "request",
+      "stage": "directory",
+      "path": "/en/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "directory",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "directory",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "directory",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "directory",
+      "path": "/en/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "directory",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "keyboard",
+      "path": "/en/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "held-expiry",
+      "path": "/en/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "held-expiry",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "held-expiry",
+      "path": "/en/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "held-expiry",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "held-expiry",
+      "path": "/en/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "held-expiry",
+      "path": "/en/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "1057100d9e0eef0e6fce9717c448ad8abe0fc0d1be2a88d1513ba02ed6f01dce"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "1057100d9e0eef0e6fce9717c448ad8abe0fc0d1be2a88d1513ba02ed6f01dce"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "kind": "request",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "kind": "response",
+      "stage": "grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    }
+  ],
+  "source": {
+    "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+        "raw": "9a1ae34792fe2cfadd2cc97ef47bbd1006b3a881dec2948f7074b235257ee05e",
+        "lf": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+        "raw": "a758ab83d397c1f49334d79a665cc33b10c9798e5b59a0894cb267e634b85758",
+        "lf": "801850c421b8a9614daf11d8c09ace80f03a8a1fac2bfea2f1dad2378d5f7fec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+        "raw": "00e4de9eb3fdc06cd4c9d679d2626cc7d15e1ae99f9fcbb48329ba19ef5ea2fa",
+        "lf": "e04ef8a44cc58b57c4d06413bf52d27955e73755c02a75f8be817b9e3be9c5ec"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+        "raw": "c54cd9d2708e577f73e1ddb0b4a8316966c5f22f37bf480880e5070872364bdc",
+        "lf": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+        "raw": "fe6d1a86b3f6c822573d97dea3a142ee71b17dc420b6cc459235981bce3fe448",
+        "lf": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+        "raw": "d71740756a86b6a3c7649d1c896080b0e6b21e1f5684d20d0bc11e4a0bd7c7e5",
+        "lf": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+        "raw": "c1abaf5a5ac03431af714f975a12ac84be7a6e0062ec721a0c47340b544a673c",
+        "lf": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "ff1db242d925ff853cea55d4d84fcc1e5d5ab0f6c8b9227f91797e927202cfe0",
+        "lf": "ac07f792ef96ebc089f66a0ee27b9aa36efd3b3d7006a5da324a026854b1ac16"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "22a3056a3a2c4e4a588fdac5ec660e6845d9c61fb33c729c30bfcde5ad093797",
+        "lf": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+        "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+        "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+        "raw": "c0eb9eb607e42674c9a6c369ba2dc411d54cd40354f26eb7820af2bbe1505fa8",
+        "lf": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "bddbfb39533b78989c6657beecaf2f7fd86480afc154e421866c3cf4b512af73",
+        "lf": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/create-document-request-dialog.tsx",
+        "raw": "94cd97b0bc5d14366c85f15a473d694eaab3be12790832b29ab2df4246bc236c",
+        "lf": "703928863994c5d01f04f57d6657c096780b7007f4bdd6fcf2ac2552e9b76871"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/expiry-store.ts",
+        "raw": "5607dadd63e83ac000ff0f0237852b496ccf56ca245376fbb14b84d82389ea5b",
+        "lf": "ff96387241a071c9201af955b641435039660fb4bee9f285b7397a68791ba0ed"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/document-request-store.ts",
+        "raw": "1b42899f89ac49c1f891693bf91e76a9c7eb7fbff0c17e060b417042fa1d4cdc",
+        "lf": "2e55d521483f51d0f3625db130bd79d1b417d94abc0ffd3b0274f6277e32f392"
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "raw": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "lf": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "f91a1bdcced8a4689ec8fd1733da012cc2d8049390be6a3c1380f2410797d8a2"
+  },
+  "harness": {
+    "runtime.mjs": "f1d66f847430458250134485da0d2b44fb9505d4a597bc231542358889685f59",
+    "common.mjs": "e40d8746ec7ca2ed5a48afd6de94fd1065c21dc56bc1b2f20b79100cbf11c182"
+  },
+  "auth": {
+    "signIn": 200,
+    "active": 200
+  },
+  "syntheticDocuments": [
+    {
+      "id": "b96a8a11-5cae-42a7-8d0c-d2d845aec852",
+      "employeeId": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "category": "certificate",
+      "title": "Root1728 certificate 1"
+    },
+    {
+      "id": "fe2c2210-b710-43d1-be59-034af3ab2ed6",
+      "employeeId": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "category": "other",
+      "title": "Root1728 other 1"
+    },
+    {
+      "id": "cbf304f1-5949-4393-95b9-a6358c1fcbff",
+      "employeeId": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "category": "certificate",
+      "title": "Root1728 certificate 2"
+    },
+    {
+      "id": "ce9eab70-5c32-4134-9e9c-14f432496d61",
+      "employeeId": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "category": "other",
+      "title": "Root1728 other 2"
+    },
+    {
+      "id": "7d809c72-2573-4416-9c7d-12ad3806875a",
+      "employeeId": "c209da12-528b-461b-beef-9009690793df",
+      "category": "certificate",
+      "title": "Root1728 certificate 3"
+    },
+    {
+      "id": "c3742782-89e4-4eff-bac5-8928707a554b",
+      "employeeId": "c209da12-528b-461b-beef-9009690793df",
+      "category": "other",
+      "title": "Root1728 other 3"
+    }
+  ],
+  "directory": {
+    "links": [
+      {
+        "href": "/en/personnel-files/6274b1f0-e076-4585-a7ac-bf9ef623f96a?category=certificate",
+        "text": "Root1728 certificate 1CertificatePerson 1 · Expires Nov 1, 2026"
+      },
+      {
+        "href": "/en/personnel-files/6274b1f0-e076-4585-a7ac-bf9ef623f96a?category=other",
+        "text": "Root1728 other 1OtherPerson 1 · Expires Nov 1, 2026"
+      },
+      {
+        "href": "/en/personnel-files/83cd7482-3d57-42c3-bef0-198d2124374a?category=certificate",
+        "text": "Root1728 certificate 2CertificatePerson 2 · Expires Nov 1, 2026"
+      },
+      {
+        "href": "/en/personnel-files/83cd7482-3d57-42c3-bef0-198d2124374a?category=other",
+        "text": "Root1728 other 2OtherPerson 2 · Expires Nov 1, 2026"
+      },
+      {
+        "href": "/en/personnel-files/c209da12-528b-461b-beef-9009690793df?category=certificate",
+        "text": "Root1728 certificate 3CertificatePerson 3 · Expires Nov 1, 2026"
+      },
+      {
+        "href": "/en/personnel-files/c209da12-528b-461b-beef-9009690793df?category=other",
+        "text": "Root1728 other 3OtherPerson 3 · Expires Nov 1, 2026"
+      },
+      {
+        "href": "/en/personnel-files/6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+        "text": "Person 1"
+      },
+      {
+        "href": "/en/personnel-files/83cd7482-3d57-42c3-bef0-198d2124374a",
+        "text": "Person 2"
+      },
+      {
+        "href": "/en/personnel-files/c209da12-528b-461b-beef-9009690793df",
+        "text": "Person 3"
+      },
+      {
+        "href": "/en/personnel-files/6923d068-673e-4005-91e6-27412c0a4a5d",
+        "text": "Person 4"
+      },
+      {
+        "href": "/en/personnel-files/5435096c-875b-47e7-af8d-88f280a9d062",
+        "text": "Person 5"
+      },
+      {
+        "href": "/en/personnel-files/b0da1513-9fff-4e58-a4dc-ec213b4e2ea6",
+        "text": "Person 6"
+      },
+      {
+        "href": "/en/personnel-files/a2e345f8-5ad9-49b7-b419-9aa3b3e9ab5c",
+        "text": "Person 7"
+      },
+      {
+        "href": "/en/personnel-files/payslip-batches",
+        "text": "Payslip batch"
+      },
+      {
+        "href": "/en/personnel-files/document-requests",
+        "text": "Document requests"
+      },
+      {
+        "href": "/en/personnel-files/sick-leave",
+        "text": "Sick leave"
+      },
+      {
+        "href": "/en/personnel-files/due-for-deletion",
+        "text": "Due for deletion"
+      },
+      {
+        "href": "/en/settings/personnel-files",
+        "text": "Personnel file officers"
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Employee records",
+        "text": "Employee records\n7\nPerson 1\nPerson 2\nPerson 3\nPerson 4\nPerson 5\nPerson 6\nPerson 7"
+      }
+    ],
+    "h1": [
+      "Personnel Files"
+    ]
+  },
+  "canonicalDirectory": [
+    {
+      "id": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "is_active": true,
+      "name": "Person 1"
+    },
+    {
+      "id": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "is_active": true,
+      "name": "Person 2"
+    },
+    {
+      "id": "c209da12-528b-461b-beef-9009690793df",
+      "is_active": true,
+      "name": "Person 3"
+    },
+    {
+      "id": "6923d068-673e-4005-91e6-27412c0a4a5d",
+      "is_active": true,
+      "name": "Person 4"
+    },
+    {
+      "id": "5435096c-875b-47e7-af8d-88f280a9d062",
+      "is_active": true,
+      "name": "Person 5"
+    },
+    {
+      "id": "b0da1513-9fff-4e58-a4dc-ec213b4e2ea6",
+      "is_active": true,
+      "name": "Person 6"
+    },
+    {
+      "id": "a2e345f8-5ad9-49b7-b419-9aa3b3e9ab5c",
+      "is_active": true,
+      "name": "Person 7"
+    }
+  ],
+  "formerRuntimeQualification": "Fixture has no former employee. Before/cutoff/materialized/rehire and deactivated controls are fresh PostgreSQL canonical-command proof, not a live browser cutoff.",
+  "keyboard": {
+    "focus": {
+      "tag": "A",
+      "href": "/en/personnel-files/6274b1f0-e076-4585-a7ac-bf9ef623f96a?category=certificate",
+      "outline": "oklab(0.549994 -0.0104668 -0.119526 / 0.5) none 1px",
+      "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, lab(46.8 5.40966 -42.8742) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px"
+    },
+    "destination": "http://localhost:56769/en/personnel-files/6274b1f0-e076-4585-a7ac-bf9ef623f96a?category=certificate"
+  },
+  "lock": {
+    "lockPid": 418,
+    "held": [
+      {
+        "pid": 421,
+        "queryHash": "4f3e6bba98e05ab30a89bab2a44db5bfdf353a1740ec1c8c12236505f1de2c3d",
+        "query": "select \"employee_document\".\"id\", \"employee_document\".\"employee_id\", \"user\".\"name\", \"employee\".\"employee_number\", \"employee_document\".\"title\", \"employee_document\".\"category\", \"employee_document\".\"visibility\", \"employee_document\".\"expiry_date\", exists (select 1 from \"employee_document_request\" where (\"employee_document_request\".\"organization_id\" = \"employee_document\".\"organization_id\" and \"employee_document_request\".\"renewed_document_id\" = \"employee_document\".\"id\" and \"employee_document_request\".\"status\" in ($1, $2))) from \"employee_document\" inner join \"employee\" on (\"employee\".\"id\" = \"employee_document\".\"employee_id\" and \"employee\".\"organization_id\" = \"employee_document\".\"organization_id\") left join \"user\" on \"user\".\"id\" = \"employee\".\"user_id\" where ((\"employee_document\".\"organization_id\" = $3 and ((true and \"employee_document\".\"employee_id\" <> $4) and \"employee_document\".\"category\" in ($5, $6, $7, $8, $9))) and \"employee_document\".\"category\" in ($10, $11) and \"employee_document\".\"expiry_date\" is not null an",
+        "blockers": [
+          418
+        ]
+      }
+    ]
+  },
+  "officerName": "Person 1",
+  "targetName": "Person 2",
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 30000ms exceeded",
+    "stack": "TimeoutError: Waiting failed: 30000ms exceeded\n    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)\n    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)\n    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)\n    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)\n    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)\n    at click (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1728-root-checks/acceptance/common.mjs:21:71)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1728-root-checks/acceptance/runtime.mjs:35:433"
+  }
+}

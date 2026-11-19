@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Nuk është importuar ende asnjë regjistrim prodhimi.",
         "openReview": "Hap rishikimin",
-        "scanningDescription": "Grupi i rishikimit {reviewBatchId} po skanohet. Rishikoni dhe miratoni të dhënat para regjistrimit përfundimtar.",
+        "scanningDescriptionWithoutId": "Skanimi i shqyrtimit po ekzekutohet. Shqyrtoni dhe miratoni regjistrimet përpara se të importohen.",
         "startedTitle": "Skanimi i rishikimit të importit filloi",
         "starting": "Po fillon skanimi i rishikimit të importit nga Clockin…",
         "startSuccess": "Skanimi i rishikimit të importit filloi. Kërkohet rishikim para se të dhënat të regjistrohen përfundimisht."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Grupi i rishikimit {batchId} po skanohet.",
         "description": "Kërkohet rishikim para se të dhënat e Clockodo të regjistrohen përfundimisht në sistem.",
         "openReview": "Hap rishikimin",
+        "scanning": "Skanimi i shqyrtimit po ekzekutohet. Asnjë regjistrim nuk importohet derisa t'i pranoni ato në shqyrtim.",
         "successTitle": "Skanimi i rishikimit të importit filloi"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Kredencialet",
         "import": "Shqyrtimi",
         "preview": "Parapamje",
+        "progressLabel": "Hapat e importimit",
         "projectMapping": "Përputhja e projekteve",
         "selection": "Përzgjedhja",
         "userMapping": "Lidhja e përdoruesve"
       },
       "userMapping": {
         "action": "Veprimi",
+        "actionFor": "Veprimi për {name}",
         "autoMatched": "{count} të përputhur automatikisht",
         "clockodoUser": "Përdoruesi i Clockodo",
         "continue": "Vazhdo",
@@ -248,14 +250,21 @@
       "linkError": "Gjenerimi i kodit të lidhjes dështoi",
       "linking": {
         "botLink": "Boti: @{botUsername}",
+        "codeCopied": "Kodi i lidhjes u kopjua",
+        "codeExpired": "Ka skaduar — gjeneroni një kod të ri",
+        "copyCode": "Kopjo kodin e lidhjes",
+        "copyFailed": "Kodi i lidhjes nuk mund të kopjohej. Zgjidheni dhe kopjojeni manualisht.",
         "description": "Lidhni llogarinë tuaj në Telegram për të marrë njoftime personale.",
+        "expiresIn": "{minutes, plural, one {Skadon për # minutë} other {Skadon për # minuta}}",
         "generateCode": "Gjenero kodin e lidhjes",
         "instructions": "Dërgojeni këtë komandë te boti në Telegram:",
         "linkedStatus": "Llogaria juaj në Telegram është lidhur",
+        "regenerateCode": "Gjenero kod të ri",
         "title": "Llogaria në Telegram"
       },
       "notConfigured": "Telegrami nuk është konfiguruar për këtë organizatë. Kontaktoni administratorin tuaj.",
       "saved": "Cilësimet e Telegramit u ruajtën",
+      "saveError": "Cilësimet e Telegramit nuk mund të ruheshin. Provoni përsëri.",
       "status": {
         "active": "Aktiv"
       },

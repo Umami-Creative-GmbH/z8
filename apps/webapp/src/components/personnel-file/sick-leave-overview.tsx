@@ -1,14 +1,21 @@
 "use client";
 
-import { IconChevronLeft, IconChevronRight, IconFileText, IconX } from "@tabler/icons-react";
+import {
+	IconChevronLeft,
+	IconChevronRight,
+	IconFileText,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useId, useState, useTransition } from "react";
 import { AbsenceSickNotesPanel } from "@/components/absences/sick-notes/absence-sick-notes-panel";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Select,
 	SelectContent,
@@ -42,6 +49,8 @@ const PATH = "/personnel-files/sick-leave";
 const ALL = "all";
 
 export interface SickLeaveOverviewProps {
+	userId: string;
+	organizationId: string;
 	filters: SickLeaveOverviewFilters;
 	/** The default range, to leave it out of the URL. */
 	defaultRange: { from: string; to: string };
@@ -57,7 +66,10 @@ export interface SickLeaveOverviewProps {
 export function useSickLeaveLabels() {
 	const { t } = useTranslate();
 	const sickDetails: Record<SickDetail, string> = {
-		child_sick: t("settings.personnelFiles.sickLeave.sickDetail.childSick", "Child sick"),
+		child_sick: t(
+			"settings.personnelFiles.sickLeave.sickDetail.childSick",
+			"Child sick",
+		),
 		with_certificate: t(
 			"settings.personnelFiles.sickLeave.sickDetail.withCertificate",
 			"With certificate",
@@ -70,7 +82,10 @@ export function useSickLeaveLabels() {
 	};
 	const statuses: Record<SickLeaveStatus, string> = {
 		pending: t("settings.personnelFiles.sickLeave.status.pending", "Pending"),
-		approved: t("settings.personnelFiles.sickLeave.status.approved", "Approved"),
+		approved: t(
+			"settings.personnelFiles.sickLeave.status.approved",
+			"Approved",
+		),
 	};
 	const notes: Record<SickLeaveNotesFilter, string> = {
 		all: t("settings.personnelFiles.sickLeave.filters.notesAll", "All"),
@@ -78,12 +93,21 @@ export function useSickLeaveLabels() {
 			"settings.personnelFiles.sickLeave.filters.notesMissing",
 			"With certificate, no note",
 		),
-		present: t("settings.personnelFiles.sickLeave.filters.notesPresent", "Has note"),
+		present: t(
+			"settings.personnelFiles.sickLeave.filters.notesPresent",
+			"Has note",
+		),
 	};
 	return { sickDetails, statuses, notes };
 }
 
-function FilterField({ label, children }: { label: string; children: (id: string) => ReactNode }) {
+function FilterField({
+	label,
+	children,
+}: {
+	label: string;
+	children: (id: string) => ReactNode;
+}) {
 	const id = useId();
 	return (
 		<div className="flex min-w-0 flex-col gap-1.5">
@@ -121,9 +145,13 @@ function SickNotesCell({ row }: { row: SickLeaveOverviewRow }) {
 							target="_blank"
 							rel="noopener noreferrer"
 							className="inline-flex max-w-56 items-center gap-1 text-sm underline-offset-4 hover:underline"
-							aria-label={t("settings.personnelFiles.list.open", "Open {title}", {
-								title: note.title,
-							})}
+							aria-label={t(
+								"settings.personnelFiles.list.open",
+								"Open {title}",
+								{
+									title: note.title,
+								},
+							)}
 						>
 							<IconFileText aria-hidden="true" className="size-3.5 shrink-0" />
 							<span className="truncate">{note.title}</span>
@@ -140,7 +168,31 @@ function SickNotesCell({ row }: { row: SickLeaveOverviewRow }) {
  * viewer's sick note scope with their linked sick notes. Read-only; filters
  * and paging live in the URL, so the page reloads the list on the server.
  */
+export function SickLeaveLoadingHeading() {
+	const { t } = useTranslate();
+	return (
+		<PageHeader
+			title={t("settings.personnelFiles.sickLeave.title", "Sick leave")}
+		/>
+	);
+}
+
 export function SickLeaveOverview(props: SickLeaveOverviewProps) {
+	const current = useOrganization();
+	if (
+		current.userId !== props.userId ||
+		current.activeOrganizationId !== props.organizationId
+	)
+		return null;
+	return (
+		<SickLeaveRecord
+			key={`${props.userId}:${props.organizationId}`}
+			{...props}
+		/>
+	);
+}
+
+function SickLeaveRecord(props: SickLeaveOverviewProps) {
 	const { t } = useTranslate();
 	const locale = useAppLocale();
 	const { push, refresh } = useRouter();
@@ -171,13 +223,22 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 		filters.sickDetail !== null ||
 		filters.notes !== "all" ||
 		filters.status !== null;
-	const firstItem = props.total === 0 ? 0 : (props.page - 1) * filters.pageSize + 1;
+	const firstItem =
+		props.total === 0 ? 0 : (props.page - 1) * filters.pageSize + 1;
 	const lastItem = Math.min(props.page * filters.pageSize, props.total);
 
 	return (
-		<div className="flex flex-col gap-4" aria-busy={isPending}>
-			<div className="grid gap-3 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-4">
-				<FilterField label={t("settings.personnelFiles.sickLeave.filters.from", "From")}>
+		<div
+			className="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card"
+			aria-busy={isPending}
+		>
+			<section
+				aria-label={t("common.filters", "Filters")}
+				className="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-4"
+			>
+				<FilterField
+					label={t("settings.personnelFiles.sickLeave.filters.from", "From")}
+				>
 					{(id) => (
 						<DatePicker
 							aria-labelledby={id}
@@ -185,11 +246,15 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 							max={filters.to}
 							required
 							disabled={isPending}
-							onChange={(from) => update({ from: from === props.defaultRange.from ? null : from })}
+							onChange={(from) =>
+								update({ from: from === props.defaultRange.from ? null : from })
+							}
 						/>
 					)}
 				</FilterField>
-				<FilterField label={t("settings.personnelFiles.sickLeave.filters.to", "To")}>
+				<FilterField
+					label={t("settings.personnelFiles.sickLeave.filters.to", "To")}
+				>
 					{(id) => (
 						<DatePicker
 							aria-labelledby={id}
@@ -197,11 +262,18 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 							min={filters.from}
 							required
 							disabled={isPending}
-							onChange={(to) => update({ to: to === props.defaultRange.to ? null : to })}
+							onChange={(to) =>
+								update({ to: to === props.defaultRange.to ? null : to })
+							}
 						/>
 					)}
 				</FilterField>
-				<FilterField label={t("settings.personnelFiles.sickLeave.filters.employee", "Employee")}>
+				<FilterField
+					label={t(
+						"settings.personnelFiles.sickLeave.filters.employee",
+						"Employee",
+					)}
+				>
 					{(id) => (
 						<Select
 							value={filters.employeeId ?? ALL}
@@ -213,7 +285,10 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value={ALL}>
-									{t("settings.personnelFiles.sickLeave.filters.allEmployees", "All employees")}
+									{t(
+										"settings.personnelFiles.sickLeave.filters.allEmployees",
+										"All employees",
+									)}
 								</SelectItem>
 								{props.employees.map((employee) => (
 									<SelectItem key={employee.id} value={employee.id}>
@@ -230,7 +305,9 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 						</Select>
 					)}
 				</FilterField>
-				<FilterField label={t("settings.personnelFiles.sickLeave.filters.team", "Team")}>
+				<FilterField
+					label={t("settings.personnelFiles.sickLeave.filters.team", "Team")}
+				>
 					{(id) => (
 						<Select
 							value={filters.teamId ?? ALL}
@@ -242,7 +319,10 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value={ALL}>
-									{t("settings.personnelFiles.sickLeave.filters.allTeams", "All teams")}
+									{t(
+										"settings.personnelFiles.sickLeave.filters.allTeams",
+										"All teams",
+									)}
 								</SelectItem>
 								{props.teams.map((team) => (
 									<SelectItem key={team.id} value={team.id}>
@@ -254,7 +334,10 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 					)}
 				</FilterField>
 				<FilterField
-					label={t("settings.personnelFiles.sickLeave.filters.sickDetail", "Sick detail")}
+					label={t(
+						"settings.personnelFiles.sickLeave.filters.sickDetail",
+						"Sick detail",
+					)}
 				>
 					{(id) => (
 						<Select
@@ -272,16 +355,23 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 										"All sick details",
 									)}
 								</SelectItem>
-								{(Object.keys(labels.sickDetails) as SickDetail[]).map((detail) => (
-									<SelectItem key={detail} value={detail}>
-										{labels.sickDetails[detail]}
-									</SelectItem>
-								))}
+								{(Object.keys(labels.sickDetails) as SickDetail[]).map(
+									(detail) => (
+										<SelectItem key={detail} value={detail}>
+											{labels.sickDetails[detail]}
+										</SelectItem>
+									),
+								)}
 							</SelectContent>
 						</Select>
 					)}
 				</FilterField>
-				<FilterField label={t("settings.personnelFiles.sickLeave.filters.notes", "Sick notes")}>
+				<FilterField
+					label={t(
+						"settings.personnelFiles.sickLeave.filters.notes",
+						"Sick notes",
+					)}
+				>
 					{(id) => (
 						<Select
 							value={filters.notes}
@@ -292,16 +382,23 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								{(Object.keys(labels.notes) as SickLeaveNotesFilter[]).map((notes) => (
-									<SelectItem key={notes} value={notes}>
-										{labels.notes[notes]}
-									</SelectItem>
-								))}
+								{(Object.keys(labels.notes) as SickLeaveNotesFilter[]).map(
+									(notes) => (
+										<SelectItem key={notes} value={notes}>
+											{labels.notes[notes]}
+										</SelectItem>
+									),
+								)}
 							</SelectContent>
 						</Select>
 					)}
 				</FilterField>
-				<FilterField label={t("settings.personnelFiles.sickLeave.filters.status", "Status")}>
+				<FilterField
+					label={t(
+						"settings.personnelFiles.sickLeave.filters.status",
+						"Status",
+					)}
+				>
 					{(id) => (
 						<Select
 							value={filters.status ?? ALL}
@@ -318,11 +415,13 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 										"Pending and approved",
 									)}
 								</SelectItem>
-								{(Object.keys(labels.statuses) as SickLeaveStatus[]).map((status) => (
-									<SelectItem key={status} value={status}>
-										{labels.statuses[status]}
-									</SelectItem>
-								))}
+								{(Object.keys(labels.statuses) as SickLeaveStatus[]).map(
+									(status) => (
+										<SelectItem key={status} value={status}>
+											{labels.statuses[status]}
+										</SelectItem>
+									),
+								)}
 							</SelectContent>
 						</Select>
 					)}
@@ -340,58 +439,95 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 							}
 						>
 							<IconX aria-hidden="true" className="size-4" />
-							{t("settings.personnelFiles.sickLeave.filters.reset", "Reset filters")}
+							{t(
+								"settings.personnelFiles.sickLeave.filters.reset",
+								"Reset filters",
+							)}
 						</Button>
 					) : null}
 				</div>
-			</div>
+			</section>
 
 			{props.rows.length === 0 ? (
-				<p className="text-sm text-muted-foreground">
+				<p
+					role="status"
+					className="px-4 py-10 text-center text-sm text-muted-foreground"
+				>
 					{t(
 						"settings.personnelFiles.sickLeave.empty",
 						"No sick leave in this period matches the filters.",
 					)}
 				</p>
 			) : (
-				<div className="rounded-lg border">
-					<Table>
+				<section
+					aria-label={t(
+						"settings.personnelFiles.sickLeave.title",
+						"Sick leave",
+					)}
+					// biome-ignore lint/a11y/noNoninteractiveTabindex: Named comparison region needs keyboard scrolling.
+					tabIndex={0}
+					className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring [&>[data-slot=table-container]]:overflow-visible"
+				>
+					<Table className="min-w-[60rem]">
 						<TableHeader>
 							<TableRow>
 								<TableHead>
-									{t("settings.personnelFiles.sickLeave.columns.employee", "Employee")}
+									{t(
+										"settings.personnelFiles.sickLeave.columns.employee",
+										"Employee",
+									)}
 								</TableHead>
 								<TableHead>
-									{t("settings.personnelFiles.sickLeave.columns.dates", "Dates")}
+									{t(
+										"settings.personnelFiles.sickLeave.columns.dates",
+										"Dates",
+									)}
 								</TableHead>
 								<TableHead className="text-right">
-									{t("settings.personnelFiles.sickLeave.columns.duration", "Duration")}
+									{t(
+										"settings.personnelFiles.sickLeave.columns.duration",
+										"Duration",
+									)}
 								</TableHead>
 								<TableHead>
-									{t("settings.personnelFiles.sickLeave.columns.status", "Status")}
+									{t(
+										"settings.personnelFiles.sickLeave.columns.status",
+										"Status",
+									)}
 								</TableHead>
 								<TableHead>
-									{t("settings.personnelFiles.sickLeave.columns.sickDetail", "Sick detail")}
+									{t(
+										"settings.personnelFiles.sickLeave.columns.sickDetail",
+										"Sick detail",
+									)}
 								</TableHead>
 								<TableHead>
-									{t("settings.personnelFiles.sickLeave.columns.sickNotes", "Sick notes")}
+									{t(
+										"settings.personnelFiles.sickLeave.columns.sickNotes",
+										"Sick notes",
+									)}
 								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{props.rows.map((row) => (
 								<TableRow key={row.absenceId}>
-									<TableCell className="align-top">
+									<TableCell className="max-w-64 align-top whitespace-normal break-words">
 										<div className="flex flex-wrap items-center gap-2">
 											<Link
-												href={personnelFilePath(row.employeeId, { category: "sick_note" })}
+												href={personnelFilePath(row.employeeId, {
+													category: "sick_note",
+												})}
 												className="font-medium underline-offset-4 hover:underline"
 											>
 												{row.employeeName}
 											</Link>
 											{row.isFormer ? (
 												<Badge variant="secondary">
-													{t("settings.personnelFiles.area.former", "Former employee")}
+													{t(
+														"settings.personnelFiles.area.former",
+														"Former employee",
+													)}
 												</Badge>
 											) : null}
 										</div>
@@ -407,15 +543,19 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 									<TableCell className="align-top text-right tabular-nums whitespace-nowrap">
 										{formatDays(row.absenceDays, t)}
 									</TableCell>
-									<TableCell className="align-top">
-										<Badge variant={row.status === "approved" ? "outline" : "secondary"}>
+									<TableCell className="align-top whitespace-normal">
+										<Badge
+											variant={
+												row.status === "approved" ? "outline" : "secondary"
+											}
+										>
 											{labels.statuses[row.status]}
 										</Badge>
 									</TableCell>
-									<TableCell className="align-top">
+									<TableCell className="align-top whitespace-normal">
 										{row.sickDetail ? labels.sickDetails[row.sickDetail] : null}
 									</TableCell>
-									<TableCell className="align-top">
+									<TableCell className="align-top whitespace-normal">
 										<SickNotesCell row={row} />
 										<Button
 											type="button"
@@ -428,31 +568,45 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 												"Attach or link sick notes for {name}, {dateRange}",
 												{
 													name: row.employeeName,
-													dateRange: formatAbsenceDateRange(row.startDate, row.endDate, locale),
+													dateRange: formatAbsenceDateRange(
+														row.startDate,
+														row.endDate,
+														locale,
+													),
 												},
 											)}
 										>
-											{t("settings.personnelFiles.sickNotes.manage", "Attach or link")}
+											{t(
+												"settings.personnelFiles.sickNotes.manage",
+												"Attach or link",
+											)}
 										</Button>
 									</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
 					</Table>
-				</div>
+				</section>
 			)}
 
-			<div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+			<div className="flex flex-wrap items-center justify-between gap-4 border-t p-4 text-sm">
 				<span className="text-muted-foreground tabular-nums">
-					{t("settings.personnelFiles.sickLeave.pagination.summary", "{first}–{last} of {total}", {
-						first: firstItem,
-						last: lastItem,
-						total: props.total,
-					})}
+					{t(
+						"settings.personnelFiles.sickLeave.pagination.summary",
+						"{first}–{last} of {total}",
+						{
+							first: firstItem,
+							last: lastItem,
+							total: props.total,
+						},
+					)}
 				</span>
 				<div className="flex flex-wrap items-center gap-2">
 					<FilterField
-						label={t("settings.personnelFiles.sickLeave.pagination.pageSize", "Rows per page")}
+						label={t(
+							"settings.personnelFiles.sickLeave.pagination.pageSize",
+							"Rows per page",
+						)}
 					>
 						{(id) => (
 							<Select
@@ -474,10 +628,14 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 						)}
 					</FilterField>
 					<span className="self-end pb-2 tabular-nums">
-						{t("settings.personnelFiles.sickLeave.pagination.page", "Page {page} of {pageCount}", {
-							page: props.page,
-							pageCount: props.pageCount,
-						})}
+						{t(
+							"settings.personnelFiles.sickLeave.pagination.page",
+							"Page {page} of {pageCount}",
+							{
+								page: props.page,
+								pageCount: props.pageCount,
+							},
+						)}
 					</span>
 					<div className="flex gap-1 self-end">
 						<Button
@@ -499,7 +657,10 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 							size="icon"
 							disabled={isPending || props.page >= props.pageCount}
 							onClick={() => update({ page: props.page + 1 })}
-							aria-label={t("settings.personnelFiles.sickLeave.pagination.next", "Next page")}
+							aria-label={t(
+								"settings.personnelFiles.sickLeave.pagination.next",
+								"Next page",
+							)}
 						>
 							<IconChevronRight aria-hidden="true" className="size-4" />
 						</Button>

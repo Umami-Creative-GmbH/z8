@@ -1,0 +1,10 @@
+{
+  "scopedCanonicalGate": "verifySuiteDatabase/integrationAdminPool",
+  "domainOnly": true,
+  "scopeCount": 2,
+  "shiftRows": 12,
+  "allShiftRowsAndDigestsUnchanged": true,
+  "recordedWorkCountsAndFullDigestsUnchanged": true,
+  "laterAuthMemberGrantPolicyMutations": 0,
+  "actualPublicMutationRequests": 0
+}

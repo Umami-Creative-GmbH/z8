@@ -1,0 +1,104 @@
+{
+  "pnpmVersion": "12.16.1",
+  "everyPnpmCall": {
+    "env": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "cli": "--config.verify-deps-before-run=false"
+  },
+  "pnpmCalls": [
+    [
+      "--version"
+    ],
+    [
+      "node",
+      ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs",
+      "prepare",
+      "{own-fixture}"
+    ],
+    [
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "tsx",
+      "--tsconfig",
+      "tsconfig.json",
+      "{own-seed}"
+    ],
+    [
+      "node",
+      "{own-runtime.mjs}"
+    ],
+    [
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "tsx",
+      "--conditions=react-server",
+      "--tsconfig",
+      "tsconfig.json",
+      "{own-seed}"
+    ],
+    [
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "tsx",
+      "--tsconfig",
+      "tsconfig.json",
+      "{own-seed}"
+    ],
+    [
+      "node",
+      ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs",
+      "cleanup",
+      "{own-fixture}"
+    ]
+  ],
+  "nestedCanonicalPrepareCalls": [
+    "exec tsx scripts/verify-approval-migration-recovery.ts",
+    "exec tsx scripts/performance-fixture.ts --write-private-manifest {own-private-manifest}"
+  ],
+  "nestedGuardsConfirmed": true,
+  "nextLaunch": [
+    "node",
+    "apps/webapp/node_modules/next/dist/bin/next",
+    "dev",
+    "--turbopack",
+    "--port",
+    "{owned-port}"
+  ],
+  "browserController": "fresh own controller.mjs with transient normal form credentials in private memory",
+  "browserOperations": [
+    "arrival-status.js",
+    "claim-diagnostics.js",
+    "close-browser.js",
+    "conversion-status.js",
+    "convert-first.js",
+    "database-after.js",
+    "database-before.js",
+    "diagnostics.js",
+    "draft-arrival.js",
+    "field-shapes.js",
+    "graph-fields.js",
+    "hold-conversion.js",
+    "login.js",
+    "mcp-initialize.js",
+    "open-report.js",
+    "react-draft.js",
+    "react-names-resolved.js",
+    "retire-release.js",
+    "second-draft-react.js",
+    "start-browser.js",
+    "status.js"
+  ],
+  "processCommands": [
+    "process-inventory.ps1",
+    "cleanup-processes.ps1 (3 guarded attempts)",
+    "final-resources.ps1"
+  ],
+  "suiteRuns": 0,
+  "buildRuns": 0,
+  "packageInstallCopyBorrowRepair": 0,
+  "gitTrackerPrReadinessWrites": 0
+}

@@ -1,0 +1,9 @@
+{
+  "actor": "small-manager",
+  "scope": "same disposable small organization",
+  "pendingRequests": 5,
+  "recordAndDeletionReadBack": true,
+  "reasonExposed": false,
+  "limit": "The unchanged generic approval detail does not display the submitted reason; no UI reason read-back pass is claimed.",
+  "detail": "Approval details\n\n8h on Jan 6, 2025\n\nCorrection\nREQUESTER\nPerson 3\n[synthetic email]\nPayroll impact unverified.\nEvidence limitation: No explicit payroll period is available\nEvidence validity: Not verified\nCorrection facts not verified.\nEvidence validity: Not verified\nREQUEST\nType\nTime Correction\nSummary\n8h on Jan 6, 2025\nStatus\nAwaiting review\nTime comparison\n\nOriginal\n\n2025-01-06 09:00 (UTC+01:00) – 2025-01-06 17:00 (UTC+01:00)\n\n480 min elapsed\n\nRequested\n\nDeleted\n\nUTC+01:00\n\n08:00\n10:00\n12:00\n14:00\n16:00\n18:00\nREQUESTED CORRECTION\nAction\nDelete\nTIMELINE\n\nPerson 3 requested time correction\n\nNov 14, 2026, 10:54 PM UTC by Person 3\n\nReject\nApprove\nClose"
+}

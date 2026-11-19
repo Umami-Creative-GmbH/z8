@@ -2,29 +2,97 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	type AppAbility,
+	createEmptyAbility,
+	defineAbilityFor,
+} from "@/lib/authorization";
+import { SuspendedBillingContent } from "./suspended-billing-content";
 
-const routePath = "src/app/[locale]/(app)/billing/suspended/page.tsx";
+let ability: AppAbility | null;
+let organizationId: string | null = "org-1";
+vi.mock("@/lib/auth-helpers", () => ({ getAbility: async () => ability }));
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: async () => (_key: string, fallback: string) => fallback,
+}));
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderOrganizationIdentity: async () =>
+		organizationId ? { organizationId } : null,
+	getRenderUserOrganizations: async () => [
+		{ id: "other-org", name: "Other organization" },
+		{ id: "org-1", name: "Example organization" },
+	],
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, ...props }: ComponentProps<"a">) => (
+		<a href={`/de${href}`} {...props} />
+	),
+}));
+
+beforeEach(() => {
+	organizationId = "org-1";
+	ability = defineAbilityFor({
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: {
+			organizationId: "org-1",
+			role: "admin",
+			status: "approved",
+		},
+		employee: null,
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	});
+});
+afterEach(cleanup);
+
 const layoutPath = "src/app/[locale]/(app)/app-layout-content.tsx";
 const billingSettingsPath = "src/app/[locale]/(app)/settings/billing/page.tsx";
 
 describe("suspended billing recovery route", () => {
-	it("defines the suspended route with localized admin and member recovery states", () => {
-		const absoluteRoutePath = join(process.cwd(), routePath);
+	it("offers contact guidance when ability and active organization identity are unavailable", async () => {
+		ability = null;
+		organizationId = null;
+		render(await SuspendedBillingContent());
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Organization suspended" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("link")).toBeNull();
+		expect(screen.getByText(/Contact an organization admin/)).toBeTruthy();
+		expect(screen.queryByText("Example organization")).toBeNull();
+		expect(screen.queryByText("Other organization")).toBeNull();
+	});
+	it("names the recovery task and active organization with a localized billing escape link", async () => {
+		render(await SuspendedBillingContent());
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Organization suspended" }),
+		).toBeTruthy();
+		expect(screen.getByText("Example organization")).toBeTruthy();
+		expect(screen.queryByText("Other organization")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "Go to billing" }).getAttribute("href"),
+		).toBe("/de/settings/billing");
+	});
 
-		expect(existsSync(absoluteRoutePath)).toBe(true);
-
-		const pageSource = readFileSync(absoluteRoutePath, "utf8");
-
-		expect(pageSource).toContain("getTranslate()");
-		expect(pageSource).toContain("getAbility()");
-		expect(pageSource).toContain('ability?.can("manage", "OrgBilling")');
-		expect(pageSource).toContain("billing.suspended.title");
-		expect(pageSource).toContain("billing.suspended.adminDescription");
-		expect(pageSource).toContain("billing.suspended.memberDescription");
-		expect(pageSource).toContain("billing.suspended.goToBilling");
-		expect(pageSource).toContain('href="/settings/billing"');
-		expect(pageSource).toContain("canManageBilling ?");
+	it("explains the access consequence and directs a restricted actor to an organization admin", async () => {
+		ability = createEmptyAbility();
+		render(await SuspendedBillingContent());
+		expect(
+			screen.getByText(
+				"Access to this organization is paused until billing is updated.",
+			),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
+				"This organization is suspended. Contact an organization admin to update billing.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByRole("link")).toBeNull();
 	});
 
 	it("redirects suspended organizations away from normal app pages but exempts recovery paths", () => {

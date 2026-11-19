@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Approve",
       "approveLabel": "Approve {title}",
+      "decided": "Decision saved. Refresh to load the current queue.",
       "description": "Requests waiting for a manager decision.",
       "empty": "No approvals are waiting.",
       "openInbox": "Open inbox",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Pending approvals",
       "reject": "Reject",
       "rejectLabel": "Reject {title}",
+      "retry": "Retry approvals",
       "title": "Approvals",
       "toast": {
         "approved": "Request approved",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Today",
-      "description": "Review the items that need action today, then move directly into the right workflow.",
+      "accessUnavailable": "This briefing is unavailable for the current employee and organization.",
+      "contextFailed": "Could not check your current access. Try again.",
+      "drivingUnavailable": "Driving details could not be checked.",
+      "incomplete": "Some checks are unavailable. Review section errors; these results are incomplete.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Work periods of your employees lacking a vehicle or an odometer reading.",
           "title": "Driving details missing ({count})"
         }
       },
+      "loadFailed": "Could not load the briefing. Try again.",
       "needsAction": {
         "description": "Start here for the most urgent operational follow-up.",
-        "empty": "All clear. No manager action is needed right now.",
+        "noExceptions": "No operational follow-up detected in this snapshot. This does not confirm employee presence.",
         "title": "Needs Action"
       },
+      "partial": "Partial",
+      "refreshFailed": "Could not refresh. Previous results are shown; try again before acting.",
+      "refreshing": "Refreshing briefing. Previous results remain visible.",
+      "retainedSection": "Previous results shown. Retry to check for changes.",
+      "retry": "Retry briefing",
+      "retrySection": "Retry {title}",
+      "scope": "Operational follow-up for the employees you may oversee in the active organization.",
       "sections": {
         "empty": "No issues detected."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Warning"
       },
+      "snapshot": "Snapshot updated {time}. Use Refresh data to check for changes.",
       "summaryAriaLabel": "Today summary",
       "supportingSectionsAriaLabel": "Supporting sections",
       "title": "Manager Daily Briefing",
-      "updatedAt": "{date} - Updated {time}"
+      "unavailable": "Unavailable"
     }
   }
 }

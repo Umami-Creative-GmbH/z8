@@ -45,6 +45,29 @@ describe("OrganizationClockingRemindersCard", () => {
 	});
 	afterEach(cleanup);
 
+	it("keeps the panel heading for assistive tech without repeating the tab name on screen", () => {
+		show();
+		const heading = screen.getByRole("heading", { level: 2, name: "Clocking reminders" });
+		expect(heading.className).toContain("sr-only");
+	});
+
+	it("shows a minutes error once, beside its own field", async () => {
+		show();
+		fireEvent.change(screen.getByLabelText("Minutes after the expected start"), {
+			target: { value: "-1" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+		const message = await screen.findByText("Enter whole minutes from 0 to 1440.");
+		expect(screen.getAllByText("Enter whole minutes from 0 to 1440.")).toHaveLength(1);
+		expect(
+			screen
+				.getByLabelText("Minutes after the expected start")
+				.getAttribute("aria-describedby"),
+		).toContain(message.id);
+		expect(mocks.save).not.toHaveBeenCalled();
+	});
+
 	it("shows every reminder off with its default minutes and every role selected", () => {
 		show();
 		for (const name of [

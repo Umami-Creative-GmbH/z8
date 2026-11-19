@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "İstekleri kimin onaylayacağını, geciken onayların ne zaman bir üst makama aktarılacağını ve hangi onay sorunlarının takip edilmesi gerektiğini yapılandırın."
+    },
     "approvalTriage": {
       "correctionError": "0 ile 60 dakika arasında bir tam sayı girin.",
       "correctionHelp": "Sıfır, sıfır fark düzenlemeleri de dahil olmak üzere küçük düzeltme hızlı şeridini devre dışı bırakır. Aksi takdirde 1–60 dakika girin; gerekli tüm kanıtların yine de doğrulanması gerekir.",
@@ -138,6 +141,7 @@
           "defaultTax": "Varsayılan: {treatment}",
           "description": "İlk aktarımdan önce her müşteriyi muhasebe aracındaki mevcut kişisiyle bağlayın ve gerektiğinde vergi uygulamasını geçersiz kılın.",
           "edit": "Düzenle",
+          "editAction": "{name} için muhasebeyi düzenle",
           "empty": "Henüz müşteri yok",
           "inactive": "Etkin değil",
           "notLinked": "Bağlı değil",
@@ -157,6 +161,8 @@
           "start": "Müşterileri içe aktar"
         },
         "keyMissing": "API anahtarı gizli depoda eksik. Bağlantıyı yeni bir anahtarla değiştirin.",
+        "loadFailed": "Muhasebe ayarları yüklenemedi.",
+        "loading": "Muhasebe ayarları yükleniyor",
         "netPrices": {
           "label": "Bu sevdesk hesabı, fatura fiyatlarını net fiyatlar olarak girer",
           "required": "Z8 net fiyatları aktarır. sevdesk'in fiyatları net fiyatlar olarak girdiğini onaylayın"
@@ -225,6 +231,7 @@
         "employeeTitle": "Maliyet oranı",
         "empty": "Henüz maliyet oranı yok. Bu çalışanın işi için marj, maliyeti bilinmiyor olarak görünür.",
         "history": "Geçmiş",
+        "historyAction": "{name} için maliyet oranı geçmişi",
         "hourly": "Saatlik",
         "inactive": "Pasif",
         "intro": "Maliyet oranı, bir çalışanın kâr marjı için kullanılan {currency} cinsinden tüm giderler dahil saatlik iç maliyetidir. Maaştan ayrıdır: birini değiştirmek asla diğerini değiştirmez.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/sa",
         "saved": "Maliyet oranı kaydedildi",
         "set": "Maliyet oranını belirle",
+        "setAction": "{name} için maliyet oranını belirle",
         "setRateHelp": "Yeni maliyet oranı bu tarihten bir sonraki değişikliğe kadar geçerlidir. Maaşı, bordroyu veya saatlik kazancı asla değiştirmez.",
         "startsOn": "Başlangıç: {date}",
         "today": "Bugün",
@@ -378,11 +386,14 @@
           "empty": "Henüz aktarım yok",
           "gone": "Araçta silindi",
           "open": "Aç",
+          "openAction": "{name}, {period} için devir teslimi aç",
           "period": "Dönem",
           "status": "Durum",
           "title": "Aktarımlar",
           "total": "Net toplam"
         },
+        "loadFailed": "Devir teslimler yüklenemedi.",
+        "loading": "Devir teslimler yükleniyor",
         "marks": {
           "compare": "Karşılaştır",
           "compareItem": "{item} öğesini karşılaştır",
@@ -495,6 +506,9 @@
         "customerRate": "Faturalandırılabilir ücret",
         "customerRateTitle": "{name} için faturalandırılabilir ücret",
         "dateRequired": "Geçerli olacağı ilk günü seçin",
+        "deletedCustomer": "Silinen müşteri",
+        "deletedEmployee": "Silinen çalışan",
+        "deletedProject": "Silinen proje",
         "effectiveFrom": "Şu tarihten itibaren geçerli",
         "employee": "Çalışan",
         "employeeProjectRateFor": "Bu projede {name} için faturalandırılabilir ücret",
@@ -511,10 +525,13 @@
         "endsFrom": "Şu tarihten itibaren artık geçerli değil",
         "for": "İçin",
         "history": "Geçmiş",
+        "historyAction": "{name} için oran geçmişi",
         "hourlyRate": "Saatlik ücret",
         "inEffect": "Yürürlükte",
         "inEffectTodayHint": "Bugün yürürlükte: {rate}",
         "intro": "Ücretler saat başına {currency} cinsindendir. Her bir çalışma için başladığı gün geçerli olan en özel ücret uygulanır: önce projedeki çalışan, sonra proje, sonra müşteri ve ardından çalışan.",
+        "invalidDate": "Geçerli bir tarih girin.",
+        "invalidRate": "En fazla iki ondalık basamağa sahip pozitif bir saatlik ücret girin.",
         "level": {
           "customer": "Müşteri",
           "customerDescription": "Müşterinin proje ücreti belirlenmemiş projelerindeki çalışmalar için geçerlidir.",
@@ -542,6 +559,8 @@
         "setRate": "Ücret belirle",
         "setRateHelp": "Yeni ücret, bu tarihten bir sonraki ücret değişikliğine kadar geçerlidir. Daha önceki tarihler, henüz faturalandırılmamış çalışmaları yeniden fiyatlandırır.",
         "startsOn": "{date} tarihinde başlıyor",
+        "switchedOff": "Faturalanabilir Zaman kapalı.",
+        "targetNotFound": "Çalışan, proje veya müşteri bulunamadı.",
         "today": "Bugün",
         "unchanged": "Bu oran zaten geçerli"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Aboneliğinizi, ödeme yöntemlerinizi ve faturalarınızı yönetin",
       "title": "Faturalandırma ve Abonelik"
+    },
+    "breadcrumbs": {
+      "label": "Ayarlar gezinme yolu"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "Henüz hiçbir ay kapatılmadı.",
       "historyTitle": "Geçmiş",
+      "loadErrorDescription": "Tekrar denemek için sayfayı yeniden yükleyin.",
+      "loadErrorTitle": "Kapatılan aylar yüklenemedi",
       "locationNotFound": "Bu konum artık mevcut değil.",
       "monthsDescription": "Bir ayın kapatılması; bordro için çalışma, ilişkilendirme ve devamsızlıkları dondurur. Notlar düzenlenebilir kalır.",
       "monthsTitle": "Aylar",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Ekip üyelerinden gelen uyumluluk istisnası taleplerini inceleyin ve yönetin",
+      "metadata": {
+        "description": "ArbZG uyumluluk ayarlarını yapılandırın ve istisna taleplerini yönetin",
+        "title": "Uyumluluk Ayarları | ArbZG"
+      },
       "title": "ArbZG Uyumluluğu"
     },
     "customDomains": {
       "title": "Alan Adı ve Markalama"
     },
     "customers": {
+      "accountingAction": "{name} için Muhasebe",
       "column": {
+        "actions": "İşlemler",
         "contactPerson": "İlgili Kişi",
         "email": "E-posta",
         "name": "Şirket Adı",
@@ -643,11 +673,13 @@
       "create": "Müşteri Ekle",
       "created": "Müşteri oluşturuldu",
       "createFailed": "Müşteri oluşturulamadı",
-      "deleted": "Müşteri silindi",
+      "deleteAction": "{name} öğesini sil",
       "delete": {
+        "confirm": "{name} öğesini sil",
         "description": "\"{name}\" öğesini silmek istediğinizden emin misiniz? Bu müşteriye atanan projeler çalışmaya devam edecek ancak müşteri referansı kaldırılacaktır.",
         "title": "Müşteriyi Sil"
       },
+      "deleted": "Müşteri silindi",
       "deleteFailed": "Müşteri silinemedi",
       "description": "Proje atamaları için müşteri kişilerini yönetin",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Müşteriyi Düzenle",
         "save": "Değişiklikleri Kaydet"
       },
+      "edit": "Müşteriyi düzenle",
+      "editAction": "{name} öğesini düzenle",
       "empty": {
         "description": "Projelere atamak için ilk müşterinizi ekleyin.",
         "title": "Henüz müşteri yok"
@@ -680,6 +714,7 @@
         "description": "Toplam {count} müşteri",
         "title": "Tüm Müşteriler"
       },
+      "loadFailed": "Müşteriler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
       "managerNoProjects": "Yönetilen proje bulunmuyor. Müşteri eklemeden önce bir proje oluşturun veya yönetin.",
       "projectRequired": "Önce bir proje seçin",
       "title": "Müşteriler",
@@ -905,7 +940,7 @@
         "columnDate": "Tarih",
         "columnSize": "Boyut",
         "columnStatus": "Durum",
-        "deleteDialogDescription": "Bu dışa aktarmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+        "deleteDialogDescriptionNamed": "{date} tarihinde saat {time} için oluşturulan dışa aktarma silinsin mi? Bu işlem geri alınamaz.",
         "deleteDialogTitle": "Dışa Aktarmayı Sil",
         "deleteError": "Dışa aktarma silinemedi",
         "deleteSuccess": "Dışa aktarma silindi",
@@ -914,7 +949,7 @@
         "downloadError": "İndirilemedi",
         "downloadSuccess": "İndirme başlatıldı",
         "emptyDescription": "Henüz dışa aktarma yok",
-        "emptyHint": "Yukarıdaki formu kullanarak ilk dışa aktarmanızı oluşturun",
+        "emptyHintNewExportTab": "İlk dışa aktarmanızı Yeni Dışa Aktarma sekmesinde oluşturun.",
         "moreCategories": "+{count} daha",
         "statusCompleted": "Tamamlandı",
         "statusFailed": "Başarısız",
@@ -935,6 +970,7 @@
         "connectionFailed": "Bağlantı Başarısız",
         "connectionSuccess": "Bağlantı Başarılı",
         "deleteDialogDescription": "Bu depolama yapılandırmasını silmek istediğinizden emin misiniz?",
+        "deleteDialogDescriptionNamed": "\"{bucket}\" demeti için depolama yapılandırması silinsin mi?",
         "deleteDialogTitle": "Yapılandırmayı Sil",
         "deleteError": "Yapılandırma silinemedi",
         "deleteSuccess": "Yapılandırma silindi",
@@ -962,7 +998,7 @@
         "verified": "Doğrulandı"
       },
       "storageNotConfigured": {
-        "description": "Dışa aktarımları oluşturmadan önce S3 depolama alanını yapılandırın",
+        "descriptionWithTab": "Dışa aktarmalar oluşturmadan önce Depolama Ayarları sekmesinde S3 depolamasını yapılandırın.",
         "title": "Depolama Yapılandırılmadı"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "{actor} tarafından {time} tarihinde verildi",
         "editor": "Doğrulayıcı kapsamı",
         "empty": "Atanmış doğrulayıcı sorumluluğu yok",
+        "failed": "Sürücü belgesi doğrulayıcı sorumluluğu güncellenemedi veya buna erişilemedi. İzinlerinizi ve seçimlerinizi kontrol edin.",
         "formerEmployee": "Eski çalışanlar eklenemez. Mevcut kadrodaki çalışanları seçin.",
         "history": "Sorumluluk geçmişi",
         "historyEntry": "{grantor} tarafından {granted} tarihinde verildi; {revoker} tarafından {revoked} tarihinde iptal edildi",
@@ -990,6 +1027,7 @@
         "myUntil": "Sorumluluğunuz {date} ({timezone}) sonrasında sona erer.",
         "none": "Şu anda herhangi bir sürücü belgesi doğrulayıcı sorumluluğunuz yok.",
         "noTeams": "Kullanılabilir ekip yok",
+        "notEnabled": "Bu kuruluş için sürücü belgesi kontrolleri etkinleştirilmemiş.",
         "person": "Doğrulayıcı",
         "revoked": "Doğrulayıcı sorumluluğu iptal edildi",
         "revokeDescription": "Doğrulayıcı bu kapsamdaki kontrollere erişimini derhal kaybeder. Sorumluluğu geri yüklemek için yeni bir yetkilendirme gerekir.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "E-posta şablonları",
       "empty": "Bu kuruluş için kullanılabilir e-posta şablonu yok.",
-      "eyebrow": "Operasyonel iletişimler",
       "reset": "E-posta şablonu sistem şablonuna sıfırlandı",
+      "resetDialog": {
+        "confirm": "Şablonu sıfırla",
+        "description": "Bu işlem, kuruluşunuzun bu e-posta için belirlediği özel konu ve gövde metnini siler. Daha sonra gönderilen e-postalar sistem şablonunu kullanır.",
+        "title": "“{template}” sistem şablonuna sıfırlansın mı?"
+      },
       "resetFailed": "E-posta şablonu sıfırlanamadı",
       "saved": "E-posta şablonu kaydedildi",
       "saveFailed": "E-posta şablonu kaydedilemedi",
@@ -1276,6 +1318,7 @@
       "savedPending": "İşe giriş tarihi kaydedildi. Çalışma bakiyeleri yenileniyor.",
       "savedRefreshFailed": "İşe giriş tarihi kaydedildi. Görüntülenen sonuçları yenilemek için bu sayfayı yeniden yükleyin.",
       "saveFailed": "Bu düzeltme kaydedilemedi. Yeni bir önizleme oluşturun ve tekrar deneyin.",
+      "stalePreview": "İncelenen istihdam veya yapılandırma değişti. Yeni bir önizleme oluşturun.",
       "title": "Fiili işe başlama tarihini düzelt",
       "total": "Kullanım öncesi toplam",
       "unknown": "Kaydedilmedi",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {Bekleyen iade yok} other {# bekleyen iade} }",
         "overdue": "{count, plural, other {# gecikmiş}}",
+        "returns": "Çalışan iadeleri",
+        "scope": "Bu çalışan için yetkilendirilmiş ekipman",
         "title": "Çalışan ekipmanı"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Ekipman genel bakışını aç",
       "overview": {
+        "asOf": "{date} ({timezone}) itibarıyla",
         "description": "Her ögenin kimde olduğu, nelerin iade edilmesi gerektiği ve kaydedilen her teslimat.",
-        "failed": "Ekipman yüklenemedi. Tekrar denemek için sayfayı yeniden yükleyin."
+        "failed": "Ekipman yüklenemedi. Tekrar denemek için sayfayı yeniden yükleyin.",
+        "scope": "Yetkilendirilmiş ekipman kayıtlarınız",
+        "summaryScope": "Kapsamınızdaki iadeler ve hazır olma durumu"
       },
       "personal": {
         "closed": "İade edildi ve kapatıldı",
@@ -1701,6 +1749,7 @@
         "failed": "Ekipmanlarınız yüklenemedi. Tekrar denemek için sayfayı yeniden yükleyin.",
         "keep": "Sizde kalacak",
         "quantity": "{count} zimmetlendi",
+        "remaining": "İade edilecek {count}",
         "title": "Ekipmanlarım",
         "toggleHistory": "Teslimat geçmişini göster",
         "toReturn": "İade edilecekler"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Ayarlara Geri Dön",
-        "tryAgain": "Tekrar Dene"
+        "backToSettings": "Ayarlara Geri Dön"
       },
       "description": "Ayarlar sayfası yüklenirken bir hata oluştu. Bu geçici bir sorun olabilir.",
-      "errorId": "Hata Kimliği: {digest}",
       "title": "Bir şeyler ters gitti"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "Atama güncellenemedi. Tekrar deneyin.",
       "noEmployees": "Çalışana özel ayar yok",
       "noTeams": "Ekibe özel ayar yok",
+      "organizationDefaultRemoved": "Kuruluş varsayılanı kaldırıldı",
       "orgDescription": "Geçersiz kılınmadığı sürece tüm çalışanlar için varsayılan ayar",
       "remove": "{target} öğesini kaldır",
+      "removedFor": "{name} için geçersiz kılma kaldırıldı",
       "valueFor": "{target} için {setting}"
+    },
+    "featureOff": {
+      "askAdmin": "Bunu etkinleştirmesi için bir kuruluş yöneticisine başvurun.",
+      "status": "Bu kuruluş için kapalı",
+      "turnOn": "Kuruluş ayarlarında etkinleştirin"
     },
     "group": {
       "account": "Hesap",
@@ -2221,12 +2275,21 @@
       "title": "Uygulama kontrol listesi"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "İşleme başlatılıyor…"
+      },
       "csv": {
         "acceptSelected": "Seçilen geçerli satırları kabul et",
         "applyMapping": "Eşlemeyi uygula",
         "chooseSource": "Bir kaynak değer seçin",
         "chooseTarget": "Mevcut bir kayıt seçin",
         "commit": "Kabul edilen satırları işle",
+        "commitConfirm": {
+          "confirm": "Satırları içe aktar",
+          "description": "İçe aktarma; eşlenen çalışanlar için, satırların içerdiği araç ayrıntılarıyla birlikte tamamlanmış iş oluşturur. Arka planda çalışır. Mevcut işle çakışan satırlar içe aktarılmaz: bir içe aktarma işlemi asla mevcut işin üzerine yazmaz.",
+          "irreversible": "İçe aktarma işlemi geri alınamaz. İçe aktarılan işi daha sonra değiştirmek için zaman takibinde düzeltin.",
+          "title": "{count, plural, other {# kabul edilen satır içe aktarılsın mı?} }"
+        },
         "committing": "Kabul edilen satırlar içe aktarılıyor…",
         "description": "Her satıra tamamlanmış bir çalışma dönemi aktarın. Molaları satırlar arasındaki boşluklar olarak gösterin. Siz inceleyip kabul edene kadar hiçbir şey kaydedilmez.",
         "download": "CSV şablonunu indir",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "Clockodo'da faturalandırılabilir ancak Clockodo projesi bir Z8 projesiyle eşleştirilmemiş."
         },
         "commitAccepted": "Kabul edilen satırları kaydet",
+        "commitConfirm": {
+          "confirm": "Satırları işle",
+          "description": "İşleme; kabul edilen satırların tanımladığı zaman kayıtları, devamsızlıklar, çalışanlar, müşteriler veya ayarlar gibi kayıtları bu kuruluşta oluşturur veya seçtiğiniz yerlere bağlar. Arka planda çalışır. Reddedilen satırlar içe aktarılmaz.",
+          "irreversible": "İçe aktarma işlemi geri alınamaz. İşlenen kayıtları daha sonra değiştirmek için yönetildikleri yerde düzenleyin.",
+          "title": "{count, plural, other {# kabul edilen satır işlensin mi?} }"
+        },
         "commitFailed": "İçe aktarma kaydı başlatılamadı",
         "commitQueued": "{count} kabul edilen satır kayıt için sıraya alındı",
         "committing": "Kaydediliyor...",
@@ -2393,6 +2462,7 @@
         },
         "title": "İçe Aktarma İncelemesi"
       },
+      "sourceTabs": "İçe aktarma kaynağı",
       "supportedSources": "CSV dosyalarından iş içe aktarın veya Clockodo ve Clockin gibi desteklenen sağlayıcıları bağlayın.",
       "title": "Veri İçe Aktar"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Yeni kod oluştur",
       "listDescription": "Her kiosk tek bir konuma aittir. Cihazda kiosk sayfasını açıp eşleştirme kodunu girerek bir cihazı eşleştirin.",
-      "listTitle": "Kiosklar",
       "loadFailed": "Kiosklar yüklenemedi.",
       "neverSeen": "Hiçbir zaman",
       "nfcFobReaderOn": "NFC anahtarlık okuyucu açık",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Bu konum için bir yönetici olarak çalışan atayın",
       "assignEmployeeToSubarea": "Alt Alana Çalışan Ata",
       "assignEmployeeToSubareaDescription": "{subareaName} için yönetici olarak bir çalışan atayın",
+      "assignmentRemovedFrom": "{name}, {place} konumundan kaldırıldı",
+      "assignmentRestored": "{name} geri yüklendi",
+      "assignmentRestoreFailed": "Atama geri yüklenemedi",
       "backToList": "Konumlara Geri Dön",
       "create": "Konum Oluştur",
       "created": "Konum oluşturuldu",
@@ -2598,10 +2670,14 @@
       "deleted": "Konum silindi",
       "deleteDescription": "Bu konumu silmek istediğinizden emin misiniz? Bu işlem tüm alt alanları ve çalışan atamalarını da silecektir.",
       "deleteFailed": "Konum silinemedi",
+      "deleteNamedTitle": "{name} konumu silinsin mi?",
       "deleteSubareaDescription": "Bu alt alanı silmek istediğinizden emin misiniz? Bu işlem tüm çalışan atamalarını da kaldıracaktır.",
+      "deleteSubareaNamedTitle": "{name} alt alanı silinsin mi?",
       "deleteSubareaTitle": "Alt Alanı Sil",
       "deleteTitle": "Konumu Sil",
       "description": "Kuruluş konumlarını ve alt alanlarını yönetin",
+      "detailLoadFailed": "Bu konum yüklenemedi",
+      "detailLoadFailedDescription": "Silinmiş olabilir veya bağlantı kurulamadı. Tekrar deneyin ya da konum listesine geri dönün.",
       "details": "Konum Detayları",
       "dialog": {
         "create": "Konum Oluştur",
@@ -2614,7 +2690,6 @@
       "employee": "Çalışan",
       "employeeAssigned": "Çalışan atandı",
       "employeeAssignFailed": "Çalışan atanamadı",
-      "employeeRemoved": "Çalışan kaldırıldı",
       "employeeRemoveFailed": "Çalışan kaldırılamadı",
       "field": {
         "active": "Aktif",
@@ -2635,7 +2710,10 @@
         "subareaName": "İsim",
         "subareaNamePlaceholder": "ör. Kasa, Depo, Bistro"
       },
+      "loadFailed": "Konumlar yüklenemedi",
+      "loadFailedDescription": "Bağlantınızı kontrol edin ve tekrar deneyin.",
       "name": "İsim",
+      "nameRequired": "Ad gereklidir",
       "noAvailableEmployees": "Tüm çalışanlar zaten bu konuma atanmış",
       "noAvailableEmployeesSubarea": "Tüm çalışanlar zaten bu alt alana atanmış",
       "noLocations": "Henüz konum yok",
@@ -2671,6 +2749,9 @@
       "updated": "Konum güncellendi",
       "updateFailed": "Konum güncellenemedi"
     },
+    "mobileNav": {
+      "open": "Ayarlar menüsü"
+    },
     "myData": {
       "aboutDownload": "Oturum açmış durumdayken buradan indirin. Dosyalar 7 gün sonra silinir.",
       "aboutEquipment": "Geri kazanımlar ayrı olarak kaydedilmek üzere saklanan ekipman atamalarını, durumları, notları, düzeltmeleri, fiziksel teslim almaları ve kayıp ya da feragat edilen sonuçları içerir.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "Bu kuruluşun sizin hakkınızda tuttuğu her şeyi bir açıklamayla birlikte JSON ve CSV dosyaları olarak içeren bir ZIP dosyası. Yalnızca bu kuruluşu kapsar.",
       "exportTitle": "Kişisel veri dışa aktarımı",
       "listLabel": "Dışa aktarmalarınız",
+      "loadFailed": "Veri dışa aktarmalarınız yüklenemedi. Tekrar deneyin.",
       "noEmployeeRecord": "Bu kuruluşta çalışan kaydınız bulunmuyor. Kuruluşun hakkınızda tuttuğu kişisel verilerin bir kopyasını almak için kuruluş yöneticileriyle iletişime geçin.",
+      "noExports": "Henüz bir dışa aktarma talebinde bulunmadınız. Verilerinizin bir kopyasını indirmek için bir talep oluşturun.",
       "refusalDailyLimit": "Verileriniz için her 24 saatte bir dışa aktarma talebinde bulunabilirsiniz. Lütfen daha sonra tekrar deneyin.",
       "refusalInProgress": "Verilerinizin dışa aktarımı zaten hazırlanıyor. Hazır olduğunda bilgilendirileceksiniz.",
       "refusalStorage": "Bu kuruluş için henüz dosya depolama alanı ayarlanmamış. Lütfen yöneticileriyle iletişime geçin.",
@@ -2697,7 +2780,14 @@
       "title": "Verilerim",
       "unavailable": "Bu kuruluştaki hesabınız için verileriniz mevcut değil."
     },
+    "nav": {
+      "disabledEntry": "{title} (devre dışı)",
+      "label": "Ayarlar navigasyonu"
+    },
     "navigation": {
+      "approval": {
+        "title": "Onay"
+      },
       "audit": {
         "activity": "Etkinlik",
         "description": "Etkinliği inceleyin ve imzalı denetim dışa aktarımlarını yapılandırın",
@@ -2757,7 +2847,8 @@
       "description": "Nasıl ve ne zaman bildirim almak istediğinizi seçin",
       "digestTime": "Özet zamanı",
       "discord": {
-        "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın."
+        "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın.",
+        "setupInstructions": "Discord'u bu sayfadan bağlama henüz kullanılamıyor. Bağlantı için Discord uygulamanızın bot belirteci, uygulama kimliği ve genel anahtarı gereklidir."
       },
       "escalations": "Yükseltmeler",
       "escalationsDescription": "Yanıtlanmayan onay isteklerini yapılandırılan zaman aşımından sonra yükselt.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "{channelName} bildirim ayarları kaydedilemedi",
       "saveSettings": "Ayarları Kaydet",
       "slack": {
+        "connect": "Slack'i bağla",
+        "connectFailed": "Slack bağlantısı başlatılamadı. Tekrar deneyin.",
+        "connectUnavailable": "Slack bu Z8 kurulumunda kullanılamıyor.",
         "description": "Kuruluşunuz için Slack bildirimlerini yapılandırın."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Bilinmeyen durum"
       },
       "teams": {
-        "description": "Kuruluşunuz için Microsoft Teams bildirimlerini yapılandırın."
+        "description": "Kuruluşunuz için Microsoft Teams bildirimlerini yapılandırın.",
+        "setupInstructions": "Microsoft Teams'i bağlamak için Z8 uygulamasını Microsoft 365 kiracınıza ekleyin. Z8 botu daha sonra bir kuruluş yöneticisinin kiracıyı bu kuruluşa bağlamak için açacağı bir kurulum bağlantısı gönderir."
       },
       "timeout": "Zaman aşımı",
+      "timeoutInvalid": "1 ile 168 arasında tam sayı olarak bir saat girin.",
       "timezone": "Zaman dilimi",
-      "timezonePlaceholder": "Europe/Berlin…",
       "title": "Bildirim Ayarları"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "Yapılandırılmış parola anahtarı yok",
       "emptyDescription": "Parolasız kimlik doğrulamayı etkinleştirmek için bir parola anahtarı ekleyin",
       "loadError": "Parola anahtarları yüklenemedi",
+      "loading": "Geçiş anahtarları yükleniyor",
       "title": "Parola Anahtarları",
       "unnamed": "İsimsiz Parola Anahtarı"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Bir bordro sorumlusu seçin ve herkesin erişimine mi yoksa belirli bir kapsama mı sahip olacağını tanımlayın.",
       "editTitle": "Bordro sorumlusunu düzenle",
       "employees": "Çalışanlar",
+      "loading": "Bordro sorumlusu ayarları yükleniyor",
       "noGrants": "Henüz hiçbir bordro sorumlusu eklenmedi.",
       "noScope": "Bordro kapsamı atanmadı",
       "noTeams": "Kullanılabilir ekip yok",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "Atama kaydedilmedi",
-      "assignmentRemoved": "Atama kaldırıldı",
       "assignmentRemoveFailed": "Atama kaldırılmadı",
       "assignmentSaved": "Atama kaydedildi",
       "assignmentsDescription": "En belirgin atama geçerli olur: Bir çalışanın kendi ataması birincil ekibininkinden, bir ekibinki ise tüm kuruluşunkinden önceliklidir. Bir ekibi veya çalışanı hariç tutmak için “kapalı”yı kullanın.",
@@ -2883,6 +2979,7 @@
       "description": "Çalışanların rızasıyla, kendi zaman kaydı etkinlikleriyle birlikte konumları kaydedin",
       "enabled": "Konumları yakala",
       "enabledDescription": "Bunu kapatmak, herkes için yakalamayı durdurur. Kaydedilen konumlar silinme tarihlerine kadar kalır.",
+      "loadFailed": "Konum yakalama ayarları yüklenemedi",
       "noNotice": "Henüz bir bildirim yayımlanmadı. Bir amaç beyanı kaydetmek, sürüm 1'i yayımlar.",
       "noticeDescription": "Çalışanların kabul ettiği koşullar: Z8'in sabit metni ve sizin amaç beyanınız. Amacı düzenlemek veya konumları daha uzun süre saklamak yeni bir sürüm yayımlar; saklama süresini kısaltmak ise yayımlamaz.",
       "noticeTitle": "Konum bildirimi",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Kaydedilen konumlarınız başka birine her gösterildiğinde burada listelenir.",
       "accessLogEmpty": "Konumlarınız başka hiç kimseye gösterilmedi.",
       "accessLogExport": "Veri dışa aktarma",
+      "accessLogLoadFailed": "Konumlarınızı kimlerin gördüğünü gösteren liste yüklenemedi. Tekrar denemek için sayfayı yeniden yükleyin.",
       "accessLogRemovedWorkPeriod": "Artık mevcut olmayan bir çalışma dönemi",
       "accessLogTitle": "Konumlarınızı kimler gördü",
       "accessLogWorkPeriod": "{date} tarihindeki çalışma dönemi",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "Henüz karar vermediniz.",
       "consentWithdrawn": "{date} tarihinde onayınızı geri çektiniz.",
       "description": "Konumunuzun giriş-çıkış hareketlerinizle kaydedilip kaydedilmeyeceği ve onayınız",
+      "loadFailed": "Konum damgası ayarlarınız yüklenemedi.",
       "noNotice": "Kuruluşunuz bir konum bildirimi yayınlamadı.",
       "noticeDescription": "Kabul ettiğiniz koşullar bunlardır. Amaç değiştiğinde veya konumlar daha uzun süre saklandığında yeni bir sürüm yayınlanır.",
       "noticeTitle": "Konum bildirimi",
@@ -2954,6 +3053,7 @@
       "firstName": "Ad",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Seçimi temizle",
         "female": "Kadın",
         "label": "Cinsiyet",
         "male": "Erkek",
@@ -2966,6 +3066,7 @@
       "lastName": "Soyad",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Profil yüklenemedi",
+      "loadFailedDetail": "Profiliniz yüklenemedi, bu nedenle şu anda düzenlenemiyor. Tekrar deneyin.",
       "personalInformation": "Kişisel Bilgiler",
       "pronouns": "Zamirler",
       "pronouns.custom": "Özel zamirler",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Profil resmi yükle"
     },
     "projects": {
+      "budgetUsed": "Kullanılan bütçe",
       "column": {
+        "actions": "İşlemler",
         "budget": "Bütçe",
         "customer": "Müşteri",
         "deadline": "Teslim Tarihi",
@@ -3002,6 +3105,12 @@
       "created": "Proje oluşturuldu",
       "createFailed": "Proje oluşturulamadı",
       "customerDeleted": "{name} (silindi)",
+      "deadline": {
+        "overdue": "{count, plural, other {# gün gecikti} }",
+        "remaining": "{count, plural, other {# gün kaldı} }",
+        "today": "Son teslim tarihi bugün",
+        "tomorrow": "Son teslim tarihi yarın"
+      },
       "description": "Projeleri, bütçeleri, teslim tarihlerini ve zaman atamalarını yönetin",
       "dialog": {
         "create": "Proje Oluştur",
@@ -3011,6 +3120,8 @@
         "editTitle": "Projeyi Düzenle",
         "save": "Değişiklikleri Kaydet"
       },
+      "edit": "Projeyi düzenle",
+      "editAction": "{name} düzenle",
       "empty": {
         "description": "Zaman takibine başlamak için ilk projenizi oluşturun.",
         "title": "Henüz proje yok"
@@ -3061,6 +3172,7 @@
         "description": "Toplam {count} proje",
         "title": "Tüm Projeler"
       },
+      "loadFailed": "Projeler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
       "members": {
         "addManager": "Proje yöneticisi ekle",
         "assignEmployee": "Çalışan ata",
@@ -3081,7 +3193,6 @@
         "noTeams": "Atanan ekip yok",
         "remove": "{name} kaldır",
         "removed": "{name} kaldırıldı",
-        "removeFailed": "{name} kaldırılamadı",
         "selectEmployee": "Bir çalışan seçin",
         "selectTeam": "Bir ekip seçin",
         "teamAssigned": "Ekip atandı",
@@ -3099,6 +3210,13 @@
         "saved": "{name} şablonu kaydedildi",
         "submit": "Şablon olarak kaydet",
         "title": "Şablon olarak kaydet"
+      },
+      "status": {
+        "active": "Etkin",
+        "archived": "Arşivlendi",
+        "completed": "Tamamlandı",
+        "paused": "Duraklatıldı",
+        "planned": "Planlandı"
       },
       "tabs": {
         "projects": "Projeler",
@@ -3118,6 +3236,16 @@
         "edit": "{name} öğesini düzenle",
         "editAction": "{name} öğesini düzenle",
         "empty": "Henüz görev yok. Görevler, kişilerin projede zamanlarını neye harcadıklarını belirtmelerini sağlar.",
+        "errors": {
+          "booked": "Bu göreve zaman kaydedildiğinden silinemez.",
+          "descriptionTooLong": "Görev açıklaması çok uzun.",
+          "duplicateName": "Bu projede bu ada sahip bir görev zaten var.",
+          "estimateInvalid": "Tahmini süreyi pozitif bir saat sayısı olarak girin.",
+          "nameRequired": "Bir görev adı girin.",
+          "nameTooLong": "Görev adı çok uzun.",
+          "notAllowed": "Bu projenin görevlerini yönetme yetkiniz yok.",
+          "notFound": "Bu görev artık mevcut değil."
+        },
         "estimate": "Tahmin: {hours} sa",
         "field": {
           "description": "Açıklama",
@@ -3167,7 +3295,6 @@
         "delete": "Sil",
         "deleteAction": "{name} öğesini sil",
         "deleted": "{name} silindi",
-        "deleteFailed": "{name} silinemedi",
         "deleteQuestion": "Bu şablon silinsin mi?",
         "description": "Yeni projeler için taslaklar: görevler, bütçe, son teslim tarihi, yöneticiler ve üyeler.",
         "dialogDescription": "Bu şablondan oluşturulan yeni projeler, içeriğini bir kez kopyalar.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, other {# şablon} }",
         "listTitle": "Tüm şablonlar",
+        "loadFailed": "Proje şablonları yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
         "managers": {
           "empty": "Proje yöneticisi yok",
           "picker": "Eklenecek proje yöneticisi",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobil",
         "tablet": "Tablet"
       },
+      "loadFailed": "Aktif oturumlarınız yüklenemedi. Tekrar deneyin.",
       "none": "Aktif oturum yok",
       "othersRevoked": "Diğer tüm oturumlar başarıyla sonlandırıldı",
       "revoke": "Sonlandır",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Diğer Tüm Oturumları Sonlandır",
       "revoked": "Oturum başarıyla sonlandırıldı",
       "revokeFailed": "Oturum sonlandırılamadı",
+      "revokeOthersDescription": "{count, plural, other {Bu işlem diğer # cihazda oturumunuzu kapatır. Buradaki oturumunuz açık kalır.} }",
+      "revokeOthersTitle": "Diğer tüm oturumlar sonlandırılsın mı?",
+      "revokeSession": "Oturumu sonlandır: {session}",
+      "revokeSessionDescription": "Bu işlem {session} oturumunu kapatır. Oturumu kullanan herkesin tekrar giriş yapması gerekir.",
+      "revokeSessionTitle": "Bu oturum sonlandırılsın mı?",
       "revoking": "Sonlandırılıyor…",
       "securityTip": "Tanımadığınız bir oturum görürseniz, hemen iptal edin ve şifrenizi değiştirin.",
       "signedIn": "Oturum açıldı",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Bağlan",
       "connected": "Bağlandı",
-      "connectedAs": "{accountId} olarak bağlandı",
+      "connectedOn": "{date} tarihinde bağlandı",
       "connectFailed": "Hesap bağlanamadı",
       "connecting": "Bağlanıyor…",
       "connectProvider": "{provider} hesabınızı bağlayın",
@@ -3364,8 +3498,9 @@
       "disconnect": "Bağlantıyı kes",
       "disconnectDescription": "Bu işlem sosyal medya hesabınızla olan bağlantıyı kaldıracaktır. İstediğiniz zaman tekrar bağlayabilirsiniz.",
       "disconnectFailed": "Hesap bağlantısı kesilemedi",
+      "disconnectProviderTitle": "{provider} bağlantısı kesilsin mi?",
       "disconnectSuccess": "Hesap bağlantısı başarıyla kesildi",
-      "disconnectTitle": "Hesap Bağlantısı Kesilsin mi?",
+      "linkedForSignIn": "Giriş için bağlandı",
       "loadFailed": "Bağlı hesaplar yüklenemedi",
       "title": "Sosyal Medya Hesapları",
       "unexpectedError": "Beklenmedik bir hata oluştu"
@@ -3391,6 +3526,7 @@
       "description": "Örneğinizle ilgili istatistikleri ve metrikleri görüntüleyin",
       "lastUpdated": "Son güncelleme",
       "loadError": "İstatistikler yüklenemedi",
+      "loadErrorRetry": "Tekrar denemek için sayfayı yeniden yükleyin.",
       "managerDescription": "Yönettiğiniz ekipler için salt okunur analizleri inceleyin.",
       "sections": {
         "absenceBreakdown": "İzin Dağılımı",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Bitiş Tarihi",
       "legacy": {
         "description": "Yalnızca referans amacıyla saklanmaktadır. Bu kayıtlar masrafları hesaplamak için hiçbir zaman kullanılmamıştır ve artık düzenlenemez; yukarıda tarihli kilometre oranlarını ayarlayın.",
+        "loadFailed": "Önceki politika kayıtları yüklenemedi",
         "title": "Önceki politika kayıtları"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Arşivlendi",
       "archiveInstead": "Bunun yerine arşivle",
       "archiveNamed": "{name} öğesini arşivle",
+      "count": "{count, plural, other {# araç} }",
       "delete": "Sil",
       "deleteConfirm": "Aracı sil",
       "deleted": "Araç silindi",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Atanan bir ekibin her üyesine ilk olarak bu araç önerilir."
       },
       "listDescription": "Arşivlenen araçlar artık seçilemez ancak kaydedildikleri işlerde kalmaya devam eder.",
-      "listTitle": "Araçlar",
       "loadFailed": "Araçlar yüklenemedi.",
       "logbookNotice": {
         "description": "Z8, iş sırasında hangi aracın kullanıldığını ve kilometre sayacı değerlerini kaydeder. Vergiye uygun bir seyir defteri (Fahrtenbuch) değildir: sayaç değerleri düzeltilebilir, seyahat amacı veya iş ortağı kaydedilmez.",
         "title": "Vergi seyir defteri değildir"
       },
+      "noActive": "Aktif araç yok. Bir araç ekleyin veya arşivlenmiş bir aracı geri yükleyin.",
       "noDrivers": "Atanan sürücü yok",
       "photos": {
         "accessChanged": "Erişiminiz değişti. İzinlerinizi kontrol etmek için araç ayarlarını tekrar açın.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} işe kaydedildi"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Atama kaldırıldı",
       "assignmentSaved": "Atama kaydedildi",
       "assignmentsDescription": "Sorulan çalışanlar mesai kaydı yaparken araç kullanımını kaydedebilir. Araç kullanımı beklenen çalışanlara her seferinde sorulur ve ayrıntılar tamamlanana kadar çalışmaları işaretlenir. Mesai kaydı yapması hiçbir zaman engellenmez. En belirgin atama geçerli olur: bir çalışanın kendi ataması birincil ekibininkine, bir ekibinki ise tüm kuruluşunkine göre önceliklidir.",
       "enabled": "Araç kullanımını kaydet",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Atamanın kimin için geçerli olduğunu seçin.",
         "teamNotFound": "Bu ekip artık mevcut değil."
       },
-      "loadFailed": "Araç kullanımı ayarları yüklenemedi. Sayfayı yeniden yükleyin.",
+      "loadFailedRetry": "Araç kullanım ayarları yüklenemedi.",
       "mode": "Mod",
       "modeAsked": "Sorulur",
       "modeExpected": "Araç kullanımı beklenir",
@@ -3958,6 +4095,13 @@
       "description": "Çalışma oturumlarınız sırasında su hatırlatıcılarını ve hidrasyon takibini yapılandırın",
       "glasses": "bardak",
       "increaseDailyGoal": "Günlük hedefi artır",
+      "loadFailed": "Su hatırlatıcı ayarlarınız yüklenemedi. Tekrar deneyin.",
+      "presets": {
+        "active": "Aktif",
+        "custom": "Özel",
+        "light": "Hafif",
+        "moderate": "Orta"
+      },
       "reminderFrequency": "Hatırlatıcı Sıklığı",
       "saved": "Sağlık ayarları kaydedildi",
       "saveError": "Sağlık ayarları kaydedilemedi",
@@ -4095,6 +4239,9 @@
         "hidden": "Gizli"
       },
       "absenceVisibility": "Devamsızlık görünürlüğü",
+      "accessSectionTitle": "Dışa aktarımlara erişin ve inceleyin",
+      "addLocation": "Konum ekle",
+      "addTeam": "Ekip ekle",
       "description": "Gizlilik odaklı iş konseyi erişimini ve inceleme dışa aktarımlarını yapılandırın",
       "exportEnabled": "İnceleme dışa aktarımlarını etkinleştir",
       "exportEnabledDescription": "Yetkili iş konseyi kullanıcılarının gizlilik filtresi uygulanmış inceleme paketleri oluşturmasına izin verin.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Kimlik görünürlüğü",
       "minimumThreshold": "Minimum toplama eşiği",
       "minimumThresholdDescription": "Yeniden tanımlama riskini azaltmak için bu boyutun altındaki gruplar gizlenir.",
+      "minimumThresholdInvalid": "En az 5 olan bir tam sayı girin",
+      "noLocationFound": "Konum bulunamadı",
+      "noLocationsAvailable": "Eklenecek başka konum yok",
+      "noTeamFound": "Ekip bulunamadı",
+      "noTeamsAvailable": "Eklenecek başka ekip yok",
+      "removeScopeItem": "{name} öğesini kaldır",
       "save": "Ayarları kaydet",
       "saved": "İş Konseyi ayarları kaydedildi",
       "saveError": "İş Konseyi ayarları kaydedilemedi",
+      "searchLocations": "Konum ara",
+      "searchTeams": "Ekip ara",
+      "selectedLocations": "Seçilen konumlar",
+      "selectedTeams": "Seçilen ekipler",
       "title": "İş Konseyi Modu",
-      "visibleLocationIds": "Görünür konum kimlikleri",
-      "visibleLocationIdsDescription": "İsteğe bağlı virgülle ayrılmış konum kimlikleri. Tüm konumları dahil etmek için boş bırakın.",
-      "visibleTeamIds": "Görünür ekip kimlikleri",
-      "visibleTeamIdsDescription": "İsteğe bağlı virgülle ayrılmış ekip kimlikleri. Tüm ekipleri dahil etmek için boş bırakın."
+      "unknownLocation": "Bilinmeyen konum ({shortId})",
+      "unknownTeam": "Bilinmeyen ekip ({shortId})",
+      "visibleLocations": "Görünür konumlar",
+      "visibleLocationsDescription": "Tüm konumları dahil etmek için boş bırakın.",
+      "visibleTeams": "Görünür ekipler",
+      "visibleTeamsDescription": "Tüm ekipleri dahil etmek için boş bırakın."
     }
   }
 }

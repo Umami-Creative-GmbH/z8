@@ -120,9 +120,12 @@ describe("KeyManagement", () => {
 		})[1];
 		fireEvent.click(rotateConfirm);
 
-		await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(3));
+		// A failed rotation stays inside its confirmation, which can be retried.
+		expect((await screen.findByRole("alert")).textContent).toBe(
+			"An unexpected error occurred",
+		);
 		expect(rotateConfirm).toHaveProperty("disabled", false);
-		expect(toast.error).toHaveBeenCalledTimes(3);
+		expect(toast.error).toHaveBeenCalledTimes(2);
 		expect(refreshMock).not.toHaveBeenCalled();
 		expect(console.error).toHaveBeenCalledWith(
 			"Export public key error:",

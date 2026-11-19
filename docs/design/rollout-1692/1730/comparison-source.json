@@ -1,0 +1,36 @@
+{
+  "historical": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "qualification": "Only historical page/overview/bulk consumers and their heading opt-in are replaced; current app/shared foundations/dependencies remain.",
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "backupSha256": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+      "historicalSha256": "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02",
+      "historicalCanonicalLfSha256": "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02",
+      "restoredSha256": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "backupSha256": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+      "historicalSha256": "9ca4700d4069fc79e0b2eb15d11c9be7961435b6d7825833e1eab489bad86a40",
+      "historicalCanonicalLfSha256": "9ca4700d4069fc79e0b2eb15d11c9be7961435b6d7825833e1eab489bad86a40",
+      "restoredSha256": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "backupSha256": "76ac516290811cf8618f7cde82d63749558152b859bec86f69fc296d0440d0e8",
+      "historicalSha256": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284",
+      "historicalCanonicalLfSha256": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284",
+      "restoredSha256": "76ac516290811cf8618f7cde82d63749558152b859bec86f69fc296d0440d0e8"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "backupSha256": "03a3e6003d42e2f588981e94e09701cb3452333592543c4eacd37712e5bad561",
+      "historicalSha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c",
+      "historicalCanonicalLfSha256": "44b3f3f82719e29c62715d62aa65e8bbf87565634c8188017e46f6cfcfe97ffd",
+      "restoredSha256": "03a3e6003d42e2f588981e94e09701cb3452333592543c4eacd37712e5bad561"
+    }
+  ],
+  "restored": true
+}

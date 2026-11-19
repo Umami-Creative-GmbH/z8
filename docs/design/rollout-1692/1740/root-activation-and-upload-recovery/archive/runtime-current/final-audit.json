@@ -1,0 +1,53 @@
+{
+  "head": "3f7759880ea2b77c199507b8967a73915c48ec91",
+  "branch": "review/1740-availability-v3",
+  "trackedClean": true,
+  "bridgeAbsent": true,
+  "verifiedCommit1740": null,
+  "ancestry": [
+    {
+      "commit": "e7089f663f6f7b388472794f211fcb6e49e7911f",
+      "ancestor": true
+    },
+    {
+      "commit": "6757981b6844a2e497c055a1fa5cebd021987675",
+      "ancestor": true
+    }
+  ],
+  "rootReceipts": [
+    {
+      "path": "correction-summary.json",
+      "sha256": "3526cc4e954982ce092f4d9b58409d9cb86fb6c4ee9c4003a8e12e968e93ca70",
+      "inspection": "safe receipt inspected; source compared independently; root PG run not repeated"
+    },
+    {
+      "path": "final-intake.json",
+      "sha256": "3071e135b5310c6bf5c33749ec6d0165f3822c2daec165c110ef2b2d74a7b1e2",
+      "inspection": "safe receipt inspected; source compared independently; root PG run not repeated"
+    },
+    {
+      "path": "merge-audit.json",
+      "sha256": "eaee8ff6a8256c2e8475a077dcb30d461b2e17d179f0f250e1b2011c134bb2a1",
+      "inspection": "safe receipt inspected; source compared independently; root PG run not repeated"
+    },
+    {
+      "path": "postgres-cleanup-receipt.json",
+      "sha256": "3e4f4a0d9bdfc900abaf953b012ae521941d079267c48b566a4970f32c5eab04",
+      "inspection": "safe receipt inspected; source compared independently; root PG run not repeated"
+    },
+    {
+      "path": "postgres-absence.json",
+      "sha256": "a09913d870c09532da584ff4926f6bcb554e6e89ad692e53a6d38ef0834b0ab4",
+      "inspection": "safe receipt inspected; source compared independently; root PG run not repeated"
+    }
+  ],
+  "rootContainerAbsence": {
+    "name": "z8_approval_workflow_repository_test_1794907005659449700_24522",
+    "freshExactNameReadOnlyQueryPassed": true
+  },
+  "fixtureBeforeSha256": "5ca3010af6c506a354195115e4099e42da8443ee3f40814cb0995dd32a735470",
+  "fixtureFinalSha256": "6ac1469cff43a817c75cf0de561a6f1c6706f74664c128f4a186f5abeae125f0",
+  "ownResourcesZero": true,
+  "rootAdvancedMetadata": "7cf9871f8c782deb9ad279c9e2dfb5ed8e6fa60c explicitly not merged; review remains frozen",
+  "preservation": "Exact unchanged candidate Git tree retained; inherited 61 anchors/445 proof files/172 templates/19 aliases not recounted as new acceptance"
+}

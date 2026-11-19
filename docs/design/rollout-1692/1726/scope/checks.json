@@ -1,0 +1,77 @@
+{
+  "checks": [
+    {
+      "revokedCommitRefused": true,
+      "previewRetained": true
+    },
+    {
+      "inflightPreviewDispatchUsesCurrentScope": true,
+      "settledBRecord": "B-R043",
+      "recordCount": 1
+    },
+    {
+      "returnARecords": 3,
+      "draftDiscarded": true
+    },
+    {
+      "role": "small-manager",
+      "directoryRefused": true
+    },
+    {
+      "role": "small-restricted",
+      "directoryRefused": true
+    }
+  ],
+  "errors": [],
+  "source": {
+    "head": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+    "baseline": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+    "scope": "Exact four consumer/heading files over current integration infrastructure, not a second complete historical application",
+    "files": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx",
+        "before": {
+          "sha256": "22b52e2cfa5e5d5d3db937508a12a05195dac1c9fbef14a88adad796eeb4a9db",
+          "blob": "d4c96e57be4cc0662c7ca567298c4e58669bd663"
+        },
+        "after": {
+          "sha256": "080cdb186c00c6c01d01d5659712f026639e4a4c03d71c3005ebcef18add877b",
+          "blob": "f0a08fc79ed497392f388383b0b68d0b035305cf"
+        }
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "before": {
+          "sha256": "a4dfabb3ca759bf9b98c14702b1c966d144ab817859f45f05395700a618390ad",
+          "blob": "6e6e81fab5bdcabfb2de35709a8a66ca4288a9a4"
+        },
+        "after": {
+          "sha256": "109761a664873985d24e12465ae3d7094ad213df9ccbbf8418100cf981838c28",
+          "blob": "65981ed793f9a1c17e6bcfc1e68f68e8f1e83d6c"
+        }
+      },
+      {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "before": {
+          "sha256": "c235d98ac2849d57394d9c361b16bab6785f40b6d61b05ec8b8ce58c3edaa28b",
+          "blob": "2dcb7f326a27b805762f1b6211f2da2926fd1851"
+        },
+        "after": {
+          "sha256": "924205303947a744d5d80798302bd392e069bdb9699e6c52abad121ee759e174",
+          "blob": "e1fc208d48ac8605cc0d396ea7f00f320783912f"
+        }
+      },
+      {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
+        "before": {
+          "sha256": "dfe1fe917ae89697545ffe3440a6c6968f1139adc85a60936712314d54254d43",
+          "blob": "87bab929f2a7432559d2fdb9dd8f02bbdfb9f3cd"
+        },
+        "after": {
+          "sha256": "f37fcc6a5d0f01d11179b7fc66a5320eb0ab07934c5e7a60f1fac71472810714",
+          "blob": "fd8aa669cf4c07ea5f815195c5b567ff237d20c7"
+        }
+      }
+    ]
+  }
+}

@@ -96,11 +96,12 @@
         "year": "Godina"
       },
       "history": {
-        "description": "Pregledajte i preuzmite prethodne DATEV izvoze",
+        "descriptionAllFormats": "Pregledajte i preuzmite prethodne izvoze obračuna plata",
         "download": "Preuzmi izvoz",
         "downloadError": "Nije uspjelo dobavljanje URL-a za preuzimanje",
         "employees": "zaposlenici",
         "noExports": "Još nema izvoza",
+        "noExportsHint": "Pokrenite izvoz obračuna plata na kartici Izvoz. Završeni izvozi će se pojaviti ovdje za preuzimanje.",
         "payrollRun": "{count, plural, one {Obračun plata: # izvještaj o troškovima} other {Obračun plata: # izvještaja o troškovima}}",
         "periods": "periodi",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Obrada u toku"
         },
         "table": {
+          "actions": "Radnje",
           "createdAt": "Kreirano",
           "dateRange": "Raspon datuma",
           "records": "Zapisi",
@@ -151,7 +153,8 @@
         "configureFirst": "Molimo konfigurišite najmanje jedan format izvoza obračuna plata (DATEV, Lexware ili Sage) prije postavljanja mapiranja.",
         "deleteDescription": "Jeste li sigurni da želite obrisati ovo mapiranje vrste plaće?",
         "deleteError": "Brisanje mapiranja nije uspjelo",
-        "deleteMapping": "Obriši mapiranje",
+        "deleteMappingNamed": "Izbriši mapiranje za {name}",
+        "deleteNamedDescription": "Izbrisati mapiranje vrste plate za \"{name}\"?",
         "deleteSuccess": "Mapiranje je obrisano",
         "deleteTitle": "Obriši mapiranje",
         "description": "Opis",
@@ -335,7 +338,8 @@
         "name": "Zaposlenik",
         "noNumber": "Nije postavljeno",
         "personnelIdentifier": "Identifikator osoblja",
-        "personnelNumber": "Kadrovski broj"
+        "personnelNumber": "Kadrovski broj",
+        "unnamed": "Neimenovani zaposlenik"
       },
       "checks": {
         "count": "Broj",
@@ -364,6 +368,13 @@
       },
       "description": "Provjerite je li obračunski period spreman prije izvoza podataka o radnom vremenu, odsustvima i platama.",
       "openPayrollExport": "Otvorite izvoz obračuna plata",
+      "period": {
+        "currentMonth": "Tekući mjesec",
+        "navLabel": "Obračunski period",
+        "previousMonth": "Prethodni mjesec",
+        "scope": "Obračunski period: {period} (UTC)",
+        "showMonth": "Prikaži {month}"
+      },
       "status": {
         "blocked": "Blokirano",
         "ready": "Spremno za obračun plata",

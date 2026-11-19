@@ -274,6 +274,7 @@
       "formatAccessCheck": "Behörighetskontroll för format",
       "nobodyEmployedInPeriod": "Ingen inom din lönebehörighet var anställd under denna period.",
       "noConfiguredTarget": "Inget konfigurerat mål för löneexport",
+      "notPayment": "Exporten förbereder löneunderlag. Den genomför ingen utbetalning.",
       "queued": "Löneexport har placerats i kö",
       "selectFormat": "Välj format",
       "target": "Mål för löneexport",
@@ -374,6 +375,7 @@
       "blockers": "Blockerare",
       "employees": "Anställda",
       "ready": "Klar",
+      "title": "Sammanfattning av löneberedskap",
       "workedHours": "Arbetade timmar"
     },
     "title": "Lön",
@@ -383,6 +385,7 @@
       "title": "Lön är tillfälligt otillgänglig"
     },
     "workBalances": {
+      "accessChanged": "Detta arbetssaldo är inte längre tillgängligt inom ditt löneomfång.",
       "back": "Arbetssaldon",
       "backToPayroll": "Lön",
       "description": "Registrera och makulera utbetalningar av övertid för de anställda som din lönebehörighet omfattar, inklusive anställda som har slutat.",
@@ -391,6 +394,13 @@
       "loading": "Läser in arbetssaldon",
       "loadingEmployee": "Läser in arbetssaldot",
       "open": "Arbetssaldon",
+      "openEmployee": "Öppna medarbetarsaldo",
+      "projectionUnavailable": "Saldoprognosen är inte tillgänglig. Justeringsposter finns kvar nedan.",
+      "refresh": "Uppdatera arbetssaldo",
+      "refreshing": "Uppdaterar arbetssaldo…",
+      "retry": "Försök hämta arbetssaldo igen",
+      "scopeChanged": "Läser in aktuellt löneomfång…",
+      "stale": "Kunde inte uppdatera. Tidigare inlästa poster visas; uppdatera innan du gör ändringar.",
       "title": "Arbetssaldon"
     }
   }

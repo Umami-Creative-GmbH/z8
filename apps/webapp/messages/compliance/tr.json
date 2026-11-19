@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Erişim kontrolleri, yalnızca halihazırda yakalanan hassas denetim günlüğü olaylarını özetler.",
         "auditEvidence": "Denetim kanıtı; canlı denetim dışa aktarma yapılandırmasını, denetim paketi isteklerini ve son doğrulama sonuçlarını kullanır.",
+        "title": "Kapsam",
         "workforceCompliance": "İş gücü uyumluluğu; son 7 gündeki çalışma politikası ihlallerini ve bekleyen istisna taleplerini kullanır."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Son yenileme: {time}"
+        "lastRefreshed": "Son yenileme: {time}",
+        "refreshMeaning": "Yenileme, kaydedilen sinyalleri yeniden yükler; bulguları yeni bir politika kapsamında yeniden değerlendirmez."
       },
       "links": {
         "inspectCompliance": "Uyumluluğu incele",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Uyumluluk Ayarlarını Aç",
         "reviewAuditExport": "Denetim dışa aktarımını incele"
       },
+      "loading": "Uyumluluk sinyalleri yükleniyor",
       "overview": "Uyumluluk genel bakışı",
       "recentEvents": {
         "empty": "Yakın zamanda kritik bir olay tespit edilmedi.",
-        "title": "Son Kritik Olaylar"
+        "partial": "Son olaylar kullanılabilir kaynaklarla sınırlıdır. Bazı sinyaller yüklenemedi.",
+        "title": "Son Kritik Olaylar",
+        "unavailable": "Sinyal kaynakları kullanılamadığı için son olaylar doğrulanamadı."
       },
+      "scope": "Aktif kuruluş",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Hassas kontrol değişikliklerinin incelenmesi gerekiyor",
             "healthy": "Yakın zamanda hiçbir hassas kontrol değişikliği kaydedilmedi",
             "warning": "Yakın zamanda kontrol değişiklikleri algılandı"
-          }
+          },
+          "title": "Erişim kontrolleri"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Denetim kanıtlarının dikkat gerektirdiği durumlar var",
             "healthy": "Denetim kanıtı sinyalleri sağlıklı görünüyor",
             "warning": "Denetim kanıtı yalnızca kısmen hazır"
-          }
+          },
+          "title": "Denetim kanıtı"
         },
+        "title": "Uyumluluk bölümleri",
         "unavailable": {
           "headline": "Sinyal geçici olarak kullanılamıyor"
         },
@@ -94,7 +103,8 @@
             "critical": "İş gücü politikası ihlallerinin incelenmesi gerekiyor",
             "healthy": "Yakın zamanda hiçbir iş gücü politikası sorunu algılanmadı",
             "warning": "İş gücü uyumluluğu sapma gösteriyor"
-          }
+          },
+          "title": "İş gücü uyumluluğu"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "İstisna Onaylandı",
       "approvedDescription": "Uyumluluk istisnası onaylandı.",
       "approveFailed": "Onaylanamadı",
+      "approveFor": "{name} için {type} istisnasını onayla",
+      "loadError": "Bekleyen istisna talepleri yüklenemedi.",
       "plannedDuration": "Planlanmış",
       "plannedDurationHelp": "Sınırın ötesinde ihtiyaç duyacağınız ek süreyi tahmin edin.",
       "reason": "İstisna Nedeni",
@@ -124,6 +136,7 @@
       "rejected": "İstisna Reddedildi",
       "rejectedDescription": "Uyumluluk istisnası reddedildi.",
       "rejectFailed": "Reddedilemedi",
+      "rejectFor": "{name} için {type} istisnasını reddet",
       "rejectionPlaceholder": "Bu istisnayı reddetme nedenini girin...",
       "rejectionReason": "Reddetme nedeni",
       "rejectTitle": "İstisna Talebini Reddet",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Yöneticiniz bilgilendirilecek ve talebinizi onaylayabilecek veya reddedebilecektir.",
       "requestTitle": "Uyumluluk İstisnası Talep Et",
       "submit": "Talebi Gönder",
-      "type": "İstisna Türü"
+      "type": "İstisna Türü",
+      "types": {
+        "overtimeDaily": "Günlük Fazla Mesai",
+        "overtimeMonthly": "Aylık Fazla Mesai",
+        "overtimeWeekly": "Haftalık Fazla Mesai",
+        "restPeriod": "Dinlenme Süresi"
+      }
     },
     "hasApprovedException": "Onaylanmış bir istisnanız var. Devam edebilirsiniz.",
     "moreAlerts": "daha fazla",

@@ -39,11 +39,13 @@
       "byCostCenter": "Po mjestu troška",
       "byManager": "Po menadžeru",
       "byTeam": "Po timu",
+      "chartValues": "Prikaži sedmične vrijednosti",
       "costCenter": "Troškovni centar",
       "currentOvertime": "Trenutni prekovremeni rad",
       "description": "Pratite sedmično smanjenje prekovremenog rada u svim timovima.",
       "errors": {
-        "loadData": "Učitavanje podataka o smanjenju prekovremenog rada nije uspjelo"
+        "loadData": "Učitavanje podataka o smanjenju prekovremenog rada nije uspjelo",
+        "retryDescription": "Podaci o prekovremenom radu nisu mogli biti učitani. Pokušajte ponovo za odabrani period i filtere."
       },
       "filters": {
         "allCostCenters": "Svi troškovni centri",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Grupe s poboljšanjem",
       "improvingGroupsDescription": "Grupe sa smanjenjem prekovremenog rada",
+      "loading": "Učitavanje podataka o prekovremenom radu",
       "manager": "Menadžer",
       "previousOvertime": "Prethodni prekovremeni rad",
       "previousPeriodDescription": "U poređenju s prethodnim periodom",
+      "refreshing": "Osvježavanje podataka o prekovremenom radu",
       "selectedRangeDescription": "Za odabrani raspon datuma i filtere",
       "title": "Smanjenje prekovremenog rada",
       "trendDirection": "Smjer trenda",
@@ -92,6 +96,10 @@
         "title": "Uska grla u odobravanju",
         "unavailable": "Nije uspjelo učitavanje uskih grla u odobravanju"
       },
+      "chartValues": "Prikaži vrijednosti grafikona",
+      "errors": {
+        "retryDescription": "Neki analitički podaci nisu mogli biti učitani. Prethodno učitane vrijednosti, ako su prikazane, mogu biti zastarjele."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Odobrenih od riješenih zahtjeva",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Učitavanje analitičkih podataka",
+      "refreshing": "Osvježavanje analitike…",
       "workHoursByTeam": {
         "description": "Ukupno evidentirani radni sati po timu",
         "title": "Radni sati po timu"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Učitavanje podataka o učinku tima nije uspjelo"
       },
+      "loading": "Učitavanje podataka o učinku tima",
       "onTrack": "Po planu",
+      "refreshFailed": "Osvježavanje nije uspjelo. Prikazuju se prethodno učitani podaci za ovaj period. Izvoz nije dostupan dok ponovni pokušaj ne uspije.",
+      "refreshing": "Osvježavanje podataka o učinku tima",
       "variance": {
         "description": "Odstupanje sati od očekivanih radnih sati",
         "empty": "Nema dostupnih podataka o odstupanju",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Dodijeljeno",
+      "allowanceMissing": "Kvota nije konfigurisana",
+      "allowanceSource": "Neki zaposlenici nemaju sačuvanu kvotu. Ukupni zbirovi koriste samo postojeće sačuvane kvote.",
       "balance": {
         "description": "Dani dodijeljeni, iskorišteni i preostali po zaposleniku",
         "title": "Stanje godišnjeg odmora"
       },
-      "daysRemaining": "Preostalo dana: {count}",
-      "daysTaken": "Iskorišteno dana: {count}",
+      "dayValue": "{count} dana",
+      "description": "Uporedite iskorištenost godišnjeg odmora i stanja zaposlenika za odabrani period organizacije.",
       "errors": {
-        "loadData": "Učitavanje podataka o trendovima godišnjih odmora nije uspjelo"
+        "loadData": "Učitavanje podataka o trendovima godišnjih odmora nije uspjelo",
+        "retryDescription": "Podaci o godišnjem odmoru nisu mogli biti učitani. Pokušajte ponovo za odabrani period."
       },
+      "loading": "Učitavanje podataka o godišnjem odmoru",
       "monthlyUsage": {
         "description": "Iskorišteni dani godišnjeg odmora po mjesecu",
         "empty": "Nema dostupnih podataka o mjesečnom korištenju",
         "title": "Mjesečno korištenje godišnjeg odmora"
       },
+      "monthlyValues": "Prikaži mjesečne vrijednosti",
       "peakMonths": {
         "description": "Mjeseci s najviše korištenja godišnjeg odmora",
         "empty": "Nema dostupnih podataka o vršnim mjesecima",
         "title": "Mjeseci s najviše godišnjih odmora"
       },
+      "refreshing": "Osvježavanje podataka o godišnjem odmoru",
       "remaining": "Preostalo",
       "taken": "Iskorišteno",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Nema dostupnih podataka o dnevnim satima",
         "title": "Dnevni radni sati"
       },
+      "dailyStatus": "Prikaži dnevni status",
+      "dailyValues": "Prikaži dnevne sate",
       "distribution": {
         "description": "Usporedba radnih sati zaposlenika (horizontalni grafikon)",
         "empty": "Nema dostupnih podataka o distribuciji",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Očekivani sati",
       "hoursPerWeekAbbreviation": "h/sed",
+      "loading": "Učitavanje analitičkih podataka o radnim satima",
+      "refreshFailed": "Osvježavanje nije uspjelo. Prikazuju se prethodno učitani podaci za ovaj period. Izvoz nije dostupan dok ponovni pokušaj ne uspije.",
+      "refreshing": "Osvježavanje analitičkih podataka o radnim satima",
       "variance": "Odstupanje",
       "varianceTrend": {
         "description": "Odstupanje sati od očekivanih radnih sati tokom vremena",
         "empty": "Nema dostupnih podataka o trendu",
-        "title": "Trend prekovremenih sati i manjka sati"
+        "title": "Trend prekovremenih sati i manjka sati",
+        "unavailable": "Dnevne vrijednosti prekovremenih sati i manjka sati nisu dostupne u ovom izvještaju. Zabilježeni dnevni status prikazan je ispod."
       }
     }
   }

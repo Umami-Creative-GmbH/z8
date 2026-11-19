@@ -1,0 +1,16 @@
+{
+  "verifiedCommit": null,
+  "indexedFiles": 69,
+  "totalArchiveFiles": 72,
+  "fileIndex": {
+    "path": "file-index.json",
+    "bytes": 12344,
+    "sha256": "d6bde2df1dfa7eca5c92792344b16de4b15295ada37049454911e16b0bdde426"
+  },
+  "sha256sums": {
+    "path": "SHA256SUMS.txt",
+    "bytes": 7540,
+    "sha256": "7aa77eab88d7a08e123ff9f33bf71b1fb263913aff3b25a992d0515703f6d574"
+  },
+  "externalFullInventory": "Private HANDOFF-publication.json binds all files including index/checksum/seal plus the full report; no circular self-hash."
+}

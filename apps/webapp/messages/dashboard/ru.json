@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Отсутствие",
-      "all-caught-up": "Все сделано!",
-      "approved-recently": "{count} {request} недавно одобрено",
       "by": "от {name}",
       "description": "Последние одобренные заявки",
       "description-count": "Последние {count} одобренных {request}",
@@ -123,11 +121,27 @@
       "title": "Недавно одобренные",
       "view-all": "Посмотреть все одобрения"
     },
+    "refresh": {
+      "activity": "Последняя активность",
+      "attention": "Обзор за сегодня",
+      "balanceRetry": "Обновите страницу, чтобы повторить попытку загрузки баланса.",
+      "balanceUnavailable": "Баланс недоступен",
+      "currentSession": "Текущая сессия",
+      "dayUnavailable": "Итог за сегодня недоступен. Обновите страницу, чтобы повторить попытку.",
+      "employee": "Сотрудник",
+      "greeting": "Добрый день, {name}.",
+      "noAbsences": "На сегодня отсутствий не зафиксировано.",
+      "openTimeTracking": "Перейти к учету времени",
+      "overview": "Краткий обзор вашей работы",
+      "personalDay": "Ваш рабочий день",
+      "status": "Статус",
+      "summary": "Сводка",
+      "team": "Команда",
+      "todayTarget": "Сегодня · Требуется: {target}"
+    },
     "team-overview": {
       "avg-hours": "Ср. кол-во часов",
       "current-employees": "Действующие сотрудники",
-      "current-employees-description": "Все, кто работает здесь сейчас",
-      "description": "Краткая статистика команды",
       "employees-button": "Сотрудники",
       "per-week": "/нед.",
       "teams": "Команды",
@@ -175,9 +189,6 @@
       "used": "{days} использовано"
     },
     "whos-out": {
-      "everyone-in": "Сегодня все в офисе",
-      "everyones-in": "Все на месте!",
-      "full-team": "Вся команда в сборе!",
       "member": "участник",
       "members": "участники",
       "members-out": "{count} {member} команды отсутствует",

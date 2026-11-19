@@ -83,6 +83,9 @@ const retentionActions = await import("@/app/[locale]/(app)/personnel-files/rete
 const settingsActions = await import(
 	"@/app/[locale]/(app)/settings/personnel-files/retention-actions"
 );
+const officerActions = await import(
+	"@/app/[locale]/(app)/settings/personnel-files/officer-actions"
+);
 const { resolvePersonnelFileAccess } = await import("./access-store");
 const { listDueDocuments, listDueDocumentsWithDay, purgeDueDocuments, loadRetentionPeriods } =
 	await import("./retention-store");
@@ -480,6 +483,67 @@ describe("due for deletion", () => {
 });
 
 describe("purge", () => {
+	it("rechecks publicly revoked category authority before a selected purge", async () => {
+		signIn("officer");
+		const before = await retentionActions.getDueForDeletionAction();
+		expect(
+			before.success && before.data.documents.some((document) => document.id === docs.dora2018),
+		).toBe(true);
+		signIn("owner");
+		const settings = await officerActions.getPersonnelFileOfficerAdminData();
+		if (!settings.success) throw Error(settings.error);
+		const grant = settings.data.grants.find((item) => item.officerEmployeeId === ids.officer);
+		if (!grant) throw Error("Missing synthetic officer grant");
+		expect(
+			(await officerActions.revokePersonnelFileOfficerGrantAction({ grantId: grant.id })).success,
+		).toBe(true);
+		try {
+			const readback = await officerActions.getPersonnelFileOfficerAdminData();
+			expect(readback.success && readback.data.grants.some((item) => item.id === grant.id)).toBe(
+				false,
+			);
+			signIn("officer");
+			expect((await retentionActions.getDueForDeletionAction()).success).toBe(false);
+			expect(
+				(await retentionActions.purgeDueDocumentsAction({ documentIds: [docs.dora2018] })).success,
+			).toBe(false);
+		} finally {
+			signIn("owner");
+			expect(
+				(
+					await officerActions.savePersonnelFileOfficerGrantAction({
+						officerEmployeeId: ids.officer,
+						scope: grant.scope,
+						employeeIds: grant.employeeIds,
+						teamIds: grant.teamIds,
+						categories: grant.categories,
+					})
+				).success,
+			).toBe(true);
+		}
+	});
+	it("refuses review and purge when the displayed account or organization no longer matches", async () => {
+		signIn("owner");
+		for (const scope of [
+			{ userId: userOf("owner"), organizationId: "another-organization" },
+			{ userId: userOf("officer"), organizationId: ORG },
+		]) {
+			expect(await retentionActions.getDueForDeletionAction(scope)).toEqual({
+				success: false,
+				error: "Personnel files not found",
+			});
+			expect(
+				await retentionActions.purgeDueDocumentsAction({ documentIds: [docs.dora2018], scope }),
+			).toEqual({ success: false, error: "Personnel files not found" });
+		}
+		const readback = await retentionActions.getDueForDeletionAction({
+			userId: userOf("owner"),
+			organizationId: ORG,
+		});
+		expect(
+			readback.success && readback.data.documents.some((document) => document.id === docs.dora2018),
+		).toBe(true);
+	});
 	it("deletes the file and the document after confirmation and keeps the audit record", async () => {
 		signIn("officer");
 		const list = await retentionActions.getDueForDeletionAction();
@@ -787,5 +851,52 @@ describe("deactivation (#1440): the deactivation instant ends the employment", (
 				[ids.hana, berlin("2030-05-15T10:00").toString()],
 			);
 		}
+	});
+});
+
+describe("fresh retention review", () => {
+	it("rechecks a changed retention period and preserves unselected and unknown records", async () => {
+		signIn("owner");
+		const selected = await seedDocument("dora", {
+			category: "payslip",
+			title: "R048 selected",
+			documentDate: "2018-10-31",
+		});
+		const unselected = await seedDocument("dora", {
+			category: "payslip",
+			title: "R048 kept",
+			documentDate: "2018-09-30",
+		});
+		const unknown = await seedDocument("finn", {
+			category: "payslip",
+			title: "R048 unknown end kept",
+			documentDate: "2015-01-31",
+		});
+		const before = await retentionActions.getDueForDeletionAction();
+		expect(
+			before.success && before.data.documents.some((document) => document.id === selected),
+		).toBe(true);
+		await setPeriods({ payslip: 100 });
+		try {
+			expect(await retentionActions.purgeDueDocumentsAction({ documentIds: [selected] })).toEqual({
+				success: true,
+				data: { purged: [], skipped: [selected] },
+			});
+		} finally {
+			await setPeriods({ payslip: 6 });
+		}
+		expect(
+			await retentionActions.purgeDueDocumentsAction({ documentIds: [selected, docs.carla2010] }),
+		).toEqual({ success: true, data: { purged: [selected], skipped: [docs.carla2010] } });
+		const after = await retentionActions.getDueForDeletionAction();
+		expect(after.success && after.data.documents.some((document) => document.id === selected)).toBe(
+			false,
+		);
+		expect(
+			after.success && after.data.documents.some((document) => document.id === unselected),
+		).toBe(true);
+		expect(
+			after.success && after.data.unknownStart.some((document) => document.id === unknown),
+		).toBe(true);
 	});
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	IconAlertTriangle,
 	IconCheck,
 	IconCopy,
 	IconDownload,
@@ -9,19 +10,18 @@ import {
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-	deleteApiKey,
-	listApiKeys,
-} from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
+import { Temporal } from "temporal-polyfill";
+import { deleteApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
+import { useDeveloperServerSnapshot } from "@/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot";
+import { readApiKeysForView } from "@/app/[locale]/(app)/settings/enterprise/api-keys/view-actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditDeleteMenu } from "@/components/ui/edit-delete-menu";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	Table,
 	TableBody,
@@ -41,15 +42,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type {
-	ApiKeyResponse,
-	CreateApiKeyResponse,
-} from "@/lib/validations/api-key";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { ServerActionResult } from "@/lib/effect/result";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import type { ApiKeyResponse, CreateApiKeyResponse } from "@/lib/validations/api-key";
 import { MAX_API_KEYS_PER_ORG } from "@/lib/validations/api-key";
 import { Link } from "@/navigation";
 import { ApiKeyDocumentation } from "./api-key-documentation";
@@ -67,23 +63,21 @@ const ApiKeyEditDialog = dynamic(() =>
 
 function formatDate(dateStr: string | null | undefined) {
 	if (!dateStr) return "-";
-	return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_SHORT);
+	return Temporal.Instant.from(dateStr).toLocaleString(undefined, {
+		timeZone: "UTC",
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	});
 }
 
-function formatScopes(
-	scopes: string[],
-	t: ReturnType<typeof useTranslate>["t"],
-) {
-	if (scopes.length === 0)
-		return t("settings.apiKeys.noPermissions", "No permissions");
+function formatScopes(scopes: string[], t: ReturnType<typeof useTranslate>["t"]) {
+	if (scopes.length === 0) return t("settings.apiKeys.noPermissions", "No permissions");
 	if (scopes.length <= 2) return scopes.join(", ");
 	return `${scopes.slice(0, 2).join(", ")} +${scopes.length - 2}`;
 }
 
-function getExpirationStatus(
-	expiresAt: string | null,
-	t: ReturnType<typeof useTranslate>["t"],
-) {
+function getExpirationStatus(expiresAt: string | null, t: ReturnType<typeof useTranslate>["t"]) {
 	if (!expiresAt)
 		return {
 			status: "never",
@@ -91,11 +85,11 @@ function getExpirationStatus(
 			variant: "secondary" as const,
 		};
 
-	const now = DateTime.now();
-	const expiry = DateTime.fromISO(expiresAt);
-	const daysUntilExpiry = Math.ceil(expiry.diff(now, "days").days);
+	const now = Temporal.Now.instant();
+	const expiry = Temporal.Instant.from(expiresAt);
+	const daysUntilExpiry = Math.ceil(now.until(expiry).total("hours") / 24);
 
-	if (daysUntilExpiry < 0) {
+	if (Temporal.Instant.compare(expiry, now) <= 0) {
 		return {
 			status: "expired",
 			label: t("settings.apiKeys.expired", "Expired"),
@@ -122,50 +116,116 @@ interface ApiKeyPageClientProps {
 	organizationId: string;
 	initialApiKeys: ApiKeyResponse[];
 	currentUserId: string;
+	initialError?: boolean;
 }
 
 function useApiKeyPageViewModel({
 	organizationId,
 	initialApiKeys,
+	initialError,
+	currentUserId,
 }: ApiKeyPageClientProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [editingKey, setEditingKey] = useState<ApiKeyResponse | null>(null);
-	const [deleteDialogKey, setDeleteDialogKey] = useState<ApiKeyResponse | null>(
-		null,
-	);
-	const [newlyCreatedKey, setNewlyCreatedKey] =
-		useState<CreateApiKeyResponse | null>(null);
+	const [deleteDialogKey, setDeleteDialogKey] = useState<ApiKeyResponse | null>(null);
+	const [newlyCreatedKey, setNewlyCreatedKey] = useState<CreateApiKeyResponse | null>(null);
 	const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
 	// Query for API keys
-	const { data: apiKeysResult, isLoading } = useQuery({
-		queryKey: ["apiKeys", organizationId],
-		queryFn: () => listApiKeys(),
-		initialData: { success: true, data: initialApiKeys },
+	const initialData = useDeveloperServerSnapshot({
+		queryKey: ["apiKeys", organizationId, currentUserId],
+		snapshot: initialApiKeys,
+		initialError,
+	});
+	const {
+		data: apiKeysResult,
+		isLoading,
+		isError: queryError,
+		refetch,
+		isFetching,
+	} = useQuery<ServerActionResult<ApiKeyResponse[]>>({
+		queryKey: ["apiKeys", organizationId, currentUserId],
+		queryFn: async () => {
+			const result = await readApiKeysForView({ organizationId, userId: currentUserId });
+			if (
+				!result.success &&
+				result.code !== "AuthorizationError" &&
+				result.code !== "AuthenticationError"
+			)
+				throw new Error("API keys unavailable");
+			return result;
+		},
+		initialData,
+		retry: false,
 	});
 
+	const refused = !!apiKeysResult && !apiKeysResult.success;
+	const isError = queryError || refused;
 	const apiKeys = apiKeysResult?.success ? apiKeysResult.data : [];
 	const keyCount = apiKeys.length;
-	const canCreateMore = keyCount < MAX_API_KEYS_PER_ORG;
+	const canCreateMore = Boolean(apiKeysResult?.success) && keyCount < MAX_API_KEYS_PER_ORG;
 
-	// Delete mutation
-	const deleteMutation = useMutation({
-		mutationFn: async (keyId: string) => {
-			const result = await deleteApiKey({ keyId });
-			if (!result.success) throw new Error(result.error || "Failed to delete");
+	const lifetime = useRef<object | null>(null);
+	const pending = useRef(false);
+	const [isDeleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	useLayoutEffect(() => {
+		lifetime.current = refused ? null : {};
+		pending.current = false;
+		return () => {
+			lifetime.current = null;
+			// Retiring this lifetime (refusal change, Activity hide or unmount) settles a pending
+			// revoke and discards the one-time key; initial state already has neither.
+			pending.current = false;
+			setDeleting(false);
+			setNewlyCreatedKey(null);
+		};
+	}, [refused]);
+	const deleteMutation = {
+		isPending: isDeleting,
+		error: deleteError,
+		mutate: async (keyId: string) => {
+			if (pending.current || !lifetime.current) return;
+			const owner = lifetime.current;
+			pending.current = true;
+			setDeleting(true);
+			setDeleteError(null);
+			return deleteApiKey({ keyId })
+				.then((result) => {
+					if (lifetime.current !== owner) return;
+					if (!result.success) {
+						setDeleteError(actionErrorMessage(t, result));
+						return;
+					}
+					void queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
+					toast.success(t("settings.apiKeys.deleted", "API key deleted"));
+					setDeleteDialogKey(null);
+				})
+				.catch(() => {
+					if (lifetime.current === owner)
+						setDeleteError(
+							t(
+								"settings.apiKeys.revokeUnknown",
+								"Could not confirm revocation. Refresh the list before trying again.",
+							),
+						);
+				})
+				.finally(() => {
+					if (lifetime.current === owner) {
+						pending.current = false;
+						setDeleting(false);
+					}
+				});
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
-			toast.success(t("settings.apiKeys.deleted", "API key deleted"));
-			setDeleteDialogKey(null);
-		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
-	});
+	};
+	const changeDeleteDialog = (key: ApiKeyResponse | null) => {
+		if (pending.current) return;
+		setDeleteError(null);
+		setDeleteDialogKey(key);
+	};
 
 	const handleCopyPrefix = async (prefix: string, keyId: string) => {
 		await navigator.clipboard.writeText(prefix);
@@ -184,18 +244,21 @@ function useApiKeyPageViewModel({
 		apiKeys,
 		canCreateMore,
 		copiedKeyId,
-		createDialogOpen,
-		deleteDialogKey,
+		createDialogOpen: createDialogOpen && !refused,
+		deleteDialogKey: refused ? null : deleteDialogKey,
 		deleteMutation,
-		editingKey,
+		editingKey: refused ? null : editingKey,
 		handleCopyPrefix,
 		handleKeyCreated,
 		isLoading,
+		isError,
+		isFetching,
+		refetch,
 		keyCount,
 		newlyCreatedKey,
 		organizationId,
 		setCreateDialogOpen,
-		setDeleteDialogKey,
+		setDeleteDialogKey: changeDeleteDialog,
 		setEditingKey,
 		setNewlyCreatedKey,
 		t,
@@ -210,6 +273,9 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 		copiedKeyId,
 		handleCopyPrefix,
 		isLoading,
+		isError,
+		isFetching,
+		refetch,
 		setCreateDialogOpen,
 		setDeleteDialogKey,
 		setEditingKey,
@@ -218,49 +284,61 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 
 	return (
 		<Card>
-			<CardContent className="pt-6">
+			<CardContent className="space-y-4 pt-6">
+				{isError ? (
+					<Alert variant="destructive">
+						<AlertTitle>{t("settings.apiKeys.unavailable", "API keys unavailable")}</AlertTitle>
+						<AlertDescription>
+							{t(
+								"settings.apiKeys.retryHelp",
+								"Refresh this list to confirm the current keys. Previously loaded records are retained.",
+							)}
+							<Button variant="outline" disabled={isFetching} onClick={() => void refetch()}>
+								{t("common.retry", "Retry")}
+							</Button>
+						</AlertDescription>
+					</Alert>
+				) : null}
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
-					</div>
-				) : apiKeys.length === 0 ? (
-					<div className="text-center py-12">
-						<IconKey className="size-12 mx-auto text-muted-foreground mb-4" />
-						<h3 className="text-lg font-medium mb-2">
-							{t("settings.apiKeys.empty.title", "No API Keys")}
-						</h3>
-						<p className="text-muted-foreground mb-4">
+					<LoadingRegion
+						className="flex items-center justify-center py-8"
+						label={{ labelKey: "settings.apiKeys.loading", labelDefault: "Loading API keys" }}
+					>
+						<IconLoader2
+							className="size-6 animate-spin text-muted-foreground"
+							aria-hidden="true"
+						/>
+					</LoadingRegion>
+				) : isError && apiKeys.length === 0 ? null : apiKeys.length === 0 ? (
+					<div className="flex flex-col items-start gap-3 py-2">
+						<div className="flex items-center gap-2">
+							<IconKey className="size-5 text-muted-foreground" aria-hidden="true" />
+							<h3 className="font-medium">
+								{t("settings.apiKeys.empty.title", "No API Keys")}
+							</h3>
+						</div>
+						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.apiKeys.empty.description",
 								"Create your first API key to enable programmatic access to your organization.",
 							)}
 						</p>
 						<Button onClick={() => setCreateDialogOpen(true)}>
-							<IconPlus className="mr-2 size-4" />
+							<IconPlus className="size-4" aria-hidden="true" />
 							{t("settings.apiKeys.create", "Create Key")}
 						</Button>
 					</div>
 				) : (
-					<Table>
+					<Table mobileLayout="stacked">
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("settings.apiKeys.name", "Name")}</TableHead>
-								<TableHead>
-									{t("settings.apiKeys.prefix", "Key Prefix")}
-								</TableHead>
-								<TableHead>
-									{t("settings.apiKeys.scopes", "Permissions")}
-								</TableHead>
-								<TableHead>
-									{t("settings.apiKeys.expires", "Expires")}
-								</TableHead>
-								<TableHead>
-									{t("settings.apiKeys.lastUsed", "Last Used")}
-								</TableHead>
+								<TableHead>{t("settings.apiKeys.prefix", "Key Prefix")}</TableHead>
+								<TableHead>{t("settings.apiKeys.scopes", "Permissions")}</TableHead>
+								<TableHead>{t("settings.apiKeys.expires", "Expires")}</TableHead>
+								<TableHead>{t("settings.apiKeys.lastUsed", "Last Used")}</TableHead>
 								<TableHead>{t("settings.apiKeys.status", "Status")}</TableHead>
-								<TableHead className="text-right">
-									{t("common.actions", "Actions")}
-								</TableHead>
+								<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -271,7 +349,7 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 										<TableCell>
 											<Link
 												href={`/settings/enterprise/api-keys/${apiKey.id}`}
-												className="font-medium hover:underline"
+												className="whitespace-normal break-words font-medium hover:underline"
 											>
 												{apiKey.name}
 											</Link>
@@ -287,18 +365,12 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 															name:
 																apiKey.creator.name ||
 																apiKey.creator.email ||
-																t(
-																	"settings.apiKeys.unknownCreator",
-																	"a former admin",
-																),
+																t("settings.apiKeys.unknownCreator", "a former admin"),
 														})}
 													</span>
 													{apiKey.creator.departed ? (
 														<Badge variant="outline" className="text-[10px]">
-															{t(
-																"settings.apiKeys.creatorDeparted",
-																"Departed",
-															)}
+															{t("settings.apiKeys.creatorDeparted", "Departed")}
 														</Badge>
 													) : null}
 												</div>
@@ -314,15 +386,17 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 														<Button
 															variant="ghost"
 															size="sm"
-															className="size-6 p-0"
-															onClick={() =>
-																handleCopyPrefix(apiKey.prefix || "", apiKey.id)
-															}
+															className="size-8 p-0"
+															aria-label={t("settings.apiKeys.copyPrefix", "Copy prefix")}
+															onClick={() => handleCopyPrefix(apiKey.prefix || "", apiKey.id)}
 														>
 															{copiedKeyId === apiKey.id ? (
-																<IconCheck className="size-4 text-green-600" />
+																<IconCheck
+																	className="size-4 text-success"
+																	aria-hidden="true"
+																/>
 															) : (
-																<IconCopy className="size-4" />
+																<IconCopy className="size-4" aria-hidden="true" />
 															)}
 														</Button>
 													</TooltipTrigger>
@@ -335,9 +409,7 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 										<TableCell>
 											<Tooltip>
 												<TooltipTrigger>
-													<span className="text-sm">
-														{formatScopes(apiKey.scopes, t)}
-													</span>
+													<span className="text-sm">{formatScopes(apiKey.scopes, t)}</span>
 												</TooltipTrigger>
 												<TooltipContent>
 													<div className="space-y-1">
@@ -349,22 +421,19 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 											</Tooltip>
 										</TableCell>
 										<TableCell>
-											<Badge
-												variant={
-													expStatus.variant as
-														| "default"
-														| "secondary"
-														| "destructive"
-														| "outline"
-												}
-											>
-												{expStatus.label}
-											</Badge>
+											{expStatus.variant === "warning" ? (
+												<Badge variant="warning" className="tabular-nums">
+													<IconAlertTriangle aria-hidden="true" />
+													{expStatus.label}
+												</Badge>
+											) : (
+												<Badge variant={expStatus.variant} className="tabular-nums">
+													{expStatus.label}
+												</Badge>
+											)}
 										</TableCell>
 										<TableCell>
-											{apiKey.lastRequest
-												? formatDate(apiKey.lastRequest)
-												: "-"}
+											{apiKey.lastRequest ? formatDate(apiKey.lastRequest) : "-"}
 										</TableCell>
 										<TableCell>
 											<Badge variant={apiKey.enabled ? "default" : "secondary"}>
@@ -420,16 +489,24 @@ function ApiKeyDialogs({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 				onOpenChange={(open: boolean) => !open && setNewlyCreatedKey(null)}
 			/>
 			<ApiKeyEditDialog
+				key={JSON.stringify([
+					editingKey?.id,
+					viewModel.apiKeys.find((key) => key.id === editingKey?.id)?.scopes,
+				])}
 				organizationId={organizationId}
-				apiKey={editingKey}
+				apiKey={viewModel.apiKeys.find((key) => key.id === editingKey?.id) ?? null}
 				open={!!editingKey}
 				onOpenChange={(open: boolean) => !open && setEditingKey(null)}
 			/>
 			<AlertDialog
 				open={!!deleteDialogKey}
-				onOpenChange={(open) => !open && setDeleteDialogKey(null)}
+				onOpenChange={(open) => !open && !deleteMutation.isPending && setDeleteDialogKey(null)}
 			>
-				<AlertDialogContent>
+				<AlertDialogContent
+					onEscapeKeyDown={(event) => {
+						if (deleteMutation.isPending) event.preventDefault();
+					}}
+				>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
 							{t("settings.apiKeys.deleteTitle", "Delete API Key")}
@@ -442,23 +519,27 @@ function ApiKeyDialogs({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
+					{deleteMutation.error ? (
+						<p role="alert" className="text-sm text-destructive">
+							{deleteMutation.error}
+						</p>
+					) : null}
 					<AlertDialogFooter>
-						<AlertDialogCancel>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>
 							{t("common.cancel", "Cancel")}
 						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() =>
-								deleteDialogKey && deleteMutation.mutate(deleteDialogKey.id)
-							}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						<Button
+							variant="destructive"
+							disabled={deleteMutation.isPending}
+							onClick={() => deleteDialogKey && deleteMutation.mutate(deleteDialogKey.id)}
 						>
 							{deleteMutation.isPending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
+								<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 							) : (
-								<IconTrash className="size-4 mr-2" />
+								<IconTrash className="size-4" aria-hidden="true" />
 							)}
 							{t("common.delete", "Delete")}
-						</AlertDialogAction>
+						</Button>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -466,66 +547,49 @@ function ApiKeyDialogs({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 	);
 }
 
-function ApiKeyPageView({
-	viewModel,
-}: {
-	viewModel: ReturnType<typeof useApiKeyPageViewModel>;
-}) {
-	const { canCreateMore, keyCount, setCreateDialogOpen, t } = viewModel;
+function ApiKeyPageView({ viewModel }: { viewModel: ReturnType<typeof useApiKeyPageViewModel> }) {
+	const { canCreateMore, keyCount, setCreateDialogOpen, isError, isLoading, t } = viewModel;
 
 	return (
 		<div className="min-w-0">
-			<div className="mx-auto max-w-4xl">
-				<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-					<div>
-						<h2 className="text-lg font-semibold">
-							{t("settings.apiKeys.title", "API Keys")}
-						</h2>
-						<p className="text-muted-foreground">
-							{t(
-								"settings.apiKeys.description",
-								"Create and manage API keys for programmatic access to your organization data.",
-							)}
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
+			<div>
+				{/* The page heading already describes this tab; this row names the section and its capacity. */}
+				<div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+					<div className="min-w-0">
+						<h2 className="text-lg font-semibold">{t("settings.apiKeys.title", "API Keys")}</h2>
+						<p className="mt-1 text-sm text-muted-foreground tabular-nums" hidden={isError || isLoading}>
 							{t("settings.apiKeys.usage", "{count} of {max} keys used", {
 								count: keyCount,
 								max: MAX_API_KEYS_PER_ORG,
 							})}
 						</p>
 					</div>
-					<Button
-						onClick={() => setCreateDialogOpen(true)}
-						disabled={!canCreateMore}
-					>
-						<IconPlus className="mr-2 size-4" />
+					<Button onClick={() => setCreateDialogOpen(true)} disabled={!canCreateMore || isError}>
+						<IconPlus className="size-4" aria-hidden="true" />
 						{t("settings.apiKeys.create", "Create Key")}
 					</Button>
 				</div>
 				<div className="space-y-6">
+					<ApiKeysCard viewModel={viewModel} />
 					<ApiKeyDocumentation>
 						<Button variant="outline" asChild>
-							<a
-								href="/api/v1/openapi.json"
-								download="z8-public-api-v1.openapi.json"
-							>
+							<a href="/api/v1/openapi.json" download="z8-public-api-v1.openapi.json">
 								<IconDownload className="size-4" aria-hidden="true" />
 								{t("settings.apiKeys.downloadOpenApi", "Download OpenAPI spec")}
 							</a>
 						</Button>
 					</ApiKeyDocumentation>
-					<ApiKeysCard viewModel={viewModel} />
 
 					{/* Security Notice */}
-					<Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+					<Card role="note" className="border-warning/40 bg-warning/10">
 						<CardContent>
 							<div className="flex gap-3">
-								<IconKey className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-								<div>
-									<h4 className="font-medium text-amber-800 dark:text-amber-200">
+								<IconKey className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden="true" />
+								<div className="min-w-0">
+									<h3 className="font-medium">
 										{t("settings.apiKeys.security.title", "Security Notice")}
-									</h4>
-									<p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+									</h3>
+									<p className="mt-1 text-sm text-muted-foreground">
 										{t(
 											"settings.apiKeys.security.description",
 											"API keys provide full access to your organization data within their permission scope. Keep them secure and never share them in public repositories or client-side code.",

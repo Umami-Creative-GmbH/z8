@@ -1,0 +1,87 @@
+src\components\personnel-file\payslip-batch-workspace.tsx:738:2 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━
+
+  ! This parameter onChanged is unused.
+  
+    736 │ 	file,
+    737 │ 	preview,
+  > 738 │ 	onChanged,
+        │ 	^^^^^^^^^
+    739 │ }: {
+    740 │ 	file: PayslipBatchFileView;
+  
+  i Unused parameters might be the result of an incomplete refactoring.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:124:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on queryClient.cancelQueries.
+  
+    122 │ 	const lifetime = useRef<object | null>(null);
+    123 │ 	const command = useRef(false);
+  > 124 │ 	useLayoutEffect(() => {
+        │ 	^^^^^^^^^^^^^^^
+    125 │ 		lifetime.current = {};
+    126 │ 		command.current = false;
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    131 │ 		return () => {
+    132 │ 			lifetime.current = null;
+  > 133 │ 			void queryClient.cancelQueries({ queryKey });
+        │ 			     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    134 │ 		};
+    135 │ 	}, []);
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Failing to specify dependencies can result in Effects not updating correctly when state changes.
+    These "stale closures" are a common source of surprising bugs.
+  
+  i Either include it or remove the dependency array.
+  
+  i Unsafe fix: Add the missing dependency queryClient.cancelQueries to the list.
+  
+    135 │ → },·[queryClient.cancelQueries]);␍
+        │       +++++++++++++++++++++++++   
+
+src\components\personnel-file\payslip-batch-workspace.tsx:124:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook does not specify its dependency on queryKey.
+  
+    122 │ 	const lifetime = useRef<object | null>(null);
+    123 │ 	const command = useRef(false);
+  > 124 │ 	useLayoutEffect(() => {
+        │ 	^^^^^^^^^^^^^^^
+    125 │ 		lifetime.current = {};
+    126 │ 		command.current = false;
+  
+  i This dependency is being used here, but is not specified in the hook dependency list.
+  
+    131 │ 		return () => {
+    132 │ 			lifetime.current = null;
+  > 133 │ 			void queryClient.cancelQueries({ queryKey });
+        │ 			                                 ^^^^^^^^
+    134 │ 		};
+    135 │ 	}, []);
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Failing to specify dependencies can result in Effects not updating correctly when state changes.
+    These "stale closures" are a common source of surprising bugs.
+  
+  i Either include it or remove the dependency array.
+  
+  i Unsafe fix: Add the missing dependency queryKey to the list.
+  
+    135 │ → },·[queryKey]);␍
+        │       ++++++++   
+
+Skipped 4 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 6 files in 19ms. Fixed 6 files.
+Found 2 errors.
+Found 1 warning.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+

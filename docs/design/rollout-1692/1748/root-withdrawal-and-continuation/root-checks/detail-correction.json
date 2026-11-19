@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "issue": 1748,
+  "status": "provisional; independent corrected-source acceptance pending",
+  "verifiedCommit": null,
+  "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+  "merge": {
+    "commit": "df0fafc4d827969d37482df69cfe2abb92fee599",
+    "tree": "9482b7c7b76665c1c303c4cb9a73cd52d745cf00",
+    "appTree": "860abb81d474927d8b49ddc521dc33d008a1d8ef",
+    "parents": [
+      "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+      "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8"
+    ],
+    "independentPredictionMatched": true,
+    "manualComposition": "Current route metadata and tests plus exact legacy UUID predicate and additive tests; listing adoption remains with #1747.",
+    "preservation": {
+      "rootNonoverlap": 18499,
+      "incomingNonoverlap": 81,
+      "classification": "independent merger receipts; root separately checked parents, resolved blobs, anchors and protected paths"
+    }
+  },
+  "independentStop": {
+    "thread": "[Merge and review legacy travel claim detail and continuation](t3-thread://v2/42f11bbd-1656-4e5c-9291-18d6f1563c86/thread:delegated-task:command%3Amcp%3A5d61c313-e255-4999-a7b3-61782d9516f4%3Adelegate-task%3A1692-merge-1748-isolated-v1)",
+    "safeIndexSha256": "649fd83ba7378d7c087466887f7f67159f09d52988e16161825c644b788cc197",
+    "handoffSha256": "d7bd4aa8653ab8bd4efe9aebf0c9f3ce91a417e29b4ef4f2987bb958aa55f98b",
+    "intakeAuditSha256": "902afa12aa1b955ec132ec6bea18442d53c09c6cbf6ddf8a378285ead36037c6",
+    "auditedPayloads": 11,
+    "auditedBytes": 103566,
+    "distinctCases": 32,
+    "latestPasses": 31,
+    "failures": 1,
+    "finding": "After success, canonical 404 hides evidence but a subsequent 503 restores notes and receipt links.",
+    "classification": "Incomplete new withdrawal guarantee over inherited cache retention; synthetic public seam, no live authorization bypass established.",
+    "deferred": "Broader checks, PostgreSQL, runtime and curated artifact acceptance stopped after P1."
+  },
+  "correction": {
+    "commit": "4cab7a5b594db3bc7e4dfdf56026d25737a2b2f4",
+    "integrationCommit": "a043fd9af51465e608bb6d00f5568e72f11d8300",
+    "appTree": "21de4ad559b7cfac4e8c168f8f7144f30e6780e5",
+    "behavior": "401/403/404 replaces cached detail with a withdrawn outcome. Transient read failures retain that outcome; only a fresh success restores claim evidence. Authorized evidence remains during a transient outage.",
+    "productionFiles": 1,
+    "permanentTestFiles": 1,
+    "exactRed": {
+      "passed": 2,
+      "failed": 1,
+      "cases": 3
+    },
+    "exactGreen": {
+      "passed": 3,
+      "failed": 0,
+      "cases": 3,
+      "nonadditive": true
+    },
+    "expandedPublic": {
+      "passed": 8,
+      "failed": 0,
+      "nonadditiveToCompatibility": true,
+      "coverage": [
+        "401/403/404 withdrawal",
+        "subsequent 503",
+        "network rejection and failed Retry",
+        "cache reset followed by failure",
+        "fresh successful Retry recovery",
+        "authorized transient retention",
+        "initial denial"
+      ]
+    },
+    "canonicalOwnersChanged": false
+  },
+  "freshRootChecks": {
+    "cases": {
+      "instances": 508,
+      "uniqueLabels": 508,
+      "files": 42,
+      "failed": 0
+    },
+    "selectionRuns": [
+      {
+        "files": 38,
+        "passed": 475,
+        "failed": 0
+      },
+      {
+        "files": 4,
+        "passed": 33,
+        "failed": 0
+      }
+    ],
+    "uniqueBy": "physical file and full test name; all 508 labels unique",
+    "rerunsNotAdded": true,
+    "typecheck": {
+      "nextTypegen": 0,
+      "application": 0,
+      "workflowContracts": 0,
+      "smoke": 0
+    },
+    "lint": {
+      "files": 9,
+      "exit": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+      "files": 9,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null
+    },
+    "format": {
+      "ownedExplicit": {
+        "files": 2,
+        "exit": 0,
+        "lineWidth": 100,
+        "lineEnding": "crlf"
+      },
+      "ownedOrdinary": {
+        "exit": 1,
+        "findings": 2
+      },
+      "incomingExplicit": {
+        "files": 9,
+        "exit": 1,
+        "paths": [
+          "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+        ]
+      }
+    },
+    "postgresqlCases": 0,
+    "runtimeAssertions": 0
+  },
+  "commands": {
+    "environment": "pnpm_config_verify_deps_before_run=false",
+    "runner": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit <recorded selections> --maxWorkers=1 --reporter=json",
+    "typecheck": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json"
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "blob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "bytes": 1861,
+      "sha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "blob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "bytes": 7918,
+      "sha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "blob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "bytes": 6874,
+      "sha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "blob": "d498332ae4ea7e8dc260b7d997fd4fda140faf06",
+      "bytes": 13289,
+      "sha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "blob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "bytes": 18784,
+      "sha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "blob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "bytes": 13627,
+      "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "blob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "bytes": 9090,
+      "sha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "blob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "bytes": 12722,
+      "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "blob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "bytes": 7641,
+      "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39"
+    }
+  ],
+  "originalReportPrefix": {
+    "bytes": 19422,
+    "sha256": "6c6b9e7ec408c6a683923c5a18a6c277fb47ecdf9b1acd0d89350c1d4bafa00b"
+  },
+  "preservedLimits": [
+    "Fresh independent corrected-source review pending.",
+    "Original worker 124 unit and 51 PostgreSQL cases and browser captures retain their historical source and timeout qualifications; they are not added to current root counts.",
+    "No new browser, PostgreSQL, native, download or live authority result is claimed for this correction.",
+    "Full production generation, catalogs, providers, devices, true zoom and exhaustive authority/transition matrices remain unpassed.",
+    "Existing receipt/conversion/settlement owners and original evidence remain unchanged."
+  ],
+  "privateInputs": "Only explicit SAFE allowlist was read; raw private inventories and historical scripts were not executed."
+}

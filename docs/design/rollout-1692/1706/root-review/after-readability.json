@@ -1,0 +1,995 @@
+{
+  "phase": "after",
+  "observations": [
+    {
+      "nameMode": "original",
+      "width": 390,
+      "regionWidth": 298,
+      "scrollWidth": 720,
+      "scrollLeft": 422,
+      "regionLeft": 46,
+      "identityLeft": 46,
+      "identityWidth": 117,
+      "statusHeader": {
+        "text": "Status",
+        "rectangles": [
+          {
+            "left": 292.28125,
+            "right": 336,
+            "visible": true
+          }
+        ],
+        "fullyVisible": true
+      },
+      "statuses": [
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 280.25,
+              "right": 295.25,
+              "visible": true
+            },
+            {
+              "left": 295.25,
+              "right": 326,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        }
+      ],
+      "metrics": [
+        {
+          "header": {
+            "text": "Total Hours",
+            "rectangles": [
+              {
+                "left": 221.921875,
+                "right": 303.75,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 245.546875,
+                "right": 294.828125,
+                "visible": true
+              },
+              {
+                "left": 294.828125,
+                "right": 303.75,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Expected Hours",
+            "rectangles": [
+              {
+                "left": 222.5,
+                "right": 334.5,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 276.296875,
+                "right": 325.578125,
+                "visible": true
+              },
+              {
+                "left": 325.578125,
+                "right": 334.5,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Variance",
+            "rectangles": [
+              {
+                "left": 274.9375,
+                "right": 335.25,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "+0.0h",
+            "rectangles": [
+              {
+                "left": 295.140625,
+                "right": 305.921875,
+                "visible": true
+              },
+              {
+                "left": 305.921875,
+                "right": 326.328125,
+                "visible": true
+              },
+              {
+                "left": 326.328125,
+                "right": 335.25,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        }
+      ],
+      "pageWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "nameMode": "original",
+      "width": 320,
+      "regionWidth": 228,
+      "scrollWidth": 720,
+      "scrollLeft": 492,
+      "regionLeft": 46,
+      "identityLeft": 46,
+      "identityWidth": 96,
+      "statusHeader": {
+        "text": "Status",
+        "rectangles": [
+          {
+            "left": 222.28125,
+            "right": 266,
+            "visible": true
+          }
+        ],
+        "fullyVisible": true
+      },
+      "statuses": [
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        }
+      ],
+      "metrics": [
+        {
+          "header": {
+            "text": "Total Hours",
+            "rectangles": [
+              {
+                "left": 182.171875,
+                "right": 264,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 205.796875,
+                "right": 255.078125,
+                "visible": true
+              },
+              {
+                "left": 255.078125,
+                "right": 264,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Expected Hours",
+            "rectangles": [
+              {
+                "left": 153,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 206.796875,
+                "right": 256.078125,
+                "visible": true
+              },
+              {
+                "left": 256.078125,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Variance",
+            "rectangles": [
+              {
+                "left": 204.6875,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "+0.0h",
+            "rectangles": [
+              {
+                "left": 224.890625,
+                "right": 235.671875,
+                "visible": true
+              },
+              {
+                "left": 235.671875,
+                "right": 256.078125,
+                "visible": true
+              },
+              {
+                "left": 256.078125,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        }
+      ],
+      "pageWidth": 320,
+      "viewportWidth": 320
+    },
+    {
+      "nameMode": "long-name",
+      "width": 390,
+      "regionWidth": 298,
+      "scrollWidth": 720,
+      "scrollLeft": 422,
+      "regionLeft": 46,
+      "identityLeft": 46,
+      "identityWidth": 117,
+      "statusHeader": {
+        "text": "Status",
+        "rectangles": [
+          {
+            "left": 291.28125,
+            "right": 335,
+            "visible": true
+          }
+        ],
+        "fullyVisible": true
+      },
+      "statuses": [
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 279.25,
+              "right": 294.25,
+              "visible": true
+            },
+            {
+              "left": 294.25,
+              "right": 325,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        }
+      ],
+      "metrics": [
+        {
+          "header": {
+            "text": "Total Hours",
+            "rectangles": [
+              {
+                "left": 222.921875,
+                "right": 304.75,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 246.546875,
+                "right": 295.828125,
+                "visible": true
+              },
+              {
+                "left": 295.828125,
+                "right": 304.75,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Expected Hours",
+            "rectangles": [
+              {
+                "left": 222.5,
+                "right": 334.5,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 276.296875,
+                "right": 325.578125,
+                "visible": true
+              },
+              {
+                "left": 325.578125,
+                "right": 334.5,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Variance",
+            "rectangles": [
+              {
+                "left": 274.9375,
+                "right": 335.25,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "+0.0h",
+            "rectangles": [
+              {
+                "left": 295.140625,
+                "right": 305.921875,
+                "visible": true
+              },
+              {
+                "left": 305.921875,
+                "right": 326.328125,
+                "visible": true
+              },
+              {
+                "left": 326.328125,
+                "right": 335.25,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        }
+      ],
+      "pageWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "nameMode": "long-name",
+      "width": 320,
+      "regionWidth": 228,
+      "scrollWidth": 720,
+      "scrollLeft": 492,
+      "regionLeft": 46,
+      "identityLeft": 46,
+      "identityWidth": 96,
+      "statusHeader": {
+        "text": "Status",
+        "rectangles": [
+          {
+            "left": 222.28125,
+            "right": 266,
+            "visible": true
+          }
+        ],
+        "fullyVisible": true
+      },
+      "statuses": [
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        },
+        {
+          "text": "40h/wk",
+          "rectangles": [
+            {
+              "left": 210.25,
+              "right": 225.25,
+              "visible": true
+            },
+            {
+              "left": 225.25,
+              "right": 256,
+              "visible": true
+            }
+          ],
+          "fullyVisible": true
+        }
+      ],
+      "metrics": [
+        {
+          "header": {
+            "text": "Total Hours",
+            "rectangles": [
+              {
+                "left": 182.171875,
+                "right": 264,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 205.796875,
+                "right": 255.078125,
+                "visible": true
+              },
+              {
+                "left": 255.078125,
+                "right": 264,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Expected Hours",
+            "rectangles": [
+              {
+                "left": 153,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "2,088.0h",
+            "rectangles": [
+              {
+                "left": 206.796875,
+                "right": 256.078125,
+                "visible": true
+              },
+              {
+                "left": 256.078125,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        },
+        {
+          "header": {
+            "text": "Variance",
+            "rectangles": [
+              {
+                "left": 204.6875,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          },
+          "value": {
+            "text": "+0.0h",
+            "rectangles": [
+              {
+                "left": 224.890625,
+                "right": 235.671875,
+                "visible": true
+              },
+              {
+                "left": 235.671875,
+                "right": 256.078125,
+                "visible": true
+              },
+              {
+                "left": 256.078125,
+                "right": 265,
+                "visible": true
+              }
+            ],
+            "fullyVisible": true
+          }
+        }
+      ],
+      "pageWidth": 320,
+      "viewportWidth": 320
+    }
+  ],
+  "errors": [],
+  "boundary": "Actual authorized report records and saved 18px text; one owned synthetic employee is temporarily renamed and restored. Native arrow-key scroll, DOM text ranges and hit-testing detect pinned-column occlusion. Screenshots retain any failure."
+}

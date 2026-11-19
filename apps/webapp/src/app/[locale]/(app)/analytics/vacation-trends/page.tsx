@@ -3,35 +3,60 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
+import { useLocale } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
-
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { LoadingRegion } from "@/components/ui/loading-region";
 
 // Dynamic imports for recharts to reduce initial bundle size
-const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
-const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
 	ssr: false,
 });
-const Line = dynamic(() => import("recharts").then((mod) => mod.Line), { ssr: false });
-const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
+	ssr: false,
+});
+const CartesianGrid = dynamic(
+	() => import("recharts").then((mod) => mod.CartesianGrid),
+	{
+		ssr: false,
+	},
+);
+const Line = dynamic(() => import("recharts").then((mod) => mod.Line), {
+	ssr: false,
+});
+const LineChart = dynamic(
+	() => import("recharts").then((mod) => mod.LineChart),
+	{ ssr: false },
+);
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+	ssr: false,
+});
 
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
 import { MetricsTableHeader } from "@/components/analytics/metrics-table-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableRow,
-} from "@/components/ui/table";
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
 import type { DateRange, VacationTrendsData } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
@@ -39,7 +64,8 @@ import { getVacationTrendsData } from "../actions";
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
 	);
 }
 
@@ -48,7 +74,7 @@ type VacationTrendsTranslate = ReturnType<typeof useTranslate>["t"];
 type VacationOverallData = NonNullable<VacationTrendsData["overall"]>;
 type VacationEmployeeData = VacationTrendsData["byEmployee"][number];
 type VacationMonthlyData = VacationTrendsData["byMonth"];
-type VacationPeakMonthData = NonNullable<VacationTrendsData["patterns"]>["peakMonths"];
+type VacationPeakMonthData = Array<{ month: string; count: number }>;
 
 function VacationUtilizationCard({
 	overallData,
@@ -57,11 +83,21 @@ function VacationUtilizationCard({
 	overallData: VacationOverallData;
 	t: VacationTrendsTranslate;
 }) {
+	const locale = useLocale();
+	const days = (count: number) =>
+		t("analytics.vacationTrends.dayValue", "{count} days", {
+			count: count.toLocaleString(locale),
+		});
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.vacationTrends.utilization.title", "Vacation Utilization")}
+					<h2>
+						{t(
+							"analytics.vacationTrends.utilization.title",
+							"Vacation Utilization",
+						)}
+					</h2>
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -71,65 +107,100 @@ function VacationUtilizationCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="space-y-4">
-					<div className="flex items-center justify-between">
-						<div className="space-y-1">
-							<p className="text-sm font-medium">
-								{t("analytics.vacationTrends.utilization.overall", "Overall Utilization")}
-							</p>
-							<p className="text-2xl font-bold">{overallData.utilizationRate.toFixed(1)}%</p>
+				<dl className="grid divide-y sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-4">
+					{[
+						[
+							t(
+								"analytics.vacationTrends.utilization.overall",
+								"Overall Utilization",
+							),
+							`${overallData.utilizationRate.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`,
+						],
+						[
+							t("analytics.vacationTrends.allocated", "Allocated"),
+							days(overallData.totalDaysAllocated),
+						],
+						[
+							t("analytics.vacationTrends.taken", "Taken"),
+							days(overallData.totalDaysTaken),
+						],
+						[
+							t("analytics.vacationTrends.remaining", "Remaining"),
+							days(overallData.totalDaysRemaining),
+						],
+					].map(([label, value]) => (
+						<div
+							key={label}
+							className="min-w-0 space-y-2 py-4 sm:px-4 sm:border-r last:border-r-0"
+						>
+							<dt className="text-sm text-muted-foreground">{label}</dt>
+							<dd className="text-2xl font-semibold tabular-nums">{value}</dd>
 						</div>
-						<div className="text-right text-sm text-muted-foreground">
-							<p>
-								{t("analytics.vacationTrends.daysTaken", "{count} days taken", {
-									count: overallData.totalDaysTaken,
-								})}
-							</p>
-							<p>
-								{t("analytics.vacationTrends.daysRemaining", "{count} days remaining", {
-									count: overallData.totalDaysRemaining,
-								})}
-							</p>
-						</div>
-					</div>
-					<Progress value={overallData.utilizationRate} className="h-2" />
-				</div>
+					))}
+				</dl>
+				<Progress
+					aria-label={t(
+						"analytics.vacationTrends.utilization.overall",
+						"Overall Utilization",
+					)}
+					value={overallData.utilizationRate}
+					className="h-2"
+				/>
 			</CardContent>
 		</Card>
 	);
 }
 
-function MonthlyUsageCard({ data, t }: { data: VacationMonthlyData; t: VacationTrendsTranslate }) {
+function MonthlyUsageCard({
+	data,
+	t,
+}: {
+	data: VacationMonthlyData;
+	t: VacationTrendsTranslate;
+}) {
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.vacationTrends.monthlyUsage.title", "Monthly Vacation Usage")}
+					<h2>
+						{t(
+							"analytics.vacationTrends.monthlyUsage.title",
+							"Monthly Vacation Usage",
+						)}
+					</h2>
 				</CardTitle>
 				<CardDescription>
-					{t("analytics.vacationTrends.monthlyUsage.description", "Vacation days taken per month")}
+					{t(
+						"analytics.vacationTrends.monthlyUsage.description",
+						"Vacation days taken per month",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				{data.length > 0 ? (
 					<ChartContainer
 						config={{
-							days: {
+							daysTaken: {
 								label: t("analytics.common.days", "Days"),
-								color: "hsl(var(--primary))",
+								color: "var(--primary)",
 							},
 						}}
-						className="h-[300px]"
+						className="h-[260px] w-full"
 					>
 						<LineChart data={data}>
 							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+							<XAxis
+								dataKey="month"
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+							/>
 							<YAxis tickLine={false} axisLine={false} />
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<Line
 								type="monotone"
-								dataKey="days"
-								stroke="var(--color-days)"
+								dataKey="daysTaken"
+								stroke="var(--color-daysTaken)"
 								strokeWidth={2}
 								dot={{ r: 4 }}
 							/>
@@ -137,9 +208,16 @@ function MonthlyUsageCard({ data, t }: { data: VacationMonthlyData; t: VacationT
 					</ChartContainer>
 				) : (
 					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t("analytics.vacationTrends.monthlyUsage.empty", "No monthly usage data available")}
+						{t(
+							"analytics.vacationTrends.monthlyUsage.empty",
+							"No monthly usage data available",
+						)}
 					</div>
 				)}
+				<MonthlyValues
+					rows={data.map((row) => ({ month: row.month, days: row.daysTaken }))}
+					t={t}
+				/>
 			</CardContent>
 		</Card>
 	);
@@ -152,10 +230,15 @@ function VacationBalanceCard({
 	employees: VacationEmployeeData[];
 	t: VacationTrendsTranslate;
 }) {
+	const locale = useLocale();
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.vacationTrends.balance.title", "Vacation Balance")}</CardTitle>
+				<CardTitle>
+					<h2>
+						{t("analytics.vacationTrends.balance.title", "Vacation Balance")}
+					</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"analytics.vacationTrends.balance.description",
@@ -166,10 +249,19 @@ function VacationBalanceCard({
 			<CardContent>
 				{employees.length === 0 ? (
 					<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-						{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
+						{t(
+							"analytics.common.noDataForPeriod",
+							"No data available for the selected period",
+						)}
 					</div>
 				) : (
-					<Table mobileLayout="stacked">
+					<Table
+						aria-label={t(
+							"analytics.vacationTrends.balance.description",
+							"Days allocated, taken, and remaining by employee",
+						)}
+						className="min-w-[44rem] tabular-nums [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:z-10 [&_th:first-child]:bg-card"
+					>
 						<MetricsTableHeader
 							name={t("analytics.common.employee", "Employee")}
 							metrics={[
@@ -185,15 +277,38 @@ function VacationBalanceCard({
 						<TableBody>
 							{employees.map((employee) => (
 								<TableRow key={employee.employeeId}>
-									<TableCell className="font-medium">{employee.employeeName}</TableCell>
-									<TableCell className="text-right">{employee.allocated}</TableCell>
-									<TableCell className="text-right">{employee.taken}</TableCell>
-									<TableCell className="text-right">{employee.remaining}</TableCell>
+									<TableCell className="sticky left-0 z-10 max-w-48 whitespace-normal bg-card font-medium">
+										<span>{employee.employeeName}</span>
+										{employee.allowanceConfigured === false && (
+											<p className="mt-1 text-sm font-normal text-muted-foreground">
+												{t(
+													"analytics.vacationTrends.allowanceMissing",
+													"Allowance not configured",
+												)}
+											</p>
+										)}
+									</TableCell>
+									<TableCell className="text-right">
+										{employee.allocated.toLocaleString(locale)}
+									</TableCell>
+									<TableCell className="text-right">
+										{employee.taken.toLocaleString(locale)}
+									</TableCell>
+									<TableCell className="text-right">
+										{employee.remaining.toLocaleString(locale)}
+									</TableCell>
 									<TableCell>
 										<div className="flex items-center gap-2">
-											<Progress value={employee.utilizationRate} className="h-2 w-[100px]" />
+											<Progress
+												aria-label={employee.employeeName}
+												value={employee.utilizationRate}
+												className="h-2 w-[100px]"
+											/>
 											<span className="text-sm text-muted-foreground">
-												{employee.utilizationRate.toFixed(0)}%
+												{employee.utilizationRate.toLocaleString(locale, {
+													maximumFractionDigits: 0,
+												})}
+												%
 											</span>
 										</div>
 									</TableCell>
@@ -207,12 +322,23 @@ function VacationBalanceCard({
 	);
 }
 
-function PeakMonthsCard({ data, t }: { data: VacationPeakMonthData; t: VacationTrendsTranslate }) {
+function PeakMonthsCard({
+	data,
+	t,
+}: {
+	data: VacationPeakMonthData;
+	t: VacationTrendsTranslate;
+}) {
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.vacationTrends.peakMonths.title", "Peak Vacation Months")}
+					<h2>
+						{t(
+							"analytics.vacationTrends.peakMonths.title",
+							"Peak Vacation Months",
+						)}
+					</h2>
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -226,15 +352,23 @@ function PeakMonthsCard({ data, t }: { data: VacationPeakMonthData; t: VacationT
 					<ChartContainer
 						config={{
 							count: {
-								label: t("analytics.vacationTrends.vacationDays", "Vacation Days"),
-								color: "hsl(var(--chart-3))",
+								label: t(
+									"analytics.vacationTrends.vacationDays",
+									"Vacation Days",
+								),
+								color: "var(--primary)",
 							},
 						}}
-						className="h-[300px]"
+						className="h-[260px] w-full"
 					>
 						<BarChart data={data}>
 							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+							<XAxis
+								dataKey="month"
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+							/>
 							<YAxis tickLine={false} axisLine={false} />
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<Bar dataKey="count" fill="var(--color-count)" radius={4} />
@@ -242,15 +376,130 @@ function PeakMonthsCard({ data, t }: { data: VacationPeakMonthData; t: VacationT
 					</ChartContainer>
 				) : (
 					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t("analytics.vacationTrends.peakMonths.empty", "No peak month data available")}
+						{t(
+							"analytics.vacationTrends.peakMonths.empty",
+							"No peak month data available",
+						)}
 					</div>
 				)}
+				<MonthlyValues
+					rows={data.map((row) => ({ month: row.month, days: row.count }))}
+					t={t}
+				/>
 			</CardContent>
 		</Card>
 	);
 }
 
+function MonthlyValues({
+	rows,
+	t,
+}: {
+	rows: Array<{ month: string; days: number }>;
+	t: VacationTrendsTranslate;
+}) {
+	const locale = useLocale();
+	if (!rows.length) return null;
+	return (
+		<details className="mt-4 text-sm">
+			<summary className="cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+				{t("analytics.vacationTrends.monthlyValues", "View monthly values")}
+			</summary>
+			<ul className="mt-3 divide-y">
+				{rows.map((row) => (
+					<li
+						key={row.month}
+						className="flex flex-wrap justify-between gap-2 py-2 tabular-nums"
+					>
+						<span>{row.month}</span>
+						<span>
+							{t("analytics.vacationTrends.dayValue", "{count} days", {
+								count: row.days.toLocaleString(locale),
+							})}
+						</span>
+					</li>
+				))}
+			</ul>
+		</details>
+	);
+}
+
+function VacationToolbar({
+	dateRange,
+	onDateRangeChange,
+	employees,
+	exportDisabled,
+	t,
+}: {
+	dateRange: DateRange | null;
+	onDateRangeChange: (range: DateRange) => void;
+	employees: VacationEmployeeData[];
+	exportDisabled: boolean;
+	t: VacationTrendsTranslate;
+}) {
+	return (
+		<DataTableToolbar
+			filterControls={
+				dateRange ? (
+					<AnalyticsDateRangePicker
+						value={dateRange}
+						onChange={onDateRangeChange}
+					/>
+				) : (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"analytics.common.loadingOrganizationSettings",
+							"Loading organization settings before enabling presets.",
+						)}
+					</p>
+				)
+			}
+			actions={
+				<ExportButton
+					data={{
+						data: employees,
+						headers: [
+							{
+								key: "employeeName",
+								label: t("analytics.common.employee", "Employee"),
+							},
+							{
+								key: "allocated",
+								label: t("analytics.vacationTrends.allocated", "Allocated"),
+							},
+							{
+								key: "taken",
+								label: t("analytics.vacationTrends.taken", "Taken"),
+							},
+							{
+								key: "remaining",
+								label: t("analytics.vacationTrends.remaining", "Remaining"),
+							},
+							{
+								key: "utilizationRate",
+								label: t(
+									"analytics.vacationTrends.utilizationPercent",
+									"Utilization %",
+								),
+							},
+						],
+						filename: `vacation-trends-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
+					}}
+					disabled={exportDisabled}
+				/>
+			}
+		/>
+	);
+}
+
 export default function VacationTrendsPage() {
+	const organizationId = useOrganizationSettings(
+		(state) => state.organizationId,
+	);
+	return <VacationTrends key={organizationId ?? "pending"} />;
+}
+
+function VacationTrends() {
 	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
@@ -260,15 +509,29 @@ export default function VacationTrendsPage() {
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<DateRange | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [vacationData, setVacationData] = useState<VacationTrendsData | null>(null);
+	const [state, setState] = useState<{
+		data: VacationTrendsData | null;
+		key: string;
+		loading: boolean;
+		refreshing: boolean;
+		failed: boolean;
+	}>({ data: null, key: "", loading: true, refreshing: false, failed: false });
+	const requestKey = JSON.stringify([
+		dateRange?.start.getTime(),
+		dateRange?.end.getTime(),
+		timezone,
+	]);
+	const vacationData = state.key === requestKey ? state.data : null;
+	const loading = state.loading || (!vacationData && !state.failed);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		const nextDateRange = getAnalyticsDateRangeForPreset("current_year", { timezone });
+		const nextDateRange = getAnalyticsDateRangeForPreset("current_year", {
+			timezone,
+		});
 		setDateRange((currentDateRange) =>
 			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
 				? currentDateRange
@@ -288,26 +551,55 @@ export default function VacationTrendsPage() {
 				return;
 			}
 
-			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_year", { timezone });
-			if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
-			return;
-		}
+			const expectedDefaultDateRange = getAnalyticsDateRangeForPreset(
+				"current_year",
+				{ timezone },
+			);
+			if (
+				!hasUserChangedRange.current &&
+				!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+			) {
+				return;
+			}
 			const range = dateRange;
 			const generation = ++refreshGeneration.current;
 
 			const isLatest = () => generation === refreshGeneration.current;
 
-			if (!background) setLoading(true);
+			setState((current) => ({
+				...current,
+				loading: !background,
+				refreshing: background,
+				failed: false,
+			}));
+			let failed = false;
 			await Promise.resolve()
-			.then(() => getVacationTrendsData(range))
-			.then((result) => {
+				.then(() => getVacationTrendsData(range))
+				.then((result) => {
 					if (!isLatest()) {
 						return;
 					}
 
 					if (result.success && result.data) {
-						setVacationData(result.data);
+						setState({
+							data: result.data,
+							key: requestKey,
+							loading: false,
+							refreshing: false,
+							failed: false,
+						});
 					} else {
+						if (
+							!result.success &&
+							[
+								"AuthenticationError",
+								"AuthorizationError",
+								"NotFoundError",
+								"BillingError",
+							].includes(result.code ?? "")
+						) {
+							setState((current) => ({ ...current, data: null }));
+						}
 						throw new Error("Failed to load analytics data");
 					}
 				})
@@ -317,17 +609,28 @@ export default function VacationTrendsPage() {
 					}
 
 					console.error("Failed to load vacation trends data:", error);
+					failed = true;
+					setState((current) => ({ ...current, failed: true }));
 					toast.error(
-					t("analytics.vacationTrends.errors.loadData", "Failed to load vacation trends data"),
-				);
+						t(
+							"analytics.vacationTrends.errors.loadData",
+							"Failed to load vacation trends data",
+						),
+					);
 				})
 				.finally(() => {
 					if (isLatest()) {
-						setLoading(false);
+						setState((current) => ({
+							...current,
+							loading: false,
+							refreshing: false,
+						}));
 					}
 				});
+			if (failed && background)
+				throw new Error("Vacation analytics refresh failed");
 		},
-		[dateRange, isHydrated, timezone, t],
+		[dateRange, isHydrated, timezone, t, requestKey],
 	);
 	useViewRefresh(() => runAnalyticsLoad(true));
 	useEffect(() => {
@@ -341,66 +644,126 @@ export default function VacationTrendsPage() {
 		};
 	}, [runAnalyticsLoad]);
 
-	const overallData = vacationData?.overall || {
-		totalDaysAllocated: 0,
-		totalDaysTaken: 0,
-		totalDaysRemaining: 0,
-		utilizationRate: 0,
-	};
+	const employees = vacationData?.byEmployee ?? [];
+
+	return (
+		<div className="space-y-6">
+			{/* Controls */}
+			<VacationToolbar
+				dateRange={dateRange}
+				onDateRangeChange={handleDateRangeChange}
+				employees={employees}
+				exportDisabled={
+					!vacationData ||
+					!dateRange ||
+					state.failed ||
+					state.refreshing ||
+					loading
+				}
+				t={t}
+			/>
+			<VacationContent
+				vacationData={vacationData}
+				loading={loading}
+				failed={state.failed}
+				refreshing={state.refreshing}
+				onRetry={() =>
+					void runAnalyticsLoad(Boolean(vacationData)).catch(() => {})
+				}
+				t={t}
+			/>
+		</div>
+	);
+}
+
+function VacationContent({
+	vacationData,
+	loading,
+	failed,
+	refreshing,
+	onRetry,
+	t,
+}: {
+	vacationData: VacationTrendsData | null;
+	loading: boolean;
+	failed: boolean;
+	refreshing: boolean;
+	onRetry: () => void;
+	t: VacationTrendsTranslate;
+}) {
+	const overallData = vacationData?.overall;
 
 	const employees = vacationData?.byEmployee || [];
 
 	// Prepare chart data
 	const monthlyUsageData = vacationData?.byMonth || [];
-	const peakMonthsData = vacationData?.patterns?.peakMonths || [];
+	const peakMonthsData = (vacationData?.patterns?.peakMonths ?? []).flatMap(
+		(month) => {
+			const row = monthlyUsageData.find((row) => row.month === month);
+			return row ? [{ month, count: row.daysTaken }] : [];
+		},
+	);
 
 	return (
-		<div className="space-y-6 px-4 lg:px-6">
-			{/* Controls */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				{dateRange ? (
-					<AnalyticsDateRangePicker value={dateRange} onChange={handleDateRangeChange} />
-				) : (
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"analytics.common.loadingOrganizationSettings",
-							"Loading organization settings before enabling presets.",
-						)}
-					</p>
-				)}
-				<ExportButton
-					data={{
-						data: employees,
-						headers: [
-							{ key: "employeeName", label: t("analytics.common.employee", "Employee") },
-							{ key: "allocated", label: t("analytics.vacationTrends.allocated", "Allocated") },
-							{ key: "taken", label: t("analytics.vacationTrends.taken", "Taken") },
-							{ key: "remaining", label: t("analytics.vacationTrends.remaining", "Remaining") },
-							{
-								key: "utilizationRate",
-								label: t("analytics.vacationTrends.utilizationPercent", "Utilization %"),
-							},
-						],
-						filename: `vacation-trends-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
-					}}
-					disabled={!vacationData || !dateRange}
-				/>
-			</div>
+		<>
+			{refreshing && (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t("analytics.vacationTrends.refreshing", "Refreshing vacation data")}
+				</p>
+			)}
+			{failed && (
+				<Alert variant="destructive">
+					<AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+						<span>
+							{t(
+								"analytics.vacationTrends.errors.retryDescription",
+								"Vacation data could not be loaded. Retry the selected period.",
+							)}
+						</span>
+						<Button variant="outline" onClick={() => onRetry()}>
+							{t("common.retry", "Retry")}
+						</Button>
+					</AlertDescription>
+				</Alert>
+			)}
 
 			{loading && (
-				<div className="flex items-center justify-center py-12">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-				</div>
+				<LoadingRegion
+					className="flex items-center justify-center py-12"
+					label={{
+						labelKey: "analytics.vacationTrends.loading",
+						labelDefault: "Loading vacation data",
+					}}
+				>
+					<IconLoader2
+						aria-hidden="true"
+						className="size-6 animate-spin text-muted-foreground motion-reduce:animate-none"
+					/>
+				</LoadingRegion>
 			)}
 
-			{!loading && (
+			{!loading && overallData && (
 				<>
+					{employees.some(
+						(employee) => employee.allowanceConfigured === false,
+					) && (
+						<Alert>
+							<AlertDescription>
+								{t(
+									"analytics.vacationTrends.allowanceSource",
+									"Some employees have no stored allowance. Totals use the existing stored allowances only.",
+								)}
+							</AlertDescription>
+						</Alert>
+					)}
 					<VacationUtilizationCard overallData={overallData} t={t} />
-					<MonthlyUsageCard data={monthlyUsageData} t={t} />
 					<VacationBalanceCard employees={employees} t={t} />
-					<PeakMonthsCard data={peakMonthsData} t={t} />
+					<div className="grid min-w-0 gap-6 xl:grid-cols-2">
+						<MonthlyUsageCard data={monthlyUsageData} t={t} />
+						<PeakMonthsCard data={peakMonthsData} t={t} />
+					</div>
 				</>
 			)}
-		</div>
+		</>
 	);
 }

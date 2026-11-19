@@ -1,0 +1,9 @@
+{
+  "owner": "same-origin sidebar_state localStorage; synchronous save, no server preference request",
+  "storedBefore": "false",
+  "settled": {
+    "stored": "false",
+    "collapsed": true,
+    "path": "/en/scheduling"
+  }
+}

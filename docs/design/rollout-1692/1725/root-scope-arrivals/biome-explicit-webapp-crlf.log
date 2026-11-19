@@ -1,0 +1,355 @@
+src\lib\payroll-workspace\pdf-exporter.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    130 130 │           employeeName: "Grace Hopper",␍
+    131 131 │           employeeNumber: "E-2",␍
+    132     │ - → → → → rows:·[␍
+    133     │ - → → → → → {·date:·"2026-06-04",·categoryName:·"Sick",·periodLabel:·"Full·day"·},␍
+    134     │ - → → → → ],␍
+        132 │ + → → → → rows:·[{·date:·"2026-06-04",·categoryName:·"Sick",·periodLabel:·"Full·day"·}],␍
+    135 133 │         },␍
+    136 134 │       ]);␍
+    ······· │
+    216 214 │   ␍
+    217 215 │       expect(␍
+    218     │ - → → → buildPayrollAbsenceSections(nameOrderingSummary).map(␍
+    219     │ - → → → → (section)·=>·section.employeeName,␍
+    220     │ - → → → ),␍
+        216 │ + → → → buildPayrollAbsenceSections(nameOrderingSummary).map((section)·=>·section.employeeName),␍
+    221 217 │       ).toEqual(["ada", "Zoe"]);␍
+    222 218 │     });␍
+    ······· │
+    243 239 │   ␍
+    244 240 │       expect(␍
+    245     │ - → → → buildPayrollAbsenceSections(identicalNamesSummary).map(␍
+    246     │ - → → → → (section)·=>·section.employeeId,␍
+    247     │ - → → → ),␍
+        241 │ + → → → buildPayrollAbsenceSections(identicalNamesSummary).map((section)·=>·section.employeeId),␍
+    248 242 │       ).toEqual(["employee-1", "employee-2"]);␍
+    249 243 │     });␍
+    ······· │
+    278 272 │             employeeName: "Grace Hopper",␍
+    279 273 │             employeeNumber: null,␍
+    280     │ - → → → → → rows:·[␍
+    281     │ - → → → → → → {·date:·"2026-06-04",·categoryName:·"Vacation",·periodLabel:·"PM"·},␍
+    282     │ - → → → → → ],␍
+        274 │ + → → → → → rows:·[{·date:·"2026-06-04",·categoryName:·"Vacation",·periodLabel:·"PM"·}],␍
+    283 275 │           },␍
+    284 276 │         ]),␍
+    ······· │
+    309 301 │   ␍
+    310 302 │     it("omits absence sections when there are no approved details", () => {␍
+    311     │ - → → expect(␍
+    312     │ - → → → buildPayrollAbsenceSections({·...summary,·absenceDetails:·[]·}),␍
+    313     │ - → → ).toEqual([]);␍
+        303 │ + → → expect(buildPayrollAbsenceSections({·...summary,·absenceDetails:·[]·})).toEqual([]);␍
+    314 304 │     });␍
+    315 305 │   ␍
+    316 306 │     it("generates a stable filename", () => {␍
+    317     │ - → → expect(generatePayrollPDFFilename(summary)).toBe(␍
+    318     │ - → → → "payroll-acme-gmbh-2026-06-01-2026-06-30.pdf",␍
+    319     │ - → → );␍
+        307 │ + → → expect(generatePayrollPDFFilename(summary)).toBe("payroll-acme-gmbh-2026-06-01-2026-06-30.pdf");␍
+    320 308 │     });␍
+    321 309 │   ␍
+    ······· │
+    327 315 │     it("exports same-source blockers of different types without duplicate keys or omission", async () => {␍
+    328 316 │       const sharedId = "11111111-1111-4111-8111-111111111111";␍
+    329     │ - → → const·consoleError·=·vi␍
+    330     │ - → → → .spyOn(console,·"error")␍
+    331     │ - → → → .mockImplementation(()·=>·undefined);␍
+        317 │ + → → const·consoleError·=·vi.spyOn(console,·"error").mockImplementation(()·=>·undefined);␍
+    332 318 │   ␍
+    333 319 │       try {␍
+    ······· │
+    354 340 │         });␍
+    355 341 │   ␍
+    356     │ - → → → expect(collidingBlockersPDF.byteLength).toBeGreaterThan(␍
+    357     │ - → → → → singleBlockerPDF.byteLength,␍
+    358     │ - → → → );␍
+        342 │ + → → → expect(collidingBlockersPDF.byteLength).toBeGreaterThan(singleBlockerPDF.byteLength);␍
+    359 343 │         expect(consoleError.mock.calls.flat().join(" ")).not.toContain(␍
+    360 344 │           "Encountered two children with the same key",␍
+
+
+src\lib\payroll-workspace\summary.cutover.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    54 54 │     it("does not calculate payroll totals from an incomplete canonical dataset", async () => {␍
+    55 55 │       mockState.assertCanonicalCutoverReady.mockRejectedValue(␍
+    56    │ - → → → new·Error(␍
+    57    │ - → → → → "Canonical·time-record·backfill·is·incomplete·for·organization·org-1",␍
+    58    │ - → → → ),␍
+       56 │ + → → → new·Error("Canonical·time-record·backfill·is·incomplete·for·organization·org-1"),␍
+    59 57 │       );␍
+    60 58 │   ␍
+
+
+src\lib\payroll-workspace\summary.test.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━━━━━
+
+  × Sort these imports.
+
+   > 1 │ import { DateTime } from "luxon";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   > 2 │ import { Temporal } from "temporal-polyfill";
+   > 3 │ import { describe, expect, it } from "vitest";
+   > 4 │ import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
+        ...
+  > 15 │ import { workPeriodsFromCollectedInput } from "@/lib/payroll-export/collected-work";
+  > 16 │ import { isDismissiblePayrollBlockerType } from "./blocker-dismissals";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    17 │ import type { PayrollSummaryWorkRow } from "./types";
+    18 │
+
+  i Safe fix: Organize imports and exports (Biome)
+
+      2   2 │   import { Temporal } from "temporal-polyfill";␍
+      3   3 │   import { describe, expect, it } from "vitest";␍
+      4     │ - import·{·filterDismissedPayrollBlockers·}·from·"./blocker-dismissals";␍
+      5     │ - import·{␍
+      6     │ - → buildPayrollSummaryFromRows,␍
+      7     │ - → buildOffboardingClockRepairBlockers,␍
+      8     │ - → buildPendingAbsenceBlockers,␍
+      9     │ - → calculatePayrollWorkedMinutes,␍
+     10     │ - → filterMissingClockOutBlockers,␍
+     11     │ - → filterPendingTimeApprovalBlockers,␍
+     12     │ - → payrollBlockersFromCollection,␍
+     13     │ - }·from·"./summary";␍
+     14     │ - import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+     15     │ - import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+     16     │ - import·{·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          4 │ + import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+          5 │ + import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+          6 │ + import·{·filterDismissedPayrollBlockers,·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          7 │ + import·{␍
+          8 │ + → buildOffboardingClockRepairBlockers,␍
+          9 │ + → buildPayrollSummaryFromRows,␍
+         10 │ + → buildPendingAbsenceBlockers,␍
+         11 │ + → calculatePayrollWorkedMinutes,␍
+         12 │ + → filterMissingClockOutBlockers,␍
+         13 │ + → filterPendingTimeApprovalBlockers,␍
+         14 │ + → payrollBlockersFromCollection,␍
+         15 │ + }·from·"./summary";␍
+     17  16 │   import type { PayrollSummaryWorkRow } from "./types";␍
+     18  17 │   ␍
+
+
+src\lib\payroll-workspace\summary.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    251 251 │         { categoryId: "overnight", categoryName: "Overnight", days: 0.5 },␍
+    252 252 │       ]);␍
+    253     │ - → → expect(␍
+    254     │ - → → → summary.absenceDetails.map(({·date,·period·})·=>·({·date,·period·})),␍
+    255     │ - → → ).toEqual([␍
+        253 │ + → → expect(summary.absenceDetails.map(({·date,·period·})·=>·({·date,·period·}))).toEqual([␍
+    256 254 │         { date: "2026-06-10", period: "pm" },␍
+    257 255 │         { date: "2026-06-11", period: "am" },␍
+    ······· │
+    289 287 │       });␍
+    290 288 │   ␍
+    291     │ - → → expect(summary.employees.map((employee)·=>·employee.id)).toEqual([␍
+    292     │ - → → → "employee-1",␍
+    293     │ - → → → "employee-2",␍
+    294     │ - → → ]);␍
+        289 │ + → → expect(summary.employees.map((employee)·=>·employee.id)).toEqual(["employee-1",·"employee-2"]);␍
+    295 290 │     });␍
+    296 291 │   ␍
+    ······· │
+    460 455 │       }).workedMinutesByEmployee;␍
+    461 456 │   ␍
+    462     │ - → → expect((juneMinutes.get("employee-1")·??·0)·+·(julyMinutes.get("employee-1")·??·0)).toBe(␍
+    463     │ - → → → 346,␍
+    464     │ - → → );␍
+        457 │ + → → expect((juneMinutes.get("employee-1")·??·0)·+·(julyMinutes.get("employee-1")·??·0)).toBe(346);␍
+    465 458 │     });␍
+    466 459 │   ␍
+    ······· │
+    878 871 │         generatedBy: { id: "payroll-1", name: "Payroll User" },␍
+    879 872 │         employees: [␍
+    880     │ - → → → → {·id:·"employee-1",·name:·"Ada",·employeeNumber:·null,·teamName:·null,·contractType:·"hourly"·},␍
+        873 │ + → → → → {␍
+        874 │ + → → → → → id:·"employee-1",␍
+        875 │ + → → → → → name:·"Ada",␍
+        876 │ + → → → → → employeeNumber:·null,␍
+        877 │ + → → → → → teamName:·null,␍
+        878 │ + → → → → → contractType:·"hourly",␍
+        879 │ + → → → → },␍
+    881 880 │         ],␍
+    882 881 │         workRows: [],␍
+
+
+src\lib\payroll-workspace\summary.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    275 275 │               type: "pending_time_correction" as const,␍
+    276 276 │               label: "Pending time correction",␍
+    277     │ - → → → → → → ...localizeBlockerInstant(␍
+    278     │ - → → → → → → → row.startAt,␍
+    279     │ - → → → → → → → input.timezoneByEmployeeId.get(row.employeeId),␍
+    280     │ - → → → → → → ),␍
+        277 │ + → → → → → → ...localizeBlockerInstant(row.startAt,·input.timezoneByEmployeeId.get(row.employeeId)),␍
+    281 278 │             },␍
+    282 279 │           ]␍
+    ······· │
+    298 295 │               type: "missing_clock_out" as const,␍
+    299 296 │               label: "Missing clock-out",␍
+    300     │ - → → → → → → ...localizeBlockerInstant(␍
+    301     │ - → → → → → → → row.startAt,␍
+    302     │ - → → → → → → → input.timezoneByEmployeeId.get(row.employeeId),␍
+    303     │ - → → → → → → ),␍
+        297 │ + → → → → → → ...localizeBlockerInstant(row.startAt,·input.timezoneByEmployeeId.get(row.employeeId)),␍
+    304 298 │             },␍
+    305 299 │           ]␍
+    ······· │
+    314 308 │   export function buildOffboardingClockRepairBlockers(input: {␍
+    315 309 │     timezoneByEmployeeId: ReadonlyMap<string, string>;␍
+    316     │ - → repairs:·ReadonlyArray<Pick<OpenDepartureClockRepair,·"reviewId"·|·"employeeId"·|·"affectedEndAt">>;␍
+        310 │ + → repairs:·ReadonlyArray<␍
+        311 │ + → → Pick<OpenDepartureClockRepair,·"reviewId"·|·"employeeId"·|·"affectedEndAt">␍
+        312 │ + → >;␍
+    317 313 │   }): PayrollBlocker[] {␍
+    318 314 │     return input.repairs.map((repair) => {␍
+    ······· │
+    698 694 │     const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows, clockRepairs] =␍
+    699 695 │       await Promise.all([␍
+    700     │ - → → collectionOwnsWorkBlockers␍
+    701     │ - → → → ?·[]␍
+    702     │ - → → → :·db␍
+    703     │ - → → → .select({␍
+    704     │ - → → → → id:·timeRecord.id,␍
+    705     │ - → → → → employeeId:·timeRecord.employeeId,␍
+    706     │ - → → → → startAt:·timeRecord.startAt,␍
+    707     │ - → → → })␍
+    708     │ - → → → .from(timeRecord)␍
+    709     │ - → → → .where(␍
+    710     │ - → → → → and(␍
+    711     │ - → → → → → eq(timeRecord.organizationId,·organizationId),␍
+    712     │ - → → → → → eq(timeRecord.recordKind,·"work"),␍
+    713     │ - → → → → → inArray(timeRecord.employeeId,·allowedEmployeeIds),␍
+    714     │ - → → → → → isNull(timeRecord.endAt),␍
+    715     │ - → → → → → lte(timeRecord.startAt,·period.end.toUTC().toJSDate()),␍
+    716     │ - → → → → ),␍
+    717     │ - → → → ),␍
+    718     │ - → → db␍
+    719     │ - → → → .select({␍
+    720     │ - → → → → id:·timeRecord.id,␍
+    721     │ - → → → → employeeId:·timeRecord.employeeId,␍
+    722     │ - → → → → startDate:·absenceEntry.startDate,␍
+    723     │ - → → → })␍
+    724     │ - → → → .from(timeRecord)␍
+    725     │ - → → → .innerJoin(␍
+    726     │ - → → → → timeRecordAbsence,␍
+    727     │ - → → → → and(␍
+    728     │ - → → → → → eq(timeRecord.id,·timeRecordAbsence.recordId),␍
+    729     │ - → → → → → eq(timeRecordAbsence.organizationId,·organizationId),␍
+    730     │ - → → → → ),␍
+    731     │ - → → → )␍
+    732     │ - → → → .leftJoin(␍
+    733     │ - → → → → absenceEntry,␍
+    734     │ - → → → → and(␍
+    735     │ - → → → → → eq(absenceEntry.canonicalRecordId,·timeRecord.id),␍
+    736     │ - → → → → → eq(absenceEntry.organizationId,·organizationId),␍
+    737     │ - → → → → ),␍
+    738     │ - → → → )␍
+    739     │ - → → → .where(␍
+    740     │ - → → → → and(␍
+    741     │ - → → → → → eq(timeRecord.organizationId,·organizationId),␍
+    742     │ - → → → → → eq(timeRecord.recordKind,·"absence"),␍
+    743     │ - → → → → → eq(timeRecord.approvalState,·"pending"),␍
+    744     │ - → → → → → inArray(timeRecord.employeeId,·allowedEmployeeIds),␍
+    745     │ - → → → → → lte(timeRecord.startAt,·period.end.toUTC().toJSDate()),␍
+    746     │ - → → → → → or(isNull(timeRecord.endAt),·gte(timeRecord.endAt,·period.start.toUTC().toJSDate())),␍
+    747     │ - → → → → ),␍
+    748     │ - → → → ),␍
+    749     │ - → → collectionOwnsWorkBlockers␍
+    750     │ - → → → ?·[]␍
+    751     │ - → → → :·db␍
+    752     │ - → → → .select({␍
+    753     │ - → → → → id:·approvalRequest.id,␍
+    754     │ - → → → → organizationId:·approvalRequest.organizationId,␍
+    755     │ - → → → → requestedBy:·approvalRequest.requestedBy,␍
+    756     │ - → → → → status:·approvalRequest.status,␍
+    757     │ - → → → → entityType:·approvalRequest.entityType,␍
+    758     │ - → → → → canonicalRecordId:·approvalRequest.canonicalRecordId,␍
+    759     │ - → → → → recordId:·timeRecord.id,␍
+    760     │ - → → → → recordOrganizationId:·timeRecord.organizationId,␍
+    761     │ - → → → → employeeId:·timeRecord.employeeId,␍
+    762     │ - → → → → startAt:·timeRecord.startAt,␍
+    763     │ - → → → → endAt:·timeRecord.endAt,␍
+    764     │ - → → → })␍
+    765     │ - → → → .from(approvalRequest)␍
+    766     │ - → → → .innerJoin(␍
+    767     │ - → → → → timeRecord,␍
+    768     │ - → → → → and(␍
+    769     │ - → → → → → eq(approvalRequest.canonicalRecordId,·timeRecord.id),␍
+    770     │ - → → → → → eq(timeRecord.organizationId,·organizationId),␍
+    771     │ - → → → → ),␍
+    772     │ - → → → )␍
+    773     │ - → → → .where(␍
+    774     │ - → → → → and(␍
+    775     │ - → → → → → eq(approvalRequest.organizationId,·organizationId),␍
+    776     │ - → → → → → eq(approvalRequest.status,·"pending"),␍
+    777     │ - → → → → → eq(approvalRequest.entityType,·"time_entry"),␍
+    778     │ - → → → → → inArray(approvalRequest.requestedBy,·allowedEmployeeIds),␍
+    779     │ - → → → → → inArray(timeRecord.employeeId,·allowedEmployeeIds),␍
+    780     │ - → → → → → isNotNull(timeRecord.endAt),␍
+    781     │ - → → → → → lte(timeRecord.startAt,·period.end.toUTC().toJSDate()),␍
+    782     │ - → → → → → gte(timeRecord.endAt,·period.start.toUTC().toJSDate()),␍
+    783     │ - → → → → ),␍
+    784     │ - → → → ),␍
+    785     │ - → → collectionOwnsWorkBlockers␍
+    786     │ - → → → ?·[]␍
+    787     │ - → → → :·findOpenDepartureClockRepairs(db,·{␍
+    788     │ - → → → → → organizationId,␍
+    789     │ - → → → → → employeeIds:·allowedEmployeeIds,␍
+    790     │ - → → → → → rangeStart:·period.start.toUTC().toJSDate(),␍
+    791     │ - → → → → → rangeEndExclusive:·period.end.toUTC().plus({·milliseconds:·1·}).toJSDate(),␍
+    792     │ - → → → → }),␍
+    793     │ - → ]);␍
+        696 │ + → → → collectionOwnsWorkBlockers␍
+        697 │ + → → → → ?·[]␍
+        698 │ + → → → → :·db␍
+        699 │ + → → → → → → .select({␍
+        700 │ + → → → → → → → id:·timeRecord.id,␍
+        701 │ + → → → → → → → employeeId:·timeRecord.employeeId,␍
+        702 │ + → → → → → → → startAt:·timeRecord.startAt,␍
+        703 │ + → → → → → → })␍
+        704 │ + → → → → → → .from(timeRecord)␍
+        705 │ + → → → → → → .where(␍
+        706 │ + → → → → → → → and(␍
+        707 │ + → → → → → → → → eq(timeRecord.organizationId,·organizationId),␍
+        708 │ + → → → → → → → → eq(timeRecord.recordKind,·"work"),␍
+        709 │ + → → → → → → → → inArray(timeRecord.employeeId,·allowedEmployeeIds),␍
+        710 │ + → → → → → → → → isNull(timeRecord.endAt),␍
+        711 │ + → → → → → → → → lte(timeRecord.startAt,·period.end.toUTC().toJSDate()),␍
+        712 │ + → → → → → → → ),␍
+        713 │ + → → → → → → ),␍
+        714 │ + → → → db␍
+        715 │ + → → → → .select({␍
+        716 │ + → → → → → id:·timeRecord.id,␍
+        717 │ + → → → → → employeeId:·timeRecord.employeeId,␍
+        718 │ + → → → → → startDate:·absenceEntry.startDate,␍
+        719 │ + → → → → })␍
+        720 │ + → → → → .from(timeRecord)␍
+        721 │ + → → → → .innerJoin(␍
+        722 │ + → → → → → timeRecordAbsence,␍
+        723 │ + → → → → → and(␍
+  102 more lines truncated
+
+
+Checked 11 files in 44ms. No fixes applied.
+Found 5 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp

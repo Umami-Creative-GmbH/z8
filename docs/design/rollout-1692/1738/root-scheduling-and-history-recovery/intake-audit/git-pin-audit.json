@@ -1,0 +1,2857 @@
+{
+  "readOnly": true,
+  "optionalLocksDisabled": true,
+  "trackedCounts": [
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "tracked": 17286,
+      "rootTree": "a729615f394e8108d53041d368cbf5dedb846039",
+      "appTree": "4937e4cd57c75182b8697741dd6a8f845cbb5bbb"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "tracked": 17406,
+      "rootTree": "86acb3e4959c122cf9f7e54edc9036528f9eb7c2",
+      "appTree": "d2857c2e6598885b716892e21965864ae63848c6"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "tracked": 17175,
+      "rootTree": "f574ea9113d26cc5d4314d0f3fbcb7804bf65804",
+      "appTree": "8f8db3bcdee37016a3bb1b9d78eb4e865a2387eb"
+    }
+  ],
+  "selectedTrees": [
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "selected": [
+        {
+          "path": "apps/webapp/next.config.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+        },
+        {
+          "path": "apps/webapp/package.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ac01ea7c0d42b1ac318c84e223609397bb406e9e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/__tests__/publish-compliance-handshake.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b07b0788eef33cc9e71a36a780ea402f040532e1"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.exports.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "72313e52256e48cfcbd682150ab364de7b5d882f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b799fcb39ee57b36ec6657c3752e13b42827bf51"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/current-employee-scope.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5cffa64a22cc96070c3f00695bd6e783e2e6af2a"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/location-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "be47aced84c7dbaaf89d6c36dd9904703b1dcb5d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "df5f6ecb9317faf53ee2f2364ffb89234ea59db8"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8cefb52b468cc416141c042ae918a10eba2a2f93"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.delete.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "fb9165d2634cf64889bcc5940941d12ff04fd55e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.range.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d35fd1669cb76ef81a03b6d1a8a75e5b385af01f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.skill-override.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f6c54147b4148eb189a4f6b6f2782973022c1ab7"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.timezone.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "288084991efca00eae836e080167e2cae6aa9bfc"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2798fff14aa95ef8aa8a3b436a14933d289c6dbb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.upcoming.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "0a2054b4e5b78ac2381914a9eb74d99ddc911ddf"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d24965520b025e69773340a00a63b98ac3512315"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1c09586c20b8f6eda0a4a08fbeff753c0e8b2224"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "611fccd510e1441a6fc5e759a44c5c6e007552ae"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a45f09a75f1f02f2cac083394674ce5cf3ed0be5"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.scope.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5c2ec36db451351485a57fc5bf59bb63a6e78541"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9d27e34ff824e4a8e67e219fca40e3ed72e9f81d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/layout.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2e6e8bac343f16c3b2acbc2885f1cdcf2505ffa2"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1c24e888bb22d25d2b0e124a9ceca7f17a96268c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "da681fb2127fce446cc9431ae19029562a5e3277"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "e497cbd4a6ee4550ff4f0e1eeb9f51b649ffdd2e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/publish-decision.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6691a2f391f4d0ccc54b4c30ff97c28fed090ce2"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6ef00657263d88e6f3cce173988b2b04a074381d"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/__tests__/publish-compliance-dialog-state.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b0529a574aab6e4e071f5c1a30eb4955246e2cf3"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a74fba45ece957e19e9b74c380cba3437fb99174"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2f9b48cffdfab3d1d63150a3c3c0b75c2bb0d231"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3354d05c0731c566f662a99cd06c16844e73b525"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "103106e8fe0646ea3c1d7fbce1b24dfb4b71bcec"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6c92478f27ccc17178252122a4a56a2f4d57ad01"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4c3b57457ebbaf4715719c3645c050c779d09dd5"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "817329d6c626f7a4f248c9533b76192796d0a314"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/publish-compliance-dialog.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d14b61e25d3a7bf2bcb43b790504893aa78f9fed"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "aaf3fc9bd9ee933e8a2e782748920473c68299c5"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-compliance-banner.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f3c5e1c31b6fc3f2ce5601445e6b42915db07c0e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "359a579bb5fca3d2abd26ba32c655c0a8fa564f2"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8a68955196364614b8f964a7df275ce3b6195edf"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-x-drag-and-drop.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "7493885a9d579907b0126f4012d133c35712688b"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-publish-flow-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b435a05e472d1cb863caf87427a1e4825695f6a8"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ef6c2cbffd457773b2f646b3490634e3bc1ed070"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "bdbacb1ec552c3c19bebf3decadac3885efd789d"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a8768a8e2ce7a96440fcd39ffb2ef73dbe74a55c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dc43ec7d197f5172182e7d96f8ca819c55612f66"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b1fb9d4ef70d1557148bdb658ffb9adbd4328d0c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "7f4c96e833730ab9ec15fa29feae4d324f20cda1"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1bfcf73f8d4f5ee5e1f8ce78d1b89242661d4a8f"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "21d2241fe341a17247ecb1b34594f927d91503ce"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a43ed5b320d9a310186ea69f0681eba90ca1852a"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-publish-flow.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5a9f85c61111f3007e3ca3feb6fbaecd42a1f5fb"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "471feb1bf750170028eee7874cb5a81d881a6681"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-request-assignee.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b2de182ebf446f6a4b8985e5723db7a1bdaf00df"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-request-decision.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "760b773eab9b03132195ce7eb8aaf98368373f09"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ed28b2a79d7df928381a99d62c74660f17693e91"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5cb2fe419aefc21f4577ee3d7842f4852173dd3c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/use-pending-shift-requests.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d4aca33d97593427600bf2bf0d0489ac5961b58c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9de924b7fe8d325d1ed74e8de41c2a12a9979642"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1a516e5bc7d1bfce61aa9aa3de1f22d885b0e08b"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "57b32349960aae4243a9306cd7f91ff028e52977"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1e77bbe25cc029c34efca56af6a67918cbfc7e92"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4567b710ec9c681026e79dac3fbe1dee3b5d76bd"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "0817f4dc6f9a9cbe2af6b8028063c6f020c0ae14"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "353f59a4c10bdd6aac46a7ae9f88549a4503224e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b5a1fd9f77da0b76976585238c591a60d185773"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-data.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ca75a855713ee102d07e2610d0db4266fcaa7517"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "51213219f68f5cad4789691066492ab239aad3cf"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "af965db15ff3bc3deb0c6356d30c910b013dc4c0"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-mutations.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6a9173eeff803fd84adb18afa569677fd45b9698"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-staffing-suggestions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "fc72609c08ef7ecbe44c039484771e18ce28d5fc"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/skill-warning-alert.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b775a252675f40ae4ceb705f46c1eac3b0bccb2"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/skill-warning-alert.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "c1c2960041d25b39087734e747ac3068d1422862"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar-hydration.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b837f213c73b9d43d8c6111e551fe7381acc00bb"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.module.css",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dbc44b8c3e44d5c100cf6346dfae2ddda2d2043c"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6e6fa5e56549024defd9782fccb7470380b05c49"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "71354e9b99aa8d46aa6e36c7bd9b05cc6bc51435"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "828e4095bc1c077f445a3ad5c2787997b1b12469"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5b46b3951dbbc18dc5af55f39bf12fc703bfb904"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/CONTEXT.md",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "cc698ad561c874a3252c834e72c335e9a1ae95dc"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/__tests__/schedule-compliance-evaluator.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5873482f8846ab5980cdb6df7fcc83c81dd4eb6c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/employee-compliance-input.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ff82c4e30fa579a395ca17e63d50d410e7e78601"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/schedule-compliance-evaluator.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "320acf9777438ccbc812f4869c673f7dbe72b96c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9497099afd493b843907a821b0a36996c7e00dad"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/docs/adr/0001-skill-certificates-set-the-skill-expiry-date.md",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "51aa0b6bd9ddd26f9106317b558fdfc578ea365f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/latest-clock-in.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9cddbc9f65f7e7ef27052c9d5d95aaa13fbd3a45"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/own-skills.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3814c1bf57e61a536cb70c5912d2cd1cfa6e7060"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/schedule-local-input.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "615f58641c37983a31b81fae34fc3406ddffb161"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/schedule-local-input.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1e6da2c3bb2d504dccbf5486d0e4ab026f668565"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-date.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9345dff3ab37c2fdd030f290bfff1f0afdd8b539"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-date.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a6247f368fe4ace252df659690e3e40aa730af4f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-labels.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dcaaa5722c5b681e6caf3000a5f789d868f8f143"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-labels.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b8d21db56c5a9993579ad228a57faadbb69dc041"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-occasion.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2af66d1da792f0572e6119960a03d4a4defbd792"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-occasion.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3b0ec7caedb55db931ff1e312b268f2ae2e1975b"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b4123cdee7ea6cbf8704e7aff1eb58d55c851747"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f12c321e4e8aa1c3e30137fa0496c199562d52e0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-reminders.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "395f72e5bee36b94ab73357387ae5099cae03dc5"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-reminders.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6365fa84175c9b8820ba6ce6a6995a6d4738492f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1105f6c28ca323ce015695a244b073ce5b40624a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "060913cb69ca4707e08cec848b274c53277d640a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-override-refusal.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "051c4b35b68f84b5304ce0e8d8e1fad932457d69"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-override.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "967c70fcbe58cddf5d26d54e7eecbcb56fadfc95"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-reminder-recipients.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5c8d40629136850acb0ada0e9d8dc111e6f23c18"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-reminder-store.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "49ccdbc047fd26d9e680cad8fdcf4ac6470e275a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-validation.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8dae80cbc8d07d9d3f9350c064eb034226e90db4"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6c22ec9f526cc2d50241a2c92ceb2a968d4cfe00"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dff2d03ce3f381abfc45efbd53c87a1694b21bd6"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/load-staffing-facts.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "012ca07a616f65e6432a958554d21a15b67cd8d8"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "870b6108c972e57612a38b9f4b2e3a43c8cba5bb"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1be02e40fffcb20b5ce482d0963552ae839fa8c0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "61fe7e2d996fd718cad204ea54a05c5bf38c2478"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8eeaa3fdc8de2eccbe757a5f3836d1663fa2f8b0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "19da9f638f3400cab438204ebbcd8d72f072bb35"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "85c0288a238ba2af2169e88a546a4c02db9e5318"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1f7f79c9b72426ffedad2657c7d6f04b5d2e6a26"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d31fb1203722da4d2defab9dfa61ad6d2dc8b974"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "30885417adc93e6ed926d052b2f0df316db58eea"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/testing/shift-database.test.fixture.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "086bea5c64a8098073d46f2f17f90dd29bbce88d"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "c2e0978e63581a70c466c74237da0a4fd8fd2fa8"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "93e3c161728d0b74abd8896f1907561212e34128"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "732b75cf2b1f56749d3df1351ac1c84c49868cc0"
+        },
+        {
+          "path": "apps/webapp/tsconfig.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8"
+        },
+        {
+          "path": "apps/webapp/tsconfig.smoke.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "e1ff03407fa993bf86febced177e215913454df1"
+        },
+        {
+          "path": "apps/webapp/tsconfig.typecheck.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8bf7f766f1e6385391c06810d2127373c3f1457b"
+        },
+        {
+          "path": "apps/webapp/tsconfig.workflow-contracts.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "70cb54aa1232d668bccf8230215e4dfc2d699c45"
+        },
+        {
+          "path": "apps/webapp/vitest.config.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1cab2ecdaea301721039932e3ac72f63c35c0fe4"
+        },
+        {
+          "path": "package.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54"
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "04abfc145288bbae42bbaccdb88a5c012c4b186c"
+        },
+        {
+          "path": "pnpm-workspace.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "72bd6c845fc48f077c52fd789d799cb0928b6873"
+        }
+      ]
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "selected": [
+        {
+          "path": "apps/webapp/next.config.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+        },
+        {
+          "path": "apps/webapp/package.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ac01ea7c0d42b1ac318c84e223609397bb406e9e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/__tests__/publish-compliance-handshake.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b07b0788eef33cc9e71a36a780ea402f040532e1"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.exports.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "72313e52256e48cfcbd682150ab364de7b5d882f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b799fcb39ee57b36ec6657c3752e13b42827bf51"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/current-employee-scope.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5cffa64a22cc96070c3f00695bd6e783e2e6af2a"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/location-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "be47aced84c7dbaaf89d6c36dd9904703b1dcb5d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "df5f6ecb9317faf53ee2f2364ffb89234ea59db8"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8cefb52b468cc416141c042ae918a10eba2a2f93"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.delete.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "fb9165d2634cf64889bcc5940941d12ff04fd55e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.range.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d35fd1669cb76ef81a03b6d1a8a75e5b385af01f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.skill-override.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f6c54147b4148eb189a4f6b6f2782973022c1ab7"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.timezone.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "288084991efca00eae836e080167e2cae6aa9bfc"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2798fff14aa95ef8aa8a3b436a14933d289c6dbb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.upcoming.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "0a2054b4e5b78ac2381914a9eb74d99ddc911ddf"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d24965520b025e69773340a00a63b98ac3512315"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1c09586c20b8f6eda0a4a08fbeff753c0e8b2224"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "611fccd510e1441a6fc5e759a44c5c6e007552ae"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a45f09a75f1f02f2cac083394674ce5cf3ed0be5"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.scope.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5c2ec36db451351485a57fc5bf59bb63a6e78541"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9d27e34ff824e4a8e67e219fca40e3ed72e9f81d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/layout.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2e6e8bac343f16c3b2acbc2885f1cdcf2505ffa2"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1c24e888bb22d25d2b0e124a9ceca7f17a96268c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "da681fb2127fce446cc9431ae19029562a5e3277"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "e497cbd4a6ee4550ff4f0e1eeb9f51b649ffdd2e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/publish-decision.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6691a2f391f4d0ccc54b4c30ff97c28fed090ce2"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6ef00657263d88e6f3cce173988b2b04a074381d"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/__tests__/publish-compliance-dialog-state.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b0529a574aab6e4e071f5c1a30eb4955246e2cf3"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a74fba45ece957e19e9b74c380cba3437fb99174"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2f9b48cffdfab3d1d63150a3c3c0b75c2bb0d231"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3354d05c0731c566f662a99cd06c16844e73b525"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "103106e8fe0646ea3c1d7fbce1b24dfb4b71bcec"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6c92478f27ccc17178252122a4a56a2f4d57ad01"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4c3b57457ebbaf4715719c3645c050c779d09dd5"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "817329d6c626f7a4f248c9533b76192796d0a314"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/publish-compliance-dialog.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d14b61e25d3a7bf2bcb43b790504893aa78f9fed"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "aaf3fc9bd9ee933e8a2e782748920473c68299c5"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-compliance-banner.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f3c5e1c31b6fc3f2ce5601445e6b42915db07c0e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "359a579bb5fca3d2abd26ba32c655c0a8fa564f2"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8a68955196364614b8f964a7df275ce3b6195edf"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-x-drag-and-drop.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "7493885a9d579907b0126f4012d133c35712688b"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-publish-flow-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b435a05e472d1cb863caf87427a1e4825695f6a8"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ef6c2cbffd457773b2f646b3490634e3bc1ed070"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "bdbacb1ec552c3c19bebf3decadac3885efd789d"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a8768a8e2ce7a96440fcd39ffb2ef73dbe74a55c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dc43ec7d197f5172182e7d96f8ca819c55612f66"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b1fb9d4ef70d1557148bdb658ffb9adbd4328d0c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "7f4c96e833730ab9ec15fa29feae4d324f20cda1"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1bfcf73f8d4f5ee5e1f8ce78d1b89242661d4a8f"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "21d2241fe341a17247ecb1b34594f927d91503ce"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a43ed5b320d9a310186ea69f0681eba90ca1852a"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-publish-flow.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5a9f85c61111f3007e3ca3feb6fbaecd42a1f5fb"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "471feb1bf750170028eee7874cb5a81d881a6681"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-request-assignee.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b2de182ebf446f6a4b8985e5723db7a1bdaf00df"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-request-decision.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "760b773eab9b03132195ce7eb8aaf98368373f09"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ed28b2a79d7df928381a99d62c74660f17693e91"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5cb2fe419aefc21f4577ee3d7842f4852173dd3c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/use-pending-shift-requests.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d4aca33d97593427600bf2bf0d0489ac5961b58c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9de924b7fe8d325d1ed74e8de41c2a12a9979642"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1a516e5bc7d1bfce61aa9aa3de1f22d885b0e08b"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "57b32349960aae4243a9306cd7f91ff028e52977"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1e77bbe25cc029c34efca56af6a67918cbfc7e92"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4567b710ec9c681026e79dac3fbe1dee3b5d76bd"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "0817f4dc6f9a9cbe2af6b8028063c6f020c0ae14"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "353f59a4c10bdd6aac46a7ae9f88549a4503224e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b5a1fd9f77da0b76976585238c591a60d185773"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-data.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ca75a855713ee102d07e2610d0db4266fcaa7517"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "51213219f68f5cad4789691066492ab239aad3cf"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "af965db15ff3bc3deb0c6356d30c910b013dc4c0"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-mutations.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6a9173eeff803fd84adb18afa569677fd45b9698"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-staffing-suggestions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "fc72609c08ef7ecbe44c039484771e18ce28d5fc"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/skill-warning-alert.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b775a252675f40ae4ceb705f46c1eac3b0bccb2"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/skill-warning-alert.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "c1c2960041d25b39087734e747ac3068d1422862"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar-hydration.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b837f213c73b9d43d8c6111e551fe7381acc00bb"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.module.css",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dbc44b8c3e44d5c100cf6346dfae2ddda2d2043c"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6e6fa5e56549024defd9782fccb7470380b05c49"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "71354e9b99aa8d46aa6e36c7bd9b05cc6bc51435"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b0569936cb21ea6e8e62bc6eb8df9d75a74fe06f"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "e71deb66d9386db4af89bcda6a5728165071f29c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/CONTEXT.md",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "cc698ad561c874a3252c834e72c335e9a1ae95dc"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/__tests__/schedule-compliance-evaluator.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5873482f8846ab5980cdb6df7fcc83c81dd4eb6c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/employee-compliance-input.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ff82c4e30fa579a395ca17e63d50d410e7e78601"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/schedule-compliance-evaluator.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "320acf9777438ccbc812f4869c673f7dbe72b96c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9497099afd493b843907a821b0a36996c7e00dad"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/docs/adr/0001-skill-certificates-set-the-skill-expiry-date.md",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "51aa0b6bd9ddd26f9106317b558fdfc578ea365f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/latest-clock-in.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9cddbc9f65f7e7ef27052c9d5d95aaa13fbd3a45"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/own-skills.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3814c1bf57e61a536cb70c5912d2cd1cfa6e7060"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/schedule-local-input.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "615f58641c37983a31b81fae34fc3406ddffb161"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/schedule-local-input.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1e6da2c3bb2d504dccbf5486d0e4ab026f668565"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-date.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9345dff3ab37c2fdd030f290bfff1f0afdd8b539"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-date.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a6247f368fe4ace252df659690e3e40aa730af4f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-labels.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dcaaa5722c5b681e6caf3000a5f789d868f8f143"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-labels.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b8d21db56c5a9993579ad228a57faadbb69dc041"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-occasion.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2af66d1da792f0572e6119960a03d4a4defbd792"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-occasion.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3b0ec7caedb55db931ff1e312b268f2ae2e1975b"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b4123cdee7ea6cbf8704e7aff1eb58d55c851747"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f12c321e4e8aa1c3e30137fa0496c199562d52e0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-reminders.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "395f72e5bee36b94ab73357387ae5099cae03dc5"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-reminders.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6365fa84175c9b8820ba6ce6a6995a6d4738492f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1105f6c28ca323ce015695a244b073ce5b40624a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "060913cb69ca4707e08cec848b274c53277d640a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-override-refusal.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "051c4b35b68f84b5304ce0e8d8e1fad932457d69"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-override.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "967c70fcbe58cddf5d26d54e7eecbcb56fadfc95"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-reminder-recipients.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5c8d40629136850acb0ada0e9d8dc111e6f23c18"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-reminder-store.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "49ccdbc047fd26d9e680cad8fdcf4ac6470e275a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-validation.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8dae80cbc8d07d9d3f9350c064eb034226e90db4"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6c22ec9f526cc2d50241a2c92ceb2a968d4cfe00"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dff2d03ce3f381abfc45efbd53c87a1694b21bd6"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/load-staffing-facts.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "012ca07a616f65e6432a958554d21a15b67cd8d8"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "870b6108c972e57612a38b9f4b2e3a43c8cba5bb"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1be02e40fffcb20b5ce482d0963552ae839fa8c0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "61fe7e2d996fd718cad204ea54a05c5bf38c2478"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8eeaa3fdc8de2eccbe757a5f3836d1663fa2f8b0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "19da9f638f3400cab438204ebbcd8d72f072bb35"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "85c0288a238ba2af2169e88a546a4c02db9e5318"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1f7f79c9b72426ffedad2657c7d6f04b5d2e6a26"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d31fb1203722da4d2defab9dfa61ad6d2dc8b974"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "30885417adc93e6ed926d052b2f0df316db58eea"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/testing/shift-database.test.fixture.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "086bea5c64a8098073d46f2f17f90dd29bbce88d"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "c2e0978e63581a70c466c74237da0a4fd8fd2fa8"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "93e3c161728d0b74abd8896f1907561212e34128"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "732b75cf2b1f56749d3df1351ac1c84c49868cc0"
+        },
+        {
+          "path": "apps/webapp/tsconfig.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8"
+        },
+        {
+          "path": "apps/webapp/tsconfig.smoke.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "e1ff03407fa993bf86febced177e215913454df1"
+        },
+        {
+          "path": "apps/webapp/tsconfig.typecheck.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8bf7f766f1e6385391c06810d2127373c3f1457b"
+        },
+        {
+          "path": "apps/webapp/tsconfig.workflow-contracts.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "70cb54aa1232d668bccf8230215e4dfc2d699c45"
+        },
+        {
+          "path": "apps/webapp/vitest.config.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1cab2ecdaea301721039932e3ac72f63c35c0fe4"
+        },
+        {
+          "path": "package.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54"
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "04abfc145288bbae42bbaccdb88a5c012c4b186c"
+        },
+        {
+          "path": "pnpm-workspace.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "72bd6c845fc48f077c52fd789d799cb0928b6873"
+        }
+      ]
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "selected": [
+        {
+          "path": "apps/webapp/next.config.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+        },
+        {
+          "path": "apps/webapp/package.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ac01ea7c0d42b1ac318c84e223609397bb406e9e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/__tests__/publish-compliance-handshake.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b07b0788eef33cc9e71a36a780ea402f040532e1"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.exports.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "72313e52256e48cfcbd682150ab364de7b5d882f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b799fcb39ee57b36ec6657c3752e13b42827bf51"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/current-employee-scope.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5cffa64a22cc96070c3f00695bd6e783e2e6af2a"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/location-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "be47aced84c7dbaaf89d6c36dd9904703b1dcb5d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "df5f6ecb9317faf53ee2f2364ffb89234ea59db8"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shared.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8cefb52b468cc416141c042ae918a10eba2a2f93"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.delete.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "fb9165d2634cf64889bcc5940941d12ff04fd55e"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.skill-override.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f6c54147b4148eb189a4f6b6f2782973022c1ab7"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.timezone.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "288084991efca00eae836e080167e2cae6aa9bfc"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b7895278fe181ad5c7f115b99d58e2747ef0d6f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.upcoming.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "0a2054b4e5b78ac2381914a9eb74d99ddc911ddf"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d24965520b025e69773340a00a63b98ac3512315"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-request-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1c09586c20b8f6eda0a4a08fbeff753c0e8b2224"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "611fccd510e1441a6fc5e759a44c5c6e007552ae"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/staffing-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a45f09a75f1f02f2cac083394674ce5cf3ed0be5"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.scope.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5c2ec36db451351485a57fc5bf59bb63a6e78541"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9d27e34ff824e4a8e67e219fca40e3ed72e9f81d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/layout.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2e6e8bac343f16c3b2acbc2885f1cdcf2505ffa2"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3a73a32a335cf17881424b96a94c8d7528efcd28"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2f8ebd4a376829eae7945f7617485254211bb433"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/publish-decision.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6691a2f391f4d0ccc54b4c30ff97c28fed090ce2"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/scheduling/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6ef00657263d88e6f3cce173988b2b04a074381d"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/__tests__/publish-compliance-dialog-state.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b0529a574aab6e4e071f5c1a30eb4955246e2cf3"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "08bd2a74d013a3a942a062722a69af2a45a49d2a"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2f9b48cffdfab3d1d63150a3c3c0b75c2bb0d231"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-schedule-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3354d05c0731c566f662a99cd06c16844e73b525"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "103106e8fe0646ea3c1d7fbce1b24dfb4b71bcec"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-agenda.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6c92478f27ccc17178252122a4a56a2f4d57ad01"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6bd70e78b4303f819f046d715c2f15225ad49d95"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/publish-compliance-dialog.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d14b61e25d3a7bf2bcb43b790504893aa78f9fed"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ba6312811e4321e8bb21fdd1a9cd6c1b92074a87"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-compliance-banner.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f3c5e1c31b6fc3f2ce5601445e6b42915db07c0e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/schedule-x-drag-and-drop.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "7493885a9d579907b0126f4012d133c35712688b"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-publish-flow-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b435a05e472d1cb863caf87427a1e4825695f6a8"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ef6c2cbffd457773b2f646b3490634e3bc1ed070"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a8768a8e2ce7a96440fcd39ffb2ef73dbe74a55c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-utils.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dc43ec7d197f5172182e7d96f8ca819c55612f66"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4591e5db4368b5866ede1c3c57b308a30b795846"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "103371807eba8cb4c59a957bb9aa57cd48cea4eb"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d31f02e6edc871d86bdf12dc220836493159af7e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-publish-flow.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5a9f85c61111f3007e3ca3feb6fbaecd42a1f5fb"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4e1252a2fcd5ae5fb8def77bb6aa9409f9766757"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-request-assignee.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b2de182ebf446f6a4b8985e5723db7a1bdaf00df"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-request-decision.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "760b773eab9b03132195ce7eb8aaf98368373f09"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ed28b2a79d7df928381a99d62c74660f17693e91"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/shift-requests-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5cb2fe419aefc21f4577ee3d7842f4852173dd3c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shift-requests/use-pending-shift-requests.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d4aca33d97593427600bf2bf0d0489ac5961b58c"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9de924b7fe8d325d1ed74e8de41c2a12a9979642"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-details-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1a516e5bc7d1bfce61aa9aa3de1f22d885b0e08b"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "57b32349960aae4243a9306cd7f91ff028e52977"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "814fbafdf44a079fb3358d750b3a4ae91ffe9ba1"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "4567b710ec9c681026e79dac3fbe1dee3b5d76bd"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b5acad059157306f3a8c77c282323826d8648498"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "353f59a4c10bdd6aac46a7ae9f88549a4503224e"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/staffing-suggestions-panel.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b5a1fd9f77da0b76976585238c591a60d185773"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-data.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ca75a855713ee102d07e2610d0db4266fcaa7517"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "51213219f68f5cad4789691066492ab239aad3cf"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1eec0e9e111aa8d2db235ac7184ec8825ec7e6ce"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-mutations.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6a9173eeff803fd84adb18afa569677fd45b9698"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/shifts/use-staffing-suggestions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "fc72609c08ef7ecbe44c039484771e18ce28d5fc"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/skill-warning-alert.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8b775a252675f40ae4ceb705f46c1eac3b0bccb2"
+        },
+        {
+          "path": "apps/webapp/src/components/scheduling/skill-warning-alert.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "c1c2960041d25b39087734e747ac3068d1422862"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar-hydration.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b837f213c73b9d43d8c6111e551fe7381acc00bb"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.module.css",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dbc44b8c3e44d5c100cf6346dfae2ddda2d2043c"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.test.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6e6fa5e56549024defd9782fccb7470380b05c49"
+        },
+        {
+          "path": "apps/webapp/src/components/ui/sidebar.tsx",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "71354e9b99aa8d46aa6e36c7bd9b05cc6bc51435"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "513a8a30666efd30a712d296f0b0b49063be0a3b"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "896047173635780ce8dc8b00479c9982cdc9a032"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/CONTEXT.md",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "cc698ad561c874a3252c834e72c335e9a1ae95dc"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/__tests__/schedule-compliance-evaluator.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5873482f8846ab5980cdb6df7fcc83c81dd4eb6c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/employee-compliance-input.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ff82c4e30fa579a395ca17e63d50d410e7e78601"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/schedule-compliance-evaluator.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "320acf9777438ccbc812f4869c673f7dbe72b96c"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/compliance/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9497099afd493b843907a821b0a36996c7e00dad"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/docs/adr/0001-skill-certificates-set-the-skill-expiry-date.md",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "51aa0b6bd9ddd26f9106317b558fdfc578ea365f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/latest-clock-in.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9cddbc9f65f7e7ef27052c9d5d95aaa13fbd3a45"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/own-skills.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3814c1bf57e61a536cb70c5912d2cd1cfa6e7060"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/schedule-local-input.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "615f58641c37983a31b81fae34fc3406ddffb161"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/schedule-local-input.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1e6da2c3bb2d504dccbf5486d0e4ab026f668565"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-date.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "9345dff3ab37c2fdd030f290bfff1f0afdd8b539"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-date.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "a6247f368fe4ace252df659690e3e40aa730af4f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-labels.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dcaaa5722c5b681e6caf3000a5f789d868f8f143"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-labels.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b8d21db56c5a9993579ad228a57faadbb69dc041"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-occasion.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2af66d1da792f0572e6119960a03d4a4defbd792"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/shift-occasion.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "3b0ec7caedb55db931ff1e312b268f2ae2e1975b"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "b4123cdee7ea6cbf8704e7aff1eb58d55c851747"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-notifications.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "f12c321e4e8aa1c3e30137fa0496c199562d52e0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-reminders.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "395f72e5bee36b94ab73357387ae5099cae03dc5"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry-reminders.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6365fa84175c9b8820ba6ce6a6995a6d4738492f"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1105f6c28ca323ce015695a244b073ce5b40624a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-expiry.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "060913cb69ca4707e08cec848b274c53277d640a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-override-refusal.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "051c4b35b68f84b5304ce0e8d8e1fad932457d69"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-override.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "967c70fcbe58cddf5d26d54e7eecbcb56fadfc95"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-reminder-recipients.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "5c8d40629136850acb0ada0e9d8dc111e6f23c18"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-reminder-store.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "49ccdbc047fd26d9e680cad8fdcf4ac6470e275a"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/skill-validation.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8dae80cbc8d07d9d3f9350c064eb034226e90db4"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "6c22ec9f526cc2d50241a2c92ceb2a968d4cfe00"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/build-staffing-suggestion.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "dff2d03ce3f381abfc45efbd53c87a1694b21bd6"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/load-staffing-facts.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "012ca07a616f65e6432a958554d21a15b67cd8d8"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "870b6108c972e57612a38b9f4b2e3a43c8cba5bb"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/rank-staffing-suggestions.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1be02e40fffcb20b5ce482d0963552ae839fa8c0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "61fe7e2d996fd718cad204ea54a05c5bf38c2478"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-blockers.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8eeaa3fdc8de2eccbe757a5f3836d1663fa2f8b0"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "19da9f638f3400cab438204ebbcd8d72f072bb35"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-compliance.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "85c0288a238ba2af2169e88a546a4c02db9e5318"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1f7f79c9b72426ffedad2657c7d6f04b5d2e6a26"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/staffing-skills.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "d31fb1203722da4d2defab9dfa61ad6d2dc8b974"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/staffing/types.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "30885417adc93e6ed926d052b2f0df316db58eea"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/testing/shift-database.test.fixture.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "086bea5c64a8098073d46f2f17f90dd29bbce88d"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.integration.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "c2e0978e63581a70c466c74237da0a4fd8fd2fa8"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.test.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "93e3c161728d0b74abd8896f1907561212e34128"
+        },
+        {
+          "path": "apps/webapp/src/lib/scheduling/upcoming-shifts.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "732b75cf2b1f56749d3df1351ac1c84c49868cc0"
+        },
+        {
+          "path": "apps/webapp/tsconfig.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8"
+        },
+        {
+          "path": "apps/webapp/tsconfig.smoke.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "e1ff03407fa993bf86febced177e215913454df1"
+        },
+        {
+          "path": "apps/webapp/tsconfig.typecheck.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "8bf7f766f1e6385391c06810d2127373c3f1457b"
+        },
+        {
+          "path": "apps/webapp/tsconfig.workflow-contracts.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "70cb54aa1232d668bccf8230215e4dfc2d699c45"
+        },
+        {
+          "path": "apps/webapp/vitest.config.ts",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "1cab2ecdaea301721039932e3ac72f63c35c0fe4"
+        },
+        {
+          "path": "package.json",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54"
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "04abfc145288bbae42bbaccdb88a5c012c4b186c"
+        },
+        {
+          "path": "pnpm-workspace.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "gitOid": "72bd6c845fc48f077c52fd789d799cb0928b6873"
+        }
+      ]
+    }
+  ],
+  "blobs": [
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "package.json",
+      "gitBytes": 5951,
+      "gitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "lfSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "crlfBytes": 6018,
+      "crlfSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "package.json",
+      "gitBytes": 5951,
+      "gitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "lfSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "crlfBytes": 6018,
+      "crlfSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "package.json",
+      "gitBytes": 5951,
+      "gitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "lfSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "crlfBytes": 6018,
+      "crlfSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/package.json",
+      "gitBytes": 8339,
+      "gitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "lfSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "crlfBytes": 8541,
+      "crlfSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/package.json",
+      "gitBytes": 8339,
+      "gitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "lfSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "crlfBytes": 8541,
+      "crlfSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/package.json",
+      "gitBytes": 8339,
+      "gitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "lfSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "crlfBytes": 8541,
+      "crlfSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "pnpm-lock.yaml",
+      "gitBytes": 771361,
+      "gitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "lfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "crlfBytes": 792624,
+      "crlfSha256": "c35081cba789226f6c48c7912a8178dc0f64a7954387fd6bf14fbd8c32a94e16"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "pnpm-lock.yaml",
+      "gitBytes": 771361,
+      "gitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "lfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "crlfBytes": 792624,
+      "crlfSha256": "c35081cba789226f6c48c7912a8178dc0f64a7954387fd6bf14fbd8c32a94e16"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "pnpm-lock.yaml",
+      "gitBytes": 771361,
+      "gitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "lfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "crlfBytes": 792624,
+      "crlfSha256": "c35081cba789226f6c48c7912a8178dc0f64a7954387fd6bf14fbd8c32a94e16"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "pnpm-workspace.yaml",
+      "gitBytes": 1816,
+      "gitSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "lfSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "crlfBytes": 1880,
+      "crlfSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "pnpm-workspace.yaml",
+      "gitBytes": 1816,
+      "gitSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "lfSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "crlfBytes": 1880,
+      "crlfSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "pnpm-workspace.yaml",
+      "gitBytes": 1816,
+      "gitSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "lfSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "crlfBytes": 1880,
+      "crlfSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/next.config.ts",
+      "gitBytes": 4154,
+      "gitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "crlfBytes": 4308,
+      "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/next.config.ts",
+      "gitBytes": 4154,
+      "gitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "crlfBytes": 4308,
+      "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/next.config.ts",
+      "gitBytes": 4154,
+      "gitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "crlfBytes": 4308,
+      "crlfSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/tsconfig.json",
+      "gitBytes": 653,
+      "gitSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "lfSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "crlfBytes": 687,
+      "crlfSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/tsconfig.json",
+      "gitBytes": 653,
+      "gitSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "lfSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "crlfBytes": 687,
+      "crlfSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/tsconfig.json",
+      "gitBytes": 653,
+      "gitSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "lfSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "crlfBytes": 687,
+      "crlfSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "gitBytes": 244,
+      "gitSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "lfSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "crlfBytes": 252,
+      "crlfSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "gitBytes": 244,
+      "gitSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "lfSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "crlfBytes": 252,
+      "crlfSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "gitBytes": 244,
+      "gitSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "lfSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "crlfBytes": 252,
+      "crlfSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "gitBytes": 437,
+      "gitSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "lfSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "crlfBytes": 453,
+      "crlfSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "gitBytes": 437,
+      "gitSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "lfSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "crlfBytes": 453,
+      "crlfSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "gitBytes": 437,
+      "gitSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "lfSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "crlfBytes": 453,
+      "crlfSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "gitBytes": 202,
+      "gitSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "lfSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "crlfBytes": 213,
+      "crlfSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "gitBytes": 202,
+      "gitSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "lfSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "crlfBytes": 213,
+      "crlfSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "gitBytes": 202,
+      "gitSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "lfSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "crlfBytes": 213,
+      "crlfSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "gitBytes": 5678,
+      "gitSha256": "4712e9eb3931bfa136c736da12346f1dc42bfdba9c7e414a3542a50f0a107256",
+      "lfSha256": "4712e9eb3931bfa136c736da12346f1dc42bfdba9c7e414a3542a50f0a107256",
+      "crlfBytes": 5873,
+      "crlfSha256": "c7ace85c139889e38b6eeccb694e78c04980b0384d0c5e96996392582fbbf26a"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "gitBytes": 5678,
+      "gitSha256": "4712e9eb3931bfa136c736da12346f1dc42bfdba9c7e414a3542a50f0a107256",
+      "lfSha256": "4712e9eb3931bfa136c736da12346f1dc42bfdba9c7e414a3542a50f0a107256",
+      "crlfBytes": 5873,
+      "crlfSha256": "c7ace85c139889e38b6eeccb694e78c04980b0384d0c5e96996392582fbbf26a"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "gitBytes": 4650,
+      "gitSha256": "e567bd1005f74ec1ae15628a3f82e0ad3a623579d6f3528ef47502a1592c47ed",
+      "lfSha256": "e567bd1005f74ec1ae15628a3f82e0ad3a623579d6f3528ef47502a1592c47ed",
+      "crlfBytes": 4806,
+      "crlfSha256": "3489effc63aeda68f55510545e319c7631b71368cd673a381361e9099ad716e4"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "gitBytes": 13871,
+      "gitSha256": "e5657954c8e80ca85438cddde18b666e62007669f6c78d725bb559c3f8726efc",
+      "lfSha256": "e5657954c8e80ca85438cddde18b666e62007669f6c78d725bb559c3f8726efc",
+      "crlfBytes": 14309,
+      "crlfSha256": "cccece0da7fb202d5591c385ef3b2850d6c13cb517d96a99b2cb2ede6b8d08ec"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "gitBytes": 13871,
+      "gitSha256": "e5657954c8e80ca85438cddde18b666e62007669f6c78d725bb559c3f8726efc",
+      "lfSha256": "e5657954c8e80ca85438cddde18b666e62007669f6c78d725bb559c3f8726efc",
+      "crlfBytes": 14309,
+      "crlfSha256": "cccece0da7fb202d5591c385ef3b2850d6c13cb517d96a99b2cb2ede6b8d08ec"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "gitBytes": 11459,
+      "gitSha256": "950c021f3965e8758c7180400d9bcdbeadd844f5341596d7054aad6d83e7464d",
+      "lfSha256": "950c021f3965e8758c7180400d9bcdbeadd844f5341596d7054aad6d83e7464d",
+      "crlfBytes": 11832,
+      "crlfSha256": "7e1e9319ca1c501ad5eda081bf2dc4fe02825491b22f7461b07f05776861071c"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+      "gitBytes": 16598,
+      "gitSha256": "81bf9323612739d8fc91de342d58a68d7b6ddd5443ae63de444c1d3790f24e38",
+      "lfSha256": "81bf9323612739d8fc91de342d58a68d7b6ddd5443ae63de444c1d3790f24e38",
+      "crlfBytes": 17044,
+      "crlfSha256": "68b42fd50a556e60a8312cb83d9aacf7cc8989fd45e310f00e55cfb8f11c47cf"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+      "gitBytes": 16598,
+      "gitSha256": "81bf9323612739d8fc91de342d58a68d7b6ddd5443ae63de444c1d3790f24e38",
+      "lfSha256": "81bf9323612739d8fc91de342d58a68d7b6ddd5443ae63de444c1d3790f24e38",
+      "crlfBytes": 17044,
+      "crlfSha256": "68b42fd50a556e60a8312cb83d9aacf7cc8989fd45e310f00e55cfb8f11c47cf"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/src/components/ui/sidebar.tsx",
+      "gitBytes": 23263,
+      "gitSha256": "ab28ad0f816c4abcbabf3c219fce29a56a0dbead98c30b1886c639acdb96d5c5",
+      "lfSha256": "ab28ad0f816c4abcbabf3c219fce29a56a0dbead98c30b1886c639acdb96d5c5",
+      "crlfBytes": 24082,
+      "crlfSha256": "387b182c63b54005293d1403794dff830101224a94de26b13de8cbe89e42a00e"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/src/components/ui/sidebar.tsx",
+      "gitBytes": 23263,
+      "gitSha256": "ab28ad0f816c4abcbabf3c219fce29a56a0dbead98c30b1886c639acdb96d5c5",
+      "lfSha256": "ab28ad0f816c4abcbabf3c219fce29a56a0dbead98c30b1886c639acdb96d5c5",
+      "crlfBytes": 24082,
+      "crlfSha256": "387b182c63b54005293d1403794dff830101224a94de26b13de8cbe89e42a00e"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/src/components/ui/sidebar.tsx",
+      "gitBytes": 23263,
+      "gitSha256": "ab28ad0f816c4abcbabf3c219fce29a56a0dbead98c30b1886c639acdb96d5c5",
+      "lfSha256": "ab28ad0f816c4abcbabf3c219fce29a56a0dbead98c30b1886c639acdb96d5c5",
+      "crlfBytes": 24082,
+      "crlfSha256": "387b182c63b54005293d1403794dff830101224a94de26b13de8cbe89e42a00e"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "gitBytes": 7168,
+      "gitSha256": "ad794de6a75fc2b0ce72c9f7c3b7813d48bdbad394098c40176abf575da8ef64",
+      "lfSha256": "ad794de6a75fc2b0ce72c9f7c3b7813d48bdbad394098c40176abf575da8ef64",
+      "crlfBytes": 7438,
+      "crlfSha256": "dcc8e4ef3359ae86c4d7a6f31dbbb58c85e969dfbf8d986b11b28bece551ea7b"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "gitBytes": 7190,
+      "gitSha256": "55d3700d8fc5bbb491ab455e90b5d3fda1a6d671c016e06fd13bb1c317fa545e",
+      "lfSha256": "55d3700d8fc5bbb491ab455e90b5d3fda1a6d671c016e06fd13bb1c317fa545e",
+      "crlfBytes": 7461,
+      "crlfSha256": "42e57143f06d8170195462983a04725b0335f9c2425dbd6c7fcec03de6cf8b6f"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "gitBytes": 7140,
+      "gitSha256": "67fd2f5eb03d57fd84104a292b3038645658e74cb403aead7fc9aa42787a5945",
+      "lfSha256": "67fd2f5eb03d57fd84104a292b3038645658e74cb403aead7fc9aa42787a5945",
+      "crlfBytes": 7409,
+      "crlfSha256": "b981444d81f2bf922849c6823c9ad1990501ccd974e29a8d504be6514077604f"
+    },
+    {
+      "revision": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+      "path": "docs/design/rollout-1692/1738.md",
+      "gitBytes": 33654,
+      "gitSha256": "5f7eaefa40bc3c84ce80cc958d66bf87cef89dcd2fe16ee48df00798cb512b9e",
+      "lfSha256": "5f7eaefa40bc3c84ce80cc958d66bf87cef89dcd2fe16ee48df00798cb512b9e",
+      "crlfBytes": 33815,
+      "crlfSha256": "3edc1bed7a637b4750028316289ff725e43457e2c8367aa79b8d9d4366688458"
+    },
+    {
+      "revision": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "path": "docs/design/rollout-1692/1738.md",
+      "gitBytes": 36097,
+      "gitSha256": "9f48ffdf17808392c2bde0036c9c050e1b588560e5cf46621b1f75aa5eef7331",
+      "lfSha256": "9f48ffdf17808392c2bde0036c9c050e1b588560e5cf46621b1f75aa5eef7331",
+      "crlfBytes": 36268,
+      "crlfSha256": "e97ad1941a67bd9d846443bc011a5c0ca3a1f4b1e45566a5136ef2f99de46fbc"
+    },
+    {
+      "revision": "83a3b30f648e74416d628c96509dcee4c765cdba",
+      "path": "docs/design/rollout-1692/1738.md",
+      "absent": true
+    }
+  ],
+  "publishedDelta": "M\tapps/webapp/src/app/[locale]/(app)/team/page.tsx\nA\tapps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx\nA\tapps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx\nA\tapps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx\nA\tapps/webapp/src/app/[locale]/(app)/team/team-directory.test.tsx\nA\tapps/webapp/src/app/[locale]/(app)/team/team-directory.tsx\nM\tapps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx\nM\tapps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx\nA\tapps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx\nM\tapps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx\nM\tapps/webapp/src/lib/navigation/route-metadata.test.ts\nM\tapps/webapp/src/lib/navigation/route-metadata.ts\nM\tdocs/design/rollout-1692/1738.md\nA\tdocs/design/rollout-1692/1739.md\nA\tdocs/design/rollout-1692/1739/after-18px-phone-dark.png\nA\tdocs/design/rollout-1692/1739/after-18px-phone-table.png\nA\tdocs/design/rollout-1692/1739/after-desktop.png\nA\tdocs/design/rollout-1692/1739/after-phone.png\nA\tdocs/design/rollout-1692/1739/after-snapshot.txt\nA\tdocs/design/rollout-1692/1739/after-wide-dark.png\nA\tdocs/design/rollout-1692/1739/before-desktop.png\nA\tdocs/design/rollout-1692/1739/before-phone.png\nA\tdocs/design/rollout-1692/1739/before-snapshot.txt\nA\tdocs/design/rollout-1692/1739/before-source.json\nA\tdocs/design/rollout-1692/1739/before-wide-dark.png\nA\tdocs/design/rollout-1692/1739/browser-lifecycle.json\nA\tdocs/design/rollout-1692/1739/cleanup-absence-final.json\nA\tdocs/design/rollout-1692/1739/cleanup-first-fixture.json\nA\tdocs/design/rollout-1692/1739/cleanup.json\nA\tdocs/design/rollout-1692/1739/commands.md\nA\tdocs/design/rollout-1692/1739/dependencies.json\nA\tdocs/design/rollout-1692/1739/doctor-before-fix.json\nA\tdocs/design/rollout-1692/1739/doctor-complexity.json\nA\tdocs/design/rollout-1692/1739/doctor.json\nA\tdocs/design/rollout-1692/1739/drivers/check.mjs\nA\tdocs/design/rollout-1692/1739/drivers/dev.mjs\nA\tdocs/design/rollout-1692/1739/drivers/final-setup.mjs\nA\tdocs/design/rollout-1692/1739/drivers/login-final.mjs\nA\tdocs/design/rollout-1692/1739/drivers/login.mjs\nA\tdocs/design/rollout-1692/1739/drivers/mcp.mjs\nA\tdocs/design/rollout-1692/1739/drivers/native-final.mjs\nA\tdocs/design/rollout-1692/1739/drivers/native.mjs\nA\tdocs/design/rollout-1692/1739/drivers/package-evidence.mjs\nA\tdocs/design/rollout-1692/1739/drivers/prepare-final-drivers.mjs\nA\tdocs/design/rollout-1692/1739/drivers/runtime-extra-continuation.mjs\nA\tdocs/design/rollout-1692/1739/drivers/runtime-extra.mjs\nA\tdocs/design/rollout-1692/1739/drivers/runtime-final.mjs\nA\tdocs/design/rollout-1692/1739/drivers/runtime.mjs\nA\tdocs/design/rollout-1692/1739/final-types.json\nA\tdocs/design/rollout-1692/1739/historical-consumer.diff\nA\tdocs/design/rollout-1692/1739/historical-source.json\nA\tdocs/design/rollout-1692/1739/history-failed-read.png\nA\tdocs/design/rollout-1692/1739/history-phone.png\nA\tdocs/design/rollout-1692/1739/inventory.md\nA\tdocs/design/rollout-1692/1739/issue-readback-final.json\nA\tdocs/design/rollout-1692/1739/logs/activity-harness-failed.log.gz\nA\tdocs/design/rollout-1692/1739/logs/arrival-tests.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-controller.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-explicit-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-explicit.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-final-format.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-format.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-lint-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-ordinary-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-session.log.gz\nA\tdocs/design/rollout-1692/1739/logs/biome-test-format.log.gz\nA\tdocs/design/rollout-1692/1739/logs/build-launch-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/build-launch.log.gz\nA\tdocs/design/rollout-1692/1739/logs/build-with-dev-present.log.gz\nA\tdocs/design/rollout-1692/1739/logs/build.log.gz\nA\tdocs/design/rollout-1692/1739/logs/controller-tests.log.gz\nA\tdocs/design/rollout-1692/1739/logs/doctor-help.log.gz\nA\tdocs/design/rollout-1692/1739/logs/final-tsconfig.smoke.json.log.gz\nA\tdocs/design/rollout-1692/1739/logs/final-tsconfig.typecheck.json.log.gz\nA\tdocs/design/rollout-1692/1739/logs/final-tsconfig.workflow-contracts.json.log.gz\nA\tdocs/design/rollout-1692/1739/logs/fixture-cleanup-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/fixture-cleanup.log.gz\nA\tdocs/design/rollout-1692/1739/logs/fixture-prepare-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/fixture-prepare.log.gz\nA\tdocs/design/rollout-1692/1739/logs/green-controls-heading.log.gz\nA\tdocs/design/rollout-1692/1739/logs/green-retained-read.log.gz\nA\tdocs/design/rollout-1692/1739/logs/green-retained-session.log.gz\nA\tdocs/design/rollout-1692/1739/logs/install-denied.log.gz\nA\tdocs/design/rollout-1692/1739/logs/install-success.log.gz\nA\tdocs/design/rollout-1692/1739/logs/integration-launch-failed.log.gz\nA\tdocs/design/rollout-1692/1739/logs/integration.log.gz\nA\tdocs/design/rollout-1692/1739/logs/licenses.log.gz\nA\tdocs/design/rollout-1692/1739/logs/mcp-1.raw.gz\nA\tdocs/design/rollout-1692/1739/logs/mcp-2.raw.gz\nA\tdocs/design/rollout-1692/1739/logs/mcp-3.raw.gz\nA\tdocs/design/rollout-1692/1739/logs/mcp-4.raw.gz\nA\tdocs/design/rollout-1692/1739/logs/mcp-5.raw.gz\nA\tdocs/design/rollout-1692/1739/logs/postgres-launch.log.gz\nA\tdocs/design/rollout-1692/1739/logs/race-harness-timeout.log.gz\nA\tdocs/design/rollout-1692/1739/logs/race-tests.log.gz\nA\tdocs/design/rollout-1692/1739/logs/red-controls-heading.log.gz\nA\tdocs/design/rollout-1692/1739/logs/red-engine-lock-failed.log.gz\nA\tdocs/design/rollout-1692/1739/logs/red-retained-read.log.gz\nA\tdocs/design/rollout-1692/1739/logs/red-retained-session.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-driver.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-extra-continuation.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-extra-incomplete.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-extra.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-final-session.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/runtime-incomplete-overlay.log.gz\nA\tdocs/design/rollout-1692/1739/logs/stop-final-next.log.gz\nA\tdocs/design/rollout-1692/1739/logs/typegen.log.gz\nA\tdocs/design/rollout-1692/1739/logs/types-app-final.log.gz\nA\tdocs/design/rollout-1692/1739/logs/types-app.log.gz\nA\tdocs/design/rollout-1692/1739/logs/types-smoke.log.gz\nA\tdocs/design/rollout-1692/1739/logs/types-workflow.log.gz\nA\tdocs/design/rollout-1692/1739/logs/unit-final.log.gz\nA\tdocs/design/rollout-1692/1739/manifest.json\nA\tdocs/design/rollout-1692/1739/next-tools.json\nA\tdocs/design/rollout-1692/1739/next.json\nA\tdocs/design/rollout-1692/1739/owned-next-process-final.json\nA\tdocs/design/rollout-1692/1739/owned-next-process.json\nA\tdocs/design/rollout-1692/1739/runtime-before-session-tightening.json\nA\tdocs/design/rollout-1692/1739/runtime-extra-incomplete.json\nA\tdocs/design/rollout-1692/1739/runtime-extra.json\nA\tdocs/design/rollout-1692/1739/runtime-incomplete-overlay.json\nA\tdocs/design/rollout-1692/1739/runtime.json\nA\tdocs/design/rollout-1692/1739/source.json\nA\tdocs/design/rollout-1692/1739/unit-results.json\nA\tdocs/design/rollout-1692/1739/verify-evidence.mjs\nM\tdocs/design/rollout-1692/README.md\nM\tdocs/design/rollout-1692/integration.json\nA\tscripts/performance/team-directory-fixture.mjs\n",
+  "navigationDiff": "diff --git a/apps/webapp/src/lib/navigation/route-metadata.ts b/apps/webapp/src/lib/navigation/route-metadata.ts\nindex 5b46b3951..e71deb66d 100644\n--- a/apps/webapp/src/lib/navigation/route-metadata.ts\n+++ b/apps/webapp/src/lib/navigation/route-metadata.ts\n@@ -224,10 +224,11 @@ export function appPageOwnsHeading(pathname: string): boolean {\n \t\tpath === \"/personnel-files/payslip-batches\" ||\n \t\tpath === \"/notifications\" ||\n \t\tpath === \"/scheduling\" ||\n \t\tpath === \"/absences\" ||\n \t\tpath === \"/my-requests\" ||\n+\t\tpath === \"/team\" ||\n \t\tpath === \"/payroll\" ||\n \t\tpath === \"/my-documents\" ||\n \t\tpath === \"/personnel-files\" ||\n \t\tpath === \"/personnel-files/document-requests\" ||\n \t\tpath === \"/personnel-files/due-for-deletion\" ||\n",
+  "trackedPinRecipeNotRecomputed": "Full 17286-file materialized pin manifest is not allowlisted; no private pin file read.",
+  "countMethod": "git ls-tree -r --name-only, nonempty lines; original raw NUL split trailing empty entry excluded",
+  "selectedDifferences": [
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "incomingOid": "828e4095bc1c077f445a3ad5c2787997b1b12469",
+      "currentOid": "b0569936cb21ea6e8e62bc6eb8df9d75a74fe06f"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "incomingOid": "5b46b3951dbbc18dc5af55f39bf12fc703bfb904",
+      "currentOid": "e71deb66d9386db4af89bcda6a5728165071f29c"
+    }
+  ],
+  "compatibility": [
+    {
+      "path": "package.json",
+      "incomingGitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "currentGitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "historicalGitSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "incomingGitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "currentGitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "historicalGitSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "incomingGitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "currentGitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "historicalGitSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "recordedByteHashMatch": "exact Git bytes"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "incomingGitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "currentGitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "historicalGitSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+      "incomingGitSha256": "6e23f9126a0f236136beb6fd07e3e69a2966dcdec14ba8275c7f92bca2274b21",
+      "currentGitSha256": "6e23f9126a0f236136beb6fd07e3e69a2966dcdec14ba8275c7f92bca2274b21",
+      "historicalGitSha256": "2461f66c7d32ae63fbf713cbfc287a92c4b1bde878f8c26fb6685705827ba2a9",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "incomingGitSha256": "4712e9eb3931bfa136c736da12346f1dc42bfdba9c7e414a3542a50f0a107256",
+      "currentGitSha256": "4712e9eb3931bfa136c736da12346f1dc42bfdba9c7e414a3542a50f0a107256",
+      "historicalGitSha256": "e567bd1005f74ec1ae15628a3f82e0ad3a623579d6f3528ef47502a1592c47ed",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-data.ts",
+      "incomingGitSha256": "5838c6e998ecba68470c076c8957f7a3be5d66cb4871aa98b40e8394681a7b04",
+      "currentGitSha256": "5838c6e998ecba68470c076c8957f7a3be5d66cb4871aa98b40e8394681a7b04",
+      "historicalGitSha256": "5838c6e998ecba68470c076c8957f7a3be5d66cb4871aa98b40e8394681a7b04",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "incomingGitSha256": "e5657954c8e80ca85438cddde18b666e62007669f6c78d725bb559c3f8726efc",
+      "currentGitSha256": "e5657954c8e80ca85438cddde18b666e62007669f6c78d725bb559c3f8726efc",
+      "historicalGitSha256": "950c021f3965e8758c7180400d9bcdbeadd844f5341596d7054aad6d83e7464d",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+      "incomingGitSha256": "4e8a44345800a48da2b80c6bde391a95d520ac4a0e725d9b2198f2cfdb077d1a",
+      "currentGitSha256": "4e8a44345800a48da2b80c6bde391a95d520ac4a0e725d9b2198f2cfdb077d1a",
+      "historicalGitSha256": "88fcef2badf5c4315a581363be5b2e65e810a6748d4976ffd672e41aa1a68d73",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.tsx",
+      "incomingGitSha256": "a525ff4b2ba9dbd413aeffec32119b67870540cf97ec318a44b4a921dfad9b44",
+      "currentGitSha256": "a525ff4b2ba9dbd413aeffec32119b67870540cf97ec318a44b4a921dfad9b44",
+      "historicalGitSha256": "a525ff4b2ba9dbd413aeffec32119b67870540cf97ec318a44b4a921dfad9b44",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "incomingGitSha256": "97c022c7efaa6162f6fb5208d272c6c4f477117ed36a0544f2ef2ef5f3a36fea",
+      "currentGitSha256": "97c022c7efaa6162f6fb5208d272c6c4f477117ed36a0544f2ef2ef5f3a36fea",
+      "historicalGitSha256": "b2cf7001432b381f60c890dff068847cac433693c127ff9b8803b8e36c22f456",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/actions.ts",
+      "incomingGitSha256": "bd162dfc13998afde367977dd7469ab0cc3e6613841fee71597646818ef7b0b8",
+      "currentGitSha256": "bd162dfc13998afde367977dd7469ab0cc3e6613841fee71597646818ef7b0b8",
+      "historicalGitSha256": "bd162dfc13998afde367977dd7469ab0cc3e6613841fee71597646818ef7b0b8",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "scripts/performance/fixture.mjs",
+      "incomingGitSha256": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "currentGitSha256": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "historicalGitSha256": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/scripts/performance-fixture.ts",
+      "incomingGitSha256": "272495c3e14e0ff98f92f4e1802c1ee987c549eba7a21a3b4be61f1c245ea0fc",
+      "currentGitSha256": "272495c3e14e0ff98f92f4e1802c1ee987c549eba7a21a3b4be61f1c245ea0fc",
+      "historicalGitSha256": "272495c3e14e0ff98f92f4e1802c1ee987c549eba7a21a3b4be61f1c245ea0fc",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "scripts/performance/journey-steps.mjs",
+      "incomingGitSha256": "ef3f794c7c1a19b60aea894817618716267881e681219e2cb1a73f98f6446a56",
+      "currentGitSha256": "ef3f794c7c1a19b60aea894817618716267881e681219e2cb1a73f98f6446a56",
+      "historicalGitSha256": "ef3f794c7c1a19b60aea894817618716267881e681219e2cb1a73f98f6446a56",
+      "recordedByteHashMatch": "CRLF materialization"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/development-keys.ts",
+      "incomingGitSha256": "7da5512d433c053299a405874383306e63aa81bc7299a20b64a2f70f8a0939b8",
+      "currentGitSha256": "7da5512d433c053299a405874383306e63aa81bc7299a20b64a2f70f8a0939b8",
+      "historicalGitSha256": "7da5512d433c053299a405874383306e63aa81bc7299a20b64a2f70f8a0939b8",
+      "recordedByteHashMatch": "CRLF materialization"
+    }
+  ]
+}

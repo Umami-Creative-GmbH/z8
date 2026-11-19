@@ -1,0 +1,50 @@
+{
+  "cleanup": {
+    "ownedNextStopped": true,
+    "threeOwnedServicesRemoved": true,
+    "noBrowserAuthStateSaved": true,
+    "portClosed": true
+  },
+  "source": "final coordinated shared correction, before commit",
+  "postgres": {
+    "rerunPerTestTimeoutMs": 15000,
+    "originalPass": 50,
+    "rerunSuitePass": 16,
+    "originalTimeout": 1,
+    "distinctCases": 51
+  },
+  "ancestry": {
+    "latestDirectlyVerified": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+    "parent": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "isAncestor": true,
+    "peer1747SourceNotAdopted": true
+  },
+  "doctor": {
+    "exit": 0,
+    "log": "doctor-coordinated-handoff.log",
+    "score": 100
+  },
+  "format": {
+    "ordinaryWholeFile": "failed: preserved CRLF/profile difference",
+    "ownedExplicitCrLf100": 0,
+    "sharedLint": 0,
+    "sharedWholeFileFormat": "failed: inherited wrapping retained for additive ownership"
+  },
+  "postCapture": {
+    "liveRerun": false,
+    "changes": "shared hook-level pending/identity retirement and activation-only feedback, plus tests",
+    "rootOwnsFreshAcceptance": true
+  },
+  "units": {
+    "exit": 0,
+    "cases": 124,
+    "log": "unit-handoff.log",
+    "files": 9
+  },
+  "typescript": {
+    "smoke": 0,
+    "app": 0,
+    "workflowContracts": 0,
+    "freshSequential": true
+  }
+}

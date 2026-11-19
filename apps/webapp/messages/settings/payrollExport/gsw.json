@@ -96,11 +96,12 @@
         "year": "Jahr"
       },
       "history": {
-        "description": "Früherigi DATEV-Export aaluege und abelade",
+        "descriptionAllFormats": "Frühere Lohnexporte anzeigen und herunterladen",
         "download": "Export abelade",
         "downloadError": "Download-URL konnte nöd abgruefe werde",
         "employees": "Mitarbeiter",
         "noExports": "No kei Export vorhande",
+        "noExportsHint": "Starten Sie einen Lohnexport auf dem Tab «Export». Abgeschlossene Exporte erscheinen hier zum Herunterladen.",
         "payrollRun": "{count, plural, one {Lohnlauf: # Spesenabrechnung} other {Lohnlauf: # Spesenabrechnungen}}",
         "periods": "Periode",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "I de Bearbeitig"
         },
         "table": {
+          "actions": "Aktionen",
           "createdAt": "Erstellt",
           "dateRange": "Datumsbereich",
           "records": "Datensätz",
@@ -151,7 +153,8 @@
         "configureFirst": "Bitte konfiguriered Sie mindestens eis Lohnexport-Format (DATEV, Lexware oder Sage), bevor Sie Zuordnige vornehmed.",
         "deleteDescription": "Sind Sie sicher, dass Sie die Lohnart-Zuordnig lösche wänd?",
         "deleteError": "Zuordnig hät nöd chönne glöscht werde",
-        "deleteMapping": "Zuordnig lösche",
+        "deleteMappingNamed": "Zuordnung für {name} löschen",
+        "deleteNamedDescription": "Lohnart-Zuordnung für «{name}» löschen?",
         "deleteSuccess": "Zuordnig glöscht",
         "deleteTitle": "Zuordnig lösche",
         "description": "Beschrybig",
@@ -335,7 +338,8 @@
         "name": "Mitarbeiter",
         "noNumber": "Nöd gsetzt",
         "personnelIdentifier": "Personal-Kennig",
-        "personnelNumber": "Personalnummere"
+        "personnelNumber": "Personalnummere",
+        "unnamed": "Unbenannte mitarbeitende Person"
       },
       "checks": {
         "count": "Aazahl",
@@ -364,6 +368,13 @@
       },
       "description": "Prüefe, öb en Lohnabrechnigszyklus bereit isch, bevor Ziit-, Absenz- und Lohn-Date exportiert wärded.",
       "openPayrollExport": "Lohnexport öffne",
+      "period": {
+        "currentMonth": "Aktueller Monat",
+        "navLabel": "Lohnperiode",
+        "previousMonth": "Vorheriger Monat",
+        "scope": "Lohnperiode: {period} (UTC)",
+        "showMonth": "{month} anzeigen"
+      },
       "status": {
         "blocked": "Blockiert",
         "ready": "Bereit für d Lohnabrechnig",

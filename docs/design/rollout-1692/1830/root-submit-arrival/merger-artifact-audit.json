@@ -1,0 +1,136 @@
+{
+  "passed": true,
+  "base": "1fb2263e97bf266522f1cf50be957889383701cd",
+  "incoming": "df375cecd17c6d28e2621ee630a8bc19edb91f09",
+  "merge": "25865312d95c68ec1eaed75363e953745f168802",
+  "tree": "9eceebe9741a320718642c13359d1030947598b9",
+  "parents": [
+    "1fb2263e97bf266522f1cf50be957889383701cd",
+    "df375cecd17c6d28e2621ee630a8bc19edb91f09"
+  ],
+  "independentMergeTreeMatches": true,
+  "changedPaths": 49,
+  "sourcePaths": [
+    "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "apps/webapp/src/lib/validations/onboarding.ts"
+  ],
+  "preservation": {
+    "unaffectedPaths": 13106,
+    "priorRolloutPaths": 2859,
+    "incomingRawPaths": 44,
+    "verifiedTicketAncestors": 43,
+    "baselineAncestor": true,
+    "root1829Verified": true,
+    "owners": [
+      "apps/webapp/src/app/[locale]/onboarding/profile/page.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/profile/actions.ts",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "apps/webapp/src/app/[locale]/init/page-client.tsx",
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "apps/webapp/src/components/ui/tanstack-form.tsx",
+      "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "apps/webapp/src/lib/auth/organization-joining-hooks.ts",
+      "apps/webapp/src/lib/organization/employee-birthday.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "sourcePageTemplates": 172,
+    "persistentPages": 153,
+    "aliases": 19,
+    "graphNodes": 157,
+    "graphEdges": 159
+  },
+  "artifacts": {
+    "decodedPNGs": 18,
+    "parsedJSON": 8,
+    "syntaxCheckedMJS": 6,
+    "documentLinks": 26,
+    "matchedPairs": 5,
+    "actionAssertions": 30,
+    "realScopeCases": 4,
+    "sourcePins": 17,
+    "normalizedLogs": [
+      {
+        "path": "docs/design/rollout-1692/1830/doctor.log",
+        "originalSHA256": "977ccf76d8902ae3b2c9ddc1feb205fe1960e55f71ca1ae248df10e6e15d92ab",
+        "normalizedSHA256": "fe235fe170e385e0a8eca4871e9a6a4903b49f30a907a875273b23d1af95d8a3",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1830/postgres.log",
+        "originalSHA256": "2e05871c46e12bebe2acc3aa3c424aff1d3d3cc7b86f91be0a9f98e280961dc8",
+        "normalizedSHA256": "5763bbaba530e8346d2bf9a9636dbfe6088b5af0142bcb171a82e08055c73086",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1830/red-activity.log",
+        "originalSHA256": "59588bb292d744f9099e27ae79d3825caded8ee3521c402e6651972d7537e78c",
+        "normalizedSHA256": "e8a7b53920904a1d5e84980980de8726464383aea074012593dc191d0b0b4370",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1830/red-birthday.log",
+        "originalSHA256": "af2e877b56c2bf6cbd798f87b67b076187e0a90426eba40b42874462131dc9e5",
+        "normalizedSHA256": "f377682dad0fb9ceca2872c3ea48c65386affc55058687a03d4f5db2b4fd977a",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1830/red-inline.log",
+        "originalSHA256": "71adafbc3dc78a0810cd0d9448299c02f728d2bb77f43842aa5b20b92505b994",
+        "normalizedSHA256": "9bd76f460e3eee3d73e044bf57689176b3d843e026c08a3bb3224723c017b0da",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1830/red-scope.log",
+        "originalSHA256": "9e00fd7aabd56fec8130fc3eb4bd4321139fa00d2966ce1329a63908ff09efd5",
+        "normalizedSHA256": "f3d53b935d7d03f33ffd9560c11a6acf9cd85ae93a20de0b4176f81e59853d07",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1830/unit.log",
+        "originalSHA256": "24a99e96c79fe63a53a25c0065236ab749d1039b734b30c1d3cfc3ba76b295eb",
+        "normalizedSHA256": "8f3689e8fc5bcd2c61b498c4341548087060b1b32cd527ccc54af8f688295313",
+        "rawByteIdentical": false,
+        "whitespaceCanonicalEqual": true
+      }
+    ],
+    "unchangedRuntimeOwners": [
+      "apps/webapp/src/app/[locale]/onboarding/profile/page.tsx",
+      "apps/webapp/src/app/[locale]/onboarding/profile/actions.ts",
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "apps/webapp/src/components/ui/tanstack-form.tsx",
+      "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "apps/webapp/src/lib/auth/organization-joining-hooks.ts",
+      "apps/webapp/src/lib/organization/employee-birthday.ts",
+      "apps/webapp/src/lib/employee-lifecycle/joining/joining.ts"
+    ],
+    "missingRuntimeOwners": []
+  },
+  "dependencies": {
+    "physicalRoots": [
+      "node_modules",
+      "apps/webapp/node_modules",
+      "node_modules/.pnpm"
+    ],
+    "localLeafLinks": 158,
+    "lockSHA256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "noInstallOrRepair": true
+  },
+  "qualification": [
+    "Fresh independent artifact/source/dependency audit only. All PostgreSQL/browser/Next/native evidence remains inherited.",
+    "Before comparison restored only owned profile page and schema to baseline; shared source is the then-current application. After pins match actual implementation blobs, not the declared pre-implementation HEAD alone.",
+    "Source pins are matched to actual Git blobs under raw/LF/CRLF variants; raw equality is not asserted for newline variants.",
+    "Seven copied tool logs were whitespace-normalized in df375cecd after implementation commit; hashes differ, whitespace-canonical contents match. No raw-byte identity claim. Manifest hashes cover PNGs and are unaffected.",
+    "Runtime/PG predate later root source, with listed direct profile owners unchanged; this does not certify the complete merged application runtime.",
+    "Native React target, full static generation, catalogs/providers/devices/true zoom/exhaustive accessibility/global transition acceptance remain unpassed.",
+    "No optional prior archive verifier rerun or private fixture/secret access was attempted."
+  ]
+}

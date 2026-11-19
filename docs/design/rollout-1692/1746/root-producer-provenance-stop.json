@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "verifiedCommit": null,
+  "status": "confirmedP1-pending-root-fix",
+  "reviewCandidate": "78d77c74ee370ed3979cf82fe7be8817a485080d",
+  "appTree": "440219039a3ec524a457da06145d319fa1d5f07d",
+  "cases": {
+    "distinct": 26,
+    "physicalFiles": 2,
+    "passed": 25,
+    "failed": 1,
+    "skipped": 0,
+    "repeatNonadditive": true,
+    "reservationAndOtherControls": 21,
+    "provenanceControls": 4
+  },
+  "finding": "Page stamps initial evidence with its earlier employee lookup. Real read action then reads admin population; manager hydration matches the old stamp and displays an outside report private reason with Approve enabled.",
+  "observed": {
+    "outsideReasonVisible": true,
+    "outsideButtonEnabled": true,
+    "employeeReads": 2
+  },
+  "classification": "Synthetic actual page/action/provider/controller/builder execution with sequential external employee responses. Admin lookup is authorized in the model. No live server unauthorized disclosure or persisted decision claimed.",
+  "controls": [
+    "Matching manager filters oversupplied approvals.",
+    "Matching workforce admin admits its wider canonical population.",
+    "Missing/ordinary employees refused before sources.",
+    "A genuinely mismatched provider role retires admin seed and reads current manager data."
+  ],
+  "safe": {
+    "indexSha256": "4ff46a518e88919dc672a7d2391eddee203566e61c9c2db55175752c4f6fb630",
+    "files": 16,
+    "allPayloadHashesVerified": true
+  },
+  "rootFixScope": "Bind the initial snapshot to the identity returned by its producing read, and verify refresh/initial provenance against the published view without new permission grants. Root will fix after the separate frozen R096 runtime lease releases.",
+  "newRuntimeCases": 0,
+  "newPostgresCases": 0,
+  "broadChecks": "Stopped under first-critical rule. Root196/types/Doctor stay historical, not independently certified.",
+  "preservation": "Candidate clean, all63anchors+baseline/proof paths preserved, bridges hash-removed and zero owned resources. Current root has documentation-only drift.",
+  "readiness": "Blocked/provisional. R096 source and accepted independent gate are unaffected."
+}

@@ -1,0 +1,268 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c46170e5-df82f3f532a8cf18/apps/webapp
+
+ ❯ |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx (9 tests | 1 failed) 1370ms
+   × keeps successful rows after failed refresh, disables downloads and retries the generated range 1050ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > keeps successful rows after failed refresh, disables downloads and retries the generated range
+TestingLibraryElementError: Found multiple elements with the text: 135 km
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<p
+  class="text-3xl font-semibold tabular-nums"
+>
+  135 km
+</p>
+
+Ignored nodes: comments, script, style
+<td
+  class="whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-right tabular-nums"
+  data-slot="table-cell"
+>
+  135 km
+</td>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-6 px-4 lg:px-6"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="min-w-0 px-6 pt-6"
+          data-slot="card-content"
+        >
+          <form>
+            <div
+              class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+            >
+              <fieldset
+                class="space-y-2"
+              >
+                <legend
+                  class="text-sm font-medium leading-none"
+                >
+                  Period
+                </legend>
+                <div
+                  class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Period"
+                    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full sm:w-[200px]"
+                    data-size="default"
+                    data-slot="select-trigger"
+                    id="base-ui-_r_28_"
+                    role="combobox"
+                    tabindex="0"
+                    type="button"
+                  >
+                    <span
+                      data-slot="select-value"
+                    >
+                      Current Month
+                    </span>
+                    <span
+                      aria-hidden="true"
+                    >
+                      <svg
+                        class="tabler-icon tabler-icon-chevron-down size-4 opacity-50"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6 9l6 6l6 -6"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  <input
+                    aria-hidden="true"
+                    id="base-ui-_r_28_-hidden-input"
+                    style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+                    tabindex="-1"
+                    value="current_month"
+                  />
+                  <div
+                    class="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground"
+                  >
+                    <svg
+                      class="tabler-icon tabler-icon-calendar mr-2 size-4"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+                      />
+                      <path
+                        d="M16 3v4"
+                      />
+                      <path
+                        d="M8 3v4"
+                      />
+                      <path
+                        d="M4 11h16"
+                      />
+                    </svg>
+                    Jan 1, 2026 - Dec 31, 2026
+                  </div>
+                </div>
+              </fieldset>
+              <button
+                class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-6 px-4 lg:px-6"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="min-w-0 px-6 pt-6"
+          data-slot="card-content"
+        >
+          <form>
+            <div
+              class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+            >
+              <fieldset
+                class="space-y-2"
+              >
+                <legend
+                  class="text-sm font-medium leading-none"
+                >
+                  Period
+                </legend>
+                <div
+                  class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Period"
+                    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full sm:w-[200px]"
+                    data-size="default"
+                    data-slot="select-trigger"
+                    id="base-ui-_r_28_"
+                    role="combobox"
+                    tabindex="0"
+                    type="button"
+                  >
+                    <span
+                      data-slot="select-value"
+                    >
+                      Current Month
+                    </span>
+                    <span
+                      aria-hidden="true"
+                    >
+                      <svg
+                        class="tabler-icon tabler-icon-chevron-down size-4 opacity-50"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6 9l6 6l6 -6"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  <input
+                    aria-hidden="true"
+                    id="base-ui-_r_28_-hidden-input"
+                    style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+                    tabindex="-1"
+                    value="current_month"
+                  />
+                  <div
+                    class="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground"
+                  >
+                    <svg
+                      class="tabler-icon tabler-icon-calendar mr-2 size-4"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+                      />
+                      <path
+                        d="M16 3v4"
+                      />
+                      <path
+                        d="M8 3v4"
+                      />
+                      <path
+                        d="M4 11h16"
+                      />
+                    </svg>
+                    Jan 1, 2026 - Dec 31, 2026
+                  </div>
+                </div>
+              </fieldset>
+              <button
+                class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:90:15
+     88|  expect(screen.queryByRole("button", {name: "Export CSV"})).toBeNull();
+     89|  fireEvent.click(screen.getByRole("button", {name: "Retry"}));
+     90|  await screen.findByText("135 km"); expect(screen.getByRole("button", …
+       |               ^
+     91|  expect(boundary.read.mock.calls[2]).toEqual(boundary.read.mock.calls[…
+     92| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  23:58:35
+   Duration  2.64s (tests 57%, import 23%, environment 15%, transform 3%, setup 1%)
+

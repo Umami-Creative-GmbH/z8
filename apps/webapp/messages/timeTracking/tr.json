@@ -50,6 +50,7 @@
       "retry": "{choice} için tekrar dene",
       "unavailable": "{choice} kullanılamıyor"
     },
+    "clockedIn": "Giriş yapıldı",
     "clockedOutSuccess": "Mesainizi bitirdiniz!",
     "clockIn": "İşe Giriş",
     "clockingIn": "İşe giriş yapılıyor…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Çıkış kaydı bu cihaza kaydedildi ancak gönderilmedi. Kaydedilen kayıtları inceleyin.",
     "clockOutSuccess": "İşten çıkış başarıyla yapıldı",
     "clockStatus": {
+      "clockedOut": "Giriş yapılmadı",
       "loading": "Giriş/çıkış durumu yükleniyor",
       "retry": "Giriş/çıkış durumunu tekrar dene",
       "unavailable": "Giriş/çıkış durumu kullanılamıyor"
@@ -301,6 +303,8 @@
         "wrong": "PIN doğru değil. Tekrar deneyin."
       },
       "queue": {
+        "awaiting": "Onay bekleyen giriş/çıkışlar: {count}",
+        "checking": "Gönderilen işlemler kontrol ediliyor: {count}",
         "dismiss": "Kapat",
         "reason": {
           "contact": "Kioskun son bağlantısı doğrulanamadı.",
@@ -311,6 +315,7 @@
           "pin": "PIN kabul edilmedi.",
           "time": "Zamanı kabul edilemedi."
         },
+        "recovery": "Kiosk, Z8'e erişebildiğinde otomatik olarak tekrar kontrol eder. Sonucu bilinmeyen bir işlemi tekrarlamayın.",
         "refused": "{name}: {time} zamanında çevrimdışıyken kaydedilen {action} kabul edilmedi. {reason}",
         "title": "Çevrimdışı giriş/çıkışlar kabul edilmiyor"
       },
@@ -335,6 +340,9 @@
         "description": "Bu kiosk artık mesai kaydı için kullanılamaz. Lütfen yöneticinizle iletişime geçin.",
         "pairAgain": "Yeni bir kodla eşleştirin",
         "title": "Kiosk yetkisi iptal edildi"
+      },
+      "scope": {
+        "zone": "Kiosk saati: {zone}"
       },
       "state": {
         "clockedIn": "{time} saatinden beri mesaide",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Kategori yok (%100)",
     "noProject": "Proje yok",
+    "notClockedIn": "Giriş yapılmadı",
     "notesPlaceholder": "Neler üzerinde çalıştın?",
     "notesSaved": "Notlar kaydedildi",
+    "onBreak": "Molada",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "{dates} tarihli bir izin talebi henüz karara bağlanmadı.",
@@ -497,6 +507,14 @@
       "withdrawn": "Gönderim geri çekildi",
       "withdrawRefused": "Bu gönderim zaten karara bağlandı ve artık geri çekilemez."
     },
+    "policy": {
+      "fixedDays": "Sabit ofis günleri: {days}",
+      "flexible": "Bu dönem için esnek ofis politikası",
+      "homeOfficeLeft": "Kalan evden çalışma günleri",
+      "officeRequired": "Hâlâ gerekli olan ofis günleri",
+      "requirementWarning": "Ofis zorunluluğu kalan çalışma günlerini aşıyor",
+      "unavailable": "İş yeri politikası kullanılamıyor."
+    },
     "project": "Proje",
     "quickBreak": {
       "addBreak": "Mola ekle",
@@ -535,6 +553,7 @@
       "title": "Oturum hatırlatıcıları"
     },
     "startedAt": "Başlangıç saati",
+    "statusUnavailable": "Giriş/çıkış durumu kullanılamıyor. Tekrar denemek için yenileyin.",
     "summary": {
       "dayOfRequired": "{date}: {required} üzerinden {worked}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} ek ücret",
       "thisMonth": "Bu Ay",
       "thisWeek": "Bu Hafta",
+      "title": "Çalışma süresi özeti",
       "today": "Bugün",
       "todayOfRequired": "{required} üzerinden {worked}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Şimdi: Şu ana kadar gereken {required} üzerinden {worked} çalışıldı. O zaman: Gereken {previousRequired} üzerinden {previousWorked} çalışıldı.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Toplam güncelleniyor… Kullanılamamaya devam ederse tekrar denemek için Yenile'yi kullanın.",
       "vsLastMonth": "geçen aya kıyasla",
       "vsLastWeek": "geçen haftaya kıyasla"
     },
+    "systemNote": {
+      "breakEnforcement": "Otomatik ayarlandı: mola zorunluluğu"
+    },
     "table": {
       "active": "Aktif",
+      "allEntries": "Tüm kayıtlar",
       "approved": "Zaman girişi onaylandı",
       "approveEntry": "Girişi onayla",
       "approveFailed": "Giriş onaylanamadı",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Sürüş ayrıntıları eksik",
       "duration": "Süre",
       "emptyState": "Bu hafta için zaman kaydı bulunamadı.",
+      "entryCount": "{count, plural, other {# kayıt} }",
+      "groupedByDay": "Güne göre gruplandırılmış",
+      "incompleteDay": "Etkin veya tamamlanmamış kayıtları içerir",
       "missingTask": "Eksik görev",
       "missingTaskHint": "Bu proje bir görev gerektiriyor: takvimdeki bu kayda bir görev ekleyin.",
+      "offsetContext": "Uç nokta saatleri her kaydın kaydedilen yerel UTC farkını kullanır. Gün başlıkları takvim saat diliminizi takip eder: {timezone}.",
       "recordedLocalTime": "Kaydedilen yerel saat",
       "rowActions": "Zaman girişi eylemleri",
       "title": "Zaman Kayıtları",
@@ -586,62 +615,64 @@
       "search": "Görevleri ara…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Öğleden sonra",
+        "fullDay": "Tam gün",
+        "morning": "Sabah"
+      },
       "dayPicker": "Zaman çizelgesi gün seçici",
       "emptyDescription": "Seçili gün için henüz hiçbir vardiya, devamsızlık veya zaman kaydı bulunmuyor.",
       "emptyTitle": "Bu gün için kaydedilmiş bir etkinlik yok.",
+      "link": {
+        "reviewRequest": "Talebi incele",
+        "viewAbsence": "İzni görüntüle"
+      },
+      "monthPicker": "Bir takvim günü seçin",
       "nextDay": "Sonraki gün",
       "previousDay": "Önceki gün",
-      "title": "İş günü zaman çizelgesi",
-      "today": "Bugün",
-      "unavailableDescription": "Zaman takibi hala çalışıyor. Bu görünümü daha sonra yenilemeyi deneyin.",
-      "unavailableTitle": "Zaman çizelgesi kullanılamıyor",
-      "workPeriod": {
-        "title": "Kaydedilen çalışma"
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "İzin talebi"
+        },
+        "timeCorrection": {
+          "subtitle": "Bir zaman kaydı için düzeltme",
+          "title": "Zaman düzeltme talebi"
+        }
       },
       "shift": {
         "title": "Planlanan vardiya"
       },
       "status": {
+        "active": "Aktif",
         "approved": "Onaylandı",
-        "pending": "Beklemede",
-        "rejected": "Reddedildi",
         "cancelled": "İptal edildi",
-        "published": "Yayınlandı",
         "draft": "Taslak",
-        "active": "Aktif"
+        "pending": "Beklemede",
+        "published": "Yayımlandı",
+        "rejected": "Reddedildi"
       },
-      "absence": {
-        "fullDay": "Tam gün",
-        "morning": "Öğleden önce",
-        "afternoon": "Öğleden sonra"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Zaman düzeltme talebi",
-          "subtitle": "Bir zaman kaydının düzeltilmesi"
-        },
-        "absence": {
-          "title": "İzin talebi",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "İzni görüntüle",
-        "reviewRequest": "Talebi incele"
-      },
+      "title": "İş günü zaman çizelgesi",
+      "today": "Bugün",
+      "unavailableDescription": "Zaman takibi hala çalışıyor. Bu görünümü daha sonra yenilemeyi deneyin.",
+      "unavailableTitle": "Zaman çizelgesi kullanılamıyor",
       "warning": {
-        "pendingEdit": {
-          "title": "Bekleyen düzenleme talebi",
-          "description": "Bu çalışma döneminde onay bekleyen değişiklikler var."
+        "autoAdjusted": {
+          "description": "Mola veya uyumluluk kuralları bu çalışma aralığını ayarladı.",
+          "title": "Otomatik ayarlanan kayıt"
         },
         "missingClockOut": {
-          "title": "Çıkış kaydı eksik",
-          "description": "Bu çalışma dönemi hâlâ aktif."
+          "description": "Bu çalışma aralığı hâlâ aktif.",
+          "title": "Eksik çıkış kaydı"
         },
-        "autoAdjusted": {
-          "title": "Otomatik düzeltilmiş kayıt",
-          "description": "Mola veya uyumluluk kuralları bu çalışma dönemini düzeltti."
+        "pendingEdit": {
+          "description": "Bu çalışma aralığında onay bekleyen değişiklikler var.",
+          "title": "Bekleyen düzenleme isteği"
         }
+      },
+      "weekPicker": "Haftanın bir gününü seçin",
+      "workPeriod": {
+        "title": "Kaydedilen çalışma"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Lütfen araç kullanımını kontrol edin"
       }
     },
-    "welcomeBack": "Tekrar hoş geldiniz, {name}",
     "workCategory": "Çalışma Kategorisi",
     "workLocation": "Çalışma yeri",
     "workLocationHome": "Ev",
     "workLocationOffice": "Ofis",
     "workLocationOther": "Diğer",
-    "workLocationRemote": "Uzaktan",
-    "systemNote": {
-      "breakEnforcement": "Otomatik düzeltildi: mola uygulaması"
-    }
+    "workLocationRemote": "Uzaktan"
   },
   "wellness": {
     "water": {

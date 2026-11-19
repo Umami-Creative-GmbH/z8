@@ -96,11 +96,12 @@
         "year": "Année"
       },
       "history": {
-        "description": "Voir et télécharger les exportations DATEV précédentes",
+        "descriptionAllFormats": "Afficher et télécharger les précédents exports de paie",
         "download": "Télécharger l'exportation",
         "downloadError": "Échec de l'obtention de l'URL de téléchargement",
         "employees": "employés",
         "noExports": "Aucune exportation pour le moment",
+        "noExportsHint": "Lancez un export de paie dans l'onglet Exporter. Les exports terminés apparaissent ici pour téléchargement.",
         "payrollRun": "{count, plural, one {Cycle de paie : # note de frais} other {Cycle de paie : # notes de frais}}",
         "periods": "périodes",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "En cours de traitement"
         },
         "table": {
+          "actions": "Actions",
           "createdAt": "Créé",
           "dateRange": "Plage de dates",
           "records": "Enregistrements",
@@ -151,7 +153,8 @@
         "configureFirst": "Veuillez configurer au moins un format d'exportation de paie (DATEV, Lexware ou Sage) avant de définir les mappages.",
         "deleteDescription": "Êtes-vous sûr de vouloir supprimer ce mappage de type de salaire ?",
         "deleteError": "Échec de la suppression du mappage",
-        "deleteMapping": "Supprimer le mappage",
+        "deleteMappingNamed": "Supprimer le mappage pour {name}",
+        "deleteNamedDescription": "Supprimer le mappage de type de salaire pour « {name} » ?",
         "deleteSuccess": "Mappage supprimé",
         "deleteTitle": "Supprimer le mappage",
         "description": "Description",
@@ -335,7 +338,8 @@
         "name": "Employé",
         "noNumber": "Non défini",
         "personnelIdentifier": "Identifiant de personnel",
-        "personnelNumber": "Numéro de personnel"
+        "personnelNumber": "Numéro de personnel",
+        "unnamed": "Employé sans nom"
       },
       "checks": {
         "count": "Nombre",
@@ -364,6 +368,13 @@
       },
       "description": "Vérifiez si une période de paie est prête avant d'exporter les données de temps, d'absence et de paie.",
       "openPayrollExport": "Ouvrir l'exportation de la paie",
+      "period": {
+        "currentMonth": "Mois en cours",
+        "navLabel": "Période de paie",
+        "previousMonth": "Mois précédent",
+        "scope": "Période de paie : {period} (UTC)",
+        "showMonth": "Afficher {month}"
+      },
       "status": {
         "blocked": "Bloqué",
         "ready": "Prêt pour la paie",

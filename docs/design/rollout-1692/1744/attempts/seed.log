@@ -1,0 +1,25 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Transform failed with 11 errors:
+X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\.tmp\1744\seed.ts:11:19: ERROR: Top-level await is currently not supported with the "cjs" output format
+X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\.tmp\1744\seed.ts:16:15: ERROR: Top-level await is currently not supported with the "cjs" output format
+X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\.tmp\1744\seed.ts:19:22: ERROR: Top-level await is currently not supported with the "cjs" output format
+X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\.tmp\1744\seed.ts:22:75: ERROR: Top-level await is currently not supported with the "cjs" output format
+X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\.tmp\1744\seed.ts:23:15: ERROR: Top-level await is currently not supported with the "cjs" output format
+...
+    at failureErrorWithLog (X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\node_modules\.pnpm\esbuild@0.25.12\node_modules\esbuild\lib\main.js:1467:15)
+    at X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\node_modules\.pnpm\esbuild@0.25.12\node_modules\esbuild\lib\main.js:736:50
+    at responseCallbacks.<computed> (X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\node_modules\.pnpm\esbuild@0.25.12\node_modules\esbuild\lib\main.js:603:9)
+    at handleIncomingPacket (X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\node_modules\.pnpm\esbuild@0.25.12\node_modules\esbuild\lib\main.js:658:12)
+    at Socket.readFromStdout (X:\t3-code\worktrees\z8\t3-831adb4b-b944467c4c43355c\node_modules\.pnpm\esbuild@0.25.12\node_modules\esbuild\lib\main.js:581:7)
+    at Socket.emit (node:events:514:20)
+    at addChunk (node:internal/streams/readable:576:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:527:3)
+    at Readable.push (node:internal/streams/readable:407:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) {
+  name: 'TransformError'
+}
+
+Node.js v26.9.0

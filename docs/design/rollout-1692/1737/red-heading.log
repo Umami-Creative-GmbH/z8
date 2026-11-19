@@ -1,0 +1,37 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c46170e5-df82f3f532a8cf18/apps/webapp
+
+ ❯ |unit| src/components/site-header.test.tsx (11 tests | 1 failed) 142ms
+   ❯ SiteHeader (11)
+     × hands the exact vehicle report its heading and retains descendant shell titles 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/site-header.test.tsx > SiteHeader > hands the exact vehicle report its heading and retains descendant shell titles
+AssertionError: expected [ <h1 …(2)></h1>, <h1 …(1)></h1> ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/components/site-header.test.tsx:135:56
+    133|   pathname = "/en/reports/vehicles";
+    134|   const page = render(<><SiteHeader /><PageHeader title="Distance per …
+    135|   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+       |                                                        ^
+    136|   page.unmount();
+    137|   pathname = "/en/reports/vehicles/detail";
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  00:04:01
+   Duration  1.09s (environment 45%, import 29%, tests 14%, transform 8%, setup 3%)
+

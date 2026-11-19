@@ -1,0 +1,1428 @@
+{
+  "kind": "Exact selection map and labeled derivations",
+  "runtimeFiles": 74,
+  "selections": [
+    {
+      "source": ".tmp/1735-pdf-independent-checks/HANDOFF.md",
+      "published": "runtime/HANDOFF.md",
+      "path": ".tmp/1735-pdf-independent-checks/HANDOFF.md",
+      "bytes": 7078,
+      "sha256": "bd46a40c52ef5df9017269f5724235f9eb82e63c3eb21083194f42ae8a5aca63",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/checks-final-02.json",
+      "published": "runtime/checks-final-02.json",
+      "path": ".tmp/1735-pdf-independent-checks/checks-final-02.json",
+      "bytes": 4962,
+      "sha256": "4afa73d5c9c2cba1bfba94aeb1362e34bc03bd4dfeebac1ba05ce425e36b63a4",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/test-accounting-01.json",
+      "published": "runtime/test-accounting-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/test-accounting-01.json",
+      "bytes": 2380,
+      "sha256": "4a9122fbfdc9a8780e55288b77d0cc1de9df7368716fc4a3aab890026a37ca7a",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/command-accounting-01.json",
+      "published": "runtime/command-accounting-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/command-accounting-01.json",
+      "bytes": 5628,
+      "sha256": "636c03061ce7faf023d4bc5fdc20b8beb3fdbb22a05129d4c9b93a14d37901bf",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/compiled-command-01.json",
+      "published": "runtime/compiled-command-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/compiled-command-01.json",
+      "bytes": 589,
+      "sha256": "453aad07973a4d7806f9a24a8932d2b54ad10439d98be71cb382f22406b0c612",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/compiled-exit-01.json",
+      "published": "runtime/compiled-exit-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/compiled-exit-01.json",
+      "bytes": 16,
+      "sha256": "3e42a2ad3dbeab9d1167d20261ad6305bdea31103ffc09c30f25558345966de2",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/compiled-result-01.json",
+      "published": "runtime/compiled-result-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/compiled-result-01.json",
+      "bytes": 877,
+      "sha256": "57afe711ede6470396f6597de8a4e8d3130355bd1a34d5122942807b22fcf4e1",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/canonical-export-controls-01.json",
+      "published": "runtime/canonical-export-controls-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/canonical-export-controls-01.json",
+      "bytes": 6396,
+      "sha256": "9974f51bdd2dc7dc7527c71bc5f520a6861d8266cd74d18a8b4cfd56be69a829",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/display-context-parity-01.json",
+      "published": "runtime/display-context-parity-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/display-context-parity-01.json",
+      "bytes": 720,
+      "sha256": "b43d221fded33134f202dbe66fdf03bd4c9b8170d9e5df3603a54289926f7f10",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/download-parsed-01-pdf-public.json",
+      "published": "runtime/download-parsed-01-pdf-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/download-parsed-01-pdf-public.json",
+      "bytes": 4427,
+      "sha256": "6ba924c9dac7aa7c12073e5ec11534b851d96e5e8a1fc92985d5a97c149724e4",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/download-parsed-01-csv-public.json",
+      "published": "runtime/download-parsed-01-csv-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/download-parsed-01-csv-public.json",
+      "bytes": 8158,
+      "sha256": "8d24da6b4732e2f5e333d677770fdacf9b0367ee61f36c6fdf3d0e9ac722aa2c",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/download-parsed-01-xlsx-public.json",
+      "published": "runtime/download-parsed-01-xlsx-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/download-parsed-01-xlsx-public.json",
+      "bytes": 7514,
+      "sha256": "929a63f4e2f39a6c623349be11760223cd2840bc5e6eec965757962944e275ad",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/runtime-flow-result-01.json",
+      "published": "runtime/runtime-flow-result-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/runtime-flow-result-01.json",
+      "bytes": 564,
+      "sha256": "05fa636521d6802a71a589b4fd297c5f2780068e3514d87091bf7d35c691f95c",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/generate-failure-retained-01-public.json",
+      "published": "runtime/generate-failure-retained-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/generate-failure-retained-01-public.json",
+      "bytes": 3283,
+      "sha256": "ccf91cd1d747c36ab07b0a76803a4cf6c3e724219930213ed9da690de85ff96c",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/generate-local-retry-01-public.json",
+      "published": "runtime/generate-local-retry-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/generate-local-retry-01-public.json",
+      "bytes": 3318,
+      "sha256": "1b56d1e49ec269b6ac54326e5c831f013b5b14460f8610f3fff39302ea249e42",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/roster-failure-02-public.json",
+      "published": "runtime/roster-failure-02-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/roster-failure-02-public.json",
+      "bytes": 956,
+      "sha256": "b362057094c900ad30f98aa96168386d06da79ef39c758fbc0be4e8f70eb0f23",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/roster-local-retry-02-public.json",
+      "published": "runtime/roster-local-retry-02-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/roster-local-retry-02-public.json",
+      "bytes": 944,
+      "sha256": "bddd6168d711bfd8bea5b680db5b495e867e69c53e1d49f5006dceb30b31e9af",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/keyboard-first-escape-01-public.json",
+      "published": "runtime/keyboard-first-escape-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/keyboard-first-escape-01-public.json",
+      "bytes": 275,
+      "sha256": "8f127ea66492bf0421fc30089658b94c2dbf9af36736a528319bb4111f0d9bc9",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/roles-preferences-result-01.json",
+      "published": "runtime/roles-preferences-result-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/roles-preferences-result-01.json",
+      "bytes": 1775,
+      "sha256": "0b4b6f2a76aac82a741befd91aec1e04e4f26a372f029efbec5fcab843af2210",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/role-admin-options-01-public.json",
+      "published": "runtime/role-admin-options-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/role-admin-options-01-public.json",
+      "bytes": 171,
+      "sha256": "c572ae14e44676687d1666d26b0c621d3088ac1d644149a4ee4f51c8b4ccba6a",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/role-manager-options-01-public.json",
+      "published": "runtime/role-manager-options-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/role-manager-options-01-public.json",
+      "bytes": 143,
+      "sha256": "09bd1cff2a2193fab76311f147688cc35ab6a73ffe8826ed1d7cd6349dd3f4ce",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/saved18-collapsed-reload-01-public.json",
+      "published": "runtime/saved18-collapsed-reload-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/saved18-collapsed-reload-01-public.json",
+      "bytes": 205,
+      "sha256": "083a6a7fea7517a499fc30f5fbfa7328d51985e263039bf383ee9f3cf69f75a6",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-context-01-public.json",
+      "published": "runtime/current-context-01-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-context-01-public.json",
+      "bytes": 2160,
+      "sha256": "88ef63b5cb30c7fad9206fd2d415f86aaff1b5e3d51a7b9baeaa530411eb1e7b",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/source-config-pins-01.json",
+      "published": "runtime/source-config-pins-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/source-config-pins-01.json",
+      "bytes": 31729,
+      "sha256": "0c484b73edeb294ea992317db424726b937950f8db5e3e2c5b9bf08208e8e80d",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/preservation-final-01.json",
+      "published": "runtime/preservation-final-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/preservation-final-01.json",
+      "bytes": 2029,
+      "sha256": "ba6fe93f5fcd7322447cdcd0103ba243c3f63f3ed7f7d0b823060dc332a88341",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/preservation-qualification-01.json",
+      "published": "runtime/preservation-qualification-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/preservation-qualification-01.json",
+      "bytes": 611,
+      "sha256": "97f393e57298dd4823bb25a5c35d2367c579ab94d21a994d67db0d9fa9f1872a",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/compiled-generated-relocation-01.json",
+      "published": "runtime/compiled-generated-relocation-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/compiled-generated-relocation-01.json",
+      "bytes": 1003,
+      "sha256": "101927245d242cc9288909404a92d6e458d85c46705d82c582a8882e77fd9ffc",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/overlay-manifest-01.json",
+      "published": "runtime/overlay-manifest-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/overlay-manifest-01.json",
+      "bytes": 2899,
+      "sha256": "3c4f0baffecf4af8a693d24fcd307e7186cea5efb74ff5436a0856a35b702ecc",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/overlay-restore-01.json",
+      "published": "runtime/overlay-restore-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/overlay-restore-01.json",
+      "bytes": 119,
+      "sha256": "b7f0bde202d1353871534e07b4b303c641ae198e1fd84b9ab38bc9153e522b7f",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/pixel-review-01.json",
+      "published": "runtime/pixel-review-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/pixel-review-01.json",
+      "bytes": 1587,
+      "sha256": "7883288dcf4c0beb0b482dd926d8574fffa3fdc2e338d06ed4f7813687bfa1f0",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/artifact-validation-01.json",
+      "published": "runtime/artifact-validation-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/artifact-validation-01.json",
+      "bytes": 4399,
+      "sha256": "c90d9d4188e098a783dea66260aeb8ce0f23b2dfe8759c37984ea5dcd05f9ea5",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/artifact-validation-02.json",
+      "published": "runtime/artifact-validation-02.json",
+      "path": ".tmp/1735-pdf-independent-checks/artifact-validation-02.json",
+      "bytes": 303,
+      "sha256": "950fb35cb922a758eb5d8f6faefb0179688400d2797aacdf987323bda1d0eda1",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/powershell-syntax-01.json",
+      "published": "runtime/powershell-syntax-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/powershell-syntax-01.json",
+      "bytes": 448,
+      "sha256": "7244205e0ce07c1e3f15835c4f15bdf22a28da0a1a611ec7c9b19a40a1dc7c92",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/native-react-target-03-public.json",
+      "published": "runtime/native-react-target-03-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/native-react-target-03-public.json",
+      "bytes": 972,
+      "sha256": "af164357df0700611232459386bc3b9822e081a37ad625abb951b301a0bc9e94",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/native-harness-target-correction-01.json",
+      "published": "runtime/native-harness-target-correction-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/native-harness-target-correction-01.json",
+      "bytes": 694,
+      "sha256": "62a5513939d423c64ed33b8175292907a04622fc337528cb3be0664ed6fa4d49",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/native-result-03.json",
+      "published": "runtime/native-result-03.json",
+      "path": ".tmp/1735-pdf-independent-checks/native-result-03.json",
+      "bytes": 719,
+      "sha256": "e8359a0053e06ff05c28643fdedab1fe8b4fe330d89f1f64436b21e4b88fb4f2",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/next-probes-03-public.json",
+      "published": "runtime/next-probes-03-public.json",
+      "path": ".tmp/1735-pdf-independent-checks/next-probes-03-public.json",
+      "bytes": 1863,
+      "sha256": "dadadc4d7c7c5723b46d75b25fb6694b19768be6eb3f4dd0c2488ef5647193b2",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/next-provenance-01.json",
+      "published": "runtime/next-provenance-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/next-provenance-01.json",
+      "bytes": 4688,
+      "sha256": "a6b32ccb7af2b3b149f57d47adaa5307037c5751876cc82f6cca9d1607eae823",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/cleanup-result-01.json",
+      "published": "runtime/cleanup-result-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/cleanup-result-01.json",
+      "bytes": 290,
+      "sha256": "374aeef4db3c76bda3911e27c4b3d8f2bc5e6f412223c83a7b159c7c2896451e",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/cleanup-result-02.json",
+      "published": "runtime/cleanup-result-02.json",
+      "path": ".tmp/1735-pdf-independent-checks/cleanup-result-02.json",
+      "bytes": 290,
+      "sha256": "4f41d6654acaa9051cad3766cce0e249788feaf3052bbba6c91aa2560f24a05e",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/earlier-own-resources-absent-01.json",
+      "published": "runtime/earlier-own-resources-absent-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/earlier-own-resources-absent-01.json",
+      "bytes": 958,
+      "sha256": "0e1eb13be424e9e5dd87ab3503a5693c49d7d3d92bb5ac66213209c6ae0a8dd2",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/fixture-helper-provenance-01.json",
+      "published": "runtime/fixture-helper-provenance-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/fixture-helper-provenance-01.json",
+      "bytes": 403,
+      "sha256": "7e0b360dcdbed43de94e54944c643f9fd9a480172f7c2322c9670bdbfbc6cc80",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/pdf-parser-harness-correction-01.json",
+      "published": "runtime/pdf-parser-harness-correction-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/pdf-parser-harness-correction-01.json",
+      "bytes": 391,
+      "sha256": "c0508927647bc1cf8e6901c8b9b66d7276540319a3faa352734440e76b1db87c",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/preflight-harness-attempt-01.json",
+      "published": "runtime/preflight-harness-attempt-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/preflight-harness-attempt-01.json",
+      "bytes": 267,
+      "sha256": "872f98dcf0e69e96d4f830fbf070f5cc8fe5f592228bfcafc4101627dd189dec",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/preflight-harness-attempt-02.json",
+      "published": "runtime/preflight-harness-attempt-02.json",
+      "path": ".tmp/1735-pdf-independent-checks/preflight-harness-attempt-02.json",
+      "bytes": 186,
+      "sha256": "aaabf390f8c6ef5591c6c3e9bd91509d6d1f744b6226fda81715c240014fbded",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/rpc-harness-attempt-01.json",
+      "published": "runtime/rpc-harness-attempt-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/rpc-harness-attempt-01.json",
+      "bytes": 178,
+      "sha256": "6234911b0800773e5746752de93be76ecd45a2f2d4635eef973d52f167dd9992",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/runtime-harness-attempt-01.json",
+      "published": "runtime/runtime-harness-attempt-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/runtime-harness-attempt-01.json",
+      "bytes": 259,
+      "sha256": "9ec9ebc30b5fc4993e544b2276a031d832ac017f33dd10ba240dc822e9ce744d",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/runtime-harness-attempt-02.json",
+      "published": "runtime/runtime-harness-attempt-02.json",
+      "path": ".tmp/1735-pdf-independent-checks/runtime-harness-attempt-02.json",
+      "bytes": 311,
+      "sha256": "f095d096f9cea98a1d5506fa833852b22d4ccb7f458343520a9cf86d7a22c895",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/layout-harness-attempt-01.json",
+      "published": "runtime/layout-harness-attempt-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/layout-harness-attempt-01.json",
+      "bytes": 591,
+      "sha256": "ea89f2e49f1471a93bb37b106bc8cfc39f26a83d1f0c0452eb565be06992fee3",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/layout-harness-attempt-02.json",
+      "published": "runtime/layout-harness-attempt-02.json",
+      "path": ".tmp/1735-pdf-independent-checks/layout-harness-attempt-02.json",
+      "bytes": 255,
+      "sha256": "e37c525ab5679bdaffa9777d4ddc59aac37af242375aeb782807eff52ae8b908",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-captures-result-01.json",
+      "published": "runtime/current-single-captures-result-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-captures-result-01.json",
+      "bytes": 1080,
+      "sha256": "a058a96c0605e421e79fd203f881948fae151013f5c93c1d12db73d53d7b969a",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-captures-result-01.json",
+      "published": "runtime/historical-single-captures-result-01.json",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-captures-result-01.json",
+      "bytes": 1180,
+      "sha256": "7f9f4fa997e5d00e0ef8b0ed4684d63690d104ee2b6da78aabc9722a0cd42716",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-desktop-1600-01.png",
+      "published": "runtime/current-single-desktop-1600-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-desktop-1600-01.png",
+      "bytes": 138197,
+      "sha256": "8100542938c5d9baf971b2ec92a40ec9fbe1e774757d191530477df2eea2555f",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-desktop-tail-01.png",
+      "published": "runtime/current-single-desktop-tail-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-desktop-tail-01.png",
+      "bytes": 102280,
+      "sha256": "f86f02b2374f8cf80a9c6afd4f59cf0cd2dd8a3f9b0f8eb923ba5e73785fba34",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-phone-390-01.png",
+      "published": "runtime/current-single-phone-390-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-phone-390-01.png",
+      "bytes": 52088,
+      "sha256": "93c347cb16f0097fcdf90bd8c610c539d1bb7e7eb73ea05cb76aa301ae5470b1",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-phone-tail-01.png",
+      "published": "runtime/current-single-phone-tail-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-phone-tail-01.png",
+      "bytes": 43794,
+      "sha256": "d6a8d83a49b1419ab69f7769e2ea2d1cab1c47be038ee620a32b713d50827dba",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-wide-2400-dark-01.png",
+      "published": "runtime/current-single-wide-2400-dark-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-wide-2400-dark-01.png",
+      "bytes": 155449,
+      "sha256": "98653eb4532d93aed6e84137504afad3d151d5d820cf85553964e3ca8fbcb4e3",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-desktop-1600-01.png",
+      "published": "runtime/historical-single-desktop-1600-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-desktop-1600-01.png",
+      "bytes": 127386,
+      "sha256": "294390454d2fcc1b552f141d75efe3506505f94656dab7aa31017907e9a7d0c6",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-desktop-tail-01.png",
+      "published": "runtime/historical-single-desktop-tail-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-desktop-tail-01.png",
+      "bytes": 102647,
+      "sha256": "d1814abbeb050b8858f93625a76850e4d3debfe90aa8cb85c59b2ae4fefe577b",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-phone-390-01.png",
+      "published": "runtime/historical-single-phone-390-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-phone-390-01.png",
+      "bytes": 52723,
+      "sha256": "c14fc0e25e968bb490d19b24547ce636af7ed0b852314035ee633c38c976a22b",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-phone-tail-01.png",
+      "published": "runtime/historical-single-phone-tail-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-phone-tail-01.png",
+      "bytes": 45374,
+      "sha256": "46e562b5efd2e6c6f5d491c0a5b1f98d3078e0701b177a992ab4a49095c6e627",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-wide-2400-dark-01.png",
+      "published": "runtime/historical-single-wide-2400-dark-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-wide-2400-dark-01.png",
+      "bytes": 144219,
+      "sha256": "12c66e4d496f45132115038c2afc3cfebf3a6c86cb407c43c43d9e081ccc3c11",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-final-saved18-01.png",
+      "published": "runtime/current-final-saved18-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-final-saved18-01.png",
+      "bytes": 144047,
+      "sha256": "8ee22b57ddec69b288cc9949b72728423ec47dfda6141f412fd5da69f2e10f1e",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-final-collapsed18-01.png",
+      "published": "runtime/current-final-collapsed18-01.png",
+      "path": ".tmp/1735-pdf-independent-checks/current-final-collapsed18-01.png",
+      "bytes": 129353,
+      "sha256": "a10b6e28d648f2271163a91e8cbe23ddec817cf1e0c6fccc4b7b0cd5399a7e14",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-desktop-1600-01-geometry.json",
+      "published": "runtime/current-single-desktop-1600-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-desktop-1600-01-geometry.json",
+      "bytes": 10774,
+      "sha256": "0daecfe93ca1b804d9d85af2e1e9893d67a0265ae15200d6966f9ae14333e2ee",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-desktop-tail-01-geometry.json",
+      "published": "runtime/current-single-desktop-tail-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-desktop-tail-01-geometry.json",
+      "bytes": 10788,
+      "sha256": "03b67bf53cd49e0c9753a4d5369f43053f296a18f07c2d6da6eb2c11fad33376",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-phone-390-01-geometry.json",
+      "published": "runtime/current-single-phone-390-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-phone-390-01-geometry.json",
+      "bytes": 10001,
+      "sha256": "f272ec5c27b92a64fc781798abcec4a832fa89a4383141569edfb32096d3d9e0",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-phone-tail-01-geometry.json",
+      "published": "runtime/current-single-phone-tail-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-phone-tail-01-geometry.json",
+      "bytes": 10015,
+      "sha256": "cebf99cc6ab44f6544f32dbb062beb9ac6d2185199947e6ae46b087461c955c1",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/current-single-wide-2400-dark-01-geometry.json",
+      "published": "runtime/current-single-wide-2400-dark-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/current-single-wide-2400-dark-01-geometry.json",
+      "bytes": 10687,
+      "sha256": "a7673854bd02be87745bcf9308f4c7256cecb4bc2c561e67630fa167a57fd54b",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-desktop-1600-01-geometry.json",
+      "published": "runtime/historical-single-desktop-1600-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-desktop-1600-01-geometry.json",
+      "bytes": 10789,
+      "sha256": "e0b2a5c779ff68f67592e88a3eb7bab394658403eaf83cf310b6ef2487cefba3",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-desktop-tail-01-geometry.json",
+      "published": "runtime/historical-single-desktop-tail-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-desktop-tail-01-geometry.json",
+      "bytes": 10803,
+      "sha256": "2806c7eac378bcb6668fc9693bcaa00f186b16fcadd4ce91d0b9691c16c7bac6",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-phone-390-01-geometry.json",
+      "published": "runtime/historical-single-phone-390-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-phone-390-01-geometry.json",
+      "bytes": 10016,
+      "sha256": "7856e8f9417c57eaac76c29b61479b8739418fa3f949170a0bbcd0e063133bae",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-phone-tail-01-geometry.json",
+      "published": "runtime/historical-single-phone-tail-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-phone-tail-01-geometry.json",
+      "bytes": 10030,
+      "sha256": "9f4de441f86932e6e2a9d0060c8a9816cebf9d2ea88957ea3b2e57dbdcc77a56",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/historical-single-wide-2400-dark-01-geometry.json",
+      "published": "runtime/historical-single-wide-2400-dark-01-geometry.json",
+      "path": ".tmp/1735-pdf-independent-checks/historical-single-wide-2400-dark-01-geometry.json",
+      "bytes": 10702,
+      "sha256": "ce8873d039f9754737d084d80bf2f2765121e779503bd6644b052760880b71a7",
+      "reason": "Exact final explicit safe runtime allowlist"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/safe-public-allowlist-final.json",
+      "published": "runtime/safe-public-allowlist-final.json",
+      "path": ".tmp/1735-pdf-independent-checks/safe-public-allowlist-final.json",
+      "bytes": 12909,
+      "sha256": "91c9a42d0216c0dc072575cba88d22261fdcfe3a29ab74629c72424260f215d7",
+      "reason": "Path/length/hash seal or explicit public allowlist; no private payload"
+    },
+    {
+      "source": ".tmp/1735-pdf-independent-checks/seal-final.json",
+      "published": "runtime/seal-final.json",
+      "path": ".tmp/1735-pdf-independent-checks/seal-final.json",
+      "bytes": 49725,
+      "sha256": "e7947e8873d9514aa5a9f2ea09868ddf0523249d96f0a08e8d95a9ef30b48621",
+      "reason": "Path/length/hash seal or explicit public allowlist; no private payload"
+    },
+    {
+      "source": ".tmp/merge1735-audit/HANDOFF.json",
+      "published": "history/merger-stop/HANDOFF.json",
+      "path": ".tmp/merge1735-audit/HANDOFF.json",
+      "bytes": 6561,
+      "sha256": "e08ff5c5fa30713349cb02404e1698b5c154f74e7226eafa24e2f0e71aac7e0a",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/merge-audit.json",
+      "published": "history/merger-stop/merge-audit.json",
+      "path": ".tmp/merge1735-audit/merge-audit.json",
+      "bytes": 11309,
+      "sha256": "870bdb9b84bed6ff868e22c79797d82b8dd3c27d1d58e18e168f2adbe79dba7b",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/failed-attempts.json",
+      "published": "history/merger-stop/failed-attempts.json",
+      "path": ".tmp/merge1735-audit/failed-attempts.json",
+      "bytes": 1935,
+      "sha256": "5f4761be3fa58b47eb67da567fb9460257e3571db9e10fe75457364c8f63dfcf",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/test-multiset.json",
+      "published": "history/merger-stop/test-multiset.json",
+      "path": ".tmp/merge1735-audit/test-multiset.json",
+      "bytes": 3918,
+      "sha256": "8f5632bf8533b5147afd697c29bf23df1430ab0443b3e8007e4aa29b8d267ff7",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/source-pins.json",
+      "published": "history/merger-stop/source-pins.json",
+      "path": ".tmp/merge1735-audit/source-pins.json",
+      "bytes": 9224,
+      "sha256": "ccc30062314b46fefe8ce8b5e8743570bb4057ee7f062f58cbacda8760f0ac5d",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/control-pins.json",
+      "published": "history/merger-stop/control-pins.json",
+      "path": ".tmp/merge1735-audit/control-pins.json",
+      "bytes": 10346,
+      "sha256": "14737881b347c84ded45fbf821e4d26392a3af6b8d0f902c5cc1589f6c68c57f",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/cleanup.json",
+      "published": "history/merger-stop/cleanup.json",
+      "path": ".tmp/merge1735-audit/cleanup.json",
+      "bytes": 671,
+      "sha256": "7817bd6d282ba0081a7fd9d63d0ba22915ff5eb54c7c79a3d6f89c25cb22eb63",
+      "reason": "Selected original context-refusal STOP receipt"
+    },
+    {
+      "source": ".tmp/merge1735-audit/safe-public-allowlist.json",
+      "published": "provenance/merger-safe-public-allowlist.json",
+      "path": ".tmp/merge1735-audit/safe-public-allowlist.json",
+      "bytes": 12704,
+      "sha256": "95a66f3c022c2346f069397c8826e19866624300f3079001488b87f870845ad0",
+      "reason": "Historical path/length/hash metadata only"
+    },
+    {
+      "source": ".tmp/merge1735-audit/seal.json",
+      "published": "provenance/merger-seal.json",
+      "path": ".tmp/merge1735-audit/seal.json",
+      "bytes": 752,
+      "sha256": "e730a6ba2d1f7906738437ff956db5de71f8381cd584f7b58dd214d25e4079a4",
+      "reason": "Historical path/length/hash metadata only"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/public-recovery.test.tsx",
+      "published": "history/roster-retry-stop/public-recovery.test.tsx",
+      "path": ".tmp/1735-independent-checks/public-recovery.test.tsx",
+      "bytes": 6440,
+      "sha256": "e017038ebc40c8938f4363402ff939a8e57ec460f50e3d02881b792617bbfd6f",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/public-recovery-02.test.tsx",
+      "published": "history/roster-retry-stop/public-recovery-02.test.tsx",
+      "path": ".tmp/1735-independent-checks/public-recovery-02.test.tsx",
+      "bytes": 6953,
+      "sha256": "1671b570aa24215038ffe248b4dbf83ee7941d6f94f53baba0ac4a2f1160e82c",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/public-result-01.json",
+      "published": "history/roster-retry-stop/public-result-01.json",
+      "path": ".tmp/1735-independent-checks/public-result-01.json",
+      "bytes": 1456,
+      "sha256": "5501b85d32be5027f1d1733f7b1f99d51c7b1506a12a544f8e10092dccae07be",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/public-result-02.json",
+      "published": "history/roster-retry-stop/public-result-02.json",
+      "path": ".tmp/1735-independent-checks/public-result-02.json",
+      "bytes": 1456,
+      "sha256": "6e8e08a356940932931ec8d381e611866b940ad10e18e3d83ace0d39db191225",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/public-command-01.json",
+      "published": "history/roster-retry-stop/public-command-01.json",
+      "path": ".tmp/1735-independent-checks/public-command-01.json",
+      "bytes": 713,
+      "sha256": "29aef7ae4b9d06f67ea5edadc968cada5eed7c8bde0c1eb75c7191bbf83f51a9",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/public-command-02.json",
+      "published": "history/roster-retry-stop/public-command-02.json",
+      "path": ".tmp/1735-independent-checks/public-command-02.json",
+      "bytes": 713,
+      "sha256": "b2a6457e27ed810a6c92fe4f452940177de77041da2b365b0385f984b0314d37",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/roster-refusal-observation-01.json",
+      "published": "history/roster-retry-stop/roster-refusal-observation-01.json",
+      "path": ".tmp/1735-independent-checks/roster-refusal-observation-01.json",
+      "bytes": 371,
+      "sha256": "dcf4639b9cb2a198bc9d85f1487d1782a372fcde4c70f138e69b51f95a41107f",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/roster-rejection-observation-01.json",
+      "published": "history/roster-retry-stop/roster-rejection-observation-01.json",
+      "path": ".tmp/1735-independent-checks/roster-rejection-observation-01.json",
+      "bytes": 373,
+      "sha256": "d553705a91c73b05913d9d7e218b7e9652ace4b28db6d63a5c7c744476988edc",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/roster-refusal-observation-02.json",
+      "published": "history/roster-retry-stop/roster-refusal-observation-02.json",
+      "path": ".tmp/1735-independent-checks/roster-refusal-observation-02.json",
+      "bytes": 371,
+      "sha256": "dcf4639b9cb2a198bc9d85f1487d1782a372fcde4c70f138e69b51f95a41107f",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/roster-rejection-observation-02.json",
+      "published": "history/roster-retry-stop/roster-rejection-observation-02.json",
+      "path": ".tmp/1735-independent-checks/roster-rejection-observation-02.json",
+      "bytes": 373,
+      "sha256": "d553705a91c73b05913d9d7e218b7e9652ace4b28db6d63a5c7c744476988edc",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/roster-refusal-positive-control-02.json",
+      "published": "history/roster-retry-stop/roster-refusal-positive-control-02.json",
+      "path": ".tmp/1735-independent-checks/roster-refusal-positive-control-02.json",
+      "bytes": 146,
+      "sha256": "f0e706cc47d477a0532f51b351075202327e2cef3dc7877a295067882d8bed36",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/roster-rejection-positive-control-02.json",
+      "published": "history/roster-retry-stop/roster-rejection-positive-control-02.json",
+      "path": ".tmp/1735-independent-checks/roster-rejection-positive-control-02.json",
+      "bytes": 148,
+      "sha256": "0af5e85d58fde3c93c31dddd6f15991e8105dd33bb8b5ed8ee424ef70a086a34",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/test-multiset.json",
+      "published": "history/roster-retry-stop/test-multiset.json",
+      "path": ".tmp/1735-independent-checks/test-multiset.json",
+      "bytes": 2817,
+      "sha256": "b4dc4d9e5f8e0a873c0d0b17f9b99c8d681eedd7887ad37276ba4260de2057ba",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/preservation.json",
+      "published": "history/roster-retry-stop/preservation.json",
+      "path": ".tmp/1735-independent-checks/preservation.json",
+      "bytes": 2341,
+      "sha256": "9e4558418f17d627680dd4a4dcf71937f7f1ca225e39aaeebf486e4ff936f3c6",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/bridge-manifest-01.json",
+      "published": "history/roster-retry-stop/bridge-manifest-01.json",
+      "path": ".tmp/1735-independent-checks/bridge-manifest-01.json",
+      "bytes": 329,
+      "sha256": "61d3cf80d023c4e8fddd97006e6a1ce6beb53ccdbf1426796118da80dfbe43ab",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/bridge-manifest-02.json",
+      "published": "history/roster-retry-stop/bridge-manifest-02.json",
+      "path": ".tmp/1735-independent-checks/bridge-manifest-02.json",
+      "bytes": 468,
+      "sha256": "039bc8ff6d88ab49489c7bb45fa7ade4731eeee9691bbb78829a0c7f74eb140d",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/post-seal-verification.json",
+      "published": "history/roster-retry-stop/post-seal-verification.json",
+      "path": ".tmp/1735-independent-checks/post-seal-verification.json",
+      "bytes": 905,
+      "sha256": "9ff5d3cfaff30c3ca2d04a7f2455a927e80d2b08619a28f7a188d1849157806e",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/safe-public-allowlist-final.json",
+      "published": "provenance/roster-retry-stop-safe-public-allowlist-final.json",
+      "path": ".tmp/1735-independent-checks/safe-public-allowlist-final.json",
+      "bytes": 964,
+      "sha256": "c729a6743c7954db69f97f7858d670d0bde035e7eb117af70ef9b5164b2335c2",
+      "reason": "Historical allowlist/seal metadata, not proof all indexed private files are published"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/seal-final.json",
+      "published": "provenance/roster-retry-stop-seal-final.json",
+      "path": ".tmp/1735-independent-checks/seal-final.json",
+      "bytes": 6889,
+      "sha256": "cd7b19c4e03989ba2c7990166474b999709457ff2dfe0867a8a1381ce3d6878b",
+      "reason": "Historical allowlist/seal metadata, not proof all indexed private files are published"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/checks-01.json",
+      "published": "history/compiled-pdf-stop/checks-01.json",
+      "path": ".tmp/1735-roster-independent-checks/checks-01.json",
+      "bytes": 2703,
+      "sha256": "f4bbaaf1e44086f80c5e6a45598143af13d2d713d5e102eb6097b13dcfdf8720",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/preservation-01.json",
+      "published": "history/compiled-pdf-stop/preservation-01.json",
+      "path": ".tmp/1735-roster-independent-checks/preservation-01.json",
+      "bytes": 7830,
+      "sha256": "cb58eb7783e5056d86938b5e8e2869d06ce3c7cc2c2bc67adbdb4765cc77e3c9",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/dependency-topology-01.json",
+      "published": "history/compiled-pdf-stop/dependency-topology-01.json",
+      "path": ".tmp/1735-roster-independent-checks/dependency-topology-01.json",
+      "bytes": 473,
+      "sha256": "afd9e9bc43696528bb401e85a93d1fc859f1062ecc45eaa48bfbc2acc4470fbe",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/protected-proof-readback-01.json",
+      "published": "history/compiled-pdf-stop/protected-proof-readback-01.json",
+      "path": ".tmp/1735-roster-independent-checks/protected-proof-readback-01.json",
+      "bytes": 627,
+      "sha256": "120b426c066376701638bf7dda1454cea7bd05a83656de75f69b69ed04cfed38",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-recovery-01.test.tsx",
+      "published": "history/compiled-pdf-stop/public-recovery-01.test.tsx",
+      "path": ".tmp/1735-roster-independent-checks/public-recovery-01.test.tsx",
+      "bytes": 13463,
+      "sha256": "60cb64e54a2766f315ae5d92c0d560cc896d501277781697d6f25ef40bbfe24a",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-recovery-03.test.tsx",
+      "published": "history/compiled-pdf-stop/public-recovery-03.test.tsx",
+      "path": ".tmp/1735-roster-independent-checks/public-recovery-03.test.tsx",
+      "bytes": 13788,
+      "sha256": "06b1dc9bdda6c5e4ad9e0084ba254cb5111a383d3dd14c99e04c97f763a45f10",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-recovery-04.test.tsx",
+      "published": "history/compiled-pdf-stop/public-recovery-04.test.tsx",
+      "path": ".tmp/1735-roster-independent-checks/public-recovery-04.test.tsx",
+      "bytes": 13788,
+      "sha256": "06b1dc9bdda6c5e4ad9e0084ba254cb5111a383d3dd14c99e04c97f763a45f10",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-recovery-05.test.tsx",
+      "published": "history/compiled-pdf-stop/public-recovery-05.test.tsx",
+      "path": ".tmp/1735-roster-independent-checks/public-recovery-05.test.tsx",
+      "bytes": 14091,
+      "sha256": "8cdd9a6a0d7af7429ab588955e9530b9201e914f36cf1ddf35c842612196a282",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-result-02.json",
+      "published": "history/compiled-pdf-stop/public-result-02.json",
+      "path": ".tmp/1735-roster-independent-checks/public-result-02.json",
+      "bytes": 2404,
+      "sha256": "3c9b571b671da7a2ff276f7f791dc3916415c2e032a2cb32b2c7837e9a0d4372",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-result-03.json",
+      "published": "history/compiled-pdf-stop/public-result-03.json",
+      "path": ".tmp/1735-roster-independent-checks/public-result-03.json",
+      "bytes": 2066,
+      "sha256": "cc2396aee4e82a406d83168916215d76c4530c98bdebd246e32799046a4b56f4",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-result-04.json",
+      "published": "history/compiled-pdf-stop/public-result-04.json",
+      "path": ".tmp/1735-roster-independent-checks/public-result-04.json",
+      "bytes": 2074,
+      "sha256": "82bc60b91a14eaafa093ce33d577d7f9f4a64554852b9e6188e44cea47030f08",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-result-05.json",
+      "published": "history/compiled-pdf-stop/public-result-05.json",
+      "path": ".tmp/1735-roster-independent-checks/public-result-05.json",
+      "bytes": 2036,
+      "sha256": "8e760a521c715a2326d606712d1e0ffe9c630469a8ae05d72054d5cb9919733d",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/test-multiset-01.json",
+      "published": "history/compiled-pdf-stop/test-multiset-01.json",
+      "path": ".tmp/1735-roster-independent-checks/test-multiset-01.json",
+      "bytes": 9060,
+      "sha256": "0a45abbf0357e7d79f98583363f033c889d004247d33d61d9f0a49b5518f6fa4",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/harness-diagnosis-05.json",
+      "published": "history/compiled-pdf-stop/harness-diagnosis-05.json",
+      "path": ".tmp/1735-roster-independent-checks/harness-diagnosis-05.json",
+      "bytes": 638,
+      "sha256": "19d1a4149b9bcc939268c23aa0ef8f606fe72648914a34ee5db6e08ef5f3c79d",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/bridge-cleanup-01.json",
+      "published": "history/compiled-pdf-stop/bridge-cleanup-01.json",
+      "path": ".tmp/1735-roster-independent-checks/bridge-cleanup-01.json",
+      "bytes": 135,
+      "sha256": "c06c9eb1d06f2f309b97e7ac63e4fe3594f1ad0602172d2424f16cac72a7885a",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/bridge-transition-03.json",
+      "published": "history/compiled-pdf-stop/bridge-transition-03.json",
+      "path": ".tmp/1735-roster-independent-checks/bridge-transition-03.json",
+      "bytes": 336,
+      "sha256": "3d86d0073a91351cb16878a7c0c95e2298d4bf271b24265aeff6b30de3217ab7",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/postgres-result-01.json",
+      "published": "history/compiled-pdf-stop/postgres-result-01.json",
+      "path": ".tmp/1735-roster-independent-checks/postgres-result-01.json",
+      "bytes": 3471,
+      "sha256": "05f54678469072d5be309270745f24a07bad3367f65ef9bdd20155e74c648483",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/canonical-export-controls-02.json",
+      "published": "history/compiled-pdf-stop/canonical-export-controls-02.json",
+      "path": ".tmp/1735-roster-independent-checks/canonical-export-controls-02.json",
+      "bytes": 6286,
+      "sha256": "e83ebd735f3becc1ceb632f786eefdb8d2dceaa4eab452303204b01a32403c08",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/canonical-export-controls-failure-01.json",
+      "published": "history/compiled-pdf-stop/canonical-export-controls-failure-01.json",
+      "path": ".tmp/1735-roster-independent-checks/canonical-export-controls-failure-01.json",
+      "bytes": 254,
+      "sha256": "4d43b5812545f75c0c492563f67524f4c34a16a264dd411ae890ada70fb3050e",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-current-preview-01.json",
+      "published": "history/compiled-pdf-stop/public-current-preview-01.json",
+      "path": ".tmp/1735-roster-independent-checks/public-current-preview-01.json",
+      "bytes": 2894,
+      "sha256": "99bcd32c9a7b91791c04b3495f5c95399a526f7f244abf72398dfb406a8bac91",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-pdf-error-02.json",
+      "published": "history/compiled-pdf-stop/public-pdf-error-02.json",
+      "path": ".tmp/1735-roster-independent-checks/public-pdf-error-02.json",
+      "bytes": 1443,
+      "sha256": "ea2760cbacc50c0b29cd47f417de72226472077ac5302fc6bcb9602c18408fb2",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-pdf-error-03.json",
+      "published": "history/compiled-pdf-stop/public-pdf-error-03.json",
+      "path": ".tmp/1735-roster-independent-checks/public-pdf-error-03.json",
+      "bytes": 1609,
+      "sha256": "b06c235376811e5979e7f471d4327203dcd2c54ff00e4667d4b5c5438399a4c1",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/pdf-download-attempt-01.json",
+      "published": "history/compiled-pdf-stop/pdf-download-attempt-01.json",
+      "path": ".tmp/1735-roster-independent-checks/pdf-download-attempt-01.json",
+      "bytes": 744,
+      "sha256": "8d713a82d016fa7c3973d56ab9adb6ce9d85fded9db60035544b85304f8f95f3",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-export-csv-01.json",
+      "published": "history/compiled-pdf-stop/public-export-csv-01.json",
+      "path": ".tmp/1735-roster-independent-checks/public-export-csv-01.json",
+      "bytes": 968,
+      "sha256": "ecc52bf11b1f92999cb10dbdc3e1156d37fd7dd810bf83292ef16ca8895447d7",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-export-xlsx-01.json",
+      "published": "history/compiled-pdf-stop/public-export-xlsx-01.json",
+      "path": ".tmp/1735-roster-independent-checks/public-export-xlsx-01.json",
+      "bytes": 1036,
+      "sha256": "b2d858bc05218824dc8efc0eebef605cb5469304a07e0446bf378282c560707f",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/native-attempt-01.json",
+      "published": "history/compiled-pdf-stop/native-attempt-01.json",
+      "path": ".tmp/1735-roster-independent-checks/native-attempt-01.json",
+      "bytes": 604,
+      "sha256": "a04ef9061f72d5c5bdee25e003f7af70a58de0defa0fadfcee3ac6a5bfb9c703",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/cleanup-01.json",
+      "published": "history/compiled-pdf-stop/cleanup-01.json",
+      "path": ".tmp/1735-roster-independent-checks/cleanup-01.json",
+      "bytes": 539,
+      "sha256": "4734bb0aec86b2f239dc3f85c5daa19193203b98062f21ff6e8a2478df98b646",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/preflight-01.json",
+      "published": "history/compiled-pdf-stop/preflight-01.json",
+      "path": ".tmp/1735-roster-independent-checks/preflight-01.json",
+      "bytes": 198,
+      "sha256": "4358398666265f8c804a106849a1da31a2ff9b0c7120d81126c3f524a5f1ee5f",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/public-failure-01.json",
+      "published": "history/compiled-pdf-stop/public-failure-01.json",
+      "path": ".tmp/1735-roster-independent-checks/public-failure-01.json",
+      "bytes": 228,
+      "sha256": "f7bb5ade91c688c8c102ed35dd4c6df7e4d61406119594f84f61682b0dea1253",
+      "reason": "Selected explicit historical safe allowlist; old STOP remains unchanged"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/safe-public-allowlist-final.json",
+      "published": "provenance/compiled-pdf-stop-safe-public-allowlist-final.json",
+      "path": ".tmp/1735-roster-independent-checks/safe-public-allowlist-final.json",
+      "bytes": 1718,
+      "sha256": "e09d42310b77531d60d5f3c1cf80272b297c12a6bc009c0d2129da6fb536eb39",
+      "reason": "Historical allowlist/seal metadata, not proof all indexed private files are published"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/seal-final.json",
+      "published": "provenance/compiled-pdf-stop-seal-final.json",
+      "path": ".tmp/1735-roster-independent-checks/seal-final.json",
+      "bytes": 21062,
+      "sha256": "cab47fa2707cabadb7b67bfe00e0f906a94a13d71e0edeb0a8ba2f6e1efe64e2",
+      "reason": "Historical allowlist/seal metadata, not proof all indexed private files are published"
+    },
+    {
+      "source": ".tmp/1735-root-checks/checks.json",
+      "published": "history/settings-correction/checks.json",
+      "path": ".tmp/1735-root-checks/checks.json",
+      "bytes": 5267,
+      "sha256": "1e1b9834c71ea533f01eb780c288cd50702085aeb36647e75d217caa37ce9307",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-root-checks/correction-commit.json",
+      "published": "history/settings-correction/correction-commit.json",
+      "path": ".tmp/1735-root-checks/correction-commit.json",
+      "bytes": 295,
+      "sha256": "30ebd7a9bd8ea05b691e77959783e3de482d276f9b1b91d74f076ac41205719c",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-root-checks/attempt-limitations.json",
+      "published": "history/settings-correction/attempt-limitations.json",
+      "path": ".tmp/1735-root-checks/attempt-limitations.json",
+      "bytes": 2035,
+      "sha256": "f2355bd71298058789f811f80560e8036c837debbd0072c67294c955fb4b5d8a",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-roster-checks/checks.json",
+      "published": "history/roster-correction/checks.json",
+      "path": ".tmp/1735-roster-checks/checks.json",
+      "bytes": 4757,
+      "sha256": "28f7a3d5725ef4751d7d388dc151fdb0d90898e44f62662795e908d824636394",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-roster-checks/correction-commit.json",
+      "published": "history/roster-correction/correction-commit.json",
+      "path": ".tmp/1735-roster-checks/correction-commit.json",
+      "bytes": 295,
+      "sha256": "c380c19b3652232990e507e0013ff942427344499ea91c0f4e87c011cbe94c85",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/checks.json",
+      "published": "history/pdf-correction/checks.json",
+      "path": ".tmp/1735-pdf-checks/checks.json",
+      "bytes": 4870,
+      "sha256": "77bc9379b303c3d2cfb1b2969b92e195f42f91906fc7c6e13a9a58b38e57f876",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/diagnosis-01.json",
+      "published": "history/pdf-correction/diagnosis-01.json",
+      "path": ".tmp/1735-pdf-checks/diagnosis-01.json",
+      "bytes": 1933,
+      "sha256": "e3d78b13409636576351fa11b4e44993a8473906804b5de696ed81ad9756b294",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/correction-commit.json",
+      "published": "history/pdf-correction/correction-commit.json",
+      "path": ".tmp/1735-pdf-checks/correction-commit.json",
+      "bytes": 389,
+      "sha256": "1d4427771bf32a6c455f8370e54099763a121075c7e066365819e11aeecec7be",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/provisional-checkpoint.json",
+      "published": "history/pdf-correction/provisional-checkpoint.json",
+      "path": ".tmp/1735-pdf-checks/provisional-checkpoint.json",
+      "bytes": 1286,
+      "sha256": "d614296b8a7e80b31dfcda0e01b25d25fcd03509fcfef0901a6f83571fd3e920",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/published-provisional.json",
+      "published": "history/pdf-correction/published-provisional.json",
+      "path": ".tmp/1735-pdf-checks/published-provisional.json",
+      "bytes": 1010,
+      "sha256": "63f012e2b97a243f9f2e718bfae7cff1842b2a33086999fcb933fdbb0d8b5e71",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/compiler-probe-results-01.json",
+      "published": "history/pdf-correction/compiler-probe-results-01.json",
+      "path": ".tmp/1735-pdf-checks/compiler-probe-results-01.json",
+      "bytes": 1312,
+      "sha256": "b486ffafc43713b4e357e42b73dd5e6696252cb6f91c0ef1727ce1d1579e15ee",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/compiler-probe-results-02.json",
+      "published": "history/pdf-correction/compiler-probe-results-02.json",
+      "path": ".tmp/1735-pdf-checks/compiler-probe-results-02.json",
+      "bytes": 997,
+      "sha256": "86294a841a83406aab71d10248cc32a1a5b4fc3a7d74dad1da8035bf08051960",
+      "reason": "Historical original summary/receipt; pending and null fields intentionally retained"
+    }
+  ],
+  "clones": [
+    {
+      "source": ".tmp/1735-root-checks/first-red.json",
+      "published": "history/settings-correction/first-red-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/first-red.json",
+        "bytes": 4058,
+        "sha256": "c6ed57aa12b5bcd8fa49f5f8a28165ec349404a2567e18c0a7292cc9ada18138"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/recovery-red.json",
+      "published": "history/settings-correction/recovery-red-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/recovery-red.json",
+        "bytes": 13809,
+        "sha256": "b90d0bcc2fb6f0bc2e2d76af4be2a56652d5ee49ad5ad9596a87303e19365941"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/recovery-green.json",
+      "published": "history/settings-correction/recovery-green-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/recovery-green.json",
+        "bytes": 1060,
+        "sha256": "daf6a652e97700dcb0dacface50652e48f45342e47bda427cda1da63feb8b115"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/retained-settings-red.json",
+      "published": "history/settings-correction/retained-settings-red-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/retained-settings-red.json",
+        "bytes": 3068,
+        "sha256": "ef52786c5ee72da7882a41ef7fd8818b83137da444e0e6f218cc45514dc5eb2b"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/recovery-compatible-confirmed.json",
+      "published": "history/settings-correction/recovery-compatible-confirmed-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/recovery-compatible-confirmed.json",
+        "bytes": 11262,
+        "sha256": "4715245b9ae7b166e1145e85aa7a87db8d7b2fbe703ee09364d7e1452d58ef77"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/original-loop-after-fix.json",
+      "published": "history/settings-correction/original-loop-after-fix-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/original-loop-after-fix.json",
+        "bytes": 3278,
+        "sha256": "e4c549a40c4b2a1de0372c94c74c81c6db612a9e018eca38c5f11c9901eb0eae"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/unit-final.json",
+      "published": "history/settings-correction/unit-final-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/unit-final.json",
+        "bytes": 104166,
+        "sha256": "e8e7ba9cee5e94d2d49c5d78e966b4e69d42ab3d061ca7d8e612d3c8282b8f2c"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-root-checks/quality.json",
+      "published": "history/settings-correction/quality-public.json",
+      "original": {
+        "path": ".tmp/1735-root-checks/quality.json",
+        "bytes": 4628,
+        "sha256": "e11b804a1300c14f4cfe9c42fc4579ab3d37da2c8f67a67fb10a6622b56a9717"
+      },
+      "changes": [
+        "Redacted local executable path; recorded commands and exits retained"
+      ]
+    },
+    {
+      "source": ".tmp/1735-roster-checks/roster-red-01.json",
+      "published": "history/roster-correction/roster-red-01-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-roster-checks/roster-red-01.json",
+        "bytes": 44676,
+        "sha256": "cb7f4d47443f77d447177009e3bd7db2ba753c9ff8cfce497ce9af7f7f026351"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-roster-checks/roster-pending-01.json",
+      "published": "history/roster-correction/roster-pending-01-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-roster-checks/roster-pending-01.json",
+        "bytes": 4006,
+        "sha256": "a0dde448713a97005d331f4a8d38e4d8eb6192554a31dc99c21f681f7eb2e999"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-roster-checks/roster-guards-green-02.json",
+      "published": "history/roster-correction/roster-guards-green-02-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-roster-checks/roster-guards-green-02.json",
+        "bytes": 5021,
+        "sha256": "f909375ead95de2ff3fc3a1fd3f06e9a9c2b8e53a804e4d7943575c0ef126748"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-roster-checks/validation-01/unit-final.json",
+      "published": "history/roster-correction/validation-01-unit-final-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-roster-checks/validation-01/unit-final.json",
+        "bytes": 105341,
+        "sha256": "30aba2b678f821989731bb1ca66a766b07739a0df793d37050cbdb3dbfe66529"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-roster-checks/validation-01/quality.json",
+      "published": "history/roster-correction/quality-public.json",
+      "original": {
+        "path": ".tmp/1735-roster-checks/validation-01/quality.json",
+        "bytes": 4628,
+        "sha256": "e11b804a1300c14f4cfe9c42fc4579ab3d37da2c8f67a67fb10a6622b56a9717"
+      },
+      "changes": [
+        "Redacted local executable path; recorded commands and exits retained"
+      ]
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/compiled-red-01.json",
+      "published": "history/pdf-correction/compiled-red-01-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-pdf-checks/compiled-red-01.json",
+        "bytes": 2081,
+        "sha256": "16cc085298190fb8861895667a0523391c0c8dfe1354f04c5a5138f73ea3c186"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/compiled-green-01.json",
+      "published": "history/pdf-correction/compiled-green-01-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-pdf-checks/compiled-green-01.json",
+        "bytes": 2858,
+        "sha256": "2cfe51784481775fed5b7c172092e290e6ecd24b9a88ea4ce70657fad8c27386"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/validation-01/unit-final.json",
+      "published": "history/pdf-correction/validation-01-unit-final-public-summary.json",
+      "original": {
+        "path": ".tmp/1735-pdf-checks/validation-01/unit-final.json",
+        "bytes": 105906,
+        "sha256": "050d4d1066897423c87c2e8d1d2f5585d22eaf03f4a26f82bddcc609202d6a24"
+      },
+      "changes": [
+        "Retained counts, file paths relative to repository, case full names and statuses only",
+        "Omitted absolute paths, timing, failure stacks and raw diagnostics"
+      ]
+    },
+    {
+      "source": ".tmp/1735-pdf-checks/validation-01/quality.json",
+      "published": "history/pdf-correction/quality-public.json",
+      "original": {
+        "path": ".tmp/1735-pdf-checks/validation-01/quality.json",
+        "bytes": 5104,
+        "sha256": "fa39443cbfd8cc9800410799b98ff4bc001c8ec0a48a621fe7aea7ff88ecfc3f"
+      },
+      "changes": [
+        "Redacted local executable path; recorded commands and exits retained"
+      ]
+    }
+  ],
+  "originalHandoffs": [
+    {
+      "source": ".tmp/merge1735-audit/HANDOFF.md",
+      "path": ".tmp/merge1735-audit/HANDOFF.md",
+      "bytes": 6483,
+      "sha256": "ba2c06debfc74f20ee0a856b0e28283aec49d692fde1380a903fe409224f90a3",
+      "published": false,
+      "reason": "Derived history summary links selected public records and explicitly excludes private links"
+    },
+    {
+      "source": ".tmp/1735-independent-checks/HANDOFF.md",
+      "path": ".tmp/1735-independent-checks/HANDOFF.md",
+      "bytes": 3302,
+      "sha256": "aa4918437d03cf2405bfe1486f2a85ef02dddf14b1ad9c86563443db7c1a3c42",
+      "published": false,
+      "reason": "Derived history summary links selected public records and explicitly excludes private links"
+    },
+    {
+      "source": ".tmp/1735-roster-independent-checks/HANDOFF.md",
+      "path": ".tmp/1735-roster-independent-checks/HANDOFF.md",
+      "bytes": 9580,
+      "sha256": "29f2a1788c8d0a9c13d2b80b399f95a9896b90d56aaf2b9981a039521387f993",
+      "published": false,
+      "reason": "Derived history summary links selected public records and explicitly excludes private links"
+    }
+  ]
+}

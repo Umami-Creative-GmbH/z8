@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-18T04:24:30.664Z",
+  "readback": [
+    {
+      "scope": "all",
+      "can_export": false,
+      "can_record_reimbursements": false,
+      "is_active": false
+    }
+  ],
+  "actualReload": true,
+  "path": "/en/travel-expenses/finance",
+  "httpStatus": 200,
+  "renderedNotFound": true,
+  "pass": false,
+  "qualification": "Canonical finance page refuses via notFound; this is fresh-arrival revocation only. R165 fresh listing destinations separately recorded as empty."
+}

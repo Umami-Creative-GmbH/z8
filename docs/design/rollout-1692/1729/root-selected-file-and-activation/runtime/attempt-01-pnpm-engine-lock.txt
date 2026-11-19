@@ -1,0 +1,1 @@
+Fixture prepare initial sandbox call failed ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK: C:\Users\KaiHentschel\AppData\Local\pnpm-store-operation-locks\all-stores.lock access denied. Approved require_escalated retry prepared fresh fixture. No install.

@@ -1,0 +1,161 @@
+{
+  "pnpm": {
+    "environment": "pnpm_config_verify_deps_before_run=false",
+    "option": "--config.verify-deps-before-run=false",
+    "dependenciesChanged": false
+  },
+  "attempts": [
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node build-probes.mjs",
+      "exit": 1,
+      "outcome": "Ordinary sandbox engine-store lock denied before bridge write; approved same command then passed",
+      "escalation": true
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node build-probes.mjs",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node run-probes.mjs",
+      "exit": 0,
+      "record": "public-probe-command.json"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node remove-bridges.mjs",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node fixture-control.mjs pg prepare",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node pg-run.mjs",
+      "exit": 0,
+      "record": "pg-command.json"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node fixture-control.mjs pg cleanup",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node fixture-control.mjs runtime prepare",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node seed-run.mjs",
+      "exit": 1,
+      "outcome": "Initial duplicate-number synthetic setup failed; raw failed output retained privately; switched to unique initial personnel numbers before runtime. No schema/auth/member/grant edit."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node seed-run.mjs",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node controller-private.mjs",
+      "exit": 0,
+      "outcome": "Orderly close; see runtime-observations for failed/partial stages, not all acceptance pass"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node native-private.mjs",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node dev.mjs dev <workspace> <owned-private-fixture>",
+      "launches": 3,
+      "terminalExits": [
+        1,
+        1,
+        1
+      ],
+      "outcome": "Owned foreground launchers ended after exact Next-tree shutdown; forced server termination does not count as a package validation failure or clean natural shutdown"
+    },
+    {
+      "command": "stop-next.ps1",
+      "exit": 1,
+      "outcome": "One child vanished after identity check during stop; narrowed repeat guarded absence/listener0 before overlay restore"
+    },
+    {
+      "command": "stop-next.ps1",
+      "successfulStops": 4,
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node overlay.mjs apply",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node overlay.mjs restore",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node fixture-control.mjs runtime cleanup",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node preservation.mjs",
+      "runs": 2,
+      "exit": 0
+    }
+  ],
+  "browserAttempts": [
+    {
+      "stage": "001-login-initial.mjs",
+      "status": "failed",
+      "error": {
+        "name": "ReferenceError",
+        "message": "Notification is not defined"
+      }
+    },
+    {
+      "stage": "002-login-initial-retry.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "003-context-preview-recovery.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "004-current-captures-native.mjs",
+      "status": "failed",
+      "error": {
+        "name": "AssertionError",
+        "message": "phone navigation closes on first Escape and restores trigger focus"
+      }
+    },
+    {
+      "stage": "005-phone-focus-observation.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "006-current-capture-continuation.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "007-operational-intake-confirm.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      }
+    },
+    {
+      "stage": "008-operational-observe.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "009-upload-repro-control.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "010-historical-upload-control.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "011-restored-current-final.mjs",
+      "status": "complete"
+    }
+  ],
+  "approvalReviewRejections": 0,
+  "existingRejectedPrivateFailureImagesInspected": false,
+  "existingCompiledProductionAuthBypassUsed": false
+}

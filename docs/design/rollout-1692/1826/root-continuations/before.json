@@ -1,0 +1,27 @@
+{
+  "phase": "before",
+  "classification": "Real local auth and client navigation; held actual successful response, no provider requests",
+  "checks": [
+    {
+      "name": "primary verification renews through real endpoint",
+      "passed": true
+    },
+    {
+      "name": "held response is an actual successful TOTP",
+      "passed": true,
+      "details": {
+        "status": 200
+      }
+    },
+    {
+      "name": "real organization link enters B while TOTP response is held",
+      "passed": true
+    }
+  ],
+  "captures": [],
+  "pageErrors": [],
+  "cachedInputRestored": false,
+  "staleInitRequests": 0,
+  "staleCompletionPath": "/en/mfa",
+  "failure": "baseline reproduces an abandoned verification continuation"
+}

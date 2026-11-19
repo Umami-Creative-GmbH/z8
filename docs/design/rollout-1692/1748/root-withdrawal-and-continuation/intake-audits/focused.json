@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "createdUTC": "2026-11-18T01:35:00.434809+00:00",
+  "task": "Read-only focused #1748 SAFE intake",
+  "verifiedCommit": null,
+  "declaredHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "declaredAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "scope": {
+    "sourceSafeIndex": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1748-focused-runtime-20261118b\\SAFE-index.json",
+    "onlyExplicitPayloadReads": true,
+    "extraAuthorizedRead": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1748-focused-runtime-coordination-20261118\\LEASE.json",
+    "writes": "Only newly created system TEMP directory",
+    "noRepoIndexGitPackageRuntimeTrackerWrites": true,
+    "suiteOrBuildRuns": 0,
+    "archivedCodeExecution": 0,
+    "excludedPrivateReads": 0,
+    "readinessDecision": "Not made; root owns it"
+  },
+  "freshChecks": {
+    "indexBytes": 6148,
+    "indexSHA256": "0da458c14db90728040ff22bb3e34cae96e22716a169d439b94dd44a94d2a534",
+    "payloads": 36,
+    "payloadBytes": 482857,
+    "allPayloadBytesAndHashesMatch": true,
+    "jsonParsed": 31,
+    "pngsIntegrityCheckedDecodedAndVisuallyInspected": 4,
+    "ledgerCountsRecomputed": {
+      "total": 32,
+      "passed": 29,
+      "unpassed": 3
+    },
+    "allIDsUniqueAndConsecutive": true,
+    "producerBeforeAfterJsonComparisons": {
+      "originalsEqual": true,
+      "foreignTravelTableCount": 29,
+      "foreignTravelAllEqual": true,
+      "foreignTravelAllEmpty": true,
+      "actualTimekeepingDigestComparisons": 6,
+      "changedTables": [
+        {
+          "organizationAlias": "small",
+          "table": "travel_expense_legacy_draft_conversion",
+          "beforeCount": 0,
+          "afterCount": 2,
+          "delta": 2
+        },
+        {
+          "organizationAlias": "small",
+          "table": "travel_expense_report",
+          "beforeCount": 0,
+          "afterCount": 2,
+          "delta": 2
+        },
+        {
+          "organizationAlias": "small",
+          "table": "travel_expense_report_item",
+          "beforeCount": 0,
+          "afterCount": 2,
+          "delta": 2
+        },
+        {
+          "organizationAlias": "small",
+          "table": "travel_expense_report_receipt",
+          "beforeCount": 0,
+          "afterCount": 2,
+          "delta": 2
+        }
+      ]
+    },
+    "authorizedRootLease": {
+      "bytes": 724,
+      "sha256": "72a3a5aa9b8e246c9e4a959d370cac6537f349e0567128d125aa7afb68011f2d",
+      "matchesAllowlistedLease": true,
+      "status": "released",
+      "ownership": false,
+      "resources": 0
+    }
+  },
+  "reconciledProducerResults": {
+    "runtimeReadbackPreservationPredicates": {
+      "total": 32,
+      "passed": 29,
+      "unpassed": 3
+    },
+    "unpassed": [
+      {
+        "id": 13,
+        "name": "Pre-release route commitment",
+        "qualification": "Wait incorrectly required retained notes to disappear everywhere; destination list legitimately shows the notes. No separate pre-release URL receipt. Cannot infer commitment from final destination."
+      },
+      {
+        "id": 14,
+        "name": "Successful retired completion",
+        "qualification": "One bounded protocol attempt only. No further conversion request or extra draft. Failure is harness evidence gap, not product P1."
+      },
+      {
+        "id": 28,
+        "name": "Main axe acceptance",
+        "qualification": "No root/app axe-core or readily discoverable global axe tool; no install/copy/launcher bypass."
+      }
+    ],
+    "newUnit": 0,
+    "newPostgresqlSuites": 0,
+    "newBuild": 0,
+    "nativeAgentBrowserReactExtensionAcceptance": "Unproved separate method limitation; not a fourth counted ledger predicate",
+    "noConfirmedProductP1": "Producer finding, not an independent product audit"
+  },
+  "reactAndEditor": {
+    "bothNames": [
+      "TravelExpenseClaimDetail",
+      "LegacyDraftConversionPanel"
+    ],
+    "bothNamesActuallyListed": true,
+    "method": "Producer CDP DOM fiber ancestry using resolved fiber.type and elementType wrapper names, names only, before conversion; no native extension acceptance.",
+    "attempt1FalseRetained": true,
+    "actualOpenLinkAndReload": "Producer receipts explicitly record original-draft and Open report clicks, correct report, actual reload and retained fields; current screenshots independently display those fields.",
+    "oldID42": "Old both-name claim remains unsupported/stale; old payload not opened or changed.",
+    "oldID16": "Old href/claim-reload claim remains insufficient for actual editor opening/reload; old payload not opened or changed."
+  },
+  "orderingAssessment": {
+    "receiptsInspected": [
+      "retirement-held-SAFE.json",
+      "retirement-attempt1-SAFE.json",
+      "next-diagnostics-SAFE.json",
+      "claim-next-diagnostics-SAFE.json",
+      "captures-SAFE.json",
+      "retirement-settled-current.png",
+      "assertion-ledger-SAFE.json",
+      "attempts-SAFE.json",
+      "HANDOFF.md",
+      "REPORT.json"
+    ],
+    "producerObserved": "One real conversion request, real successful 2xx response held after canonical graph persisted, pending button, still-claim observation and actual Back click.",
+    "gap": "Combined departure wait timed out because it required notes to disappear while the legitimate list shows the same notes. No separate pre-release URL receipt or lifetime-cleanup receipt.",
+    "afterRelease": "Original response continued unmodified; finished1/cancelled0/failed0; final list/no late navigation or feedback reported over bounded6.5 seconds.",
+    "extraOrderingProofFound": false,
+    "conclusion": "Supports bounded end state and successful response delivery only; IDs13/14 remain UNPASSED. Do not infer ordering/lifetime cleanup from final destination.",
+    "productFailure": "Harness evidence gap; no product P1 inferred."
+  },
+  "canonicalGraphReadbacks": {
+    "producerGraphs": 2,
+    "eachConversionReportItemReceiptCount": 1,
+    "scopeAndProvenance": "Producer readbacks say current-owner/org-scoped, receipt identity and provenance preserved; no live database rerun.",
+    "correctedFields": "graph-fields uses original_amount/original_currency and SQL date::text with all checks true. database-controls retains false itemAmount/itemCurrency/itemDate from invalid key/date predicates.",
+    "expectedDelta": "Only four small-organization graph tables differ, each0->2.",
+    "originalRows": "Six original claim/attachment/decision-log row-set digests compare equal.",
+    "foreignTravelQualification": "All29 foreign travel tables compare equal but are empty in both snapshots; this does not demonstrate behavior on populated foreign travel records.",
+    "actualTimekeeping": "All6 nonempty time_entry/time_record/work_period controls compare equal in the producer snapshots."
+  },
+  "preservationAndResources": {
+    "producerClaims": "18587 tracked files, index, frozen pins, lock/genuine license,158 dependency links and prior34 allowlisted payloads unchanged; all owned processes/ports/services/profile/isolated contexts zero, existing Next cache preserved.",
+    "independentlyFresh": "SAFE index and36 payload hashes; pins consistency within allowed receipts; released root lease equals bundled lease with ownership false/resources0.",
+    "notFreshlyChecked": "No direct Git/index/tracked-file/dependency/license/prior34 rehash; no OS process/port/service/profile or live runtime inventory. These remain producer receipts.",
+    "leaseVerifiedCommit": null
+  },
+  "failurePreservation": {
+    "oneFirstRawSeedExceptionOverwritten": true,
+    "rawReconstructed": false,
+    "qualification": "Only bounded failure classification/log survives for first seed exception; safe receipt does not restore lost raw bytes. Other failed attempts remain private and excluded."
+  },
+  "limits": [
+    "Prior producer140 and independent545unit/51PG stay separate; not rerun or added. Prior genuine-artifact type pass and license/type/format qualifications remain separate.",
+    "No main axe acceptance or native React CLI acceptance. No package install/copy/repair/bypass.",
+    "One seeded fixture, two business drafts created through canonical integration seam rather than UI, one fixed isolated primary page/context; no full generation/catalog/provider/device/true zoom/exhaustive authority claims.",
+    "No screenshot historical matched comparison or broad layout acceptance; dev overlays/header loading and final list left crop persist.",
+    "Safe summaries assert no auth-state copying or authority/time writes; private helper/raw runtime files were not inspected.",
+    "No permission, tracker, PR, Git or readiness writes or decision."
+  ]
+}

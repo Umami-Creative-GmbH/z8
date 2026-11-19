@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "base": ".tmp/1733-root-checks/runtime",
+  "files": [
+    "HANDOFF-runtime.md",
+    "STOP.json",
+    "test-accounting.json",
+    "attempts.json",
+    "cleanup.json",
+    "preservation.json",
+    "bridge-cleanup.json",
+    "bridge-ownership.json",
+    "command-probe.test.tsx",
+    "heading-probe.test.tsx",
+    "public-probes.json",
+    "public-probes.log",
+    "public-probe-command.json",
+    "minimal-repeat.json",
+    "minimal-repeat.log",
+    "minimal-repeat-command.json",
+    "build-public-probes.mjs",
+    "run-public-probes.mjs",
+    "repeat-minimal-probe.mjs",
+    "clean-and-seal.mjs",
+    "validation.json",
+    "verification-manifest.json",
+    "public-allowlist.json",
+    "artifact-hashes.json"
+  ],
+  "policy": "Only these explicit files are public; no directory expansion, inferred or nested excluded artifact references."
+}

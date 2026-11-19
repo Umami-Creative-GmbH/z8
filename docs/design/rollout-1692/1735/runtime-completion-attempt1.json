@@ -1,0 +1,9 @@
+{
+  "attempts": [
+    {
+      "name": "failure",
+      "message": "net::ERR_ABORTED at http://localhost:65040/en/reports"
+    }
+  ],
+  "downloads": []
+}

@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { Activity } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const reopenActions = vi.hoisted(() => ({
@@ -43,6 +44,113 @@ afterEach(() => {
 });
 
 describe("reopening an approved report (#614)", () => {
+	it("reserves native activation before validation and blocks duplicate submit and pending dismissal", async () => {
+		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
+			success: true,
+			data: { status: "available", submissionCycle: 2 },
+		});
+		let complete!: (value: unknown) => void;
+		reopenActions.reopenTravelExpenseReportAction.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Reopen for correction" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Reason/), {
+			target: { value: "Exact pending reason" },
+		});
+		const form = within(dialog).getByRole("button", { name: "Reopen report" }).closest("form");
+		if (!form) throw Error("Missing native form");
+		fireEvent.submit(form);
+		fireEvent.submit(form);
+		fireEvent.keyDown(dialog, { key: "Escape" });
+		await waitFor(() =>
+			expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(1),
+		);
+		expect(screen.getByRole("dialog")).toBeTruthy();
+		await act(async () => complete({ success: false, error: "refused" }));
+		expect(within(dialog).getByLabelText(/Reason/)).toHaveProperty("value", "Exact pending reason");
+	});
+	it("keeps a pending reason across Activity and retires the confirmation after a successful reopen", async () => {
+		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
+			success: true,
+			data: { status: "available", submissionCycle: 2 },
+		});
+		let complete!: (value: unknown) => void;
+		reopenActions.reopenTravelExpenseReportAction.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const view = (mode: "visible" | "hidden") => (
+			<QueryClientProvider client={client}>
+				<Activity mode={mode}>
+					<ReopenReportPanel reportId={reportId} />
+				</Activity>
+			</QueryClientProvider>
+		);
+		const rendered = render(view("visible"));
+		fireEvent.click(await screen.findByRole("button", { name: "Reopen for correction" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Reason/), {
+			target: { value: "Activity keeps this reason" },
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Reopen report" }));
+		await waitFor(() =>
+			expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(1),
+		);
+		rendered.rerender(view("hidden"));
+		rendered.rerender(view("visible"));
+		expect(await screen.findByLabelText(/Reason/)).toHaveProperty(
+			"value",
+			"Activity keeps this reason",
+		);
+		const reads = reopenActions.getTravelExpenseReportReopenState.mock.calls.length;
+		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
+			success: true,
+			data: { status: "unavailable" },
+		});
+		await act(async () => complete({ success: true, data: { status: "reopened" } }));
+		await waitFor(() => {
+			expect(reopenActions.getTravelExpenseReportReopenState.mock.calls.length).toBeGreaterThan(
+				reads,
+			);
+			expect(screen.queryByRole("dialog")).toBeNull();
+			expect(screen.queryByRole("button", { name: "Reopen for correction" })).toBeNull();
+		});
+		expect(toast.success).not.toHaveBeenCalled();
+		expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(1);
+	});
+	it("keeps the exact reason and dialog after a rejected transport, then retries", async () => {
+		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
+			success: true,
+			data: { status: "available", submissionCycle: 2 },
+		});
+		reopenActions.reopenTravelExpenseReportAction
+			.mockRejectedValueOnce(new Error("offline"))
+			.mockResolvedValueOnce({ success: true, data: { status: "reopened" } });
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Reopen for correction" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Reason/), {
+			target: { value: "Keep invoice note exactly" },
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Reopen report" }));
+		expect(await within(dialog).findByText(/The report could not be reopened/)).toBeTruthy();
+		expect(within(dialog).getByLabelText(/Reason/)).toHaveProperty(
+			"value",
+			"Keep invoice note exactly",
+		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Reopen report" }));
+		await waitFor(() =>
+			expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(2),
+		);
+	});
 	it("asks for a reason and reopens the current approved submission", async () => {
 		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
 			success: true,

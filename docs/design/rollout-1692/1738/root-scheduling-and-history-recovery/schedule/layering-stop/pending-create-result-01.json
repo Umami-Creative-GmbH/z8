@@ -1,0 +1,20 @@
+{
+  "normalDevelopment": true,
+  "actualUI": true,
+  "transientSameContext": true,
+  "defaults": {
+    "start": "09:00",
+    "end": "17:00",
+    "subarea": "Independent scheduling office – Independent reception",
+    "template": "Independent morning (09:00 - 17:00)"
+  },
+  "pending": {
+    "savingDisabled": true,
+    "escapeRetained": true,
+    "duplicatePointerClickAttempted": true,
+    "latencyMs": 2200
+  },
+  "upsertRequests": 1,
+  "closedAfterActualSave": true,
+  "draftCount": 2
+}

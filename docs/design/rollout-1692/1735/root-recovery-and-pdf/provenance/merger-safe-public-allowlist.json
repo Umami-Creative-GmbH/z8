@@ -1,0 +1,356 @@
+{
+  "kind": "Candidate safe synthetic/source-only allowlist for root review; no files published",
+  "excludes": "Raw logs/result JSON containing absolute diagnostics; no credentials/private manifests/images/auth inventories exist in this run",
+  "files": [
+    {
+      "path": "alias-preservation.json",
+      "sha256": "84360b5c54e2ae8724934db63e44c88c7e155c21d03a534652be603e537a8464",
+      "bytes": 3874
+    },
+    {
+      "path": "archive-check.json",
+      "sha256": "9d4f6d1735b0ee49584e442a3da59888a781787df646c002513512d14c362e29",
+      "bytes": 18480
+    },
+    {
+      "path": "archive-check.mjs",
+      "sha256": "3d38ff1085d352c21aba980b89d761d62b8c3986618f40b2142c9d607209ff7c",
+      "bytes": 2456
+    },
+    {
+      "path": "audit.mjs",
+      "sha256": "c75e4a1586672e09cc9289576fa7fb52d4623bb9adc012f6e9b334758c878c12",
+      "bytes": 2803
+    },
+    {
+      "path": "baseline.json",
+      "sha256": "fb887a48ee5fb5981d4a46daf06348e206c7e3780a2c31d4119d4f89d6d4cc74",
+      "bytes": 52281
+    },
+    {
+      "path": "cleanup.json",
+      "sha256": "7817bd6d282ba0081a7fd9d63d0ba22915ff5eb54c7c79a3d6f89c25cb22eb63",
+      "bytes": 671
+    },
+    {
+      "path": "control-pins.json",
+      "sha256": "14737881b347c84ded45fbf821e4d26392a3af6b8d0f902c5cc1589f6c68c57f",
+      "bytes": 10346
+    },
+    {
+      "path": "failed-attempts.json",
+      "sha256": "5f4761be3fa58b47eb67da567fb9460257e3571db9e10fe75457364c8f63dfcf",
+      "bytes": 1935
+    },
+    {
+      "path": "HANDOFF.json",
+      "sha256": "e08ff5c5fa30713349cb02404e1698b5c154f74e7226eafa24e2f0e71aac7e0a",
+      "bytes": 6561
+    },
+    {
+      "path": "HANDOFF.md",
+      "sha256": "ba2c06debfc74f20ee0a856b0e28283aec49d692fde1380a903fe409224f90a3",
+      "bytes": 6483
+    },
+    {
+      "path": "merge-audit.json",
+      "sha256": "870bdb9b84bed6ff868e22c79797d82b8dd3c27d1d58e18e168f2adbe79dba7b",
+      "bytes": 11309
+    },
+    {
+      "path": "pin.mjs",
+      "sha256": "e1a6a055f1bfccb6e32fad581c76d92c977088159a0148092b76806c937cc0fb",
+      "bytes": 3552
+    },
+    {
+      "path": "prepare-probes.mjs",
+      "sha256": "323ede1c17eee7ee895a4acb34218639c792892be34b50af9612eab1c8991e83",
+      "bytes": 1756
+    },
+    {
+      "path": "prepare-seal.mjs",
+      "sha256": "77ac1120e4701b5b8c1444d011ae5901e8c211c6c18433a1dc5eba723902a7b6",
+      "bytes": 5055
+    },
+    {
+      "path": "public-probes.test.tsx",
+      "sha256": "2dcfbc8e9d7b0e79a0b144a1995e50133623ea7d3deb0745d02c7ac43961a26a",
+      "bytes": 5666
+    },
+    {
+      "path": "repeat-probes.mjs",
+      "sha256": "951df97c9cfe7da2d7ec170eb2ceb06c6d8433bb831a62893c4a14c91bfc21e7",
+      "bytes": 448
+    },
+    {
+      "path": "seal.mjs",
+      "sha256": "6859c89d51a9342af584485267d51845a6340bc82db9dccade49ba14effa3e22",
+      "bytes": 15484
+    },
+    {
+      "path": "source-pins.json",
+      "sha256": "ccc30062314b46fefe8ce8b5e8743570bb4057ee7f062f58cbacda8760f0ac5d",
+      "bytes": 9224
+    },
+    {
+      "path": "test-multiset.json",
+      "sha256": "8f5632bf8533b5147afd697c29bf23df1430ab0443b3e8007e4aa29b8d267ff7",
+      "bytes": 3918
+    },
+    {
+      "path": "original-parent/billable-figures.tsx",
+      "sha256": "21057ee8d3667f1fde74cb0788ec4d174df0e5d77d519a79bd3a7780817d5810",
+      "bytes": 11618
+    },
+    {
+      "path": "original-parent/customer-billable-view.tsx",
+      "sha256": "223075e470aee7999c84172ff536d711c898b034a55d47cd9378fe29124eda99",
+      "bytes": 6940
+    },
+    {
+      "path": "original-parent/date-range-picker.tsx",
+      "sha256": "a344338209c40c0bade3fb8b55314c36815ccf547278b2bab584c0ee528d7d7b",
+      "bytes": 5543
+    },
+    {
+      "path": "original-parent/export-buttons.tsx",
+      "sha256": "b427c73cf2220513bdaed97cc63564b54587ec44ddb3f439a4d1db4138b32770",
+      "bytes": 3981
+    },
+    {
+      "path": "original-parent/project-budget-progress.tsx",
+      "sha256": "28a8fb234966d18e20fc17ad23da6963b46a5712cc4b42c5eafad200dbe40206",
+      "bytes": 5545
+    },
+    {
+      "path": "original-parent/project-budget-utilization-summary.tsx",
+      "sha256": "4db4d1378bca62d2c9e755bdb865999cd32728f8bf7b5802e01ebfc5786799b7",
+      "bytes": 2865
+    },
+    {
+      "path": "original-parent/project-filters.tsx",
+      "sha256": "4eb1808497b17277034380a787552f1600308914ce8ee2eb7b295a9af5b247f9",
+      "bytes": 5160
+    },
+    {
+      "path": "original-parent/project-health-alerts.tsx",
+      "sha256": "366522c2f0f031f9fd90b6b2c8cb9583a90c8f98dbb4b277dcfe7943c6920369",
+      "bytes": 6117
+    },
+    {
+      "path": "original-parent/project-hours-chart.tsx",
+      "sha256": "fc09b29a0c685b6f52a8692020bb28ea4f7e90b62a96e330da1772202475266d",
+      "bytes": 5606
+    },
+    {
+      "path": "original-parent/project-portfolio-table.tsx",
+      "sha256": "af77d6d1dff65ba150fa973ea1b04e0888e54a85e5346b4e494650cca687a0a8",
+      "bytes": 11006
+    },
+    {
+      "path": "original-parent/project-report-details.tsx",
+      "sha256": "84dfbfe10b645885a556ad1fa33b47667d4335b3cf545bb4505f297f9071ed58",
+      "bytes": 1893
+    },
+    {
+      "path": "original-parent/project-reports-container.tsx",
+      "sha256": "f5fce1eaa79e48263dcf54bf9f5e408f8ae404a1964684eb7cea09f5f343c078",
+      "bytes": 16956
+    },
+    {
+      "path": "original-parent/project-summary-cards.tsx",
+      "sha256": "7f709efcbe67de3af325ef1328a2069d2b2c8999edfa5151e0f4ddc4a7d4b618",
+      "bytes": 7903
+    },
+    {
+      "path": "original-parent/project-task-breakdown.tsx",
+      "sha256": "4f7e45295ded6527f976b4d071fc7856260dc65f5748f85470b2ef2715492dc9",
+      "bytes": 5494
+    },
+    {
+      "path": "original-parent/project-team-breakdown.tsx",
+      "sha256": "549cb94e27cc3074e46337c15dbc15c023ac2c450021fe8301dc95d609dfbe2e",
+      "bytes": 9313
+    },
+    {
+      "path": "original-parent/report-custom-fields.tsx",
+      "sha256": "ac63991eb695166889c7e80555371dfbd8e67a86b12dfee5737d6938d10908da",
+      "bytes": 2268
+    },
+    {
+      "path": "original-parent/report-document-export-buttons.tsx",
+      "sha256": "81cc49ded87be25cdc0d3039d0028cf6e501f6a020b51ebcfde5fd4d8725c8e7",
+      "bytes": 9895
+    },
+    {
+      "path": "original-parent/report-employee-selector.tsx",
+      "sha256": "85c6678b6f1da647aee242001f346304badb6cb3841930ba8b8cee4d370ed439",
+      "bytes": 2240
+    },
+    {
+      "path": "original-parent/report-filters.tsx",
+      "sha256": "2c300a1ec45c1a2eb03b620be646f98b5a81fe6b8d729700e3fb2c6ed9cdd0f3",
+      "bytes": 3301
+    },
+    {
+      "path": "original-parent/report-preview-table.tsx",
+      "sha256": "fa71a7a2f1f133383bfdc06e34c159a9581e946aeb41bfee9b03199e12d46314",
+      "bytes": 7186
+    },
+    {
+      "path": "original-parent/report-scope-failure.tsx",
+      "sha256": "746415ce40661f6371b5466989da32a2ed5a0b8d31a3fb72e3c77c51f97065f5",
+      "bytes": 960
+    },
+    {
+      "path": "original-parent/report-share-dialog.tsx",
+      "sha256": "46648adf872af56a9d14c9f9bc0a378587b835d0cb7322de065bbd00da080cb6",
+      "bytes": 12551
+    },
+    {
+      "path": "original-parent/report-share-link-list.tsx",
+      "sha256": "9b81924c5aabd80bfa78409b5ddad58db1f8cab8d963380884436d7fc0e09f53",
+      "bytes": 12860
+    },
+    {
+      "path": "original-parent/report-summary-cards.tsx",
+      "sha256": "35774a51ee0728c062707d3996249d88f5d643623b877161bf722df74e7e8065",
+      "bytes": 5817
+    },
+    {
+      "path": "original-parent/reports-container.tsx",
+      "sha256": "218fd82a13898ae90a57f7486c854a9b3f6896fd3992817cdc51024b773161ea",
+      "bytes": 5392
+    },
+    {
+      "path": "original-parent/shared-report-view.tsx",
+      "sha256": "c9224e4bd5f50c716012f71c8bfb3a23409af19202a2330a53ffe7b5490aec4a",
+      "bytes": 5910
+    },
+    {
+      "path": "original-parent/use-report-employees.ts",
+      "sha256": "fd062e1f28317f5aa8c4f7230364b7ea185039a6475619182873fed9218002b2",
+      "bytes": 3441
+    },
+    {
+      "path": "original-parent/vehicle-distance-report-container.tsx",
+      "sha256": "a83c97d1659fb1d133b2294ed003366be8c61eaf74567b5202e992b2e3288f44",
+      "bytes": 15936
+    },
+    {
+      "path": "original-parent/vehicle-report-exports.tsx",
+      "sha256": "7035a7a6c086d8b8f3a88fb2ed975ef29088efb7369a6a5a82b35cf00000599a",
+      "bytes": 5061
+    },
+    {
+      "path": "original-parent/vehicle-report-period-picker.tsx",
+      "sha256": "0874fce137d4d67a82f8cd63d4574e0af2bce37d357beaa71c404c7fd2350eba",
+      "bytes": 5623
+    },
+    {
+      "path": "source-current/apps/webapp/src/hooks/use-report-employees.ts",
+      "sha256": "0bb62306d72fbe2d83839d29f05fece5b4313615119c7092424820b03761e1e5",
+      "bytes": 6209
+    },
+    {
+      "path": "source-current/apps/webapp/src/lib/api-error.ts",
+      "sha256": "954fbe214d1b8fe9a16d538a8cdbdfbc3ee7879b8ea6d1d45d067d4f0cd3f288",
+      "bytes": 1500
+    },
+    {
+      "path": "source-current/apps/webapp/src/lib/fetch.ts",
+      "sha256": "e7d855169712aaa68c8baed2c0ef14a14b5e38c53b4a9973bf432974207af5fa",
+      "bytes": 1359
+    },
+    {
+      "path": "source-current/apps/webapp/src/stores/organization-settings-store.ts",
+      "sha256": "0c9955d7797b2e6ab991ceb078b4f2a11b3b85a0f1d207c6578a985b679f09c6",
+      "bytes": 4271
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "bytes": 7321
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/providers/organization-settings-provider.tsx",
+      "sha256": "40bfbf9d460930c004c6d1fa61f9820bc258f43dad86eb0e1c3e14a748933c1d",
+      "bytes": 1198
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/providers/view-refresh-provider.tsx",
+      "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+      "bytes": 4072
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/reports/export-buttons.tsx",
+      "sha256": "89dfa0642632c54e4f3da9f07f0b8c0a9f80563a2e9a0288054199d5e5b2fd1f",
+      "bytes": 5276
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "sha256": "83155f1fa3b0f75700cbd6677fafeb6ce5297e4e6709ac92554d2816a637bba1",
+      "bytes": 2301
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/reports/report-filters.tsx",
+      "sha256": "f0c846304d480ebfe7f9f5bf46b6e0e03f7c0c2b6fe6fc799ebc73a6101b065b",
+      "bytes": 4312
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/reports/report-preview-table.tsx",
+      "sha256": "2bcc1e298f9eba1ccbd7c170e35587dcc45b86af307b345f156901eb89e93465",
+      "bytes": 8213
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/reports/report-summary-cards.tsx",
+      "sha256": "38de40605b8947b102b9cd911b1a695ef82dd27f275827d51d9bcffcef4ee4bf",
+      "bytes": 6163
+    },
+    {
+      "path": "source-current/apps/webapp/src/components/reports/reports-container.tsx",
+      "sha256": "a9d5c1794a903c90a9827f1514606bbcc83a199cfec2541b689d46d27a9faf5f",
+      "bytes": 10758
+    },
+    {
+      "path": "source-current/apps/webapp/src/lib/auth/organization-display-context.ts",
+      "sha256": "703fa5a7d0b1392a3a5e4456eb965d0b587696d000fa3cf8706b2b66cf821153",
+      "bytes": 626
+    },
+    {
+      "path": "source-current/apps/webapp/src/lib/query/keys.ts",
+      "sha256": "c8b19ad609774388a6d68711c7f3b657467dbd9ec0cc891e8571b8edab6c9707",
+      "bytes": 37263
+    },
+    {
+      "path": "source-current/apps/webapp/src/app/[locale]/(app)/app-layout-content.tsx",
+      "sha256": "411b95a2dd7e47bc6c21a409cadde5d9a72c1a934886ced07d6459bd8c650cd3",
+      "bytes": 11007
+    },
+    {
+      "path": "source-current/apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx",
+      "sha256": "8025d89b577bade8564ee4a8d8e726b971c2b30b8720379cc54b04399f823788",
+      "bytes": 13187
+    },
+    {
+      "path": "source-current/apps/webapp/src/app/[locale]/(app)/reports/actions.ts",
+      "sha256": "7d21de0cd9b275d6659249e143c99e7a1abb297c59069eb9a89f99ad232857f5",
+      "bytes": 10065
+    },
+    {
+      "path": "source-current/apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "sha256": "f1450162fdbf4e30e7bb069f68ce7d07cd5cc943b72074067ba99e559637e7f4",
+      "bytes": 8335
+    },
+    {
+      "path": "source-current/apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "sha256": "8ee12df8372595afd68231db0afde31e6dddd1fe25f2e3aad840cfbf0e8da0c5",
+      "bytes": 12406
+    },
+    {
+      "path": "source-current/apps/webapp/src/app/[locale]/(app)/reports/page.tsx",
+      "sha256": "5637ce76f88ee36e10d7e9f8c408495fb18eb2aa331755b19e3e35672e54da67",
+      "bytes": 2689
+    }
+  ]
+}

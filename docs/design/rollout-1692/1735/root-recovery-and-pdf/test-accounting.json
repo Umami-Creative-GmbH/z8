@@ -1,0 +1,40 @@
+{
+  "root": {
+    "path": "history/pdf-correction/validation-01-unit-final-public-summary.json",
+    "cases": 294,
+    "physicalFiles": 52,
+    "snapshot": "c7eab901 through 92849562 correction; preserved at 1d328a1"
+  },
+  "freshCompiled": {
+    "path": "runtime/compiled-result-01.json",
+    "cases": 2,
+    "physicalFiles": 2,
+    "additive": false,
+    "snapshot": "1d328a1 independent runtime acceptance"
+  },
+  "inheritedPostgres": {
+    "path": "history/compiled-pdf-stop/postgres-result-01.json",
+    "cases": 14,
+    "physicalFiles": 2,
+    "snapshot": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+    "fresh": false,
+    "canonicalOwnersUnchanged": true
+  },
+  "inheritedIndependentPublic": {
+    "path": "history/compiled-pdf-stop/public-result-05.json",
+    "cases": 9,
+    "physicalFiles": 1,
+    "snapshot": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+    "fresh": false,
+    "separateSelection": true
+  },
+  "selectedUnion": {
+    "cases": 308,
+    "physicalFiles": 54,
+    "mixedSnapshot": true,
+    "freshPostgres": false
+  },
+  "runtimeScenariosAdditiveToTests": false,
+  "differentialVariantsAdditiveToTests": false,
+  "repeatedAttemptsAdditiveToTests": false
+}

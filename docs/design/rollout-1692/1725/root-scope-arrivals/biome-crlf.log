@@ -1,0 +1,970 @@
+src\app\[locale]\(app)\payroll\payroll-failure-state.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     3   3 │   import type { ReactNode } from "react";␍
+     4   4 │   import { Button } from "@/components/ui/button";␍
+     5     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+         5 │ + import·{␍
+         6 │ + → Card,␍
+         7 │ + → CardContent,␍
+         8 │ + → CardDescription,␍
+         9 │ + → CardHeader,␍
+        10 │ + → CardTitle,␍
+        11 │ + }·from·"@/components/ui/card";␍
+     6  12 │   import { PageHeader } from "@/components/ui/page-header";␍
+     7  13 │   ␍
+     8     │ - export·type·PayrollFailureTranslator·=·(key:·string,·fallback:·string)·=>·string;␍
+        14 │ + export·type·PayrollFailureTranslator·=·(␍
+        15 │ + → key:·string,␍
+        16 │ + → fallback:·string,␍
+        17 │ + )·=>·string;␍
+     9  18 │   ␍
+    10  19 │   export function PayrollFailureState({␍
+    ······ │
+    28  37 │     exportEntry?: ReactNode;␍
+    29  38 │   }) {␍
+    30     │ - → const·accessDenied·=·code·===·"AuthenticationError"·||·code·===·"AuthorizationError";␍
+        39 │ + → const·accessDenied·=␍
+        40 │ + → → code·===·"AuthenticationError"·||·code·===·"AuthorizationError";␍
+    31  41 │     if (accessDenied && offerWorkBalances) {␍
+    32  42 │       return (␍
+    ······ │
+    69  79 │           "You do not have access to payroll data for the active organization.",␍
+    70  80 │         )␍
+    71     │ - → → :·t("payroll.unavailable.description",·"Payroll·data·could·not·be·prepared·safely.");␍
+        81 │ + → → :·t(␍
+        82 │ + → → → → "payroll.unavailable.description",␍
+        83 │ + → → → → "Payroll·data·could·not·be·prepared·safely.",␍
+        84 │ + → → → );␍
+    72  85 │     const help = accessDenied␍
+    73  86 │       ? t(␍
+    ······ │
+    89 102 │               <CardDescription>{description}</CardDescription>␍
+    90 103 │             </CardHeader>␍
+    91     │ - → → → → → <CardContent·className="text-muted-foreground·text-sm">{help}</CardContent>␍
+       104 │ + → → → → → <CardContent·className="text-muted-foreground·text-sm">␍
+       105 │ + → → → → → → {help}␍
+       106 │ + → → → → → </CardContent>␍
+    92 107 │           </Card>␍
+    93 108 │         </div>␍
+
+
+src\components\payroll\payroll-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+       1    1 │   // @vitest-environment jsdom␍
+       2    2 │   ␍
+       3      │ - import·{·act,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+            3 │ + import·{␍
+            4 │ + → act,␍
+            5 │ + → fireEvent,␍
+            6 │ + → render,␍
+            7 │ + → screen,␍
+            8 │ + → waitFor,␍
+            9 │ + → within,␍
+           10 │ + }·from·"@testing-library/react";␍
+       4   11 │   import { Activity } from "react";␍
+       5   12 │   import { beforeEach, describe, expect, it, vi } from "vitest";␍
+       6   13 │   import { payrollBlockerIdentity } from "@/lib/payroll-workspace/blocker-identity";␍
+       7      │ - import·type·{·PayrollBlockerType,·PayrollWorkspaceSummary·}·from·"@/lib/payroll-workspace/types";␍
+           14 │ + import·type·{␍
+           15 │ + → PayrollBlockerType,␍
+           16 │ + → PayrollWorkspaceSummary,␍
+           17 │ + }·from·"@/lib/payroll-workspace/types";␍
+       8   18 │   import { PayrollWorkspace } from "./payroll-workspace";␍
+       9   19 │   ␍
+    ········· │
+      22   32 │   vi.mock("@tolgee/react", () => ({␍
+      23   33 │     useTranslate: () => ({␍
+      24      │ - → → t:·(key:·string,·fallback:·string,·params?:·Record<string,·string·|·number>)·=>·{␍
+           34 │ + → → t:·(␍
+           35 │ + → → → key:·string,␍
+           36 │ + → → → fallback:·string,␍
+           37 │ + → → → params?:·Record<string,·string·|·number>,␍
+           38 │ + → → )·=>·{␍
+      25   39 │         const template = translateOverrides[key] ?? fallback;␍
+      26   40 │   ␍
+      27   41 │         return Object.entries(params ?? {}).reduce(␍
+      28      │ - → → → → (message,·[paramKey,·value])·=>·message.replaceAll(`{${paramKey}}`,·String(value)),␍
+           42 │ + → → → → (message,·[paramKey,·value])·=>␍
+           43 │ + → → → → → message.replaceAll(`{${paramKey}}`,·String(value)),␍
+      29   44 │           template,␍
+      30   45 │         );␍
+    ········· │
+      63   78 │     dismissPayrollBlockerAction: actionMocks.dismissPayrollBlockerAction,␍
+      64   79 │     exportPayrollPdfAction: actionMocks.exportPayrollPdfAction,␍
+      65      │ - → getPayrollWorkspaceSummaryAction:·actionMocks.getPayrollWorkspaceSummaryAction,␍
+           80 │ + → getPayrollWorkspaceSummaryAction:␍
+           81 │ + → → actionMocks.getPayrollWorkspaceSummaryAction,␍
+      66   82 │     startScopedPayrollExportAction: actionMocks.startScopedPayrollExportAction,␍
+      67   83 │   }));␍
+    ········· │
+     117  133 │   };␍
+     118  134 │   ␍
+     119      │ - function·buildSummary(overrides:·Partial<PayrollWorkspaceSummary>·=·{}):·PayrollWorkspaceSummary·{␍
+          135 │ + function·buildSummary(␍
+          136 │ + → overrides:·Partial<PayrollWorkspaceSummary>·=·{},␍
+          137 │ + ):·PayrollWorkspaceSummary·{␍
+     120  138 │     return {␍
+     121  139 │       ...baseSummary,␍
+    ········· │
+     133  151 │   }␍
+     134  152 │   ␍
+     135      │ - function·expandPayrollBlockers(name:·string·|·RegExp·=·/payroll·blockers·need·review/)·{␍
+          153 │ + function·expandPayrollBlockers(␍
+          154 │ + → name:·string·|·RegExp·=·/payroll·blockers·need·review/,␍
+          155 │ + )·{␍
+     136  156 │     const region = screen.getByRole("region", { name });␍
+     137  157 │     const trigger = within(region).getByRole("button", { name });␍
+     138      │ - → if·(trigger.getAttribute("aria-expanded")·===·"false")·fireEvent.click(trigger);␍
+          158 │ + → if·(trigger.getAttribute("aria-expanded")·===·"false")␍
+          159 │ + → → fireEvent.click(trigger);␍
+     139  160 │     return region;␍
+     140  161 │   }␍
+    ········· │
+     144  165 │   function arrivingScope(scope: "organization" | "actor" | "coverage") {␍
+     145  166 │     return buildSummary({␍
+     146      │ - → → organizationId:·scope·===·"organization"·?·"organization-b"·:·baseSummary.organizationId,␍
+          167 │ + → → organizationId:␍
+          168 │ + → → → scope·===·"organization"·?·"organization-b"·:·baseSummary.organizationId,␍
+     147  169 │       generatedBy:␍
+     148      │ - → → → scope·===·"actor"·?·{·id:·"other-actor",·name:·"Other·actor"·}·:·baseSummary.generatedBy,␍
+     149      │ - → → employees:·scope·===·"coverage"·?·[baseSummary.employees[1]]·:·baseSummary.employees,␍
+          170 │ + → → → scope·===·"actor"␍
+          171 │ + → → → → ?·{·id:·"other-actor",·name:·"Other·actor"·}␍
+          172 │ + → → → → :·baseSummary.generatedBy,␍
+          173 │ + → → employees:␍
+          174 │ + → → → scope·===·"coverage"·?·[baseSummary.employees[1]]·:·baseSummary.employees,␍
+     150  175 │     });␍
+     151  176 │   }␍
+    ········· │
+     165  190 │     it("replaces records when another organization arrives for the same actor and organization name", () => {␍
+     166  191 │       const formats = [{ id: "datev_lohn", label: "DATEV" }];␍
+     167      │ - → → const·view·=·render(<PayrollWorkspace·initialSummary={summary}·exportFormats={formats}·/>);␍
+          192 │ + → → const·view·=·render(␍
+          193 │ + → → → <PayrollWorkspace·initialSummary={summary}·exportFormats={formats}·/>,␍
+          194 │ + → → );␍
+     168  195 │       view.rerender(␍
+     169  196 │         <PayrollWorkspace␍
+     170  197 │           initialSummary={buildSummary({␍
+     171  198 │             organizationId: "organization-b",␍
+     172      │ - → → → → → employees:·[{·...baseSummary.employees[0],·id:·"employee-b",·name:·"Scope·B·Employee"·}],␍
+          199 │ + → → → → → employees:·[␍
+          200 │ + → → → → → → {␍
+          201 │ + → → → → → → → ...baseSummary.employees[0],␍
+          202 │ + → → → → → → → id:·"employee-b",␍
+          203 │ + → → → → → → → name:·"Scope·B·Employee",␍
+          204 │ + → → → → → → },␍
+          205 │ + → → → → → ],␍
+     173  206 │             blockers: [],␍
+     174  207 │             totals: { employeeCount: 1, totalWorkedHours: 16, blockerCount: 0 },␍
+    ········· │
+     183  216 │       "discards a held summary after a %s scope leaves and returns",␍
+     184  217 │       async (scope) => {␍
+     185      │ - → → → const·pending·=·deferred<{·success:·true;·data:·PayrollWorkspaceSummary·}>();␍
+     186      │ - → → → actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(pending.promise);␍
+          218 │ + → → → const·pending·=·deferred<{␍
+          219 │ + → → → → success:·true;␍
+          220 │ + → → → → data:·PayrollWorkspaceSummary;␍
+          221 │ + → → → }>();␍
+          222 │ + → → → actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(␍
+          223 │ + → → → → pending.promise,␍
+          224 │ + → → → );␍
+     187  225 │         const formats = [{ id: "datev_lohn", label: "DATEV" }];␍
+     188      │ - → → → const·view·=·render(<PayrollWorkspace·initialSummary={summary}·exportFormats={formats}·/>);␍
+          226 │ + → → → const·view·=·render(␍
+          227 │ + → → → → <PayrollWorkspace·initialSummary={summary}·exportFormats={formats}·/>,␍
+          228 │ + → → → );␍
+     189  229 │         fireEvent.click(screen.getByRole("button", { name: "Next period" }));␍
+     190  230 │         view.rerender(␍
+     191      │ - → → → → <PayrollWorkspace·initialSummary={arrivingScope(scope)}·exportFormats={formats}·/>,␍
+          231 │ + → → → → <PayrollWorkspace␍
+          232 │ + → → → → → initialSummary={arrivingScope(scope)}␍
+          233 │ + → → → → → exportFormats={formats}␍
+          234 │ + → → → → />,␍
+     192  235 │         );␍
+     193      │ - → → → view.rerender(<PayrollWorkspace·initialSummary={summary}·exportFormats={formats}·/>);␍
+          236 │ + → → → view.rerender(␍
+          237 │ + → → → → <PayrollWorkspace·initialSummary={summary}·exportFormats={formats}·/>,␍
+          238 │ + → → → );␍
+     194  239 │         await act(async () =>␍
+     195  240 │           pending.resolve({␍
+     196  241 │             success: true,␍
+     197  242 │             data: buildSummary({␍
+     198      │ - → → → → → → employees:·[{·...baseSummary.employees[0],·name:·"Late·old·employee"·}],␍
+          243 │ + → → → → → → employees:·[␍
+          244 │ + → → → → → → → {·...baseSummary.employees[0],·name:·"Late·old·employee"·},␍
+          245 │ + → → → → → → ],␍
+     199  246 │             }),␍
+     200  247 │           }),␍
+    ········· │
+     202  249 │         expect(screen.queryByText("Late old employee")).toBeNull();␍
+     203  250 │         expect(screen.getByText("Ada Lovelace")).toBeTruthy();␍
+     204      │ - → → → expect(screen.getByRole("button",·{·name:·"Next·period"·}).hasAttribute("disabled")).toBe(␍
+     205      │ - → → → → false,␍
+     206      │ - → → → );␍
+          251 │ + → → → expect(␍
+          252 │ + → → → → screen␍
+          253 │ + → → → → → .getByRole("button",·{·name:·"Next·period"·})␍
+          254 │ + → → → → → .hasAttribute("disabled"),␍
+          255 │ + → → → ).toBe(false);␍
+     207  256 │       },␍
+     208  257 │     );␍
+  1379 more lines truncated
+
+
+src\components\payroll\payroll-workspace.tsx:1782:6 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <section>
+
+    1780 │ 			<CardContent>
+    1781 │ 				<div
+  > 1782 │ 					role="region"
+         │ 					^^^^^^^^^^^^^
+    1783 │ 					aria-label={t("payroll.employeeTotals.title", "Employee totals")}
+    1784 │ 					// biome-ignore lint/a11y/noNoninteractiveTabindex: Named comparison region needs keyboard scrolling.
+
+  i For examples and more information, see WAI-ARIA Roles
+
+  i Replace with one of these elements:
+
+  - <section>
+
+
+src\components\payroll\payroll-workspace.tsx:1868:4 lint/a11y/useSemanticElements ━━━━━━━━━━━━━━━━━━
+
+  × The elements with this role can be changed to the following elements:
+    <fieldset>
+
+    1866 │ 	return (
+    1867 │ 		<div
+  > 1868 │ 			role="group"
+         │ 			^^^^^^^^^^^^
+    1869 │ 			aria-label={label}
+    1870 │ 			className={[
+
+  i For examples and more information, see WAI-ARIA Roles
+
+  i Replace with one of these elements:
+
+  - <fieldset>
+
+
+src\components\payroll\payroll-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      35   35 │   import { Badge } from "@/components/ui/badge";␍
+      36   36 │   import { Button } from "@/components/ui/button";␍
+      37      │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+           37 │ + import·{␍
+           38 │ + → Card,␍
+           39 │ + → CardContent,␍
+           40 │ + → CardDescription,␍
+           41 │ + → CardHeader,␍
+           42 │ + → CardTitle,␍
+           43 │ + }·from·"@/components/ui/card";␍
+      38   44 │   import { Checkbox } from "@/components/ui/checkbox";␍
+      39      │ - import·{·Collapsible,·CollapsibleContent,·CollapsibleTrigger·}·from·"@/components/ui/collapsible";␍
+           45 │ + import·{␍
+           46 │ + → Collapsible,␍
+           47 │ + → CollapsibleContent,␍
+           48 │ + → CollapsibleTrigger,␍
+           49 │ + }·from·"@/components/ui/collapsible";␍
+      40   50 │   import { Input } from "@/components/ui/input";␍
+      41   51 │   import { Label } from "@/components/ui/label";␍
+    ········· │
+      75   85 │     payrollBlockerIdentity,␍
+      76   86 │   } from "@/lib/payroll-workspace/blocker-identity";␍
+      77      │ - import·type·{·PayrollDateRangeMode,·PayrollWorkspaceSummary·}·from·"@/lib/payroll-workspace/types";␍
+           87 │ + import·type·{␍
+           88 │ + → PayrollDateRangeMode,␍
+           89 │ + → PayrollWorkspaceSummary,␍
+           90 │ + }·from·"@/lib/payroll-workspace/types";␍
+      78   91 │   import { queryKeys } from "@/lib/query/keys";␍
+      79   92 │   import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";␍
+    ········· │
+     205  218 │   ␍
+     206  219 │         if (!isMountedRef.current) return { status: "unmounted" };␍
+     207      │ - → → → if·(requestGeneration·!==·requestGenerationRef.current)·return·{·status:·"stale"·};␍
+          220 │ + → → → if·(requestGeneration·!==·requestGenerationRef.current)␍
+          221 │ + → → → → return·{·status:·"stale"·};␍
+     208  222 │   ␍
+     209  223 │         if (!result.success) {␍
+    ········· │
+     213  227 │   ␍
+     214  228 │         dispatch({␍
+     215      │ - → → → → type:·options.preserveDraft·?·"summaryDataRefreshed"·:·"summaryRefreshed",␍
+          229 │ + → → → → type:·options.preserveDraft␍
+          230 │ + → → → → → ?·"summaryDataRefreshed"␍
+          231 │ + → → → → → :·"summaryRefreshed",␍
+     216  232 │           summary: result.data,␍
+     217  233 │         });␍
+    ········· │
+     220  236 │       } catch {␍
+     221  237 │         if (!isMountedRef.current) return { status: "unmounted" };␍
+     222      │ - → → → if·(requestGeneration·!==·requestGenerationRef.current)·return·{·status:·"stale"·};␍
+          238 │ + → → → if·(requestGeneration·!==·requestGenerationRef.current)␍
+          239 │ + → → → → return·{·status:·"stale"·};␍
+     223  240 │   ␍
+     224  241 │         options.onError();␍
+    ········· │
+     290  307 │         refreshResult.status === "applied" &&␍
+     291  308 │         !refreshResult.summary.blockers.some(␍
+     292      │ - → → → → (currentBlocker)·=>·payrollBlockerIdentity(currentBlocker)·===·blockerKey,␍
+          309 │ + → → → → (currentBlocker)·=>␍
+          310 │ + → → → → → payrollBlockerIdentity(currentBlocker)·===·blockerKey,␍
+     293  311 │         )␍
+     294  312 │       ) {␍
+    ········· │
+     303  321 │                 "Blocker cleared, but payroll could not be refreshed",␍
+     304  322 │               )␍
+     305      │ - → → → → → :·t("payroll.blockers.clearFailed",·"Could·not·clear·payroll·blocker"),␍
+          323 │ + → → → → → :·t(␍
+          324 │ + → → → → → → → "payroll.blockers.clearFailed",␍
+          325 │ + → → → → → → → "Could·not·clear·payroll·blocker",␍
+          326 │ + → → → → → → ),␍
+     306  327 │         );␍
+     307  328 │       }␍
+    ········· │
+     332  353 │     const clearBlockerQueueRef = useRef<Promise<void> | null>(null);␍
+     333  354 │     const focusRequestIdRef = useRef(0);␍
+     334      │ - → const·[focusRequest,·setFocusRequest]·=·useState<BlockerFocusRequest·|·null>(null);␍
+          355 │ + → const·[focusRequest,·setFocusRequest]·=·useState<BlockerFocusRequest·|·null>(␍
+          356 │ + → → null,␍
+          357 │ + → );␍
+     335  358 │   ␍
+     336  359 │     function clearPayrollBlocker(␍
+    ········· │
+     343  366 │   ␍
+     344  367 │       clearingBlockerKeysRef.current.add(blockerKey);␍
+     345      │ - → → setClearingBlockerKeys((currentKeys)·=>·new·Set(currentKeys).add(blockerKey));␍
+          368 │ + → → setClearingBlockerKeys((currentKeys)·=>␍
+          369 │ + → → → new·Set(currentKeys).add(blockerKey),␍
+          370 │ + → → );␍
+     346  371 │       const currentClickRequest = clickRequest;␍
+     347  372 │       const blockerOrder = blockers.map(payrollBlockerIdentity);␍
+     348  373 │   ␍
+     349      │ - → → clearBlockerQueueRef.current·=·(clearBlockerQueueRef.current·??·Promise.resolve()).then(()·=>␍
+          374 │ + → → clearBlockerQueueRef.current·=·(␍
+          375 │ + → → → clearBlockerQueueRef.current·??·Promise.resolve()␍
+          376 │ + → → ).then(()·=>␍
+     350  377 │         isMountedRef.current␍
+     351  378 │           ? clearPayrollBlockerAndRefresh({␍
+    ········· │
+     370  397 │                 const nextBlockerKey = blockerOrder␍
+     371  398 │                   .slice(removedIndex + 1)␍
+     372      │ - → → → → → → → → .find((currentBlockerKey)·=>·remainingBlockerKeys.has(currentBlockerKey));␍
+          399 │ + → → → → → → → → .find((currentBlockerKey)·=>␍
+          400 │ + → → → → → → → → → remainingBlockerKeys.has(currentBlockerKey),␍
+          401 │ + → → → → → → → → );␍
+     373  402 │                 const previousBlockerKey = blockerOrder␍
+     374  403 │                   .slice(0, removedIndex)␍
+     375  404 │                   .reverse()␍
+     376      │ - → → → → → → → → .find((currentBlockerKey)·=>·remainingBlockerKeys.has(currentBlockerKey));␍
+          405 │ + → → → → → → → → .find((currentBlockerKey)·=>␍
+          406 │ + → → → → → → → → → remainingBlockerKeys.has(currentBlockerKey),␍
+          407 │ + → → → → → → → → );␍
+     377  408 │                 focusRequestIdRef.current += 1;␍
+     378  409 │                 setFocusRequest({␍
+    ········· │
+     433  464 │       });␍
+     434  465 │       const amount = direction === "previous" ? -1 : 1;␍
+     435      │ - → → const·nextStart·=·currentStart.plus({·[dateMode]:·amount·}).startOf(dateMode);␍
+          466 │ + → → const·nextStart·=·currentStart␍
+          467 │ + → → → .plus({·[dateMode]:·amount·})␍
+          468 │ + → → → .startOf(dateMode);␍
+     436  469 │   ␍
+     437  470 │       refreshSummary(buildPeriodRequest(nextStart, dateMode));␍
+    ········· │
+     441  474 │       if (dateMode === "custom") return;␍
+     442  475 │   ␍
+     443      │ - → → refreshSummary(buildPeriodRequest(DateTime.utc().startOf(dateMode),·dateMode));␍
+          476 │ + → → refreshSummary(␍
+          477 │ + → → → buildPeriodRequest(DateTime.utc().startOf(dateMode),·dateMode),␍
+          478 │ + → → );␍
+     444  479 │     }␍
+     445  480 │   ␍
+    ········· │
+     501  536 │         const result = await exportPayrollPdfAction(request).catch(() => ({␍
+     502  537 │           success: false as const,␍
+     503      │ - → → → → error:·t("payroll.errors.actionFailed",·"Payroll·workspace·action·failed"),␍
+          538 │ + → → → → error:·t(␍
+          539 │ + → → → → → "payroll.errors.actionFailed",␍
+          540 │ + → → → → → "Payroll·workspace·action·failed",␍
+          541 │ + → → → → ),␍
+     504  542 │         }));␍
+     505  543 │         if (generation !== lifetime.current) return;␍
+    ········· │
+     543  581 │         }).catch(() => ({␍
+     544  582 │           success: false as const,␍
+     545      │ - → → → → error:·t("payroll.errors.actionFailed",·"Payroll·workspace·action·failed"),␍
+          583 │ + → → → → error:·t(␍
+          584 │ + → → → → → "payroll.errors.actionFailed",␍
+          585 │ + → → → → → "Payroll·workspace·action·failed",␍
+          586 │ + → → → → ),␍
+     546  587 │         }));␍
+     547  588 │         if (generation !== lifetime.current) return;␍
+    ········· │
+     638  679 │   }␍
+     639  680 │   ␍
+     640      │ - function·PayrollWorkspaceContent({·initialSummary,·exportFormats·}:·PayrollWorkspaceProps)·{␍
+          681 │ + function·PayrollWorkspaceContent({␍
+          682 │ + → initialSummary,␍
+          683 │ + → exportFormats,␍
+          684 │ + }:·PayrollWorkspaceProps)·{␍
+     641  685 │     const { t } = useTranslate();␍
+     642  686 │     const [state, dispatch] = useReducer(payrollWorkspaceReducer, {␍
+    ········· │
+     676  720 │       ? { employeeCount: 0, totalWorkedHours: 0, blockerCount: 0 }␍
+     677  721 │       : summary.totals;␍
+     678      │ - → const·readyEmployeeCount·=·displayedEmployees.filter((employee)·=>·!employee.hasBlockers).length;␍
+  688 more lines truncated
+
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+          2 │ + import·{␍
+          3 │ + → appPageOwnsHeading,␍
+          4 │ + → normalizeAppPath,␍
+          5 │ + → resolveAppRouteMetadata,␍
+          6 │ + }·from·"./route-metadata";␍
+      3   7 │   ␍
+      4   8 │   describe("route metadata", () => {␍
+    ······· │
+      6  10 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+      7  11 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(false);␍
+      8     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(false);␍
+         12 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+         13 │ + → → → false,␍
+         14 │ + → → );␍
+      9  15 │     });␍
+     10  16 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │
+     25  31 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     26  32 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     27     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+         33 │ + → → expect(␍
+         34 │ + → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+         35 │ + → → ).toBe(true);␍
+     28  36 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     29     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+         37 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+         38 │ + → → → false,␍
+         39 │ + → → );␍
+     30  40 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     31  41 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │
+     37  47 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     38  48 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     39     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+         49 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+         50 │ + → → → true,␍
+         51 │ + → → );␍
+         52 │ + → → expect(␍
+         53 │ + → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+         54 │ + → → ).toBe(false);␍
+     41  55 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     42  56 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │
+     45  59 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     46  60 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     47     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+         61 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+         62 │ + → → → true,␍
+         63 │ + → → );␍
+     48  64 │     });␍
+     49  65 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+     50     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     51     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+         66 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+         67 │ + → → → true,␍
+         68 │ + → → );␍
+         69 │ + → → expect(␍
+         70 │ + → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+         71 │ + → → ).toBe(false);␍
+     52  72 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     53  73 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │
+     56  76 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     57  77 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     58     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+         78 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+         79 │ + → → → true,␍
+         80 │ + → → );␍
+     59  81 │     });␍
+     60  82 │     it("adopts only the complete review arrival route", () => {␍
+     61     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     62     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     63     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+         83 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+         84 │ + → → → true,␍
+         85 │ + → → );␍
+         86 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+         87 │ + → → → false,␍
+         88 │ + → → );␍
+         89 │ + → → expect(␍
+         90 │ + → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+         91 │ + → → ).toBe(false);␍
+     64  92 │     });␍
+     65  93 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+     66  94 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     67     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+         95 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+         96 │ + → → → false,␍
+         97 │ + → → );␍
+     68  98 │     });␍
+     69  99 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+     70 100 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     71     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+        101 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+        102 │ + → → → false,␍
+        103 │ + → → );␍
+     72 104 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     73     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+        105 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+        106 │ + → → → false,␍
+        107 │ + → → );␍
+     74 108 │     });␍
+     75 109 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │
+    117 151 │   ␍
+    118 152 │     it("normalizes locale and trailing slash segments", () => {␍
+    119     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+        153 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+        154 │ + → → → "/settings/security",␍
+        155 │ + → → );␍
+    120 156 │     });␍
+    121 157 │   });␍
+
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+    171     │ - → → id:·`settings-${entry.id}`,␍
+    172     │ - → → href:·entry.href,␍
+    173     │ - → → titleKey:·entry.titleKey,␍
+    174     │ - → → titleDefault:·entry.titleDefault,␍
+    175     │ - → })),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+        171 │ + → → (entry)·=>·({␍
+        172 │ + → → → id:·`settings-${entry.id}`,␍
+        173 │ + → → → href:·entry.href,␍
+        174 │ + → → → titleKey:·entry.titleKey,␍
+        175 │ + → → → titleDefault:·entry.titleDefault,␍
+        176 │ + → → }),␍
+        177 │ + → ),␍
+    176 178 │     {␍
+    177 179 │       id: "settings",␍
+    ······· │
+    190 192 │   ␍
+    191 193 │   export function normalizeAppPath(pathname: string): string {␍
+    192     │ - → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+    193     │ - → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+        194 │ + → const·[firstSegment,·...remainingSegments]·=·pathname␍
+        195 │ + → → .split("/")␍
+        196 │ + → → .filter(Boolean);␍
+        197 │ + → const·segments·=·ALL_LANGUAGES.includes(␍
+        198 │ + → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+        199 │ + → )␍
+    194 200 │       ? remainingSegments␍
+    195 201 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │
+    245 251 │       [...APP_ROUTE_METADATA]␍
+    246 252 │         .sort((left, right) => right.href.length - left.href.length)␍
+    247     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+        253 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+        254 │ + → → UNKNOWN_ROUTE_METADATA␍
+    248 255 │     );␍
+    249 256 │   }␍
+
+
+src\lib\payroll-workspace\summary.cutover.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    73 73 │   ␍
+    74 74 │       expect(summary.organizationId).toBe("org-1");␍
+    75    │ - → → expect(mockState.assertCanonicalAbsencesReady).toHaveBeenCalledWith("org-1");␍
+       75 │ + → → expect(mockState.assertCanonicalAbsencesReady).toHaveBeenCalledWith(␍
+       76 │ + → → → "org-1",␍
+       77 │ + → → );␍
+    76 78 │       expect(mockState.assertCanonicalCutoverReady).not.toHaveBeenCalled();␍
+    77 79 │     });␍
+
+
+src\lib\payroll-workspace\summary.test.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━━━━━
+
+  × Sort these imports.
+
+   > 1 │ import { DateTime } from "luxon";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   > 2 │ import { Temporal } from "temporal-polyfill";
+   > 3 │ import { describe, expect, it } from "vitest";
+   > 4 │ import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
+        ...
+  > 15 │ import { workPeriodsFromCollectedInput } from "@/lib/payroll-export/collected-work";
+  > 16 │ import { isDismissiblePayrollBlockerType } from "./blocker-dismissals";
+       │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    17 │ import type { PayrollSummaryWorkRow } from "./types";
+    18 │
+
+  i Safe fix: Organize imports and exports (Biome)
+
+      2   2 │   import { Temporal } from "temporal-polyfill";␍
+      3   3 │   import { describe, expect, it } from "vitest";␍
+      4     │ - import·{·filterDismissedPayrollBlockers·}·from·"./blocker-dismissals";␍
+      5     │ - import·{␍
+      6     │ - → buildPayrollSummaryFromRows,␍
+      7     │ - → buildOffboardingClockRepairBlockers,␍
+      8     │ - → buildPendingAbsenceBlockers,␍
+      9     │ - → calculatePayrollWorkedMinutes,␍
+     10     │ - → filterMissingClockOutBlockers,␍
+     11     │ - → filterPendingTimeApprovalBlockers,␍
+     12     │ - → payrollBlockersFromCollection,␍
+     13     │ - }·from·"./summary";␍
+     14     │ - import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+     15     │ - import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+     16     │ - import·{·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          4 │ + import·{·assessPayrollWorkCollection·}·from·"@/lib/payroll-collection/payroll-work-collection";␍
+          5 │ + import·{·workPeriodsFromCollectedInput·}·from·"@/lib/payroll-export/collected-work";␍
+          6 │ + import·{·filterDismissedPayrollBlockers,·isDismissiblePayrollBlockerType·}·from·"./blocker-dismissals";␍
+          7 │ + import·{␍
+          8 │ + → buildOffboardingClockRepairBlockers,␍
+          9 │ + → buildPayrollSummaryFromRows,␍
+         10 │ + → buildPendingAbsenceBlockers,␍
+         11 │ + → calculatePayrollWorkedMinutes,␍
+         12 │ + → filterMissingClockOutBlockers,␍
+         13 │ + → filterPendingTimeApprovalBlockers,␍
+         14 │ + → payrollBlockersFromCollection,␍
+         15 │ + }·from·"./summary";␍
+     17  16 │   import type { PayrollSummaryWorkRow } from "./types";␍
+     18  17 │   ␍
+
+
+src\lib\payroll-workspace\summary.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    454 454 │     it("conserves stored minutes across adjacent payroll periods", () => {␍
+    455 455 │       const rows = [workRow("2026-06-30T21:07:13Z", "2026-07-01T02:52:51Z", 346)];␍
+    456     │ - → → const·juneMinutes·=·calculatePayrollWorkedMinutes(rows,·june).workedMinutesByEmployee;␍
+        456 │ + → → const·juneMinutes·=·calculatePayrollWorkedMinutes(␍
+        457 │ + → → → rows,␍
+        458 │ + → → → june,␍
+        459 │ + → → ).workedMinutesByEmployee;␍
+    457 460 │       const julyMinutes = calculatePayrollWorkedMinutes(rows, {␍
+    458 461 │         start: "2026-07-01",␍
+    ······· │
+    460 463 │       }).workedMinutesByEmployee;␍
+    461 464 │   ␍
+    462     │ - → → expect((juneMinutes.get("employee-1")·??·0)·+·(julyMinutes.get("employee-1")·??·0)).toBe(␍
+    463     │ - → → → 346,␍
+    464     │ - → → );␍
+        465 │ + → → expect(␍
+        466 │ + → → → (juneMinutes.get("employee-1")·??·0)·+␍
+        467 │ + → → → → (julyMinutes.get("employee-1")·??·0),␍
+        468 │ + → → ).toBe(346);␍
+    465 469 │     });␍
+    466 470 │   ␍
+    ······· │
+    503 507 │       expect(workedMinutesByEmployee.get("employee-1")).toBe(0);␍
+    504 508 │       expect(blockers).toEqual([␍
+    505     │ - → → → expect.objectContaining({·id:·"record-missing",·type:·"unresolved_work_minutes"·}),␍
+        509 │ + → → → expect.objectContaining({␍
+        510 │ + → → → → id:·"record-missing",␍
+        511 │ + → → → → type:·"unresolved_work_minutes",␍
+        512 │ + → → → }),␍
+    506 513 │       ]);␍
+    507 514 │     });␍
+    ······· │
+    530 537 │       });␍
+    531 538 │   ␍
+    532     │ - → → expect(summary.totals).toMatchObject({·blockerCount:·1,·totalWorkedHours:·0·});␍
+    533     │ - → → expect(summary.employees[0]).toMatchObject({·hasBlockers:·true,·workedHours:·0·});␍
+    534     │ - → → expect(summary.blockers[0]).toMatchObject({·type:·"unresolved_work_minutes"·});␍
+        539 │ + → → expect(summary.totals).toMatchObject({␍
+        540 │ + → → → blockerCount:·1,␍
+        541 │ + → → → totalWorkedHours:·0,␍
+        542 │ + → → });␍
+        543 │ + → → expect(summary.employees[0]).toMatchObject({␍
+        544 │ + → → → hasBlockers:·true,␍
+        545 │ + → → → workedHours:·0,␍
+        546 │ + → → });␍
+        547 │ + → → expect(summary.blockers[0]).toMatchObject({␍
+        548 │ + → → → type:·"unresolved_work_minutes",␍
+        549 │ + → → });␍
+    535 550 │     });␍
+    536 551 │   });␍
+    ······· │
+    803 818 │         },␍
+    804 819 │       ]);␍
+    805     │ - → → expect(isDismissiblePayrollBlockerType("offboarding_clock_repair")).toBe(false);␍
+        820 │ + → → expect(isDismissiblePayrollBlockerType("offboarding_clock_repair")).toBe(␍
+        821 │ + → → → false,␍
+        822 │ + → → );␍
+    806 823 │     });␍
+    807 824 │   });␍
+    ······· │
+    833 850 │     const collection = assessPayrollWorkCollection(␍
+    834 851 │       {␍
+    835     │ - → → → employees:·[employee("employee-1",·"Europe/Berlin"),·employee("employee-2",·"UTC")],␍
+        852 │ + → → → employees:·[␍
+        853 │ + → → → → employee("employee-1",·"Europe/Berlin"),␍
+        854 │ + → → → → employee("employee-2",·"UTC"),␍
+        855 │ + → → → ],␍
+    836 856 │         records: [␍
+    837 857 │           record("boundary", "employee-1"),␍
+    ······· │
+    851 871 │               timeRecordIds: [],␍
+    852 872 │               entryIds: [],␍
+    853     │ - → → → → → → provenance:·{·state:·"ambiguous",·reason:·"ownership_unestablished"·},␍
+        873 │ + → → → → → → provenance:·{␍
+        874 │ + → → → → → → → state:·"ambiguous",␍
+        875 │ + → → → → → → → reason:·"ownership_unestablished",␍
+        876 │ + → → → → → → },␍
+    854 877 │               relevance: { level: "organization" },␍
+    855 878 │               relevant: true,␍
+    ······· │
+    878 901 │         generatedBy: { id: "payroll-1", name: "Payroll User" },␍
+    879 902 │         employees: [␍
+    880     │ - → → → → {·id:·"employee-1",·name:·"Ada",·employeeNumber:·null,·teamName:·null,·contractType:·"hourly"·},␍
+        903 │ + → → → → {␍
+        904 │ + → → → → → id:·"employee-1",␍
+        905 │ + → → → → → name:·"Ada",␍
+        906 │ + → → → → → employeeNumber:·null,␍
+        907 │ + → → → → → teamName:·null,␍
+        908 │ + → → → → → contractType:·"hourly",␍
+        909 │ + → → → → },␍
+    881 910 │         ],␍
+    882 911 │         workRows: [],␍
+    ······· │
+    885 914 │         blockers: payrollBlockersFromCollection(collection),␍
+    886 915 │       });␍
+    887     │ - → → const·exportMinutes·=·workPeriodsFromCollectedInput(collection.input).reduce(␍
+    888     │ - → → → (total,·line)·=>·total·+·(line.durationMinutes·??·0),␍
+    889     │ - → → → 0,␍
+    890     │ - → → );␍
+        916 │ + → → const·exportMinutes·=·workPeriodsFromCollectedInput(␍
+        917 │ + → → → collection.input,␍
+        918 │ + → → ).reduce((total,·line)·=>·total·+·(line.durationMinutes·??·0),·0);␍
+    891 919 │   ␍
+    892 920 │       // 23:30-00:30 Berlin with 61 stored minutes: 31 belong to June.␍
+    893 921 │       expect(exportMinutes).toBe(31);␍
+    894     │ - → → expect(summary.employees[0]?.workedHours).toBe(Math.round((31·/·60)·*·100)·/·100);␍
+        922 │ + → → expect(summary.employees[0]?.workedHours).toBe(␍
+        923 │ + → → → Math.round((31·/·60)·*·100)·/·100,␍
+        924 │ + → → );␍
+    895 925 │       expect(summary.employees[0]?.hasBlockers).toBe(true);␍
+    896 926 │     });␍
+    ······· │
+    899 929 │       const blockers = payrollBlockersFromCollection(collection);␍
+    900 930 │   ␍
+    901     │ - → → expect(blockers.map((blocker)·=>·[blocker.type,·blocker.employeeId])).toEqual([␍
+        931 │ + → → expect(␍
+        932 │ + → → → blockers.map((blocker)·=>·[blocker.type,·blocker.employeeId]),␍
+        933 │ + → → ).toEqual([␍
+    902 934 │         ["uncertain_historical_work", "employee-1"],␍
+    903 935 │         ["pending_work_approval", "employee-2"],␍
+    ······· │
+    912 944 │         time: "21:30",␍
+    913 945 │       });␍
+    914     │ - → → expect(blockers.some((blocker)·=>·isDismissiblePayrollBlockerType(blocker.type))).toBe(false);␍
+        946 │ + → → expect(␍
+        947 │ + → → → blockers.some((blocker)·=>·isDismissiblePayrollBlockerType(blocker.type)),␍
+        948 │ + → → ).toBe(false);␍
+    915 949 │     });␍
+    916 950 │   });␍
+
+
+src\lib\payroll-workspace\summary.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+     15   15 │     userSettings,␍
+     16   16 │   } from "@/db/schema";␍
+     17      │ - import·{·type·Instant,·instantFromDate,·parsePlainDate·}·from·"@/lib/datetime/temporal-core";␍
+          17 │ + import·{␍
+          18 │ + → type·Instant,␍
+          19 │ + → instantFromDate,␍
+          20 │ + → parsePlainDate,␍
+          21 │ + }·from·"@/lib/datetime/temporal-core";␍
+     18   22 │   import {␍
+     19   23 │     findOpenDepartureClockRepairs,␍
+    ········ │
+     48   52 │     exportIsPayrollRun,␍
+     49   53 │   } from "@/lib/travel-expenses/payroll-run";␍
+     50      │ - import·{·buildPayrollAbsenceDetails,·payrollAbsenceDetailDays·}·from·"./absence-details";␍
+          54 │ + import·{␍
+          55 │ + → buildPayrollAbsenceDetails,␍
+          56 │ + → payrollAbsenceDetailDays,␍
+          57 │ + }·from·"./absence-details";␍
+     51   58 │   import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";␍
+     52   59 │   import type {␍
+    ········ │
+     90   97 │     workRows: PayrollSummaryWorkRow[];␍
+     91   98 │     /** Work credited by scoped collection (#322); replaces `workRows` when present. */␍
+     92      │ - → collectedWork?:·readonly·Pick<CollectedPayrollWork,·"employeeId"·|·"minutes">[];␍
+          99 │ + → collectedWork?:·readonly·Pick<␍
+         100 │ + → → CollectedPayrollWork,␍
+         101 │ + → → "employeeId"·|·"minutes"␍
+         102 │ + → >[];␍
+     93  103 │     absenceRows: PayrollSummaryAbsenceRow[];␍
+     94  104 │     blockers: PayrollBlocker[];␍
+     95  105 │   }): PayrollWorkspaceSummary {␍
+     96      │ - → const·{·workedMinutesByEmployee,·blockers:·workBlockers·}·=·input.collectedWork␍
+     97      │ - → → ?·{·workedMinutesByEmployee:·sumCollectedMinutes(input.collectedWork),·blockers:·[]·}␍
+     98      │ - → → :·calculatePayrollWorkedMinutes(input.workRows,·input.period);␍
+         106 │ + → const·{·workedMinutesByEmployee,·blockers:·workBlockers·}·=␍
+         107 │ + → → input.collectedWork␍
+         108 │ + → → → ?·{␍
+         109 │ + → → → → → workedMinutesByEmployee:·sumCollectedMinutes(input.collectedWork),␍
+         110 │ + → → → → → blockers:·[],␍
+         111 │ + → → → → }␍
+         112 │ + → → → :·calculatePayrollWorkedMinutes(input.workRows,·input.period);␍
+     99  113 │     const blockers = [...workBlockers, ...input.blockers];␍
+    100      │ - → const·absenceDetails·=·buildPayrollAbsenceDetails(input.absenceRows,·input.period);␍
+         114 │ + → const·absenceDetails·=·buildPayrollAbsenceDetails(␍
+         115 │ + → → input.absenceRows,␍
+         116 │ + → → input.period,␍
+         117 │ + → );␍
+    101  118 │   ␍
+    102  119 │     const absenceDaysByEmployee = new Map<␍
+    ········ │
+    105  122 │     >();␍
+    106  123 │     for (const detail of absenceDetails) {␍
+    107      │ - → → const·employeeAbsences·=·absenceDaysByEmployee.get(detail.employeeId)·??·new·Map();␍
+         124 │ + → → const·employeeAbsences·=␍
+         125 │ + → → → absenceDaysByEmployee.get(detail.employeeId)·??·new·Map();␍
+    108  126 │       const existing = employeeAbsences.get(detail.categoryId);␍
+    109  127 │       employeeAbsences.set(detail.categoryId, {␍
+    ········ │
+    115  133 │     }␍
+    116  134 │   ␍
+    117      │ - → const·employeesWithBlockers·=·new·Set(blockers.map((blocker)·=>·blocker.employeeId));␍
+         135 │ + → const·employeesWithBlockers·=·new·Set(␍
+         136 │ + → → blockers.map((blocker)·=>·blocker.employeeId),␍
+         137 │ + → );␍
+    118  138 │     const employees = input.employees␍
+    119  139 │       .map((employeeRow) => {␍
+    120      │ - → → → const·workedHours·=·roundHours((workedMinutesByEmployee.get(employeeRow.id)·??·0)·/·60);␍
+    121      │ - → → → const·absenceDaysByCategory·=·[...(absenceDaysByEmployee.get(employeeRow.id)?.values()·??·[])]␍
+         140 │ + → → → const·workedHours·=·roundHours(␍
+         141 │ + → → → → (workedMinutesByEmployee.get(employeeRow.id)·??·0)·/·60,␍
+         142 │ + → → → );␍
+         143 │ + → → → const·absenceDaysByCategory·=·[␍
+         144 │ + → → → → ...(absenceDaysByEmployee.get(employeeRow.id)?.values()·??·[]),␍
+         145 │ + → → → ]␍
+    122  146 │           .map((absence) => ({ ...absence, days: roundDays(absence.days) }))␍
+    123  147 │           .sort((a, b) => a.categoryName.localeCompare(b.categoryName));␍
+    ········ │
+    136  160 │       organizationName: input.organizationName,␍
+    137  161 │       period: input.period,␍
+    138      │ - → → generatedAt:·input.generatedAt.toUTC().toISO()·??·input.generatedAt.toISO()·??·"",␍
+         162 │ + → → generatedAt:␍
+         163 │ + → → → input.generatedAt.toUTC().toISO()·??·input.generatedAt.toISO()·??·"",␍
+    139  164 │       generatedBy: input.generatedBy,␍
+    140  165 │       totals: {␍
+    141  166 │         employeeCount: employees.length,␍
+    142  167 │         totalWorkedHours: roundHours(␍
+    143      │ - → → → → employees.reduce((total,·employeeRow)·=>·total·+·employeeRow.workedHours,·0),␍
+         168 │ + → → → → employees.reduce(␍
+         169 │ + → → → → → (total,·employeeRow)·=>·total·+·employeeRow.workedHours,␍
+         170 │ + → → → → → 0,␍
+         171 │ + → → → → ),␍
+    144  172 │         ),␍
+    145  173 │         blockerCount: blockers.length,␍
+    ········ │
+    159  187 │     workRows: PayrollSummaryWorkRow[],␍
+    160  188 │     period: Pick<PayrollPeriod, "start" | "end">,␍
+    161      │ - ):·{·workedMinutesByEmployee:·Map<string,·number>;·blockers:·PayrollBlocker[]·}·{␍
+         189 │ + ):·{␍
+         190 │ + → workedMinutesByEmployee:·Map<string,·number>;␍
+         191 │ + → blockers:·PayrollBlocker[];␍
+         192 │ + }·{␍
+    162  193 │     const workedMinutesByEmployee = new Map<string, number>();␍
+    163  194 │     const blockers: PayrollBlocker[] = [];␍
+    164  195 │     for (const row of workRows) {␍
+    165  196 │       const allocation = allocateProtectedMinutes(␍
+    166      │ - → → → {·startAt:·row.startAt,·endAt:·row.endAt,·storedMinutes:·row.durationMinutes·},␍
+         197 │ + → → → {␍
+         198 │ + → → → → startAt:·row.startAt,␍
+         199 │ + → → → → endAt:·row.endAt,␍
+         200 │ + → → → → storedMinutes:·row.durationMinutes,␍
+         201 │ + → → → },␍
+    167  202 │         employeePayrollWindow(period.start, period.end, row.timezone),␍
+    168  203 │       );␍
+    ········ │
+    226  261 │         // A finding or identifier field names several employees: one blocker ID each.␍
+    227  262 │         id:␍
+    228      │ - → → → → blocker.kind·===·"uncertain_historical_work"·||·blocker.kind·===·"missing_identifier"␍
+         263 │ + → → → → blocker.kind·===·"uncertain_historical_work"·||␍
+         264 │ + → → → → blocker.kind·===·"missing_identifier"␍
+    229  265 │             ? createHash("sha256")␍
+    230  266 │                 .update(`${blocker.sourceId}\u0000${blocker.employeeId}`)␍
+    ········ │
+    314  350 │   export function buildOffboardingClockRepairBlockers(input: {␍
+    315  351 │     timezoneByEmployeeId: ReadonlyMap<string, string>;␍
+    316      │ - → repairs:·ReadonlyArray<Pick<OpenDepartureClockRepair,·"reviewId"·|·"employeeId"·|·"affectedEndAt">>;␍
+         352 │ + → repairs:·ReadonlyArray<␍
+         353 │ + → → Pick<OpenDepartureClockRepair,·"reviewId"·|·"employeeId"·|·"affectedEndAt">␍
+         354 │ + → >;␍
+    317  355 │   }): PayrollBlocker[] {␍
+    318  356 │     return input.repairs.map((repair) => {␍
+    ········ │
+    357  395 │     // Scoped collection (#322) owns work readiness; the organization-wide backfill must␍
+    358  396 │     // not run for it, so only absences keep their organization-wide (read-only) check.␍
+    359      │ - → const·scopedCollection·=·await·isPayrollWorkCollectionActive(db,·input.organizationId);␍
+         397 │ + → const·scopedCollection·=·await·isPayrollWorkCollectionActive(␍
+         398 │ + → → db,␍
+         399 │ + → → input.organizationId,␍
+         400 │ + → );␍
+    360  401 │     if (scopedCollection) {␍
+    361  402 │       await assertCanonicalAbsencesReady(input.organizationId);␍
+    ········ │
+    388  429 │     }␍
+    389  430 │   ␍
+    390      │ - → const·allowedEmployeeIds·=·Array.from(new·Set(input.allowedEmployeeIds)).toSorted();␍
+         431 │ + → const·allowedEmployeeIds·=·Array.from(␍
+         432 │ + → → new·Set(input.allowedEmployeeIds),␍
+         433 │ + → ).toSorted();␍
+    391  434 │     const identifierBlockers = (employeesWithRows: Iterable<string>) =>␍
+    392  435 │       getMissingIdentifierBlockers({␍
+    ········ │
+    397  440 │       });␍
+    398  441 │     if (scopedCollection) {␍
+    399      │ - → → const·[employeeRows,·collection,·absenceRows,·blockers]·=·await·Promise.all([␍
+    400      │ - → → → getEmployeeRows(input.organizationId,·allowedEmployeeIds),␍
+    401      │ - → → → readPayrollWorkCollection(db,·input.organizationId,·{␍
+    402      │ - → → → → startDate:·summaryInput.period.start,␍
+    403      │ - → → → → endDate:·summaryInput.period.end,␍
+    404      │ - → → → → employeeIds:·allowedEmployeeIds,␍
+    405      │ - → → → }),␍
+    406      │ - → → → getAbsenceRows(input.organizationId,·allowedEmployeeIds,·input.period),␍
+    407      │ - → → → getBlockers(␍
+  359 more lines truncated
+
+
+Checked 11 files in 63ms. No fixes applied.
+Found 11 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp

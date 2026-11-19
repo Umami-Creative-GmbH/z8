@@ -1,0 +1,11 @@
+{
+  "repo": "X:\\t3-code\\worktrees\\z8\\t3-eaa80aa0-d4431093adcdde65",
+  "pid": 42420,
+  "port": 51756,
+  "pidPathVerified": true,
+  "ownedTreeOnly": true,
+  "portClosed": true,
+  "containersRemoved": 3,
+  "ownership": "fixture cleanup rechecked each named z8.agent-owned label",
+  "result": "supplemental repeat remains failed; prior successful observations preserved"
+}

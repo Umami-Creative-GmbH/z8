@@ -1,0 +1,37 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/apps/webapp
+
+ ❯ |unit| src/lib/navigation/route-metadata.test.ts (39 tests | 1 failed | 38 skipped) 4ms
+   ❯ route metadata (39)
+     × adopts the payslip batch start heading without adopting batch detail 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/lib/navigation/route-metadata.test.ts > route metadata > adopts the payslip batch start heading without adopting batch detail
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/navigation/route-metadata.test.ts:6:69
+      4| describe("route metadata", () => {
+      5|  it("adopts the payslip batch start heading without adopting batch det…
+      6|   expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).to…
+       |                                                                     ^
+      7|   expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch…
+      8|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 38 skipped (39)
+   Start at  19:45:33
+   Duration  170ms (transform 48%, setup 38%, import 5%, tests 5%, worker 4%)
+

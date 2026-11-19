@@ -1,0 +1,67 @@
+{
+  "phase": "red-01",
+  "realClientHook": true,
+  "realBrowser": true,
+  "testServerModelsConsumedTemporaryObjects": true,
+  "fullApplicationOrCanonicalStorage": false,
+  "sourceSha256": "d00f904d1a7443d54064099badff58574f0accd9c6a54fd9e97e4303a76359f5",
+  "observed": {
+    "batch": "probe-batch-2",
+    "staged": 0,
+    "failed": 1,
+    "status": "Processing failed",
+    "error": "The same PDF must stage in a second batch after the first consumes its temporary object\n\n0 !== 1\n"
+  },
+  "events": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/caller.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404
+    },
+    {
+      "method": "POST",
+      "path": "/api/tus",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/tus/upload-1",
+      "status": 204
+    },
+    {
+      "method": "POST",
+      "path": "/api/upload/personnel-file/payslip-batch",
+      "status": 200
+    },
+    {
+      "method": "HEAD",
+      "path": "/api/tus/upload-1",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/upload/personnel-file/payslip-batch",
+      "status": 500
+    }
+  ],
+  "staged": [
+    {
+      "batchId": "probe-batch-1",
+      "fileName": "300.pdf",
+      "key": "upload-1"
+    }
+  ],
+  "browserClosed": true,
+  "listenerClosed": true,
+  "exit": 1
+}

@@ -75,8 +75,10 @@
         "title": "Trendy analityczne",
         "viewFull": "Zobacz pełną analitykę"
       },
+      "scope": "Raportowanie na poziomie całej platformy",
       "sectionDescription": "Zaktualizowano na podstawie bieżących danych platformy dla wybranego zakresu i przedziału.",
       "sectionTitle": "Trendy analityczne",
+      "seriesValues": "Wyświetl wartości serii",
       "title": "Analityka platformy",
       "values": {
         "notAvailable": "Niedostępne"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Nie udało się potwierdzić dostępu do platformy.",
       "analytics": {
         "title": "Trendy analityczne"
       },
-      "description": "Metryki platformy i szybkie akcje",
+      "analyticsUnavailable": "Analityka platformy jest niedostępna. Spróbuj ponownie.",
+      "confirmingAccess": "Potwierdzanie dostępu do platformy",
+      "groups": {
+        "access": "Zarządzanie dostępem",
+        "billing": "Rozliczenia i subskrypcje",
+        "operations": "Operacje platformy"
+      },
+      "loadingAnalytics": "Ładowanie analityki platformy",
+      "loadingMetrics": "Ładowanie metryk platformy",
       "metrics": {
         "bannedUsers": "Zbanowani użytkownicy",
         "bannedUsersDescription": "Ograniczony dostęp",
@@ -295,6 +306,9 @@
         "totalUsers": "Łączna liczba użytkowników",
         "totalUsersDescription": "Zarejestrowane konta na platformie"
       },
+      "metricsUnavailable": "Metryki platformy są niedostępne. Spróbuj ponownie.",
+      "platformDescription": "Przejrzyj konta, obszary robocze i aktywność na całej platformie, a następnie otwórz obszar roboczy administracji.",
+      "platformTitle": "Przegląd platformy",
       "quickActions": {
         "billing": {
           "description": "Metryki przychodów i status subskrypcji",
@@ -318,7 +332,7 @@
           "title": "Zarządzanie użytkownikami"
         }
       },
-      "title": "Przegląd"
+      "refreshAccess": "Odśwież przegląd, aby potwierdzić dostęp do platformy przed kontynuowaniem."
     },
     "settings": {
       "actions": {

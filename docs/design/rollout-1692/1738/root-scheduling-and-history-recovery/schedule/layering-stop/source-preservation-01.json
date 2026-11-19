@@ -1,0 +1,37 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "baseline": "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
+  "correction": "c41f1fcfb9b581b0f746b01ca68a079449f5a831",
+  "ownedCorrectionPaths": [
+    "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+    "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+    "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+    "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+    "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+    "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+    "docs/design/rollout-1692/1738.md"
+  ],
+  "priorPaths": 17277,
+  "priorUnchangedAtCorrection": true,
+  "laterHeadMetadataOnlyChanges": [
+    "docs/design/rollout-1692/README.md",
+    "docs/design/rollout-1692/integration.json"
+  ],
+  "metadataExpected": [
+    "docs/design/rollout-1692/README.md",
+    "docs/design/rollout-1692/integration.json"
+  ],
+  "inventory": {
+    "counts": {
+      "persistentPages": 153,
+      "redirectAliases": 19,
+      "sourcePageTemplates": 172,
+      "aliasTemplatesUnchangedFromInitialDev": 19
+    },
+    "persistentArrayCount": 153,
+    "aliasArrayCount": 19,
+    "mappedPathsExist": true,
+    "sourceInventoryUnchanged": true
+  },
+  "qualification": "17277 paths compare unchanged at the correction merge; later HEAD intentionally updates exactly README/integration metadata. No whole-head-tree equality to the correction tree is claimed."
+}

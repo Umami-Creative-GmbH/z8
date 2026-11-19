@@ -24,14 +24,18 @@ async function ChangePoliciesSettingsPageContent() {
 function ChangePoliciesSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.changePolicySettings",
 				labelDefault: "Loading change policy settings",
 			}}
 		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-48" aria-hidden="true" />
+				<Skeleton className="h-4 w-full max-w-xl" aria-hidden="true" />
+			</div>
+			<Skeleton className="h-9 w-64 max-w-full" aria-hidden="true" />
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
 		</LoadingRegion>
 	);

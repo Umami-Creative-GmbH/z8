@@ -9,9 +9,9 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	deleteWebhook,
 	regenerateSecret,
@@ -20,7 +20,6 @@ import {
 } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -39,34 +38,93 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { useRouter } from "@/navigation";
 import { WebhookDeliveryLogsDialog } from "./webhook-delivery-logs-dialog";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
+const ENDPOINT_LABEL_URL_LENGTH = 48;
+
+/** Identifies an endpoint in control names: its name, or a shortened URL when it has none. */
+export function webhookEndpointLabel(webhook: Pick<PublicWebhookEndpoint, "name" | "url">) {
+	const name = webhook.name.trim();
+	if (name) return name;
+	const url = webhook.url.replace(/^https?:\/\//, "");
+	return url.length > ENDPOINT_LABEL_URL_LENGTH
+		? `${url.slice(0, ENDPOINT_LABEL_URL_LENGTH - 1)}…`
+		: url;
+}
+
 interface WebhookEndpointCardProps {
 	webhook: PublicWebhookEndpoint;
+	/** Current list snapshot must still accept command completion. Server authorization is unchanged. */
+	canComplete?: () => boolean;
 	onUpdated: (webhook: WebhookEndpoint) => void;
 	onDeleted: (webhookId: string) => void;
 }
 
-export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpointCardProps) {
+function useWebhookEndpointCard({
+	webhook,
+	onUpdated,
+	onDeleted,
+	canComplete,
+}: WebhookEndpointCardProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
-	const [isPending, startTransition] = useTransition();
+	const [isRefreshing, startTransition] = useTransition();
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isLogsDialogOpen, setIsLogsDialogOpen] = useState(false);
 	const [isSecretDialogOpen, setIsSecretDialogOpen] = useState(false);
 	const [newSecret, setNewSecret] = useState<string | null>(null);
 
-	// Mask URL for display
-	const maskedUrl = webhook.url.length > 50 ? `${webhook.url.slice(0, 50)}…` : webhook.url;
+	const life = useRef<object | null>(null);
+	const pending = useRef(false);
+	const [commandPending, setCommandPending] = useState(false);
+	const [commandError, setCommandError] = useState<string | null>(null);
+	const isPending = commandPending || isRefreshing;
+	useLayoutEffect(() => {
+		life.current = {};
+		return () => {
+			life.current = null;
+			// Retiring the owner (unmount or Activity hide) discards a one-time secret, so it never
+			// reappears when the endpoint is shown again. Initial state already has no secret.
+			setNewSecret(null);
+			setIsSecretDialogOpen(false);
+		};
+	}, []);
+	async function runCommand(run: (current: () => boolean) => Promise<void>) {
+		if (pending.current || !life.current || (canComplete && !canComplete())) return;
+		const owner = life.current;
+		const current = () => life.current === owner && (canComplete?.() ?? true);
+		pending.current = true;
+		setCommandPending(true);
+		setCommandError(null);
+		return run(current)
+			.catch(() => {
+				if (current())
+					setCommandError(
+						t(
+							"webhooks:webhooks.command-unknown",
+							"Could not confirm the command. Refresh this endpoint before trying again.",
+						),
+					);
+			})
+			.finally(() => {
+				// Retirement suppresses effects, but only settlement releases the dispatched command.
+				pending.current = false;
+				setCommandPending(false);
+			});
+	}
 
 	// Format last delivery time
 	const lastDeliveryTime = webhook.lastDeliveredAt
-		? DateTime.fromJSDate(webhook.lastDeliveredAt).toRelative()
+		? Temporal.Instant.fromEpochMilliseconds(webhook.lastDeliveredAt.getTime()).toLocaleString(
+				undefined,
+				{ timeZone: "UTC", dateStyle: "medium", timeStyle: "short" },
+			)
 		: null;
 
 	// Get status badge
@@ -83,108 +141,174 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 		}
 		if (webhook.consecutiveFailures > 0) {
 			return (
-				<Badge variant="outline" className="border-yellow-500 text-yellow-600">
+				<Badge variant="warning">
 					{t("webhooks:webhooks.status.degraded", "Degraded")}
 				</Badge>
 			);
 		}
+		if (webhook.totalDeliveries === 0)
+			return (
+				<Badge variant="outline">
+					{t("webhooks:webhooks.status.untried", "No deliveries yet")}
+				</Badge>
+			);
 		return (
-			<Badge variant="default" className="bg-green-600">
+			<Badge variant="success">
 				{t("webhooks:webhooks.status.healthy", "Healthy")}
 			</Badge>
 		);
 	};
 
-	const handleToggleActive = async (checked: boolean) => {
-		const result = await updateWebhook({ webhookId: webhook.id, isActive: checked });
-		if (result.success) {
-			onUpdated(result.data.endpoint);
-			toast.success(
-				checked
-					? t("webhooks:webhooks.enabled", "Webhook enabled")
-					: t("webhooks:webhooks.disabled", "Webhook disabled"),
-			);
-			startTransition(() => refresh());
-		} else {
-			toast.error(result.error ?? t("webhooks:webhooks.update-failed", "Failed to update webhook"));
-		}
-	};
+	const handleToggleActive = (checked: boolean) =>
+		runCommand(async (current) => {
+			const result = await updateWebhook({ webhookId: webhook.id, isActive: checked });
+			if (!current()) return;
+			if (result.success) {
+				onUpdated(result.data.endpoint);
+				toast.success(
+					checked
+						? t("webhooks:webhooks.enabled", "Webhook enabled")
+						: t("webhooks:webhooks.disabled", "Webhook disabled"),
+				);
+				startTransition(() => refresh());
+			} else {
+				setCommandError(actionErrorMessage(t, result));
+			}
+		});
 
-	const handleDelete = async () => {
-		const result = await deleteWebhook(webhook.id);
-		if (result.success) {
-			onDeleted(webhook.id);
-			toast.success(t("webhooks:webhooks.deleted", "Webhook deleted"));
-			setIsDeleteDialogOpen(false);
-			startTransition(() => refresh());
-		} else {
-			toast.error(result.error ?? t("webhooks:webhooks.delete-failed", "Failed to delete webhook"));
-		}
-	};
+	const handleDelete = () =>
+		runCommand(async (current) => {
+			const result = await deleteWebhook(webhook.id);
+			if (!current()) return;
+			if (result.success) {
+				onDeleted(webhook.id);
+				toast.success(t("webhooks:webhooks.deleted", "Webhook deleted"));
+				setIsDeleteDialogOpen(false);
+				startTransition(() => refresh());
+			} else {
+				setCommandError(actionErrorMessage(t, result));
+			}
+		});
 
-	const handleTest = async () => {
-		const result = await testWebhook(webhook.id);
-		if (result.success) {
-			toast.success(t("webhooks:webhooks.test-sent", "Test webhook sent"));
-		} else {
-			toast.error(
-				result.error ?? t("webhooks:webhooks.test-failed", "Failed to send test webhook"),
-			);
-		}
-	};
+	const handleTest = () =>
+		runCommand(async (current) => {
+			const result = await testWebhook(webhook.id);
+			if (!current()) return;
+			if (result.success) {
+				toast.success(t("webhooks:webhooks.test-queued", "Test webhook queued"));
+			} else {
+				setCommandError(actionErrorMessage(t, result));
+			}
+		});
 
-	const handleRegenerateSecret = async () => {
-		const result = await regenerateSecret(webhook.id);
-		if (result.success) {
-			setNewSecret(result.data.secret);
-			setIsSecretDialogOpen(true);
-			toast.success(t("webhooks:webhooks.secret-regenerated", "Secret regenerated"));
-		} else {
-			toast.error(
-				result.error ?? t("webhooks:webhooks.regenerate-failed", "Failed to regenerate secret"),
-			);
-		}
+	const handleRegenerateSecret = () =>
+		runCommand(async (current) => {
+			const result = await regenerateSecret(webhook.id);
+			if (!current()) return;
+			if (result.success) {
+				setNewSecret(result.data.secret);
+				setIsSecretDialogOpen(true);
+				toast.success(t("webhooks:webhooks.secret-regenerated", "Secret regenerated"));
+			} else {
+				setCommandError(actionErrorMessage(t, result));
+			}
+		});
+
+	return {
+		t,
+		isPending,
+		pending,
+		commandError,
+		getStatusBadge,
+		handleToggleActive,
+		handleDelete,
+		handleTest,
+		handleRegenerateSecret,
+		isEditDialogOpen,
+		setIsEditDialogOpen,
+		isDeleteDialogOpen,
+		setIsDeleteDialogOpen,
+		isLogsDialogOpen,
+		setIsLogsDialogOpen,
+		isSecretDialogOpen,
+		setIsSecretDialogOpen,
+		newSecret,
+		setNewSecret,
+		lastDeliveryTime,
 	};
+}
+
+export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
+	const { webhook, onUpdated } = props;
+	const {
+		t,
+		isPending,
+		pending,
+		commandError,
+		getStatusBadge,
+		handleToggleActive,
+		handleDelete,
+		handleTest,
+		handleRegenerateSecret,
+		isEditDialogOpen,
+		setIsEditDialogOpen,
+		isDeleteDialogOpen,
+		setIsDeleteDialogOpen,
+		isLogsDialogOpen,
+		setIsLogsDialogOpen,
+		isSecretDialogOpen,
+		setIsSecretDialogOpen,
+		newSecret,
+		setNewSecret,
+		lastDeliveryTime,
+	} = useWebhookEndpointCard(props);
+	const endpointLabel = webhookEndpointLabel(webhook);
 
 	return (
 		<>
 			<Card>
 				<CardHeader className="flex flex-row items-start justify-between gap-y-0 pb-2">
-					<div className="space-y-1">
-						<div className="flex items-center gap-2">
-							<CardTitle className="text-base font-medium">{webhook.name}</CardTitle>
+					<div className="min-w-0 space-y-1">
+						<div className="flex flex-wrap items-center gap-2">
+							<CardTitle className="break-words text-base font-medium">{webhook.name}</CardTitle>
 							{getStatusBadge()}
 						</div>
-						<CardDescription className="font-mono text-xs">{maskedUrl}</CardDescription>
+						<CardDescription className="break-all font-mono text-xs">{webhook.url}</CardDescription>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex shrink-0 items-center gap-2">
 						<Switch
 							checked={webhook.isActive}
 							onCheckedChange={handleToggleActive}
 							disabled={isPending}
-							aria-label={t("webhooks:webhooks.toggle-active", "Toggle webhook active")}
+							aria-label={t("webhooks:webhooks.toggle-active-named", "Active: {endpoint}", {
+								endpoint: endpointLabel,
+							})}
 						/>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon">
+								<Button variant="ghost" size="icon" disabled={isPending}>
 									<IconDots className="size-4" aria-hidden="true" />
-									<span className="sr-only">{t("common.actions", "Actions")}</span>
+									<span className="sr-only">
+										{t("webhooks:webhooks.actions-named", "Actions for {endpoint}", {
+											endpoint: endpointLabel,
+										})}
+									</span>
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={handleTest}>
+								<DropdownMenuItem disabled={isPending} onClick={handleTest}>
 									<IconPlayerPlay className="mr-2 size-4" aria-hidden="true" />
 									{t("webhooks:webhooks.test", "Send Test")}
 								</DropdownMenuItem>
-								<DropdownMenuItem onClick={() => setIsLogsDialogOpen(true)}>
+								<DropdownMenuItem disabled={isPending} onClick={() => setIsLogsDialogOpen(true)}>
 									<IconHistory className="mr-2 size-4" aria-hidden="true" />
 									{t("webhooks:webhooks.view-logs", "View Logs")}
 								</DropdownMenuItem>
-								<DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+								<DropdownMenuItem disabled={isPending} onClick={() => setIsEditDialogOpen(true)}>
 									<IconEdit className="mr-2 size-4" aria-hidden="true" />
 									{t("common.edit", "Edit")}
 								</DropdownMenuItem>
-								<DropdownMenuItem onClick={handleRegenerateSecret}>
+								<DropdownMenuItem disabled={isPending} onClick={handleRegenerateSecret}>
 									<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 									{t("webhooks:webhooks.regenerate-secret", "Regenerate Secret")}
 								</DropdownMenuItem>
@@ -201,7 +325,12 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 					</div>
 				</CardHeader>
 				<CardContent>
-					<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+					{commandError && !isDeleteDialogOpen ? (
+						<p role="alert" className="mb-3 text-sm text-destructive">
+							{commandError}
+						</p>
+					) : null}
+					<div className="flex flex-wrap gap-4 text-sm text-muted-foreground tabular-nums">
 						<div>
 							<span className="font-medium">{t("webhooks:webhooks.events", "Events")}:</span>{" "}
 							{(webhook.subscribedEvents as string[]).length}
@@ -232,10 +361,8 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 				webhook={webhook}
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}
-				onSuccess={(updated) => {
-					onUpdated(updated);
-					setIsEditDialogOpen(false);
-				}}
+				onSuccess={onUpdated}
+				canComplete={props.canComplete}
 			/>
 
 			<WebhookDeliveryLogsDialog
@@ -254,11 +381,22 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 				}}
 			/>
 
-			<AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-				<AlertDialogContent>
+			<AlertDialog
+				open={isDeleteDialogOpen}
+				onOpenChange={(open) => {
+					if (!pending.current) setIsDeleteDialogOpen(open);
+				}}
+			>
+				<AlertDialogContent
+					onEscapeKeyDown={(event) => {
+						if (pending.current) event.preventDefault();
+					}}
+				>
 					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("webhooks:webhooks.delete-confirm.title", "Delete webhook?")}
+						<AlertDialogTitle className="break-words">
+							{t("webhooks:webhooks.delete-confirm.title-named", "Delete webhook {name}?", {
+								name: endpointLabel,
+							})}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -267,14 +405,18 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
+					{commandError ? (
+						<p role="alert" className="text-sm text-destructive">
+							{commandError}
+						</p>
+					) : null}
 					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
+						<AlertDialogCancel disabled={isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<Button variant="destructive" disabled={isPending} onClick={handleDelete}>
 							{t("common.delete", "Delete")}
-						</AlertDialogAction>
+						</Button>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

@@ -1,6 +1,9 @@
 import { eq } from "drizzle-orm";
 import { Suspense } from "react";
-import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
+import {
+	canReachFeatureSwitches,
+	getResolvedSettingsVisibility,
+} from "@/components/settings/settings-config";
 import { SettingsGrid } from "@/components/settings/settings-grid";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { db } from "@/db";
@@ -60,11 +63,12 @@ async function SettingsPageContent() {
 	});
 
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-4xl">
+		<div className="page-frame flex-1">
+			<div className="page-measure">
 				<SettingsGrid
 					visibleSettings={visibleSettings}
 					visibleGroups={visibleGroups}
+					canChangeFeatures={canReachFeatureSwitches(accessTier)}
 				/>
 			</div>
 		</div>

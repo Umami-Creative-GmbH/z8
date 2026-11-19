@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import { queryKeys } from "@/lib/query";
@@ -47,7 +48,14 @@ export function useTeamDetailPage(teamId: string) {
 		onSubmit: async ({ value }) => updateTeamMutation.mutate(value),
 	});
 
-	const { data: team, isLoading: isLoadingTeam } = useQuery({
+	const {
+		data: team,
+		isLoading: isLoadingTeam,
+		isError: teamLoadFailed,
+		error: teamLoadError,
+		isFetching: isFetchingTeam,
+		refetch: refetchTeam,
+	} = useQuery({
 		queryKey: queryKeys.teams.detail(teamId),
 		queryFn: async () => {
 			const result = await getTeam(teamId);
@@ -83,22 +91,40 @@ export function useTeamDetailPage(teamId: string) {
 		enabled: canManageSettings,
 	});
 
+	// Only the latest request may settle the picker, so a slow earlier response cannot overwrite it.
+	const availableEmployeesRequest = useRef(0);
+
 	async function loadAvailableEmployees() {
 		if (!team) return;
+
+		const request = ++availableEmployeesRequest.current;
+		dispatch({ type: "loadAvailableEmployeesStarted" });
+		const fallbackError = t(
+			"settings.teams.detail.addMember.loadError",
+			"Could not load employees to add",
+		);
 
 		// Only the current roster can join a team (#1438).
 		const result = await listEmployeesForSelect({
 			limit: 1000,
 			excludeIds: extractTeamMemberIds(team),
 			status: "current",
-		});
+		}).catch(() => null);
 
-		if (result.success && result.data) {
+		if (request !== availableEmployeesRequest.current) return;
+
+		if (result?.success && result.data) {
 			dispatch({
 				type: "setAvailableEmployees",
 				employees: result.data.employees,
 			});
+			return;
 		}
+
+		dispatch({
+			type: "loadAvailableEmployeesFailed",
+			error: (result && !result.success && result.error) || fallbackError,
+		});
 	}
 
 	const updateTeamMutation = useMutation({
@@ -311,8 +337,12 @@ export function useTeamDetailPage(teamId: string) {
 		handleAddMember,
 		handleDeleteTeam,
 		handleRemoveMember,
+		isFetchingTeam,
 		isLoadingTeam,
 		loading,
+		refetchTeam,
+		teamLoadError,
+		teamLoadFailed,
 		loadAvailableEmployees,
 		managerOptions,
 		removeMemberMutation,
