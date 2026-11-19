@@ -1,6 +1,5 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
@@ -14,13 +13,14 @@ import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { parseAbsencesUrlState } from "@/lib/absences/absences-url";
 import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
-import { getTranslate } from "@/tolgee/server";
 import {
-	getAbsenceEntries,
-	getCurrentEmployee,
-	getHolidays,
-	getVacationBalanceResult,
-} from "./actions";
+	instantToCanonicalString,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { getTranslate } from "@/tolgee/server";
+import { getCurrentEmployee, getVacationBalanceResult } from "./actions";
+import { readAbsenceCalendarYear } from "./calendar-year";
 import { getAbsenceCategories } from "./queries";
 
 interface AbsencesPageProps {
@@ -52,38 +52,26 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 	const timezone = org?.timezone || "UTC";
 	// The employee's current local calendar year must be resolved per request.
 	await connection();
-	const now = DateTime.now().setZone(timezone);
-	const nowIso = now.toUTC().toISO();
-	if (!nowIso) {
-		throw new RangeError("Could not resolve the current instant");
-	}
-	const calendarYear = now.year;
-	const currentDate =
-		now.toISODate() ?? DateTime.utc().toISODate() ?? "9999-12-31";
+	const now = systemClock.nowInstant();
+	const nowIso = instantToCanonicalString(now);
+	const today = plainDateAt(now, timezone);
+	const calendarYear = today.year;
+	const currentDate = today.toString();
 
 	// The record view follows the linked year; the balance stays on the current calendar year.
 	const { view: initialView, year: recordYear } = parseAbsencesUrlState(
 		query,
 		calendarYear,
 	);
-	const calendarStart = DateTime.fromObject(
-		{ year: recordYear, month: 1, day: 1 },
-		{ zone: timezone },
-	).startOf("day");
-	const calendarEnd = calendarStart.endOf("year");
-	const calendarStartDate = calendarStart.toISODate() ?? `${recordYear}-01-01`;
-	const calendarEndDate = calendarEnd.toISODate() ?? `${recordYear}-12-31`;
 
 	// Fetch all data in parallel
 	const [
 		{ balance: vacationBalance, configuration },
-		absences,
-		holidays,
+		{ absences, holidays },
 		categories,
 	] = await Promise.all([
 		getVacationBalanceResult(employee.id, calendarYear, timezone),
-		getAbsenceEntries(employee.id, calendarStartDate, calendarEndDate),
-		getHolidays(employee.id, calendarStart.toJSDate(), calendarEnd.toJSDate()),
+		readAbsenceCalendarYear(employee.id, recordYear),
 		getAbsenceCategories(employee.organizationId),
 	]);
 

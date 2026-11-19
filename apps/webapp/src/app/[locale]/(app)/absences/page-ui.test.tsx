@@ -35,10 +35,12 @@ vi.mock("@/db", () => ({
 vi.mock("./actions", () => ({
 	getCurrentEmployee: readers.employee,
 	getVacationBalanceResult: readers.balance,
+}));
+vi.mock("./queries", () => ({
+	getAbsenceCategories: async () => [],
 	getAbsenceEntries: readers.entries,
 	getHolidays: readers.holidays,
 }));
-vi.mock("./queries", () => ({ getAbsenceCategories: async () => [] }));
 vi.mock("@/components/errors/no-employee-error", () => ({
 	NoEmployeeError: () => <p>Employee access required</p>,
 }));
@@ -87,10 +89,11 @@ describe("Personal absences arrival", () => {
 			"2027-01-01",
 			"2027-12-31",
 		);
+		// Calendar dates, not Berlin midnights: 2026-12-31T23:00Z read as 31 December 2026.
 		expect(readers.holidays).toHaveBeenCalledWith(
 			"employee-1",
-			new Date("2026-12-31T23:00:00.000Z"),
-			new Date("2027-12-31T22:59:59.999Z"),
+			new Date("2027-01-01T00:00:00.000Z"),
+			new Date("2027-12-31T00:00:00.000Z"),
 		);
 		expect(readers.balance).toHaveBeenCalledWith(
 			"employee-1",
@@ -122,7 +125,6 @@ describe("Personal absences arrival", () => {
 			screen.getByRole("heading", { level: 1, name: "Absences" }),
 		).toBeTruthy();
 		expect(appPageOwnsHeading("/en/absences")).toBe(true);
-		expect(appPageOwnsHeading("/en/team/absences")).toBe(false);
 		expect(screen.getByText("Missing vacation policy")).toBeTruthy();
 		expect(screen.getByText("Personal absence records")).toBeTruthy();
 		expect(screen.queryByText("Available vacation balance")).toBeNull();

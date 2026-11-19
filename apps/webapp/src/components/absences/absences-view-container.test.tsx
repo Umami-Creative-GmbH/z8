@@ -202,6 +202,11 @@ function requestDialog() {
 	return screen.getByTestId("request-absence-dialog");
 }
 
+// The view keeps its view and year in the URL; a tab click in one test must not leak into the next.
+beforeEach(() => {
+	window.history.replaceState(null, "", "/");
+});
+
 describe("absence day popover (#1863)", () => {
 	beforeEach(() => {
 		mockGetAbsenceCalendarYearData.mockReset();
@@ -677,6 +682,7 @@ describe("absences view and year in the URL (#1864)", () => {
 	}
 
 	it("arrives on the linked view and year without a client read", () => {
+		window.history.replaceState(null, "", "/en/absences?view=table&year=2027");
 		render(
 			<AbsencesViewContainer {...baseProps} year={2027} initialView="table" />,
 		);
@@ -733,6 +739,7 @@ describe("absences view and year in the URL (#1864)", () => {
 	});
 
 	it("takes a fresh server snapshot for a linked year", () => {
+		window.history.replaceState(null, "", "/en/absences?year=2027");
 		const { rerender } = render(
 			<AbsencesViewContainer {...baseProps} year={2027} />,
 		);
@@ -782,7 +789,28 @@ describe("absences view and year in the URL (#1864)", () => {
 		expect(currentSearch()).toBe("");
 	});
 
+	it("restores the URL's view and year when it remounts with props of another entry", async () => {
+		// e.g. back navigation that reuses a server render of the entry before `replaceState`
+		mockGetAbsenceCalendarYearData.mockResolvedValue({
+			absences: [],
+			holidays: [holiday("restored", "Restored holiday", "2027-03-01")],
+		});
+		window.history.replaceState(null, "", "/en/absences?utm=mail&view=table&year=2027");
+
+		render(<AbsencesViewContainer {...baseProps} />);
+
+		expect(
+			screen.getByRole("tab", { name: "Table" }).getAttribute("aria-selected"),
+		).toBe("true");
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: "2027", level: 2 })).toBeTruthy(),
+		);
+		expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2027);
+		expect(currentSearch()).toBe("?utm=mail&view=table&year=2027");
+	});
+
 	it("stops year navigation at the edges of the supported range", () => {
+		window.history.replaceState(null, "", "/en/absences?year=2100");
 		const { unmount } = render(
 			<AbsencesViewContainer {...baseProps} year={2100} />,
 		);
@@ -790,6 +818,7 @@ describe("absences view and year in the URL (#1864)", () => {
 			screen.getByRole("button", { name: "Next year" }).hasAttribute("disabled"),
 		).toBe(true);
 		unmount();
+		window.history.replaceState(null, "", "/en/absences?year=1900");
 		render(<AbsencesViewContainer {...baseProps} year={1900} />);
 		expect(
 			screen

@@ -8,7 +8,7 @@ import {
 	IconTable,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Temporal } from "temporal-polyfill";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
@@ -30,19 +30,22 @@ import { OwnAbsenceActionsProvider } from "./own-absence-actions";
 import { OwnAbsenceChangeRequests } from "./own-absence-change-requests";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
 
+/** The view and year the browser's URL names. */
+function readAbsencesUrl(todayYear: number): AbsencesUrlState {
+	const params = new URL(window.location.href).searchParams;
+	return parseAbsencesUrlState(
+		{ view: params.get("view"), year: params.get("year") },
+		todayYear,
+	);
+}
+
 /**
  * Replaces the view or year in the URL without a navigation or a history entry, so a reload or
  * a shared link returns to them. Next keeps its router state in step with `replaceState`.
  */
 function replaceAbsencesUrl(change: Partial<AbsencesUrlState>, todayYear: number) {
 	const url = new URL(window.location.href);
-	const current = parseAbsencesUrlState(
-		{
-			view: url.searchParams.get("view"),
-			year: url.searchParams.get("year"),
-		},
-		todayYear,
-	);
+	const current = readAbsencesUrl(todayYear);
 	const search = absencesSearch(
 		{ ...current, ...change },
 		todayYear,
@@ -87,7 +90,13 @@ export function AbsencesViewContainer({
 		open: boolean;
 		initialDate?: string;
 	}>({ open: false });
-	const [activeView, setActiveView] = useState<AbsencesView>(initialView);
+	const todayYear = Temporal.PlainDate.from(currentDate).year;
+	// Back/forward navigation can remount this view with a server render of the entry before
+	// `replaceState` changed it; the URL is what the user returned to. While hydrating, the URL is
+	// the one the server rendered, so this matches `initialView`.
+	const [activeView, setActiveView] = useState<AbsencesView>(() =>
+		typeof window === "undefined" ? initialView : readAbsencesUrl(todayYear).view,
+	);
 	const [calendarData, setCalendarData] = useState(() => ({
 		sourceYear: year,
 		sourceAbsences: absences,
@@ -101,8 +110,12 @@ export function AbsencesViewContainer({
 	const [yearLoad, setYearLoad] = useState<{
 		year: number;
 		status: "pending" | "failed";
-	} | null>(null);
-	const todayYear = Temporal.PlainDate.from(currentDate).year;
+	} | null>(() => {
+		// The year counterpart of the view's initializer: another URL year starts out loading.
+		const urlYear =
+			typeof window === "undefined" ? year : readAbsencesUrl(todayYear).year;
+		return urlYear === year ? null : { year: urlYear, status: "pending" };
+	});
 	// The URL props last seen; `navigations` counts the ones that moved to another year.
 	const [urlProps, setUrlProps] = useState({ year, initialView, navigations: 0 });
 
@@ -149,12 +162,12 @@ export function AbsencesViewContainer({
 	const calendarAbsences = calendarData.absences;
 	const calendarHolidays = calendarData.holidays;
 
-	const reloadYearData = async (requestedYear: number, reportFailure = false) => {
+	/** Reads a year whose load is already shown as pending. */
+	const loadYearData = async (requestedYear: number, reportFailure: boolean) => {
 		const sourceAbsences = absences;
 		const sourceHolidays = holidays;
 		const requestId = ++yearRequestId.current;
 		latestRequestedYearRef.current = requestedYear;
-		setYearLoad({ year: requestedYear, status: "pending" });
 		try {
 			const data = await getAbsenceCalendarYearData(requestedYear);
 			const isLatestRequest =
@@ -184,7 +197,23 @@ export function AbsencesViewContainer({
 		}
 	};
 
+	const reloadYearData = (requestedYear: number, reportFailure = false) => {
+		setYearLoad({ year: requestedYear, status: "pending" });
+		return loadYearData(requestedYear, reportFailure);
+	};
+
 	useViewRefresh(() => reloadYearData(latestRequestedYearRef.current, true));
+
+	// Starts the read for a URL year that arrived as initial pending state, unless a year
+	// change already started another read.
+	const resumeYearLoad = useEffectEvent(() => {
+		if (yearLoad?.status === "pending" && yearRequestId.current === 0)
+			void loadYearData(yearLoad.year, false);
+	});
+	useEffect(() => {
+		const timeout = setTimeout(resumeYearLoad, 0);
+		return () => clearTimeout(timeout);
+	}, []);
 
 	const handleYearChange = (nextYear: number) => {
 		void reloadYearData(nextYear);
