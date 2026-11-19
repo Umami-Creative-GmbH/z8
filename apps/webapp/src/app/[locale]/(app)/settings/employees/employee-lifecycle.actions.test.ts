@@ -709,12 +709,14 @@ describe("employee lifecycle actions", () => {
 	});
 
 	it("does not update or audit an already active reactivation retry", async () => {
-		const { update } = setup();
+		const { auditRows, update } = setup();
 
 		const result = await reactivateEmployeeAction(employeeId);
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(update).not.toHaveBeenCalled();
+		expect(auditRows).toEqual([]);
+		expect(mocks.forwardAuditToExternalService).not.toHaveBeenCalled();
 		expect(mocks.logAudit).not.toHaveBeenCalled();
 		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
 		expect(mocks.reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
