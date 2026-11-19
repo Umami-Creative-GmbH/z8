@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
+import { TFormTextareaField } from "@/components/ui/tanstack-form-textarea";
 import { comparePlainDates, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type {
@@ -493,22 +493,13 @@ function BulkReimbursementForm({
 			</form.Field>
 			<form.Field name="note" validators={validators("note")}>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>
-							{t("travelExpenses.settlement.form.note", "Note (optional)")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Textarea
-								name="note"
-								rows={2}
-								maxLength={SETTLEMENT_NOTE_MAX_LENGTH}
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
+					<TFormTextareaField
+						field={field}
+						label={t("travelExpenses.settlement.form.note", "Note (optional)")}
+						name="note"
+						rows={2}
+						maxLength={SETTLEMENT_NOTE_MAX_LENGTH}
+					/>
 				)}
 			</form.Field>
 			<SkippedList skipped={skipped} />

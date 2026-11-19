@@ -17,6 +17,7 @@ import {
 	normalizeTimeCorrectionWorkflowPayload,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
 
@@ -172,13 +173,7 @@ async function loadTimeCorrections(
 			offset,
 		})) as TimeCorrectionRow[];
 		if (rows.length === 0) break;
-		const periodsById = await loadLegacyTimeCorrectionPeriods(db, input, rows);
-		const listings = await Promise.all(
-			rows.map(async (row) => ({
-				row,
-				listing: await listLegacyTimeCorrection(db, row, periodsById.get(row.entityId)),
-			})),
-		);
+		const listings = await loadLegacyTimeCorrectionListings(db, input, rows);
 
 		for (const { row, listing } of listings) {
 			if (!listing) continue;
@@ -261,10 +256,9 @@ export async function findTimeCorrectionsListedInMyRequests(
 			inArray(approvalRequest.entityId, workPeriodIds),
 		),
 	})) as TimeCorrectionRow[];
-	const periodsById = await loadLegacyTimeCorrectionPeriods(database, input, rows);
+	const listings = await loadLegacyTimeCorrectionListings(database, input, rows);
 	const legacyWorkflowIds = new Set<string>();
-	for (const row of rows) {
-		const listing = await listLegacyTimeCorrection(database, row, periodsById.get(row.entityId));
+	for (const { row, listing } of listings) {
 		if (!listing) continue;
 		if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
 		if (listing.status === "pending") listed.add(row.entityId);
@@ -335,12 +329,12 @@ async function listLegacyTimeCorrection(
 	return { workflowId: metadata.workflowId, status, availableActions };
 }
 
-async function loadLegacyTimeCorrectionPeriods(
+async function loadLegacyTimeCorrectionListings(
 	database: SelfServiceDatabase,
 	input: { organizationId: string; employeeId: string },
 	rows: TimeCorrectionRow[],
-): Promise<Map<string, LegacyTimeCorrectionPeriod>> {
-	if (rows.length === 0) return new Map();
+) {
+	if (rows.length === 0) return [];
 	const periods = await database.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.organizationId, input.organizationId),
@@ -352,7 +346,12 @@ async function loadLegacyTimeCorrectionPeriods(
 		),
 		columns: { id: true, clockInId: true, clockOutId: true, pendingChanges: true },
 	});
-	return new Map(periods.map((period) => [period.id, period]));
+	const periodsById = new Map(periods.map((period) => [period.id, period]));
+	// Limit evidence reads on the pool. A transaction shares one PostgreSQL connection.
+	return mapConcurrently(rows, database === db ? 4 : 1, async (row) => ({
+		row,
+		listing: await listLegacyTimeCorrection(database, row, periodsById.get(row.entityId)),
+	}));
 }
 
 function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {

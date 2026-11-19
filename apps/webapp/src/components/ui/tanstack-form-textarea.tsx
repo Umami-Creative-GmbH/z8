@@ -17,7 +17,7 @@ export function TFormTextareaField({
 }: {
 	field: TextField;
 	label: string;
-} & Pick<ComponentProps<typeof Textarea>, "disabled" | "maxLength" | "rows" | "required">) {
+} & Pick<ComponentProps<typeof Textarea>, "disabled" | "maxLength" | "name" | "rows" | "required">) {
 	const hasError = fieldHasError(field);
 	return (
 		<TFormItem>
