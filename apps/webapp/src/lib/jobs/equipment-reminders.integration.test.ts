@@ -334,6 +334,29 @@ it("recalculates corrected deadlines and suppresses queued notices for the old o
 	expect(await inbox()).toHaveLength(1);
 	expect(harness.mail).toHaveBeenCalledTimes(1);
 });
+it("discovers partially settled assignments and excludes fully settled assignments", async () => {
+	const settled = await issue();
+	const partial = await issue();
+	for (const [assignmentId, quantity] of [
+		[settled.id, 3],
+		[partial.id, 1],
+	] as const) {
+		await change({
+			kind: "receive_quantity",
+			assignmentId,
+			expectedRevision: 1,
+			quantity,
+			actualDate: "2026-03-01",
+			condition: "good",
+		});
+	}
+	const { listEquipmentReminderCandidates } =
+		await import("@/lib/organization/equipment/reminders");
+	const ids = (await listEquipmentReminderCandidates()).map((row) => row.id);
+	expect(ids).toContain(partial.id);
+	expect(ids).not.toContain(settled.id);
+});
+
 it("uses partial receipt and corrected receipt balances, then stops when fully returned", async () => {
 	const issued = await issue();
 	await change({
@@ -647,6 +670,11 @@ it("suppresses stale queued delivery after full settlement and rejects a foreign
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(0);
 	expect(await inbox(outsider.userId)).toHaveLength(0);
 	expect(harness.mail).not.toHaveBeenCalled();
+	const deliveries = await fixture.pool.query(
+		"select state from equipment_reminder_delivery where organization_id=$1 and assignment_id=$2",
+		[fixture.organizationId, issued.id],
+	);
+	expect(deliveries.rows).toEqual([{ state: "obsolete" }, { state: "obsolete" }]);
 	// Reopen one quantity through the public correction boundary; the foreign recipient remains forbidden.
 	const current = await assignment(issued.id);
 	await change({
