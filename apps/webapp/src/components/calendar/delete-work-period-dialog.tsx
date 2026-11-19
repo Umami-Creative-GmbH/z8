@@ -95,8 +95,8 @@ export function DeleteWorkPeriodDialog({
 				result.data.status === "approved"
 					? t("calendar.delete.applied", "Time entry deletion applied")
 					: t(
-							"calendar.delete.success",
-							"Deletion request submitted for manager approval",
+							"calendar.edit.time.submitted",
+							"Change submitted for manager approval",
 						),
 			);
 			onDeleteComplete?.();
@@ -119,13 +119,13 @@ export function DeleteWorkPeriodDialog({
 					<div className="flex items-center gap-2 text-destructive">
 						<IconAlertTriangle className="size-5" aria-hidden="true" />
 						<AlertDialogTitle>
-							{t("calendar.delete.title", "Request deletion?")}
+							{t("calendar.edit.deleteEntry", "Delete entry")}
 						</AlertDialogTitle>
 					</div>
 					<AlertDialogDescription>
 						{t(
-							"calendar.delete.description",
-							"This will hide the time entry after manager approval. The audit history and time-entry chain will be preserved.",
+							"calendar.delete.auditNote",
+							"Time entries will be marked as deleted for audit purposes.",
 						)}
 					</AlertDialogDescription>
 
@@ -181,13 +181,6 @@ export function DeleteWorkPeriodDialog({
 								rows={3}
 							/>
 						</div>
-
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"calendar.delete.auditNote",
-								"Time entries will be marked as deleted for audit purposes.",
-							)}
-						</p>
 					</div>
 				</AlertDialogHeader>
 
@@ -213,7 +206,7 @@ export function DeleteWorkPeriodDialog({
 						) : (
 							<IconTrash className="size-4 mr-1" aria-hidden="true" />
 						)}
-						{t("calendar.delete.confirm", "Delete entry")}
+						{t("calendar.edit.deleteEntry", "Delete entry")}
 					</Button>
 				</AlertDialogFooter>
 			</AlertDialogContent>
