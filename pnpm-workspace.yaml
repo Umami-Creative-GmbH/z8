@@ -103,3 +103,18 @@ patchedDependencies:
   drizzle-kit@0.31.11: patches/drizzle-kit@0.31.11.patch
   next@16.4.3: patches/next@16.4.3.patch
   next@16.4.6: patches/next@16.4.6.patch
+
+permissions:
+  '@tanstack/react-hotkeys':
+    skills: true
+  '@tanstack/react-table':
+    skills: [getting-started, migrate-v8-to-v9, table-state]
+
+skills:
+  dirs:
+    - .agent/skills
+    - .agents/skills
+    - .claude/skills
+    - .cursor/skills
+    - .gemini/skills
+    - .github/skills
