@@ -79,6 +79,13 @@ RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
     fi && \
     pnpm --filter webapp exec next build
 
+# Preserve pnpm's relative links and the files used by the logging worker.
+RUN --mount=type=bind,source=docker/scripts,target=/tmp/docker-scripts \
+    set -o pipefail && \
+    node /tmp/docker-scripts/standalone-runtime-files.mjs > /tmp/runtime-files && \
+    tar -cf - -T /tmp/runtime-files | tar -xf - -C apps/webapp/.next/standalone && \
+    rm /tmp/runtime-files
+
 FROM node:${NODE_VERSION}-alpine AS webapp
 
 RUN apk add --no-cache ca-certificates curl libc6-compat libstdc++ tini
