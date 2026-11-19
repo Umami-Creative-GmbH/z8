@@ -19,7 +19,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
+import { BalanceMinutesField, BalanceReasonField } from "./balance-adjustment-fields";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
@@ -305,26 +305,7 @@ function SetOpeningBalanceForm({
 							}}
 						>
 							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.employees.workBalance.minutes", "Minutes")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											name="minutes"
-											type="number"
-											inputMode="numeric"
-											min={0}
-											max={59}
-											step={1}
-											autoComplete="off"
-											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
-											onBlur={field.handleBlur}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
+								<BalanceMinutesField field={field} />
 							)}
 						</form.Field>
 					</div>
@@ -339,27 +320,10 @@ function SetOpeningBalanceForm({
 						}}
 					>
 						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)} required>
-									{t("settings.employees.workBalance.reason", "Reason")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Textarea
-										name="reason"
-										autoComplete="off"
-										rows={3}
-										maxLength={1000}
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
+							<BalanceReasonField field={field} placeholder={t(
 											"settings.employees.workBalance.openingBalanceReasonPlaceholder",
 											"For example: balance carried over from the previous system…",
-										)}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
+										)} />
 						)}
 					</form.Field>
 

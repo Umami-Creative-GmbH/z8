@@ -6,19 +6,12 @@ import { Fragment, useState } from "react";
 import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableFooter,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableRow } from "@/components/ui/table";
 import { buildCustomerReportDocument } from "@/lib/reports/project-report-export";
 import type { CustomerBillableReport } from "@/lib/reports/project-types";
 import {
 	BillableFigureCells,
+	BillableFigureTableHeader,
 	BillableFiguresCard,
 	useBillableFigureFormat,
 } from "./billable-figures";
@@ -97,25 +90,10 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 						</p>
 					) : (
 						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t("reports.projects.customers.customer", "Customer")}</TableHead>
-									<TableHead className="text-right">
-										{t("reports.projects.billable.billableHours", "Billable hours")}
-									</TableHead>
-									<TableHead className="text-right">
-										{t("reports.projects.billable.nonBillableHours", "Non-billable hours")}
-									</TableHead>
-									<TableHead className="text-right">
-										{t("reports.projects.billable.revenue", "Revenue")}
-									</TableHead>
-									{showMargin && (
-										<TableHead className="text-right">
-											{t("reports.projects.billable.margin", "Margin")}
-										</TableHead>
-									)}
-								</TableRow>
-							</TableHeader>
+							<BillableFigureTableHeader
+								rowLabel={t("reports.projects.customers.customer", "Customer")}
+								showMargin={showMargin}
+							/>
 							<TableBody>
 								{groups.map((row) => {
 									const isOpen = expanded.has(row.key);
