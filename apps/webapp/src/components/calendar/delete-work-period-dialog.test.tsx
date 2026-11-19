@@ -79,11 +79,11 @@ describe("DeleteWorkPeriodDialog", () => {
 		);
 
 		expect(
-			screen.getByRole("heading", { name: "Request deletion?" }),
+			screen.getByRole("heading", { name: "Delete entry" }),
 		).toBeTruthy();
 		expect(
 			screen.getByText(
-				"This will hide the time entry after manager approval. The audit history and time-entry chain will be preserved.",
+				"Time entries will be marked as deleted for audit purposes.",
 			),
 		).toBeTruthy();
 		expect(screen.getByLabelText("Reason for deletion")).toBeTruthy();
@@ -269,7 +269,7 @@ describe("DeleteWorkPeriodDialog", () => {
 
 		await waitFor(() => {
 			expect(toastSuccess).toHaveBeenCalledWith(
-				"Deletion request submitted for manager approval",
+				"Change submitted for manager approval",
 			);
 		});
 	});

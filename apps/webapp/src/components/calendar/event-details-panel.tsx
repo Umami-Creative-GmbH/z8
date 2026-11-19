@@ -12,6 +12,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import type { AbsenceEvent, CalendarEvent, WorkPeriodEvent } from "@/lib/calendar/types";
+import { runningWorkPeriodTitle } from "./running-work-period-labels";
 import { format } from "@/lib/datetime/luxon-utils";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
@@ -403,6 +404,9 @@ function getEventTypeLabel(event: CalendarEvent, t: Translate) {
 }
 
 function getEventTitle(event: CalendarEvent, t: Translate) {
+	if (event.type === "work_period" && event.metadata.isRunning) {
+		return runningWorkPeriodTitle(event, t);
+	}
 	return event.titleKey
 		? t(event.titleKey, event.title, getEventTranslationParams(event))
 		: event.title;

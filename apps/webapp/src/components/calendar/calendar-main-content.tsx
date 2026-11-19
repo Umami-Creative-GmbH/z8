@@ -89,24 +89,27 @@ export function CalendarMainContent({
 	const { t } = useTranslate();
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-			<div className="flex shrink-0 flex-wrap items-end justify-between gap-3 rounded-lg border bg-card p-4">
-				<div className="w-full min-w-0 sm:w-72">
+			{/* Whose calendar and which zone, as one plain row under the title rather than a card. */}
+			<div className="flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-3">
+				<div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-2">
 					{selectedEmployeeName ? (
-						<h2 className="mb-2 break-words text-base font-semibold">
+						<h2 className="break-words text-base font-semibold">
 							{selectedEmployeeName}
 						</h2>
 					) : null}
 					{!isManagerOrAbove && selectedEmployeeId === currentEmployeeId ? (
-						<p className="text-sm font-medium">
+						<p className="text-sm text-muted-foreground">
 							{t("calendar.employeeSelector.myCalendar", "My Calendar")}
 						</p>
 					) : null}
-					<CalendarEmployeeSelector
-						currentEmployeeId={currentEmployeeId}
-						selectedEmployeeId={selectedEmployeeId}
-						onEmployeeChange={onEmployeeChange}
-						isManagerOrAbove={isManagerOrAbove}
-					/>
+					<div className="w-full min-w-0 sm:w-auto sm:min-w-72 [&:empty]:hidden">
+						<CalendarEmployeeSelector
+							currentEmployeeId={currentEmployeeId}
+							selectedEmployeeId={selectedEmployeeId}
+							onEmployeeChange={onEmployeeChange}
+							isManagerOrAbove={isManagerOrAbove}
+						/>
+					</div>
 				</div>
 				<p className="min-w-0 break-words text-sm text-muted-foreground">
 					{t("calendar.context.timezone", "Calendar timezone")}

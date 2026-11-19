@@ -7,7 +7,8 @@ export function CalendarPageHeader() {
 	const { t } = useTranslate();
 	return (
 		<PageHeader
-			title={t("calendar.title", "Calendar")}
+			// The navigation's translated name; the page and its menu entry read the same.
+			title={t("nav.calendar", "Calendar")}
 			className="shrink-0"
 		/>
 	);

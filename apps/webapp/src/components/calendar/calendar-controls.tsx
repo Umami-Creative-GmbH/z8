@@ -17,7 +17,6 @@ import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 import { CalendarFiltersComponent } from "./calendar-filters";
-import { CalendarLegend } from "./calendar-legend";
 
 interface CalendarControlsProps {
 	currentEmployeeId?: string;
@@ -68,7 +67,6 @@ export function CalendarControls({
 					currentEmployeeId={currentEmployeeId}
 					idPrefix="calendar-desktop"
 				/>
-				<CalendarLegend />
 			</div>
 			<div
 				data-testid="calendar-mobile-controls"
@@ -101,7 +99,6 @@ export function CalendarControls({
 								currentEmployeeId={currentEmployeeId}
 								idPrefix="calendar-mobile"
 							/>
-							<CalendarLegend />
 						</div>
 					</SheetContent>
 				</Sheet>

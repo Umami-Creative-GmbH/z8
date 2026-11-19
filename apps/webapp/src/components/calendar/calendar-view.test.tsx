@@ -143,9 +143,6 @@ vi.mock("./calendar-filters", () => ({
 	CalendarFiltersComponent: () => <div data-testid="calendar-filters" />,
 }));
 
-vi.mock("./calendar-legend", () => ({
-	CalendarLegend: () => <div data-testid="calendar-legend" />,
-}));
 
 vi.mock("./event-details-panel", () => ({
 	EventDetailsPanel: () => <div data-testid="event-details" />,
@@ -1060,8 +1057,8 @@ describe("CalendarView", () => {
 
 		expect(controlsButton).toBeTruthy();
 		fireEvent.click(controlsButton);
+		// The filters carry the legend: each switch shows its entry colour.
 		expect(screen.getAllByTestId("calendar-filters")).toHaveLength(2);
-		expect(screen.getAllByTestId("calendar-legend")).toHaveLength(2);
 	});
 
 	it("uses one balance surface across responsive layouts", () => {
