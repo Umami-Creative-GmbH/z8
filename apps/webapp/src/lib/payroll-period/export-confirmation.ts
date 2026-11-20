@@ -4,14 +4,14 @@ import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { payrollExportCarriedDay, payrollExportJob, payrollSettledDay } from "@/db/schema";
-import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
+import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { loadExportCarriedDays, type PayrollCarriedDay } from "./carried-days";
+import { resolvePeriodEmployeeIds } from "./read-period";
 import {
 	insertSettlements,
 	type PayrollDayKey,
 	type PayrollSettlementActor,
 	planDays,
-	resolveScope,
 	type SettleDaysPlan,
 } from "./settlement";
 
@@ -105,13 +105,8 @@ export async function listExportsToConfirm(
 	actor: PayrollSettlementActor,
 	limit = 20,
 ): Promise<PayrollExportToConfirm[]> {
-	const allowed = new Set(
-		await resolvePayrollAccessibleEmployeeIds({
-			organizationId,
-			payrollEmployeeId: actor.employeeId,
-		}),
-	);
-	if (allowed.size === 0) return [];
+	if (!(await hasActivePayrollAccessGrant({ organizationId, payrollEmployeeId: actor.employeeId })))
+		return [];
 	const carriedJobs = db
 		.selectDistinct({ jobId: payrollExportCarriedDay.jobId })
 		.from(payrollExportCarriedDay)
@@ -173,9 +168,23 @@ export async function listExportsToConfirm(
 	]);
 	const carriedByJob = Map.groupBy(carried, (row) => row.jobId);
 	const settledByJob = new Map(settled.map((row) => [row.jobId, row.days]));
+	// The grant, plus its employees who left during or after each export's period (#1894).
+	const startDates = [...new Set(jobs.map((job) => job.filters.dateRange.start))];
+	const allowedByStart = new Map(
+		await Promise.all(
+			startDates.map(
+				async (startDate) =>
+					[
+						startDate,
+						new Set(await resolvePeriodEmployeeIds(organizationId, actor, startDate)),
+					] as const,
+			),
+		),
+	);
 
 	return jobs.flatMap((job) => {
 		const employees = carriedByJob.get(job.id) ?? [];
+		const allowed = allowedByStart.get(job.filters.dateRange.start) ?? new Set<string>();
 		if (employees.some((row) => !allowed.has(row.employeeId))) return [];
 		return [
 			{
@@ -208,7 +217,11 @@ async function resolveExport(
 		return { ok: false, rejection: { status: "not_found" } };
 	}
 	const [job] = await db
-		.select({ id: payrollExportJob.id, status: payrollExportJob.status })
+		.select({
+			id: payrollExportJob.id,
+			status: payrollExportJob.status,
+			filters: payrollExportJob.filters,
+		})
 		.from(payrollExportJob)
 		.where(
 			and(eq(payrollExportJob.id, exportId), eq(payrollExportJob.organizationId, organizationId)),
@@ -218,10 +231,19 @@ async function resolveExport(
 	if (job.status !== "completed") return { ok: false, rejection: { status: "not_completed" } };
 
 	const carried = await loadExportCarriedDays(db, { organizationId, jobId: job.id });
-	const employeeIds = [...new Set(carried.map((day) => day.employeeId))];
-	const scope = await resolveScope(organizationId, actor, employeeIds);
-	if (!scope.ok) {
-		return { ok: false, rejection: { status: "out_of_scope", employeeIds: scope.employeeIds } };
+	const employeeIds = [...new Set(carried.map((day) => day.employeeId))].toSorted();
+	const allowed = new Set(
+		await resolvePeriodEmployeeIds(organizationId, actor, job.filters.dateRange.start),
+	);
+	const outside = employeeIds.filter((id) => !allowed.has(id));
+	if (allowed.size === 0 || outside.length > 0) {
+		return {
+			ok: false,
+			rejection: {
+				status: "out_of_scope",
+				employeeIds: outside.length > 0 ? outside : employeeIds,
+			},
+		};
 	}
 	if (carried.length === 0) return { ok: false, rejection: { status: "nothing_carried" } };
 	return { ok: true, jobId: job.id, carried };

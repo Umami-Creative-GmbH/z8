@@ -405,9 +405,9 @@ async function resolveSettlement(
 
 /**
  * The requested employees when the grant covers every one of them, otherwise the
- * ones it does not cover. No request means the whole grant. Module-internal.
+ * ones it does not cover. No request means the whole grant.
  */
-export async function resolveScope(
+async function resolveScope(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	requested: readonly string[] | undefined,

@@ -74,15 +74,19 @@ export async function readExportCarriedDays(input: {
 	return carriedDaysOf(rows.employees);
 }
 
-/** Each employee's period days as carried values. */
+/**
+ * Each employee's period days as carried values. For an employee who left (#1894), the
+ * empty days after the last working day are not carried: the file pays nothing for them.
+ */
 export function carriedDaysOf(employees: readonly PayrollPeriodEmployee[]): PayrollCarriedDay[] {
 	return employees.flatMap((employee) =>
-		employee.days.map((day) => ({
-			employeeId: employee.id,
-			date: day.date,
-			timezone: employee.timezone,
-			...settledDayValues(day),
-		})),
+		employee.days.flatMap((day) => {
+			const values = settledDayValues(day);
+			const afterLeaving =
+				employee.departure != null && day.date > employee.departure.lastWorkingDay;
+			if (afterLeaving && values.creditedMinutes === 0 && values.absences.length === 0) return [];
+			return [{ employeeId: employee.id, date: day.date, timezone: employee.timezone, ...values }];
+		}),
 	);
 }
 

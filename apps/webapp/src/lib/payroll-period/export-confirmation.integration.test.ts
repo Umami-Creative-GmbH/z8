@@ -29,13 +29,21 @@ const { confirmExportAsPaid, listExportsToConfirm, previewConfirmExportAsPaid } 
 const admin = integrationAdminPool();
 const ORG = "t1899-org";
 const OTHER_ORG = "t1899-other";
-const users = ["t1899-owner", "t1899-holder", "t1899-anna", "t1899-ben", "t1899-foreign"];
+const users = [
+	"t1899-owner",
+	"t1899-holder",
+	"t1899-anna",
+	"t1899-ben",
+	"t1899-foreign",
+	"t1899-cara",
+];
 const ids = {
 	owner: "d1899000-0000-4000-8000-000000000001",
 	holder: "d1899000-0000-4000-8000-000000000002",
 	anna: "d1899000-0000-4000-8000-000000000003",
 	ben: "d1899000-0000-4000-8000-000000000004",
 	foreign: "d1899000-0000-4000-8000-000000000005",
+	cara: "d1899000-0000-4000-8000-000000000006",
 } as const;
 const november = { startDate: "2026-11-01", endDate: "2026-11-30", label: "November 2026" };
 const week = { startDate: "2026-11-09", endDate: "2026-11-15" };
@@ -111,6 +119,26 @@ async function exportConfig(organizationId: string) {
 	);
 }
 
+/** An effective departure whose last working day is `lastWorkingDay` (Europe/Berlin, winter). */
+async function leftOn(employeeId: string, lastWorkingDay: string) {
+	const cutoff = `${lastWorkingDay}T23:00:00Z`; // the next local midnight in winter time
+	await admin.query("update employee set is_active = false where id = $1", [employeeId]);
+	const { rows } = await admin.query(
+		`insert into employee_employment_period
+		   (organization_id, employee_id, status, started_at, ended_at, start_provenance)
+		 values ($1, $2, 'closed', '2026-01-01T00:00:00Z', $3, 'recorded') returning id`,
+		[ORG, employeeId, cutoff],
+	);
+	await admin.query(
+		`insert into employee_departure
+		   (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+		    cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
+		 values ($1, $2, $3, 'scheduled', $4, 'Europe/Berlin', $5, 't1899-owner', gen_random_uuid(),
+		         'test', 1, 'effective', $5)`,
+		[ORG, employeeId, rows[0].id, lastWorkingDay, cutoff],
+	);
+}
+
 let annaWorkId = "";
 let vacationId = "";
 
@@ -135,8 +163,15 @@ async function seed() {
 	await employee(ids.anna, "t1899-anna", ORG, "ANN-1");
 	await employee(ids.ben, "t1899-ben", ORG, "BEN-1");
 	await employee(ids.foreign, "t1899-foreign", OTHER_ORG, "FOR-1");
+	await employee(ids.cara, "t1899-cara", ORG, "CAR-1");
+	// An approved member: the grant then also covers its employees who left (#1894).
+	await admin.query(
+		`insert into member (id, organization_id, user_id, role, status, created_at)
+		 values ('t1899-m-holder', $1, 't1899-holder', 'member', 'approved', now())`,
+		[ORG],
+	);
 
-	// The holder's grant covers Anna only.
+	// The holder's grant covers Anna and Cara.
 	const { rows: grant } = await admin.query(
 		`insert into payroll_access_grant (organization_id, payroll_employee_id, scope, created_by, updated_at)
 		 values ($1, $2, 'specific', 't1899-owner', now()) returning id`,
@@ -144,8 +179,8 @@ async function seed() {
 	);
 	await admin.query(
 		`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
-		 values ($1, $2, $3, 't1899-owner')`,
-		[ORG, grant[0].id, ids.anna],
+		 values ($1, $2, $3, 't1899-owner'), ($1, $2, $4, 't1899-owner')`,
+		[ORG, grant[0].id, ids.anna, ids.cara],
 	);
 
 	await admin.query(
@@ -238,7 +273,12 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 
 	it("previews the newly settled, already settled and unclosed-month days without settling", async () => {
 		const jobId = await exportFile([ids.anna]);
-		await settleDays(ORG, holder, {}, { startDate: "2026-11-09", endDate: "2026-11-10" });
+		await settleDays(
+			ORG,
+			holder,
+			{ employeeIds: [ids.anna] },
+			{ startDate: "2026-11-09", endDate: "2026-11-10" },
+		);
 
 		const preview = await previewConfirmExportAsPaid(ORG, holder, jobId);
 
@@ -322,10 +362,32 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 		expect(await settledRowCount()).toBe(0);
 	});
 
+	it("settles an employee of the grant who left, up to the last working day", async () => {
+		await leftOn(ids.cara, "2026-11-11");
+		await work(ORG, ids.cara, "2026-11-10T08:00:00Z", "2026-11-10T12:00:00Z", 240);
+		const jobId = await exportFile([ids.anna, ids.cara]);
+
+		const result = await confirmExportAsPaid(ORG, holder, jobId);
+
+		expect(
+			result.status === "settled" &&
+				result.newlySettled.filter((day) => day.employeeId === ids.cara),
+		).toEqual([
+			{ employeeId: ids.cara, date: "2026-11-09" },
+			{ employeeId: ids.cara, date: "2026-11-10" },
+			{ employeeId: ids.cara, date: "2026-11-11" },
+		]);
+	});
+
 	it("lists the grant's completed exports with how many of their days are settled", async () => {
 		const jobId = await exportFile([ids.anna]);
 		await exportFile([ids.anna, ids.ben]);
-		await settleDays(ORG, holder, {}, { startDate: "2026-11-09", endDate: "2026-11-09" });
+		await settleDays(
+			ORG,
+			holder,
+			{ employeeIds: [ids.anna] },
+			{ startDate: "2026-11-09", endDate: "2026-11-09" },
+		);
 
 		const before = await listExportsToConfirm(ORG, holder);
 		await confirmExportAsPaid(ORG, holder, jobId);
