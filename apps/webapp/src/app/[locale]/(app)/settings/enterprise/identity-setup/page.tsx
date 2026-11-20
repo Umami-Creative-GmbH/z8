@@ -60,12 +60,13 @@ async function IdentitySettingsContent() {
 						"settings.enterpriseIdentitySetup.description",
 						"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
 					),
-					measure: true,
+					// The wizard bounds its own step column; its step list needs the room beside it.
 					panel: (
 						<IdentitySetupWizard
 							callbackBaseUrl={callbackBaseUrl}
 							initialSetup={setup}
 							organizationId={organizationId}
+							ssoProviders={providers}
 						/>
 					),
 				},
