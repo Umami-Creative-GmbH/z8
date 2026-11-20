@@ -2,10 +2,14 @@
 
 import { IconAlertTriangle, IconCircleCheck, IconConfetti } from "@tabler/icons-react";
 import { useLocale } from "next-intl";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
+import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
+import { PayrollDayPanel, type PayrollDaySelection } from "./payroll-day-panel";
 import { PayrollDaysGrid, payrollDaysFormat } from "./payroll-days-grid";
+import { PayrollDaysList } from "./payroll-days-list";
 import { PayrollPlaceholderTab } from "./payroll-workspace-tabs";
 import type { PayrollPeriodRequest, PayrollTranslate } from "./state";
 import { usePayrollPeriod } from "./use-payroll-period";
@@ -15,6 +19,8 @@ const SKELETON_ROWS = ["first", "second", "third", "fourth", "fifth", "sixth"] a
 /**
  * The Days tab: credited hours per employee and local day, with required hours, the
  * difference, absences and holidays. Everything shown comes from the payroll period read.
+ * A day opens a read-only side panel; below the mobile breakpoint the grid becomes a list
+ * of days for one employee at a time (#1894).
  */
 export function PayrollDaysTab({
 	filtersHaveNoMatches,
@@ -28,8 +34,12 @@ export function PayrollDaysTab({
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
+	const isMobile = useIsMobile();
 	const format = useMemo(() => payrollDaysFormat(locale), [locale]);
 	const { data, error, isPending } = usePayrollPeriod(request, refreshedAt);
+	const [selection, setSelection] = useState<PayrollDaySelection | null>(null);
+	const selectDay = (employee: PayrollPeriodEmployee, day: PayrollPeriodDay) =>
+		setSelection({ employee, day });
 
 	if (filtersHaveNoMatches) {
 		return (
@@ -70,9 +80,26 @@ export function PayrollDaysTab({
 
 	const dates = data.employees[0]?.days.map((day) => day.date) ?? [];
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex min-w-0 flex-col gap-3">
 			<PayrollDaysLegend t={t} />
-			<PayrollDaysGrid dates={dates} employees={data.employees} format={format} t={t} />
+			{isMobile ? (
+				<PayrollDaysList employees={data.employees} format={format} onSelectDay={selectDay} t={t} />
+			) : (
+				<PayrollDaysGrid
+					dates={dates}
+					employees={data.employees}
+					format={format}
+					onSelectDay={selectDay}
+					t={t}
+				/>
+			)}
+			<PayrollDayPanel
+				format={format}
+				onClose={() => setSelection(null)}
+				refreshedAt={refreshedAt}
+				selection={selection}
+				t={t}
+			/>
 		</div>
 	);
 }
