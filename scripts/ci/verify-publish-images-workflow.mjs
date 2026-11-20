@@ -185,6 +185,8 @@ if (webappBuilderStage) {
 	);
 }
 
+expect(!/arm64|ubuntu-24\.04-arm/i.test(workflow), "ARM64 image publishing is paused");
+
 expectPushPathFilters([
 	"apps/webapp/**",
 	"!apps/webapp/**/*.md",
@@ -265,17 +267,14 @@ if (publishTargetsJob) {
 		),
 	];
 	expect(
-		includeMatches.length === 6,
-		`publish-targets expected 6 matrix entries, found ${includeMatches.length}`,
+		includeMatches.length === 3,
+		`publish-targets expected 3 matrix entries, found ${includeMatches.length}`,
 	);
 
 	const expectedMatrixEntries = new Set([
 		"z8-webapp:docker/Dockerfile.webapp:amd64",
-		"z8-webapp:docker/Dockerfile.webapp:arm64",
 		"z8-worker:docker/Dockerfile.worker:amd64",
-		"z8-worker:docker/Dockerfile.worker:arm64",
 		"z8-migration:docker/Dockerfile.migration:amd64",
-		"z8-migration:docker/Dockerfile.migration:arm64",
 	]);
 
 	for (const match of includeMatches) {
@@ -334,7 +333,6 @@ if (publishManifestsJob) {
 			"uses: docker/setup-buildx-action@",
 			"uses: docker/login-action@",
 			"name: target-digest-${{ matrix.repository }}-amd64",
-			"name: target-digest-${{ matrix.repository }}-arm64",
 			"uses: docker/metadata-action@",
 			"type=raw,value=latest,enable={{is_default_branch}}",
 			"type=sha,prefix=sha-",
@@ -342,9 +340,7 @@ if (publishManifestsJob) {
 			"type=semver,pattern=v{{major}}.{{minor}}",
 			"type=semver,pattern=v{{major}}",
 			'AMD64_REFERENCE="$(tr -d \'\\n\' < "${DIGEST_ROOT}/targets/amd64/reference.txt")"',
-			'ARM64_REFERENCE="$(tr -d \'\\n\' < "${DIGEST_ROOT}/targets/arm64/reference.txt")"',
 			'"$AMD64_REFERENCE"',
-			'"$ARM64_REFERENCE"',
 		],
 		"publish-manifests",
 	);
