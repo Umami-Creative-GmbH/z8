@@ -43,6 +43,8 @@ vi.mock("@tanstack/react-query", () => ({
 	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
 }));
 vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
+// The Days grid only displays the payroll period read; it has no seam of its own (#1891).
+vi.mock("./workspace/payroll-days-tab", () => ({ PayrollDaysTab: () => null }));
 vi.mock("./payroll-baselines-card", () => ({
 	PayrollBaselinesCard: () => null,
 }));

@@ -20,8 +20,13 @@ const DEFAULT_COLORS: Record<string, string> = {
 	custom: "#06b6d4", // cyan
 };
 
+/** A category's own colour, else the default colour of its type. */
+export function absenceCategoryColor(type: string | null, color?: string | null): string {
+	return color || (type ? DEFAULT_COLORS[type] : undefined) || DEFAULT_COLORS.custom;
+}
+
 export function CategoryBadge({ name, type, color, className }: CategoryBadgeProps) {
-	const badgeColor = color || DEFAULT_COLORS[type] || DEFAULT_COLORS.custom;
+	const badgeColor = absenceCategoryColor(type, color);
 
 	return (
 		<Badge

@@ -228,6 +228,24 @@ export const queryKeys = {
 				request.formatId,
 				request.employeeIds?.join(",") ?? "scope",
 			] as const,
+		/**
+		 * The payroll period read (#1891) behind the Days and Absences tabs. `refreshedAt`
+		 * is the summary's generation time, so a workspace refresh refetches it too.
+		 */
+		period: (request: {
+			startDate: string;
+			endDate: string;
+			employeeIds?: readonly string[];
+			refreshedAt: string;
+		}) =>
+			[
+				"payroll",
+				"period",
+				request.startDate,
+				request.endDate,
+				request.employeeIds?.join(",") ?? "scope",
+				request.refreshedAt,
+			] as const,
 	},
 
 	// Closed months

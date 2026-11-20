@@ -31,6 +31,8 @@ import {
 	type PayrollWorkspaceExportFormatId,
 	payrollWorkspaceExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
+import { readPeriodForEmployees } from "@/lib/payroll-period/read-period";
+import type { PayrollPeriodRead } from "@/lib/payroll-period/types";
 import {
 	exportPayrollSummaryToPDF,
 	generatePayrollPDFFilename,
@@ -86,6 +88,30 @@ export async function getPayrollWorkspaceSummaryAction(
 	return runPayrollWorkspaceAction((t) => buildScopedPayrollWorkspaceSummary(t, request));
 }
 
+/** The period's day rows and absence list (#1891), for the Days and Absences tabs. */
+export type PayrollPeriodView = Pick<PayrollPeriodRead, "period" | "employees" | "absences">;
+
+export async function getPayrollPeriodAction(
+	request: PayrollWorkspaceRequest,
+): Promise<ServerActionResult<PayrollPeriodView>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+		);
+		const read = await readPeriodForEmployees(
+			authContext.employee.organizationId,
+			{
+				employeeId: authContext.employee.id,
+				name: authContext.user.name || authContext.user.email,
+			},
+			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
+			{ employeeIds: scopedEmployeeIds },
+		);
+		return { period: read.period, employees: read.employees, absences: read.absences };
+	});
+}
+
 export async function dismissPayrollBlockerAction(
 	request: DismissPayrollBlockerRequest,
 ): Promise<ServerActionResult<{ dismissed: true }>> {
@@ -112,9 +138,7 @@ export async function dismissPayrollBlockerAction(
 					eq(payrollBlockerDismissal.sourceId, blockerId),
 				),
 			});
-		const dismissalIsInScope = (
-			dismissal: Awaited<ReturnType<typeof findExistingDismissal>>,
-		) =>
+		const dismissalIsInScope = (dismissal: Awaited<ReturnType<typeof findExistingDismissal>>) =>
 			dismissal?.organizationId === organizationId &&
 			dismissal.blockerType === blockerType &&
 			dismissal.sourceId === blockerId &&
@@ -575,10 +599,7 @@ function validatePayrollBlockerDismissalRequest(
 
 function throwPayrollBlockerAuthorizationError(t: PayrollTranslate, userId: string): never {
 	throw new AuthorizationError({
-		message: t(
-			"payroll.errors.blockerNotDismissible",
-			"Payroll blocker cannot be dismissed",
-		),
+		message: t("payroll.errors.blockerNotDismissible", "Payroll blocker cannot be dismissed"),
 		userId,
 		resource: "payroll_workspace",
 		action: "write",
