@@ -267,7 +267,14 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 							t={t}
 						/>
 					),
-					absences: <PayrollAbsencesTab t={t} />,
+					absences: (
+						<PayrollAbsencesTab
+							filtersHaveNoMatches={filtersHaveNoMatches}
+							refreshedAt={summary.generatedAt}
+							request={request}
+							t={t}
+						/>
+					),
 					export: (
 						<PayrollExportTab
 							dispatch={dispatch}
