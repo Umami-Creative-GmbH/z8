@@ -28,21 +28,6 @@ type DropdownMenuSelectEvent = React.SyntheticEvent<HTMLElement> & {
 	preventBaseUIHandler?: () => void;
 };
 
-type BaseUIPreventableEvent = React.SyntheticEvent<HTMLElement> & {
-	baseUIHandlerPrevented?: boolean;
-	preventBaseUIHandler?: () => void;
-};
-
-type DropdownMenuTriggerPointerDownEvent = Parameters<
-	NonNullable<DropdownMenuPrimitive.Trigger.Props["onPointerDown"]>
->[0];
-type DropdownMenuTriggerMouseDownEvent = Parameters<
-	NonNullable<DropdownMenuPrimitive.Trigger.Props["onMouseDown"]>
->[0];
-type DropdownMenuTriggerClickEvent = Parameters<
-	NonNullable<DropdownMenuPrimitive.Trigger.Props["onClick"]>
->[0];
-
 type DropdownMenuItemProps = Omit<DropdownMenuPrimitive.Item.Props, "onClick"> & {
 	asChild?: boolean;
 	inset?: boolean;
@@ -70,91 +55,46 @@ function DropdownMenuTrigger({
 	render,
 	...props
 }: DropdownMenuPrimitive.Trigger.Props & { asChild?: boolean }) {
-	const dispatchingPointerMouseDownRef = React.useRef(false);
-	const dispatchingPointerClickRef = React.useRef(false);
-	const skipNextMouseDownRef = React.useRef(false);
-	const skipNextClickRef = React.useRef(false);
-
-	const handlePointerDown: React.PointerEventHandler<HTMLElement> = (event) => {
-		onPointerDown?.(event as DropdownMenuTriggerPointerDownEvent);
-
-		if (event.defaultPrevented || disabled || event.button !== 0 || event.ctrlKey) {
+	// Base UI handles mouse presses on mousedown, including drag-to-select.
+	// Other pointers use the immediate pointerdown activation of this wrapper.
+	const pointerPressHandled = React.useRef(false);
+	const handlePointerDown: NonNullable<DropdownMenuPrimitive.Trigger.Props["onPointerDown"]> = (
+		event,
+	) => {
+		pointerPressHandled.current = false;
+		onPointerDown?.(event);
+		if (
+			event.defaultPrevented ||
+			event.baseUIHandlerPrevented ||
+			disabled ||
+			event.button !== 0 ||
+			event.ctrlKey ||
+			event.pointerType === "mouse"
+		)
 			return;
-		}
 
-		const element = event.currentTarget;
-		const MouseEventCtor = element.ownerDocument.defaultView?.MouseEvent ?? MouseEvent;
-		const mouseDownEvent = new MouseEventCtor("mousedown", {
-			altKey: event.altKey,
-			bubbles: true,
-			button: event.button,
-			buttons: event.buttons,
-			cancelable: true,
-			clientX: event.clientX,
-			clientY: event.clientY,
-			ctrlKey: event.ctrlKey,
-			metaKey: event.metaKey,
-			screenX: event.screenX,
-			screenY: event.screenY,
-			shiftKey: event.shiftKey,
-		});
-
-		dispatchingPointerMouseDownRef.current = true;
-		element.dispatchEvent(mouseDownEvent);
-		dispatchingPointerMouseDownRef.current = false;
-
-		const clickEvent = new MouseEventCtor("click", {
-			altKey: event.altKey,
-			bubbles: true,
-			button: event.button,
-			buttons: event.buttons,
-			cancelable: true,
-			clientX: event.clientX,
-			clientY: event.clientY,
-			ctrlKey: event.ctrlKey,
-			metaKey: event.metaKey,
-			screenX: event.screenX,
-			screenY: event.screenY,
-			shiftKey: event.shiftKey,
-		});
-
-		dispatchingPointerClickRef.current = true;
-		element.dispatchEvent(clickEvent);
-		dispatchingPointerClickRef.current = false;
-
-		skipNextMouseDownRef.current = true;
-		skipNextClickRef.current = true;
 		event.preventDefault();
-		element.ownerDocument.defaultView?.setTimeout(() => {
-			skipNextMouseDownRef.current = false;
-			skipNextClickRef.current = false;
-		}, 0);
+		event.preventBaseUIHandler();
+		event.currentTarget.click();
+		pointerPressHandled.current = true;
 	};
 
-	const handleMouseDown: React.MouseEventHandler<HTMLElement> = (event) => {
-		if (skipNextMouseDownRef.current && !dispatchingPointerMouseDownRef.current) {
-			skipNextMouseDownRef.current = false;
-			event.preventDefault();
-			(event as BaseUIPreventableEvent).preventBaseUIHandler?.();
-			return;
-		}
-
-		onMouseDown?.(event as DropdownMenuTriggerMouseDownEvent);
+	const handleMouseDown: NonNullable<DropdownMenuPrimitive.Trigger.Props["onMouseDown"]> = (
+		event,
+	) => {
+		onMouseDown?.(event);
+		if (pointerPressHandled.current) event.preventBaseUIHandler();
 	};
 
-	const handleClick: React.MouseEventHandler<HTMLElement> = (event) => {
-		if (skipNextClickRef.current && !dispatchingPointerClickRef.current) {
-			skipNextClickRef.current = false;
-			event.preventDefault();
-			(event as BaseUIPreventableEvent).preventBaseUIHandler?.();
+	const handleClick: NonNullable<DropdownMenuPrimitive.Trigger.Props["onClick"]> = (event) => {
+		// A physical release may arrive well after pointerdown. Keyboard and
+		// assistive-technology clicks have zero detail and can activate independently.
+		if (pointerPressHandled.current && event.detail > 0) {
+			pointerPressHandled.current = false;
+			event.preventBaseUIHandler();
 			return;
 		}
-
-		if (dispatchingPointerClickRef.current) {
-			return;
-		}
-
-		onClick?.(event as DropdownMenuTriggerClickEvent);
+		onClick?.(event);
 	};
 
 	return (

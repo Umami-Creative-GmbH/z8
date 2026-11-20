@@ -30,13 +30,14 @@ it("changes the real theme from the phone overflow and returns keyboard focus th
 	);
 	await user.click(screen.getByRole("button", { name: "More actions" }));
 	await user.click(screen.getByRole("button", { name: "Toggle theme" }));
-	await user.click(screen.getByRole("menuitem", { name: "Dark" }));
+	await user.click(await screen.findByRole("menuitem", { name: "Dark" }));
 	await waitFor(() =>
 		expect(document.documentElement.classList.contains("dark")).toBe(true),
 	);
 	expect(localStorage.getItem("f1-theme-test")).toBe("dark");
 	const themeTrigger = screen.getByRole("button", { name: "Toggle theme" });
 	await user.click(themeTrigger);
+	await screen.findByRole("menu");
 	await user.keyboard("{Escape}");
 	await waitFor(() => expect(document.activeElement).toBe(themeTrigger));
 	await user.keyboard("{Escape}");

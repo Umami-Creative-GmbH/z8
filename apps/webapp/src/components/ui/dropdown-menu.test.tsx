@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { readFile } from "node:fs/promises";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -72,9 +72,30 @@ describe("DropdownMenu", () => {
 
 		await user.click(screen.getByRole("button", { name: "Open actions" }));
 
-		expect(document.querySelector('[data-slot="dropdown-menu-positioner"]')?.className).toContain(
-			"z-50",
+		const menu = await screen.findByRole("menu");
+		expect(menu.closest('[data-slot="dropdown-menu-positioner"]')?.className).toContain("z-50");
+	});
+
+	it("keeps a touch-opened menu open on release and restores focus on Escape", async () => {
+		const user = userEvent.setup();
+		render(
+			<DropdownMenu>
+				<DropdownMenuTrigger>Open actions</DropdownMenuTrigger>
+				<DropdownMenuContent>
+					<DropdownMenuItem>Archive</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>,
 		);
+
+		const trigger = screen.getByRole("button", { name: "Open actions" });
+		await user.pointer({ keys: "[TouchA>]", target: trigger });
+		expect(screen.getByRole("menu")).toBeTruthy();
+		await user.pointer({ keys: "[/TouchA]", target: trigger });
+		expect(screen.getByRole("menu")).toBeTruthy();
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(document.activeElement).toBe(trigger));
+		await user.keyboard("{Enter}");
+		expect(await screen.findByRole("menu")).toBeTruthy();
 	});
 
 	it("opens menu items from a Radix-compatible pointer down trigger", async () => {
