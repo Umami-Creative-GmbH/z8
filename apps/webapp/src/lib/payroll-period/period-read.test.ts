@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { buildPayrollPeriodRead } from "./period-read";
@@ -8,7 +7,7 @@ describe("buildPayrollPeriodRead", () => {
 		const read = buildPayrollPeriodRead({
 			organizationId: "organization-a",
 			period: { start: "2026-11-01", end: "2026-11-30", label: "November 2026" },
-			generatedAt: DateTime.fromISO("2026-11-30T12:00:00Z"),
+			generatedAt: Temporal.Instant.from("2026-11-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			sources: {
 				organizationName: "Acme GmbH",
@@ -86,7 +85,7 @@ describe("buildPayrollPeriodRead", () => {
 			buildPayrollPeriodRead({
 				organizationId: "organization-a",
 				period: { start: "2026-11-01", end: "2026-11-30", label: "November 2026" },
-				generatedAt: DateTime.fromISO("2026-11-30T12:00:00Z"),
+				generatedAt: Temporal.Instant.from("2026-11-30T12:00:00Z"),
 				generatedBy: { id: "payroll-1", name: "Payroll User" },
 				sources: {
 					organizationName: "Acme GmbH",
@@ -175,7 +174,7 @@ describe("buildPayrollPeriodRead", () => {
 			buildPayrollPeriodRead({
 				organizationId: "organization-a",
 				period: { start: "2026-11-01", end: "2026-11-30", label: "November 2026" },
-				generatedAt: DateTime.fromISO("2026-11-30T12:00:00Z"),
+				generatedAt: Temporal.Instant.from("2026-11-30T12:00:00Z"),
 				generatedBy: { id: "payroll-1", name: "Payroll User" },
 				sources: {
 					organizationName: "Acme GmbH",
@@ -204,7 +203,6 @@ describe("buildPayrollPeriodRead", () => {
 					id: "settled-3",
 					employeeId: anna.id,
 					type: "changed_since_settled",
-					label: "+1.5 h since settled",
 					date: "2026-11-03",
 					time: null,
 					settledChange: { creditedMinutesDifference: 90, absencesChanged: false },
@@ -226,9 +224,14 @@ describe("buildPayrollPeriodRead", () => {
 			const result = read({ lastWorkingDay: "2026-11-05" });
 
 			expect(result.employees.map((row) => row.id)).toEqual([anna.id]);
-			expect(result.blockers.map((blocker) => [blocker.date, blocker.label])).toEqual([
-				["2026-11-03", "-8 h since settled"],
-				["2026-11-04", "-8 h since settled"],
+			expect(
+				result.blockers.map((blocker) => [
+					blocker.date,
+					blocker.settledChange?.creditedMinutesDifference,
+				]),
+			).toEqual([
+				["2026-11-03", -480],
+				["2026-11-04", -480],
 			]);
 		});
 	});

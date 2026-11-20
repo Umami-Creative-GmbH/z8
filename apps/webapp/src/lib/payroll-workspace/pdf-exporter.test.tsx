@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
@@ -75,7 +74,7 @@ function periodRead(
 	return buildPayrollPeriodRead({
 		organizationId: "organization-a",
 		period,
-		generatedAt: DateTime.fromISO("2026-11-07T12:00:00Z"),
+		generatedAt: Temporal.Instant.from("2026-11-07T12:00:00Z"),
 		generatedBy: { id: "payroll-1", name: "Payroll User" },
 		sources: {
 			organizationName: "Acme GmbH",

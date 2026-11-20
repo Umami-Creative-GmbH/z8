@@ -1,3 +1,4 @@
+import { payrollHoursFormat } from "./hours-format";
 import type { PayrollBlocker } from "./types";
 
 /** A Tolgee `t` as the workspace and the payroll PDF call it. */
@@ -51,10 +52,7 @@ function changedSinceSettledLabel(
 	const hours =
 		change.creditedMinutesDifference === 0
 			? null
-			: new Intl.NumberFormat(locale, {
-					maximumFractionDigits: 2,
-					signDisplay: "exceptZero",
-				}).format(change.creditedMinutesDifference / 60);
+			: payrollHoursFormat(locale).signedMinutes(change.creditedMinutesDifference);
 	if (hours && change.absencesChanged) {
 		return t(
 			"payroll.blockers.changedSinceSettledHoursAndAbsence",

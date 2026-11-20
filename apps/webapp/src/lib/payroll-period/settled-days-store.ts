@@ -12,7 +12,7 @@ export type SettledDaysReader = Pick<Database, "select"> | Pick<Transaction, "se
 /**
  * The active settlements of the employees' days in the inclusive date range (#1896),
  * organization-scoped. Callers resolve the employees through the payroll access grant.
- * This is the read `settledDaysFor` (#1898) builds on.
+ * `settledDaysFor` (#1898) builds on it. Each day keeps the zone it was settled in.
  */
 export async function loadActiveSettledDays(
 	database: SettledDaysReader,
@@ -22,13 +22,14 @@ export async function loadActiveSettledDays(
 		startDate: string;
 		endDate: string;
 	},
-): Promise<PayrollSettledDaySource[]> {
+): Promise<(PayrollSettledDaySource & { timezone: string })[]> {
 	if (input.employeeIds.length === 0) return [];
 	const rows = await database
 		.select({
 			id: payrollSettledDay.id,
 			employeeId: payrollSettledDay.employeeId,
 			date: payrollSettledDay.date,
+			timezone: payrollSettledDay.timezone,
 			method: payrollSettledDay.method,
 			payrollExportJobId: payrollSettledDay.payrollExportJobId,
 			settledAt: payrollSettledDay.settledAt,
@@ -50,6 +51,7 @@ export async function loadActiveSettledDays(
 		id: row.id,
 		employeeId: row.employeeId,
 		date: row.date,
+		timezone: row.timezone,
 		method: row.method,
 		payrollExportJobId: row.payrollExportJobId,
 		settledAt: row.settledAt.toISOString(),

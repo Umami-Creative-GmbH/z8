@@ -14,7 +14,11 @@ import {
 import { user } from "@/db/auth-schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { readPeriodForEmployees, resolvePeriodEmployeeIds } from "./read-period";
+import {
+	type DepartedEmployees,
+	readPeriodForEmployees,
+	resolveGrantEmployeeIds,
+} from "./read-period";
 import { loadActiveSettledDays } from "./settled-days-store";
 import { settledDayValues } from "./settlement-values";
 import type { PayrollPeriodActor, PayrollPeriodScope, PayrollSettledDayValues } from "./types";
@@ -53,7 +57,7 @@ export const MAX_UNSETTLE_DAYS = 5_000;
  * settlement exists only for a day the grant could settle, so its record stays
  * reachable, also for a day after the employee's last working day.
  */
-const ANY_DEPARTURE = "0001-01-01";
+const WHENEVER_THEY_LEFT: DepartedEmployees = { anyDeparture: true };
 
 export interface SettleDaysPlan {
 	/** Days settled now (preview: days a settle would settle). */
@@ -252,7 +256,7 @@ export async function unsettleDays(
 		organizationId,
 		actor,
 		[...new Set(unique.map((day) => day.employeeId))],
-		ANY_DEPARTURE,
+		WHENEVER_THEY_LEFT,
 	);
 	if (!scope.ok) return { status: "out_of_scope", employeeIds: scope.employeeIds };
 	if (unique.length === 0) return { status: "unsettled", unsettled: [], notSettled: [] };
@@ -333,7 +337,12 @@ export async function settlementHistory(
 	range: PayrollDateRange,
 ): Promise<PayrollSettlementHistoryEntry[]> {
 	if (!rangeDates(range)) return [];
-	const employeeIds = await resolvePeriodEmployeeIds(organizationId, actor, ANY_DEPARTURE, scope);
+	const employeeIds = await resolveGrantEmployeeIds(
+		organizationId,
+		actor,
+		WHENEVER_THEY_LEFT,
+		scope,
+	);
 	if (employeeIds.length === 0) return [];
 	const rows = await db
 		.select({
@@ -408,7 +417,9 @@ async function resolveSettlement(
 ): Promise<ResolvedSettlement | { ok: false; rejection: SettleDaysRejection }> {
 	const dates = rangeDates(range);
 	if (!dates) return { ok: false, rejection: { status: "invalid_range" } };
-	const resolved = await resolveScope(organizationId, actor, scope.employeeIds, range.startDate);
+	const resolved = await resolveScope(organizationId, actor, scope.employeeIds, {
+		leftAfterStartOf: range.startDate,
+	});
 	if (!resolved.ok) {
 		return { ok: false, rejection: { status: "out_of_scope", employeeIds: resolved.employeeIds } };
 	}
@@ -425,9 +436,9 @@ async function resolveScope(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	requested: readonly string[] | undefined,
-	startDate: string | undefined,
+	departed: DepartedEmployees,
 ): Promise<{ ok: true; employeeIds: string[] } | { ok: false; employeeIds: string[] }> {
-	const allowed = startDate ? await resolvePeriodEmployeeIds(organizationId, actor, startDate) : [];
+	const allowed = await resolveGrantEmployeeIds(organizationId, actor, departed);
 	const requestedIds = requested ? [...new Set(requested)] : undefined;
 	if (allowed.length === 0) return { ok: false, employeeIds: requestedIds ?? [] };
 	if (!requestedIds) return { ok: true, employeeIds: [...allowed] };

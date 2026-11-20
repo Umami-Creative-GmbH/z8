@@ -24,6 +24,7 @@ const mockState = vi.hoisted(() => {
 		})),
 		getPayrollWorkspaceSummary: vi.fn(),
 		insert: vi.fn(() => ({ values })),
+		listDepartedEmployeesCoveredForExport: vi.fn(async (): Promise<string[]> => []),
 		onConflictDoNothing,
 		resolvePayrollAccessibleEmployeeIds: vi.fn(async () => [
 			"22222222-2222-4222-8222-222222222222",
@@ -58,6 +59,10 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 		(requestedEmployeeIds ?? allowedEmployeeIds)
 			.filter((employeeId) => allowedEmployeeIds.includes(employeeId))
 			.sort(),
+}));
+
+vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
+	listDepartedEmployeesCoveredForExport: mockState.listDepartedEmployeesCoveredForExport,
 }));
 
 vi.mock("@/lib/payroll-export", () => ({
@@ -138,6 +143,30 @@ describe("dismissPayrollBlockerAction", () => {
 		mockState.getPayrollWorkspaceSummary.mockResolvedValue(summaryWithBlocker("missing_clock_out"));
 		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([employeeId]);
 		mockState.returning.mockResolvedValue([{ id: "dismissal-1" }]);
+		mockState.listDepartedEmployeesCoveredForExport.mockResolvedValue([]);
+	});
+
+	it("dismisses a blocker of an employee who left during the period, as the workspace shows it", async () => {
+		const departedId = "66666666-6666-4666-8666-666666666666";
+		mockState.listDepartedEmployeesCoveredForExport.mockResolvedValue([departedId]);
+		mockState.getPayrollWorkspaceSummary.mockResolvedValue(
+			summaryWithBlocker("missing_clock_out", departedId),
+		);
+
+		const result = await dismissPayrollBlockerAction({ ...baseRequest, employeeIds: [departedId] });
+
+		expect(result).toEqual({ success: true, data: { dismissed: true } });
+		expect(mockState.listDepartedEmployeesCoveredForExport).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				actorUserId: "user-1",
+				fromDate: "2026-01-01",
+			},
+		);
+		expect(mockState.values).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ employeeId: departedId }),
+		);
 	});
 
 	it("inserts only server-resolved values for an in-scope live blocker", async () => {

@@ -1,12 +1,11 @@
 import "server-only";
 
 import { and, asc, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
 import { payrollExportCarriedDay } from "@/db/schema";
 import type { CollectedPayrollWork } from "@/lib/payroll-collection/payroll-work-collection";
-import { loadPayrollPeriodSources } from "@/lib/payroll-workspace/summary";
+import { loadPeriodSources } from "./legacy-sources";
 import { buildPayrollPeriodRows } from "./period-rows";
 import { settledDayValues } from "./settlement-values";
 import type { PayrollPeriodEmployee, PayrollSettledDayValues } from "./types";
@@ -48,14 +47,10 @@ export async function readExportCarriedDays(input: {
 	>[];
 }): Promise<PayrollCarriedDay[]> {
 	if (input.employeeIds.length === 0) return [];
-	const { sources } = await loadPayrollPeriodSources({
-		organizationId: input.organizationId,
-		allowedEmployeeIds: input.employeeIds,
-		period: {
-			start: DateTime.fromISO(input.startDate, { zone: "utc" }),
-			end: DateTime.fromISO(input.endDate, { zone: "utc" }),
-			label: `${input.startDate} – ${input.endDate}`,
-		},
+	const { sources } = await loadPeriodSources(input.organizationId, input.employeeIds, {
+		startDate: input.startDate,
+		endDate: input.endDate,
+		label: `${input.startDate} – ${input.endDate}`,
 	});
 	const rows = buildPayrollPeriodRows({
 		period: { startDate: input.startDate, endDate: input.endDate },

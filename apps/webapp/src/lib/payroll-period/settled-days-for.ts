@@ -1,9 +1,7 @@
 import "server-only";
 
-import { and, asc, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { payrollSettledDay } from "@/db/schema";
-import type { SettledDaysReader } from "./settled-days-store";
+import { loadActiveSettledDays, type SettledDaysReader } from "./settled-days-store";
 
 /** An employee-day with an active settlement, in the employee's timezone at settling. */
 export interface PayrollSettledDayKey {
@@ -27,22 +25,10 @@ export async function settledDaysFor(
 	period: { startDate: string; endDate: string },
 	database: SettledDaysReader = db,
 ): Promise<PayrollSettledDayKey[]> {
-	if (scope.employeeIds.length === 0) return [];
-	return database
-		.select({
-			employeeId: payrollSettledDay.employeeId,
-			date: payrollSettledDay.date,
-			timezone: payrollSettledDay.timezone,
-		})
-		.from(payrollSettledDay)
-		.where(
-			and(
-				eq(payrollSettledDay.organizationId, organizationId),
-				inArray(payrollSettledDay.employeeId, [...scope.employeeIds]),
-				gte(payrollSettledDay.date, period.startDate),
-				lte(payrollSettledDay.date, period.endDate),
-				isNull(payrollSettledDay.unsettledAt),
-			),
-		)
-		.orderBy(asc(payrollSettledDay.employeeId), asc(payrollSettledDay.date));
+	const settled = await loadActiveSettledDays(database, {
+		organizationId,
+		employeeIds: scope.employeeIds,
+		...period,
+	});
+	return settled.map(({ employeeId, date, timezone }) => ({ employeeId, date, timezone }));
 }

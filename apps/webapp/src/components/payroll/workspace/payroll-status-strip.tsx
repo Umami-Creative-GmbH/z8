@@ -1,9 +1,11 @@
 "use client";
 
 import { IconUsers } from "@tabler/icons-react";
+import { useLocale } from "next-intl";
 import type React from "react";
+import { payrollHoursFormat } from "@/lib/payroll-workspace/hours-format";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
-import { formatHours, type PayrollTranslate } from "./state";
+import type { PayrollTranslate } from "./state";
 
 /** The compact strip of period figures: employees, worked hours, readiness and blockers. */
 export function PayrollStatusStrip({
@@ -20,6 +22,7 @@ export function PayrollStatusStrip({
 	readyEmployeeCount: number;
 	t: PayrollTranslate;
 }) {
+	const hours = payrollHoursFormat(useLocale(), { decimals: "two" });
 	return (
 		<section
 			aria-label={t("payroll.summary.title", "Payroll readiness summary")}
@@ -35,7 +38,7 @@ export function PayrollStatusStrip({
 			/>
 			<StatusFigure
 				label={t("payroll.summary.workedHours", "Worked hours")}
-				value={formatHours(displayedTotals.totalWorkedHours)}
+				value={`${hours.hours(displayedTotals.totalWorkedHours)} h`}
 			/>
 			<StatusFigure
 				label={t("payroll.summary.ready", "Ready")}

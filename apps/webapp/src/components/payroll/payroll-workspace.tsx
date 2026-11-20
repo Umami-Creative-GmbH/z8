@@ -29,6 +29,7 @@ import {
 } from "./workspace/state";
 import { usePayrollBlockerClearing } from "./workspace/use-payroll-blocker-clearing";
 import { usePayrollExportActions } from "./workspace/use-payroll-export-actions";
+import { PayrollSettlementRefreshProvider } from "./workspace/use-payroll-settlement-changed";
 import {
 	payrollPeriodActions,
 	useMountedRef,
@@ -106,13 +107,13 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 		initialRequest: request,
 		isMountedRef,
 	});
-	useViewRefresh(() =>
+	const refreshWorkspaceSummary = () =>
 		refreshLatestSummary({
 			preserveDraft: true,
 			onError: (error) =>
 				toast.error(error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed")),
-		}),
-	);
+		});
+	useViewRefresh(refreshWorkspaceSummary);
 	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } = usePayrollBlockerClearing({
 		blockers: displayedBlockers,
 		clickRequest: request,
@@ -212,96 +213,98 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 	});
 
 	return (
-		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-4">
-			<PayrollHeader organizationName={summary.organizationName} t={t} />
-			<PayrollPeriodBar
-				dateMode={dateMode}
-				dispatch={dispatch}
-				employeeCount={displayedTotals.employeeCount}
-				endDate={endDate}
-				filtersHaveNoMatches={filtersHaveNoMatches}
-				isPending={isPending}
-				onApplyCustomRange={applyCustomRange}
-				onApplyDateMode={applyDateMode}
-				onApplyEmployees={applyEmployeeFilter}
-				onApplyTeams={applyTeamFilter}
-				onNavigatePeriod={navigatePeriod}
-				onReturnToCurrentPeriod={returnToCurrentPeriod}
-				scopedEmployees={scopedEmployees}
-				selectedEmployeeIds={selectedEmployeeIds}
-				selectedTeamNames={selectedTeamNames}
-				startDate={startDate}
-				summary={summary}
-				teamOptions={getTeamOptions(scopedEmployees)}
-				t={t}
-			/>
-			<PayrollStatusStrip
-				blockersSummaryRef={blockersSummaryRef}
-				displayedTotals={displayedTotals}
-				readyEmployeeCount={readyEmployeeCount}
-				t={t}
-			>
-				<PayrollSettlementFigures
+		<PayrollSettlementRefreshProvider refreshSummary={refreshWorkspaceSummary}>
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-4">
+				<PayrollHeader organizationName={summary.organizationName} t={t} />
+				<PayrollPeriodBar
+					dateMode={dateMode}
+					dispatch={dispatch}
+					employeeCount={displayedTotals.employeeCount}
+					endDate={endDate}
 					filtersHaveNoMatches={filtersHaveNoMatches}
-					refreshedAt={summary.generatedAt}
-					request={request}
+					isPending={isPending}
+					onApplyCustomRange={applyCustomRange}
+					onApplyDateMode={applyDateMode}
+					onApplyEmployees={applyEmployeeFilter}
+					onApplyTeams={applyTeamFilter}
+					onNavigatePeriod={navigatePeriod}
+					onReturnToCurrentPeriod={returnToCurrentPeriod}
+					scopedEmployees={scopedEmployees}
+					selectedEmployeeIds={selectedEmployeeIds}
+					selectedTeamNames={selectedTeamNames}
+					startDate={startDate}
+					summary={summary}
+					teamOptions={getTeamOptions(scopedEmployees)}
 					t={t}
 				/>
-			</PayrollStatusStrip>
-			<PayrollWorkspaceTabs
-				t={t}
-				panels={{
-					overview: (
-						<PayrollOverviewTab
-							blockers={displayedBlockers}
-							blockersSummaryRef={blockersSummaryRef}
-							clearingBlockerKeys={clearingBlockerKeys}
-							closureEmployeeIds={closureEmployeeIds}
-							employees={displayedEmployees}
-							filtersHaveNoMatches={filtersHaveNoMatches}
-							focusRequest={focusRequest}
-							formatId={formatId}
-							onClearBlocker={clearPayrollBlocker}
-							periodMonths={periodMonths}
-							request={request}
-							t={t}
-						/>
-					),
-					days: (
-						<PayrollDaysTab
-							filtersHaveNoMatches={filtersHaveNoMatches}
-							refreshedAt={summary.generatedAt}
-							request={request}
-							t={t}
-						/>
-					),
-					absences: (
-						<PayrollAbsencesTab
-							filtersHaveNoMatches={filtersHaveNoMatches}
-							refreshedAt={summary.generatedAt}
-							request={request}
-							t={t}
-						/>
-					),
-					export: (
-						<PayrollExportTab
-							dispatch={dispatch}
-							exportFormats={exportFormats}
-							filteredEmployeeIds={filteredEmployeeIds}
-							filtersHaveNoMatches={filtersHaveNoMatches}
-							formatId={formatId}
-							isPending={isPending}
-							onDownloadPdf={downloadPdf}
-							onTriggerExport={triggerExport}
-							period={summary.period}
-							refreshedAt={summary.generatedAt}
-							request={request}
-							t={t}
-						/>
-					),
-				}}
-			/>
-		</div>
+				<PayrollStatusStrip
+					blockersSummaryRef={blockersSummaryRef}
+					displayedTotals={displayedTotals}
+					readyEmployeeCount={readyEmployeeCount}
+					t={t}
+				>
+					<PayrollSettlementFigures
+						filtersHaveNoMatches={filtersHaveNoMatches}
+						refreshedAt={summary.generatedAt}
+						request={request}
+						t={t}
+					/>
+				</PayrollStatusStrip>
+				<PayrollWorkspaceTabs
+					t={t}
+					panels={{
+						overview: (
+							<PayrollOverviewTab
+								blockers={displayedBlockers}
+								blockersSummaryRef={blockersSummaryRef}
+								clearingBlockerKeys={clearingBlockerKeys}
+								closureEmployeeIds={closureEmployeeIds}
+								employees={displayedEmployees}
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								focusRequest={focusRequest}
+								formatId={formatId}
+								onClearBlocker={clearPayrollBlocker}
+								periodMonths={periodMonths}
+								request={request}
+								t={t}
+							/>
+						),
+						days: (
+							<PayrollDaysTab
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
+						absences: (
+							<PayrollAbsencesTab
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
+						export: (
+							<PayrollExportTab
+								dispatch={dispatch}
+								exportFormats={exportFormats}
+								filteredEmployeeIds={filteredEmployeeIds}
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								formatId={formatId}
+								isPending={isPending}
+								onDownloadPdf={downloadPdf}
+								onTriggerExport={triggerExport}
+								period={summary.period}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
+					}}
+				/>
+			</div>
+		</PayrollSettlementRefreshProvider>
 	);
 }
 

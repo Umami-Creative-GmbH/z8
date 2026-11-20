@@ -177,11 +177,12 @@ export async function listBalanceAdjustmentGrantEmployees(
  * they worked on or after that day. A payroll grant holder's export (#1001)
  * adds them, so final payouts and last-month hours reach payroll; every other
  * payroll view keeps `resolvePayrollAccessibleEmployeeIds`. Empty when the
- * actor holds no active grant in the organization.
+ * actor holds no active grant in the organization. `fromDate: null` lists every covered
+ * employee who left, whenever they left.
  */
 export async function listDepartedEmployeesCoveredForExport(
 	client: Reader,
-	input: { organizationId: string; actorUserId: string; fromDate: string },
+	input: { organizationId: string; actorUserId: string; fromDate: string | null },
 ): Promise<string[]> {
 	const result = await client.execute<{ id: string }>(sql`
 		with ${holderGrant(input)}
@@ -193,7 +194,10 @@ export async function listDepartedEmployeesCoveredForExport(
 				select 1 from employee_departure d
 				where d.organization_id = e.organization_id and d.employee_id = e.id
 					and d.status = 'effective'
-					and d.cutoff_at > (${input.fromDate}::date::timestamp at time zone d.timezone)
+					and (
+						${input.fromDate}::date is null
+						or d.cutoff_at > (${input.fromDate}::date::timestamp at time zone d.timezone)
+					)
 			)
 		order by e.id
 	`);

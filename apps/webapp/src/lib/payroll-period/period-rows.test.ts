@@ -106,6 +106,37 @@ describe("buildPayrollPeriodRows", () => {
 		expect(minutesByDate(rows)).toEqual({ "2026-10-24": 120, "2026-10-25": 420 });
 	});
 
+	it("credits a span clipped to the period window only to the period's own days", () => {
+		const rows = buildPayrollPeriodRows({
+			period: NOVEMBER,
+			employees: [person()],
+			// Clipped to the period: the night shift into 1 November starts at local midnight.
+			work: [span("2026-10-31T23:00:00Z", "2026-11-01T05:00:00Z", 360)],
+			absences: [],
+		});
+
+		expect(minutesByDate(rows)).toEqual({ "2026-11-01": 360 });
+		expect(rows.employees[0]?.totals.creditedMinutes).toBe(360);
+	});
+
+	it("never moves work from outside the period onto its first or last day", () => {
+		const rows = buildPayrollPeriodRows({
+			period: NOVEMBER,
+			// A span clipped in another zone than the employee's (an export's stored work after
+			// the employee changed zones) reaches into 31 October and 1 December in Berlin.
+			employees: [person()],
+			work: [
+				span("2026-10-31T21:00:00Z", "2026-11-01T05:00:00Z", 480),
+				span("2026-11-30T21:00:00Z", "2026-12-01T05:00:00Z", 480),
+			],
+			absences: [],
+		});
+
+		// 22:00–24:00 on 31 October and 00:00–06:00 on 1 December are not period days.
+		expect(minutesByDate(rows)).toEqual({ "2026-11-01": 360, "2026-11-30": 120 });
+		expect(rows.employees[0]?.totals.creditedMinutes).toBe(480);
+	});
+
 	it("adds up exactly to the period credit when a long span crosses several local days", () => {
 		const rows = buildPayrollPeriodRows({
 			period: NOVEMBER,

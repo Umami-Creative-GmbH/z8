@@ -230,6 +230,8 @@ export const queryKeys = {
 				request.formatId,
 				request.employeeIds?.join(",") ?? "scope",
 			] as const,
+		/** Every payroll period read, to refetch them all after a settlement change. */
+		periods: () => ["payroll", "period"] as const,
 		/**
 		 * The payroll period read (#1891) behind the Days and Absences tabs. `refreshedAt`
 		 * is the summary's generation time, so a workspace refresh refetches it too.

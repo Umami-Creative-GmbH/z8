@@ -184,6 +184,99 @@ describe("readPeriod on PostgreSQL", () => {
 		expect(days.find((day) => day.date === "2026-11-08")?.requiredMinutes).toBe(0);
 	});
 
+	it("puts half-day absences on the right local day for employees outside UTC", async () => {
+		// Anna works in New York (UTC-5), Ben in Auckland (UTC+13); the grant covers both.
+		await admin.query(
+			`insert into user_settings (user_id, timezone, updated_at)
+			 values ('t1893-anna', 'America/New_York', now()), ('t1893-ben', 'Pacific/Auckland', now())`,
+		);
+		const { rows: grant } = await admin.query(
+			"select id from payroll_access_grant where organization_id = $1",
+			[ORG],
+		);
+		await admin.query(
+			`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+			 values ($1, $2, $3, 't1893-owner')`,
+			[ORG, grant[0].id, ids.ben],
+		);
+		const { rows: category } = await admin.query(
+			`insert into absence_category
+			 (organization_id, type, name, color, requires_approval, counts_against_vacation, is_active, updated_at)
+			 values ($1, 'vacation', 'Holiday', '#0ea5e9', true, true, true, now()) returning id`,
+			[ORG],
+		);
+		/** An approved absence as the absence writers encode it: local wall clock as UTC. */
+		async function approvedHalfDays(
+			employeeId: string,
+			from: { date: string; period: "full_day" | "pm" },
+			to: { date: string; period: "full_day" | "am" | "pm" },
+		) {
+			const startAt = `${from.date}T${from.period === "pm" ? "12" : "00"}:00:00.000Z`;
+			const endAt = `${to.date}T${to.period === "am" ? "11" : "23"}:59:59.999Z`;
+			const { rows: record } = await admin.query(
+				`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
+				   approval_state, origin, created_by, updated_at)
+				 values (gen_random_uuid(), $1, $2, 'absence', $3, $4, 'approved', 'manual', 't1893-owner', now())
+				 returning id`,
+				[ORG, employeeId, startAt, endAt],
+			);
+			await admin.query(
+				`insert into time_record_absence
+				   (record_id, organization_id, record_kind, absence_category_id, start_period, end_period)
+				 values ($1, $2, 'absence', $3, $4, $5)`,
+				[record[0].id, ORG, category[0].id, from.period, to.period],
+			);
+		}
+		// Anna: from Tuesday afternoon to Thursday morning.
+		await approvedHalfDays(
+			ids.anna,
+			{ date: "2026-11-17", period: "pm" },
+			{ date: "2026-11-19", period: "am" },
+		);
+		// Ben: from 31 October to the morning of 1 November, and the afternoon of 30 November.
+		await approvedHalfDays(
+			ids.ben,
+			{ date: "2026-10-31", period: "full_day" },
+			{ date: "2026-11-01", period: "am" },
+		);
+		await approvedHalfDays(
+			ids.ben,
+			{ date: "2026-11-30", period: "pm" },
+			{ date: "2026-11-30", period: "pm" },
+		);
+
+		const read = await readPeriod(ORG, holder, november);
+
+		const holidays = (employeeId: string) =>
+			(read.employees.find((row) => row.id === employeeId)?.days ?? []).flatMap((day) =>
+				day.absences
+					.filter((mark) => mark.categoryName === "Holiday")
+					.map((mark) => [day.date, mark.period]),
+			);
+		expect(read.employees.map((row) => [row.id, row.timezone])).toEqual([
+			[ids.anna, "America/New_York"],
+			[ids.ben, "Pacific/Auckland"],
+		]);
+		expect(holidays(ids.anna)).toEqual([
+			["2026-11-17", "pm"],
+			["2026-11-18", "full_day"],
+			["2026-11-19", "am"],
+		]);
+		expect(holidays(ids.ben)).toEqual([
+			["2026-11-01", "am"],
+			["2026-11-30", "pm"],
+		]);
+		expect(
+			read.absences
+				.filter((row) => row.categoryName === "Holiday")
+				.map((row) => [row.employeeId, row.startDate, row.endDate, row.daysInPeriod]),
+		).toEqual([
+			[ids.anna, "2026-11-17", "2026-11-19", 2],
+			[ids.ben, "2026-10-31", "2026-11-01", 0.5],
+			[ids.ben, "2026-11-30", "2026-11-30", 0.5],
+		]);
+	});
+
 	it("never widens the grant's scope to requested employees outside it", async () => {
 		const read = await readPeriod(ORG, holder, november, {
 			employeeIds: [ids.anna, ids.ben, ids.foreign],

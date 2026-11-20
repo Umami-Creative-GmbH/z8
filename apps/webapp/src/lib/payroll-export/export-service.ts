@@ -217,10 +217,11 @@ export async function createExportJob(params: {
 	 */
 	repairActorUserId?: string | null;
 	/**
-	 * Reissue a file with its settled and changed-since-settled days (#1898). Omitted, a
-	 * file leaves them out so they are not paid twice.
+	 * The payroll workspace's choice for settled and changed-since-settled days (#1898):
+	 * `leave_out` so they are not paid twice, or `include` to reissue a file with them.
+	 * Omitted (settings and scheduled exports), the file keeps them, as before.
 	 */
-	includeSettledDays?: boolean;
+	settledDays?: "leave_out" | "include";
 }): Promise<{
 	jobId: string;
 	isAsync: boolean;
@@ -318,7 +319,8 @@ export async function createExportJob(params: {
 				requestedById: params.requestedById,
 				filters: serializedFilters,
 				personnelIdentifier: legacyIdentifier,
-				includesSettledDays: params.includeSettledDays ?? false,
+				includesSettledDays: params.settledDays === "include",
+				leavesOutSettledDays: params.settledDays === "leave_out",
 				isAsync,
 				status: "pending",
 			})
@@ -570,8 +572,9 @@ export async function processExportJob(
 				employeeIds: fileEmployeeIds,
 				collectedWork: storedInput?.work,
 			});
-			// Settled and changed-since-settled days are left out of the file and of what
-			// it carried (#1898), unless the officer chose to include settled days.
+			// A file the workspace prepares leaves settled and changed-since-settled days
+			// out of the file and of what it carried (#1898), unless the officer chose to
+			// include them. Settings and scheduled exports keep them, as before.
 			const {
 				workPeriods: fileWorkPeriods,
 				absences: fileAbsences,
@@ -579,7 +582,7 @@ export async function processExportJob(
 				settledDaysLeftOut,
 			} = await withoutSettledDays({
 				organizationId: job.organizationId,
-				includesSettledDays: job.includesSettledDays,
+				leavesOutSettledDays: job.leavesOutSettledDays,
 				period: {
 					startDate: job.filters.dateRange.start,
 					endDate: job.filters.dateRange.end,
@@ -755,13 +758,14 @@ async function refuseDuplicatePersonnelIdentifiersOfFormat(
 
 /**
  * A file's work, absences and carried days without the employee-days that have an
- * active settlement (#1898), and how many such days it left out. Including settled days
- * (a reissue the officer chose) leaves nothing out. Overtime payouts and expense lines
- * keep their own safeguards and are never touched.
+ * active settlement (#1898), and how many such days it left out. A file that does not
+ * leave them out (a reissue the officer chose, a settings or scheduled export) keeps
+ * everything. Overtime payouts and expense lines keep their own safeguards and are never
+ * touched.
  */
 async function withoutSettledDays(input: {
 	organizationId: string;
-	includesSettledDays: boolean;
+	leavesOutSettledDays: boolean;
 	period: { startDate: string; endDate: string };
 	employeeIds: readonly string[];
 	workPeriods: WorkPeriodData[];
@@ -779,7 +783,7 @@ async function withoutSettledDays(input: {
 		carriedDays: input.periodDays,
 		settledDaysLeftOut: 0,
 	};
-	if (input.includesSettledDays) return unchanged;
+	if (!input.leavesOutSettledDays) return unchanged;
 	const employeeIds = [
 		...new Set([
 			...input.employeeIds,

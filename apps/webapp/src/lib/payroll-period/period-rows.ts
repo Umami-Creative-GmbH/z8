@@ -60,11 +60,14 @@ export function buildPayrollPeriodRows(input: {
 			absenceMarksByEmployee.get(source.id) ?? [],
 			(mark) => mark.date,
 		);
+		// Spans arrive clipped to the employee-local period window, so every minute lands on
+		// a period day. A span clipped in another zone (an export's stored work after the
+		// employee changed zones) can reach past it: those minutes belong to days outside
+		// the period and are never moved onto its first or last day.
 		const credited = new Map<string, number>();
 		for (const row of workByEmployee.get(source.id) ?? []) {
 			for (const [date, minutes] of splitCreditByLocalDay(row, source.timezone)) {
-				const key = clampDate(date, dates);
-				credited.set(key, (credited.get(key) ?? 0) + minutes);
+				credited.set(date, (credited.get(date) ?? 0) + minutes);
 			}
 		}
 		const requirements = input.requirements?.get(source.id);
@@ -214,11 +217,4 @@ function periodDates(startDate: string, endDate: string): string[] {
 		dates.push(date.toString());
 	}
 	return dates;
-}
-
-/** Spans are clipped to the period window, so this only guards the sum against bad input. */
-function clampDate(date: string, dates: readonly string[]): string {
-	const first = dates[0] ?? date;
-	const last = dates.at(-1) ?? date;
-	return date < first ? first : date > last ? last : date;
 }

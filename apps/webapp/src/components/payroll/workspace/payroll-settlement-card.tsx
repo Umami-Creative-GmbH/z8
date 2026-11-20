@@ -2,7 +2,6 @@
 
 import { IconAlertTriangle, IconCircleCheck, IconLoader2, IconRotate } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -27,6 +26,7 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { PayrollPeriodRequest, PayrollTranslate } from "./state";
 import { usePayrollPeriod } from "./use-payroll-period";
+import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
 /**
  * Settling days by hand (#1896), for organisations that pay from the PDF or outside
@@ -44,7 +44,7 @@ export function PayrollSettlementCard({
 	request: PayrollPeriodRequest;
 	t: PayrollTranslate;
 }) {
-	const queryClient = useQueryClient();
+	const settlementChanged = usePayrollSettlementChanged();
 	const { data } = usePayrollPeriod(request, refreshedAt);
 	const [preview, setPreview] = useState<PayrollSettlementCounts | null>(null);
 	const [isLoadingPreview, setIsLoadingPreview] = useState(false);
@@ -52,8 +52,6 @@ export function PayrollSettlementCard({
 	const [unsettleOpen, setUnsettleOpen] = useState(false);
 	const settledDays = data?.settlement.settledDays ?? 0;
 	const disabled = filtersHaveNoMatches || isLoadingPreview || isSettling;
-
-	const refreshPeriod = () => queryClient.invalidateQueries({ queryKey: ["payroll", "period"] });
 
 	async function openPreview() {
 		setIsLoadingPreview(true);
@@ -81,7 +79,7 @@ export function PayrollSettlementCard({
 				t("payroll.settle.settled", "{count} days settled", { count: result.data.newDays }),
 			);
 			setPreview(null);
-			await refreshPeriod();
+			await settlementChanged();
 		} finally {
 			setIsSettling(false);
 		}
@@ -166,7 +164,7 @@ export function PayrollSettlementCard({
 			<UnsettleDialog
 				open={unsettleOpen}
 				onOpenChange={setUnsettleOpen}
-				onUnsettled={refreshPeriod}
+				onUnsettled={settlementChanged}
 				request={request}
 				settledDays={settledDays}
 				t={t}
@@ -190,6 +188,17 @@ export function SettlePreview({
 				<dd className="text-right font-medium">{preview.newDays}</dd>
 				<dt>{t("payroll.settle.alreadySettledDays", "Already settled, left as they are")}</dt>
 				<dd className="text-right font-medium">{preview.alreadySettledDays}</dd>
+				{preview.previouslyUnsettledDays ? (
+					<>
+						<dt>
+							{t(
+								"payroll.confirmPaid.previouslyUnsettledDays",
+								"Unsettled since this file was confirmed, skipped",
+							)}
+						</dt>
+						<dd className="text-right font-medium">{preview.previouslyUnsettledDays}</dd>
+					</>
+				) : null}
 			</dl>
 			{preview.unclosedMonths.length > 0 ? (
 				<Alert>

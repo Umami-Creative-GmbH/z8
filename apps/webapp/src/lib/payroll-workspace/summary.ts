@@ -401,7 +401,9 @@ export async function getPayrollWorkspaceSummary(input: {
 	return buildPayrollPeriodRead({
 		organizationId: input.organizationId,
 		period,
-		generatedAt: input.generatedAt ?? DateTime.utc(),
+		generatedAt: input.generatedAt
+			? Temporal.Instant.fromEpochMilliseconds(input.generatedAt.toMillis())
+			: Temporal.Now.instant(),
 		generatedBy: input.generatedBy,
 		sources: { ...sources, settledDays },
 	}).summary;

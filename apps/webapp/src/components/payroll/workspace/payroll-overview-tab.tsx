@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import type React from "react";
 import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
 import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import type { DismissiblePayrollBlocker } from "@/lib/payroll-workspace/blocker-dismissals";
 import type { PayrollBlockerIdentity } from "@/lib/payroll-workspace/blocker-identity";
+import { payrollHoursFormat } from "@/lib/payroll-workspace/hours-format";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { OvertimePayoutReadinessAlert } from "../overtime-payout-readiness-alert";
 import { PayrollRunReadinessCard } from "../payroll-run-readiness-card";
@@ -86,6 +88,9 @@ function EmployeeTotalsCard({
 	employees: PayrollWorkspaceSummary["employees"];
 	t: PayrollTranslate;
 }) {
+	const locale = useLocale();
+	const hours = payrollHoursFormat(locale);
+	const days = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
 	return (
 		<Card>
 			<CardHeader>
@@ -142,9 +147,9 @@ function EmployeeTotalsCard({
 											</Badge>
 										</TableCell>
 										<TableCell className="text-right tabular-nums">
-											{formatTableHours(employee.workedHours)}
+											{`${hours.hours(employee.workedHours)} h`}
 										</TableCell>
-										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
+										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory, days)}</TableCell>
 										<TableCell>
 											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
 												{employee.hasBlockers
@@ -172,15 +177,14 @@ function EmployeeTotalsCard({
 	);
 }
 
-function formatTableHours(hours: number) {
-	return `${hours.toLocaleString(undefined, { maximumFractionDigits: 2 })} h`;
-}
-
 function formatAbsences(
 	t: PayrollTranslate,
 	absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"],
+	days: Intl.NumberFormat,
 ) {
 	if (absences.length === 0) return t("payroll.employeeTotals.noAbsences", "None");
 
-	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
+	return absences
+		.map((absence) => `${absence.categoryName}: ${days.format(absence.days)}`)
+		.join(", ");
 }

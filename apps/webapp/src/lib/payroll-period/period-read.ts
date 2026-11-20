@@ -1,4 +1,5 @@
-import type { DateTime } from "luxon";
+import { DateTime } from "luxon";
+import type { Temporal } from "temporal-polyfill";
 import { buildPayrollSummaryFromRows } from "@/lib/payroll-workspace/summary";
 import type { PayrollBlocker, PayrollPeriod } from "@/lib/payroll-workspace/types";
 import { buildPayrollPeriodRows } from "./period-rows";
@@ -35,7 +36,7 @@ export interface PayrollPeriodSources {
 export function buildPayrollPeriodRead(input: {
 	organizationId: string;
 	period: PayrollPeriod;
-	generatedAt: DateTime;
+	generatedAt: Temporal.Instant;
 	generatedBy: { id: string; name: string };
 	sources: PayrollPeriodSources;
 }): PayrollPeriodRead {
@@ -58,7 +59,8 @@ export function buildPayrollPeriodRead(input: {
 		organizationId: input.organizationId,
 		organizationName: sources.organizationName,
 		period: input.period,
-		generatedAt: input.generatedAt,
+		// The Overview's builder predates Temporal; this is its one Luxon boundary.
+		generatedAt: DateTime.fromMillis(input.generatedAt.epochMilliseconds, { zone: "utc" }),
 		generatedBy: input.generatedBy,
 		employees: sources.employees.map(
 			({ timezone: _timezone, departure: _departure, ...employee }) => employee,
@@ -90,8 +92,9 @@ export function buildPayrollPeriodRead(input: {
 }
 
 /**
- * One blocker per changed-since-settled day (#1897), such as "+1.5 h since settled":
- * the officer handles the difference deliberately, it is never paid automatically.
+ * One blocker per changed-since-settled day (#1897), with how the day differs from what
+ * was paid: the officer handles the difference deliberately, it is never paid
+ * automatically. Its label ("+1.5 h since settled") lives in `blocker-labels.ts`.
  */
 function changedSinceSettledBlockers(
 	employees: readonly PayrollPeriodEmployee[],
@@ -105,7 +108,6 @@ function changedSinceSettledBlockers(
 					id: day.settlement.settledDayId,
 					employeeId: employee.id,
 					type: "changed_since_settled",
-					label: changedSinceSettledLabel(creditedMinutesDifference, absencesChanged),
 					date: day.date,
 					time: null,
 					settledChange: { creditedMinutesDifference, absencesChanged },
@@ -113,21 +115,6 @@ function changedSinceSettledBlockers(
 			];
 		}),
 	);
-}
-
-/** The blocker's plain-text label; the workspace shows a translated one. */
-function changedSinceSettledLabel(minutes: number, absencesChanged: boolean): string {
-	const hours = minutes === 0 ? null : `${formatSignedHours(minutes)} since settled`;
-	if (!absencesChanged) return hours ?? "Changed since settled";
-	return hours
-		? `${formatSignedHours(minutes)} and absence changed since settled`
-		: "Absence changed since settled";
-}
-
-/** Signed hours with up to two decimals: 90 -> "+1.5 h", -480 -> "-8 h". */
-export function formatSignedHours(minutes: number): string {
-	const hours = Math.round((Math.abs(minutes) / 60) * 100) / 100;
-	return `${minutes < 0 ? "-" : "+"}${hours} h`;
 }
 
 /**
