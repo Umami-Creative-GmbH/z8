@@ -50,6 +50,7 @@ vi.mock("./workspace/payroll-settlement-card", () => ({ PayrollSettlementCard: (
 vi.mock("./workspace/payroll-settlement-figures", () => ({
 	PayrollSettlementFigures: () => null,
 }));
+vi.mock("./workspace/payroll-absences-tab", () => ({ PayrollAbsencesTab: () => null }));
 vi.mock("./payroll-baselines-card", () => ({
 	PayrollBaselinesCard: () => null,
 }));
