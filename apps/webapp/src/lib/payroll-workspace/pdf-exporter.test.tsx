@@ -1,9 +1,18 @@
+import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
+import { avvPdfText as pdfText } from "@/lib/avv/avv-pdf.test.fixture";
+import {
+	buildPayrollPeriodRead,
+	type PayrollPeriodSources,
+} from "@/lib/payroll-period/period-read";
+import type { PayrollPeriodRead } from "@/lib/payroll-period/types";
 import {
 	buildPayrollAbsenceSections,
-	exportPayrollSummaryToPDF,
+	exportPayrollPeriodToPDF,
 	flattenPayrollAbsenceSections,
 	generatePayrollPDFFilename,
+	type PayrollPdfTranslate,
 } from "./pdf-exporter";
 import type { PayrollWorkspaceSummary } from "./types";
 
@@ -14,6 +23,193 @@ function countPDFPages(pdf: Uint8Array): number {
 			.match(/\/Type \/Page\b/g)?.length ?? 0
 	);
 }
+
+/** Tolgee's English fallback: the static default with `{name}` placeholders filled in. */
+const englishT: PayrollPdfTranslate = (_key, defaultValue, params) =>
+	interpolate(defaultValue, params);
+
+function interpolate(text: string, params?: Record<string, string | number>): string {
+	return text.replace(/\{(\w+)\}/g, (match, name: string) =>
+		params && name in params ? String(params[name]) : match,
+	);
+}
+
+const anna = {
+	id: "employee-1",
+	name: "Anna Berg",
+	employeeNumber: "E-1",
+	teamName: "Ops",
+	contractType: "fixed" as const,
+	timezone: "Europe/Berlin",
+};
+const ben = { ...anna, id: "employee-2", name: "Ben Cole", employeeNumber: "E-2" };
+
+function work(employeeId: string, date: string, minutes: number) {
+	const startAt = Temporal.Instant.from(`${date}T07:00:00Z`);
+	return {
+		recordId: `${employeeId}-${date}`,
+		employeeId,
+		startAt,
+		endExclusive: startAt.add({ minutes }),
+		minutes,
+	};
+}
+
+function settled(employeeId: string, date: string, paidMinutes: number) {
+	return {
+		id: `settled-${employeeId}-${date}`,
+		employeeId,
+		date,
+		method: "manual" as const,
+		payrollExportJobId: null,
+		settledAt: "2026-11-06T10:00:00.000Z",
+		paid: { creditedMinutes: paidMinutes, absences: [] },
+	};
+}
+
+const weekdays = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"];
+
+function periodRead(
+	sources: Partial<PayrollPeriodSources> = {},
+	period = { start: "2026-11-01", end: "2026-11-07", label: "Week 45" },
+): PayrollPeriodRead {
+	return buildPayrollPeriodRead({
+		organizationId: "organization-a",
+		period,
+		generatedAt: DateTime.fromISO("2026-11-07T12:00:00Z"),
+		generatedBy: { id: "payroll-1", name: "Payroll User" },
+		sources: {
+			organizationName: "Acme GmbH",
+			employees: [anna, ben],
+			work: [
+				work(anna.id, "2026-11-02", 480),
+				work(anna.id, "2026-11-03", 570),
+				work(anna.id, "2026-11-04", 480),
+				work(ben.id, "2026-11-02", 240),
+			],
+			absences: [
+				{
+					id: "absence-1",
+					employeeId: anna.id,
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					categoryType: "vacation",
+					categoryColor: null,
+					startDate: "2026-11-06",
+					endDate: "2026-11-06",
+					startPeriod: "am",
+					endPeriod: "am",
+					approvalState: "approved",
+				},
+			],
+			blockers: [],
+			requirements: new Map([
+				[anna.id, Object.fromEntries(weekdays.map((date) => [date, { requiredMinutes: 480 }]))],
+			]),
+			holidays: new Map([
+				[anna.id, [{ name: "Founders Day", startDate: "2026-11-05", endDate: "2026-11-05" }]],
+			]),
+			settledDays: [settled(anna.id, "2026-11-03", 480), settled(anna.id, "2026-11-04", 480)],
+			...sources,
+		},
+	});
+}
+
+/** The day sheet pages of one employee: their page header names the employee. */
+function daySheetPages(text: string, employeeName: string): string[] {
+	return text.split("\n").filter((page) => page.includes(`Day sheet ${employeeName}`));
+}
+
+describe("payroll PDF day sheets", () => {
+	it("gives each employee in scope a day sheet with one row per local day", async () => {
+		const text = await pdfText(
+			await exportPayrollPeriodToPDF(periodRead(), { t: englishT, locale: "en" }),
+		);
+
+		const [annaSheet] = daySheetPages(text, "Anna Berg");
+		expect(annaSheet).toBeDefined();
+		expect(daySheetPages(text, "Ben Cole")).toHaveLength(1);
+		for (const date of ["11/1/2026", "11/2/2026", "11/7/2026"]) {
+			expect(annaSheet).toContain(date);
+		}
+		expect(annaSheet).toContain("Founders Day");
+		expect(annaSheet).toContain("Vacation (AM)");
+	});
+
+	it("ends each sheet with a total row matching the summary totals", async () => {
+		const text = await pdfText(
+			await exportPayrollPeriodToPDF(periodRead(), { t: englishT, locale: "en" }),
+		);
+
+		// 480 + 570 + 480 minutes; 2,400 required on five weekdays.
+		expect(daySheetPages(text, "Anna Berg")[0]).toMatch(/Total\s+25\.50 h\s+40\.00 h\s+-14\.50 h/);
+		expect(daySheetPages(text, "Ben Cole")[0]).toMatch(/Total\s+4\.00 h/);
+		const summaryPage = text.split("\n")[0];
+		expect(summaryPage).toContain("25.50 h");
+		expect(summaryPage).toContain("29.50 h");
+	});
+
+	it("marks settled and changed-since-settled days apart", async () => {
+		const text = await pdfText(
+			await exportPayrollPeriodToPDF(periodRead(), { t: englishT, locale: "en" }),
+		);
+		const sheet = daySheetPages(text, "Anna Berg")[0] ?? "";
+
+		// 3 Nov was settled at 8 h and now has 9.5 h; 4 Nov is unchanged.
+		expect(sheet).toMatch(/11\/3\/2026.*Changed since settled\s+\+1\.5 h/);
+		expect(sheet).toMatch(/11\/4\/2026.*Settled/);
+		expect(sheet).not.toMatch(/11\/2\/2026[^/]*Settled/);
+	});
+
+	it("uses the exporter's language and locale formatting", async () => {
+		const german: Record<string, string> = {
+			"payroll.pdf.daySheet.title": "Tagesblatt {name}",
+			"payroll.pdf.daySheet.total": "Summe",
+			"payroll.pdf.daySheet.settled": "Abgerechnet",
+			"payroll.pdf.daySheet.changedSinceSettled": "Seit Abrechnung geändert",
+			"payroll.pdf.summary.kicker": "Lohnabrechnungsprüfung",
+			"payroll.pdf.summary.workedHours": "Gearbeitete Stunden",
+		};
+		const germanT: PayrollPdfTranslate = (key, defaultValue, params) =>
+			interpolate(german[key] ?? defaultValue, params);
+
+		const text = await pdfText(
+			await exportPayrollPeriodToPDF(periodRead(), { t: germanT, locale: "de" }),
+		);
+		const sheet = text.split("\n").find((page) => page.includes("Tagesblatt Anna Berg")) ?? "";
+
+		expect(text).toContain("Lohnabrechnungsprüfung");
+		expect(text).toMatch(/Gearbeitete Stunden/i);
+		expect(sheet).toContain("3.11.2026");
+		expect(sheet).toMatch(/Summe\s+25,50 h/);
+		expect(sheet).toMatch(/Seit Abrechnung geändert\s+\+1,5 h/);
+		expect(sheet).toContain("Abgerechnet");
+		expect(text).not.toContain("Day sheet");
+	});
+
+	it("repeats the page header when a long period flows across pages", async () => {
+		const read = periodRead(
+			{
+				employees: [anna],
+				work: [],
+				absences: [],
+				settledDays: [],
+				requirements: new Map(),
+				holidays: new Map(),
+			},
+			{ start: "2026-01-01", end: "2026-03-31", label: "Q1 2026" },
+		);
+		const pages = daySheetPages(
+			await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" })),
+			"Anna Berg",
+		);
+
+		expect(pages.length).toBeGreaterThan(1);
+		for (const page of pages) {
+			expect(page).toMatch(/Date\s+Worked\s+Required\s+Difference/i);
+		}
+	}, 15_000);
+});
 
 const summary: PayrollWorkspaceSummary = {
 	organizationId: "organization-a",
@@ -129,9 +325,7 @@ describe("payroll PDF exporter", () => {
 				employeeId: "employee-2",
 				employeeName: "Grace Hopper",
 				employeeNumber: "E-2",
-				rows: [
-					{ date: "2026-06-04", categoryName: "Sick", periodLabel: "Full day" },
-				],
+				rows: [{ date: "2026-06-04", categoryName: "Sick", periodLabel: "Full day" }],
 			},
 		]);
 	});
@@ -215,9 +409,7 @@ describe("payroll PDF exporter", () => {
 		};
 
 		expect(
-			buildPayrollAbsenceSections(nameOrderingSummary).map(
-				(section) => section.employeeName,
-			),
+			buildPayrollAbsenceSections(nameOrderingSummary).map((section) => section.employeeName),
 		).toEqual(["ada", "Zoe"]);
 	});
 
@@ -242,9 +434,7 @@ describe("payroll PDF exporter", () => {
 		};
 
 		expect(
-			buildPayrollAbsenceSections(identicalNamesSummary).map(
-				(section) => section.employeeId,
-			),
+			buildPayrollAbsenceSections(identicalNamesSummary).map((section) => section.employeeId),
 		).toEqual(["employee-1", "employee-2"]);
 	});
 
@@ -277,9 +467,7 @@ describe("payroll PDF exporter", () => {
 					employeeId: "employee-2",
 					employeeName: "Grace Hopper",
 					employeeNumber: null,
-					rows: [
-						{ date: "2026-06-04", categoryName: "Vacation", periodLabel: "PM" },
-					],
+					rows: [{ date: "2026-06-04", categoryName: "Vacation", periodLabel: "PM" }],
 				},
 			]),
 		).toEqual([
@@ -308,54 +496,61 @@ describe("payroll PDF exporter", () => {
 	});
 
 	it("omits absence sections when there are no approved details", () => {
-		expect(
-			buildPayrollAbsenceSections({ ...summary, absenceDetails: [] }),
-		).toEqual([]);
+		expect(buildPayrollAbsenceSections({ ...summary, absenceDetails: [] })).toEqual([]);
 	});
 
 	it("generates a stable filename", () => {
-		expect(generatePayrollPDFFilename(summary)).toBe(
-			"payroll-acme-gmbh-2026-06-01-2026-06-30.pdf",
-		);
+		expect(generatePayrollPDFFilename(summary)).toBe("payroll-acme-gmbh-2026-06-01-2026-06-30.pdf");
 	});
 
-	it("generates a PDF byte array", async () => {
-		const pdf = await exportPayrollSummaryToPDF(summary);
-		expect(pdf.byteLength).toBeGreaterThan(1000);
+	it("keeps the summary page with totals and blockers", async () => {
+		const read = periodRead({
+			blockers: [
+				{
+					id: "blocker-1",
+					employeeId: ben.id,
+					type: "missing_clock_out",
+					label: "Missing clock-out",
+					date: "2026-11-02",
+					time: "09:00",
+				},
+			],
+		});
+		const summaryPage =
+			(await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" }))).split(
+				"\n",
+			)[0] ?? "";
+
+		expect(summaryPage).toContain("Payroll export audit");
+		expect(summaryPage).toContain("Acme GmbH");
+		expect(summaryPage).toMatch(/Employees\s+2/i);
+		expect(summaryPage).toMatch(/Ben Cole.*Missing clock-out/);
+		expect(summaryPage).toMatch(/Anna Berg.*\+1\.5 h since settled/);
+		expect(summaryPage).toContain("Vacation: 0.5 d");
 	});
 
 	it("exports same-source blockers of different types without duplicate keys or omission", async () => {
 		const sharedId = "11111111-1111-4111-8111-111111111111";
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => undefined);
+		const blocker = {
+			id: sharedId,
+			employeeId: ben.id,
+			type: "missing_clock_out" as const,
+			label: "Missing clock-out",
+			date: "2026-11-02",
+			time: "09:00",
+		};
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
 		try {
-			const singleBlockerPDF = await exportPayrollSummaryToPDF({
-				...summary,
-				blockers: [{ ...summary.blockers[0], id: sharedId }],
-			});
-			const collidingBlockersPDF = await exportPayrollSummaryToPDF({
-				...summary,
-				totals: { ...summary.totals, blockerCount: 2 },
-				blockers: [
-					{
-						...summary.blockers[0],
-						id: sharedId,
-						label: "Missing clock-out collision",
-					},
-					{
-						...summary.blockers[0],
-						id: sharedId,
-						type: "pending_absence",
-						label: "Pending absence collision",
-					},
-				],
-			});
-
-			expect(collidingBlockersPDF.byteLength).toBeGreaterThan(
-				singleBlockerPDF.byteLength,
+			const text = await pdfText(
+				await exportPayrollPeriodToPDF(
+					periodRead({ blockers: [blocker, { ...blocker, type: "pending_absence" }] }),
+					{ t: englishT, locale: "en" },
+				),
 			);
+
+			expect(text).toContain("Missing clock-out");
+			expect(text).toContain("Pending absence");
 			expect(consoleError.mock.calls.flat().join(" ")).not.toContain(
 				"Encountered two children with the same key",
 			);
@@ -364,56 +559,56 @@ describe("payroll PDF exporter", () => {
 		}
 	});
 
-	it("generates a PDF byte array without absence details", async () => {
-		const pdf = await exportPayrollSummaryToPDF({
-			...summary,
-			absenceDetails: [],
-		});
-		expect(pdf.byteLength).toBeGreaterThan(1000);
-	});
-
 	it("flows a long employee absence report across physical PDF pages", async () => {
-		const pdf = await exportPayrollSummaryToPDF({
-			...summary,
-			absenceDetails: Array.from({ length: 60 }, (_, index) => ({
-				employeeId: "employee-1",
+		const read = periodRead({
+			employees: [anna],
+			settledDays: [],
+			absences: Array.from({ length: 60 }, (_, index) => ({
+				id: `absence-${index}`,
+				employeeId: anna.id,
 				categoryId: `category-${String(index).padStart(2, "0")}`,
 				categoryName: `Approved absence category ${index + 1}`,
-				date: "2026-06-03",
-				period: "full_day" as const,
+				categoryType: null,
+				categoryColor: null,
+				startDate: "2026-11-03",
+				endDate: "2026-11-03",
+				startPeriod: "full_day" as const,
+				endPeriod: "full_day" as const,
+				approvalState: "approved" as const,
 			})),
 		});
-		const pageCount = countPDFPages(pdf);
+		const text = await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" }));
+		const absencePages = text.split("\n").filter((page) => page.includes("Absence details"));
 
-		expect(pageCount).toBeGreaterThan(2);
-	});
+		expect(absencePages.length).toBeGreaterThan(1);
+	}, 15_000);
 
-	it("keeps one-row employee absence reports compact", async () => {
+	it("paginates a large scope into one day sheet per employee", async () => {
 		const employees = Array.from({ length: 100 }, (_, index) => {
-			const employeeNumber = String(index + 1).padStart(3, "0");
+			const number = String(index + 1).padStart(3, "0");
 			return {
-				...summary.employees[0],
-				id: `employee-${employeeNumber}`,
-				name: `Employee ${employeeNumber}`,
-				employeeNumber: `E-${employeeNumber}`,
+				...anna,
+				id: `employee-${number}`,
+				name: `Employee ${number}`,
+				employeeNumber: `E-${number}`,
 			};
 		});
-		const pdf = await exportPayrollSummaryToPDF({
-			...summary,
-			totals: { ...summary.totals, employeeCount: employees.length },
-			employees,
-			absenceDetails: employees.map((employee) => ({
-				employeeId: employee.id,
-				categoryId: "vacation",
-				categoryName: "Vacation",
-				date: "2026-06-03",
-				period: "full_day" as const,
-			})),
-			blockers: [],
-		});
+		const read = periodRead(
+			{
+				employees,
+				work: employees.map((employee) => work(employee.id, "2026-11-02", 480)),
+				absences: [],
+				settledDays: [],
+				requirements: new Map(),
+				holidays: new Map(),
+			},
+			{ start: "2026-11-02", end: "2026-11-02", label: "2 Nov 2026" },
+		);
 
-		const pageCount = countPDFPages(pdf);
+		const pdf = await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" });
 
-		expect(pageCount).toBeLessThan(20);
-	}, 15_000);
+		// The summary's employee table, then exactly one sheet per employee.
+		expect(countPDFPages(pdf)).toBeGreaterThanOrEqual(101);
+		expect(countPDFPages(pdf)).toBeLessThan(108);
+	}, 30_000);
 });
