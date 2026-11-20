@@ -58,7 +58,9 @@ export function WidgetCard({
 	) : null;
 
 	return (
-		<Card className={cn("py-5 shadow-none", strip ? "h-full gap-3" : "gap-4")}>
+		// `@container/widget`: widget content adapts to the card's width, not the page's. A
+		// dashboard column on a wide screen is still a narrow card.
+		<Card className={cn("@container/widget py-5 shadow-none", strip ? "h-full gap-3" : "gap-4")}>
 			<CardHeader className="px-5">
 				<div className="flex flex-wrap items-start justify-between gap-2">
 					<div className="min-w-0 flex-1">
