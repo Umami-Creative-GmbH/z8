@@ -4,8 +4,11 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
+import { env } from "@/env";
 import { getConfiguredProviders } from "@/lib/social-oauth";
+import { normalizeCustomDomain } from "./custom-domain-hostname";
 import { domainCache } from "./domain-cache";
+import { getPlatformRootDomain, normalizeDomainHost } from "./platform-domain";
 import {
 	listUsableSsoProviderIds,
 	parseStoredAuthConfig,
@@ -155,6 +158,14 @@ export async function registerCustomDomain(
 	domain: string,
 	_isPrimary = false,
 ): Promise<{ id: string; verificationToken: string }> {
+	const normalizedDomain = normalizeCustomDomain(domain);
+	for (const root of [getPlatformRootDomain(), normalizeDomainHost(env.MAIN_DOMAIN ?? null)]) {
+		const hostname = root?.replace(/\.$/, "");
+		if (hostname && (normalizedDomain === hostname || normalizedDomain.endsWith(`.${hostname}`))) {
+			throw new Error("This domain is reserved for the platform");
+		}
+	}
+
 	// Check if organization already has a domain (limit: 1 per org)
 	const existingDomain = await db.query.organizationDomain.findFirst({
 		where: eq(organizationDomain.organizationId, organizationId),
@@ -163,9 +174,6 @@ export async function registerCustomDomain(
 	if (existingDomain) {
 		throw new Error("Organization can only have one custom domain");
 	}
-
-	// Normalize domain
-	const normalizedDomain = domain.toLowerCase().replace(/:\d+$/, "");
 
 	// Generate verification token
 	const verificationToken = crypto.randomBytes(32).toString("hex");
