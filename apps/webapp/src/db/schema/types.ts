@@ -5,13 +5,16 @@
 import type { PolicyClockOutBreakSnapshot } from "@/lib/time-tracking/policy-clock-out-break-snapshot.types";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot.types";
 
-// Auth method configuration type for custom domains
+// Sign-in methods offered on one host: a custom domain or the canonical platform domain.
 export type AuthConfig = {
 	emailPasswordEnabled: boolean;
+	// Social providers shown on this host; an empty list shows none.
 	socialProvidersEnabled: string[]; // ["google", "github", "linkedin", "apple"]
 	ssoEnabled: boolean;
 	ssoProviderId?: string; // Reference to ssoProvider.providerId
 	passkeyEnabled: boolean;
+	// New accounts may be created on this host. Missing means true (configs saved before #1885).
+	registrationEnabled?: boolean;
 	// Cloudflare Turnstile (enterprise domains - required, no fallback to global)
 	// Site key is public, stored here. Secret key stored in Vault at:
 	// secret/organizations/{orgId}/turnstile/secret_key

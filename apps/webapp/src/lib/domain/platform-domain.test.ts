@@ -19,11 +19,22 @@ const mockState = vi.hoisted(() => ({
 		},
 	},
 	getConfiguredProviders: vi.fn(),
+	getPlatformAuthConfig: vi.fn(),
 }));
 
 vi.mock("@/env", () => ({ env: mockState.env }));
 vi.mock("@/db", () => ({ db: mockState.db }));
 vi.mock("@/lib/social-oauth", () => ({ getConfiguredProviders: mockState.getConfiguredProviders }));
+vi.mock("./host-auth-config", () => ({ getPlatformAuthConfig: mockState.getPlatformAuthConfig }));
+
+const ENTRA_ONLY = {
+	emailPasswordEnabled: false,
+	socialProvidersEnabled: [],
+	ssoEnabled: true,
+	ssoProviderId: "entra-acme",
+	passkeyEnabled: false,
+	registrationEnabled: false,
+};
 
 const {
 	classifyDomainHost,
@@ -206,6 +217,7 @@ describe("platform organization resolution", () => {
 			slug: "acme",
 			name: "Acme",
 		});
+		mockState.getPlatformAuthConfig.mockResolvedValueOnce(ENTRA_ONLY);
 		mockState.db.query.organizationBranding.findFirst.mockResolvedValueOnce({
 			logoUrl: "https://cdn.example/logo.png",
 			backgroundImageUrl: null,
@@ -222,18 +234,15 @@ describe("platform organization resolution", () => {
 
 		const result = await getPlatformDomainConfig("acme.ui.z8-time.app");
 
+		expect(mockState.getPlatformAuthConfig).toHaveBeenCalledWith("org_123");
 		expect(result).toEqual({
 			organizationId: "org_123",
 			organizationSlug: "acme",
 			domain: "acme.ui.z8-time.app",
 			canonicalDomain: "acme.ui.z8-time.app",
 			isCanonical: true,
-			authConfig: {
-				emailPasswordEnabled: true,
-				socialProvidersEnabled: ["google", "github", "linkedin", "apple"],
-				ssoEnabled: false,
-				passkeyEnabled: true,
-			},
+			// The organization's own canonical-domain sign-in methods, SSO included (#1885).
+			authConfig: ENTRA_ONLY,
 			branding: {
 				logoUrl: "https://cdn.example/logo.png",
 				backgroundImageUrl: null,
@@ -260,6 +269,7 @@ describe("platform organization resolution", () => {
 			.mockResolvedValueOnce(null)
 			.mockResolvedValueOnce({ id: "org_123", slug: "acme", name: "Acme" });
 		mockState.db.query.organizationBranding.findFirst.mockResolvedValueOnce(null);
+		mockState.getPlatformAuthConfig.mockResolvedValueOnce(ENTRA_ONLY);
 
 		const result = await getPlatformDomainConfig("org_123.ui.z8-time.app");
 

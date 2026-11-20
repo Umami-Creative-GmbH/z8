@@ -471,6 +471,11 @@ describe("current-domain sign-in journey", () => {
 		);
 		expect(mocks.email).not.toHaveBeenCalled();
 	});
+	it("hides the sign-up link where registration is off (#1885)", () => {
+		arrival({ ...domain, authConfig: { ...DEFAULT_AUTH_CONFIG, registrationEnabled: false } });
+		expect(screen.getByLabelText("Email")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Sign up" })).toBeNull();
+	});
 	it("reports missing SSO configuration without invoking a provider", async () => {
 		arrival({ ...domain, authConfig: { ...DEFAULT_AUTH_CONFIG, ssoEnabled: true } });
 		fireEvent.click(screen.getByRole("button", { name: "Sign in with SSO" }));
