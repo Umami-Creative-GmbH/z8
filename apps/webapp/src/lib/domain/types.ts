@@ -64,6 +64,26 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
 	passkeyEnabled: true,
 };
 
+/** Configs saved before #1885 have no registration flag: registration stayed open. */
+export function isRegistrationEnabled(
+	config: Pick<AuthConfig, "registrationEnabled"> | null | undefined,
+): boolean {
+	return config?.registrationEnabled !== false;
+}
+
+/**
+ * Social providers a host offers: the ones it lists that are configured. Without
+ * a host config (no domain context) every configured provider is offered.
+ */
+export function filterOfferedSocialProviders<T extends { id: string }>(
+	authConfig: Pick<AuthConfig, "socialProvidersEnabled"> | null | undefined,
+	configuredProviders: T[],
+): T[] {
+	if (!authConfig) return configuredProviders;
+	const offered = new Set(authConfig.socialProvidersEnabled);
+	return configuredProviders.filter((provider) => offered.has(provider.id));
+}
+
 /**
  * Default branding when no custom branding is configured
  */

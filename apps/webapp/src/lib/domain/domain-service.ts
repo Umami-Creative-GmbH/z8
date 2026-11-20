@@ -7,6 +7,11 @@ import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/
 import { getConfiguredProviders } from "@/lib/social-oauth";
 import { domainCache } from "./domain-cache";
 import {
+	listUsableSsoProviderIds,
+	parseStoredAuthConfig,
+	withUsableSsoProvider,
+} from "./host-auth-config";
+import {
 	DEFAULT_AUTH_CONFIG,
 	DEFAULT_BRANDING,
 	type DomainAuthContext,
@@ -53,18 +58,15 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 		where: eq(organizationBranding.organizationId, domainRecord.organizationId),
 	});
 
-	// Parse auth config from JSON string
-	let authConfig: AuthConfig = DEFAULT_AUTH_CONFIG;
-	if (domainRecord.authConfig) {
-		try {
-			authConfig =
-				typeof domainRecord.authConfig === "string"
-					? JSON.parse(domainRecord.authConfig)
-					: domainRecord.authConfig;
-		} catch {
-			console.warn(`Failed to parse auth config for domain ${hostname}`);
-		}
+	const storedAuthConfig = parseStoredAuthConfig(domainRecord.authConfig);
+	if (domainRecord.authConfig && !storedAuthConfig) {
+		console.warn(`Failed to parse auth config for domain ${hostname}`);
 	}
+	// SSO needs a provider the organization can still sign in with (#1885).
+	const authConfig: AuthConfig = withUsableSsoProvider(
+		storedAuthConfig ?? DEFAULT_AUTH_CONFIG,
+		await listUsableSsoProviderIds(domainRecord.organizationId),
+	);
 
 	// Build branding object
 	let branding: OrganizationBranding | null = null;
@@ -331,10 +333,7 @@ export async function listOrganizationDomains(organizationId: string): Promise<
 		isPrimary: d.isPrimary,
 		verificationToken: d.verificationToken,
 		verificationTokenExpiresAt: d.verificationTokenExpiresAt,
-		authConfig:
-			typeof d.authConfig === "string"
-				? JSON.parse(d.authConfig)
-				: (d.authConfig ?? DEFAULT_AUTH_CONFIG),
+		authConfig: parseStoredAuthConfig(d.authConfig) ?? DEFAULT_AUTH_CONFIG,
 		createdAt: d.createdAt,
 	}));
 }

@@ -32,11 +32,11 @@ interface DomainAuthConfigDialogProps {
 	onOpenChange: (open: boolean) => void;
 	domain: Domain | null;
 	organizationId: string;
-	onSave: (
-		domainId: string,
-		config: AuthConfig,
-		turnstileSecretKey?: string,
-	) => Promise<void>;
+	/** The canonical platform domain stores sign-in methods only; Turnstile and cookie consent are global there. */
+	variant?: "customDomain" | "platform";
+	/** The organization has a verified SSO provider to sign in with. */
+	ssoProviderAvailable: boolean;
+	onSave: (domainId: string, config: AuthConfig, turnstileSecretKey?: string) => Promise<void>;
 }
 
 const SOCIAL_PROVIDERS = [
@@ -50,7 +50,10 @@ const getInitialConfig = (domain: Domain | null): AuthConfig => ({
 	emailPasswordEnabled: domain?.authConfig.emailPasswordEnabled ?? true,
 	socialProvidersEnabled: domain?.authConfig.socialProvidersEnabled ?? [],
 	ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
+	// Kept so saving does not detach SSO from its provider.
+	ssoProviderId: domain?.authConfig.ssoProviderId,
 	passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
+	registrationEnabled: domain?.authConfig.registrationEnabled !== false,
 	turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
 	cookieConsentScript: domain?.authConfig.cookieConsentScript,
 });
@@ -60,6 +63,8 @@ function useDomainAuthConfigController({
 	onOpenChange,
 	domain,
 	organizationId: _organizationId,
+	variant = "customDomain",
+	ssoProviderAvailable,
 	onSave,
 }: DomainAuthConfigDialogProps) {
 	const { t } = useTranslate();
@@ -120,8 +125,10 @@ function useDomainAuthConfigController({
 		open,
 		setConfig,
 		setTurnstileSecretKey,
+		ssoProviderAvailable,
 		t,
 		turnstileSecretKey,
+		variant,
 	};
 }
 
@@ -129,12 +136,8 @@ type DomainAuthConfigController = ReturnType<
 	typeof useDomainAuthConfigController
 >;
 
-function AuthenticationMethodsSection({
-	controller,
-}: {
-	controller: DomainAuthConfigController;
-}) {
-	const { config, handleSocialProviderToggle, setConfig, t } = controller;
+function AuthenticationMethodsSection({ controller }: { controller: DomainAuthConfigController }) {
+	const { config, handleSocialProviderToggle, setConfig, ssoProviderAvailable, t } = controller;
 
 	return (
 		<>
@@ -158,6 +161,28 @@ function AuthenticationMethodsSection({
 							...prev,
 							emailPasswordEnabled: checked,
 						}))
+					}
+				/>
+			</div>
+
+			<Separator />
+			<div className="flex items-center justify-between">
+				<div className="space-y-0.5">
+					<Label htmlFor="registration">
+						{t("settings.enterprise.domains.registration", "Registration")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.enterprise.domains.registrationHelp",
+							"Allow new people to create an account here. When off, only people with an invitation can sign up.",
+						)}
+					</p>
+				</div>
+				<Switch
+					id="registration"
+					checked={config.registrationEnabled !== false}
+					onCheckedChange={(checked) =>
+						setConfig((prev) => ({ ...prev, registrationEnabled: checked }))
 					}
 				/>
 			</div>
@@ -203,18 +228,19 @@ function AuthenticationMethodsSection({
 						{t("settings.enterprise.domains.sso", "Single Sign-On (SSO)")}
 					</Label>
 					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.enterprise.domains.ssoHelp",
-							"Allow OIDC-based enterprise sign-in",
-						)}
+						{ssoProviderAvailable
+							? t("settings.enterprise.domains.ssoHelp", "Allow OIDC-based enterprise sign-in")
+							: t(
+									"settings.enterprise.domains.ssoUnavailableHelp",
+									"Set up and verify an SSO provider under Identity setup first.",
+								)}
 					</p>
 				</div>
 				<Switch
 					id="sso"
-					checked={config.ssoEnabled}
-					onCheckedChange={(checked) =>
-						setConfig((prev) => ({ ...prev, ssoEnabled: checked }))
-					}
+					checked={config.ssoEnabled && ssoProviderAvailable}
+					disabled={!ssoProviderAvailable}
+					onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, ssoEnabled: checked }))}
 				/>
 			</div>
 
@@ -361,15 +387,8 @@ function DomainSecuritySection({
 
 export function DomainAuthConfigDialog(props: DomainAuthConfigDialogProps) {
 	const controller = useDomainAuthConfigController(props);
-	const {
-		domain,
-		handleOpenChange,
-		handleSave,
-		isSaving,
-		onOpenChange,
-		open,
-		t,
-	} = controller;
+	const { domain, handleOpenChange, handleSave, isSaving, onOpenChange, open, t, variant } =
+		controller;
 
 	if (!domain) return null;
 
@@ -394,7 +413,7 @@ export function DomainAuthConfigDialog(props: DomainAuthConfigDialogProps) {
 
 				<ActionPanelBody className="space-y-6">
 					<AuthenticationMethodsSection controller={controller} />
-					<DomainSecuritySection controller={controller} />
+					{variant === "customDomain" ? <DomainSecuritySection controller={controller} /> : null}
 				</ActionPanelBody>
 
 				<ActionPanelFooter>

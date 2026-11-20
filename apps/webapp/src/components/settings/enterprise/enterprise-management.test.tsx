@@ -43,6 +43,7 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	requestSSODomainVerificationAction: vi.fn(),
 	storeTurnstileSecretAction: vi.fn(),
 	updateDomainAuthConfigAction: vi.fn(),
+	updatePlatformAuthConfigAction: vi.fn(),
 	verifyDomainAction: vi.fn(),
 	verifySSODomainAction: vi.fn(),
 }));
@@ -71,6 +72,17 @@ const domain = {
 		passkeyEnabled: false,
 	},
 	createdAt: new Date("2026-01-01T00:00:00.000Z"),
+};
+
+const platformAuth = {
+	config: {
+		emailPasswordEnabled: true,
+		socialProvidersEnabled: [],
+		ssoEnabled: true,
+		passkeyEnabled: true,
+		registrationEnabled: true,
+	},
+	ssoProviderAvailable: true,
 };
 
 const provider = {
@@ -147,6 +159,7 @@ describe("enterprise management deletion", () => {
 			<DomainManagement
 				defaultUrls={{ canonical: "https://acme.z8.test" }}
 				initialDomains={[domain]}
+				initialPlatformAuth={platformAuth}
 				organizationId="org_123"
 			/>,
 		);
@@ -224,6 +237,7 @@ const removals = [
 				<DomainManagement
 					defaultUrls={{ canonical: "https://acme.z8.test" }}
 					initialDomains={[domain]}
+					initialPlatformAuth={platformAuth}
 					organizationId="org_123"
 				/>,
 			),

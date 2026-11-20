@@ -124,10 +124,39 @@ export function SignupFormBody({
 		isInvitationSignup,
 		isLoading,
 		providersLoading,
+		registrationClosed,
 		sanitizedCallbackUrl,
 		showEmailPassword,
 		t,
 	} = controller;
+	if (registrationClosed) {
+		return (
+			<AuthFormWrapper
+				backHref="/sign-in"
+				className={className}
+				title={t("auth.create-account", "Create your account")}
+				branding={branding}
+				{...props}
+			>
+				<Alert>
+					<AlertDescription>
+						{t(
+							"auth.registration-disabled",
+							"Registration is turned off here. Ask your administrator for an invitation.",
+						)}
+					</AlertDescription>
+				</Alert>
+				<div className="text-center text-sm">
+					<Link
+						className="underline underline-offset-4"
+						href={withCallbackUrl("/sign-in", sanitizedCallbackUrl)}
+					>
+						{t("auth.sign-in", "Sign in")}
+					</Link>
+				</div>
+			</AuthFormWrapper>
+		);
+	}
 	return (
 		<AuthFormWrapper
 			backHref="/sign-in"

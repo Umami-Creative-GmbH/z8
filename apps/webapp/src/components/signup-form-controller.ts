@@ -16,6 +16,7 @@ import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
+import { filterOfferedSocialProviders, isRegistrationEnabled } from "@/lib/domain/types";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { useRouter } from "@/navigation";
@@ -187,14 +188,9 @@ export function useSignupFormController({
 	}, [inviteCode]);
 
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
-	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
-	const allowedSocialProviderSet = new Set(allowedSocialProviders);
-	const filteredProviders =
-		allowedSocialProviders.length === 0
-			? enabledProviders
-			: enabledProviders.filter((provider) =>
-					allowedSocialProviderSet.has(provider.id),
-				);
+	const filteredProviders = filterOfferedSocialProviders(authConfig, enabledProviders);
+	// With registration off, only an invited person (arriving with their address) signs up here.
+	const registrationClosed = !isRegistrationEnabled(authConfig) && !initialEmail;
 	const validatePassword = (value: string) => validateStrongPassword(value, t);
 	const validateConfirmPassword = (value: string) =>
 		validatePasswordConfirmation(value, formData.password, t);
@@ -278,6 +274,7 @@ export function useSignupFormController({
 		isInvitationSignup: Boolean(initialEmail),
 		isLoading,
 		providersLoading,
+		registrationClosed,
 		sanitizedCallbackUrl,
 		showEmailPassword,
 		t,

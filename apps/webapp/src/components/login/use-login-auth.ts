@@ -13,6 +13,7 @@ import {
 import { useDomainAuth } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
+import { filterOfferedSocialProviders, isRegistrationEnabled } from "@/lib/domain/types";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding-steps";
@@ -102,11 +103,8 @@ export function useLoginAuth(
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
 	const showPasskey = authConfig?.passkeyEnabled ?? true;
 	const showSSO = authConfig?.ssoEnabled ?? false;
-	const allowed = authConfig?.socialProvidersEnabled ?? [];
-	const allowedProviders = new Set(allowed);
-	const filteredProviders = allowed.length
-		? enabledProviders.filter((provider) => allowedProviders.has(provider.id))
-		: enabledProviders;
+	const showSignUp = isRegistrationEnabled(authConfig);
+	const filteredProviders = filterOfferedSocialProviders(authConfig, enabledProviders);
 
 	useEffect(() => {
 		const owner = lifetime.current;
@@ -395,6 +393,7 @@ export function useLoginAuth(
 		showEmailPassword,
 		showPasskey,
 		showSSO,
+		showSignUp,
 		turnstileConfig,
 		turnstileToken,
 		verificationState,

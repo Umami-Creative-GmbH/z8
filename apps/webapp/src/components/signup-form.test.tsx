@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	domainAuth: null as null | { authConfig: Record<string, unknown> },
 	enabledProviders: [] as Array<{ id: string; name: string; icon: () => null }>,
 	push: vi.fn(),
 	signInSocial: vi.fn(),
@@ -50,7 +51,7 @@ vi.mock("@/app/[locale]/(auth)/invitation-actions", () => ({
 }));
 
 vi.mock("@/lib/auth/domain-auth-context", () => ({
-	useDomainAuth: () => null,
+	useDomainAuth: () => mocks.domainAuth,
 	useTurnstile: mocks.useTurnstile,
 }));
 
@@ -144,6 +145,42 @@ describe("SignupForm", () => {
 		mocks.storePendingInviteCode.mockResolvedValue(undefined);
 		mocks.useTurnstile.mockReturnValue(null);
 		mocks.verifyTurnstile.mockResolvedValue({ success: true });
+		mocks.domainAuth = null;
+	});
+
+	it("tells people registration is off on this host instead of showing the form (#1885)", () => {
+		mocks.domainAuth = {
+			authConfig: {
+				emailPasswordEnabled: true,
+				socialProvidersEnabled: [],
+				ssoEnabled: true,
+				passkeyEnabled: true,
+				registrationEnabled: false,
+			},
+		};
+		render(<SignupForm />);
+
+		expect(
+			screen.getByText(
+				"Registration is turned off here. Ask your administrator for an invitation.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByLabelText("Email")).toBeNull();
+	});
+
+	it("still lets an invited person sign up while registration is off", () => {
+		mocks.domainAuth = {
+			authConfig: {
+				emailPasswordEnabled: true,
+				socialProvidersEnabled: [],
+				ssoEnabled: false,
+				passkeyEnabled: true,
+				registrationEnabled: false,
+			},
+		};
+		render(<SignupForm initialEmail="invited@acme.test" />);
+
+		expect(screen.getByLabelText("Email")).toBeTruthy();
 	});
 
 	it("sends the token in the signup request without consuming it in a separate verification", async () => {

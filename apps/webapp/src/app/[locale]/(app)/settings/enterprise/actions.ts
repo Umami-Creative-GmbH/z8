@@ -19,14 +19,19 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import {
+	type AuthConfig,
 	deleteCustomDomain,
 	getOrganizationBranding,
+	getStoredPlatformAuthConfig,
 	listOrganizationDomains,
+	listUsableSsoProviderIds,
 	registerCustomDomain,
 	requestNewVerificationToken,
+	savePlatformAuthConfig,
 	updateDomainAuthConfig,
 	updateOrganizationBranding,
 	verifyDomainOwnership,
+	withUsableSsoProvider,
 } from "@/lib/domain";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { selectVerifiedEnterpriseIdentityDomain } from "@/lib/enterprise-identity/enforcement";
@@ -676,15 +681,34 @@ export const regenerateVerificationTokenAction = organizationAction(
 		}),
 );
 
-const authConfigSchema = z.strictObject({
+const signInMethodsSchema = {
 	emailPasswordEnabled: z.boolean(),
 	socialProvidersEnabled: z.array(z.string().max(50)).max(20),
 	ssoEnabled: z.boolean(),
 	ssoProviderId: z.string().max(255).optional(),
 	passkeyEnabled: z.boolean(),
+	registrationEnabled: z.boolean().optional(),
+};
+
+const authConfigSchema = z.strictObject({
+	...signInMethodsSchema,
 	turnstileSiteKey: z.string().max(255).optional(),
 	cookieConsentScript: z.string().max(100_000).optional(),
 });
+
+/**
+ * SSO sign-in is saved against a provider the organization can sign in with: the
+ * chosen one when it qualifies, else the identity setup's (#1885). The settings
+ * dialog never picks one itself.
+ */
+async function withSavedSsoProvider(organizationId: string, config: AuthConfig) {
+	if (!config.ssoEnabled) return config;
+	const resolved = withUsableSsoProvider(config, await listUsableSsoProviderIds(organizationId));
+	if (!resolved.ssoEnabled) {
+		refuse("Set up and verify an SSO provider under Identity setup before turning on SSO sign-in.");
+	}
+	return resolved;
+}
 
 export const updateDomainAuthConfigAction = organizationAction(
 	{
@@ -695,8 +719,56 @@ export const updateDomainAuthConfigAction = organizationAction(
 	({ organizationId, input }) =>
 		withDatabase("Unable to save the sign-in settings", async (database) => {
 			await organizationDomainById(database, input.domainId, organizationId);
-			await updateDomainAuthConfig(input.domainId, input.config);
+			await updateDomainAuthConfig(
+				input.domainId,
+				await withSavedSsoProvider(organizationId, input.config),
+			);
 			revalidatePath("/settings/enterprise/domains");
+		}),
+);
+
+export interface PlatformAuthConfigResponse {
+	config: AuthConfig;
+	/** The organization has a verified SSO provider the canonical domain can offer. */
+	ssoProviderAvailable: boolean;
+}
+
+/** Sign-in methods of the canonical platform domain (`<slug>.<platform root>`), #1885. */
+export const getPlatformAuthConfigAction = organizationAction(
+	{ name: "enterpriseDomains.getPlatformAuthConfig", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		enterpriseWork(
+			"Unable to load the sign-in settings",
+			async (): Promise<PlatformAuthConfigResponse> => {
+				const [config, providerIds] = await Promise.all([
+					getStoredPlatformAuthConfig(organizationId),
+					listUsableSsoProviderIds(organizationId),
+				]);
+				return {
+					config: { ...config, ssoEnabled: config.ssoEnabled && providerIds.length > 0 },
+					ssoProviderAvailable: providerIds.length > 0,
+				};
+			},
+		),
+);
+
+export const updatePlatformAuthConfigAction = organizationAction(
+	{
+		name: "enterpriseDomains.updatePlatformAuthConfig",
+		requires: "orgAdmin",
+		schema: z.strictObject({ config: z.strictObject(signInMethodsSchema) }),
+	},
+	({ organizationId, input }) =>
+		enterpriseWork("Unable to save the sign-in settings", async () => {
+			// The canonical domain shows the global Turnstile widget and cookie
+			// consent script, so only sign-in methods are stored for it.
+			const config = await withSavedSsoProvider(organizationId, {
+				...input.config,
+				registrationEnabled: input.config.registrationEnabled ?? true,
+			});
+			await savePlatformAuthConfig(organizationId, config);
+			revalidatePath("/settings/enterprise/domains");
+			return config;
 		}),
 );
 
