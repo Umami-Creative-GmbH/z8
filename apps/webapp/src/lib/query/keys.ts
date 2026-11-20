@@ -249,6 +249,9 @@ export const queryKeys = {
 		/** The records of one employee-day, for the Days tab's side panel (#1894). */
 		dayRecords: (request: { employeeId: string; date: string; refreshedAt: string }) =>
 			["payroll", "day-records", request.employeeId, request.date, request.refreshedAt] as const,
+		/** The settlement history of one employee-day, for the side panel (#1897). */
+		daySettlementHistory: (request: { employeeId: string; date: string }) =>
+			["payroll", "day-settlement-history", request.employeeId, request.date] as const,
 	},
 
 	// Closed months

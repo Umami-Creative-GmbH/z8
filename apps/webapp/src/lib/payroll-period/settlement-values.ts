@@ -28,19 +28,40 @@ export function settledDayValues(day: PayrollPeriodDay): PayrollSettledDayValues
 	};
 }
 
-/** A day's settlement state from its active settlement, if any. */
+/**
+ * A day's settlement state from its active settlement, if any (#1896). The day is
+ * changed since settled (#1897) when its current values differ from the copy taken
+ * at settling: other credited minutes, or an approved absence added, removed, or
+ * with another category or day period. A renamed category is not a change.
+ */
 export function daySettlement(
 	source: PayrollSettledDaySource | undefined,
+	day: PayrollPeriodDay,
 ): PayrollPeriodDaySettlement {
 	if (!source) return { state: "unsettled" };
-	return {
-		state: "settled",
+	const settled = {
 		settledDayId: source.id,
 		method: source.method,
 		payrollExportJobId: source.payrollExportJobId,
 		settledAt: source.settledAt,
 		paid: source.paid,
 	};
+	const current = settledDayValues(day);
+	const creditedMinutesDifference = current.creditedMinutes - source.paid.creditedMinutes;
+	const absencesChanged = absenceKeys(current.absences) !== absenceKeys(source.paid.absences);
+	if (creditedMinutesDifference === 0 && !absencesChanged) return { state: "settled", ...settled };
+	return {
+		state: "changed_since_settled",
+		...settled,
+		change: { current, creditedMinutesDifference, absencesChanged },
+	};
+}
+
+function absenceKeys(absences: PayrollSettledDayValues["absences"]): string {
+	return absences
+		.map((absence) => `${absence.categoryId}:${absence.period}`)
+		.toSorted()
+		.join("|");
 }
 
 function compare(left: string, right: string): number {

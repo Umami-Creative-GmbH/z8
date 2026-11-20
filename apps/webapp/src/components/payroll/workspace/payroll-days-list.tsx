@@ -17,6 +17,7 @@ import {
 	isAfterDeparture,
 	type PayrollDaysFormat,
 	PayrollLeftOn,
+	PayrollSettlementMarker,
 	absencePeriodLabel,
 	dayTitle,
 } from "./payroll-days-grid";
@@ -150,7 +151,8 @@ export function PayrollDaysList({
 									</span>
 								</span>
 								<span className="flex shrink-0 flex-col items-end">
-									<span className="font-medium">
+									<span className="flex items-center gap-1 font-medium">
+										<PayrollSettlementMarker day={day} />
 										{day.creditedMinutes === 0 ? "–" : format.hours(day.creditedMinutes)}
 									</span>
 									{day.requiredMinutes !== null && day.requiredMinutes > 0 ? (

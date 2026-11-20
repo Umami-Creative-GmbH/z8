@@ -1,6 +1,11 @@
 "use client";
 
-import { IconAlertTriangle, IconCircleCheck, IconConfetti } from "@tabler/icons-react";
+import {
+	IconAlertCircle,
+	IconAlertTriangle,
+	IconCircleCheck,
+	IconConfetti,
+} from "@tabler/icons-react";
 import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -8,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { PayrollDayPanel, type PayrollDaySelection } from "./payroll-day-panel";
+import { PayrollDaySettlement } from "./payroll-day-settlement";
 import { PayrollDaysGrid, payrollDaysFormat } from "./payroll-days-grid";
 import { PayrollDaysList } from "./payroll-days-list";
 import { PayrollPlaceholderTab } from "./payroll-workspace-tabs";
@@ -79,6 +85,8 @@ export function PayrollDaysTab({
 	}
 
 	const dates = data.employees[0]?.days.map((day) => day.date) ?? [];
+	// The open day follows refetches of the period, for example after unsettling it.
+	const currentSelection = selection ? currentDay(data.employees, selection) : null;
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
 			<PayrollDaysLegend t={t} />
@@ -97,11 +105,30 @@ export function PayrollDaysTab({
 				format={format}
 				onClose={() => setSelection(null)}
 				refreshedAt={refreshedAt}
-				selection={selection}
+				selection={currentSelection}
+				settlementHistory={
+					currentSelection ? (
+						<PayrollDaySettlement
+							day={currentSelection.day}
+							employeeId={currentSelection.employee.id}
+							format={format}
+							t={t}
+						/>
+					) : null
+				}
 				t={t}
 			/>
 		</div>
 	);
+}
+
+function currentDay(
+	employees: readonly PayrollPeriodEmployee[],
+	selection: PayrollDaySelection,
+): PayrollDaySelection {
+	const employee = employees.find((row) => row.id === selection.employee.id);
+	const day = employee?.days.find((row) => row.date === selection.day.date);
+	return employee && day ? { employee, day } : selection;
 }
 
 function PayrollDaysLegend({ t }: { t: PayrollTranslate }) {
@@ -123,6 +150,13 @@ function PayrollDaysLegend({ t }: { t: PayrollTranslate }) {
 					className="size-3.5 text-emerald-600 dark:text-emerald-400"
 				/>
 				{t("payroll.days.legend.settled", "Settled")}
+			</span>
+			<span className="inline-flex items-center gap-1">
+				<IconAlertCircle
+					aria-hidden="true"
+					className="size-3.5 text-amber-600 dark:text-amber-400"
+				/>
+				{t("payroll.days.legend.changedSinceSettled", "Changed since settled")}
 			</span>
 			<span className="inline-flex items-center gap-1">
 				<span

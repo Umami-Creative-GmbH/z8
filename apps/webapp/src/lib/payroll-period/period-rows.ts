@@ -74,7 +74,7 @@ export function buildPayrollPeriodRows(input: {
 			// A requirement source lists only days that require time; other days require none.
 			const requiredMinutes = requirements ? (requirements[date]?.requiredMinutes ?? 0) : null;
 			const holiday = holidayByDate.get(date);
-			return {
+			const day: PayrollPeriodDay = {
 				date,
 				creditedMinutes,
 				requiredMinutes,
@@ -83,8 +83,10 @@ export function buildPayrollPeriodRows(input: {
 					({ employeeId: _employeeId, date: _date, ...mark }) => mark,
 				),
 				holiday: holiday ? { name: holiday } : null,
-				settlement: daySettlement(settledByEmployeeDay.get(`${source.id}:${date}`)),
 			};
+			// The comparison with the copy taken at settling (#1897).
+			day.settlement = daySettlement(settledByEmployeeDay.get(`${source.id}:${date}`), day);
+			return day;
 		});
 		const creditedMinutes = days.reduce((sum, day) => sum + day.creditedMinutes, 0);
 		const requiredDays = days.filter((day) => day.requiredMinutes !== null);

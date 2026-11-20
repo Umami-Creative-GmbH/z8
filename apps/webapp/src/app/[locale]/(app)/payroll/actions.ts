@@ -32,13 +32,15 @@ import {
 	payrollWorkspaceExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
 import { readPeriodDayForEmployee } from "@/lib/payroll-period/read-day";
-import { readPeriodForEmployees } from "@/lib/payroll-period/read-period";
+import { readPeriodForEmployees, resolvePeriodEmployeeIds } from "@/lib/payroll-period/read-period";
 import { loadActiveSettledDays } from "@/lib/payroll-period/settled-days-store";
 import {
+	type PayrollSettlementHistoryEntry,
 	previewSettleDays,
 	type SettleDaysPreview,
 	type SettleDaysResult,
 	settleDays,
+	settlementHistory,
 	unsettleDays,
 } from "@/lib/payroll-period/settlement";
 import type { PayrollPeriodDayDetail, PayrollPeriodRead } from "@/lib/payroll-period/types";
@@ -177,16 +179,10 @@ export async function unsettlePayrollDaysAction(
 			t,
 			request,
 		);
-		const allowed = await resolvePayrollAccessibleEmployeeIds({
-			organizationId,
-			payrollEmployeeId: actor.employeeId,
-		});
+		// Employees who left during or after the period are in scope too (#1894).
 		const settled = await loadActiveSettledDays(db, {
 			organizationId,
-			employeeIds: intersectPayrollScope({
-				allowedEmployeeIds: allowed,
-				requestedEmployeeIds: scope.employeeIds,
-			}),
+			employeeIds: await resolvePeriodEmployeeIds(organizationId, actor, range.startDate, scope),
 			...range,
 		});
 		const result = await unsettleDays(
@@ -204,6 +200,58 @@ export async function unsettlePayrollDaysAction(
 		if (result.status !== "unsettled") throwPayrollSettlementOutOfScope(t, actor.userId);
 		revalidatePath("/payroll");
 		return { unsettledDays: result.unsettled.length };
+	});
+}
+
+/**
+ * The settlement history of one employee-day (#1897), newest first, for the Days
+ * tab's side panel: who settled or unsettled it, when, how, why, and what was paid.
+ */
+export async function getPayrollDaySettlementHistoryAction(request: {
+	employeeId: string;
+	date: string;
+}): Promise<ServerActionResult<PayrollSettlementHistoryEntry[]>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor, scope, range } = await resolvePayrollDayRequest(t, request);
+		return settlementHistory(organizationId, actor, scope, range);
+	});
+}
+
+/** Unsettles one employee-day from the side panel, with a required reason (#1897). */
+export async function unsettlePayrollDayAction(request: {
+	employeeId: string;
+	date: string;
+	reason: string;
+}): Promise<ServerActionResult<{ unsettled: boolean }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollDayRequest(t, request);
+		const result = await unsettleDays(
+			organizationId,
+			actor,
+			[{ employeeId: request.employeeId, date: request.date }],
+			typeof request.reason === "string" ? request.reason : "",
+		);
+		if (result.status === "reason_required") {
+			throw new ValidationError({
+				message: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
+				field: "reason",
+			});
+		}
+		if (result.status !== "unsettled") throwPayrollSettlementOutOfScope(t, actor.userId);
+		revalidatePath("/payroll");
+		return { unsettled: result.unsettled.length === 1 };
+	});
+}
+
+async function resolvePayrollDayRequest(
+	t: PayrollTranslate,
+	request: { employeeId: string; date: string },
+) {
+	return resolvePayrollSettlementRequest(t, {
+		startDate: request.date,
+		endDate: request.date,
+		label: request.date,
+		employeeIds: [request.employeeId],
 	});
 }
 
