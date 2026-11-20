@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
@@ -45,7 +46,7 @@ import {
 } from "@/lib/payroll-period/settlement";
 import type { PayrollPeriodDayDetail, PayrollPeriodRead } from "@/lib/payroll-period/types";
 import {
-	exportPayrollSummaryToPDF,
+	exportPayrollPeriodToPDF,
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
@@ -447,11 +448,26 @@ export async function exportPayrollPdfAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<{ filename: string; data: number[] }>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const summary = await buildScopedPayrollWorkspaceSummary(t, request);
-		const pdfBytes = await exportPayrollSummaryToPDF(summary);
+		// The PDF reads the payroll period module, so it matches the Days tab (#1900).
+		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+			undefined,
+			{ includeDeparted: true },
+		);
+		const read = await readPeriodForEmployees(
+			authContext.employee.organizationId,
+			{
+				employeeId: authContext.employee.id,
+				name: authContext.user.name || authContext.user.email,
+			},
+			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
+			{ employeeIds: scopedEmployeeIds },
+		);
+		const pdfBytes = await exportPayrollPeriodToPDF(read, { t, locale: await getLocale() });
 
 		return {
-			filename: generatePayrollPDFFilename(summary),
+			filename: generatePayrollPDFFilename(read.summary),
 			data: Array.from(pdfBytes),
 		};
 	});

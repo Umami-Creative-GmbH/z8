@@ -15,6 +15,7 @@ import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
+import { payrollBlockerTypeLabel } from "@/lib/payroll-workspace/blocker-labels";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import type { BlockerFocusRequest, PayrollTranslate } from "./state";
 
@@ -25,35 +26,18 @@ function payrollBlockerAction(
 	locale: string,
 	t: PayrollTranslate,
 ) {
-	let blockerType: string;
+	const blockerType = payrollBlockerTypeLabel(blocker, locale, t);
 	let actionLabel: string;
 	let href: string;
 
 	switch (blocker.type) {
 		case "missing_clock_out":
 		case "unresolved_work_minutes":
-			blockerType =
-				blocker.type === "missing_clock_out"
-					? t("payroll.blockers.missingClockOut", "Missing clock-out")
-					: t("payroll.blockers.unresolvedWorkMinutes", "Work minutes need review");
-			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
-			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
-			}`;
-			break;
+		// Fixed through the existing time correction flow on the calendar.
 		case "offboarding_clock_repair":
-			// Fixed through the existing time correction flow on the calendar.
-			blockerType = t(
-				"payroll.blockers.offboardingClockRepair",
-				"Offboarding clock-out needs repair",
-			);
-			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
-			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
-			}`;
-			break;
 		case "open_work":
-			blockerType = t("payroll.blockers.openWork", "Work without clock-out");
+		// A settled day's values changed after settling (#1897).
+		case "changed_since_settled":
 			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
 			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
 				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
@@ -61,41 +45,22 @@ function payrollBlockerAction(
 			break;
 		case "pending_work_approval":
 		case "pending_work_correction":
-			blockerType =
-				blocker.type === "pending_work_approval"
-					? t("payroll.blockers.pendingWorkApproval", "Work awaiting approval")
-					: t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
+		case "pending_time_correction":
 			actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
 			href = "/approvals/inbox?types=time_entry";
 			break;
 		case "uncertain_historical_work":
-			blockerType = t("payroll.blockers.uncertainHistoricalWork", "Historical work needs review");
 			actionLabel = t("payroll.blockers.openWorkDiagnostics", "Open work diagnostics");
 			href = "/settings/work-diagnostics";
 			break;
-		case "pending_time_correction":
-			blockerType = t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
-			actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
-			href = "/approvals/inbox?types=time_entry";
-			break;
 		case "pending_absence":
-			blockerType = t("payroll.blockers.pendingAbsence", "Pending absence");
 			actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
 			href = "/approvals/inbox?types=absence_entry";
 			break;
 		case "missing_identifier":
 			// The configured custom field identifier has no value (#821).
-			blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
 			actionLabel = t("payroll.blockers.openEmployee", "Open employee");
 			href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
-			break;
-		case "changed_since_settled":
-			// A settled day's values changed after settling (#1897), e.g. "+1.5 h since settled".
-			blockerType = changedSinceSettledLabel(blocker, locale, t);
-			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
-			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
-			}`;
 			break;
 	}
 
@@ -273,33 +238,6 @@ export function PayrollBlockersAlert({
 			</section>
 		</Collapsible>
 	);
-}
-
-function changedSinceSettledLabel(
-	blocker: PayrollWorkspaceSummary["blockers"][number],
-	locale: string,
-	t: PayrollTranslate,
-): string {
-	const change = blocker.settledChange;
-	if (!change) return t("payroll.blockers.changedSinceSettled", "Changed since settled");
-	const hours =
-		change.creditedMinutesDifference === 0
-			? null
-			: new Intl.NumberFormat(locale, {
-					maximumFractionDigits: 2,
-					signDisplay: "exceptZero",
-				}).format(change.creditedMinutesDifference / 60);
-	if (hours && change.absencesChanged) {
-		return t(
-			"payroll.blockers.changedSinceSettledHoursAndAbsence",
-			"{hours} h and absence changed since settled",
-			{ hours },
-		);
-	}
-	if (hours) {
-		return t("payroll.blockers.changedSinceSettledHours", "{hours} h since settled", { hours });
-	}
-	return t("payroll.blockers.changedSinceSettledAbsence", "Absence changed since settled");
 }
 
 function formatPayrollBlockerDate(date: string | null, locale: string): string | null {
