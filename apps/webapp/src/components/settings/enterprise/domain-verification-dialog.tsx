@@ -152,6 +152,14 @@ export function DomainVerificationDialog({
 							</div>
 						</div>
 
+						<p className="break-words text-sm">
+							{t(
+								"settings.enterprise.domains.routingInstruction",
+								"For a subdomain, add a CNAME record pointing {domain} to {target}. For an apex domain, add an A record pointing to the Z8 load balancer IP. Turn off CDN proxying for this record.",
+								{ domain: domain.domain, target: "ui.z8-time.app" },
+							)}
+						</p>
+
 						<Alert>
 							<AlertTitle>
 								{t("settings.enterprise.domains.dnsPropagation", "DNS Propagation")}
