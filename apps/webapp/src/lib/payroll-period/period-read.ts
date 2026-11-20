@@ -38,7 +38,7 @@ export function buildPayrollPeriodRead(input: {
 	generatedBy: { id: string; name: string };
 	sources: PayrollPeriodSources;
 }): PayrollPeriodRead {
-	const { sources } = input;
+	const sources = withoutDepartedEmployeesWithoutData(input.sources);
 	const rows = buildPayrollPeriodRows({
 		period: { startDate: input.period.start, endDate: input.period.end },
 		employees: sources.employees,
@@ -56,7 +56,9 @@ export function buildPayrollPeriodRead(input: {
 		period: input.period,
 		generatedAt: input.generatedAt,
 		generatedBy: input.generatedBy,
-		employees: sources.employees.map(({ timezone: _timezone, ...employee }) => employee),
+		employees: sources.employees.map(
+			({ timezone: _timezone, departure: _departure, ...employee }) => employee,
+		),
 		workRows: [],
 		collectedWork: rows.employees.map((row) => ({
 			employeeId: row.id,
@@ -76,5 +78,22 @@ export function buildPayrollPeriodRead(input: {
 		settlement: { settledDays, unsettledDays: days.length - settledDays },
 		blockers: summary.blockers,
 		summary,
+	};
+}
+
+/**
+ * Employees who left are read when they have data in the period (#1894): credited
+ * work, an absence or a blocker. Without any, they are left out of every view.
+ */
+function withoutDepartedEmployeesWithoutData(sources: PayrollPeriodSources): PayrollPeriodSources {
+	if (!sources.employees.some((row) => row.departure)) return sources;
+	const withData = new Set([
+		...sources.work.map((row) => row.employeeId),
+		...sources.absences.map((row) => row.employeeId),
+		...sources.blockers.map((row) => row.employeeId),
+	]);
+	return {
+		...sources,
+		employees: sources.employees.filter((row) => !row.departure || withData.has(row.id)),
 	};
 }

@@ -53,6 +53,7 @@ const {
 	getOvertimePayoutExportReadinessAction,
 	getConfiguredPayrollExportFormatsAction,
 	getPayrollExportScopeAction,
+	getPayrollPeriodAction,
 	getPayrollWorkspaceSummaryAction,
 	startScopedPayrollExportAction,
 } = await import("@/app/[locale]/(app)/payroll/actions");
@@ -242,16 +243,39 @@ describe("payroll grant holder exports and the unmapped payout warning on Postgr
 		]);
 	});
 
-	it("leaves the payroll workspace summary to employees who have not left", async () => {
-		const result = await startScopedPayrollExportAction({ ...july, formatId: "datev_lohn" });
-		const summary = await getPayrollWorkspaceSummaryAction(july);
+	it("reads employees who left into the workspace only when they have hours or absences in the period (#1894)", async () => {
+		await admin.query(
+			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
+			   duration_minutes, approval_state, origin, created_by, updated_by, updated_at)
+			 values (gen_random_uuid(), $1, $2, 'work', '2026-07-14T07:00:00Z', '2026-07-14T11:00:00Z', 240,
+			   'approved', 'manual', 't1001x-owner', 't1001x-owner', now())`,
+			[ORG, ids.leftInRange],
+		);
 
-		expect(result.success).toBe(true);
+		const summary = await getPayrollWorkspaceSummaryAction(july);
+		const period = await getPayrollPeriodAction(july);
+		const selected = await getPayrollPeriodAction({ ...july, employeeIds: [ids.leftInRange] });
+
 		expect(summary.success).toBe(true);
 		const summarized = summary.success ? summary.data.employees.map((row) => row.id) : [];
 		expect(summarized).toContain(ids.worker);
-		expect(summarized).not.toContain(ids.leftInRange);
+		expect(summarized).toContain(ids.leftInRange);
+		// Left after the range, but only a payout in it: no hours or absences to show.
 		expect(summarized).not.toContain(ids.leftAfterRange);
+		expect(summarized).not.toContain(ids.leftBeforeRange);
+		expect(
+			period.success
+				? period.data.employees.map((row) => [row.id, row.departure?.lastWorkingDay ?? null])
+				: [],
+		).toEqual(
+			expect.arrayContaining([
+				[ids.worker, null],
+				[ids.leftInRange, "2026-07-15"],
+			]),
+		);
+		expect(selected.success && selected.data.employees.map((row) => row.id)).toEqual([
+			ids.leftInRange,
+		]);
 	});
 
 	it("warns before exporting about the export's payouts the format has no overtime code for", async () => {

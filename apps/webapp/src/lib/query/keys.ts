@@ -248,6 +248,9 @@ export const queryKeys = {
 				request.employeeIds?.join(",") ?? "scope",
 				request.refreshedAt,
 			] as const,
+		/** The records of one employee-day, for the Days tab's side panel (#1894). */
+		dayRecords: (request: { employeeId: string; date: string; refreshedAt: string }) =>
+			["payroll", "day-records", request.employeeId, request.date, request.refreshedAt] as const,
 	},
 
 	// Closed months
