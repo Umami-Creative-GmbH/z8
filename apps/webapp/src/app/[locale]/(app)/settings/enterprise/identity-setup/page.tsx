@@ -50,7 +50,7 @@ async function IdentitySettingsContent() {
 						"mfa.policy.tabDescription",
 						"Require verified local authentication with controlled enrollment deadlines",
 					),
-					measure: true,
+					// The member table needs the full frame; the policy form bounds itself.
 					panel: <OrganizationMfaPolicyPanel organizationId={organizationId} />,
 				},
 				{
