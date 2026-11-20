@@ -170,304 +170,16 @@ export function OrganizationMfaSettings({
 	initial: OrganizationMfaCoverage;
 }) {
 	const { t } = useTranslate();
-	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const router = useRouter();
-	const queryClient = useQueryClient();
-	const [saveError, setSaveError] = useState<SaveError | null>(null);
-	const [recoveryMissing, setRecoveryMissing] = useState(false);
-	const recoveryRef = useRef<HTMLButtonElement>(null);
-	const lockoutRef = useRef<HTMLButtonElement>(null);
 	const rows = coverageRows(initial);
 	const summary = summarizeCoverage(rows);
-	const form = useForm({
-		defaultValues: {
-			enabled: initial.enabled,
-			gracePeriodDays: initial.gracePeriodDays,
-			recoveryAcknowledged: false,
-			soleAdminLockoutAcknowledged: false,
-		},
-		onSubmit: async ({ value }) => {
-			setSaveError(null);
-			const activating = value.enabled && !initial.enabled;
-			if (activating && !value.recoveryAcknowledged) {
-				setRecoveryMissing(true);
-				recoveryRef.current?.focus();
-				return;
-			}
-			const response = await fetch("/api/organization-mfa/policy", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ organizationId, ...value }),
-			});
-			const result = await response.json().catch(() => ({}));
-			if (!response.ok) {
-				const classified = classifySaveError(result.error) ?? {
-					kind: "other",
-					message: t("mfa.policy.failed", "Policy update refused"),
-				};
-				setSaveError(classified);
-				if (classified.kind === "lockout") lockoutRef.current?.focus();
-				return;
-			}
-			toast.success(
-				value.enabled
-					? t("mfa.policy.savedOn", "Local MFA requirement saved")
-					: t("mfa.policy.savedOff", "Local MFA requirement turned off"),
-			);
-			await queryClient.invalidateQueries({
-				queryKey: ["organization-mfa-policy", organizationId],
-			});
-			router.refresh();
-		},
-	});
-
 	return (
 		<div className="space-y-6">
 			<MfaCoverageSummary summary={summary} policyEnabled={initial.enabled} />
-			<ClientForm
-				noValidate
-				className="page-measure"
-				aria-labelledby="mfa-policy-title"
-				onSubmit={() => {
-					void form.handleSubmit();
-				}}
-			>
-				<Card className="gap-0 py-0">
-					<CardHeader className="border-b py-5">
-						<CardTitle as="h2" id="mfa-policy-title" className="text-base">
-							{t("mfa.policy.title", "Organization authentication")}
-						</CardTitle>
-						<CardDescription>
-							{initial.updatedAt
-								? t("mfa.policy.updatedAt", "Last changed {date} ({timezone})", {
-										date: formatCoverageInstant(initial.updatedAt, initial.timezone, locale),
-										timezone: initial.timezone,
-									})
-								: t("mfa.policy.neverChanged", "Not configured yet")}
-						</CardDescription>
-						<CardAction>
-							{initial.enabled ? (
-								<Badge variant="success">
-									<IconShieldCheck aria-hidden="true" />
-									{t("mfa.policy.stateOn", "Required")}
-								</Badge>
-							) : (
-								<Badge variant="outline" className="text-muted-foreground">
-									<IconShieldOff aria-hidden="true" />
-									{t("mfa.policy.stateOff", "Not required")}
-								</Badge>
-							)}
-						</CardAction>
-					</CardHeader>
-					<CardContent className="divide-y">
-						<form.Field name="enabled">
-							{(field) => (
-								<div className="flex items-start justify-between gap-6 py-5">
-									<div className="min-w-0 space-y-1">
-										<label
-											htmlFor="mfa-policy-enabled"
-											className="cursor-pointer text-sm font-medium"
-										>
-											{t("mfa.policy.enable", "Require an authenticator for local sign-ins")}
-										</label>
-										<p
-											id="mfa-policy-enabled-description"
-											className="text-sm text-muted-foreground"
-										>
-											{t(
-												"mfa.policy.description",
-												"Require password plus TOTP, or a passkey verified with PIN/biometrics, for every human member's local organization access. Synced passkeys qualify. This policy is available on every plan.",
-											)}
-										</p>
-									</div>
-									<Switch
-										id="mfa-policy-enabled"
-										name={field.name}
-										checked={field.state.value}
-										onCheckedChange={(checked) => {
-											field.handleChange(checked);
-											setSaveError(null);
-										}}
-										aria-describedby="mfa-policy-enabled-description"
-										className="mt-0.5"
-									/>
-								</div>
-							)}
-						</form.Field>
-						<form.Field name="gracePeriodDays">
-							{(field) => (
-								<div className="min-w-0 space-y-3 py-5">
-									<p id="mfa-policy-grace-label" className="text-sm font-medium">
-										{t("mfa.policy.grace", "Enrollment window for future assignments")}
-									</p>
-									<p id="mfa-policy-grace-description" className="text-sm text-muted-foreground">
-										{t(
-											"mfa.policy.graceDescription",
-											"Applies when a member is assigned a deadline after you save. Existing deadlines never move.",
-										)}
-									</p>
-									<GracePeriodOptions
-										name={field.name}
-										value={field.state.value}
-										onChange={field.handleChange}
-										labelId="mfa-policy-grace-label"
-										descriptionId="mfa-policy-grace-description"
-									/>
-								</div>
-							)}
-						</form.Field>
-						<form.Subscribe selector={(state) => state.values}>
-							{(values) => {
-								const activating = values.enabled && !initial.enabled;
-								const deactivating = !values.enabled && initial.enabled;
-								if (deactivating)
-									return (
-										<div className="py-5">
-											<Alert>
-												<IconInfoCircle aria-hidden="true" />
-												<AlertTitle>
-													{t("mfa.policy.offTitle", "Turning the requirement off")}
-												</AlertTitle>
-												<AlertDescription>
-													{t(
-														"mfa.policy.windows",
-														"Existing deadlines never move. Disabling suspends enforcement; re-enabling restores assigned deadlines, including expired ones. There are no individual exemptions.",
-													)}
-												</AlertDescription>
-											</Alert>
-										</div>
-									);
-								if (!activating) return null;
-								return (
-									<ActivationSafeguards
-										withoutMethod={summary.inScope - summary.enrolled}
-										gracePeriodDays={values.gracePeriodDays}
-									>
-										<form.Field name="recoveryAcknowledged">
-											{(field) => (
-												<div className="space-y-1.5">
-													<AcknowledgementField
-														name={field.name}
-														checked={field.state.value}
-														onChange={(checked) => {
-															field.handleChange(checked);
-															setRecoveryMissing(false);
-														}}
-														checkboxRef={recoveryRef}
-														invalid={recoveryMissing}
-														label={t(
-															"mfa.policy.recoveryAck",
-															"I have verified my sign-in route and arranged recovery.",
-														)}
-														description={t(
-															"mfa.policy.recoveryAckHint",
-															"Required to turn the requirement on.",
-														)}
-													/>
-													{recoveryMissing && (
-														<p
-															role="alert"
-															className="flex items-center gap-1.5 pl-7 text-sm text-destructive"
-														>
-															<IconAlertCircle aria-hidden="true" className="size-4" />
-															{t(
-																"mfa.policy.recoveryRequired",
-																"Confirm your sign-in route and recovery before turning this on.",
-															)}
-														</p>
-													)}
-												</div>
-											)}
-										</form.Field>
-										<form.Field name="soleAdminLockoutAcknowledged">
-											{(field) => (
-												<AcknowledgementField
-													name={field.name}
-													checked={field.state.value}
-													onChange={field.handleChange}
-													checkboxRef={lockoutRef}
-													invalid={saveError?.kind === "lockout" && !field.state.value}
-													label={t(
-														"mfa.policy.lockoutLabel",
-														"Accept the risk of losing every administrator authentication route",
-													)}
-													description={t(
-														"mfa.policy.lockoutAck",
-														"If no other administrator has a confirmed route, I accept that losing every authentication and recovery route leaves this organization locked, without an administrator or support bypass.",
-													)}
-												/>
-											)}
-										</form.Field>
-									</ActivationSafeguards>
-								);
-							}}
-						</form.Subscribe>
-					</CardContent>
-					<CardFooter className="flex-col items-stretch gap-4 border-t bg-muted/30 py-4 sm:flex-row sm:items-center sm:justify-between">
-						<p className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
-							<IconShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-							<span>
-								{t(
-									"mfa.policy.verifyHint",
-									"Saving needs owner or admin access and a verification from the last five minutes.",
-								)}{" "}
-								<Link
-									href={verificationHref(organizationId)}
-									className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
-								>
-									{t("mfa.policy.verifyNow", "Verify now")}
-								</Link>
-							</span>
-						</p>
-						<form.Subscribe
-							selector={(state) => ({
-								submitting: state.isSubmitting,
-								dirty:
-									state.values.enabled !== initial.enabled ||
-									state.values.gracePeriodDays !== initial.gracePeriodDays,
-							})}
-						>
-							{({ submitting, dirty }) => (
-								<div className="flex shrink-0 items-center justify-end gap-3">
-									{dirty && !submitting && (
-										<span className="text-sm text-muted-foreground" aria-live="polite">
-											{t("mfa.policy.unsaved", "Unsaved changes")}
-										</span>
-									)}
-									{dirty && (
-										<Button
-											type="button"
-											variant="ghost"
-											disabled={submitting}
-											onClick={() => {
-												form.reset();
-												setSaveError(null);
-												setRecoveryMissing(false);
-											}}
-										>
-											{t("common.cancel", "Cancel")}
-										</Button>
-									)}
-									<Button type="submit" disabled={submitting || !dirty} aria-busy={submitting}>
-										{submitting && (
-											<IconLoader2
-												aria-hidden="true"
-												className="size-4 animate-spin motion-reduce:animate-none"
-											/>
-										)}
-										{submitting
-											? t("mfa.policy.saving", "Saving…")
-											: t("mfa.policy.save", "Save policy")}
-									</Button>
-								</div>
-							)}
-						</form.Subscribe>
-					</CardFooter>
-				</Card>
-				{saveError && (
-					<SaveErrorAlert error={saveError} organizationId={organizationId} className="mt-4" />
-				)}
-			</ClientForm>
+			<MfaPolicyForm
+				organizationId={organizationId}
+				initial={initial}
+				withoutMethod={summary.inScope - summary.enrolled}
+			/>
 			<MfaMemberCoverage
 				rows={rows}
 				summary={summary}
@@ -495,6 +207,319 @@ export function OrganizationMfaSettings({
 				</div>
 			</aside>
 		</div>
+	);
+}
+
+function MfaPolicyHeader({ initial }: { initial: OrganizationMfaCoverage }) {
+	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() ?? "en";
+	return (
+		<CardHeader className="border-b py-5">
+			<CardTitle as="h2" id="mfa-policy-title" className="text-base">
+				{t("mfa.policy.title", "Organization authentication")}
+			</CardTitle>
+			<CardDescription>
+				{initial.updatedAt
+					? t("mfa.policy.updatedAt", "Last changed {date} ({timezone})", {
+							date: formatCoverageInstant(initial.updatedAt, initial.timezone, locale),
+							timezone: initial.timezone,
+						})
+					: t("mfa.policy.neverChanged", "Not configured yet")}
+			</CardDescription>
+			<CardAction>
+				{initial.enabled ? (
+					<Badge variant="success">
+						<IconShieldCheck aria-hidden="true" />
+						{t("mfa.policy.stateOn", "Required")}
+					</Badge>
+				) : (
+					<Badge variant="outline" className="text-muted-foreground">
+						<IconShieldOff aria-hidden="true" />
+						{t("mfa.policy.stateOff", "Not required")}
+					</Badge>
+				)}
+			</CardAction>
+		</CardHeader>
+	);
+}
+
+function MfaPolicyForm({
+	organizationId,
+	initial,
+	withoutMethod,
+}: {
+	organizationId: string;
+	initial: OrganizationMfaCoverage;
+	withoutMethod: number;
+}) {
+	const { t } = useTranslate();
+	const router = useRouter();
+	const queryClient = useQueryClient();
+	const [saveError, setSaveError] = useState<SaveError | null>(null);
+	const [recoveryMissing, setRecoveryMissing] = useState(false);
+	const recoveryRef = useRef<HTMLButtonElement>(null);
+	const lockoutRef = useRef<HTMLButtonElement>(null);
+	const form = useForm({
+		defaultValues: {
+			enabled: initial.enabled,
+			gracePeriodDays: initial.gracePeriodDays,
+			recoveryAcknowledged: false,
+			soleAdminLockoutAcknowledged: false,
+		},
+		onSubmit: async ({ value }) => {
+			setSaveError(null);
+			const activating = value.enabled && !initial.enabled;
+			if (activating && !value.recoveryAcknowledged) {
+				setRecoveryMissing(true);
+				recoveryRef.current?.focus();
+				return;
+			}
+			const response = await fetch("/api/organization-mfa/policy", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ organizationId, ...value }),
+			});
+			if (!response.ok) {
+				const result = await response.json().catch(() => null);
+				const classified = classifySaveError(
+					typeof result?.error === "string" ? result.error : undefined,
+				) ?? {
+					kind: "other",
+					message: t("mfa.policy.failed", "Policy update refused"),
+				};
+				setSaveError(classified);
+				if (classified.kind === "lockout") lockoutRef.current?.focus();
+				return;
+			}
+			toast.success(
+				value.enabled
+					? t("mfa.policy.savedOn", "Local MFA requirement saved")
+					: t("mfa.policy.savedOff", "Local MFA requirement turned off"),
+			);
+			await queryClient.invalidateQueries({
+				queryKey: ["organization-mfa-policy", organizationId],
+			});
+			router.refresh();
+		},
+	});
+
+	return (
+		<ClientForm
+			noValidate
+			className="page-measure"
+			aria-labelledby="mfa-policy-title"
+			onSubmit={() => {
+				void form.handleSubmit();
+			}}
+		>
+			<Card className="gap-0 py-0">
+				<MfaPolicyHeader initial={initial} />
+				<CardContent className="divide-y">
+					<form.Field name="enabled">
+						{(field) => (
+							<div className="flex items-start justify-between gap-6 py-5">
+								<div className="min-w-0 space-y-1">
+									<label
+										htmlFor="mfa-policy-enabled"
+										className="cursor-pointer text-sm font-medium"
+									>
+										{t("mfa.policy.enable", "Require an authenticator for local sign-ins")}
+									</label>
+									<p id="mfa-policy-enabled-description" className="text-sm text-muted-foreground">
+										{t(
+											"mfa.policy.description",
+											"Require password plus TOTP, or a passkey verified with PIN/biometrics, for every human member's local organization access. Synced passkeys qualify. This policy is available on every plan.",
+										)}
+									</p>
+								</div>
+								<Switch
+									id="mfa-policy-enabled"
+									name={field.name}
+									checked={field.state.value}
+									onCheckedChange={(checked) => {
+										field.handleChange(checked);
+										setSaveError(null);
+									}}
+									aria-describedby="mfa-policy-enabled-description"
+									className="mt-0.5"
+								/>
+							</div>
+						)}
+					</form.Field>
+					<form.Field name="gracePeriodDays">
+						{(field) => (
+							<div className="min-w-0 space-y-3 py-5">
+								<p id="mfa-policy-grace-label" className="text-sm font-medium">
+									{t("mfa.policy.grace", "Enrollment window for future assignments")}
+								</p>
+								<p id="mfa-policy-grace-description" className="text-sm text-muted-foreground">
+									{t(
+										"mfa.policy.graceDescription",
+										"Applies when a member is assigned a deadline after you save. Existing deadlines never move.",
+									)}
+								</p>
+								<GracePeriodOptions
+									name={field.name}
+									value={field.state.value}
+									onChange={field.handleChange}
+									labelId="mfa-policy-grace-label"
+									descriptionId="mfa-policy-grace-description"
+								/>
+							</div>
+						)}
+					</form.Field>
+					<form.Subscribe selector={(state) => state.values}>
+						{(values) => {
+							const activating = values.enabled && !initial.enabled;
+							const deactivating = !values.enabled && initial.enabled;
+							if (deactivating)
+								return (
+									<div className="py-5">
+										<Alert>
+											<IconInfoCircle aria-hidden="true" />
+											<AlertTitle>
+												{t("mfa.policy.offTitle", "Turning the requirement off")}
+											</AlertTitle>
+											<AlertDescription>
+												{t(
+													"mfa.policy.windows",
+													"Existing deadlines never move. Disabling suspends enforcement; re-enabling restores assigned deadlines, including expired ones. There are no individual exemptions.",
+												)}
+											</AlertDescription>
+										</Alert>
+									</div>
+								);
+							if (!activating) return null;
+							return (
+								<ActivationSafeguards
+									withoutMethod={withoutMethod}
+									gracePeriodDays={values.gracePeriodDays}
+								>
+									<form.Field name="recoveryAcknowledged">
+										{(field) => (
+											<div className="space-y-1.5">
+												<AcknowledgementField
+													name={field.name}
+													checked={field.state.value}
+													onChange={(checked) => {
+														field.handleChange(checked);
+														setRecoveryMissing(false);
+													}}
+													checkboxRef={recoveryRef}
+													invalid={recoveryMissing}
+													label={t(
+														"mfa.policy.recoveryAck",
+														"I have verified my sign-in route and arranged recovery.",
+													)}
+													description={t(
+														"mfa.policy.recoveryAckHint",
+														"Required to turn the requirement on.",
+													)}
+												/>
+												{recoveryMissing && (
+													<p
+														role="alert"
+														className="flex items-center gap-1.5 pl-7 text-sm text-destructive"
+													>
+														<IconAlertCircle aria-hidden="true" className="size-4" />
+														{t(
+															"mfa.policy.recoveryRequired",
+															"Confirm your sign-in route and recovery before turning this on.",
+														)}
+													</p>
+												)}
+											</div>
+										)}
+									</form.Field>
+									<form.Field name="soleAdminLockoutAcknowledged">
+										{(field) => (
+											<AcknowledgementField
+												name={field.name}
+												checked={field.state.value}
+												onChange={field.handleChange}
+												checkboxRef={lockoutRef}
+												invalid={saveError?.kind === "lockout" && !field.state.value}
+												label={t(
+													"mfa.policy.lockoutLabel",
+													"Accept the risk of losing every administrator authentication route",
+												)}
+												description={t(
+													"mfa.policy.lockoutAck",
+													"If no other administrator has a confirmed route, I accept that losing every authentication and recovery route leaves this organization locked, without an administrator or support bypass.",
+												)}
+											/>
+										)}
+									</form.Field>
+								</ActivationSafeguards>
+							);
+						}}
+					</form.Subscribe>
+				</CardContent>
+				<CardFooter className="flex-col items-stretch gap-4 border-t bg-muted/30 py-4 sm:flex-row sm:items-center sm:justify-between">
+					<p className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
+						<IconShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+						<span>
+							{t(
+								"mfa.policy.verifyHint",
+								"Saving needs owner or admin access and a verification from the last five minutes.",
+							)}{" "}
+							<Link
+								href={verificationHref(organizationId)}
+								className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+							>
+								{t("mfa.policy.verifyNow", "Verify now")}
+							</Link>
+						</span>
+					</p>
+					<form.Subscribe
+						selector={(state) => ({
+							submitting: state.isSubmitting,
+							dirty:
+								state.values.enabled !== initial.enabled ||
+								state.values.gracePeriodDays !== initial.gracePeriodDays,
+						})}
+					>
+						{({ submitting, dirty }) => (
+							<div className="flex shrink-0 items-center justify-end gap-3">
+								{dirty && !submitting && (
+									<span className="text-sm text-muted-foreground" aria-live="polite">
+										{t("mfa.policy.unsaved", "Unsaved changes")}
+									</span>
+								)}
+								{dirty && (
+									<Button
+										type="button"
+										variant="ghost"
+										disabled={submitting}
+										onClick={() => {
+											form.reset();
+											setSaveError(null);
+											setRecoveryMissing(false);
+										}}
+									>
+										{t("common.cancel", "Cancel")}
+									</Button>
+								)}
+								<Button type="submit" disabled={submitting || !dirty} aria-busy={submitting}>
+									{submitting && (
+										<IconLoader2
+											aria-hidden="true"
+											className="size-4 animate-spin motion-reduce:animate-none"
+										/>
+									)}
+									{submitting
+										? t("mfa.policy.saving", "Saving…")
+										: t("mfa.policy.save", "Save policy")}
+								</Button>
+							</div>
+						)}
+					</form.Subscribe>
+				</CardFooter>
+			</Card>
+			{saveError && (
+				<SaveErrorAlert error={saveError} organizationId={organizationId} className="mt-4" />
+			)}
+		</ClientForm>
 	);
 }
 

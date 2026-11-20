@@ -109,6 +109,12 @@ function firstOpenStep(completion: Record<EnterpriseIdentitySetupStep, boolean>)
 	return WIZARD_STEPS.find((step) => !step.optional && !completion[step.id])?.id ?? "review";
 }
 
+async function requestDnsToken(providerId: string) {
+	const result = await actionData(requestSSODomainVerificationAction({ providerId }));
+	if (!result.domainVerificationToken) throw new Error("Missing domain verification token");
+	return result.domainVerificationToken;
+}
+
 export function useIdentitySetupController({
 	callbackBaseUrl,
 	initialSetup,
@@ -303,9 +309,7 @@ export function useIdentitySetupController({
 	const generateDnsRecord = () => {
 		startTransition(async () => {
 			try {
-				const result = await actionData(requestSSODomainVerificationAction({ providerId }));
-				if (!result.domainVerificationToken) throw new Error("missing token");
-				setDnsToken(result.domainVerificationToken);
+				setDnsToken(await requestDnsToken(providerId));
 			} catch (error) {
 				toast.error(
 					enterpriseErrorMessage(t, error, [

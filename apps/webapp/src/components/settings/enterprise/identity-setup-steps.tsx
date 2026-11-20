@@ -44,6 +44,7 @@ import {
 	type Translate,
 	WIZARD_STEPS,
 } from "./identity-setup-controller";
+import { domainName, getStepCopy, providerName } from "./identity-setup-copy";
 import { ScimStep as ManagedScimStep } from "./scim/scim-step";
 import { CopySetupButton, SsoProviderGuide } from "./sso-provider-guide";
 
@@ -64,115 +65,6 @@ function getServerBrowserOriginSnapshot() {
 // ---------------------------------------------------------------------------
 // Copy
 // ---------------------------------------------------------------------------
-
-/** The provider's name for use inside a sentence. */
-function providerName(controller: IdentitySetupController) {
-	return controller.presetId === "generic"
-		? controller.t(
-				"settings.enterprise.identity.wizard.provider.genericName",
-				"your identity provider",
-			)
-		: controller.preset.name;
-}
-
-function domainName(controller: IdentitySetupController) {
-	return (
-		controller.domain ||
-		controller.t("settings.enterprise.identity.wizard.domain.fallbackName", "your domain")
-	);
-}
-
-export function getStepCopy(
-	step: EnterpriseIdentitySetupStep,
-	controller: IdentitySetupController,
-) {
-	const { t } = controller;
-	const provider = providerName(controller);
-	const domain = domainName(controller);
-
-	switch (step) {
-		case "provider":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.provider.nav", "Identity provider"),
-				title: t(
-					"settings.enterprise.identity.wizard.provider.title",
-					"Choose your identity provider",
-				),
-				description: t(
-					"settings.enterprise.identity.wizard.provider.description",
-					"Tell Z8 which service your company uses for work accounts and which email domain your employees have.",
-				),
-			};
-		case "sso":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.sso.nav", "Connect"),
-				title: t("settings.enterprise.identity.wizard.sso.title", "Connect {provider} to Z8", {
-					provider,
-				}),
-				description: t(
-					"settings.enterprise.identity.wizard.sso.description",
-					"Create an app for Z8 in {provider}, then paste the details it gives you here.",
-					{ provider },
-				),
-			};
-		case "domain":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.domain.nav", "Verify domain"),
-				title: t(
-					"settings.enterprise.identity.wizard.domain.title",
-					"Verify that you own {domain}",
-					{
-						domain,
-					},
-				),
-				description: t(
-					"settings.enterprise.identity.wizard.domain.description",
-					"Add one DNS record to prove that your company controls this domain. Only verified domains can use enterprise sign-in.",
-				),
-			};
-		case "ssoTest":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.ssoTest.nav", "Test sign-in"),
-				title: t(
-					"settings.enterprise.identity.wizard.ssoTest.title",
-					"Test sign-in with a real account",
-				),
-				description: t(
-					"settings.enterprise.identity.wizard.ssoTest.description",
-					"Before you turn anything on, confirm that an employee can actually sign in through {provider}.",
-					{ provider },
-				),
-			};
-		case "scim":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.scim.nav", "Sync users"),
-				title: t("settings.enterprise.identity.wizard.scim.title", "Sync users automatically"),
-				description: t(
-					"settings.enterprise.identity.wizard.scim.description",
-					"Let {provider} create, update and deactivate Z8 accounts for you using SCIM. You can skip this and set it up later.",
-					{ provider },
-				),
-			};
-		case "accessPolicy":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.accessPolicy.nav", "Access rules"),
-				title: t("settings.enterprise.identity.wizard.accessPolicy.title", "Choose access rules"),
-				description: t(
-					"settings.enterprise.identity.wizard.accessPolicy.description",
-					"Decide how strictly enterprise sign-in is enforced. Nothing changes for employees until you activate the setup in the last step.",
-				),
-			};
-		case "review":
-			return {
-				navLabel: t("settings.enterprise.identity.wizard.review.nav", "Activate"),
-				title: t("settings.enterprise.identity.wizard.review.title", "Review and activate"),
-				description: t(
-					"settings.enterprise.identity.wizard.review.description",
-					"Check your setup, then turn enterprise sign-in on.",
-				),
-			};
-	}
-}
 
 function presetDescription(id: EnterpriseIdentityProviderPresetId, t: Translate) {
 	if (id === "okta") {
@@ -362,6 +254,124 @@ function SectionHeading({ number, children }: { number?: number; children: React
 // ---------------------------------------------------------------------------
 // 1. Identity provider
 // ---------------------------------------------------------------------------
+
+function ProviderIdentifierFields({ controller }: { controller: IdentitySetupController }) {
+	const { providerForm, t } = controller;
+	return (
+		<div className="grid min-w-0 gap-5 sm:grid-cols-2">
+			<providerForm.Field
+				name="domain"
+				validators={{
+					onChange: ({ value }) => {
+						const trimmed = value.trim();
+						if (!trimmed) {
+							return t(
+								"settings.enterprise.identity.provider.error.domainRequired",
+								"Domain is required",
+							);
+						}
+						return DOMAIN_REGEX.test(trimmed)
+							? undefined
+							: t(
+									"settings.enterprise.identity.wizard.provider.domainInvalid",
+									"Enter only the part after the @, for example example.com.",
+								);
+					},
+				}}
+			>
+				{(field) => {
+					const error = field.state.meta.errors[0];
+					return (
+						<div className="min-w-0 space-y-2">
+							<Label htmlFor="identity-domain">
+								{t("settings.enterprise.identity.wizard.provider.domainLabel", "Work email domain")}
+							</Label>
+							<Input
+								id="identity-domain"
+								name="domain"
+								autoComplete="off"
+								autoCapitalize="none"
+								spellCheck={false}
+								inputMode="url"
+								placeholder={t(
+									"settings.enterprise.identity.provider.placeholder.domain",
+									"e.g. example.com…",
+								)}
+								value={field.state.value}
+								aria-invalid={Boolean(error)}
+								aria-describedby={`identity-domain-help${error ? " identity-domain-error" : ""}`}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+							<FieldHelp id="identity-domain-help">
+								{t(
+									"settings.enterprise.identity.wizard.provider.domainHelp",
+									"Employees whose email address ends in this domain will sign in through your provider.",
+								)}
+							</FieldHelp>
+							<FieldError id="identity-domain-error" message={error} />
+						</div>
+					);
+				}}
+			</providerForm.Field>
+
+			<providerForm.Field
+				name="providerId"
+				validators={{
+					onChange: ({ value }) => {
+						const trimmed = value.trim();
+						if (!trimmed) {
+							return t(
+								"settings.enterprise.identity.provider.error.providerIdRequired",
+								"Provider ID is required",
+							);
+						}
+						return PROVIDER_ID_REGEX.test(trimmed)
+							? undefined
+							: t(
+									"settings.enterprise.identity.wizard.provider.providerIdInvalid",
+									"Use only lowercase letters, numbers and hyphens, without a hyphen at the start or end.",
+								);
+					},
+				}}
+			>
+				{(field) => {
+					const error = field.state.meta.errors[0];
+					return (
+						<div className="min-w-0 space-y-2">
+							<Label htmlFor="identity-provider-id">
+								{t("settings.enterprise.identity.provider.label.providerId", "Provider ID")}
+							</Label>
+							<Input
+								id="identity-provider-id"
+								name="providerId"
+								autoComplete="off"
+								autoCapitalize="none"
+								spellCheck={false}
+								placeholder={t(
+									"settings.enterprise.identity.provider.placeholder.providerId",
+									"e.g. acme-okta…",
+								)}
+								value={field.state.value}
+								aria-invalid={Boolean(error)}
+								aria-describedby={`identity-provider-id-help${error ? " identity-provider-id-error" : ""}`}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+							<FieldHelp id="identity-provider-id-help">
+								{t(
+									"settings.enterprise.identity.wizard.provider.providerIdHelp",
+									"A short name for this connection, used in sign-in links. Lowercase letters, numbers and hyphens, for example acme-okta.",
+								)}
+							</FieldHelp>
+							<FieldError id="identity-provider-id-error" message={error} />
+						</div>
+					);
+				}}
+			</providerForm.Field>
+		</div>
+	);
+}
 
 export function ProviderStep({ controller }: { controller: IdentitySetupController }) {
 	const { completion, isPending, providerForm, ssoRegistered, t } = controller;
@@ -553,121 +563,7 @@ export function ProviderStep({ controller }: { controller: IdentitySetupControll
 					}}
 				</providerForm.Subscribe>
 
-				<div className="grid min-w-0 gap-5 sm:grid-cols-2">
-					<providerForm.Field
-						name="domain"
-						validators={{
-							onChange: ({ value }) => {
-								const trimmed = value.trim();
-								if (!trimmed) {
-									return t(
-										"settings.enterprise.identity.provider.error.domainRequired",
-										"Domain is required",
-									);
-								}
-								return DOMAIN_REGEX.test(trimmed)
-									? undefined
-									: t(
-											"settings.enterprise.identity.wizard.provider.domainInvalid",
-											"Enter only the part after the @, for example example.com.",
-										);
-							},
-						}}
-					>
-						{(field) => {
-							const error = field.state.meta.errors[0];
-							return (
-								<div className="min-w-0 space-y-2">
-									<Label htmlFor="identity-domain">
-										{t(
-											"settings.enterprise.identity.wizard.provider.domainLabel",
-											"Work email domain",
-										)}
-									</Label>
-									<Input
-										id="identity-domain"
-										name="domain"
-										autoComplete="off"
-										autoCapitalize="none"
-										spellCheck={false}
-										inputMode="url"
-										placeholder={t(
-											"settings.enterprise.identity.provider.placeholder.domain",
-											"e.g. example.com…",
-										)}
-										value={field.state.value}
-										aria-invalid={Boolean(error)}
-										aria-describedby={`identity-domain-help${error ? " identity-domain-error" : ""}`}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-									/>
-									<FieldHelp id="identity-domain-help">
-										{t(
-											"settings.enterprise.identity.wizard.provider.domainHelp",
-											"Employees whose email address ends in this domain will sign in through your provider.",
-										)}
-									</FieldHelp>
-									<FieldError id="identity-domain-error" message={error} />
-								</div>
-							);
-						}}
-					</providerForm.Field>
-
-					<providerForm.Field
-						name="providerId"
-						validators={{
-							onChange: ({ value }) => {
-								const trimmed = value.trim();
-								if (!trimmed) {
-									return t(
-										"settings.enterprise.identity.provider.error.providerIdRequired",
-										"Provider ID is required",
-									);
-								}
-								return PROVIDER_ID_REGEX.test(trimmed)
-									? undefined
-									: t(
-											"settings.enterprise.identity.wizard.provider.providerIdInvalid",
-											"Use only lowercase letters, numbers and hyphens, without a hyphen at the start or end.",
-										);
-							},
-						}}
-					>
-						{(field) => {
-							const error = field.state.meta.errors[0];
-							return (
-								<div className="min-w-0 space-y-2">
-									<Label htmlFor="identity-provider-id">
-										{t("settings.enterprise.identity.provider.label.providerId", "Provider ID")}
-									</Label>
-									<Input
-										id="identity-provider-id"
-										name="providerId"
-										autoComplete="off"
-										autoCapitalize="none"
-										spellCheck={false}
-										placeholder={t(
-											"settings.enterprise.identity.provider.placeholder.providerId",
-											"e.g. acme-okta…",
-										)}
-										value={field.state.value}
-										aria-invalid={Boolean(error)}
-										aria-describedby={`identity-provider-id-help${error ? " identity-provider-id-error" : ""}`}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-									/>
-									<FieldHelp id="identity-provider-id-help">
-										{t(
-											"settings.enterprise.identity.wizard.provider.providerIdHelp",
-											"A short name for this connection, used in sign-in links. Lowercase letters, numbers and hyphens, for example acme-okta.",
-										)}
-									</FieldHelp>
-									<FieldError id="identity-provider-id-error" message={error} />
-								</div>
-							);
-						}}
-					</providerForm.Field>
-				</div>
+				<ProviderIdentifierFields controller={controller} />
 
 				<Button type="submit" disabled={isPending}>
 					{t("settings.enterprise.identity.wizard.provider.save", "Save and continue")}
@@ -685,19 +581,231 @@ function requiredValidator(message: string) {
 	return ({ value }: { value: string }) => (value.trim() ? undefined : message);
 }
 
+function SsoConnectionForm({ controller }: { controller: IdentitySetupController }) {
+	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
+	const provider = providerName(controller);
+	return (
+		<section className="min-w-0 space-y-4 border-t pt-6">
+			<SectionHeading>
+				{t("settings.enterprise.identity.wizard.sso.partTwo", "Paste the details from {provider}", {
+					provider,
+				})}
+			</SectionHeading>
+			<form className="min-w-0 space-y-5" action={() => ssoForm.handleSubmit()} noValidate>
+				{presetId === "microsoft-entra" && protocol === "oidc" ? (
+					<ssoForm.Field
+						name="tenantId"
+						validators={{
+							onChange: ({ value }) =>
+								!value || getEntraIssuer(value)
+									? undefined
+									: t(
+											"settings.enterprise.sso.guide.entra.tenantInvalid",
+											"Enter the Directory (tenant) ID as a complete UUID.",
+										),
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="wizard-entra-tenant">
+									{t("settings.enterprise.sso.guide.entra.tenantId", "Directory (tenant) ID")}
+								</Label>
+								<Input
+									id="wizard-entra-tenant"
+									name={field.name}
+									autoComplete="off"
+									spellCheck={false}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									aria-invalid={field.state.meta.errors.length > 0}
+									aria-describedby="wizard-entra-tenant-help"
+									onChange={(event) => {
+										field.handleChange(event.target.value);
+										ssoForm.setFieldValue("issuer", getEntraIssuer(event.target.value) ?? "");
+									}}
+								/>
+								<FieldHelp id="wizard-entra-tenant-help">
+									{t(
+										"settings.enterprise.sso.guide.entra.tenantHelp",
+										"App registrations → your app → Overview. Use your tenant ID, not common or organizations.",
+									)}
+								</FieldHelp>
+								<FieldError message={field.state.meta.errors.join(" ")} />
+							</div>
+						)}
+					</ssoForm.Field>
+				) : null}
+
+				<ssoForm.Field
+					name="issuer"
+					validators={{
+						onChange: requiredValidator(
+							t(
+								"settings.enterprise.identity.wizard.sso.issuerRequired",
+								"Enter the issuer URL from your provider.",
+							),
+						),
+					}}
+				>
+					{(field) => {
+						const error = field.state.meta.errors[0];
+						return (
+							<div className="space-y-2">
+								<Label htmlFor="sso-issuer">
+									{t("settings.enterprise.identity.sso.label.issuer", "Issuer")}
+								</Label>
+								<Input
+									id="sso-issuer"
+									name="issuer"
+									type="url"
+									autoComplete="off"
+									spellCheck={false}
+									placeholder={presetIssuerPlaceholder(presetId, t)}
+									value={field.state.value}
+									aria-invalid={Boolean(error)}
+									aria-describedby="sso-issuer-help"
+									onBlur={field.handleBlur}
+									onChange={(event) => field.handleChange(event.target.value)}
+								/>
+								<FieldHelp id="sso-issuer-help">
+									{t(
+										"settings.enterprise.identity.wizard.sso.issuerHelp",
+										"The web address that identifies your provider. It's listed in the app's settings and starts with https://.",
+									)}
+								</FieldHelp>
+								<FieldError message={error} />
+							</div>
+						);
+					}}
+				</ssoForm.Field>
+
+				{protocol === "oidc" ? (
+					<div className="grid min-w-0 gap-5 sm:grid-cols-2">
+						<ssoForm.Field
+							name="clientId"
+							validators={{
+								onChange: requiredValidator(
+									t(
+										"settings.enterprise.identity.wizard.sso.clientIdRequired",
+										"Enter the client ID.",
+									),
+								),
+							}}
+						>
+							{(field) => (
+								<div className="min-w-0 space-y-2">
+									<Label htmlFor="oidc-client-id">
+										{t("settings.enterprise.identity.sso.label.clientId", "Client ID")}
+									</Label>
+									<Input
+										id="oidc-client-id"
+										name="clientId"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										aria-invalid={field.state.meta.errors.length > 0}
+										aria-describedby="oidc-client-id-help"
+										onBlur={field.handleBlur}
+										onChange={(event) => field.handleChange(event.target.value)}
+									/>
+									<FieldHelp id="oidc-client-id-help">
+										{t(
+											"settings.enterprise.identity.wizard.sso.clientIdHelp",
+											"Also called application ID.",
+										)}
+									</FieldHelp>
+									<FieldError message={field.state.meta.errors[0]} />
+								</div>
+							)}
+						</ssoForm.Field>
+						<ssoForm.Field
+							name="clientSecret"
+							validators={{
+								onChange: requiredValidator(
+									t(
+										"settings.enterprise.identity.wizard.sso.clientSecretRequired",
+										"Enter the client secret.",
+									),
+								),
+							}}
+						>
+							{(field) => (
+								<div className="min-w-0 space-y-2">
+									<Label htmlFor="oidc-client-secret">
+										{t("settings.enterprise.identity.sso.label.clientSecret", "Client secret")}
+									</Label>
+									<Input
+										id="oidc-client-secret"
+										name="clientSecret"
+										type="password"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										aria-invalid={field.state.meta.errors.length > 0}
+										aria-describedby="oidc-client-secret-help"
+										onBlur={field.handleBlur}
+										onChange={(event) => field.handleChange(event.target.value)}
+									/>
+									<FieldHelp id="oidc-client-secret-help">
+										{t(
+											"settings.enterprise.identity.wizard.sso.clientSecretHelp",
+											"Stored securely and never shown again.",
+										)}
+									</FieldHelp>
+									<FieldError message={field.state.meta.errors[0]} />
+								</div>
+							)}
+						</ssoForm.Field>
+					</div>
+				) : (
+					<ssoForm.Field
+						name="metadata"
+						validators={{
+							onChange: requiredValidator(
+								t(
+									"settings.enterprise.identity.wizard.sso.metadataRequired",
+									"Paste the metadata XML from your provider.",
+								),
+							),
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="saml-metadata">
+									{t("settings.enterprise.identity.sso.label.metadata", "SAML metadata")}
+								</Label>
+								<Textarea
+									id="saml-metadata"
+									name="metadata"
+									autoComplete="off"
+									spellCheck={false}
+									className="min-h-32 font-mono text-xs"
+									placeholder={t(
+										"settings.enterprise.identity.sso.placeholder.metadata",
+										"Paste IdP metadata XML…",
+									)}
+									value={field.state.value}
+									aria-invalid={field.state.meta.errors.length > 0}
+									onBlur={field.handleBlur}
+									onChange={(event) => field.handleChange(event.target.value)}
+								/>
+								<FieldError message={field.state.meta.errors[0]} />
+							</div>
+						)}
+					</ssoForm.Field>
+				)}
+
+				<Button type="submit" disabled={isPending || !providerId}>
+					{t("settings.enterprise.identity.wizard.sso.save", "Connect provider")}
+				</Button>
+			</form>
+		</section>
+	);
+}
+
 export function SsoStep({ controller }: { controller: IdentitySetupController }) {
-	const {
-		callbackBaseUrl,
-		completion,
-		domain,
-		isPending,
-		presetId,
-		protocol,
-		providerId,
-		ssoForm,
-		ssoRegistered,
-		t,
-	} = controller;
+	const { callbackBaseUrl, completion, domain, presetId, protocol, providerId, ssoRegistered, t } =
+		controller;
 	const browserOrigin = useSyncExternalStore(
 		subscribeBrowserOrigin,
 		getBrowserOriginSnapshot,
@@ -789,223 +897,7 @@ export function SsoStep({ controller }: { controller: IdentitySetupController })
 				)}
 			</section>
 
-			<section className="min-w-0 space-y-4 border-t pt-6">
-				<SectionHeading>
-					{t(
-						"settings.enterprise.identity.wizard.sso.partTwo",
-						"Paste the details from {provider}",
-						{ provider },
-					)}
-				</SectionHeading>
-				<form className="min-w-0 space-y-5" action={() => ssoForm.handleSubmit()} noValidate>
-					{presetId === "microsoft-entra" && protocol === "oidc" ? (
-						<ssoForm.Field
-							name="tenantId"
-							validators={{
-								onChange: ({ value }) =>
-									!value || getEntraIssuer(value)
-										? undefined
-										: t(
-												"settings.enterprise.sso.guide.entra.tenantInvalid",
-												"Enter the Directory (tenant) ID as a complete UUID.",
-											),
-							}}
-						>
-							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="wizard-entra-tenant">
-										{t("settings.enterprise.sso.guide.entra.tenantId", "Directory (tenant) ID")}
-									</Label>
-									<Input
-										id="wizard-entra-tenant"
-										name={field.name}
-										autoComplete="off"
-										spellCheck={false}
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										aria-invalid={field.state.meta.errors.length > 0}
-										aria-describedby="wizard-entra-tenant-help"
-										onChange={(event) => {
-											field.handleChange(event.target.value);
-											ssoForm.setFieldValue("issuer", getEntraIssuer(event.target.value) ?? "");
-										}}
-									/>
-									<FieldHelp id="wizard-entra-tenant-help">
-										{t(
-											"settings.enterprise.sso.guide.entra.tenantHelp",
-											"App registrations → your app → Overview. Use your tenant ID, not common or organizations.",
-										)}
-									</FieldHelp>
-									<FieldError message={field.state.meta.errors.join(" ")} />
-								</div>
-							)}
-						</ssoForm.Field>
-					) : null}
-
-					<ssoForm.Field
-						name="issuer"
-						validators={{
-							onChange: requiredValidator(
-								t(
-									"settings.enterprise.identity.wizard.sso.issuerRequired",
-									"Enter the issuer URL from your provider.",
-								),
-							),
-						}}
-					>
-						{(field) => {
-							const error = field.state.meta.errors[0];
-							return (
-								<div className="space-y-2">
-									<Label htmlFor="sso-issuer">
-										{t("settings.enterprise.identity.sso.label.issuer", "Issuer")}
-									</Label>
-									<Input
-										id="sso-issuer"
-										name="issuer"
-										type="url"
-										autoComplete="off"
-										spellCheck={false}
-										placeholder={presetIssuerPlaceholder(presetId, t)}
-										value={field.state.value}
-										aria-invalid={Boolean(error)}
-										aria-describedby="sso-issuer-help"
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-									/>
-									<FieldHelp id="sso-issuer-help">
-										{t(
-											"settings.enterprise.identity.wizard.sso.issuerHelp",
-											"The web address that identifies your provider. It's listed in the app's settings and starts with https://.",
-										)}
-									</FieldHelp>
-									<FieldError message={error} />
-								</div>
-							);
-						}}
-					</ssoForm.Field>
-
-					{protocol === "oidc" ? (
-						<div className="grid min-w-0 gap-5 sm:grid-cols-2">
-							<ssoForm.Field
-								name="clientId"
-								validators={{
-									onChange: requiredValidator(
-										t(
-											"settings.enterprise.identity.wizard.sso.clientIdRequired",
-											"Enter the client ID.",
-										),
-									),
-								}}
-							>
-								{(field) => (
-									<div className="min-w-0 space-y-2">
-										<Label htmlFor="oidc-client-id">
-											{t("settings.enterprise.identity.sso.label.clientId", "Client ID")}
-										</Label>
-										<Input
-											id="oidc-client-id"
-											name="clientId"
-											autoComplete="off"
-											spellCheck={false}
-											value={field.state.value}
-											aria-invalid={field.state.meta.errors.length > 0}
-											aria-describedby="oidc-client-id-help"
-											onBlur={field.handleBlur}
-											onChange={(event) => field.handleChange(event.target.value)}
-										/>
-										<FieldHelp id="oidc-client-id-help">
-											{t(
-												"settings.enterprise.identity.wizard.sso.clientIdHelp",
-												"Also called application ID.",
-											)}
-										</FieldHelp>
-										<FieldError message={field.state.meta.errors[0]} />
-									</div>
-								)}
-							</ssoForm.Field>
-							<ssoForm.Field
-								name="clientSecret"
-								validators={{
-									onChange: requiredValidator(
-										t(
-											"settings.enterprise.identity.wizard.sso.clientSecretRequired",
-											"Enter the client secret.",
-										),
-									),
-								}}
-							>
-								{(field) => (
-									<div className="min-w-0 space-y-2">
-										<Label htmlFor="oidc-client-secret">
-											{t("settings.enterprise.identity.sso.label.clientSecret", "Client secret")}
-										</Label>
-										<Input
-											id="oidc-client-secret"
-											name="clientSecret"
-											type="password"
-											autoComplete="off"
-											spellCheck={false}
-											value={field.state.value}
-											aria-invalid={field.state.meta.errors.length > 0}
-											aria-describedby="oidc-client-secret-help"
-											onBlur={field.handleBlur}
-											onChange={(event) => field.handleChange(event.target.value)}
-										/>
-										<FieldHelp id="oidc-client-secret-help">
-											{t(
-												"settings.enterprise.identity.wizard.sso.clientSecretHelp",
-												"Stored securely and never shown again.",
-											)}
-										</FieldHelp>
-										<FieldError message={field.state.meta.errors[0]} />
-									</div>
-								)}
-							</ssoForm.Field>
-						</div>
-					) : (
-						<ssoForm.Field
-							name="metadata"
-							validators={{
-								onChange: requiredValidator(
-									t(
-										"settings.enterprise.identity.wizard.sso.metadataRequired",
-										"Paste the metadata XML from your provider.",
-									),
-								),
-							}}
-						>
-							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="saml-metadata">
-										{t("settings.enterprise.identity.sso.label.metadata", "SAML metadata")}
-									</Label>
-									<Textarea
-										id="saml-metadata"
-										name="metadata"
-										autoComplete="off"
-										spellCheck={false}
-										className="min-h-32 font-mono text-xs"
-										placeholder={t(
-											"settings.enterprise.identity.sso.placeholder.metadata",
-											"Paste IdP metadata XML…",
-										)}
-										value={field.state.value}
-										aria-invalid={field.state.meta.errors.length > 0}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-									/>
-									<FieldError message={field.state.meta.errors[0]} />
-								</div>
-							)}
-						</ssoForm.Field>
-					)}
-
-					<Button type="submit" disabled={isPending || !providerId}>
-						{t("settings.enterprise.identity.wizard.sso.save", "Connect provider")}
-					</Button>
-				</form>
-			</section>
+			<SsoConnectionForm controller={controller} />
 		</>
 	);
 }
@@ -1568,11 +1460,55 @@ function SummaryRow({ label, children }: { label: string; children: ReactNode })
 	);
 }
 
-export function ReviewStep({ controller }: { controller: IdentitySetupController }) {
-	const { activateSetup, completion, goTo, isPending, protocol, providerId, readiness, setup, t } =
-		controller;
-	const activated = Boolean(setup.activatedAt);
+function ReviewChecklist({ controller }: { controller: IdentitySetupController }) {
+	const { completion, goTo, t } = controller;
 	const checklist = WIZARD_STEPS.filter((step) => step.id !== "review");
+	return (
+		<section className="min-w-0 space-y-2">
+			<SectionHeading>
+				{t("settings.enterprise.identity.wizard.review.checklist", "Checklist")}
+			</SectionHeading>
+			<ul className="divide-y rounded-lg border">
+				{checklist.map((step) => {
+					const done = completion[step.id];
+					const copy = getStepCopy(step.id, controller);
+					return (
+						<li key={step.id} className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3">
+							{done ? (
+								<IconCircleCheck className="size-5 shrink-0 text-success" aria-hidden="true" />
+							) : (
+								<IconCircleDashed
+									className="size-5 shrink-0 text-muted-foreground"
+									aria-hidden="true"
+								/>
+							)}
+							<span className="min-w-0 flex-1 text-sm">
+								<span className="font-medium">{copy.navLabel}</span>
+								<span className="text-muted-foreground">
+									{" · "}
+									{done
+										? t("settings.enterprise.identity.wizard.status.done", "Done")
+										: step.optional
+											? t("settings.enterprise.identity.wizard.status.optional", "Optional")
+											: t("settings.enterprise.identity.wizard.status.toDo", "To do")}
+								</span>
+							</span>
+							{!done ? (
+								<Button type="button" size="sm" variant="ghost" onClick={() => goTo(step.id)}>
+									{t("settings.enterprise.identity.wizard.review.open", "Open step")}
+									<span className="sr-only">: {copy.navLabel}</span>
+								</Button>
+							) : null}
+						</li>
+					);
+				})}
+			</ul>
+		</section>
+	);
+}
+
+function ReviewSettingsSummary({ controller }: { controller: IdentitySetupController }) {
+	const { protocol, providerId, setup, t } = controller;
 	const enabledRules = [
 		setup.enforcement.ssoRequired
 			? t("settings.enterprise.identity.accessPolicy.requireSso", "Require SSO")
@@ -1585,109 +1521,72 @@ export function ReviewStep({ controller }: { controller: IdentitySetupController
 			: null,
 	].filter((rule): rule is string => rule !== null);
 	const notSet = t("settings.enterprise.identity.wizard.review.notSet", "Not set");
+	return (
+		<section className="min-w-0 space-y-1">
+			<SectionHeading>
+				{t("settings.enterprise.identity.wizard.review.summary", "Your settings")}
+			</SectionHeading>
+			<dl className="divide-y">
+				<SummaryRow
+					label={t("settings.enterprise.identity.wizard.review.provider", "Identity provider")}
+				>
+					{setup.provider ? `${controller.preset.name} · ${protocol.toUpperCase()}` : notSet}
+				</SummaryRow>
+				<SummaryRow
+					label={t("settings.enterprise.identity.provider.label.providerId", "Provider ID")}
+				>
+					{providerId ? <code translate="no">{providerId}</code> : notSet}
+				</SummaryRow>
+				<SummaryRow
+					label={t("settings.enterprise.identity.wizard.provider.domainLabel", "Work email domain")}
+				>
+					{setup.domain
+						? `${setup.domain.domain} · ${
+								setup.domain.verified
+									? t("settings.enterprise.identity.domain.status.verified", "Verified")
+									: t("settings.enterprise.identity.wizard.domain.notVerified", "Not verified yet")
+							}`
+						: notSet}
+				</SummaryRow>
+				<SummaryRow label={t("settings.enterprise.identity.wizard.review.test", "Sign-in test")}>
+					{setup.ssoTest.status === "passed"
+						? t(
+								"settings.enterprise.identity.wizard.ssoTest.passed",
+								"Sign-in worked for {email}",
+								{
+									email: setup.ssoTest.testEmail ?? "",
+								},
+							)
+						: setup.ssoTest.status === "failed"
+							? t("settings.enterprise.identity.wizard.ssoTest.failed", "The last test failed")
+							: t("settings.enterprise.identity.ssoTest.status.notRun", "Not run")}
+				</SummaryRow>
+				<SummaryRow label={t("settings.enterprise.identity.wizard.review.rules", "Access rules")}>
+					{enabledRules.length
+						? enabledRules.join(", ")
+						: t("settings.enterprise.identity.wizard.review.noRules", "No rules turned on")}
+				</SummaryRow>
+				<SummaryRow
+					label={t("settings.enterprise.identity.wizard.review.scim", "User sync (SCIM)")}
+				>
+					{setup.scim.connection
+						? t("settings.enterprise.identity.wizard.review.scimOn", "Connected")
+						: t("settings.enterprise.identity.wizard.review.scimOff", "Not set up")}
+				</SummaryRow>
+			</dl>
+		</section>
+	);
+}
+
+export function ReviewStep({ controller }: { controller: IdentitySetupController }) {
+	const { activateSetup, isPending, readiness, setup, t } = controller;
+	const activated = Boolean(setup.activatedAt);
 
 	return (
 		<>
-			<section className="min-w-0 space-y-2">
-				<SectionHeading>
-					{t("settings.enterprise.identity.wizard.review.checklist", "Checklist")}
-				</SectionHeading>
-				<ul className="divide-y rounded-lg border">
-					{checklist.map((step) => {
-						const done = completion[step.id];
-						const copy = getStepCopy(step.id, controller);
-						return (
-							<li key={step.id} className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3">
-								{done ? (
-									<IconCircleCheck className="size-5 shrink-0 text-success" aria-hidden="true" />
-								) : (
-									<IconCircleDashed
-										className="size-5 shrink-0 text-muted-foreground"
-										aria-hidden="true"
-									/>
-								)}
-								<span className="min-w-0 flex-1 text-sm">
-									<span className="font-medium">{copy.navLabel}</span>
-									<span className="text-muted-foreground">
-										{" · "}
-										{done
-											? t("settings.enterprise.identity.wizard.status.done", "Done")
-											: step.optional
-												? t("settings.enterprise.identity.wizard.status.optional", "Optional")
-												: t("settings.enterprise.identity.wizard.status.toDo", "To do")}
-									</span>
-								</span>
-								{!done ? (
-									<Button type="button" size="sm" variant="ghost" onClick={() => goTo(step.id)}>
-										{t("settings.enterprise.identity.wizard.review.open", "Open step")}
-										<span className="sr-only">: {copy.navLabel}</span>
-									</Button>
-								) : null}
-							</li>
-						);
-					})}
-				</ul>
-			</section>
+			<ReviewChecklist controller={controller} />
 
-			<section className="min-w-0 space-y-1">
-				<SectionHeading>
-					{t("settings.enterprise.identity.wizard.review.summary", "Your settings")}
-				</SectionHeading>
-				<dl className="divide-y">
-					<SummaryRow
-						label={t("settings.enterprise.identity.wizard.review.provider", "Identity provider")}
-					>
-						{setup.provider ? `${controller.preset.name} · ${protocol.toUpperCase()}` : notSet}
-					</SummaryRow>
-					<SummaryRow
-						label={t("settings.enterprise.identity.provider.label.providerId", "Provider ID")}
-					>
-						{providerId ? <code translate="no">{providerId}</code> : notSet}
-					</SummaryRow>
-					<SummaryRow
-						label={t(
-							"settings.enterprise.identity.wizard.provider.domainLabel",
-							"Work email domain",
-						)}
-					>
-						{setup.domain
-							? `${setup.domain.domain} · ${
-									setup.domain.verified
-										? t("settings.enterprise.identity.domain.status.verified", "Verified")
-										: t(
-												"settings.enterprise.identity.wizard.domain.notVerified",
-												"Not verified yet",
-											)
-								}`
-							: notSet}
-					</SummaryRow>
-					<SummaryRow label={t("settings.enterprise.identity.wizard.review.test", "Sign-in test")}>
-						{setup.ssoTest.status === "passed"
-							? t(
-									"settings.enterprise.identity.wizard.ssoTest.passed",
-									"Sign-in worked for {email}",
-									{
-										email: setup.ssoTest.testEmail ?? "",
-									},
-								)
-							: setup.ssoTest.status === "failed"
-								? t("settings.enterprise.identity.wizard.ssoTest.failed", "The last test failed")
-								: t("settings.enterprise.identity.ssoTest.status.notRun", "Not run")}
-					</SummaryRow>
-					<SummaryRow label={t("settings.enterprise.identity.wizard.review.rules", "Access rules")}>
-						{enabledRules.length
-							? enabledRules.join(", ")
-							: t("settings.enterprise.identity.wizard.review.noRules", "No rules turned on")}
-					</SummaryRow>
-					<SummaryRow
-						label={t("settings.enterprise.identity.wizard.review.scim", "User sync (SCIM)")}
-					>
-						{setup.scim.connection
-							? t("settings.enterprise.identity.wizard.review.scimOn", "Connected")
-							: t("settings.enterprise.identity.wizard.review.scimOff", "Not set up")}
-					</SummaryRow>
-				</dl>
-			</section>
+			<ReviewSettingsSummary controller={controller} />
 
 			<Callout
 				tone="warning"

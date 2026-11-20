@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { assignMasonryColumns, preservesRelativeOrder } from "./stable-masonry";
 
@@ -27,95 +27,9 @@ export function StableMasonryGrid({
 	className: string;
 	children: ReactNode;
 }) {
-	const containerRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const container = containerRef.current;
-		if (
-			!container ||
-			typeof ResizeObserver === "undefined" ||
-			typeof MutationObserver === "undefined"
-		) {
-			return;
-		}
-
-		let engaged = false;
-		let columnCount = 0;
-		let order: HTMLElement[] = [];
-		let assignment = new Map<HTMLElement, number>();
-		let observed = new Set<HTMLElement>();
-		let frame = 0;
-
-		const layout = () => {
-			const nextColumnCount = readColumnCount(container);
-			const items = collectItems(container);
-			const heights = items.map(outerHeight);
-			const keep =
-				engaged && nextColumnCount === columnCount && preservesRelativeOrder(order, items);
-
-			assignment = assignMasonryColumns(
-				items.map((key, index) => ({ key, height: heights[index] })),
-				nextColumnCount,
-				keep ? assignment : undefined,
-			);
-			columnCount = nextColumnCount;
-			order = items;
-
-			items.forEach((item, index) => {
-				item.style.gridColumnStart = String((assignment.get(item) ?? 0) + 1);
-				item.style.gridRowEnd = `span ${Math.max(1, Math.ceil(heights[index]))}`;
-				item.style.alignSelf = "start";
-			});
-
-			const current = new Set(items);
-			for (const item of observed) {
-				if (!current.has(item)) {
-					resizeObserver.unobserve(item);
-					clearPlacement(item);
-				}
-			}
-			for (const item of items) {
-				if (!observed.has(item)) resizeObserver.observe(item);
-			}
-			observed = current;
-			container.dataset.masonry = "ready";
-		};
-
-		// Height changes only change row spans, which never resize an item, so they are laid
-		// out synchronously and nothing overlaps for a frame. A column-count change moves items
-		// between columns of different widths; that waits a frame so the observer does not loop.
-		const resizeObserver = new ResizeObserver(() => {
-			if (readColumnCount(container) === columnCount) {
-				layout();
-				return;
-			}
-			cancelAnimationFrame(frame);
-			frame = requestAnimationFrame(layout);
-		});
-		const mutationObserver = new MutationObserver(layout);
-		const engage = () => {
-			engaged = true;
-		};
-
-		layout();
-		mutationObserver.observe(container, { childList: true, subtree: true });
-		container.addEventListener("pointerdown", engage, { capture: true });
-		container.addEventListener("keydown", engage, { capture: true });
-
-		return () => {
-			cancelAnimationFrame(frame);
-			resizeObserver.disconnect();
-			mutationObserver.disconnect();
-			container.removeEventListener("pointerdown", engage, { capture: true });
-			container.removeEventListener("keydown", engage, { capture: true });
-			for (const item of observed) clearPlacement(item);
-			delete container.dataset.masonry;
-		};
-	}, []);
-
 	return (
 		<div
-			ref={containerRef}
+			ref={observeMasonryGrid}
 			className={cn(
 				"min-w-0 gap-x-4 columns-(--masonry-columns)",
 				"data-[masonry=ready]:grid data-[masonry=ready]:grid-flow-row-dense data-[masonry=ready]:auto-rows-[1px] data-[masonry=ready]:grid-cols-[repeat(var(--masonry-columns),minmax(0,1fr))]",
@@ -125,6 +39,85 @@ export function StableMasonryGrid({
 			{children}
 		</div>
 	);
+}
+
+function observeMasonryGrid(container: HTMLDivElement | null) {
+	if (!container) return;
+	if (typeof ResizeObserver === "undefined" || typeof MutationObserver === "undefined") {
+		return;
+	}
+
+	let engaged = false;
+	let columnCount = 0;
+	let order: HTMLElement[] = [];
+	let assignment = new Map<HTMLElement, number>();
+	let observed = new Set<HTMLElement>();
+	let frame = 0;
+
+	const layout = () => {
+		const nextColumnCount = readColumnCount(container);
+		const items = collectItems(container);
+		const heights = items.map(outerHeight);
+		const keep = engaged && nextColumnCount === columnCount && preservesRelativeOrder(order, items);
+
+		assignment = assignMasonryColumns(
+			items.map((key, index) => ({ key, height: heights[index] })),
+			nextColumnCount,
+			keep ? assignment : undefined,
+		);
+		columnCount = nextColumnCount;
+		order = items;
+
+		items.forEach((item, index) => {
+			item.style.gridColumnStart = String((assignment.get(item) ?? 0) + 1);
+			item.style.gridRowEnd = `span ${Math.max(1, Math.ceil(heights[index]))}`;
+			item.style.alignSelf = "start";
+		});
+
+		const current = new Set(items);
+		for (const item of observed) {
+			if (!current.has(item)) {
+				resizeObserver.unobserve(item);
+				clearPlacement(item);
+			}
+		}
+		for (const item of items) {
+			if (!observed.has(item)) resizeObserver.observe(item);
+		}
+		observed = current;
+		container.dataset.masonry = "ready";
+	};
+
+	// Height changes only change row spans, which never resize an item, so they are laid
+	// out synchronously and nothing overlaps for a frame. A column-count change moves items
+	// between columns of different widths; that waits a frame so the observer does not loop.
+	const resizeObserver = new ResizeObserver(() => {
+		if (readColumnCount(container) === columnCount) {
+			layout();
+			return;
+		}
+		cancelAnimationFrame(frame);
+		frame = requestAnimationFrame(layout);
+	});
+	const mutationObserver = new MutationObserver(layout);
+	const engage = () => {
+		engaged = true;
+	};
+
+	layout();
+	mutationObserver.observe(container, { childList: true, subtree: true });
+	container.addEventListener("pointerdown", engage, true);
+	container.addEventListener("keydown", engage, true);
+
+	return () => {
+		cancelAnimationFrame(frame);
+		resizeObserver.disconnect();
+		mutationObserver.disconnect();
+		container.removeEventListener("pointerdown", engage, true);
+		container.removeEventListener("keydown", engage, true);
+		for (const item of observed) clearPlacement(item);
+		delete container.dataset.masonry;
+	};
 }
 
 function readColumnCount(container: HTMLElement): number {

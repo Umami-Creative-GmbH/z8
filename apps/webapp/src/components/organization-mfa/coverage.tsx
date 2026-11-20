@@ -22,8 +22,7 @@ import {
 	TableBody,
 	TableCaption,
 	TableCell,
-	TableHead,
-	TableHeader,
+	TableHeaderRow,
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -300,15 +299,15 @@ export function MfaMemberCoverage({
 					<TableCaption className="sr-only">
 						{t("mfa.coverage.title", "Member enrollment and organization verification")}
 					</TableCaption>
-					<TableHeader>
-						<TableRow>
-							<TableHead>{t("mfa.coverage.member", "Member")}</TableHead>
-							<TableHead>{t("mfa.coverage.status", "Status")}</TableHead>
-							<TableHead>{t("mfa.coverage.methods", "Enrolled methods")}</TableHead>
-							<TableHead>{t("mfa.coverage.deadline", "Assigned deadline")}</TableHead>
-							<TableHead>{t("mfa.coverage.lastAccess", "Last verified access")}</TableHead>
-						</TableRow>
-					</TableHeader>
+					<TableHeaderRow
+						columns={[
+							{ id: "member", label: t("mfa.coverage.member", "Member") },
+							{ id: "status", label: t("mfa.coverage.status", "Status") },
+							{ id: "methods", label: t("mfa.coverage.methods", "Enrolled methods") },
+							{ id: "deadline", label: t("mfa.coverage.deadline", "Assigned deadline") },
+							{ id: "lastAccess", label: t("mfa.coverage.lastAccess", "Last verified access") },
+						]}
+					/>
 					<TableBody>
 						{visible.map((row) => (
 							<TableRow key={row.userId} className="align-top">

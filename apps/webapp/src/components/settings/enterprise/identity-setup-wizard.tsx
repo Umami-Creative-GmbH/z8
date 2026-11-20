@@ -16,10 +16,10 @@ import {
 	useIdentitySetupController,
 	WIZARD_STEPS,
 } from "./identity-setup-controller";
+import { getStepCopy } from "./identity-setup-copy";
 import {
 	AccessPolicyStep,
 	DomainStep,
-	getStepCopy,
 	ProviderStep,
 	ReviewStep,
 	ScimStep,
