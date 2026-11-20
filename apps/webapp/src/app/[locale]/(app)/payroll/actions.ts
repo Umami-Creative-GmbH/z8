@@ -568,7 +568,11 @@ export async function exportPayrollPdfAction(
 }
 
 export async function startScopedPayrollExportAction(
-	request: PayrollWorkspaceRequest & { formatId: string },
+	request: PayrollWorkspaceRequest & {
+		formatId: string;
+		/** Reissue the file with its settled days (#1898); the Export tab warns first. */
+		includeSettledDays?: boolean;
+	},
 ): Promise<
 	ServerActionResult<{
 		jobId: string;
@@ -576,6 +580,8 @@ export async function startScopedPayrollExportAction(
 		fileContent?: string;
 		/** Overtime payouts the file left out for want of an "overtime" mapping (#1001). */
 		unmappedOvertimePayoutCount?: number;
+		/** Settled and changed-since-settled employee-days the file left out (#1898). */
+		settledDaysLeftOut?: number;
 	}>
 > {
 	return runPayrollWorkspaceAction(async (t) => {
@@ -622,6 +628,7 @@ export async function startScopedPayrollExportAction(
 			requestedById: authContext.employee.id,
 			filters,
 			repairActorUserId: ability?.can("manage", "OrgSettings") ? authContext.user.id : null,
+			includeSettledDays: request.includeSettledDays === true,
 		});
 
 		if (isAsync) {
@@ -632,7 +639,7 @@ export async function startScopedPayrollExportAction(
 			return { jobId, isAsync };
 		}
 
-		const { result } = await processExportJob({
+		const { result, settledDaysLeftOut } = await processExportJob({
 			jobId,
 			organizationId: authContext.employee.organizationId,
 		});
@@ -647,6 +654,7 @@ export async function startScopedPayrollExportAction(
 			isAsync,
 			fileContent,
 			unmappedOvertimePayoutCount: result?.metadata.unmappedOvertimePayouts.length ?? 0,
+			settledDaysLeftOut: settledDaysLeftOut ?? 0,
 		};
 	});
 }

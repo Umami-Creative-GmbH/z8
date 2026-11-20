@@ -134,6 +134,16 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 												settled: exportToConfirm.settledDays,
 												carried: exportToConfirm.carriedDays,
 											})}
+											{exportToConfirm.settledDaysLeftOut > 0
+												? ` · ${t(
+														"payroll.confirmPaid.leftOut",
+														"{count, plural, one {# settled day} other {# settled days}} left out",
+														{ count: exportToConfirm.settledDaysLeftOut },
+													)}`
+												: null}
+											{exportToConfirm.includesSettledDays
+												? ` · ${t("payroll.confirmPaid.includedSettled", "Settled days included")}`
+												: null}
 										</p>
 									</div>
 									{paid ? (

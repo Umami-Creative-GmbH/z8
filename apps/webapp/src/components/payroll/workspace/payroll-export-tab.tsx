@@ -1,10 +1,13 @@
 "use client";
 
-import { IconDownload, IconFileExport, IconLoader2 } from "@tabler/icons-react";
+import { IconAlertTriangle, IconDownload, IconFileExport, IconLoader2 } from "@tabler/icons-react";
 import type React from "react";
+import { useState } from "react";
 import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -48,13 +51,15 @@ export function PayrollExportTab({
 	formatId: string;
 	isPending: boolean;
 	onDownloadPdf: () => void;
-	onTriggerExport: () => void;
+	onTriggerExport: (options: { includeSettledDays: boolean }) => void;
 	period: PayrollWorkspaceSummary["period"];
 	refreshedAt: string;
 	request: PayrollPeriodRequest;
 	t: PayrollTranslate;
 }) {
 	const hasExportFormats = exportFormats.length > 0;
+	// "Include settled days" (#1898): an explicit, warned opt-in to reissue a file.
+	const [includeSettledDays, setIncludeSettledDays] = useState(false);
 	return (
 		<div className="flex flex-col gap-6">
 			<Card>
@@ -120,7 +125,11 @@ export function PayrollExportTab({
 							type="button"
 							className="justify-center"
 							disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
-							onClick={onTriggerExport}
+							onClick={() => {
+								onTriggerExport({ includeSettledDays });
+								// A reissue is a one-off: the next file leaves settled days out again.
+								setIncludeSettledDays(false);
+							}}
 						>
 							{isPending ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
@@ -129,6 +138,42 @@ export function PayrollExportTab({
 							)}
 							{t("payroll.actions.triggerExport", "Trigger export")}
 						</Button>
+					</div>
+
+					<div className="flex flex-col gap-3 md:col-span-2">
+						<div className="flex items-start gap-2">
+							<Checkbox
+								id="payroll-export-include-settled"
+								checked={includeSettledDays}
+								disabled={isPending}
+								onCheckedChange={(checked) => setIncludeSettledDays(checked === true)}
+							/>
+							<div className="grid gap-1">
+								<Label htmlFor="payroll-export-include-settled">
+									{t("payroll.export.includeSettledDays", "Include settled days")}
+								</Label>
+								<p className="text-muted-foreground text-sm">
+									{t(
+										"payroll.export.includeSettledDaysHint",
+										"Files leave out days that are already settled, including days changed since. Include them only to reissue a lost or rejected file.",
+									)}
+								</p>
+							</div>
+						</div>
+						{includeSettledDays ? (
+							<Alert className="border-amber-300 dark:border-amber-700">
+								<IconAlertTriangle aria-hidden="true" />
+								<AlertTitle>
+									{t("payroll.export.includeSettledDaysWarningTitle", "Risk of double payouts")}
+								</AlertTitle>
+								<AlertDescription>
+									{t(
+										"payroll.export.includeSettledDaysWarning",
+										"This file will carry days that have already been paid. If payroll processes it as a new file, those employees are paid twice. Use it only to replace a file that was lost or rejected.",
+									)}
+								</AlertDescription>
+							</Alert>
+						) : null}
 					</div>
 				</CardContent>
 			</Card>

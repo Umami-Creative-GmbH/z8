@@ -19,6 +19,7 @@ import {
 	type PayrollCarriedDay,
 	readExportCarriedDays,
 } from "@/lib/payroll-period/carried-days";
+import { settledDaysFor } from "@/lib/payroll-period/settled-days-for";
 import {
 	insertPayrollExportWorkInput,
 	PayrollExportWorkInputIntegrityError,
@@ -85,6 +86,7 @@ import {
 	overtimePayoutsForFormat,
 } from "./formatters/overtime-payouts";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
+import { leaveOutSettledDays } from "./leave-out-settled-days";
 import {
 	employeesWithPayoutsOrExpenseLines,
 	logicalPeriod,
@@ -214,6 +216,11 @@ export async function createExportJob(params: {
 	 * before collection (#322). Omitted, collection runs without repair.
 	 */
 	repairActorUserId?: string | null;
+	/**
+	 * Reissue a file with its settled and changed-since-settled days (#1898). Omitted, a
+	 * file leaves them out so they are not paid twice.
+	 */
+	includeSettledDays?: boolean;
 }): Promise<{
 	jobId: string;
 	isAsync: boolean;
@@ -311,6 +318,7 @@ export async function createExportJob(params: {
 				requestedById: params.requestedById,
 				filters: serializedFilters,
 				personnelIdentifier: legacyIdentifier,
+				includesSettledDays: params.includeSettledDays ?? false,
 				isAsync,
 				status: "pending",
 			})
@@ -356,6 +364,8 @@ export async function processExportJob(
 	downloadUrl?: string;
 	/** The uploaded file's object key. */
 	s3Key?: string;
+	/** Settled and changed-since-settled employee-days a file left out (#1898). */
+	settledDaysLeftOut?: number;
 }> {
 	logger.info({ jobId, organizationId }, "Processing payroll export job");
 
@@ -548,16 +558,36 @@ export async function processExportJob(
 		// BRANCH: File-based formatter (DATEV, etc.)
 		if (formatter) {
 			const formatId = job.config.formatId;
+			const fileEmployeeIds = await resolvePayrollRunEmployeeIds(
+				job.organizationId,
+				filters,
+			);
 			// The employee-days the file carries (#1899), recorded with the completed job.
-			const carriedDays = await readExportCarriedDays({
+			const periodDays = await readExportCarriedDays({
 				organizationId: job.organizationId,
 				startDate: job.filters.dateRange.start,
 				endDate: job.filters.dateRange.end,
-				employeeIds: await resolvePayrollRunEmployeeIds(
-					job.organizationId,
-					filters,
-				),
+				employeeIds: fileEmployeeIds,
 				collectedWork: storedInput?.work,
+			});
+			// Settled and changed-since-settled days are left out of the file and of what
+			// it carried (#1898), unless the officer chose to include settled days.
+			const {
+				workPeriods: fileWorkPeriods,
+				absences: fileAbsences,
+				carriedDays,
+				settledDaysLeftOut,
+			} = await withoutSettledDays({
+				organizationId: job.organizationId,
+				includesSettledDays: job.includesSettledDays,
+				period: {
+					startDate: job.filters.dateRange.start,
+					endDate: job.filters.dateRange.end,
+				},
+				employeeIds: fileEmployeeIds,
+				workPeriods,
+				absences,
+				periodDays,
 			});
 			// Overtime payouts (#1001), read now like absences; the formatter maps them.
 			const overtimePayouts = overtimePayoutCodeFormat(formatId)
@@ -594,8 +624,8 @@ export async function processExportJob(
 					db,
 					job,
 					formatter.transform(
-						workPeriods,
-						absences,
+						fileWorkPeriods,
+						fileAbsences,
 						[],
 						mappings,
 						job.config.config as Record<string, unknown>,
@@ -606,6 +636,7 @@ export async function processExportJob(
 					baselineEmployeeIds,
 					employeeWindowsUnavailable,
 					carriedDays,
+					settledDaysLeftOut,
 				);
 			}
 
@@ -648,8 +679,8 @@ export async function processExportJob(
 					tx,
 					job,
 					formatter.transform(
-						workPeriods,
-						absences,
+						fileWorkPeriods,
+						fileAbsences,
 						expenseLines,
 						mappings,
 						job.config.config as Record<string, unknown>,
@@ -660,6 +691,7 @@ export async function processExportJob(
 					baselineEmployeeIds,
 					employeeWindowsUnavailable,
 					carriedDays,
+					settledDaysLeftOut,
 				);
 			});
 			// After the commit (#855): officers learn of the run and of the reports it left out.
@@ -721,6 +753,68 @@ async function refuseDuplicatePersonnelIdentifiersOfFormat(
 	});
 }
 
+/**
+ * A file's work, absences and carried days without the employee-days that have an
+ * active settlement (#1898), and how many such days it left out. Including settled days
+ * (a reissue the officer chose) leaves nothing out. Overtime payouts and expense lines
+ * keep their own safeguards and are never touched.
+ */
+async function withoutSettledDays(input: {
+	organizationId: string;
+	includesSettledDays: boolean;
+	period: { startDate: string; endDate: string };
+	employeeIds: readonly string[];
+	workPeriods: WorkPeriodData[];
+	absences: AbsenceData[];
+	periodDays: PayrollCarriedDay[];
+}): Promise<{
+	workPeriods: WorkPeriodData[];
+	absences: AbsenceData[];
+	carriedDays: PayrollCarriedDay[];
+	settledDaysLeftOut: number;
+}> {
+	const unchanged = {
+		workPeriods: input.workPeriods,
+		absences: input.absences,
+		carriedDays: input.periodDays,
+		settledDaysLeftOut: 0,
+	};
+	if (input.includesSettledDays) return unchanged;
+	const employeeIds = [
+		...new Set([
+			...input.employeeIds,
+			...input.workPeriods.map((row) => row.employeeId),
+			...input.absences.map((row) => row.employeeId),
+		]),
+	];
+	const settled = await settledDaysFor(
+		input.organizationId,
+		{ employeeIds },
+		input.period,
+	);
+	if (settled.length === 0) return unchanged;
+	// Days are cut by each employee's timezone as the period module reads it.
+	const timezones = new Map([
+		...settled.map((day) => [day.employeeId, day.timezone] as const),
+		...input.periodDays.map((day) => [day.employeeId, day.timezone] as const),
+	]);
+	const settledKeys = new Set(
+		settled.map((day) => `${day.employeeId}:${day.date}`),
+	);
+	return {
+		...leaveOutSettledDays({
+			workPeriods: input.workPeriods,
+			absences: input.absences,
+			settledDays: settled,
+			timezones,
+		}),
+		carriedDays: input.periodDays.filter(
+			(day) => !settledKeys.has(`${day.employeeId}:${day.date}`),
+		),
+		settledDaysLeftOut: settled.length,
+	};
+}
+
 async function writeFileExport(
 	database: ExportDatabase,
 	job: {
@@ -737,7 +831,13 @@ async function writeFileExport(
 	baselineEmployeeIds: string[] = [],
 	employeeWindowsUnavailable?: true,
 	carriedDays: readonly PayrollCarriedDay[] = [],
-): Promise<{ result?: ExportResult; downloadUrl?: string; s3Key?: string }> {
+	settledDaysLeftOut = 0,
+): Promise<{
+	result?: ExportResult;
+	downloadUrl?: string;
+	s3Key?: string;
+	settledDaysLeftOut: number;
+}> {
 	const contentBuffer =
 		typeof exportResult.content === "string"
 			? Buffer.from(exportResult.content, exportResult.encoding)
@@ -823,6 +923,7 @@ async function writeFileExport(
 				workPeriodCount: exportResult.metadata.workPeriodCount,
 				employeeCount: exportResult.metadata.employeeCount,
 				unmappedOvertimePayouts: exportResult.metadata.unmappedOvertimePayouts,
+				settledDaysLeftOut,
 				completedAt,
 				errorMessage: null,
 			})
@@ -834,8 +935,12 @@ async function writeFileExport(
 			);
 	});
 	return job.isAsync && !storeFile
-		? { downloadUrl, s3Key }
-		: { ...(s3Key ? { downloadUrl, s3Key } : {}), result: exportResult };
+		? { downloadUrl, s3Key, settledDaysLeftOut }
+		: {
+				...(s3Key ? { downloadUrl, s3Key } : {}),
+				result: exportResult,
+				settledDaysLeftOut,
+			};
 }
 /**
  * Scoped collection for an export (#322): eligible repair, then readiness and
@@ -1170,6 +1275,8 @@ export async function getExportJobHistory(
 		filters: job.filters,
 		payrollRunIncludedReports: included.get(job.id) ?? 0,
 		unmappedOvertimePayoutCount: job.unmappedOvertimePayouts.length,
+		settledDaysLeftOut: job.settledDaysLeftOut,
+		includesSettledDays: job.includesSettledDays,
 	}));
 }
 

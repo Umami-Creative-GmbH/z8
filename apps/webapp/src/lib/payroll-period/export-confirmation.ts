@@ -49,6 +49,10 @@ export interface PayrollExportToConfirm {
 	carriedDays: number;
 	/** Of those, the days settled now (by this export or otherwise). */
 	settledDays: number;
+	/** Settled and changed-since-settled days the file left out (#1898). */
+	settledDaysLeftOut: number;
+	/** The file was reissued with its settled days (#1898). */
+	includesSettledDays: boolean;
 }
 
 /** What confirming the export as paid would settle, without settling anything. */
@@ -117,6 +121,8 @@ export async function listExportsToConfirm(
 			fileName: payrollExportJob.fileName,
 			filters: payrollExportJob.filters,
 			completedAt: payrollExportJob.completedAt,
+			settledDaysLeftOut: payrollExportJob.settledDaysLeftOut,
+			includesSettledDays: payrollExportJob.includesSettledDays,
 		})
 		.from(payrollExportJob)
 		.where(
@@ -196,6 +202,8 @@ export async function listExportsToConfirm(
 				employeeCount: employees.length,
 				carriedDays: employees.reduce((sum, row) => sum + row.days, 0),
 				settledDays: settledByJob.get(job.id) ?? 0,
+				settledDaysLeftOut: job.settledDaysLeftOut,
+				includesSettledDays: job.includesSettledDays,
 			},
 		];
 	});

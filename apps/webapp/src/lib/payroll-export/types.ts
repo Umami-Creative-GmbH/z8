@@ -378,6 +378,10 @@ export interface PayrollExportJobSummary {
 	payrollRunIncludedReports: number;
 	/** How many overtime payouts the file left out for want of an "overtime" mapping (#1001). */
 	unmappedOvertimePayoutCount: number;
+	/** Settled and changed-since-settled employee-days the file left out (#1898). */
+	settledDaysLeftOut: number;
+	/** The officer chose "Include settled days" to reissue the file (#1898). */
+	includesSettledDays: boolean;
 }
 
 // ============================================
