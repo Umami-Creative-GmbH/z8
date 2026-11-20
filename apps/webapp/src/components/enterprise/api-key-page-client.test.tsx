@@ -120,7 +120,7 @@ describe("Public API discovery in API Keys", () => {
 		renderApiKeys([existingKey]);
 		const user = userEvent.setup();
 		await user.click(screen.getByRole("button", { name: "More actions" }));
-		await user.click(screen.getByRole("menuitem", { name: "Delete" }));
+		await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
 		const confirm = screen.getByRole("button", { name: "Delete" });
 		act(() => {
 			fireEvent.click(confirm);

@@ -12,14 +12,11 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import {
-	arrayMove,
-	rectSortingStrategy,
-	SortableContext,
-} from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useId, useState } from "react";
 import { DashboardWidgetDraggableProvider } from "./dashboard-widget-draggable-context";
+import { StableMasonryGrid } from "./stable-masonry-grid";
 import type { WidgetId } from "./widget-registry";
 import { useVisibleWidgets } from "./widget-visibility-context";
 
@@ -30,6 +27,7 @@ interface SortableWidgetGridProps {
 	onReorder: (newOrder: WidgetId[]) => void;
 	/** Children (widget components that wrap themselves in DashboardWidget) */
 	children: ReactNode;
+	/** Replaces the default masonry grid with a plain container using these classes */
 	className?: string;
 }
 
@@ -86,9 +84,7 @@ export function SortableWidgetGrid({
 				const newVisibleOrder = arrayMove(sortableItems, oldIndex, newIndex);
 
 				// Merge back with hidden widgets, preserving their relative positions
-				const hiddenWidgets = widgetOrder.filter(
-					(id) => !visibleWidgetSet.has(id),
-				);
+				const hiddenWidgets = widgetOrder.filter((id) => !visibleWidgetSet.has(id));
 
 				// Create final order: visible widgets in new order + hidden widgets at the end
 				const newOrder = [...newVisibleOrder, ...hiddenWidgets];
@@ -101,6 +97,10 @@ export function SortableWidgetGrid({
 		setActiveId(null);
 	}
 
+	const widgets = (
+		<DashboardWidgetDraggableProvider value={false}>{children}</DashboardWidgetDraggableProvider>
+	);
+
 	return (
 		<DndContext
 			collisionDetection={closestCenter}
@@ -111,16 +111,13 @@ export function SortableWidgetGrid({
 			sensors={sensors}
 		>
 			<SortableContext items={sortableItems} strategy={rectSortingStrategy}>
-				<div
-					className={
-						className ??
-						"columns-1 @xl/main:columns-2 @5xl/main:columns-3 @[110rem]/main:columns-4 gap-4"
-					}
-				>
-					<DashboardWidgetDraggableProvider value={false}>
-						{children}
-					</DashboardWidgetDraggableProvider>
-				</div>
+				{className ? (
+					<div className={className}>{widgets}</div>
+				) : (
+					<StableMasonryGrid className="[--masonry-columns:1] @xl/main:[--masonry-columns:2] @5xl/main:[--masonry-columns:3] @[110rem]/main:[--masonry-columns:4]">
+						{widgets}
+					</StableMasonryGrid>
+				)}
 			</SortableContext>
 			<DragOverlay dropAnimation={null}>
 				{activeId ? (

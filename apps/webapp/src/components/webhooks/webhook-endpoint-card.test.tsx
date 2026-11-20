@@ -71,7 +71,7 @@ it("keeps the actual delete confirmation pending and retains it after an owner r
 	render(<WebhookEndpointCard webhook={endpoint} onUpdated={vi.fn()} onDeleted={vi.fn()} />);
 	const user = userEvent.setup();
 	await user.click(screen.getByRole("button", { name: "Actions for Payroll webhook" }));
-	await user.click(screen.getByRole("menuitem", { name: "Delete" }));
+	await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
 	const confirm = screen.getByRole("button", { name: "Delete" });
 	act(() => {
 		fireEvent.click(confirm);
@@ -123,7 +123,7 @@ it("ignores a late rotation secret after Activity retires the endpoint command o
 	const view = render(tree(true));
 	const user = userEvent.setup();
 	await user.click(screen.getByRole("button", { name: "Actions for Payroll webhook" }));
-	await user.click(screen.getByRole("menuitem", { name: "Regenerate Secret" }));
+	await user.click(await screen.findByRole("menuitem", { name: "Regenerate Secret" }));
 	await waitFor(() => expect(regenerateSecret).toHaveBeenCalledTimes(1));
 	await act(async () => view.rerender(tree(false)));
 	await act(async () => view.rerender(tree(true)));

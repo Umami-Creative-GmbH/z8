@@ -103,9 +103,8 @@ describe("getWorkPolicyTableColumns", () => {
 
 		await user.click(screen.getByRole("button", { name: "Actions for Retail 38h" }));
 
-		expect(screen.getByRole("menuitem", { name: "Duplicate" }).getAttribute("aria-disabled")).toBe(
-			"true",
-		);
+		const duplicate = await screen.findByRole("menuitem", { name: "Duplicate" });
+		expect(duplicate.getAttribute("aria-disabled")).toBe("true");
 		expect(
 			screen.getByRole("menuitem", { name: "Set as Default" }).getAttribute("aria-disabled"),
 		).toBe("true");

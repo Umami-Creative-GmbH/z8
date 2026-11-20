@@ -127,7 +127,7 @@ export function ManagerTodayWidget({
 
 					{!hasError && (
 						<div
-							className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+							className="grid grid-cols-2 gap-2 @2xl/widget:grid-cols-4"
 							data-testid="manager-today-metrics"
 						>
 							{metricItems.map((item) => (
@@ -135,14 +135,14 @@ export function ManagerTodayWidget({
 									href="/today"
 									key={item.label}
 									className={cn(
-										"rounded-lg border border-transparent px-3 py-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
+										"min-w-0 rounded-lg border border-transparent px-3 py-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
 										item.value > 0 && item.activeClass,
 									)}
 								>
 									<div className="text-xl font-semibold tabular-nums leading-none">
 										{item.value}
 									</div>
-									<div className="mt-1 text-sm font-medium text-muted-foreground">
+									<div className="mt-1 text-sm font-medium text-muted-foreground break-words hyphens-auto">
 										{item.label}
 									</div>
 								</Link>

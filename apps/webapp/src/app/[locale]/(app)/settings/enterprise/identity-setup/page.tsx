@@ -50,7 +50,7 @@ async function IdentitySettingsContent() {
 						"mfa.policy.tabDescription",
 						"Require verified local authentication with controlled enrollment deadlines",
 					),
-					measure: true,
+					// The member table needs the full frame; the policy form bounds itself.
 					panel: <OrganizationMfaPolicyPanel organizationId={organizationId} />,
 				},
 				{
@@ -60,12 +60,13 @@ async function IdentitySettingsContent() {
 						"settings.enterpriseIdentitySetup.description",
 						"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
 					),
-					measure: true,
+					// The wizard bounds its own step column; its step list needs the room beside it.
 					panel: (
 						<IdentitySetupWizard
 							callbackBaseUrl={callbackBaseUrl}
 							initialSetup={setup}
 							organizationId={organizationId}
+							ssoProviders={providers}
 						/>
 					),
 				},

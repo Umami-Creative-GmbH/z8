@@ -1,9 +1,12 @@
 /* @vitest-environment jsdom */
 /* @vitest-environment-options {"url": "https://example.test/"} */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { EnterpriseIdentitySetupResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
+import type {
+	EnterpriseIdentitySetupResponse,
+	SSOProviderResponse,
+} from "@/app/[locale]/(app)/settings/enterprise/actions";
 import type { OrganizationBranding } from "@/lib/domain";
 import { DomainsAndBrandingTabs } from "./domains-branding-tabs";
 import { IdentitySetupWizard } from "./identity-setup-wizard";
@@ -13,24 +16,26 @@ const {
 	recordEnterpriseIdentitySsoTestActionMock,
 	refreshEnterpriseIdentityDomainStatusActionMock,
 	registerEnterpriseIdentitySSOProviderActionMock,
+	requestSSODomainVerificationActionMock,
 	updateEnterpriseIdentityAccessPolicyActionMock,
 	updateEnterpriseIdentityProviderActionMock,
+	verifySSODomainActionMock,
 } = vi.hoisted(() => ({
 	activateEnterpriseIdentitySetupActionMock: vi.fn(),
 	recordEnterpriseIdentitySsoTestActionMock: vi.fn(),
 	refreshEnterpriseIdentityDomainStatusActionMock: vi.fn(),
 	registerEnterpriseIdentitySSOProviderActionMock: vi.fn(),
+	requestSSODomainVerificationActionMock: vi.fn(),
 	updateEnterpriseIdentityAccessPolicyActionMock: vi.fn(),
 	updateEnterpriseIdentityProviderActionMock: vi.fn(),
+	verifySSODomainActionMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", async () => {
 	const { useSyncExternalStore } = await import("react");
 	const listeners = new Set<() => void>();
 	const replaceState = window.history.replaceState.bind(window.history);
-	window.history.replaceState = (
-		...args: Parameters<History["replaceState"]>
-	) => {
+	window.history.replaceState = (...args: Parameters<History["replaceState"]>) => {
 		replaceState(...args);
 		for (const listener of listeners) listener();
 	};
@@ -50,69 +55,17 @@ vi.mock("next/navigation", async () => {
 	};
 });
 
+// A few catalog entries prove the wizard reads its copy through Tolgee keys.
 const germanCopy: Record<string, string> = {
-	"settings.enterprise.identity.hero.eyebrow": "Unternehmensidentität",
-	"settings.enterprise.identity.hero.title": "Operative Befehlscheckliste",
-	"settings.enterprise.identity.step.provider": "Anbieter",
-	"settings.enterprise.identity.step.domain": "Domäne",
-	"settings.enterprise.identity.step.sso": "SSO-Konfiguration",
-	"settings.enterprise.identity.step.ssoTest": "Testbenutzer",
-	"settings.enterprise.identity.step.scim": "SCIM-Bereitstellung",
-	"settings.enterprise.identity.step.accessPolicy": "Zugriffsrichtlinie",
-	"settings.enterprise.identity.step.review": "Prüfen & Aktivieren",
-	"settings.enterprise.identity.badge.ready": "Bereit",
-	"settings.enterprise.identity.badge.now": "Jetzt",
-	"settings.enterprise.identity.badge.queued": "Wartend",
-	"settings.enterprise.identity.provider.title": "Anbieter",
-	"settings.enterprise.identity.provider.action.save": "Anbieter speichern",
-	"settings.enterprise.identity.provider.label.preset": "Anbietervorlage",
-	"settings.enterprise.identity.provider.label.protocol": "Protokoll",
 	"settings.enterprise.identity.provider.label.providerId": "Anbieter-ID",
-	"settings.enterprise.identity.provider.label.domain": "E-Mail-Domäne",
-	"settings.enterprise.identity.provider.placeholder.providerId":
-		"z. B. acme-okta…",
-	"settings.enterprise.identity.provider.placeholder.domain":
-		"z. B. example.com…",
-	"settings.enterprise.identity.domain.title": "Domäne",
-	"settings.enterprise.identity.domain.status.pending": "Ausstehend",
-	"settings.enterprise.identity.domain.status.verified": "Verifiziert",
-	"settings.enterprise.identity.domain.action.checkStatus":
-		"Domänenstatus prüfen",
+	"settings.enterprise.identity.provider.placeholder.providerId": "z. B. acme-okta…",
 	"settings.enterprise.identity.sso.label.issuer": "Aussteller",
-	"settings.enterprise.identity.sso.label.clientId": "Client-ID",
-	"settings.enterprise.identity.sso.label.clientSecret": "Client-Geheimnis",
-	"settings.enterprise.identity.sso.action.register":
-		"SSO-Anbieter registrieren",
-	"settings.enterprise.identity.sso.placeholder.issuer.generic":
-		"https://idp.beispiel.de…",
-	"settings.enterprise.identity.ssoTest.title": "Testbenutzer",
-	"settings.enterprise.identity.ssoTest.label.email": "Testbenutzer-E-Mail",
-	"settings.enterprise.identity.ssoTest.label.failureNote": "Fehlernotiz",
-	"settings.enterprise.identity.ssoTest.action.recordPass": "Erfolg erfassen",
-	"settings.enterprise.identity.ssoTest.action.recordFail": "Fehler erfassen",
-	"settings.enterprise.identity.ssoTest.status.passed": "Bestanden",
-	"settings.enterprise.identity.review.requirement.provider": "Anbieter",
-	"settings.enterprise.identity.review.requirement.ssoTest": "SSO-Test",
-	"settings.enterprise.identity.review.missingRequirement":
-		"{item} ist vor Aktivierung erforderlich",
-	"settings.enterprise.identity.ssoTest.status.notRun": "Nicht ausgeführt",
-	"settings.enterprise.identity.accessPolicy.defaultRoleTemplate":
-		"Standard-Rollenvorlage",
-	"settings.enterprise.identity.accessPolicy.action.save":
-		"Zugriffsrichtlinie speichern",
-	"settings.enterprise.identity.review.action.activate":
-		"Unternehmensidentität aktivieren",
 	"settings.enterprise.tab.sso": "SSO-Anbieter",
-	"settings.enterprise.domains.guidedSetup.action": "Geführte Einrichtung",
 };
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (
-			key: string,
-			defaultValue?: string,
-			params?: Record<string, string>,
-		) => {
+		t: (key: string, defaultValue?: string, params?: Record<string, string>) => {
 			const copy = germanCopy[key] ?? defaultValue ?? key;
 			return params
 				? Object.entries(params).reduce(
@@ -136,11 +89,7 @@ vi.mock("./branding-form", () => ({
 }));
 
 vi.mock("./domain-management", () => ({
-	DomainManagement: ({
-		defaultUrls,
-	}: {
-		defaultUrls: { canonical: string; alias: string };
-	}) => (
+	DomainManagement: ({ defaultUrls }: { defaultUrls: { canonical: string; alias: string } }) => (
 		<div>
 			<div>Domain management</div>
 			<div>{defaultUrls.canonical}</div>
@@ -163,18 +112,14 @@ vi.mock("@/components/settings/enterprise/action-data", async (importOriginal) =
 	actionData: <T,>(result: Promise<T>) => result,
 }));
 vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
-	activateEnterpriseIdentitySetupAction:
-		activateEnterpriseIdentitySetupActionMock,
-	recordEnterpriseIdentitySsoTestAction:
-		recordEnterpriseIdentitySsoTestActionMock,
-	refreshEnterpriseIdentityDomainStatusAction:
-		refreshEnterpriseIdentityDomainStatusActionMock,
-	registerEnterpriseIdentitySSOProviderAction:
-		registerEnterpriseIdentitySSOProviderActionMock,
-	updateEnterpriseIdentityAccessPolicyAction:
-		updateEnterpriseIdentityAccessPolicyActionMock,
-	updateEnterpriseIdentityProviderAction:
-		updateEnterpriseIdentityProviderActionMock,
+	activateEnterpriseIdentitySetupAction: activateEnterpriseIdentitySetupActionMock,
+	recordEnterpriseIdentitySsoTestAction: recordEnterpriseIdentitySsoTestActionMock,
+	refreshEnterpriseIdentityDomainStatusAction: refreshEnterpriseIdentityDomainStatusActionMock,
+	registerEnterpriseIdentitySSOProviderAction: registerEnterpriseIdentitySSOProviderActionMock,
+	updateEnterpriseIdentityAccessPolicyAction: updateEnterpriseIdentityAccessPolicyActionMock,
+	updateEnterpriseIdentityProviderAction: updateEnterpriseIdentityProviderActionMock,
+	requestSSODomainVerificationAction: requestSSODomainVerificationActionMock,
+	verifySSODomainAction: verifySSODomainActionMock,
 }));
 
 const roleTemplate = {
@@ -186,9 +131,7 @@ const roleTemplate = {
 	employeeRole: "employee",
 };
 
-function setupResponse(
-	overrides: Partial<EnterpriseIdentitySetupResponse["state"]> = {},
-) {
+function setupResponse(overrides: Partial<EnterpriseIdentitySetupResponse["state"]> = {}) {
 	const state: EnterpriseIdentitySetupResponse["state"] = {
 		organizationId: "org_123",
 		currentStep: "provider",
@@ -227,9 +170,7 @@ function setupResponse(
 	};
 }
 
-function configuredSetup(
-	overrides: Partial<EnterpriseIdentitySetupResponse["state"]> = {},
-) {
+function configuredSetup(overrides: Partial<EnterpriseIdentitySetupResponse["state"]> = {}) {
 	return setupResponse({
 		currentStep: "review",
 		provider: {
@@ -245,14 +186,53 @@ function configuredSetup(
 	});
 }
 
-function renderWizard(initialSetup = setupResponse()) {
+function renderWizard(initialSetup = setupResponse(), ssoProviders: SSOProviderResponse[] = []) {
 	return render(
 		<IdentitySetupWizard
 			callbackBaseUrl="https://acme.z8.test"
 			initialSetup={initialSetup}
 			organizationId="org_123"
+			ssoProviders={ssoProviders}
 		/>,
 	);
+}
+
+function registeredProvider(overrides: Partial<SSOProviderResponse> = {}): SSOProviderResponse {
+	return {
+		id: "sso_1",
+		issuer: "https://idp.example.com",
+		domain: "example.com",
+		providerId: "acme-okta",
+		domainVerified: false,
+		domainVerificationToken: "token-123",
+		organizationId: "org_123",
+		userId: null,
+		createdAt: null,
+		hasOidcConfig: true,
+		hasSamlConfig: false,
+		...overrides,
+	};
+}
+
+const verifiedDomain = { domain: "example.com", verified: true };
+const passedTest = {
+	status: "passed" as const,
+	testEmail: "admin@example.com",
+	providerId: "acme-okta",
+	checkedAt: "2026-01-01T00:00:00.000Z",
+	error: null,
+};
+
+function stepNav() {
+	return within(screen.getByRole("navigation", { name: "Setup steps" }));
+}
+
+function openStep(name: RegExp) {
+	fireEvent.click(stepNav().getByRole("button", { name }));
+}
+
+function stepHeading(name: string) {
+	return screen.getByRole("heading", { level: 3, name });
 }
 
 function renderDomainsTabs() {
@@ -284,9 +264,7 @@ function setInput(label: string, value: string) {
 beforeEach(() => {
 	window.history.replaceState(null, "", "/en/settings/enterprise/domains");
 	vi.clearAllMocks();
-	updateEnterpriseIdentityProviderActionMock.mockResolvedValue(
-		configuredSetup(),
-	);
+	updateEnterpriseIdentityProviderActionMock.mockResolvedValue(configuredSetup());
 	registerEnterpriseIdentitySSOProviderActionMock.mockResolvedValue(
 		configuredSetup({ currentStep: "ssoTest" }),
 	);
@@ -303,13 +281,12 @@ beforeEach(() => {
 		}),
 	);
 	refreshEnterpriseIdentityDomainStatusActionMock.mockResolvedValue(
-		configuredSetup({
-			domain: {
-				domain: "example.com",
-				verified: true,
-			},
-		}),
+		configuredSetup({ currentStep: "ssoTest", domain: verifiedDomain }),
 	);
+	requestSSODomainVerificationActionMock.mockResolvedValue({
+		domainVerificationToken: "token-new",
+	});
+	verifySSODomainActionMock.mockResolvedValue({ verified: true });
 	updateEnterpriseIdentityAccessPolicyActionMock.mockResolvedValue(
 		configuredSetup({ currentStep: "review" }),
 	);
@@ -319,95 +296,63 @@ beforeEach(() => {
 });
 
 describe("IdentitySetupWizard behavior", () => {
-	it("renders all seven steps and accessible controls", () => {
-		renderWizard(setupResponse({ currentStep: "domain" }));
+	it("opens on the first unfinished step and lists every step with its status", () => {
+		renderWizard();
 
-		// The page heading names the area: no decorative eyebrow, only the setup's status and progress.
-		expect(screen.queryByText("Unternehmensidentität")).toBeNull();
-		expect(screen.queryByText("Enterprise identity")).toBeNull();
 		expect(
-			screen.getByRole("heading", { level: 2, name: "Operative Befehlscheckliste" }),
+			screen.getByRole("heading", { level: 2, name: "Set up enterprise sign-in" }),
 		).toBeTruthy();
-		expect(screen.queryByText("Operational command checklist")).toBeNull();
-		expect(screen.getByText("1 of 7 steps complete")).toBeTruthy();
-		expect(screen.getByText("Draft")).toBeTruthy();
-		expect(screen.getAllByText("Anbieter").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Domäne").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("SSO-Konfiguration").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Testbenutzer").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("SCIM-Bereitstellung").length).toBeGreaterThan(
-			0,
-		);
-		expect(screen.getAllByText("Zugriffsrichtlinie").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Prüfen & Aktivieren").length).toBeGreaterThan(
-			0,
-		);
+		expect(screen.getByText("0 of 5 required steps done")).toBeTruthy();
+		expect(screen.getByText("Not active yet")).toBeTruthy();
+		expect(screen.getByText("Step 1 of 7")).toBeTruthy();
+		expect(stepHeading("Choose your identity provider")).toBeTruthy();
+		expect(screen.getByText("Before you begin")).toBeTruthy();
 
-		expect(screen.getAllByText("Bereit").length).toBeGreaterThan(0);
-		expect(screen.getByText("Jetzt")).toBeTruthy();
-		expect(screen.getAllByText("Wartend").length).toBeGreaterThan(0);
-		expect(screen.getByLabelText("Anbietervorlage")).toBeTruthy();
-		expect(screen.getByPlaceholderText("z. B. acme-okta…")).toBeTruthy();
-		expect(screen.getByPlaceholderText("z. B. example.com…")).toBeTruthy();
-		expect(screen.queryByPlaceholderText("e.g. acme-okta…")).toBeNull();
-		expect(screen.queryByPlaceholderText("e.g. example.com…")).toBeNull();
-		expect(screen.getByLabelText("Protokoll")).toBeTruthy();
+		const steps = stepNav().getAllByRole("button");
+		expect(steps.map((step) => step.getAttribute("aria-label"))).toEqual([
+			"Identity provider, In progress",
+			"Connect, To do",
+			"Verify domain, To do",
+			"Test sign-in, To do",
+			"Sync users, Optional",
+			"Access rules, Optional",
+			"Activate, To do",
+		]);
+		expect(steps[0].getAttribute("aria-current")).toBe("step");
+
+		// Only the active step renders its form; the copy comes from the catalog.
 		expect(screen.getByLabelText("Anbieter-ID")).toBeTruthy();
-		expect(screen.getByLabelText("E-Mail-Domäne")).toBeTruthy();
-		expect(screen.getByLabelText("Aussteller")).toBeTruthy();
-		expect(
-			screen.getByPlaceholderText("https://idp.beispiel.de…"),
-		).toBeTruthy();
-		expect(
-			screen.queryByPlaceholderText("https://idp.example.com…"),
-		).toBeNull();
-		expect(screen.getByLabelText("Client-ID")).toBeTruthy();
-		expect(screen.getByLabelText("Client-Geheimnis")).toBeTruthy();
-		expect(screen.getByLabelText("Testbenutzer-E-Mail")).toBeTruthy();
-		expect(screen.getByLabelText("Fehlernotiz")).toBeTruthy();
-		expect(screen.getByRole("checkbox", { name: "Require SSO" })).toBeTruthy();
-		expect(
-			screen.getByRole("checkbox", { name: "Restrict to verified domain" }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("checkbox", { name: "Restrict invites" }),
-		).toBeTruthy();
-		expect(screen.getByLabelText("Standard-Rollenvorlage")).toBeTruthy();
-		expect(screen.getByText("Nicht ausgeführt")).toBeTruthy();
-		expect(screen.queryByText("not-run")).toBeNull();
-		expect(
-			screen.getByText("Anbieter ist vor Aktivierung erforderlich"),
-		).toBeTruthy();
-		expect(
-			screen.getByText("SSO-Test ist vor Aktivierung erforderlich"),
-		).toBeTruthy();
-		expect(
-			screen.queryByText("provider is required before activation"),
-		).toBeNull();
-		expect(
-			screen.queryByText("ssoTest is required before activation"),
-		).toBeNull();
-		expect(
-			screen.queryByText(
-				"Configure SSO and enforcement for this organization with guarded activation.",
-			),
-		).toBeNull();
+		expect(screen.getByPlaceholderText("z. B. acme-okta…")).toBeTruthy();
+		expect(screen.getByLabelText("Work email domain")).toBeTruthy();
+		expect(screen.getByRole("radio", { name: "Generic SAML/OIDC" })).toBeTruthy();
+		expect(screen.getByRole("radio", { name: "OpenID Connect (recommended)" })).toBeTruthy();
+		expect(screen.queryByLabelText("Aussteller")).toBeNull();
 		expect(screen.queryByText(/org_123/)).toBeNull();
 	});
 
-	it("reports every step complete once the setup is activated", () => {
-		renderWizard(configuredSetup({ activatedAt: "2026-01-01T00:00:00.000Z" }));
-		expect(screen.getByText("7 of 7 steps complete")).toBeTruthy();
+	it("reports every required step done once the setup is activated", () => {
+		renderWizard(
+			configuredSetup({
+				domain: verifiedDomain,
+				ssoTest: passedTest,
+				activatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+		);
+		expect(screen.getByText("5 of 5 required steps done")).toBeTruthy();
 		expect(screen.getByText("Activated")).toBeTruthy();
-		expect(screen.queryByText("Draft")).toBeNull();
+		expect(screen.queryByText("Not active yet")).toBeNull();
+		expect(stepHeading("Review and activate")).toBeTruthy();
 	});
 
-	it("saves provider setup with the expected payload", async () => {
+	it("saves the provider and moves on to connecting it", async () => {
+		updateEnterpriseIdentityProviderActionMock.mockResolvedValue(
+			configuredSetup({ currentStep: "sso" }),
+		);
 		renderWizard();
 
 		setInput("Anbieter-ID", "acme-okta");
-		setInput("E-Mail-Domäne", "example.com");
-		fireEvent.click(screen.getByRole("button", { name: "Anbieter speichern" }));
+		setInput("Work email domain", "Example.com");
+		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
 
 		await waitFor(() => {
 			expect(updateEnterpriseIdentityProviderActionMock).toHaveBeenCalledWith({
@@ -415,25 +360,59 @@ describe("IdentitySetupWizard behavior", () => {
 				protocol: "oidc",
 				providerId: "acme-okta",
 				domain: "example.com",
-				currentStep: "domain",
+				currentStep: "sso",
 			});
 		});
+		expect(stepHeading("Connect your identity provider to Z8")).toBeTruthy();
+		expect(document.activeElement).toBe(stepHeading("Connect your identity provider to Z8"));
+	});
+
+	it("explains an invalid provider ID before saving", async () => {
+		renderWizard();
+
+		setInput("Anbieter-ID", "Acme Okta");
+		setInput("Work email domain", "example.com");
+		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
+
+		expect(
+			await screen.findByText(
+				"Use only lowercase letters, numbers and hyphens, without a hyphen at the start or end.",
+			),
+		).toBeTruthy();
+		expect(updateEnterpriseIdentityProviderActionMock).not.toHaveBeenCalled();
+	});
+
+	it("offers only the protocols the chosen provider supports", () => {
+		renderWizard();
+
+		fireEvent.click(screen.getByRole("radio", { name: "Google Workspace" }));
+
+		expect(screen.getByText("Google Workspace connects with OpenID Connect (OIDC).")).toBeTruthy();
+		expect(screen.queryByRole("radio", { name: "SAML 2.0" })).toBeNull();
+	});
+
+	it("sends an administrator back to the step a locked step depends on", () => {
+		renderWizard();
+
+		openStep(/^Connect,/);
+		expect(stepHeading("Connect your identity provider to Z8")).toBeTruthy();
+		expect(screen.queryByLabelText("Aussteller")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Go to Identity provider" }));
+
+		expect(stepHeading("Choose your identity provider")).toBeTruthy();
 	});
 
 	it("registers OIDC SSO with provider, domain, issuer, and client credentials", async () => {
-		renderWizard(configuredSetup());
+		renderWizard(configuredSetup({ currentStep: "sso" }));
 
+		expect(stepHeading("Connect your identity provider to Z8")).toBeTruthy();
 		setInput("Aussteller", "https://idp.example.com");
-		setInput("Client-ID", "client_123");
-		setInput("Client-Geheimnis", "secret_123");
-		fireEvent.click(
-			screen.getByRole("button", { name: "SSO-Anbieter registrieren" }),
-		);
+		setInput("Client ID", "client_123");
+		setInput("Client secret", "secret_123");
+		fireEvent.click(screen.getByRole("button", { name: "Connect provider" }));
 
 		await waitFor(() => {
-			expect(
-				registerEnterpriseIdentitySSOProviderActionMock,
-			).toHaveBeenCalledWith(
+			expect(registerEnterpriseIdentitySSOProviderActionMock).toHaveBeenCalledWith(
 				expect.objectContaining({
 					protocol: "oidc",
 					providerId: "acme-okta",
@@ -444,68 +423,57 @@ describe("IdentitySetupWizard behavior", () => {
 				}),
 			);
 		});
+		expect(stepHeading("Verify that you own example.com")).toBeTruthy();
+	});
+
+	it("requires the connection details before registering", async () => {
+		renderWizard(configuredSetup({ currentStep: "sso" }));
+
+		fireEvent.click(screen.getByRole("button", { name: "Connect provider" }));
+
+		expect(await screen.findByText("Enter the issuer URL from your provider.")).toBeTruthy();
+		expect(registerEnterpriseIdentitySSOProviderActionMock).not.toHaveBeenCalled();
 	});
 
 	it("shows the mounted browser origin in the encoded SAML ACS URL", async () => {
 		renderWizard(
 			configuredSetup({
-				provider: {
-					preset: "generic",
-					protocol: "saml",
-					providerId: "acme/okta",
-				},
+				currentStep: "sso",
+				provider: { preset: "generic", protocol: "saml", providerId: "acme/okta" },
 			}),
 		);
 
-		await waitFor(() => {
-			const acsInstruction = screen.getByText(
-				/assertion consumer service \(ACS\) URL/,
-			);
-			expect(acsInstruction.textContent).toContain(
-				"https://example.test/api/auth/sso/saml2/sp/acs/acme%2Fokta",
-			);
-			expect(acsInstruction.textContent).not.toContain(
-				"URL: /api/auth/sso/saml2/sp/acs/acme%2Fokta",
-			);
-		});
+		expect(
+			await screen.findByText("https://example.test/api/auth/sso/saml2/sp/acs/acme%2Fokta"),
+		).toBeTruthy();
+		expect(screen.getByLabelText("SAML metadata")).toBeTruthy();
 		expect(screen.queryByText("/api/auth/sso/callback")).toBeNull();
 	});
 
 	it("shares the Entra guide and derives the issuer using the organization's callback", async () => {
 		renderWizard(
 			configuredSetup({
-				provider: {
-					preset: "microsoft-entra",
-					protocol: "oidc",
-					providerId: "acme-entra",
-				},
+				currentStep: "sso",
+				provider: { preset: "microsoft-entra", protocol: "oidc", providerId: "acme-entra" },
 			}),
 		);
+		expect(stepHeading("Connect Microsoft Entra ID to Z8")).toBeTruthy();
 		expect(screen.getByText("Set up Microsoft Entra ID")).toBeTruthy();
-		expect(
-			screen.getByText("https://acme.z8.test/api/auth/sso/callback"),
-		).toBeTruthy();
-		expect(
-			screen.queryByText("https://example.test/api/auth/sso/callback"),
-		).toBeNull();
+		expect(screen.getByText("https://acme.z8.test/api/auth/sso/callback")).toBeTruthy();
+		expect(screen.queryByText("https://example.test/api/auth/sso/callback")).toBeNull();
 		setInput("Directory (tenant) ID", "11111111-2222-3333-4444-555555555555");
 		expect(screen.getByLabelText("Aussteller")).toHaveProperty(
 			"value",
 			"https://login.microsoftonline.com/11111111-2222-3333-4444-555555555555/v2.0",
 		);
-		setInput("Client-ID", "entra-client");
-		setInput("Client-Geheimnis", "entra-secret");
-		fireEvent.click(
-			screen.getByRole("button", { name: "SSO-Anbieter registrieren" }),
-		);
+		setInput("Client ID", "entra-client");
+		setInput("Client secret", "entra-secret");
+		fireEvent.click(screen.getByRole("button", { name: "Connect provider" }));
 		await waitFor(() =>
-			expect(
-				registerEnterpriseIdentitySSOProviderActionMock,
-			).toHaveBeenCalledWith(
+			expect(registerEnterpriseIdentitySSOProviderActionMock).toHaveBeenCalledWith(
 				expect.objectContaining({
 					providerId: "acme-entra",
-					issuer:
-						"https://login.microsoftonline.com/11111111-2222-3333-4444-555555555555/v2.0",
+					issuer: "https://login.microsoftonline.com/11111111-2222-3333-4444-555555555555/v2.0",
 					clientId: "entra-client",
 					clientSecret: "entra-secret",
 				}),
@@ -513,14 +481,47 @@ describe("IdentitySetupWizard behavior", () => {
 		);
 	});
 
-	it("records an administrator-reported successful sign-in", async () => {
-		renderWizard(configuredSetup());
-		expect(
-			screen.getByText(/This is an administrator-reported sign-in result/),
-		).toBeTruthy();
+	it("shows the DNS record for a connected provider and verifies the domain", async () => {
+		renderWizard(configuredSetup({ currentStep: "ssoTest" }), [registeredProvider()]);
 
-		setInput("Testbenutzer-E-Mail", "admin@example.com");
-		fireEvent.click(screen.getByRole("button", { name: "Erfolg erfassen" }));
+		expect(stepHeading("Verify that you own example.com")).toBeTruthy();
+		expect(screen.getByText("Not verified yet")).toBeTruthy();
+		expect(screen.getByText("_z8-auth--acme-okta")).toBeTruthy();
+		expect(screen.getByText("token-123")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Verify domain" }));
+
+		await waitFor(() => {
+			expect(verifySSODomainActionMock).toHaveBeenCalledWith({ providerId: "acme-okta" });
+			expect(refreshEnterpriseIdentityDomainStatusActionMock).toHaveBeenCalled();
+		});
+		expect(stepHeading("Test sign-in with a real account")).toBeTruthy();
+	});
+
+	it("creates a DNS record when the connection has none yet", async () => {
+		renderWizard(configuredSetup({ currentStep: "ssoTest" }), [
+			registeredProvider({ domainVerificationToken: null }),
+		]);
+
+		fireEvent.click(screen.getByRole("button", { name: "Create DNS record" }));
+
+		await waitFor(() =>
+			expect(requestSSODomainVerificationActionMock).toHaveBeenCalledWith({
+				providerId: "acme-okta",
+			}),
+		);
+		expect(await screen.findByText("token-new")).toBeTruthy();
+	});
+
+	it("records an administrator-reported successful sign-in", async () => {
+		recordEnterpriseIdentitySsoTestActionMock.mockResolvedValue(
+			configuredSetup({ currentStep: "scim", domain: verifiedDomain, ssoTest: passedTest }),
+		);
+		renderWizard(configuredSetup({ currentStep: "ssoTest", domain: verifiedDomain }));
+
+		expect(stepHeading("Test sign-in with a real account")).toBeTruthy();
+		expect(screen.getByText(/the result is saved as you report it/)).toBeTruthy();
+		setInput("Email used for the test", "admin@example.com");
+		fireEvent.click(screen.getByRole("button", { name: "Sign-in worked" }));
 
 		await waitFor(() => {
 			expect(recordEnterpriseIdentitySsoTestActionMock).toHaveBeenCalledWith({
@@ -530,112 +531,62 @@ describe("IdentitySetupWizard behavior", () => {
 				error: null,
 			});
 		});
+		expect(stepHeading("Sync users automatically")).toBeTruthy();
 	});
 
-	it("refreshes domain verification from the Domain card", async () => {
-		renderWizard(configuredSetup());
+	it("restores SCIM controls with a role choice before the connection exists", () => {
+		renderWizard(configuredSetup({ currentStep: "scim" }));
 
-		expect(screen.getByText("Ausstehend")).toBeTruthy();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Domänenstatus prüfen" }),
-		);
-
-		await waitFor(() => {
-			expect(
-				refreshEnterpriseIdentityDomainStatusActionMock,
-			).toHaveBeenCalled();
-		});
-
-		expect(screen.getByText("Verifiziert")).toBeTruthy();
-	});
-
-	it("restores SCIM controls with a responsive managed connection layout", () => {
-		renderWizard(
-			configuredSetup({
-				currentStep: "scim",
-				scim: {
-					policy: {
-						autoActivateUsers: false,
-						deprovisionAction: "suspend",
-						defaultRoleTemplateId: "role-template-1",
-					},
-					connection: null,
-				},
-			}),
-		);
-
-		expect(
-			screen.getByRole("button", { name: "Create SCIM connection" }),
-		).toBeTruthy();
-		expect(
-			screen.getByText("https://app.example.test/api/auth/scim/v2"),
-		).toBeTruthy();
+		openStep(/^Sync users,/);
+		expect(screen.getByLabelText("Role for people created by your provider")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Create SCIM connection" })).toBeTruthy();
+		expect(screen.getByText("https://app.example.test/api/auth/scim/v2")).toBeTruthy();
 		expect(screen.queryByText("scim_token_returned_once")).toBeNull();
 	});
 
 	it("saves access policy with top-level defaultRoleTemplateId", async () => {
 		renderWizard(configuredSetup());
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Zugriffsrichtlinie speichern" }),
-		);
+		openStep(/^Access rules,/);
+		fireEvent.click(screen.getByRole("checkbox", { name: "Require SSO" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
 
 		await waitFor(() => {
-			expect(
-				updateEnterpriseIdentityAccessPolicyActionMock,
-			).toHaveBeenCalledWith({
-				ssoRequired: false,
+			expect(updateEnterpriseIdentityAccessPolicyActionMock).toHaveBeenCalledWith({
+				ssoRequired: true,
 				domainRestrictionEnabled: false,
 				inviteRestrictionEnabled: false,
 				defaultRoleTemplateId: "role-template-1",
 			});
 		});
 
-		const payload =
-			updateEnterpriseIdentityAccessPolicyActionMock.mock.calls[0][0];
+		const payload = updateEnterpriseIdentityAccessPolicyActionMock.mock.calls[0][0];
 		expect(payload.enforcement).toBeUndefined();
+		expect(stepHeading("Review and activate")).toBeTruthy();
 	});
 
 	it("guards activation until readiness checks pass", () => {
-		const { rerender } = render(
-			<IdentitySetupWizard
-				callbackBaseUrl="https://acme.z8.test"
-				initialSetup={configuredSetup()}
-				organizationId="org_123"
-			/>,
-		);
+		const { rerender } = renderWizard(configuredSetup());
 
+		openStep(/^Activate,/);
+		expect(screen.getByText(/Finish the steps marked/)).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Open step: Verify domain" })).toBeTruthy();
 		expect(
-			screen
-				.getByRole("button", { name: "Unternehmensidentität aktivieren" })
-				.hasAttribute("disabled"),
+			screen.getByRole("button", { name: "Activate enterprise identity" }).hasAttribute("disabled"),
 		).toBe(true);
 
 		rerender(
 			<IdentitySetupWizard
 				callbackBaseUrl="https://acme.z8.test"
 				key="ready"
-				initialSetup={configuredSetup({
-					domain: {
-						domain: "example.com",
-						verified: true,
-					},
-					ssoTest: {
-						status: "passed",
-						testEmail: "admin@example.com",
-						providerId: "acme-okta",
-						checkedAt: "2026-01-01T00:00:00.000Z",
-						error: null,
-					},
-				})}
+				initialSetup={configuredSetup({ domain: verifiedDomain, ssoTest: passedTest })}
 				organizationId="org_123"
 			/>,
 		);
 
+		expect(stepHeading("Review and activate")).toBeTruthy();
 		expect(
-			screen
-				.getByRole("button", { name: "Unternehmensidentität aktivieren" })
-				.hasAttribute("disabled"),
+			screen.getByRole("button", { name: "Activate enterprise identity" }).hasAttribute("disabled"),
 		).toBe(false);
 	});
 });
@@ -656,19 +607,11 @@ describe("DomainsAndBrandingTabs behavior", () => {
 		]);
 		expect(screen.queryByRole("tab", { name: "SSO-Anbieter" })).toBeNull();
 		fireEvent.click(screen.getByRole("tab", { name: "Branding" }));
-		await waitFor(() =>
-			expect(screen.getByRole("tabpanel").textContent).toBe("Branding form"),
-		);
-		expect(new URLSearchParams(window.location.search).get("tab")).toBe(
-			"branding",
-		);
+		await waitFor(() => expect(screen.getByRole("tabpanel").textContent).toBe("Branding form"));
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe("branding");
 	});
 	it("supports a direct link to the branding tab", () => {
-		window.history.replaceState(
-			null,
-			"",
-			"/en/settings/enterprise/domains?tab=branding",
-		);
+		window.history.replaceState(null, "", "/en/settings/enterprise/domains?tab=branding");
 		renderDomainsTabs();
 		expect(screen.getByRole("tabpanel").textContent).toBe("Branding form");
 		expect(screen.queryByText("Domain management")).toBeNull();

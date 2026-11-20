@@ -108,10 +108,13 @@ export function SsoProviderGuide({
 	kind,
 	callbackUrl,
 	domain,
+	showNextSteps = true,
 }: {
 	kind: SsoSetupKind;
 	callbackUrl: string;
 	domain?: string;
+	/** Off inside Guided setup, which already walks through what follows. */
+	showNextSteps?: boolean;
 }) {
 	const { t } = useTranslate();
 	const guide = getSsoGuideContent(kind, t);
@@ -204,7 +207,7 @@ export function SsoProviderGuide({
 					)}
 				/>
 			</div>
-			<SsoSetupNextSteps />
+			{showNextSteps ? <SsoSetupNextSteps /> : null}
 			{kind === "microsoft-entra" ? <EntraTroubleshooting /> : null}
 		</aside>
 	);
