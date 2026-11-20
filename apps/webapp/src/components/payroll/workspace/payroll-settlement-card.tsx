@@ -175,7 +175,14 @@ export function PayrollSettlementCard({
 	);
 }
 
-function SettlePreview({ preview, t }: { preview: PayrollSettlementCounts; t: PayrollTranslate }) {
+/** The counts and unclosed-month warning before settling; also before confirming an export as paid (#1899). */
+export function SettlePreview({
+	preview,
+	t,
+}: {
+	preview: PayrollSettlementCounts;
+	t: PayrollTranslate;
+}) {
 	return (
 		<div className="flex flex-col gap-3 text-sm">
 			<dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 tabular-nums">

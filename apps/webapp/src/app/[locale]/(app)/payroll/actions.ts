@@ -32,6 +32,14 @@ import {
 	type PayrollWorkspaceExportFormatId,
 	payrollWorkspaceExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
+import {
+	type ConfirmExportPreview,
+	type ConfirmExportResult,
+	confirmExportAsPaid,
+	listExportsToConfirm,
+	type PayrollExportToConfirm,
+	previewConfirmExportAsPaid,
+} from "@/lib/payroll-period/export-confirmation";
 import { readPeriodDayForEmployee } from "@/lib/payroll-period/read-day";
 import { readPeriodForEmployees, resolvePeriodEmployeeIds } from "@/lib/payroll-period/read-period";
 import { loadActiveSettledDays } from "@/lib/payroll-period/settled-days-store";
@@ -202,6 +210,92 @@ export async function unsettlePayrollDaysAction(
 		revalidatePath("/payroll");
 		return { unsettledDays: result.unsettled.length };
 	});
+}
+
+/** The completed exports the grant holder may confirm as paid (#1899), newest first. */
+export async function getPayrollExportsToConfirmAction(): Promise<
+	ServerActionResult<PayrollExportToConfirm[]>
+> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		return listExportsToConfirm(organizationId, actor);
+	});
+}
+
+/** What confirming the export as paid would settle (#1899), as counts. */
+export async function previewConfirmPayrollExportPaidAction(
+	jobId: string,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		const preview = await previewConfirmExportAsPaid(organizationId, actor, jobId);
+		return exportConfirmationCounts(t, actor.userId, preview);
+	});
+}
+
+/** Confirms a completed export as paid (#1899): settles the employee-days it carried. */
+export async function confirmPayrollExportPaidAction(
+	jobId: string,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		const result = await confirmExportAsPaid(organizationId, actor, jobId);
+		const counts = exportConfirmationCounts(t, actor.userId, result);
+		revalidatePath("/payroll");
+		return counts;
+	});
+}
+
+async function resolvePayrollSettlementActor(t: PayrollTranslate) {
+	const authContext = await requirePayrollGrantHolder(t);
+	return {
+		organizationId: authContext.employee.organizationId,
+		actor: {
+			employeeId: authContext.employee.id,
+			userId: authContext.user.id,
+			name: authContext.user.name || authContext.user.email,
+		},
+	};
+}
+
+function exportConfirmationCounts(
+	t: PayrollTranslate,
+	userId: string,
+	result: ConfirmExportPreview | ConfirmExportResult,
+): PayrollSettlementCounts {
+	switch (result.status) {
+		case "not_found":
+			throw new ValidationError({
+				message: t("payroll.confirmPaid.notFound", "This export was not found"),
+				field: "jobId",
+			});
+		case "not_completed":
+			throw new ValidationError({
+				message: t(
+					"payroll.confirmPaid.notCompleted",
+					"Only a completed export can be confirmed as paid",
+				),
+				field: "jobId",
+			});
+		case "nothing_carried":
+			throw new ValidationError({
+				message: t(
+					"payroll.confirmPaid.nothingCarried",
+					"This export recorded no days to settle. Settle its days by hand instead.",
+				),
+				field: "jobId",
+			});
+		case "out_of_scope":
+			throwPayrollSettlementOutOfScope(t, userId);
+	}
+	const unclosed = Map.groupBy(result.inUnclosedMonths, (day) => day.date.slice(0, 7));
+	return {
+		newDays: result.newlySettled.length,
+		alreadySettledDays: result.alreadySettled.length,
+		unclosedMonths: [...unclosed]
+			.map(([month, days]) => ({ month, days: days.length }))
+			.toSorted((left, right) => left.month.localeCompare(right.month)),
+	};
 }
 
 /**
