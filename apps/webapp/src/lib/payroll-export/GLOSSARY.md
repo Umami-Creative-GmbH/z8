@@ -44,6 +44,14 @@ _Avoid_: reconciliation (Time Tracking uses record agreement and historical repa
 The historical facts retained from a successful payroll export so its supported lines can be compared later, including the destination, scope, period boundaries, exported values and their source contributions. It represents the export as it happened, independently of whether its downloadable file still exists.
 _Avoid_: work input (that is only part of the evidence), regenerated export
 
+**Settled day**:
+One employee's calendar day, in that employee's timezone, whose worked hours and absences have been paid to the employee, so they must not be paid again. Settling records a payout. It does not freeze the day's data; a Closed month does that.
+_Avoid_: closed day, locked day, payroll period, paid day
+
+**Changed since settled**:
+A settled day whose worked hours or absences now differ from the values recorded when it was settled. The difference has not been paid yet.
+_Avoid_: unsettled, reopened (Time Tracking uses reopening for closed months)
+
 **Payroll impact**:
 A change to the supported values or identifiers the payroll target would receive, at that target's grouping and precision. A change between wage codes can have payroll impact even when an employee's total hours are unchanged.
 _Avoid_: balance change, net hours change
