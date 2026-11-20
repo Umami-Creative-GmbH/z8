@@ -18,12 +18,14 @@ import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { PayrollBaselinesCard } from "../payroll-baselines-card";
 import { PayrollComparisonCard } from "../payroll-comparison-card";
 import { PayrollRunsCard } from "../payroll-runs-card";
+import { PayrollConfirmPaidCard } from "./payroll-confirm-paid-card";
 import { PayrollSettlementCard } from "./payroll-settlement-card";
 import type { PayrollPeriodRequest, PayrollTranslate, PayrollWorkspaceAction } from "./state";
 
 /**
  * The Export tab: everything that leaves Z8. The export format, the PDF download,
- * starting an export, settling days, unconfirmed payroll runs, baselines and comparison.
+ * starting an export, confirming an export as paid, settling days, unconfirmed payroll
+ * runs, baselines and comparison.
  */
 export function PayrollExportTab({
 	dispatch,
@@ -130,6 +132,7 @@ export function PayrollExportTab({
 					</div>
 				</CardContent>
 			</Card>
+			<PayrollConfirmPaidCard t={t} />
 			<PayrollSettlementCard
 				filtersHaveNoMatches={filtersHaveNoMatches}
 				refreshedAt={refreshedAt}

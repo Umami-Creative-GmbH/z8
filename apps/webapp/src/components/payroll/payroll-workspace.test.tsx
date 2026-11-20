@@ -47,6 +47,8 @@ vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
 vi.mock("./workspace/payroll-days-tab", () => ({ PayrollDaysTab: () => null }));
 // Settling reads and writes through the payroll period module, tested on PostgreSQL (#1896).
 vi.mock("./workspace/payroll-settlement-card", () => ({ PayrollSettlementCard: () => null }));
+// Confirming an export as paid is tested on PostgreSQL at the payroll period module (#1899).
+vi.mock("./workspace/payroll-confirm-paid-card", () => ({ PayrollConfirmPaidCard: () => null }));
 vi.mock("./workspace/payroll-settlement-figures", () => ({
 	PayrollSettlementFigures: () => null,
 }));

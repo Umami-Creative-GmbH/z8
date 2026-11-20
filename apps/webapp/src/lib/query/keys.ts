@@ -213,6 +213,8 @@ export const queryKeys = {
 		/** How many employees an export of the period would cover (#1001). */
 		exportScope: (request: { startDate: string; endDate: string }) =>
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
+		/** Completed exports the reader may confirm as paid (#1899). */
+		exportsToConfirm: () => ["payroll", "exports-to-confirm"] as const,
 		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
 		overtimePayoutReadiness: (request: {
 			startDate: string;

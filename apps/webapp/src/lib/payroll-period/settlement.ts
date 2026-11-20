@@ -134,30 +134,67 @@ export async function settleDays(
 			})),
 	);
 
-	const inserted = await db.transaction(async (tx) => {
-		const rows = values.length
-			? await tx
-					.insert(payrollSettledDay)
-					.values(
-						values.map((value) => ({
-							organizationId,
-							employeeId: value.employeeId,
-							date: value.date,
-							timezone: value.timezone,
-							creditedMinutes: value.creditedMinutes,
-							absences: value.absences,
-							method: "manual" as const,
-							settledBy: actor.userId,
-						})),
-					)
-					.onConflictDoNothing()
-					.returning({
-						id: payrollSettledDay.id,
-						employeeId: payrollSettledDay.employeeId,
-						date: payrollSettledDay.date,
-					})
-			: [];
-		if (rows.length === 0) return rows;
+	const inserted = await insertSettlements(organizationId, actor, values, {
+		method: "manual",
+		payrollExportJobId: null,
+	});
+
+	// A day a concurrent settle took between the plan and the insert is already settled.
+	const settledNow = new Set(inserted.map(dayKey));
+	return {
+		status: "settled",
+		newlySettled: sortDays(inserted),
+		alreadySettled: sortDays([
+			...plan.alreadySettled,
+			...plan.newlySettled.filter(
+				(day) => !settledNow.has(dayKey(day)) && values.some((value) => sameDay(value, day)),
+			),
+		]),
+		inUnclosedMonths: plan.inUnclosedMonths,
+	};
+}
+
+/** A day's values as a settlement copies them, with the zone its date was read in. */
+export interface PayrollSettlementValues extends PayrollSettledDayValues, PayrollDayKey {
+	timezone: string;
+}
+
+/**
+ * Inserts a settlement per day not settled yet, its history event and one audit entry
+ * per employee, in one transaction. Days with an active settlement are skipped by the
+ * partial unique index. Returns the days settled now. Module-internal: shared by
+ * manual settling and confirming an export as paid (#1899).
+ */
+export async function insertSettlements(
+	organizationId: string,
+	actor: PayrollSettlementActor,
+	values: readonly PayrollSettlementValues[],
+	source: { method: PayrollSettlementMethod; payrollExportJobId: string | null },
+): Promise<PayrollDayKey[]> {
+	if (values.length === 0) return [];
+	return db.transaction(async (tx) => {
+		const rows = await tx
+			.insert(payrollSettledDay)
+			.values(
+				values.map((value) => ({
+					organizationId,
+					employeeId: value.employeeId,
+					date: value.date,
+					timezone: value.timezone,
+					creditedMinutes: value.creditedMinutes,
+					absences: value.absences,
+					method: source.method,
+					payrollExportJobId: source.payrollExportJobId,
+					settledBy: actor.userId,
+				})),
+			)
+			.onConflictDoNothing()
+			.returning({
+				id: payrollSettledDay.id,
+				employeeId: payrollSettledDay.employeeId,
+				date: payrollSettledDay.date,
+			});
+		if (rows.length === 0) return [];
 		await tx.insert(payrollSettledDayEvent).values(
 			rows.map((row) => ({
 				organizationId,
@@ -165,7 +202,8 @@ export async function settleDays(
 				employeeId: row.employeeId,
 				date: row.date,
 				kind: "settled" as const,
-				method: "manual" as const,
+				method: source.method,
+				payrollExportJobId: source.payrollExportJobId,
 				actorUserId: actor.userId,
 			})),
 		);
@@ -178,27 +216,14 @@ export async function settleDays(
 				action: AuditAction.PAYROLL_DAYS_SETTLED,
 				performedBy: actor.userId,
 				changes: JSON.stringify({
-					method: "manual",
+					method: source.method,
+					...(source.payrollExportJobId ? { payrollExportJobId: source.payrollExportJobId } : {}),
 					dates: days.map((day) => day.date).toSorted(),
 				}),
 			})),
 		);
-		return rows;
+		return rows.map(({ employeeId, date }) => ({ employeeId, date }));
 	});
-
-	// A day a concurrent settle took between the plan and the insert is already settled.
-	const settledNow = new Set(inserted.map(dayKey));
-	return {
-		status: "settled",
-		newlySettled: sortDays(inserted.map(({ employeeId, date }) => ({ employeeId, date }))),
-		alreadySettled: sortDays([
-			...plan.alreadySettled,
-			...plan.newlySettled.filter(
-				(day) => !settledNow.has(dayKey(day)) && values.some((value) => sameDay(value, day)),
-			),
-		]),
-		inUnclosedMonths: plan.inUnclosedMonths,
-	};
 }
 
 /**
@@ -380,9 +405,9 @@ async function resolveSettlement(
 
 /**
  * The requested employees when the grant covers every one of them, otherwise the
- * ones it does not cover. No request means the whole grant.
+ * ones it does not cover. No request means the whole grant. Module-internal.
  */
-async function resolveScope(
+export async function resolveScope(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	requested: readonly string[] | undefined,
@@ -405,10 +430,27 @@ async function planSettlement(
 	organizationId: string,
 	resolved: ResolvedSettlement,
 ): Promise<SettleDaysPlan> {
-	const { employeeIds, dates, range } = resolved;
-	if (employeeIds.length === 0) {
+	const { employeeIds, dates } = resolved;
+	return planDays(
+		organizationId,
+		employeeIds.flatMap((employeeId) => dates.map((date) => ({ employeeId, date }))),
+	);
+}
+
+/**
+ * Splits the days into those to settle and those already settled, and flags the days
+ * to settle whose month is not closed for the employee. Module-internal.
+ */
+export async function planDays(
+	organizationId: string,
+	days: readonly PayrollDayKey[],
+): Promise<SettleDaysPlan> {
+	if (days.length === 0) {
 		return { newlySettled: [], alreadySettled: [], inUnclosedMonths: [] };
 	}
+	const employeeIds = [...new Set(days.map((day) => day.employeeId))];
+	const dates = days.map((day) => day.date).toSorted();
+	const range = { startDate: dates[0], endDate: dates[dates.length - 1] };
 	const months = [...new Set(dates.map(firstDayOfMonth))];
 	const [settled, closed] = await Promise.all([
 		loadActiveSettledDays(db, { organizationId, employeeIds, ...range }),
@@ -427,17 +469,15 @@ async function planSettlement(
 	const settledKeys = new Set(settled.map(dayKey));
 	const closedKeys = new Set(closed.map((row) => `${row.employeeId}:${row.month}`));
 	const plan: SettleDaysPlan = { newlySettled: [], alreadySettled: [], inUnclosedMonths: [] };
-	for (const employeeId of employeeIds.toSorted()) {
-		for (const date of dates) {
-			const day = { employeeId, date };
-			if (settledKeys.has(dayKey(day))) {
-				plan.alreadySettled.push(day);
-				continue;
-			}
-			plan.newlySettled.push(day);
-			if (!closedKeys.has(`${employeeId}:${firstDayOfMonth(date)}`)) {
-				plan.inUnclosedMonths.push(day);
-			}
+	for (const { employeeId, date } of sortDays([...days])) {
+		const day = { employeeId, date };
+		if (settledKeys.has(dayKey(day))) {
+			plan.alreadySettled.push(day);
+			continue;
+		}
+		plan.newlySettled.push(day);
+		if (!closedKeys.has(`${employeeId}:${firstDayOfMonth(date)}`)) {
+			plan.inUnclosedMonths.push(day);
 		}
 	}
 	return plan;
