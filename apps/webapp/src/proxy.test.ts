@@ -8,11 +8,12 @@ vi.mock("@/lib/setup/config-cache", () => ({
 	isPlatformConfigured: async () => platform.configured,
 }));
 vi.mock("@/lib/domain/platform-domain", () => ({
-	classifyDomainHost: () => null,
+	classifyDomainHost: vi.fn(() => null),
 	resolvePlatformOrganization: vi.fn(),
 }));
 
 import { NextRequest, NextResponse } from "next/server";
+import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
 import { config, proxy } from "./proxy";
 
 function matchesProxy(pathname: string) {
@@ -126,5 +127,19 @@ describe("proxy matcher", () => {
 		);
 		expect(response.headers.get("x-middleware-next")).toBe("1");
 		expect(response.headers.get("location")).toBeNull();
+	});
+
+	it("passes the in-cluster custom-domain poll through untouched", async () => {
+		vi.clearAllMocks();
+		const host = "web.app-prod.svc.cluster.local:3000";
+		const path = "/api/internal/custom-domains";
+		expect(matchesProxy(path)).toBe(true);
+		const response = await proxy(new NextRequest(`http://${host}${path}`, {
+			headers: { host, authorization: "Bearer test-secret", accept: "application/json" },
+		}));
+		expect(response.status).toBe(200);
+		expect([...response.headers]).toEqual([["x-middleware-next", "1"]]);
+		expect(classifyDomainHost).not.toHaveBeenCalled();
+		expect(resolvePlatformOrganization).not.toHaveBeenCalled();
 	});
 });
