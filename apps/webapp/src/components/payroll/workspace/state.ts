@@ -144,7 +144,3 @@ export function formatDisplayedPeriod(
 		return `${startDate.toLocaleString(locale, { month: "short", day: "numeric" })} - ${endDate.toLocaleString(locale, { month: "short", day: "numeric", year: "numeric" })}`;
 	return `${startDate.toLocaleString(locale)} - ${endDate.toLocaleString(locale)}`;
 }
-
-export function formatHours(hours: number) {
-	return `${hours.toFixed(2)} h`;
-}

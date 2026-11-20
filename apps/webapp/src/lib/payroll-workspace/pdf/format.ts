@@ -4,6 +4,7 @@ import {
 	formatPlainDate,
 	localeDefaultTimeFormat,
 } from "@/lib/datetime/temporal-format";
+import { payrollHoursFormat } from "../hours-format";
 
 /** Locale formatting of the payroll PDF's figures and calendar dates. */
 export interface PayrollPdfFormat {
@@ -26,27 +27,16 @@ export interface PayrollPdfFormat {
 }
 
 export function payrollPdfFormat(locale: string): PayrollPdfFormat {
-	const hours = new Intl.NumberFormat(locale, {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	});
-	const difference = new Intl.NumberFormat(locale, {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-		signDisplay: "exceptZero",
-	});
-	const change = new Intl.NumberFormat(locale, {
-		maximumFractionDigits: 2,
-		signDisplay: "exceptZero",
-	});
+	const hours = payrollHoursFormat(locale, { decimals: "two" });
+	const change = payrollHoursFormat(locale);
 	const days = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
 	const timeFormat = localeDefaultTimeFormat(locale);
 
 	return {
-		hours: (minutes) => pdfSafe(`${hours.format(roundHours(minutes / 60))} h`),
-		hoursValue: (value) => pdfSafe(`${hours.format(value)} h`),
-		difference: (minutes) => pdfSafe(`${difference.format(roundHours(minutes / 60))} h`),
-		change: (minutes) => pdfSafe(`${change.format(minutes / 60)} h`),
+		hours: (minutes) => pdfSafe(`${hours.minutes(minutes)} h`),
+		hoursValue: (value) => pdfSafe(`${hours.hours(value)} h`),
+		difference: (minutes) => pdfSafe(`${hours.signedMinutes(minutes)} h`),
+		change: (minutes) => pdfSafe(`${change.signedMinutes(minutes)} h`),
 		days: (value) => pdfSafe(days.format(value)),
 		date: (date) => pdfSafe(formatPlainDate(Temporal.PlainDate.from(date), locale, "dateShort")),
 		weekday: (date) =>
@@ -60,11 +50,6 @@ export function payrollPdfFormat(locale: string): PayrollPdfFormat {
 				)} UTC`,
 			),
 	};
-}
-
-/** Rounded as the summary rounds worked hours, so a sheet's total equals the summary's. */
-function roundHours(hours: number): number {
-	return Math.round(hours * 100) / 100;
 }
 
 /**

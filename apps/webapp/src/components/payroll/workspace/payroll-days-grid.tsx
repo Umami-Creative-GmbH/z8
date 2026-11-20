@@ -10,6 +10,7 @@ import type {
 	PayrollPeriodDayAbsence,
 	PayrollPeriodEmployee,
 } from "@/lib/payroll-period/types";
+import { payrollHoursFormat } from "@/lib/payroll-workspace/hours-format";
 import { cn } from "@/lib/utils";
 import type { PayrollTranslate } from "./state";
 
@@ -30,11 +31,7 @@ export interface PayrollDaysFormat {
 }
 
 export function payrollDaysFormat(locale: string): PayrollDaysFormat {
-	const hours = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
-	const difference = new Intl.NumberFormat(locale, {
-		maximumFractionDigits: 2,
-		signDisplay: "exceptZero",
-	});
+	const hours = payrollHoursFormat(locale);
 	const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
 	const day = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
 	const longDate = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
@@ -46,8 +43,8 @@ export function payrollDaysFormat(locale: string): PayrollDaysFormat {
 	// A calendar date shown as itself: formatted at UTC midnight in UTC, never the viewer's zone.
 	const asDate = (date: string) => new Date(`${date}T00:00:00Z`);
 	return {
-		hours: (minutes) => hours.format(minutes / 60),
-		difference: (minutes) => difference.format(minutes / 60),
+		hours: hours.minutes,
+		difference: hours.signedMinutes,
 		weekday: (date) => weekday.format(asDate(date)),
 		dayOfMonth: (date) => day.format(asDate(date)),
 		longDate: (date) => longDate.format(asDate(date)),

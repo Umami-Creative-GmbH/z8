@@ -1,6 +1,7 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { type CSSProperties, useRef } from "react";
 import { Temporal } from "temporal-polyfill";
 import { absenceCategoryColor } from "@/components/absences/category-badge";
 import type { PayrollPeriodDayAbsence, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
@@ -10,6 +11,8 @@ import type { PayrollTranslate } from "./state";
 
 const EMPLOYEE_COLUMN = "11rem";
 const DAY_COLUMN = "2rem";
+/** h-7 cells plus the row border. */
+const ROW_HEIGHT = 29;
 
 /** Diagonal stripes over a category colour mark an absence that is still pending. */
 export const PENDING_HATCH =
@@ -49,7 +52,8 @@ function isWeekend(date: string): boolean {
 /**
  * The period's absences as employees against days. Each day cell has a morning (left)
  * and an afternoon (right) half, so half days never read as full days. The calendar
- * scrolls inside its own frame, keeping the employee column and the date header fixed.
+ * scrolls inside its own frame, keeping the employee column and the date header fixed,
+ * and only the rows in view are rendered, as in the Days grid.
  */
 export function PayrollAbsenceCalendar({
 	dates,
@@ -62,9 +66,20 @@ export function PayrollAbsenceCalendar({
 	format: PayrollDaysFormat;
 	t: PayrollTranslate;
 }) {
+	// The virtualizer changes its rows in place, so the compiler must not memoize this component.
+	"use no memo";
+	const scrollRef = useRef<HTMLDivElement | null>(null);
+	// oxlint-disable-next-line react/incompatible-library -- memoization is opted out above
+	const virtualizer = useVirtualizer({
+		count: employees.length,
+		getScrollElement: () => scrollRef.current,
+		estimateSize: () => ROW_HEIGHT,
+		overscan: 12,
+	});
 	const gridTemplateColumns = `${EMPLOYEE_COLUMN} repeat(${dates.length}, ${DAY_COLUMN})`;
 	return (
 		<div
+			ref={scrollRef}
 			className="relative max-h-[60vh] overflow-auto rounded-lg border bg-background"
 			role="table"
 			aria-label={t("payroll.absences.calendarLabel", "Absences per employee and day")}
@@ -74,6 +89,7 @@ export function PayrollAbsenceCalendar({
 			<div role="rowgroup" className="sticky top-0 z-20 min-w-max">
 				<div
 					role="row"
+					aria-rowindex={1}
 					className="grid border-b bg-muted text-muted-foreground text-[0.6875rem]"
 					style={{ gridTemplateColumns }}
 				>
@@ -98,32 +114,45 @@ export function PayrollAbsenceCalendar({
 					))}
 				</div>
 			</div>
-			<div role="rowgroup" className="min-w-max">
-				{employees.map((employee) => (
-					<div
-						key={employee.id}
-						role="row"
-						className="grid border-b last:border-b-0"
-						style={{ gridTemplateColumns }}
-					>
+			<div
+				role="rowgroup"
+				className="relative min-w-max"
+				style={{ height: virtualizer.getTotalSize() }}
+			>
+				{virtualizer.getVirtualItems().map((item) => {
+					const employee = employees[item.index];
+					if (!employee) return null;
+					return (
 						<div
-							role="rowheader"
-							className="sticky left-0 z-10 flex min-w-0 items-center border-r bg-background px-3 py-1"
+							key={employee.id}
+							role="row"
+							aria-rowindex={item.index + 2}
+							className="absolute top-0 left-0 grid w-full border-b"
+							style={{
+								gridTemplateColumns,
+								height: item.size,
+								transform: `translateY(${item.start}px)`,
+							}}
 						>
-							<span className="truncate text-xs font-medium">{employee.name}</span>
+							<div
+								role="rowheader"
+								className="sticky left-0 z-10 flex min-w-0 items-center border-r bg-background px-3 py-1"
+							>
+								<span className="truncate text-xs font-medium">{employee.name}</span>
+							</div>
+							{employee.days.map((day) => (
+								<PayrollAbsenceCalendarCell
+									key={day.date}
+									absences={day.absences}
+									date={day.date}
+									employeeName={employee.name}
+									format={format}
+									t={t}
+								/>
+							))}
 						</div>
-						{employee.days.map((day) => (
-							<PayrollAbsenceCalendarCell
-								key={day.date}
-								absences={day.absences}
-								date={day.date}
-								employeeName={employee.name}
-								format={format}
-								t={t}
-							/>
-						))}
-					</div>
-				))}
+					);
+				})}
 			</div>
 		</div>
 	);
