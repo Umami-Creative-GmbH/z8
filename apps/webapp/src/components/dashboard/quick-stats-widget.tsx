@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import type {
 	DashboardWidgetData,
@@ -21,11 +22,13 @@ function PeriodSummary({
 	actual,
 	expected,
 	expectedToDate,
+	className,
 }: {
 	title: string;
 	actual: number;
 	expected: number;
 	expectedToDate: number;
+	className?: string;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -40,7 +43,7 @@ function PeriodSummary({
 		[locale],
 	);
 	return (
-		<div className="min-w-0 space-y-2 px-5 py-4 first:pt-0 last:pb-0 @xl/main:py-0">
+		<div className={cn("min-w-0 space-y-2", className)}>
 			<p className="text-sm text-muted-foreground">{title}</p>
 			<p className="text-2xl font-semibold tabular-nums">
 				{number.format(actual)}{" "}
@@ -113,16 +116,22 @@ export function QuickStatsWidget({
 						refreshing={refreshing}
 					/>
 				) : stats ? (
-					<div className="-mx-5 grid divide-y @xl/main:grid-cols-3 @xl/main:divide-x @xl/main:divide-y-0">
+					// Stacked in a narrow card, week and month side by side from a medium card
+					// (balance below), all three in one row only when the card is wide.
+					<div className="grid gap-x-6 gap-y-5 @sm/widget:grid-cols-2 @2xl/widget:grid-cols-3">
 						<PeriodSummary
 							title={t("dashboard.quick-stats.this-week", "This Week")}
 							{...stats.thisWeek}
 						/>
 						<PeriodSummary
 							title={t("dashboard.quick-stats.this-month", "This Month")}
+							className="border-t pt-5 @sm/widget:border-t-0 @sm/widget:border-l @sm/widget:pt-0 @sm/widget:pl-6"
 							{...stats.thisMonth}
 						/>
-						<BalanceSummary stats={stats} />
+						<BalanceSummary
+							stats={stats}
+							className="border-t pt-5 @sm/widget:col-span-2 @2xl/widget:col-span-1 @2xl/widget:border-t-0 @2xl/widget:border-l @2xl/widget:pt-0 @2xl/widget:pl-6"
+						/>
 					</div>
 				) : null}
 			</WidgetCard>
@@ -132,12 +141,14 @@ export function QuickStatsWidget({
 
 function BalanceSummary({
 	stats,
+	className,
 }: {
 	stats: DashboardWidgetData["quick-stats"];
+	className?: string;
 }) {
 	const { t } = useTranslate();
 	return (
-		<div className="min-w-0 space-y-2 px-5 py-4 first:pt-0 last:pb-0 @xl/main:py-0">
+		<div className={cn("min-w-0 space-y-2", className)}>
 			<p className="text-sm text-muted-foreground">
 				{t("workBalance.label", "All-time balance")}
 			</p>

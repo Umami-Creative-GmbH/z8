@@ -18,6 +18,7 @@ import { PresenceStatusWidget } from "@/components/dashboard/presence-status-wid
 import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
 import { RecentlyApprovedWidget } from "@/components/dashboard/recently-approved-widget";
 import { SortableWidgetGrid } from "@/components/dashboard/sortable-widget-grid";
+import { StableMasonryGrid } from "@/components/dashboard/stable-masonry-grid";
 import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget";
 import { UpcomingShiftsWidget } from "@/components/dashboard/upcoming-shifts-widget";
 import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
@@ -175,12 +176,13 @@ function DashboardRegionLayout({
 				</WidgetCardVariantContext>
 			) : null}
 			{/*
-			 * Balanced columns: widget heights vary by role and data, so fixed region
-			 * columns leave large gaps. The browser balances the columns instead.
+			 * Packed columns: widget heights vary by role and data, so fixed region
+			 * columns leave large gaps. Widgets are packed into the shortest column and
+			 * then keep it, so expanding one never moves the others.
 			 * Regions are `display: contents` so they keep their identity without
-			 * becoming column items; DashboardWidget already avoids column breaks.
+			 * becoming grid items.
 			 */}
-			<div className="min-w-0 gap-4 @3xl/main:columns-2 @[96rem]/main:columns-3">
+			<StableMasonryGrid className="[--masonry-columns:1] @3xl/main:[--masonry-columns:2] @[96rem]/main:[--masonry-columns:3]">
 				{attention.length > 0 ? (
 					<section
 						aria-label={t("dashboard.refresh.attention", "Today at a glance")}
@@ -205,7 +207,7 @@ function DashboardRegionLayout({
 						{personal.map(renderWidget)}
 					</div>
 				) : null}
-			</div>
+			</StableMasonryGrid>
 		</>
 	);
 }

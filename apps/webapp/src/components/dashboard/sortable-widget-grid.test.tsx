@@ -66,7 +66,7 @@ function ProductionLikeWidget() {
 }
 
 describe("SortableWidgetGrid", () => {
-	it("renders widgets in a responsive masonry column container", () => {
+	it("renders widgets in a responsive masonry container", () => {
 		render(
 			<SortableWidgetGrid onReorder={vi.fn()} widgetOrder={["quick-stats", "presence-status"]}>
 				<DashboardWidget id="quick-stats">Time tracking</DashboardWidget>
@@ -74,13 +74,28 @@ describe("SortableWidgetGrid", () => {
 			</SortableWidgetGrid>,
 		);
 
-		const container = screen.getByText("Time tracking").closest(".columns-1");
+		const widget = screen.getByText("Time tracking").closest("[data-widget-id]");
+		const container = widget?.parentElement;
 
-		expect(container?.className).toContain("columns-1");
-		expect(container?.className).toContain("@xl/main:columns-2");
-		expect(container?.className).toContain("@5xl/main:columns-3");
-		expect(container?.className).toContain("gap-4");
-		expect(container?.className).not.toContain("grid-cols");
+		expect(container?.className).toContain("[--masonry-columns:1]");
+		expect(container?.className).toContain("@xl/main:[--masonry-columns:2]");
+		expect(container?.className).toContain("@5xl/main:[--masonry-columns:3]");
+		expect(container?.className).toContain("@[110rem]/main:[--masonry-columns:4]");
+		// Without measurement (server render, no ResizeObserver) it stays a balanced column layout.
+		expect(container?.className).toContain("columns-(--masonry-columns)");
+		expect(container?.getAttribute("data-masonry")).toBeNull();
+	});
+
+	it("uses a plain container when the caller supplies its own layout", () => {
+		render(
+			<SortableWidgetGrid className="space-y-6" onReorder={vi.fn()} widgetOrder={["quick-stats"]}>
+				<DashboardWidget id="quick-stats">Time tracking</DashboardWidget>
+			</SortableWidgetGrid>,
+		);
+
+		const widget = screen.getByText("Time tracking").closest("[data-widget-id]");
+
+		expect(widget?.parentElement?.className).toBe("space-y-6");
 	});
 
 	it("does not expose nested dashboard widget drag handles in masonry mode", () => {
