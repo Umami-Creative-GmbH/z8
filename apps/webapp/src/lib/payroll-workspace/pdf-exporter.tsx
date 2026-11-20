@@ -1,17 +1,12 @@
 import type { PayrollPeriodRead } from "@/lib/payroll-period/types";
-import { absenceDetailsSection } from "./pdf/absence-details-page";
+import { absenceCalendarSection } from "./pdf/absence-calendar";
+import { absenceListSection } from "./pdf/absence-list";
 import type { PayrollPdfContext, PayrollPdfSection, PayrollPdfTranslate } from "./pdf/context";
 import { daySheetsSection } from "./pdf/day-sheets";
 import { payrollPdfFormat } from "./pdf/format";
 import { summarySection } from "./pdf/summary-page";
 import type { PayrollWorkspaceSummary } from "./types";
 
-export {
-	buildPayrollAbsenceSections,
-	flattenPayrollAbsenceSections,
-	type PayrollAbsenceReportRow,
-	type PayrollAbsenceSection,
-} from "./pdf/absence-details-page";
 export type { PayrollPdfTranslate } from "./pdf/context";
 
 /**
@@ -21,14 +16,15 @@ export type { PayrollPdfTranslate } from "./pdf/context";
 const PAYROLL_PDF_SECTIONS: readonly PayrollPdfSection[] = [
 	summarySection,
 	daySheetsSection,
-	absenceDetailsSection,
+	absenceCalendarSection,
+	absenceListSection,
 ];
 
 /**
  * The payroll PDF of a period read (#1891): the summary page, then a day sheet per
- * employee, then the period's absences. Every figure comes from `read`, so the PDF
- * matches the workspace; every label goes through `t` in the exporter's language and
- * dates and numbers are formatted for `locale`.
+ * employee, then the period's absences as a landscape calendar and as a list. Every
+ * figure comes from `read`, so the PDF matches the workspace; every label goes through
+ * `t` in the exporter's language and dates and numbers are formatted for `locale`.
  */
 export async function exportPayrollPeriodToPDF(
 	read: PayrollPeriodRead,
