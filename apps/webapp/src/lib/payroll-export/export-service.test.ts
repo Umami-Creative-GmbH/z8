@@ -102,6 +102,10 @@ vi.mock("@/lib/payroll-period/carried-days", () => ({
 	readExportCarriedDays: vi.fn(async () => []),
 	insertExportCarriedDays: vi.fn(async () => undefined),
 }));
+// Leaving settled days out (#1898) is tested on PostgreSQL too.
+vi.mock("@/lib/payroll-period/settled-days-for", () => ({
+	settledDaysFor: vi.fn(async () => []),
+}));
 
 // The custom field identifier read (#821) has its own PostgreSQL suite.
 vi.mock("./personnel-identifier-store", () => ({
@@ -580,7 +584,7 @@ describe("stored payroll export files (#1008)", () => {
 		});
 
 		expect(storage.uploadExport).not.toHaveBeenCalled();
-		expect(outcome).toEqual({ result: exported });
+		expect(outcome).toEqual({ result: exported, settledDaysLeftOut: 0 });
 		expect(mockState.updates.at(-1)?.set).not.toHaveProperty("s3Key");
 	});
 });

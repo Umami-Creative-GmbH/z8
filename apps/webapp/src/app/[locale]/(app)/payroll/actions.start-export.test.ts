@@ -120,6 +120,16 @@ describe("startScopedPayrollExportAction", () => {
 		expect(mockState.processExportJob).not.toHaveBeenCalled();
 	});
 
+	it("leaves settled days out unless the officer chose to include them (#1898)", async () => {
+		await startScopedPayrollExportAction(request);
+		await startScopedPayrollExportAction({ ...request, includeSettledDays: true });
+
+		expect(mockState.createExportJob.mock.calls.map(([params]) => params)).toMatchObject([
+			{ includeSettledDays: false },
+			{ includeSettledDays: true },
+		]);
+	});
+
 	it("processes synchronous exports inline with the trusted organization scope", async () => {
 		mockState.createExportJob.mockResolvedValueOnce({
 			jobId: "job-sync",
@@ -151,6 +161,7 @@ describe("startScopedPayrollExportAction", () => {
 				fileContent: "sync-content",
 				// #1001: the export reports the overtime payouts it could not carry.
 				unmappedOvertimePayoutCount: 1,
+				settledDaysLeftOut: 0,
 			},
 		});
 		expect(mockState.processExportJob).toHaveBeenCalledExactlyOnceWith({

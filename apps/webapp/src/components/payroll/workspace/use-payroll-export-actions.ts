@@ -75,7 +75,8 @@ export function usePayrollExportActions({
 		});
 	}
 
-	function triggerExport() {
+	/** `includeSettledDays` reissues a file with its settled days (#1898), after the tab warned. */
+	function triggerExport({ includeSettledDays = false }: { includeSettledDays?: boolean } = {}) {
 		if (!formatId) return;
 		if (filtersHaveNoMatches) {
 			toast.error(
@@ -92,6 +93,7 @@ export function usePayrollExportActions({
 			const result = await startScopedPayrollExportAction({
 				...request,
 				formatId,
+				includeSettledDays,
 			}).catch(() => ({
 				success: false as const,
 				error: t("payroll.errors.actionFailed", "Payroll workspace action failed"),
@@ -108,6 +110,22 @@ export function usePayrollExportActions({
 					? t("payroll.export.queued", "Payroll export queued")
 					: t("payroll.export.completed", "Payroll export completed"),
 			);
+			if (result.data.settledDaysLeftOut) {
+				// A smaller file is no surprise (#1898).
+				toast.info(
+					t(
+						"payroll.export.settledDaysLeftOut",
+						"{count, plural, one {# settled day was} other {# settled days were}} left out",
+						{ count: result.data.settledDaysLeftOut },
+					),
+					{
+						description: t(
+							"payroll.export.settledDaysLeftOutDescription",
+							"These days have already been paid. Include settled days only to reissue a lost or rejected file.",
+						),
+					},
+				);
+			}
 			if (result.data.unmappedOvertimePayoutCount) {
 				toast.warning(
 					t(
