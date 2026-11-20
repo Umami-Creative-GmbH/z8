@@ -11,6 +11,8 @@ export interface TurnstileWidgetProps {
 	onError?: (errorCode?: string) => void;
 	onExpire?: () => void;
 	onTimeout?: () => void;
+	/** Fires when Cloudflare needs the person to interact and is about to show the widget. */
+	onBeforeInteractive?: () => void;
 	onWidgetLoad?: (widgetId: string) => void;
 	theme?: "light" | "dark" | "auto";
 	size?: "normal" | "compact" | "flexible" | "invisible";
@@ -51,6 +53,7 @@ export function TurnstileWidget({
 	onError,
 	onExpire,
 	onTimeout,
+	onBeforeInteractive,
 	onWidgetLoad,
 	theme = "auto",
 	size,
@@ -89,6 +92,7 @@ export function TurnstileWidget({
 			onError={onError}
 			onExpire={onExpire}
 			onTimeout={onTimeout}
+			onBeforeInteractive={onBeforeInteractive}
 			onWidgetLoad={onWidgetLoad}
 			className={className}
 			options={{
