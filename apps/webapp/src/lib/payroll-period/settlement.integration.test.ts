@@ -5,6 +5,7 @@
  * organizations, and read the result back through `readPeriod` and the history.
  */
 
+import { DateTime } from "luxon";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -16,11 +17,19 @@ vi.mock("next/cache", async (importOriginal) =>
 const { readPeriod } = await import("./read-period");
 const { previewSettleDays, settleDays, settlementHistory, unsettleDays } =
 	await import("./settlement");
+const { getPayrollWorkspaceSummary } = await import("@/lib/payroll-workspace/summary");
 
 const admin = integrationAdminPool();
 const ORG = "t1896-org";
 const OTHER_ORG = "t1896-other";
-const users = ["t1896-owner", "t1896-holder", "t1896-anna", "t1896-ben", "t1896-foreign"];
+const users = [
+	"t1896-owner",
+	"t1896-holder",
+	"t1896-anna",
+	"t1896-ben",
+	"t1896-foreign",
+	"t1896-left",
+];
 const ids = {
 	owner: "d1896000-0000-4000-8000-000000000001",
 	holder: "d1896000-0000-4000-8000-000000000002",
@@ -191,6 +200,7 @@ describe("settling payroll days on PostgreSQL", () => {
 		expect((await annaDay("2026-11-16"))?.settlement).toEqual({ state: "unsettled" });
 		expect((await readPeriod(ORG, holder, november)).settlement).toEqual({
 			settledDays: 7,
+			changedSinceSettledDays: 0,
 			unsettledDays: 23,
 		});
 	});
@@ -272,17 +282,153 @@ describe("settling payroll days on PostgreSQL", () => {
 		expect(await settledRowCount(OTHER_ORG)).toBe(0);
 	});
 
-	it("never blocks an edit to the time data of a settled day", async () => {
+	it("makes a settled day corrected afterwards changed since settled, with a blocker (#1897)", async () => {
 		await settleDays(ORG, holder, {}, week);
 
-		await admin.query("update time_record set end_at = $2, duration_minutes = 540 where id = $1", [
+		// The correction is never blocked: settling does not freeze data.
+		await admin.query("update time_record set end_at = $2, duration_minutes = 570 where id = $1", [
 			annaWorkId,
-			"2026-11-10T17:00:00Z",
+			"2026-11-10T17:30:00Z",
 		]);
 
-		const day = await annaDay("2026-11-10");
-		expect(day?.creditedMinutes).toBe(540);
-		expect(day?.settlement).toMatchObject({ state: "settled", paid: { creditedMinutes: 480 } });
+		const read = await readPeriod(ORG, holder, november);
+		const day = read.employees[0]?.days.find((candidate) => candidate.date === "2026-11-10");
+		expect(day?.creditedMinutes).toBe(570);
+		expect(day?.settlement).toMatchObject({
+			state: "changed_since_settled",
+			paid: { creditedMinutes: 480 },
+			change: { creditedMinutesDifference: 90, absencesChanged: false },
+		});
+		const blocker = {
+			employeeId: ids.anna,
+			type: "changed_since_settled",
+			label: "+1.5 h since settled",
+			date: "2026-11-10",
+			settledChange: { creditedMinutesDifference: 90, absencesChanged: false },
+		};
+		expect(read.blockers).toEqual([expect.objectContaining(blocker)]);
+		expect(read.settlement).toEqual({
+			settledDays: 7,
+			changedSinceSettledDays: 1,
+			unsettledDays: 23,
+		});
+		// The Overview shows it with the existing blockers.
+		const summary = await getPayrollWorkspaceSummary({
+			organizationId: ORG,
+			allowedEmployeeIds: [ids.anna],
+			period: {
+				start: DateTime.fromISO(november.startDate, { zone: "utc" }),
+				end: DateTime.fromISO(november.endDate, { zone: "utc" }),
+				label: november.label,
+			},
+			generatedBy: { id: ids.holder, name: "Holder" },
+		});
+		expect(summary.blockers).toEqual([expect.objectContaining(blocker)]);
+
+		// Reverting the correction returns the day to plain settled.
+		await admin.query("update time_record set end_at = $2, duration_minutes = 480 where id = $1", [
+			annaWorkId,
+			"2026-11-10T16:00:00Z",
+		]);
+		const reverted = await readPeriod(ORG, holder, november);
+		expect(
+			reverted.employees[0]?.days.find((candidate) => candidate.date === "2026-11-10")?.settlement
+				?.state,
+		).toBe("settled");
+		expect(reverted.blockers).toEqual([]);
+	});
+
+	it("makes a settled day whose absence was removed changed since settled", async () => {
+		await settleDays(ORG, holder, {}, week);
+
+		await admin.query(
+			"update time_record set approval_state = 'rejected' where employee_id = $1 and record_kind = 'absence'",
+			[ids.anna],
+		);
+
+		expect((await annaDay("2026-11-12"))?.settlement).toMatchObject({
+			state: "changed_since_settled",
+			change: { creditedMinutesDifference: 0, absencesChanged: true },
+		});
+	});
+
+	it("settles, unsettles and shows the history of a covered employee who left (#1894)", async () => {
+		const leftId = "d1896000-0000-4000-8000-000000000011";
+		await admin.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at)
+			 values ('t1896-m-holder', $1, 't1896-holder', 'member', 'approved', now())`,
+			[ORG],
+		);
+		await admin.query(
+			`insert into employee (id, user_id, organization_id, role, employee_number, is_active, updated_at)
+			 values ($1, 't1896-left', $2, 'employee', 'LFT-1', false, now())`,
+			[leftId, ORG],
+		);
+		const cutoff = "2026-11-13T23:00:00Z";
+		const { rows: period } = await admin.query(
+			`insert into employee_employment_period
+			   (organization_id, employee_id, status, started_at, ended_at, start_provenance)
+			 values ($1, $2, 'closed', '2026-01-01T00:00:00Z', $3, 'recorded') returning id`,
+			[ORG, leftId, cutoff],
+		);
+		await admin.query(
+			`insert into employee_departure
+			   (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			    cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
+			 values ($1, $2, $3, 'scheduled', '2026-11-13', 'Europe/Berlin', $4, 't1896-owner',
+			         gen_random_uuid(), 'test', 1, 'effective', $4)`,
+			[ORG, leftId, period[0].id, cutoff],
+		);
+		const { rows: grant } = await admin.query(
+			"select id from payroll_access_grant where organization_id = $1",
+			[ORG],
+		);
+		await admin.query(
+			`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+			 values ($1, $2, $3, 't1896-owner')`,
+			[ORG, grant[0].id, leftId],
+		);
+		await work(ORG, leftId, "2026-11-12T08:00:00Z", "2026-11-12T12:00:00Z", 240);
+
+		const settled = await settleDays(ORG, holder, { employeeIds: [leftId] }, week);
+		expect(settled.status).toBe("settled");
+		const read = await readPeriod(ORG, holder, november);
+		const leftDay = read.employees
+			.find((row) => row.id === leftId)
+			?.days.find((day) => day.date === "2026-11-12");
+		expect(leftDay?.settlement).toMatchObject({
+			state: "settled",
+			paid: { creditedMinutes: 240 },
+		});
+
+		const unsettled = await unsettleDays(
+			ORG,
+			holder,
+			[
+				{ employeeId: leftId, date: "2026-11-12" },
+				// After the last working day, reachable even from a later period.
+				{ employeeId: leftId, date: "2026-11-15" },
+			],
+			"Final pay recalculated",
+		);
+		expect(unsettled).toEqual({
+			status: "unsettled",
+			unsettled: [
+				{ employeeId: leftId, date: "2026-11-12" },
+				{ employeeId: leftId, date: "2026-11-15" },
+			],
+			notSettled: [],
+		});
+		const history = await settlementHistory(
+			ORG,
+			holder,
+			{ employeeIds: [leftId] },
+			{ startDate: "2026-11-12", endDate: "2026-11-12" },
+		);
+		expect(history.map((entry) => [entry.kind, entry.reason])).toEqual([
+			["unsettled", "Final pay recalculated"],
+			["settled", null],
+		]);
 	});
 
 	it("rejects unsettling without a reason", async () => {

@@ -145,4 +145,91 @@ describe("buildPayrollPeriodRead", () => {
 			expect(result.summary.totals.employeeCount).toBe(2);
 		});
 	});
+
+	describe("changed since settled", () => {
+		const anna = {
+			id: "employee-1",
+			name: "Anna Berg",
+			employeeNumber: "E-1",
+			teamName: "Ops",
+			contractType: "fixed",
+			timezone: "Europe/Berlin",
+		};
+		const settled = (id: string, date: string, creditedMinutes: number) => ({
+			id,
+			employeeId: anna.id,
+			date,
+			method: "manual" as const,
+			payrollExportJobId: null,
+			settledAt: "2026-12-01T09:00:00.000Z",
+			paid: { creditedMinutes, absences: [] },
+		});
+		const work = (recordId: string, startAt: string, endExclusive: string, minutes: number) => ({
+			recordId,
+			employeeId: anna.id,
+			startAt: Temporal.Instant.from(startAt),
+			endExclusive: Temporal.Instant.from(endExclusive),
+			minutes,
+		});
+		const read = (departure?: { lastWorkingDay: string }) =>
+			buildPayrollPeriodRead({
+				organizationId: "organization-a",
+				period: { start: "2026-11-01", end: "2026-11-30", label: "November 2026" },
+				generatedAt: DateTime.fromISO("2026-11-30T12:00:00Z"),
+				generatedBy: { id: "payroll-1", name: "Payroll User" },
+				sources: {
+					organizationName: "Acme GmbH",
+					employees: [{ ...anna, departure }],
+					work: departure
+						? []
+						: [
+								work("record-1", "2026-11-03T07:00:00Z", "2026-11-03T16:30:00Z", 570),
+								work("record-2", "2026-11-04T07:00:00Z", "2026-11-04T15:00:00Z", 480),
+							],
+					absences: [],
+					blockers: [],
+					settledDays: [
+						// 3 Nov was paid with 8 h and now has 9.5 h; 4 Nov is unchanged.
+						settled("settled-3", "2026-11-03", 480),
+						settled("settled-4", "2026-11-04", 480),
+					],
+				},
+			});
+
+		it("raises a blocker with the employee, the date and the signed difference", () => {
+			const result = read();
+
+			expect(result.blockers).toEqual([
+				{
+					id: "settled-3",
+					employeeId: anna.id,
+					type: "changed_since_settled",
+					label: "+1.5 h since settled",
+					date: "2026-11-03",
+					time: null,
+					settledChange: { creditedMinutesDifference: 90, absencesChanged: false },
+				},
+			]);
+			expect(result.summary.totals.blockerCount).toBe(1);
+			expect(result.summary.employees[0]?.hasBlockers).toBe(true);
+		});
+
+		it("counts changed-since-settled days among the settled days for the status strip", () => {
+			expect(read().settlement).toEqual({
+				settledDays: 2,
+				changedSinceSettledDays: 1,
+				unsettledDays: 28,
+			});
+		});
+
+		it("keeps an employee who left whose settled days lost their hours", () => {
+			const result = read({ lastWorkingDay: "2026-11-05" });
+
+			expect(result.employees.map((row) => row.id)).toEqual([anna.id]);
+			expect(result.blockers.map((blocker) => [blocker.date, blocker.label])).toEqual([
+				["2026-11-03", "-8 h since settled"],
+				["2026-11-04", "-8 h since settled"],
+			]);
+		});
+	});
 });
