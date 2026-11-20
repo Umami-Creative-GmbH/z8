@@ -28,8 +28,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
-	resolvePayrollAccessibleEmployeeIds:
-		mockState.resolvePayrollAccessibleEmployeeIds,
+	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
 	hasActivePayrollAccessGrant: vi.fn(async () => true),
 	intersectPayrollScope: ({
 		allowedEmployeeIds,
@@ -56,7 +55,7 @@ vi.mock("@/lib/payroll-export", () => ({
 }));
 
 vi.mock("@/lib/payroll-workspace/pdf-exporter", () => ({
-	exportPayrollSummaryToPDF: vi.fn(),
+	exportPayrollPeriodToPDF: vi.fn(),
 	generatePayrollPDFFilename: vi.fn(),
 }));
 
@@ -77,17 +76,14 @@ vi.mock("@/lib/effect/result", async () => {
 	const { Effect } = await import("effect");
 
 	return {
-		runServerActionSafe: async <T>(
-			effect: Parameters<typeof Effect.runPromise<T>>[0],
-		) => ({
+		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromise<T>>[0]) => ({
 			success: true as const,
 			data: await Effect.runPromise(effect),
 		}),
 	};
 });
 
-const { getScopedPayrollRunsAction, startScopedPayrollExportAction } =
-	await import("./actions");
+const { getScopedPayrollRunsAction, startScopedPayrollExportAction } = await import("./actions");
 
 const request = {
 	formatId: "datev_lohn",
@@ -173,9 +169,7 @@ describe("payroll workspace export formats", () => {
 	});
 
 	afterEach(() => {
-		const fake = registered.findIndex(
-			(format) => "id" in format && format.id === "fake_lohn",
-		);
+		const fake = registered.findIndex((format) => "id" in format && format.id === "fake_lohn");
 		if (fake >= 0) registered.splice(fake, 1);
 	});
 
@@ -198,9 +192,7 @@ describe("payroll workspace export formats", () => {
 				payrollWorkspace: true,
 			});
 
-			await expect(
-				startScopedPayrollExportAction({ ...request, formatId }),
-			).rejects.toBeDefined();
+			await expect(startScopedPayrollExportAction({ ...request, formatId })).rejects.toBeDefined();
 			expect(mockState.createExportJob).not.toHaveBeenCalled();
 		},
 	);
@@ -209,17 +201,12 @@ describe("payroll workspace export formats", () => {
 describe("getScopedPayrollRunsAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([
-			"employee-1",
-			"employee-2",
-		]);
+		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue(["employee-1", "employee-2"]);
 		mockState.listUnconfirmedPayrollRuns.mockResolvedValue([]);
 	});
 
 	afterEach(() => {
-		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([
-			"employee-1",
-		]);
+		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue(["employee-1"]);
 	});
 
 	function run(jobId: string, employeeIds: string[]): UnconfirmedPayrollRun {
@@ -239,11 +226,7 @@ describe("getScopedPayrollRunsAction", () => {
 		const first = run("first", ["employee-2", "employee-1", "employee-2"]);
 		const mixed = run("mixed", ["employee-1", "outside-scope"]);
 		const last = run("last", ["employee-1"]);
-		mockState.listUnconfirmedPayrollRuns.mockResolvedValue([
-			first,
-			mixed,
-			last,
-		]);
+		mockState.listUnconfirmedPayrollRuns.mockResolvedValue([first, mixed, last]);
 
 		const result = await getScopedPayrollRunsAction();
 
@@ -253,20 +236,12 @@ describe("getScopedPayrollRunsAction", () => {
 			success: true,
 			data: [expectedFirst, expectedLast],
 		});
-		expect(
-			mockState.resolvePayrollAccessibleEmployeeIds,
-		).toHaveBeenCalledExactlyOnceWith({
+		expect(mockState.resolvePayrollAccessibleEmployeeIds).toHaveBeenCalledExactlyOnceWith({
 			organizationId: "org-1",
 			payrollEmployeeId: "employee-1",
 		});
-		expect(
-			mockState.listUnconfirmedPayrollRuns,
-		).toHaveBeenCalledExactlyOnceWith({}, "org-1");
-		expect(first.employeeIds).toEqual([
-			"employee-2",
-			"employee-1",
-			"employee-2",
-		]);
+		expect(mockState.listUnconfirmedPayrollRuns).toHaveBeenCalledExactlyOnceWith({}, "org-1");
+		expect(first.employeeIds).toEqual(["employee-2", "employee-1", "employee-2"]);
 	});
 
 	it("returns no runs when every run contains an unauthorized employee", async () => {
