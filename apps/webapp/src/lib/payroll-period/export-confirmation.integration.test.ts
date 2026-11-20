@@ -22,7 +22,7 @@ vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
 const { DateTime } = await import("luxon");
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { readPeriod } = await import("./read-period");
-const { settleDays, settlementHistory } = await import("./settlement");
+const { settleDays, settlementHistory, unsettleDays } = await import("./settlement");
 const { confirmExportAsPaid, listExportsToConfirm, previewConfirmExportAsPaid } =
 	await import("./export-confirmation");
 
@@ -214,6 +214,7 @@ async function exportFile(
 			},
 			employeeIds,
 		},
+		settledDays: "leave_out",
 	});
 	await processExportJob({ jobId, organizationId });
 	return jobId;
@@ -302,6 +303,35 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 
 		expect(again).toMatchObject({ status: "settled", newlySettled: [] });
 		expect(again.status === "settled" && again.alreadySettled).toHaveLength(7);
+		expect(await settledRowCount()).toBe(7);
+	});
+
+	it("does not settle again a day whose settlement from the same export was unsettled", async () => {
+		const jobId = await exportFile([ids.anna]);
+		await confirmExportAsPaid(ORG, holder, jobId);
+		await unsettleDays(
+			ORG,
+			holder,
+			[{ employeeId: ids.anna, date: "2026-11-10" }],
+			"Paid the wrong hours",
+		);
+
+		const preview = await previewConfirmExportAsPaid(ORG, holder, jobId);
+		const again = await confirmExportAsPaid(ORG, holder, jobId);
+
+		const tuesday = [{ employeeId: ids.anna, date: "2026-11-10" }];
+		expect(preview).toMatchObject({
+			status: "ready",
+			newlySettled: [],
+			previouslyUnsettled: tuesday,
+		});
+		expect(preview.status === "ready" && preview.alreadySettled).toHaveLength(6);
+		expect(again).toMatchObject({
+			status: "settled",
+			newlySettled: [],
+			previouslyUnsettled: tuesday,
+		});
+		expect((await annaDay("2026-11-10"))?.settlement).toEqual({ state: "unsettled" });
 		expect(await settledRowCount()).toBe(7);
 	});
 

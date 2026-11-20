@@ -2220,6 +2220,13 @@
       "when": 1812038400000,
       "tag": "0316_payroll_settled_days",
       "breakpoints": true
+    },
+    {
+      "idx": 317,
+      "version": "7",
+      "when": 1812124800000,
+      "tag": "0317_payroll_export_leaves_out_settled_days",
+      "breakpoints": true
     }
   ]
 }

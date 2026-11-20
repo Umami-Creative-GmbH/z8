@@ -121,8 +121,8 @@ describe("startScopedPayrollExportAction", () => {
 		await startScopedPayrollExportAction({ ...request, includeSettledDays: true });
 
 		expect(mockState.createExportJob.mock.calls.map(([params]) => params)).toMatchObject([
-			{ includeSettledDays: false },
-			{ includeSettledDays: true },
+			{ settledDays: "leave_out" },
+			{ settledDays: "include" },
 		]);
 	});
 

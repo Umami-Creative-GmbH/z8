@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { payrollExportCarriedDay, payrollExportJob, payrollSettledDay } from "@/db/schema";
@@ -32,8 +32,21 @@ export type ConfirmExportRejection =
 	/** The file carried employees outside the grant; nothing was settled. */
 	| { status: "out_of_scope"; employeeIds: string[] };
 
-export type ConfirmExportPreview = ConfirmExportRejection | ({ status: "ready" } & SettleDaysPlan);
-export type ConfirmExportResult = ConfirmExportRejection | ({ status: "settled" } & SettleDaysPlan);
+/** A confirmation's plan: a settle plan plus the days it skips because they were unsettled. */
+export interface ConfirmExportPlan extends SettleDaysPlan {
+	/**
+	 * Days this export settled before and someone unsettled since: confirming again
+	 * never settles them anew. They can be settled by hand.
+	 */
+	previouslyUnsettled: PayrollDayKey[];
+}
+
+export type ConfirmExportPreview =
+	| ConfirmExportRejection
+	| ({ status: "ready" } & ConfirmExportPlan);
+export type ConfirmExportResult =
+	| ConfirmExportRejection
+	| ({ status: "settled" } & ConfirmExportPlan);
 
 /** A completed export the actor may confirm as paid, with its settlement progress. */
 export interface PayrollExportToConfirm {
@@ -63,14 +76,15 @@ export async function previewConfirmExportAsPaid(
 ): Promise<ConfirmExportPreview> {
 	const resolved = await resolveExport(organizationId, actor, exportId);
 	if (!resolved.ok) return resolved.rejection;
-	return { status: "ready", ...(await planDays(organizationId, resolved.carried)) };
+	return { status: "ready", ...(await planConfirmation(organizationId, resolved)) };
 }
 
 /**
  * Confirms a completed export as paid: each day it carried that is not settled yet gets
  * a settlement with method `export`, the export, and a copy of the values the file
- * carried. Days settled before are reported and left as they are, so confirming the
- * same export again settles nothing new.
+ * carried. Days settled before are reported and left as they are, and days this export
+ * settled that were unsettled since are skipped, so confirming the same export again
+ * settles nothing new.
  */
 export async function confirmExportAsPaid(
 	organizationId: string,
@@ -79,7 +93,7 @@ export async function confirmExportAsPaid(
 ): Promise<ConfirmExportResult> {
 	const resolved = await resolveExport(organizationId, actor, exportId);
 	if (!resolved.ok) return resolved.rejection;
-	const plan = await planDays(organizationId, resolved.carried);
+	const plan = await planConfirmation(organizationId, resolved);
 	const toSettle = new Set(plan.newlySettled.map(dayKey));
 	const values = resolved.carried.filter((day) => toSettle.has(dayKey(day)));
 	const inserted = await insertSettlements(organizationId, actor, values, {
@@ -97,6 +111,7 @@ export async function confirmExportAsPaid(
 			...plan.newlySettled.filter((day) => !settledNow.has(dayKey(day))),
 		]),
 		inUnclosedMonths: plan.inUnclosedMonths,
+		previouslyUnsettled: plan.previouslyUnsettled,
 	};
 }
 
@@ -212,6 +227,40 @@ export async function listExportsToConfirm(
 // ============================================
 // INTERNALS
 // ============================================
+
+/**
+ * The carried days split as a settle would split them, without the days whose
+ * settlement from this export was unsettled since and which are not settled now.
+ */
+async function planConfirmation(
+	organizationId: string,
+	resolved: { jobId: string; carried: PayrollCarriedDay[] },
+): Promise<ConfirmExportPlan> {
+	const unsettledRows = await db
+		.selectDistinct({
+			employeeId: payrollSettledDay.employeeId,
+			date: payrollSettledDay.date,
+		})
+		.from(payrollSettledDay)
+		.where(
+			and(
+				eq(payrollSettledDay.organizationId, organizationId),
+				eq(payrollSettledDay.payrollExportJobId, resolved.jobId),
+				isNotNull(payrollSettledDay.unsettledAt),
+			),
+		);
+	const unsettled = new Set(unsettledRows.map(dayKey));
+	const plan = await planDays(organizationId, resolved.carried);
+	const skipped = new Set(
+		plan.newlySettled.filter((day) => unsettled.has(dayKey(day))).map(dayKey),
+	);
+	return {
+		newlySettled: plan.newlySettled.filter((day) => !skipped.has(dayKey(day))),
+		alreadySettled: plan.alreadySettled,
+		inUnclosedMonths: plan.inUnclosedMonths.filter((day) => !skipped.has(dayKey(day))),
+		previouslyUnsettled: sortDays(plan.newlySettled.filter((day) => skipped.has(dayKey(day)))),
+	};
+}
 
 async function resolveExport(
 	organizationId: string,

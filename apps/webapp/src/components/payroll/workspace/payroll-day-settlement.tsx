@@ -27,6 +27,7 @@ import type { PayrollPeriodDay, PayrollSettledDayValues } from "@/lib/payroll-pe
 import { queryKeys } from "@/lib/query/keys";
 import { absencePeriodLabel, type PayrollDaysFormat, settledChangeText } from "./payroll-days-grid";
 import type { PayrollTranslate } from "./state";
+import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
 /**
  * The settlement part of the Days tab's side panel (#1897): the day's settlement
@@ -123,6 +124,7 @@ function UnsettleDayForm({
 	t: PayrollTranslate;
 }) {
 	const queryClient = useQueryClient();
+	const settlementChanged = usePayrollSettlementChanged();
 	const form = useForm({
 		defaultValues: { reason: "" },
 		onSubmit: async ({ value }) => {
@@ -139,7 +141,7 @@ function UnsettleDayForm({
 			form.reset();
 			onDone();
 			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: ["payroll", "period"] }),
+				settlementChanged(),
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.payroll.daySettlementHistory({ employeeId, date }),
 				}),

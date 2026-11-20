@@ -81,7 +81,12 @@ export interface PayrollBlocker {
 	id: string;
 	employeeId: string;
 	type: PayrollBlockerType;
-	label: string;
+	/**
+	 * A plain-text note of the older blocker sources. Views show the translated label of
+	 * `payrollBlockerTypeLabel` (blocker-labels.ts); `changed_since_settled` has none and
+	 * carries `settledChange` instead.
+	 */
+	label?: string;
 	date: string | null;
 	time: string | null;
 	/** For `changed_since_settled`: how the day differs from what was paid. */

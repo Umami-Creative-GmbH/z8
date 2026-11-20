@@ -190,8 +190,14 @@ async function seed() {
 	await work(OTHER_ORG, ids.foreign, "2026-11-10T08:00:00Z", "2026-11-10T16:00:00Z", 480);
 }
 
-/** A DATEV file of the employees for the week, as the workspace exports it. */
-async function exportFile(employeeIds: string[], options: { includeSettledDays?: boolean } = {}) {
+/**
+ * A DATEV file of the employees for the week. By default as the workspace prepares it;
+ * `settledDays: undefined` exports it as the settings page and scheduled exports do.
+ */
+async function exportFile(
+	employeeIds: string[],
+	options: { settledDays?: "leave_out" | "include" } = { settledDays: "leave_out" },
+) {
 	const { jobId } = await createExportJob({
 		organizationId: ORG,
 		formatId: "datev_lohn",
@@ -291,7 +297,7 @@ describe("payroll files leave settled days out on PostgreSQL", () => {
 		await settleAnna("2026-11-10", "2026-11-12");
 
 		const { jobId, rows, job } = await exportFile([ids.anna, ids.ben], {
-			includeSettledDays: true,
+			settledDays: "include",
 		});
 
 		expect(rows).toEqual([...annaWeek, ...benWeek]);
@@ -300,6 +306,17 @@ describe("payroll files leave settled days out on PostgreSQL", () => {
 		expect(carried.filter((day) => day.employeeId === ids.anna)).toHaveLength(7);
 		const [history] = await getExportJobHistory(ORG);
 		expect(history).toMatchObject({ id: jobId, settledDaysLeftOut: 0, includesSettledDays: true });
+	});
+
+	it("keeps settled days in settings and scheduled exports, and records every day they carried", async () => {
+		await settleAnna("2026-11-10", "2026-11-12");
+
+		const { jobId, rows, job } = await exportFile([ids.anna, ids.ben], {});
+
+		expect(rows).toEqual([...annaWeek, ...benWeek]);
+		expect(job).toEqual({ settled_days_left_out: 0, includes_settled_days: false });
+		const carried = await loadExportCarriedDays(db, { organizationId: ORG, jobId });
+		expect(carried.filter((day) => day.employeeId === ids.anna)).toHaveLength(7);
 	});
 
 	it("shows the left-out count in the export history", async () => {

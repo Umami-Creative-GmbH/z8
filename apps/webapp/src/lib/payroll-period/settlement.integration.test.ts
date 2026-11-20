@@ -302,7 +302,6 @@ describe("settling payroll days on PostgreSQL", () => {
 		const blocker = {
 			employeeId: ids.anna,
 			type: "changed_since_settled",
-			label: "+1.5 h since settled",
 			date: "2026-11-10",
 			settledChange: { creditedMinutesDifference: 90, absencesChanged: false },
 		};

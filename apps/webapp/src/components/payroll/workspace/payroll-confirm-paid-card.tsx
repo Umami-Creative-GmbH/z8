@@ -1,7 +1,7 @@
 "use client";
 
 import { IconCircleCheck, IconLoader2 } from "@tabler/icons-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { formatPlainDateRange } from "@/lib/travel-expenses/format";
 import { SettlePreview } from "./payroll-settlement-card";
 import type { PayrollTranslate } from "./state";
+import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
 /**
  * Confirming a completed payroll export as paid (#1899): settles exactly the
@@ -35,7 +36,7 @@ import type { PayrollTranslate } from "./state";
  */
 export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 	const locale = useLocale();
-	const queryClient = useQueryClient();
+	const settlementChanged = usePayrollSettlementChanged();
 	const { data: exports } = useQuery({
 		queryKey: queryKeys.payroll.exportsToConfirm(),
 		queryFn: async () => {
@@ -84,10 +85,7 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 				}),
 			);
 			close();
-			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.payroll.exportsToConfirm() }),
-				queryClient.invalidateQueries({ queryKey: ["payroll", "period"] }),
-			]);
+			await settlementChanged();
 		} finally {
 			setIsConfirming(false);
 		}
@@ -171,6 +169,12 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 						})}
 					</ul>
 				)}
+				<p className="mt-3 text-muted-foreground text-sm">
+					{t(
+						"payroll.confirmPaid.notConfirmable",
+						"Files made before settled days existed, and deliveries to a connected payroll system, recorded no days and can't be confirmed as paid. Settle their days by hand with Settle days below.",
+					)}
+				</p>
 			</CardContent>
 
 			<Dialog open={preview !== null} onOpenChange={(open) => !open && close()}>

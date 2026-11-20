@@ -12,7 +12,6 @@ import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
 import {
 	hasActivePayrollAccessGrant,
 	intersectPayrollScope,
@@ -40,8 +39,12 @@ import {
 	type PayrollExportToConfirm,
 	previewConfirmExportAsPaid,
 } from "@/lib/payroll-period/export-confirmation";
-import { readPeriodDayForEmployee } from "@/lib/payroll-period/read-day";
-import { readPeriodForEmployees, resolvePeriodEmployeeIds } from "@/lib/payroll-period/read-period";
+import { readPeriodDay } from "@/lib/payroll-period/read-day";
+import {
+	listDepartedGrantEmployees,
+	readPeriodForEmployees,
+	resolvePeriodEmployeeIds,
+} from "@/lib/payroll-period/read-period";
 import { loadActiveSettledDays } from "@/lib/payroll-period/settled-days-store";
 import {
 	type PayrollSettlementHistoryEntry,
@@ -126,10 +129,7 @@ export async function getPayrollPeriodAction(
 		);
 		const read = await readPeriodForEmployees(
 			authContext.employee.organizationId,
-			{
-				employeeId: authContext.employee.id,
-				name: authContext.user.name || authContext.user.email,
-			},
+			payrollActor(authContext),
 			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
 			{ employeeIds: scopedEmployeeIds },
 		);
@@ -148,6 +148,11 @@ export interface PayrollSettlementCounts {
 	alreadySettledDays: number;
 	/** Days to settle whose month is not closed, per month (YYYY-MM): a warning only. */
 	unclosedMonths: { month: string; days: number }[];
+	/**
+	 * Confirming an export as paid (#1899): days this export settled that were unsettled
+	 * since, which confirming again skips.
+	 */
+	previouslyUnsettledDays?: number;
 }
 
 export async function previewSettlePayrollDaysAction(
@@ -200,12 +205,7 @@ export async function unsettlePayrollDaysAction(
 			settled.map(({ employeeId, date }) => ({ employeeId, date })),
 			request.reason,
 		);
-		if (result.status === "reason_required") {
-			throw new ValidationError({
-				message: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
-				field: "reason",
-			});
-		}
+		if (result.status === "reason_required") throwUnsettleReasonRequired(t);
 		if (result.status !== "unsettled") throwPayrollSettlementOutOfScope(t, actor.userId);
 		revalidatePath("/payroll");
 		return { unsettledDays: result.unsettled.length };
@@ -250,12 +250,35 @@ async function resolvePayrollSettlementActor(t: PayrollTranslate) {
 	const authContext = await requirePayrollGrantHolder(t);
 	return {
 		organizationId: authContext.employee.organizationId,
-		actor: {
-			employeeId: authContext.employee.id,
-			userId: authContext.user.id,
-			name: authContext.user.name || authContext.user.email,
-		},
+		actor: payrollActor(authContext),
 	};
+}
+
+/** The signed-in grant holder as the payroll period module names an actor. */
+function payrollActor(
+	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
+) {
+	return {
+		employeeId: authContext.employee.id,
+		userId: authContext.user.id,
+		name: authContext.user.name || authContext.user.email,
+	};
+}
+
+/** Days to settle in months that are not closed, counted per month (YYYY-MM). */
+function unclosedMonthCounts(
+	days: readonly { date: string }[],
+): PayrollSettlementCounts["unclosedMonths"] {
+	return [...Map.groupBy(days, (day) => day.date.slice(0, 7))]
+		.map(([month, monthDays]) => ({ month, days: monthDays.length }))
+		.toSorted((left, right) => left.month.localeCompare(right.month));
+}
+
+function throwUnsettleReasonRequired(t: PayrollTranslate): never {
+	throw new ValidationError({
+		message: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
+		field: "reason",
+	});
 }
 
 function exportConfirmationCounts(
@@ -281,20 +304,18 @@ function exportConfirmationCounts(
 			throw new ValidationError({
 				message: t(
 					"payroll.confirmPaid.nothingCarried",
-					"This export recorded no days to settle. Settle its days by hand instead.",
+					"This export recorded no days, so it can't be confirmed as paid: it was made before settled days existed, or delivered to a connected payroll system. Settle its days by hand with Settle days.",
 				),
 				field: "jobId",
 			});
 		case "out_of_scope":
 			throwPayrollSettlementOutOfScope(t, userId);
 	}
-	const unclosed = Map.groupBy(result.inUnclosedMonths, (day) => day.date.slice(0, 7));
 	return {
 		newDays: result.newlySettled.length,
 		alreadySettledDays: result.alreadySettled.length,
-		unclosedMonths: [...unclosed]
-			.map(([month, days]) => ({ month, days: days.length }))
-			.toSorted((left, right) => left.month.localeCompare(right.month)),
+		unclosedMonths: unclosedMonthCounts(result.inUnclosedMonths),
+		previouslyUnsettledDays: result.previouslyUnsettled.length,
 	};
 }
 
@@ -307,7 +328,8 @@ export async function getPayrollDaySettlementHistoryAction(request: {
 	date: string;
 }): Promise<ServerActionResult<PayrollSettlementHistoryEntry[]>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { organizationId, actor, scope, range } = await resolvePayrollDayRequest(t, request);
+		const day = parsePayrollActionInput(t, payrollDaySchema, request);
+		const { organizationId, actor, scope, range } = await resolvePayrollDayRequest(t, day);
 		return settlementHistory(organizationId, actor, scope, range);
 	});
 }
@@ -319,34 +341,51 @@ export async function unsettlePayrollDayAction(request: {
 	reason: string;
 }): Promise<ServerActionResult<{ unsettled: boolean }>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { organizationId, actor } = await resolvePayrollDayRequest(t, request);
-		const result = await unsettleDays(
-			organizationId,
-			actor,
-			[{ employeeId: request.employeeId, date: request.date }],
-			typeof request.reason === "string" ? request.reason : "",
-		);
-		if (result.status === "reason_required") {
-			throw new ValidationError({
-				message: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
-				field: "reason",
-			});
-		}
+		const { reason, ...day } = parsePayrollActionInput(t, unsettlePayrollDaySchema, request);
+		if (reason.length === 0) throwUnsettleReasonRequired(t);
+		const { organizationId, actor } = await resolvePayrollDayRequest(t, day);
+		const result = await unsettleDays(organizationId, actor, [day], reason);
+		if (result.status === "reason_required") throwUnsettleReasonRequired(t);
 		if (result.status !== "unsettled") throwPayrollSettlementOutOfScope(t, actor.userId);
 		revalidatePath("/payroll");
 		return { unsettled: result.unsettled.length === 1 };
 	});
 }
 
+/** One employee and one employee-local date, as the Days tab's side panel names a day. */
+const payrollDaySchema = z.object({
+	employeeId: z.string().trim().min(1),
+	date: z.iso.date(),
+});
+
+const unsettlePayrollDaySchema = payrollDaySchema.extend({
+	reason: z.string().trim().max(2_000),
+});
+
+/** The parsed input, or a ValidationError naming the first invalid field. */
+function parsePayrollActionInput<Schema extends z.ZodType>(
+	t: PayrollTranslate,
+	schema: Schema,
+	input: unknown,
+): z.output<Schema> {
+	const parsed = schema.safeParse(input);
+	if (parsed.success) return parsed.data;
+	const field = parsed.error.issues[0]?.path.join(".") || undefined;
+	throw new ValidationError({
+		message: t("payroll.errors.invalidRequest", "The request is not valid"),
+		field,
+	});
+}
+
 async function resolvePayrollDayRequest(
 	t: PayrollTranslate,
-	request: { employeeId: string; date: string },
+	day: { employeeId: string; date: string },
 ) {
 	return resolvePayrollSettlementRequest(t, {
-		startDate: request.date,
-		endDate: request.date,
-		label: request.date,
-		employeeIds: [request.employeeId],
+		startDate: day.date,
+		endDate: day.date,
+		label: day.date,
+		employeeIds: [day.employeeId],
 	});
 }
 
@@ -359,11 +398,7 @@ async function resolvePayrollSettlementRequest(
 	const employeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
 	return {
 		organizationId: authContext.employee.organizationId,
-		actor: {
-			employeeId: authContext.employee.id,
-			userId: authContext.user.id,
-			name: authContext.user.name || authContext.user.email,
-		},
+		actor: payrollActor(authContext),
 		scope: { employeeIds },
 		range: { startDate: request.startDate, endDate: request.endDate },
 	};
@@ -384,13 +419,10 @@ function settlementCounts(
 		});
 	}
 	if (result.status === "out_of_scope") throwPayrollSettlementOutOfScope(t, userId);
-	const unclosed = Map.groupBy(result.inUnclosedMonths, (day) => day.date.slice(0, 7));
 	return {
 		newDays: result.newlySettled.length,
 		alreadySettledDays: result.alreadySettled.length,
-		unclosedMonths: [...unclosed]
-			.map(([month, days]) => ({ month, days: days.length }))
-			.toSorted((left, right) => left.month.localeCompare(right.month)),
+		unclosedMonths: unclosedMonthCounts(result.inUnclosedMonths),
 	};
 }
 
@@ -415,23 +447,14 @@ export async function getPayrollDayRecordsAction(request: {
 	date: string;
 }): Promise<ServerActionResult<PayrollPeriodDayDetail>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
-			t,
-			{
-				startDate: request.date,
-				endDate: request.date,
-				label: request.date,
-				employeeIds: [request.employeeId],
-			},
-			undefined,
-			{ includeDeparted: true },
+		const day = parsePayrollActionInput(t, payrollDaySchema, request);
+		const authContext = await requirePayrollGrantHolder(t);
+		// The module checks the grant's scope, employees who left during or after the day included.
+		const detail = await readPeriodDay(
+			authContext.employee.organizationId,
+			payrollActor(authContext),
+			day,
 		);
-		const detail = scopedEmployeeIds.includes(request.employeeId)
-			? await readPeriodDayForEmployee(authContext.employee.organizationId, {
-					employeeId: request.employeeId,
-					date: request.date,
-				})
-			: null;
 		if (!detail) {
 			throw new AuthorizationError({
 				message: t(
@@ -453,10 +476,12 @@ export async function dismissPayrollBlockerAction(
 	return runPayrollWorkspaceAction(async (t) => {
 		const authenticatedContext = await requireActiveOrganizationEmployee(t);
 		const { blockerId, blockerType } = validatePayrollBlockerDismissalRequest(t, request);
+		// Blockers of employees who left are in the workspace's summary, so they can be dismissed.
 		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
 			authenticatedContext,
+			{ includeDeparted: true },
 		);
 		const organizationId = authContext.employee.organizationId;
 		const findExistingDismissal = () =>
@@ -551,10 +576,7 @@ export async function exportPayrollPdfAction(
 		);
 		const read = await readPeriodForEmployees(
 			authContext.employee.organizationId,
-			{
-				employeeId: authContext.employee.id,
-				name: authContext.user.name || authContext.user.email,
-			},
+			payrollActor(authContext),
 			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
 			{ employeeIds: scopedEmployeeIds },
 		);
@@ -628,7 +650,8 @@ export async function startScopedPayrollExportAction(
 			requestedById: authContext.employee.id,
 			filters,
 			repairActorUserId: ability?.can("manage", "OrgSettings") ? authContext.user.id : null,
-			includeSettledDays: request.includeSettledDays === true,
+			// The workspace prepares the file: settled days are left out unless reissued.
+			settledDays: request.includeSettledDays === true ? "include" : "leave_out",
 		});
 
 		if (isAsync) {
@@ -719,10 +742,8 @@ async function resolvePayrollExportScope(
 			organizationId: authContext.employee.organizationId,
 			payrollEmployeeId: authContext.employee.id,
 		}),
-		listDepartedEmployeesCoveredForExport(db, {
-			organizationId: authContext.employee.organizationId,
-			actorUserId: authContext.user.id,
-			fromDate: parsePlainDate(request.startDate).toString(),
+		listDepartedGrantEmployees(authContext.employee.organizationId, payrollActor(authContext), {
+			leftAfterStartOf: request.startDate,
 		}),
 	]);
 	return {
@@ -904,10 +925,8 @@ async function resolvePayrollWorkspaceActionContext(
 			payrollEmployeeId: authContext.employee.id,
 		}),
 		options.includeDeparted
-			? listDepartedEmployeesCoveredForExport(db, {
-					organizationId: authContext.employee.organizationId,
-					actorUserId: authContext.user.id,
-					fromDate: parsePlainDate(request.startDate).toString(),
+			? listDepartedGrantEmployees(authContext.employee.organizationId, payrollActor(authContext), {
+					leftAfterStartOf: request.startDate,
 				})
 			: [],
 	]);
