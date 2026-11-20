@@ -8,6 +8,7 @@ import type {
 	PayrollPeriodEmployeeSource,
 	PayrollPeriodHolidaySource,
 	PayrollPeriodRead,
+	PayrollSettledDaySource,
 } from "./types";
 
 /** Everything the database part reads for one organization, scope and period. */
@@ -21,6 +22,8 @@ export interface PayrollPeriodSources {
 	blockers: PayrollBlocker[];
 	requirements?: ReadonlyMap<string, Readonly<Record<string, { requiredMinutes: number }>>>;
 	holidays?: ReadonlyMap<string, readonly PayrollPeriodHolidaySource[]>;
+	/** Active settlements of the employees' period days (#1896). */
+	settledDays?: readonly PayrollSettledDaySource[];
 }
 
 /**
@@ -43,7 +46,10 @@ export function buildPayrollPeriodRead(input: {
 		absences: sources.absences,
 		requirements: sources.requirements,
 		holidays: sources.holidays,
+		settledDays: sources.settledDays,
 	});
+	const days = rows.employees.flatMap((row) => row.days);
+	const settledDays = days.filter((day) => day.settlement?.state === "settled").length;
 	const summary = buildPayrollSummaryFromRows({
 		organizationId: input.organizationId,
 		organizationName: sources.organizationName,
@@ -67,6 +73,7 @@ export function buildPayrollPeriodRead(input: {
 			(left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id),
 		),
 		absences: rows.absences,
+		settlement: { settledDays, unsettledDays: days.length - settledDays },
 		blockers: summary.blockers,
 		summary,
 	};

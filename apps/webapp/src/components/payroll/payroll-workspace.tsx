@@ -16,6 +16,7 @@ import { PayrollDaysTab } from "./workspace/payroll-days-tab";
 import { PayrollExportTab } from "./workspace/payroll-export-tab";
 import { PayrollOverviewTab } from "./workspace/payroll-overview-tab";
 import { PayrollPeriodBar } from "./workspace/payroll-period-bar";
+import { PayrollSettlementFigures } from "./workspace/payroll-settlement-figures";
 import { PayrollStatusStrip } from "./workspace/payroll-status-strip";
 import { PayrollWorkspaceTabs } from "./workspace/payroll-workspace-tabs";
 import {
@@ -239,7 +240,14 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 				displayedTotals={displayedTotals}
 				readyEmployeeCount={readyEmployeeCount}
 				t={t}
-			/>
+			>
+				<PayrollSettlementFigures
+					filtersHaveNoMatches={filtersHaveNoMatches}
+					refreshedAt={summary.generatedAt}
+					request={request}
+					t={t}
+				/>
+			</PayrollStatusStrip>
 			<PayrollWorkspaceTabs
 				t={t}
 				panels={{
@@ -279,6 +287,8 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 							onDownloadPdf={downloadPdf}
 							onTriggerExport={triggerExport}
 							period={summary.period}
+							refreshedAt={summary.generatedAt}
+							request={request}
 							t={t}
 						/>
 					),

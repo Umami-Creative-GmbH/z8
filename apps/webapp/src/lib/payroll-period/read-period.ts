@@ -18,6 +18,7 @@ import {
 import { loadPayrollPeriodSources } from "@/lib/payroll-workspace/summary";
 import { loadEmployeeTrackingContexts } from "@/lib/time-tracking/tracking-start";
 import { buildPayrollPeriodRead } from "./period-read";
+import { loadActiveSettledDays } from "./settled-days-store";
 import type {
 	PayrollPeriodActor,
 	PayrollPeriodHolidaySource,
@@ -76,9 +77,10 @@ export async function readPeriodForEmployees(
 		},
 	});
 	const employeeIds = sources.employees.map((row) => row.id);
-	const [requirements, holidays] = await Promise.all([
+	const [requirements, holidays, settledDays] = await Promise.all([
 		loadRequirements(organizationId, employeeIds, period),
 		loadHolidays(organizationId, employeeIds, period),
+		loadSettledDays(organizationId, employeeIds, period),
 	]);
 
 	return buildPayrollPeriodRead({
@@ -86,7 +88,21 @@ export async function readPeriodForEmployees(
 		period: payrollPeriod,
 		generatedAt: DateTime.utc(),
 		generatedBy: { id: actor.employeeId, name: actor.name },
-		sources: { ...sources, requirements, holidays },
+		sources: { ...sources, requirements, holidays, settledDays },
+	});
+}
+
+async function loadSettledDays(
+	organizationId: string,
+	employeeIds: readonly string[],
+	period: PayrollPeriodRange,
+) {
+	const { db } = await import("@/db");
+	return loadActiveSettledDays(db, {
+		organizationId,
+		employeeIds,
+		startDate: period.startDate,
+		endDate: period.endDate,
 	});
 }
 

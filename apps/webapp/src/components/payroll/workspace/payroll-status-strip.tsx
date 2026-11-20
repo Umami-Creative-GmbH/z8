@@ -8,11 +8,14 @@ import { formatHours, type PayrollTranslate } from "./state";
 /** The compact strip of period figures: employees, worked hours, readiness and blockers. */
 export function PayrollStatusStrip({
 	blockersSummaryRef,
+	children,
 	displayedTotals,
 	readyEmployeeCount,
 	t,
 }: {
 	blockersSummaryRef: React.RefObject<HTMLDivElement | null>;
+	/** Further figures after the summary's, such as the settled days (#1896). */
+	children?: React.ReactNode;
 	displayedTotals: PayrollWorkspaceSummary["totals"];
 	readyEmployeeCount: number;
 	t: PayrollTranslate;
@@ -20,7 +23,10 @@ export function PayrollStatusStrip({
 	return (
 		<section
 			aria-label={t("payroll.summary.title", "Payroll readiness summary")}
-			className="grid grid-cols-2 divide-x divide-y rounded-lg border bg-card sm:grid-cols-4 sm:divide-y-0"
+			className={[
+				"grid grid-cols-2 divide-x divide-y rounded-lg border bg-card",
+				children ? "sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0" : "sm:grid-cols-4 sm:divide-y-0",
+			].join(" ")}
 		>
 			<StatusFigure
 				icon={<IconUsers aria-hidden="true" className="size-4" />}
@@ -41,11 +47,12 @@ export function PayrollStatusStrip({
 				value={displayedTotals.blockerCount.toString()}
 				tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
 			/>
+			{children}
 		</section>
 	);
 }
 
-function StatusFigure({
+export function StatusFigure({
 	focusRef,
 	icon,
 	label,

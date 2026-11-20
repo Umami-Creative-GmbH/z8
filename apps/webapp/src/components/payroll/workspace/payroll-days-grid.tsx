@@ -1,6 +1,6 @@
 "use client";
 
-import { IconConfetti } from "@tabler/icons-react";
+import { IconCircleCheck, IconConfetti } from "@tabler/icons-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef } from "react";
 import { Temporal } from "temporal-polyfill";
@@ -191,9 +191,18 @@ function PayrollDayCell({
 				<span className={cn("font-medium", day.creditedMinutes === 0 && "text-muted-foreground")}>
 					{day.creditedMinutes === 0 ? "–" : format.hours(day.creditedMinutes)}
 				</span>
-				{day.holiday ? (
-					<IconConfetti aria-hidden="true" className="size-3.5 shrink-0 text-amber-600" />
-				) : null}
+				<span className="flex shrink-0 items-center gap-0.5">
+					{day.settlement?.state === "settled" ? (
+						<IconCircleCheck
+							aria-hidden="true"
+							data-settled=""
+							className="size-3.5 text-emerald-600 dark:text-emerald-400"
+						/>
+					) : null}
+					{day.holiday ? (
+						<IconConfetti aria-hidden="true" className="size-3.5 text-amber-600" />
+					) : null}
+				</span>
 			</div>
 			{day.requiredMinutes !== null && day.requiredMinutes > 0 ? (
 				<div className="flex items-center justify-between gap-1 text-[0.6875rem] text-muted-foreground">
@@ -304,6 +313,9 @@ function dayTitle(day: PayrollPeriodDay, format: PayrollDaysFormat, t: PayrollTr
 	}
 	if (day.holiday) {
 		parts.push(t("payroll.days.cell.holiday", "Holiday: {name}", { name: day.holiday.name }));
+	}
+	if (day.settlement?.state === "settled") {
+		parts.push(t("payroll.days.cell.settled", "Settled"));
 	}
 	return parts.join("\n");
 }

@@ -1,3 +1,7 @@
+import type {
+	PayrollSettledDayAbsence,
+	PayrollSettlementMethod,
+} from "@/db/schema/payroll-settlement";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type {
 	PayrollAbsenceDetailPeriod,
@@ -81,6 +85,38 @@ export interface PayrollPeriodDayAbsence {
 	approvalState: PayrollAbsenceApprovalState;
 }
 
+/** A day's values as settling pays them: credited minutes and approved absences. */
+export interface PayrollSettledDayValues {
+	creditedMinutes: number;
+	/** Sorted by category and day period, so two copies compare as equal values. */
+	absences: PayrollSettledDayAbsence[];
+}
+
+/** An active settlement of one employee-day, as the database part reads it. */
+export interface PayrollSettledDaySource {
+	id: string;
+	employeeId: string;
+	/** Employee-local calendar date. */
+	date: string;
+	method: PayrollSettlementMethod;
+	payrollExportJobId: string | null;
+	/** ISO instant. */
+	settledAt: string;
+	/** The copy taken at settling. */
+	paid: PayrollSettledDayValues;
+}
+
+/**
+ * Whether a day has been paid (#1896). #1897 adds the changed-since-settled state,
+ * comparing the day's current values with `paid`.
+ */
+export type PayrollPeriodDaySettlement =
+	| { state: "unsettled" }
+	| ({ state: "settled"; settledDayId: string } & Omit<
+			PayrollSettledDaySource,
+			"id" | "employeeId" | "date"
+	  >);
+
 export interface PayrollPeriodDay {
 	/** Employee-local calendar date. */
 	date: string;
@@ -91,6 +127,8 @@ export interface PayrollPeriodDay {
 	differenceMinutes: number | null;
 	absences: PayrollPeriodDayAbsence[];
 	holiday: { name: string } | null;
+	/** Always set by the row builder; optional only for hand-built fixtures. */
+	settlement?: PayrollPeriodDaySettlement;
 }
 
 export interface PayrollPeriodTotals {
@@ -118,9 +156,16 @@ export interface PayrollPeriodRows {
 	absences: PayrollPeriodAbsence[];
 }
 
+/** Employee-days of the read by settlement state, for the status strip. */
+export interface PayrollPeriodSettlementCounts {
+	settledDays: number;
+	unsettledDays: number;
+}
+
 export interface PayrollPeriodRead extends PayrollPeriodRows {
 	organizationId: string;
 	period: PayrollPeriod;
+	settlement: PayrollPeriodSettlementCounts;
 	blockers: PayrollBlocker[];
 	/** The Overview projection of the same read; its totals equal the rows'. */
 	summary: PayrollWorkspaceSummary;

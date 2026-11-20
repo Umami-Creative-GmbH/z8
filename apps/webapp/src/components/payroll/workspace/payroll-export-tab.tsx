@@ -18,11 +18,12 @@ import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { PayrollBaselinesCard } from "../payroll-baselines-card";
 import { PayrollComparisonCard } from "../payroll-comparison-card";
 import { PayrollRunsCard } from "../payroll-runs-card";
-import type { PayrollTranslate, PayrollWorkspaceAction } from "./state";
+import { PayrollSettlementCard } from "./payroll-settlement-card";
+import type { PayrollPeriodRequest, PayrollTranslate, PayrollWorkspaceAction } from "./state";
 
 /**
  * The Export tab: everything that leaves Z8. The export format, the PDF download,
- * starting an export, unconfirmed payroll runs, baselines and comparison.
+ * starting an export, settling days, unconfirmed payroll runs, baselines and comparison.
  */
 export function PayrollExportTab({
 	dispatch,
@@ -34,6 +35,8 @@ export function PayrollExportTab({
 	onDownloadPdf,
 	onTriggerExport,
 	period,
+	refreshedAt,
+	request,
 	t,
 }: {
 	dispatch: React.Dispatch<PayrollWorkspaceAction>;
@@ -45,6 +48,8 @@ export function PayrollExportTab({
 	onDownloadPdf: () => void;
 	onTriggerExport: () => void;
 	period: PayrollWorkspaceSummary["period"];
+	refreshedAt: string;
+	request: PayrollPeriodRequest;
 	t: PayrollTranslate;
 }) {
 	const hasExportFormats = exportFormats.length > 0;
@@ -125,6 +130,12 @@ export function PayrollExportTab({
 					</div>
 				</CardContent>
 			</Card>
+			<PayrollSettlementCard
+				filtersHaveNoMatches={filtersHaveNoMatches}
+				refreshedAt={refreshedAt}
+				request={request}
+				t={t}
+			/>
 			<PayrollRunsCard />
 			<PayrollBaselinesCard
 				key={formatId}

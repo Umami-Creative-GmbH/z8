@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { buildPayrollPeriodRows } from "./period-rows";
+import { settledDayValues } from "./settlement-values";
 import type {
 	CreditedWorkSpan,
 	PayrollPeriodAbsenceSource,
@@ -277,6 +278,76 @@ describe("buildPayrollPeriodRows", () => {
 			creditedMinutes: 120,
 			requiredMinutes: null,
 			differenceMinutes: null,
+		});
+	});
+});
+
+describe("settlement state of the day rows", () => {
+	const settled = {
+		id: "settled-1",
+		employeeId: "employee-1",
+		date: "2026-11-10",
+		method: "manual" as const,
+		payrollExportJobId: null,
+		settledAt: "2026-12-01T09:00:00.000Z",
+		paid: { creditedMinutes: 480, absences: [] },
+	};
+
+	it("marks a settled employee-day settled with what was paid, and every other day unsettled", () => {
+		const rows = buildPayrollPeriodRows({
+			period: NOVEMBER,
+			employees: [person(), person({ id: "employee-2", name: "Ben" })],
+			work: [span("2026-11-10T08:00:00Z", "2026-11-10T16:00:00Z", 480)],
+			absences: [],
+			settledDays: [settled],
+		});
+
+		const anna = rows.employees.find((row) => row.id === "employee-1");
+		expect(anna?.days.find((day) => day.date === "2026-11-10")?.settlement).toEqual({
+			state: "settled",
+			settledDayId: "settled-1",
+			method: "manual",
+			payrollExportJobId: null,
+			settledAt: "2026-12-01T09:00:00.000Z",
+			paid: { creditedMinutes: 480, absences: [] },
+		});
+		expect(anna?.days.find((day) => day.date === "2026-11-11")?.settlement).toEqual({
+			state: "unsettled",
+		});
+		const ben = rows.employees.find((row) => row.id === "employee-2");
+		expect(ben?.days.every((day) => day.settlement?.state === "unsettled")).toBe(true);
+	});
+
+	it("copies a day's credited minutes and approved absences as the values settling pays", () => {
+		const rows = buildPayrollPeriodRows({
+			period: NOVEMBER,
+			employees: [person()],
+			work: [span("2026-11-10T07:00:00Z", "2026-11-10T11:00:00Z", 240)],
+			absences: [
+				absence({ id: "a-pm", categoryId: "vacation", startPeriod: "pm", endPeriod: "pm" }),
+				absence({
+					id: "a-pending",
+					categoryId: "sick",
+					categoryName: "Sick",
+					categoryType: "sick",
+					startPeriod: "am",
+					endPeriod: "am",
+					approvalState: "pending",
+				}),
+			],
+		});
+
+		const day = rows.employees[0]?.days.find((candidate) => candidate.date === "2026-11-10");
+		expect(day && settledDayValues(day)).toEqual({
+			creditedMinutes: 240,
+			absences: [
+				{
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					categoryType: "vacation",
+					period: "pm",
+				},
+			],
 		});
 	});
 });

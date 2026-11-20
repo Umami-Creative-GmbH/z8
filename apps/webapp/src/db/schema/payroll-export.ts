@@ -266,6 +266,10 @@ export const payrollExportJob = pgTable(
 			.$type<UnmappedOvertimePayout[]>()
 			.default([])
 			.notNull(),
+		// Settled and changed-since-settled employee-days the file left out (#1898)
+		settledDaysLeftOut: integer("settled_days_left_out").default(0).notNull(),
+		// The officer chose "Include settled days" to reissue a file (#1898)
+		includesSettledDays: boolean("includes_settled_days").default(false).notNull(),
 
 		// API export results (for Personio and similar)
 		syncedRecordCount: integer("synced_record_count"), // Successfully synced to external system

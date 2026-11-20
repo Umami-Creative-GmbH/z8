@@ -4,6 +4,7 @@ import {
 	buildPayrollAbsenceDetails,
 	payrollAbsenceDetailDays,
 } from "@/lib/payroll-workspace/absence-details";
+import { daySettlement } from "./settlement-values";
 import type {
 	CreditedWorkSpan,
 	PayrollPeriodAbsence,
@@ -14,6 +15,7 @@ import type {
 	PayrollPeriodEmployeeSource,
 	PayrollPeriodHolidaySource,
 	PayrollPeriodRows,
+	PayrollSettledDaySource,
 } from "./types";
 
 const TWO = BigInt(2);
@@ -39,6 +41,8 @@ export function buildPayrollPeriodRows(input: {
 	/** Daily work requirements by employee, keyed by employee-local date. */
 	requirements?: ReadonlyMap<string, Readonly<Record<string, { requiredMinutes: number }>>>;
 	holidays?: ReadonlyMap<string, readonly PayrollPeriodHolidaySource[]>;
+	/** Active settlements of the employees' days (#1896). */
+	settledDays?: readonly PayrollSettledDaySource[];
 }): PayrollPeriodRows {
 	const dates = periodDates(input.period.startDate, input.period.endDate);
 	const workByEmployee = Map.groupBy(input.work, (row) => row.employeeId);
@@ -46,6 +50,9 @@ export function buildPayrollPeriodRows(input: {
 	const absenceMarksByEmployee = Map.groupBy(
 		absences.flatMap((row) => row.marks),
 		(mark) => mark.employeeId,
+	);
+	const settledByEmployeeDay = new Map(
+		(input.settledDays ?? []).map((row) => [`${row.employeeId}:${row.date}`, row]),
 	);
 
 	const employees = input.employees.map((source): PayrollPeriodEmployee => {
@@ -76,6 +83,7 @@ export function buildPayrollPeriodRows(input: {
 					({ employeeId: _employeeId, date: _date, ...mark }) => mark,
 				),
 				holiday: holiday ? { name: holiday } : null,
+				settlement: daySettlement(settledByEmployeeDay.get(`${source.id}:${date}`)),
 			};
 		});
 		const creditedMinutes = days.reduce((sum, day) => sum + day.creditedMinutes, 0);

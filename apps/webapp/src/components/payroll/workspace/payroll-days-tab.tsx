@@ -1,6 +1,6 @@
 "use client";
 
-import { IconAlertTriangle, IconConfetti } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCircleCheck, IconConfetti } from "@tabler/icons-react";
 import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -89,6 +89,13 @@ function PayrollDaysLegend({ t }: { t: PayrollTranslate }) {
 			<span className="inline-flex items-center gap-1">
 				<IconConfetti aria-hidden="true" className="size-3.5 text-amber-600" />
 				{t("payroll.days.legend.holiday", "Holiday")}
+			</span>
+			<span className="inline-flex items-center gap-1">
+				<IconCircleCheck
+					aria-hidden="true"
+					className="size-3.5 text-emerald-600 dark:text-emerald-400"
+				/>
+				{t("payroll.days.legend.settled", "Settled")}
 			</span>
 			<span className="inline-flex items-center gap-1">
 				<span
