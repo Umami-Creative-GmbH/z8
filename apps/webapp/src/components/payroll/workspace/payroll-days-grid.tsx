@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCircleCheck, IconConfetti } from "@tabler/icons-react";
+import { IconAlertCircle, IconCircleCheck, IconConfetti } from "@tabler/icons-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef } from "react";
 import { Temporal } from "temporal-polyfill";
@@ -263,13 +263,7 @@ function PayrollDayCellContent({
 					{day.creditedMinutes === 0 ? "–" : format.hours(day.creditedMinutes)}
 				</span>
 				<span className="flex shrink-0 items-center gap-0.5">
-					{day.settlement?.state === "settled" ? (
-						<IconCircleCheck
-							aria-hidden="true"
-							data-settled=""
-							className="size-3.5 text-emerald-600 dark:text-emerald-400"
-						/>
-					) : null}
+					<PayrollSettlementMarker day={day} />
 					{day.holiday ? (
 						<IconConfetti aria-hidden="true" className="size-3.5 text-amber-600" />
 					) : null}
@@ -288,6 +282,29 @@ function PayrollDayCellContent({
 			</div>
 		</>
 	);
+}
+
+/** A settled day's check, or the warning of a day changed since settled (#1897). */
+export function PayrollSettlementMarker({ day }: { day: PayrollPeriodDay }) {
+	if (day.settlement?.state === "settled") {
+		return (
+			<IconCircleCheck
+				aria-hidden="true"
+				data-settled=""
+				className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+			/>
+		);
+	}
+	if (day.settlement?.state === "changed_since_settled") {
+		return (
+			<IconAlertCircle
+				aria-hidden="true"
+				data-changed-since-settled=""
+				className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+			/>
+		);
+	}
+	return null;
 }
 
 function AbsenceMarker({ absence }: { absence: PayrollPeriodDayAbsence }) {
@@ -403,7 +420,29 @@ export function dayTitle(
 	if (day.settlement?.state === "settled") {
 		parts.push(t("payroll.days.cell.settled", "Settled"));
 	}
+	if (day.settlement?.state === "changed_since_settled") {
+		parts.push(settledChangeText(day.settlement.change, format, t));
+	}
 	return parts.join("\n");
+}
+
+/** "Changed since settled: +1.5 h, absence changed" (#1897). */
+export function settledChangeText(
+	change: { creditedMinutesDifference: number; absencesChanged: boolean },
+	format: Pick<PayrollDaysFormat, "difference">,
+	t: PayrollTranslate,
+): string {
+	const details = [
+		change.creditedMinutesDifference !== 0
+			? t("payroll.days.cell.changedHours", "{hours} h", {
+					hours: format.difference(change.creditedMinutesDifference),
+				})
+			: null,
+		change.absencesChanged ? t("payroll.days.cell.changedAbsence", "absence changed") : null,
+	].filter(Boolean);
+	return t("payroll.days.cell.changedSinceSettled", "Changed since settled: {details}", {
+		details: details.join(", "),
+	});
 }
 
 export function absencePeriodLabel(

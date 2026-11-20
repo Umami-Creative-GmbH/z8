@@ -22,6 +22,7 @@ import type { BlockerFocusRequest, PayrollTranslate } from "./state";
 function payrollBlockerAction(
 	blocker: PayrollWorkspaceSummary["blockers"][number],
 	formattedDate: string | null,
+	locale: string,
 	t: PayrollTranslate,
 ) {
 	let blockerType: string;
@@ -87,6 +88,14 @@ function payrollBlockerAction(
 			blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
 			actionLabel = t("payroll.blockers.openEmployee", "Open employee");
 			href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
+			break;
+		case "changed_since_settled":
+			// A settled day's values changed after settling (#1897), e.g. "+1.5 h since settled".
+			blockerType = changedSinceSettledLabel(blocker, locale, t);
+			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
+			}`;
 			break;
 	}
 
@@ -196,6 +205,7 @@ export function PayrollBlockersAlert({
 							const { blockerType, actionLabel, href } = payrollBlockerAction(
 								blocker,
 								formattedDate,
+								locale,
 								t,
 							);
 
@@ -263,6 +273,33 @@ export function PayrollBlockersAlert({
 			</section>
 		</Collapsible>
 	);
+}
+
+function changedSinceSettledLabel(
+	blocker: PayrollWorkspaceSummary["blockers"][number],
+	locale: string,
+	t: PayrollTranslate,
+): string {
+	const change = blocker.settledChange;
+	if (!change) return t("payroll.blockers.changedSinceSettled", "Changed since settled");
+	const hours =
+		change.creditedMinutesDifference === 0
+			? null
+			: new Intl.NumberFormat(locale, {
+					maximumFractionDigits: 2,
+					signDisplay: "exceptZero",
+				}).format(change.creditedMinutesDifference / 60);
+	if (hours && change.absencesChanged) {
+		return t(
+			"payroll.blockers.changedSinceSettledHoursAndAbsence",
+			"{hours} h and absence changed since settled",
+			{ hours },
+		);
+	}
+	if (hours) {
+		return t("payroll.blockers.changedSinceSettledHours", "{hours} h since settled", { hours });
+	}
+	return t("payroll.blockers.changedSinceSettledAbsence", "Absence changed since settled");
 }
 
 function formatPayrollBlockerDate(date: string | null, locale: string): string | null {

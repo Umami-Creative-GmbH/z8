@@ -8,13 +8,13 @@ import {
 	type PayrollSettledDayEventKind,
 	type PayrollSettlementMethod,
 	payrollSettledDay,
+	payrollExportJob,
 	payrollSettledDayEvent,
 } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
-import { readPeriodForEmployees } from "./read-period";
+import { readPeriodForEmployees, resolvePeriodEmployeeIds } from "./read-period";
 import { loadActiveSettledDays } from "./settled-days-store";
 import { settledDayValues } from "./settlement-values";
 import type { PayrollPeriodActor, PayrollPeriodScope, PayrollSettledDayValues } from "./types";
@@ -48,6 +48,12 @@ export interface PayrollDateRange {
 export const MAX_SETTLE_RANGE_DAYS = 366;
 /** The most days one unsettle names. */
 export const MAX_UNSETTLE_DAYS = 5_000;
+/**
+ * Unsettling and the history cover the grant's employees whenever they left: a
+ * settlement exists only for a day the grant could settle, so its record stays
+ * reachable, also for a day after the employee's last working day.
+ */
+const ANY_DEPARTURE = "0001-01-01";
 
 export interface SettleDaysPlan {
 	/** Days settled now (preview: days a settle would settle). */
@@ -78,6 +84,8 @@ export interface PayrollSettlementHistoryEntry {
 	kind: PayrollSettledDayEventKind;
 	method: PayrollSettlementMethod;
 	payrollExportJobId: string | null;
+	/** The file name of the export the day was settled with, if any (#1897). */
+	payrollExportFileName: string | null;
 	actorUserId: string | null;
 	actorName: string | null;
 	/** ISO instant. */
@@ -240,9 +248,12 @@ export async function unsettleDays(
 	if (trimmedReason.length === 0) return { status: "reason_required" };
 	const unique = uniqueDays(days);
 	if (!unique || unique.length > MAX_UNSETTLE_DAYS) return { status: "invalid_days" };
-	const scope = await resolveScope(organizationId, actor, [
-		...new Set(unique.map((day) => day.employeeId)),
-	]);
+	const scope = await resolveScope(
+		organizationId,
+		actor,
+		[...new Set(unique.map((day) => day.employeeId))],
+		ANY_DEPARTURE,
+	);
 	if (!scope.ok) return { status: "out_of_scope", employeeIds: scope.employeeIds };
 	if (unique.length === 0) return { status: "unsettled", unsettled: [], notSettled: [] };
 
@@ -321,16 +332,9 @@ export async function settlementHistory(
 	scope: PayrollPeriodScope,
 	range: PayrollDateRange,
 ): Promise<PayrollSettlementHistoryEntry[]> {
-	const allowed = new Set(
-		await resolvePayrollAccessibleEmployeeIds({
-			organizationId,
-			payrollEmployeeId: actor.employeeId,
-		}),
-	);
-	const employeeIds = scope.employeeIds
-		? scope.employeeIds.filter((id) => allowed.has(id))
-		: [...allowed];
-	if (employeeIds.length === 0 || !rangeDates(range)) return [];
+	if (!rangeDates(range)) return [];
+	const employeeIds = await resolvePeriodEmployeeIds(organizationId, actor, ANY_DEPARTURE, scope);
+	if (employeeIds.length === 0) return [];
 	const rows = await db
 		.select({
 			id: payrollSettledDayEvent.id,
@@ -341,6 +345,7 @@ export async function settlementHistory(
 			payrollExportJobId: payrollSettledDayEvent.payrollExportJobId,
 			actorUserId: payrollSettledDayEvent.actorUserId,
 			actorName: user.name,
+			payrollExportFileName: payrollExportJob.fileName,
 			occurredAt: payrollSettledDayEvent.occurredAt,
 			reason: payrollSettledDayEvent.reason,
 			creditedMinutes: payrollSettledDay.creditedMinutes,
@@ -355,6 +360,13 @@ export async function settlementHistory(
 			),
 		)
 		.leftJoin(user, eq(user.id, payrollSettledDayEvent.actorUserId))
+		.leftJoin(
+			payrollExportJob,
+			and(
+				eq(payrollExportJob.id, payrollSettledDayEvent.payrollExportJobId),
+				eq(payrollExportJob.organizationId, payrollSettledDayEvent.organizationId),
+			),
+		)
 		.where(
 			and(
 				eq(payrollSettledDayEvent.organizationId, organizationId),
@@ -396,7 +408,7 @@ async function resolveSettlement(
 ): Promise<ResolvedSettlement | { ok: false; rejection: SettleDaysRejection }> {
 	const dates = rangeDates(range);
 	if (!dates) return { ok: false, rejection: { status: "invalid_range" } };
-	const resolved = await resolveScope(organizationId, actor, scope.employeeIds);
+	const resolved = await resolveScope(organizationId, actor, scope.employeeIds, range.startDate);
 	if (!resolved.ok) {
 		return { ok: false, rejection: { status: "out_of_scope", employeeIds: resolved.employeeIds } };
 	}
@@ -405,17 +417,17 @@ async function resolveSettlement(
 
 /**
  * The requested employees when the grant covers every one of them, otherwise the
- * ones it does not cover. No request means the whole grant.
+ * ones it does not cover. No request means the whole grant. The grant covers its
+ * employees who left after `startDate` too (#1894, spec story 24), so their final
+ * days can be settled and unsettled.
  */
 async function resolveScope(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	requested: readonly string[] | undefined,
+	startDate: string | undefined,
 ): Promise<{ ok: true; employeeIds: string[] } | { ok: false; employeeIds: string[] }> {
-	const allowed = await resolvePayrollAccessibleEmployeeIds({
-		organizationId,
-		payrollEmployeeId: actor.employeeId,
-	});
+	const allowed = startDate ? await resolvePeriodEmployeeIds(organizationId, actor, startDate) : [];
 	const requestedIds = requested ? [...new Set(requested)] : undefined;
 	if (allowed.length === 0) return { ok: false, employeeIds: requestedIds ?? [] };
 	if (!requestedIds) return { ok: true, employeeIds: [...allowed] };

@@ -383,17 +383,27 @@ export async function getPayrollWorkspaceSummary(input: {
 	generatedBy: { id: string; name: string };
 	generatedAt?: DateTime;
 }): Promise<PayrollWorkspaceSummary> {
-	const [{ period, sources }, { buildPayrollPeriodRead }] = await Promise.all([
-		loadPayrollPeriodSources(input),
-		// Imported lazily: the period read builds on this module's summary builder.
-		import("@/lib/payroll-period/period-read"),
-	]);
+	const [{ period, sources }, { buildPayrollPeriodRead }, { loadActiveSettledDays }, { db }] =
+		await Promise.all([
+			loadPayrollPeriodSources(input),
+			// Imported lazily: the period read builds on this module's summary builder.
+			import("@/lib/payroll-period/period-read"),
+			import("@/lib/payroll-period/settled-days-store"),
+			import("@/db"),
+		]);
+	// Settled days give the Overview its changed-since-settled blockers (#1897).
+	const settledDays = await loadActiveSettledDays(db, {
+		organizationId: input.organizationId,
+		employeeIds: sources.employees.map((row) => row.id),
+		startDate: period.start,
+		endDate: period.end,
+	});
 	return buildPayrollPeriodRead({
 		organizationId: input.organizationId,
 		period,
 		generatedAt: input.generatedAt ?? DateTime.utc(),
 		generatedBy: input.generatedBy,
-		sources,
+		sources: { ...sources, settledDays },
 	}).summary;
 }
 

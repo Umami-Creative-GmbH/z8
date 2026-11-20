@@ -254,8 +254,9 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 				date: `2026-11-${day}`,
 			})),
 		);
+		// The correction made after the file shows as changed since settled (#1897).
 		expect((await annaDay("2026-11-10"))?.settlement).toMatchObject({
-			state: "settled",
+			state: "changed_since_settled",
 			method: "export",
 			payrollExportJobId: jobId,
 			paid: { creditedMinutes: 480, absences: [] },

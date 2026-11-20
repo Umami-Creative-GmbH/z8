@@ -115,16 +115,32 @@ export interface PayrollSettledDaySource {
 	paid: PayrollSettledDayValues;
 }
 
+/** How a settled day's current values differ from the copy taken at settling (#1897). */
+export interface PayrollSettledDayChange {
+	/** The day's values now. */
+	current: PayrollSettledDayValues;
+	/** Current minus paid credited minutes; positive when the day has more hours now. */
+	creditedMinutesDifference: number;
+	/** An approved absence was added, removed, or changed its category or day period. */
+	absencesChanged: boolean;
+}
+
+type PayrollPeriodDaySettledFields = { settledDayId: string } & Omit<
+	PayrollSettledDaySource,
+	"id" | "employeeId" | "date"
+>;
+
 /**
- * Whether a day has been paid (#1896). #1897 adds the changed-since-settled state,
- * comparing the day's current values with `paid`.
+ * Whether a day has been paid (#1896), and whether it changed since (#1897): a
+ * settled day whose current values differ from `paid` is changed since settled.
  */
 export type PayrollPeriodDaySettlement =
 	| { state: "unsettled" }
-	| ({ state: "settled"; settledDayId: string } & Omit<
-			PayrollSettledDaySource,
-			"id" | "employeeId" | "date"
-	  >);
+	| ({ state: "settled" } & PayrollPeriodDaySettledFields)
+	| ({
+			state: "changed_since_settled";
+			change: PayrollSettledDayChange;
+	  } & PayrollPeriodDaySettledFields);
 
 export interface PayrollPeriodDay {
 	/** Employee-local calendar date. */
@@ -167,7 +183,10 @@ export interface PayrollPeriodRows {
 
 /** Employee-days of the read by settlement state, for the status strip. */
 export interface PayrollPeriodSettlementCounts {
+	/** Days with an active settlement, changed since settled or not. */
 	settledDays: number;
+	/** The settled days whose values changed since settling (#1897). */
+	changedSinceSettledDays: number;
 	unsettledDays: number;
 }
 

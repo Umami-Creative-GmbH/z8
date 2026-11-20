@@ -351,3 +351,156 @@ describe("settlement state of the day rows", () => {
 		});
 	});
 });
+
+describe("changed since settled", () => {
+	const paidVacationAm = {
+		categoryId: "vacation",
+		categoryName: "Vacation",
+		categoryType: "vacation",
+		period: "am" as const,
+	};
+
+	function settledDay(paid: { creditedMinutes: number; absences: (typeof paidVacationAm)[] }) {
+		return {
+			id: "settled-1",
+			employeeId: "employee-1",
+			date: "2026-11-10",
+			method: "manual" as const,
+			payrollExportJobId: null,
+			settledAt: "2026-12-01T09:00:00.000Z",
+			paid,
+		};
+	}
+
+	function settlementOn10th(input: {
+		work?: CreditedWorkSpan[];
+		absences?: PayrollPeriodAbsenceSource[];
+		paid: { creditedMinutes: number; absences: (typeof paidVacationAm)[] };
+	}) {
+		const rows = buildPayrollPeriodRows({
+			period: NOVEMBER,
+			employees: [person()],
+			work: input.work ?? [],
+			absences: input.absences ?? [],
+			settledDays: [settledDay(input.paid)],
+		});
+		return rows.employees[0]?.days.find((day) => day.date === "2026-11-10")?.settlement;
+	}
+
+	const fourHours = span("2026-11-10T07:00:00Z", "2026-11-10T11:00:00Z", 240);
+	const vacationAm = absence({ startPeriod: "am", endPeriod: "am" });
+
+	it("stays plain settled while the day still has the values that were paid", () => {
+		const settlement = settlementOn10th({
+			work: [fourHours],
+			absences: [vacationAm],
+			paid: { creditedMinutes: 240, absences: [paidVacationAm] },
+		});
+
+		expect(settlement?.state).toBe("settled");
+	});
+
+	it("is changed since settled with the signed difference when the day has more hours", () => {
+		const settlement = settlementOn10th({
+			work: [span("2026-11-10T07:00:00Z", "2026-11-10T12:30:00Z", 330)],
+			paid: { creditedMinutes: 240, absences: [] },
+		});
+
+		expect(settlement).toMatchObject({
+			state: "changed_since_settled",
+			settledDayId: "settled-1",
+			paid: { creditedMinutes: 240, absences: [] },
+			change: {
+				creditedMinutesDifference: 90,
+				absencesChanged: false,
+				current: { creditedMinutes: 330, absences: [] },
+			},
+		});
+	});
+
+	it("is changed since settled with a negative difference when the day has fewer hours", () => {
+		const settlement = settlementOn10th({
+			work: [fourHours],
+			paid: { creditedMinutes: 480, absences: [] },
+		});
+
+		expect(settlement).toMatchObject({
+			state: "changed_since_settled",
+			change: { creditedMinutesDifference: -240, absencesChanged: false },
+		});
+	});
+
+	it("is changed since settled when the absence category changed", () => {
+		const settlement = settlementOn10th({
+			work: [fourHours],
+			absences: [
+				absence({
+					categoryId: "sick",
+					categoryName: "Sick",
+					categoryType: "sick",
+					startPeriod: "am",
+					endPeriod: "am",
+				}),
+			],
+			paid: { creditedMinutes: 240, absences: [paidVacationAm] },
+		});
+
+		expect(settlement).toMatchObject({
+			state: "changed_since_settled",
+			change: { creditedMinutesDifference: 0, absencesChanged: true },
+		});
+	});
+
+	it("is changed since settled when the absence moved to the other half of the day", () => {
+		const settlement = settlementOn10th({
+			work: [fourHours],
+			absences: [absence({ startPeriod: "pm", endPeriod: "pm" })],
+			paid: { creditedMinutes: 240, absences: [paidVacationAm] },
+		});
+
+		expect(settlement).toMatchObject({
+			state: "changed_since_settled",
+			change: { absencesChanged: true },
+		});
+	});
+
+	it("is changed since settled when an absence was added or removed", () => {
+		const added = settlementOn10th({
+			work: [fourHours],
+			absences: [vacationAm],
+			paid: { creditedMinutes: 240, absences: [] },
+		});
+		const removed = settlementOn10th({
+			work: [fourHours],
+			paid: { creditedMinutes: 240, absences: [paidVacationAm] },
+		});
+
+		expect(added).toMatchObject({
+			state: "changed_since_settled",
+			change: { absencesChanged: true },
+		});
+		expect(removed).toMatchObject({
+			state: "changed_since_settled",
+			change: { absencesChanged: true, current: { creditedMinutes: 240, absences: [] } },
+		});
+	});
+
+	it("ignores a pending absence, which was never paid, and a renamed category", () => {
+		const settlement = settlementOn10th({
+			work: [fourHours],
+			absences: [
+				absence({ startPeriod: "am", endPeriod: "am", categoryName: "Annual leave" }),
+				absence({
+					id: "absence-2",
+					categoryId: "sick",
+					startPeriod: "pm",
+					endPeriod: "pm",
+					approvalState: "pending",
+				}),
+			],
+			paid: { creditedMinutes: 240, absences: [paidVacationAm] },
+		});
+
+		expect(settlement?.state).toBe("settled");
+	});
+});

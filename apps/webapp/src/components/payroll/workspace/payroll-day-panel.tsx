@@ -34,8 +34,8 @@ export interface PayrollDaySelection {
 /**
  * The read-only side panel of one employee-day (#1894): the day's figures, absences and
  * holiday from the period read, the work and break records behind them in the employee's
- * timezone, and a link to the employee's calendar, where corrections are made. Nothing
- * can be changed here.
+ * timezone, and a link to the employee's calendar, where corrections are made. No time
+ * data can be changed here; the settlement slot (#1897) can only unsettle the day.
  */
 export function PayrollDayPanel({
 	format,
