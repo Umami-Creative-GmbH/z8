@@ -3,6 +3,7 @@ import {
 	boolean,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -60,6 +61,20 @@ export const organizationDomain = pgTable(
 		uniqueIndex("organizationDomain_org_single_idx").on(table.organizationId),
 	],
 );
+
+// Sign-in methods for the organization's canonical platform domain
+// (`<slug>.<platform root>`), which has no `organization_domain` row.
+// No row means the defaults in `lib/domain/host-auth-config.ts`.
+export const organizationPlatformAuthConfig = pgTable("organization_platform_auth_config", {
+	organizationId: text("organization_id")
+		.primaryKey()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	authConfig: jsonb("auth_config").$type<AuthConfig>().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => currentTimestamp())
+		.notNull(),
+});
 
 // ============================================
 // ENTERPRISE: ORGANIZATION BRANDING

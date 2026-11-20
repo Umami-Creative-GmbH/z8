@@ -110,6 +110,7 @@ function LoginFormArrival({
 				turnstile={{ config: auth.turnstileConfig, token: auth.turnstileToken }}
 				forgotPasswordHref="/forgot-password"
 				signUpHref={withCallbackUrl("/sign-up", auth.callbackUrl)}
+				showSignUp={auth.showSignUp}
 			>
 				<LoginAlternativeAuth
 					requires2FA={auth.requires2FA}

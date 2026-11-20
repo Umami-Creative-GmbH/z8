@@ -81,6 +81,7 @@ import {
 import { guardSCIMSubjectAcquisitions } from "@/lib/scim/projection-guards";
 import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
 import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
+import { signInMethodGuard } from "@/lib/auth/sign-in-method-guard";
 import { turnstileAuthGuard } from "@/lib/turnstile/auth-plugin";
 import { getOrganizationBaseUrl } from "./app-url";
 import { authDatabaseSchema } from "./auth-database-schema";
@@ -421,6 +422,7 @@ export const auth = betterAuth({
 	// the config `pnpm auth:generate` reads.
 	plugins: [
 		turnstileAuthGuard(),
+		signInMethodGuard(), // Methods turned off on an organization's sign-in host (#1885)
 		accountBanPlugin(),
 		reservedEmailGuard(), // Kiosk-only placeholder addresses never sign in (#857)
 		passwordSetupVerification(), // A kiosk-only employee's new address is verified by its setup link (#857)

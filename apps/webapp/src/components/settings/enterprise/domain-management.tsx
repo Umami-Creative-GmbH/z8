@@ -1,14 +1,16 @@
 "use client";
 
-import { IconExternalLink } from "@tabler/icons-react";
+import { IconExternalLink, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteDomainAction,
+	type PlatformAuthConfigResponse,
 	regenerateVerificationTokenAction,
 	storeTurnstileSecretAction,
 	updateDomainAuthConfigAction,
+	updatePlatformAuthConfigAction,
 	verifyDomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
@@ -33,14 +35,49 @@ interface DomainManagementProps {
 	defaultUrls: {
 		canonical: string;
 	};
+	initialPlatformAuth: PlatformAuthConfigResponse;
 }
+
+const PLATFORM_DOMAIN_ID = "canonical";
 
 export function DomainManagement({
 	initialDomains,
 	organizationId,
 	defaultUrls,
+	initialPlatformAuth,
 }: DomainManagementProps) {
 	const { t } = useTranslate();
+	const [platformAuthConfig, setPlatformAuthConfig] = useServerDataState<AuthConfig>(
+		initialPlatformAuth.config,
+	);
+	const [isPlatformAuthDialogOpen, setIsPlatformAuthDialogOpen] = useState(false);
+	const canonicalHost = new URL(defaultUrls.canonical).host;
+	const handleUpdatePlatformAuthConfig = async (_domainId: string, config: AuthConfig) => {
+		// The canonical domain stores sign-in methods only.
+		const methods = {
+			emailPasswordEnabled: config.emailPasswordEnabled,
+			socialProvidersEnabled: config.socialProvidersEnabled,
+			ssoEnabled: config.ssoEnabled,
+			ssoProviderId: config.ssoProviderId,
+			passkeyEnabled: config.passkeyEnabled,
+			registrationEnabled: config.registrationEnabled,
+		};
+		const saved = await actionData(updatePlatformAuthConfigAction({ config: methods })).catch(
+			(error: unknown) => {
+				toast.error(
+					enterpriseErrorMessage(t, error, [
+						"settings.enterprise.domains.authConfigUpdateFailed",
+						"Failed to update auth configuration",
+					]),
+				);
+				return null;
+			},
+		);
+		if (!saved) return;
+		setPlatformAuthConfig(saved);
+		toast.success(t("settings.enterprise.domains.authConfigUpdated", "Auth configuration updated"));
+		setIsPlatformAuthDialogOpen(false);
+	};
 	// Since each org can only have 1 domain, we track it as a single domain
 	const [domain, setDomain] = useServerDataState<Domain | null>(initialDomains[0] ?? null);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -129,16 +166,16 @@ export function DomainManagement({
 
 		const authUpdated = await actionData(updateDomainAuthConfigAction({ domainId, config }))
 			.then(() => true)
-			.catch(() => false);
-		if (!authUpdated) {
-			toast.error(
-				t(
-					"settings.enterprise.domains.authConfigUpdateFailed",
-					"Failed to update auth configuration",
-				),
-			);
-			return;
-		}
+			.catch((error: unknown) => {
+				toast.error(
+					enterpriseErrorMessage(t, error, [
+						"settings.enterprise.domains.authConfigUpdateFailed",
+						"Failed to update auth configuration",
+					]),
+				);
+				return false;
+			});
+		if (!authUpdated) return;
 
 		setDomain((prev) => (prev ? { ...prev, authConfig: config } : null));
 		toast.success(t("settings.enterprise.domains.authConfigUpdated", "Auth configuration updated"));
@@ -186,12 +223,23 @@ export function DomainManagement({
 								<p className="text-sm font-medium">{label}</p>
 								<p className="truncate font-mono text-muted-foreground text-sm">{url}</p>
 							</div>
-							<Button asChild variant="outline" size="sm" className="w-fit">
-								<a href={url} target="_blank" rel="noreferrer">
-									<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
-									{t("common.open", "Open")}
-								</a>
-							</Button>
+							<div className="flex flex-wrap gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									className="w-fit"
+									onClick={() => setIsPlatformAuthDialogOpen(true)}
+								>
+									<IconSettings className="mr-2 size-4" aria-hidden="true" />
+									{t("settings.enterprise.domains.signInMethods", "Sign-in methods")}
+								</Button>
+								<Button asChild variant="outline" size="sm" className="w-fit">
+									<a href={url} target="_blank" rel="noreferrer">
+										<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
+										{t("common.open", "Open")}
+									</a>
+								</Button>
+							</div>
 						</div>
 					))}
 				</CardContent>
@@ -246,7 +294,18 @@ export function DomainManagement({
 				}
 				domain={authConfigDialog.domain}
 				organizationId={organizationId}
+				ssoProviderAvailable={initialPlatformAuth.ssoProviderAvailable}
 				onSave={handleUpdateAuthConfig}
+			/>
+
+			<DomainAuthConfigDialog
+				open={isPlatformAuthDialogOpen}
+				onOpenChange={setIsPlatformAuthDialogOpen}
+				domain={{ id: PLATFORM_DOMAIN_ID, domain: canonicalHost, authConfig: platformAuthConfig }}
+				organizationId={organizationId}
+				variant="platform"
+				ssoProviderAvailable={initialPlatformAuth.ssoProviderAvailable}
+				onSave={handleUpdatePlatformAuthConfig}
 			/>
 
 			<EnterpriseDeleteConfirmDialog

@@ -4,9 +4,9 @@ import { organization } from "@/db/auth-schema";
 import { organizationBranding } from "@/db/schema";
 import { env } from "@/env";
 import { getConfiguredProviders } from "@/lib/social-oauth";
+import { getPlatformAuthConfig } from "./host-auth-config";
 import {
 	type AuthConfig,
-	DEFAULT_AUTH_CONFIG,
 	type OrganizationBranding,
 	type SocialOAuthConfigured,
 	type TurnstileConfig,
@@ -208,9 +208,12 @@ export async function getPlatformDomainConfig(
 		return null;
 	}
 
-	const brandingRecord = await db.query.organizationBranding.findFirst({
-		where: eq(organizationBranding.organizationId, organizationRecord.id),
-	});
+	const [brandingRecord, authConfig] = await Promise.all([
+		db.query.organizationBranding.findFirst({
+			where: eq(organizationBranding.organizationId, organizationRecord.id),
+		}),
+		getPlatformAuthConfig(organizationRecord.id),
+	]);
 
 	let branding: OrganizationBranding | null = null;
 	if (brandingRecord) {
@@ -238,7 +241,7 @@ export async function getPlatformDomainConfig(
 		domain: classification.hostname,
 		canonicalDomain,
 		isCanonical: classification.hostname === canonicalDomain,
-		authConfig: DEFAULT_AUTH_CONFIG,
+		authConfig,
 		branding,
 		socialOAuthConfigured,
 		turnstile: {

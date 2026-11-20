@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 	identity: vi.fn(),
 	domains: vi.fn(),
 	branding: vi.fn(),
+	platformAuthConfig: vi.fn(),
 	providers: vi.fn(),
 	social: vi.fn(),
 	slack: vi.fn(),
@@ -70,6 +71,7 @@ vi.mock("../enterprise/actions", () => ({
 	getEnterpriseIdentitySetupAction: mocks.identity,
 	listDomainsAction: mocks.domains,
 	getBrandingAction: mocks.branding,
+	getPlatformAuthConfigAction: mocks.platformAuthConfig,
 	listSSOProvidersAction: mocks.providers,
 	listSocialOAuthConfigsAction: mocks.social,
 }));
@@ -211,6 +213,7 @@ beforeEach(() => {
 	mocks.providers.mockResolvedValue({ success: true, data: [] });
 	mocks.domains.mockResolvedValue({ success: true, data: [] });
 	mocks.branding.mockResolvedValue({ success: true, data: { appName: "Z8" } });
+	mocks.platformAuthConfig.mockResolvedValue({ success: true, data: null });
 	mocks.social.mockResolvedValue({ success: true, data: [] });
 	for (const loader of [mocks.slack, mocks.teams, mocks.discord])
 		loader.mockResolvedValue({ success: true, data: null });
