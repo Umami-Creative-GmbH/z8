@@ -129,6 +129,10 @@ export function usePayrollExportActions({
 			void queryClient.invalidateQueries({
 				queryKey: ["payroll", "comparisonBaselines"],
 			});
+			// A completed file can now be confirmed as paid (#1899).
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.payroll.exportsToConfirm(),
+			});
 			// A payroll run may now include expense reports (#852), which changes readiness (#854).
 			void queryClient.invalidateQueries({
 				queryKey: queryKeys.travelExpenses.payrollRuns(),

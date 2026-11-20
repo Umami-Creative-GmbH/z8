@@ -97,6 +97,12 @@ vi.mock("@/lib/payroll-collection/payroll-export-work-input", () => ({
 	readPayrollExportWorkInput: mockState.readInput,
 }));
 
+// The days a file carried (#1899) are tested on PostgreSQL with confirming it as paid.
+vi.mock("@/lib/payroll-period/carried-days", () => ({
+	readExportCarriedDays: vi.fn(async () => []),
+	insertExportCarriedDays: vi.fn(async () => undefined),
+}));
+
 // The custom field identifier read (#821) has its own PostgreSQL suite.
 vi.mock("./personnel-identifier-store", () => ({
 	readPersonnelIdentifierValues: vi.fn(),

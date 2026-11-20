@@ -15,6 +15,11 @@ import type { PayrollExportJobPersonnelIdentifier } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
+	insertExportCarriedDays,
+	type PayrollCarriedDay,
+	readExportCarriedDays,
+} from "@/lib/payroll-period/carried-days";
+import {
 	insertPayrollExportWorkInput,
 	PayrollExportWorkInputIntegrityError,
 	readPayrollExportWorkInput,
@@ -543,6 +548,17 @@ export async function processExportJob(
 		// BRANCH: File-based formatter (DATEV, etc.)
 		if (formatter) {
 			const formatId = job.config.formatId;
+			// The employee-days the file carries (#1899), recorded with the completed job.
+			const carriedDays = await readExportCarriedDays({
+				organizationId: job.organizationId,
+				startDate: job.filters.dateRange.start,
+				endDate: job.filters.dateRange.end,
+				employeeIds: await resolvePayrollRunEmployeeIds(
+					job.organizationId,
+					filters,
+				),
+				collectedWork: storedInput?.work,
+			});
 			// Overtime payouts (#1001), read now like absences; the formatter maps them.
 			const overtimePayouts = overtimePayoutCodeFormat(formatId)
 				? await identify.rows(
@@ -589,6 +605,7 @@ export async function processExportJob(
 					baselineWindows,
 					baselineEmployeeIds,
 					employeeWindowsUnavailable,
+					carriedDays,
 				);
 			}
 
@@ -642,6 +659,7 @@ export async function processExportJob(
 					baselineWindows,
 					baselineEmployeeIds,
 					employeeWindowsUnavailable,
+					carriedDays,
 				);
 			});
 			// After the commit (#855): officers learn of the run and of the reports it left out.
@@ -718,6 +736,7 @@ async function writeFileExport(
 	baselineWindows?: PayrollBaselineEvidence["employeeWindows"],
 	baselineEmployeeIds: string[] = [],
 	employeeWindowsUnavailable?: true,
+	carriedDays: readonly PayrollCarriedDay[] = [],
 ): Promise<{ result?: ExportResult; downloadUrl?: string; s3Key?: string }> {
 	const contentBuffer =
 		typeof exportResult.content === "string"
@@ -785,6 +804,13 @@ async function writeFileExport(
 				},
 			});
 		}
+		// What the file carried commits with its completion (#1899), so a confirmation
+		// as paid never settles days of an attempt that failed.
+		await insertExportCarriedDays(tx, {
+			organizationId: job.organizationId,
+			jobId: job.id,
+			days: carriedDays,
+		});
 		await tx
 			.update(payrollExportJob)
 			.set({
