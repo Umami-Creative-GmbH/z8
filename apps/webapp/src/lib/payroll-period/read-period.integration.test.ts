@@ -14,6 +14,7 @@ vi.mock("next/cache", async (importOriginal) =>
 );
 
 const { readPeriod } = await import("./read-period");
+const { readPeriodDay } = await import("./read-day");
 
 const admin = integrationAdminPool();
 const ORG = "t1893-org";
@@ -189,6 +190,137 @@ describe("readPeriod on PostgreSQL", () => {
 		});
 
 		expect(read.employees.map((row) => row.id)).toEqual([ids.anna]);
+	});
+
+	describe("employees who left (#1894)", () => {
+		const left = {
+			mid: "d1893000-0000-4000-8000-000000000011",
+			before: "d1893000-0000-4000-8000-000000000012",
+			uncovered: "d1893000-0000-4000-8000-000000000013",
+		} as const;
+
+		async function departedEmployee(
+			id: string,
+			userId: string,
+			number: string,
+			lastWorkingDay: string,
+		) {
+			await admin.query(
+				`insert into "user" (id, name, email, created_at, updated_at)
+				 values ($1, $1, $1 || '@example.test', now(), now()) on conflict (id) do nothing`,
+				[userId],
+			);
+			await admin.query(
+				`insert into employee (id, user_id, organization_id, role, employee_number, is_active, updated_at)
+				 values ($1, $2, $3, 'employee', $4, false, now())`,
+				[id, userId, ORG, number],
+			);
+			// The next local midnight in Berlin winter time.
+			const cutoff = `${lastWorkingDay}T23:00:00Z`;
+			const { rows } = await admin.query(
+				`insert into employee_employment_period
+				   (organization_id, employee_id, status, started_at, ended_at, start_provenance)
+				 values ($1, $2, 'closed', '2026-01-01T00:00:00Z', $3, 'recorded') returning id`,
+				[ORG, id, cutoff],
+			);
+			await admin.query(
+				`insert into employee_departure
+				   (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+				    cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
+				 values ($1, $2, $3, 'scheduled', $4, 'Europe/Berlin', $5, 't1893-owner', gen_random_uuid(),
+				         'test', 1, 'effective', $5)`,
+				[ORG, id, rows[0].id, lastWorkingDay, cutoff],
+			);
+		}
+
+		beforeEach(async () => {
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values ('t1893-m-holder', $1, 't1893-holder', 'member', 'approved', now())`,
+				[ORG],
+			);
+			await departedEmployee(left.mid, "t1893-left-mid", "LMD-1", "2026-11-13");
+			await departedEmployee(left.before, "t1893-left-before", "LBF-1", "2026-10-30");
+			await departedEmployee(left.uncovered, "t1893-left-uncovered", "LUN-1", "2026-11-13");
+			const { rows: grant } = await admin.query(
+				"select id from payroll_access_grant where organization_id = $1",
+				[ORG],
+			);
+			await admin.query(
+				`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+				 values ($1, $2, $3, 't1893-owner'), ($1, $2, $4, 't1893-owner')`,
+				[ORG, grant[0].id, left.mid, left.before],
+			);
+			await work(ORG, left.mid, "2026-11-12T08:00:00Z", "2026-11-12T12:00:00Z", 240);
+			await work(ORG, left.before, "2026-10-29T08:00:00Z", "2026-10-29T12:00:00Z", 240);
+			await work(ORG, left.uncovered, "2026-11-12T08:00:00Z", "2026-11-12T12:00:00Z", 240);
+		});
+
+		afterAll(async () => {
+			await admin.query('delete from "user" where id like $1', ["t1893-left-%"]);
+		});
+
+		it("reads a covered employee who left mid-period, marked with the last working day", async () => {
+			const read = await readPeriod(ORG, holder, november);
+
+			expect(read.employees.map((row) => [row.id, row.departure ?? null])).toEqual([
+				[ids.anna, null],
+				[left.mid, { lastWorkingDay: "2026-11-13" }],
+			]);
+			const leftMid = read.employees.find((row) => row.id === left.mid);
+			expect(leftMid?.days.find((day) => day.date === "2026-11-12")?.creditedMinutes).toBe(240);
+			expect(read.summary.employees.map((row) => row.id)).toContain(left.mid);
+		});
+
+		it("never reads an employee who left before the period or outside the grant", async () => {
+			const read = await readPeriod(ORG, holder, november, {
+				employeeIds: [ids.anna, left.mid, left.before, left.uncovered],
+			});
+
+			expect(read.employees.map((row) => row.id)).not.toContain(left.before);
+			expect(read.employees.map((row) => row.id)).not.toContain(left.uncovered);
+		});
+	});
+
+	describe("the records of one employee-day (#1894)", () => {
+		it("lists work and break records touching the local day, with local times", async () => {
+			await admin.query(
+				`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
+				   duration_minutes, approval_state, origin, created_by, updated_by, updated_at)
+				 values (gen_random_uuid(), $1, $2, 'break', '2026-11-10T01:00:00Z', '2026-11-10T01:30:00Z',
+				   30, 'approved', 'manual', 't1893-owner', 't1893-owner', now())`,
+				[ORG, ids.anna],
+			);
+
+			const day = await readPeriodDay(ORG, holder, { employeeId: ids.anna, date: "2026-11-10" });
+
+			expect(day).toMatchObject({
+				employeeId: ids.anna,
+				date: "2026-11-10",
+				timezone: "Europe/Berlin",
+			});
+			expect(
+				day?.records.map((record) => [
+					record.kind,
+					record.start,
+					record.end,
+					record.durationMinutes,
+					record.approvalState,
+				]),
+			).toEqual([
+				["work", "2026-11-09T22:00", "2026-11-10T06:00", 480, "approved"],
+				["break", "2026-11-10T02:00", "2026-11-10T02:30", 30, "approved"],
+			]);
+		});
+
+		it("reads nothing for an employee outside the grant or the organization", async () => {
+			expect(
+				await readPeriodDay(ORG, holder, { employeeId: ids.ben, date: "2026-11-10" }),
+			).toBeNull();
+			expect(
+				await readPeriodDay(OTHER_ORG, holder, { employeeId: ids.foreign, date: "2026-11-10" }),
+			).toBeNull();
+		});
 	});
 
 	it("reads nobody for an actor without a grant in the organization", async () => {

@@ -23,6 +23,10 @@ export interface PayrollDaysFormat {
 	difference: (minutes: number) => string;
 	weekday: (date: string) => string;
 	dayOfMonth: (date: string) => string;
+	/** For example "Tuesday, 10 November 2026". */
+	longDate: (date: string) => string;
+	/** For example "10 Nov". */
+	shortDate: (date: string) => string;
 }
 
 export function payrollDaysFormat(locale: string): PayrollDaysFormat {
@@ -33,6 +37,12 @@ export function payrollDaysFormat(locale: string): PayrollDaysFormat {
 	});
 	const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
 	const day = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
+	const longDate = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
+	const shortDate = new Intl.DateTimeFormat(locale, {
+		day: "numeric",
+		month: "short",
+		timeZone: "UTC",
+	});
 	// A calendar date shown as itself: formatted at UTC midnight in UTC, never the viewer's zone.
 	const asDate = (date: string) => new Date(`${date}T00:00:00Z`);
 	return {
@@ -40,7 +50,14 @@ export function payrollDaysFormat(locale: string): PayrollDaysFormat {
 		difference: (minutes) => difference.format(minutes / 60),
 		weekday: (date) => weekday.format(asDate(date)),
 		dayOfMonth: (date) => day.format(asDate(date)),
+		longDate: (date) => longDate.format(asDate(date)),
+		shortDate: (date) => shortDate.format(asDate(date)),
 	};
+}
+
+/** Whether the day lies after the last working day of an employee who left (#1894). */
+export function isAfterDeparture(employee: PayrollPeriodEmployee, date: string): boolean {
+	return employee.departure ? date > employee.departure.lastWorkingDay : false;
 }
 
 function isWeekend(date: string): boolean {
@@ -55,11 +72,14 @@ export function PayrollDaysGrid({
 	dates,
 	employees,
 	format,
+	onSelectDay,
 	t,
 }: {
 	dates: readonly string[];
 	employees: readonly PayrollPeriodEmployee[];
 	format: PayrollDaysFormat;
+	/** Opens the day's side panel (#1894). */
+	onSelectDay: (employee: PayrollPeriodEmployee, day: PayrollPeriodDay) => void;
 	t: PayrollTranslate;
 }) {
 	// The virtualizer changes its rows in place, so the compiler must not memoize this component.
@@ -145,9 +165,17 @@ export function PayrollDaysGrid({
 								<span className="truncate text-muted-foreground text-xs">
 									{[employee.employeeNumber, employee.teamName].filter(Boolean).join(" · ")}
 								</span>
+								<PayrollLeftOn employee={employee} format={format} t={t} />
 							</div>
 							{employee.days.map((day) => (
-								<PayrollDayCell key={day.date} day={day} format={format} t={t} />
+								<PayrollDayCell
+									key={day.date}
+									afterDeparture={isAfterDeparture(employee, day.date)}
+									day={day}
+									format={format}
+									onSelect={() => onSelectDay(employee, day)}
+									t={t}
+								/>
 							))}
 							<PayrollTotalCell employee={employee} format={format} t={t} />
 						</div>
@@ -158,35 +186,78 @@ export function PayrollDaysGrid({
 	);
 }
 
-function PayrollDayCell({
-	day,
+/** "Left on …" for an employee who left (#1894). */
+export function PayrollLeftOn({
+	employee,
 	format,
 	t,
 }: {
-	day: PayrollPeriodDay;
+	employee: PayrollPeriodEmployee;
 	format: PayrollDaysFormat;
 	t: PayrollTranslate;
 }) {
-	const pending = day.absences.some((absence) => absence.approvalState === "pending");
-	const description = dayTitle(day, format, t);
+	if (!employee.departure) return null;
 	return (
-		<div
-			role="cell"
-			title={description}
-			aria-label={description}
-			className={cn(
-				"flex min-w-0 flex-col justify-between gap-0.5 px-1.5 py-1 text-xs tabular-nums",
-				isWeekend(day.date) && "bg-muted/50",
-			)}
-			style={
-				pending
-					? {
-							backgroundImage:
-								"repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in oklab, currentColor 10%, transparent) 5px 7px)",
-						}
-					: undefined
-			}
-		>
+		<span className="truncate text-amber-700 text-xs dark:text-amber-400">
+			{t("payroll.days.leftOn", "Left on {date}", {
+				date: format.shortDate(employee.departure.lastWorkingDay),
+			})}
+		</span>
+	);
+}
+
+function PayrollDayCell({
+	afterDeparture,
+	day,
+	format,
+	onSelect,
+	t,
+}: {
+	afterDeparture: boolean;
+	day: PayrollPeriodDay;
+	format: PayrollDaysFormat;
+	onSelect: () => void;
+	t: PayrollTranslate;
+}) {
+	const pending = day.absences.some((absence) => absence.approvalState === "pending");
+	const description = dayTitle(day, format, t, afterDeparture);
+	return (
+		<div role="cell" className="min-w-0">
+			<button
+				type="button"
+				title={description}
+				aria-label={description}
+				onClick={onSelect}
+				className={cn(
+					"flex h-full w-full min-w-0 flex-col justify-between gap-0.5 px-1.5 py-1 text-left text-xs tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+					isWeekend(day.date) && "bg-muted/50",
+					afterDeparture && "bg-muted text-muted-foreground",
+				)}
+				style={
+					pending
+						? {
+								backgroundImage:
+									"repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in oklab, currentColor 10%, transparent) 5px 7px)",
+							}
+						: undefined
+				}
+			>
+				<PayrollDayCellContent day={day} format={format} />
+			</button>
+		</div>
+	);
+}
+
+/** The worked hours, required hours, difference, holiday and absence markers of one day. */
+function PayrollDayCellContent({
+	day,
+	format,
+}: {
+	day: PayrollPeriodDay;
+	format: PayrollDaysFormat;
+}) {
+	return (
+		<>
 			<div className="flex items-center justify-between gap-1">
 				<span className={cn("font-medium", day.creditedMinutes === 0 && "text-muted-foreground")}>
 					{day.creditedMinutes === 0 ? "–" : format.hours(day.creditedMinutes)}
@@ -206,7 +277,7 @@ function PayrollDayCell({
 					<AbsenceMarker key={absence.absenceId} absence={absence} />
 				))}
 			</div>
-		</div>
+		</>
 	);
 }
 
@@ -232,7 +303,13 @@ function AbsenceMarker({ absence }: { absence: PayrollPeriodDayAbsence }) {
 	);
 }
 
-function DifferenceValue({ minutes, format }: { minutes: number; format: PayrollDaysFormat }) {
+export function DifferenceValue({
+	minutes,
+	format,
+}: {
+	minutes: number;
+	format: PayrollDaysFormat;
+}) {
 	return (
 		<span
 			className={cn(
@@ -277,10 +354,19 @@ function PayrollTotalCell({
 }
 
 /** The cell's full meaning as text, for the tooltip and assistive technology. */
-function dayTitle(day: PayrollPeriodDay, format: PayrollDaysFormat, t: PayrollTranslate): string {
+export function dayTitle(
+	day: PayrollPeriodDay,
+	format: PayrollDaysFormat,
+	t: PayrollTranslate,
+	afterDeparture = false,
+): string {
 	const parts = [
+		format.longDate(day.date),
 		t("payroll.days.cell.worked", "Worked {hours} h", { hours: format.hours(day.creditedMinutes) }),
 	];
+	if (afterDeparture) {
+		parts.push(t("payroll.days.cell.afterDeparture", "After the last working day"));
+	}
 	if (day.requiredMinutes !== null) {
 		parts.push(
 			t("payroll.days.cell.required", "Required {hours} h", {
@@ -308,7 +394,7 @@ function dayTitle(day: PayrollPeriodDay, format: PayrollDaysFormat, t: PayrollTr
 	return parts.join("\n");
 }
 
-function absencePeriodLabel(
+export function absencePeriodLabel(
 	period: PayrollPeriodDayAbsence["period"],
 	t: PayrollTranslate,
 ): string | null {

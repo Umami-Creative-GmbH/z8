@@ -11,6 +11,7 @@ import {
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
 import {
 	intersectPayrollScope,
 	resolvePayrollAccessibleEmployeeIds,
@@ -37,9 +38,10 @@ const MAX_ZONE_OFFSET_HOURS = 14;
  * the difference, absences and holidays, plus totals, the absence list, blockers and the
  * Overview summary built from the same rows.
  *
- * `scope.employeeIds` narrows the grant's scope and never widens it. Every read is
- * filtered by `organizationId`; an actor without an active grant in the organization
- * reads nobody.
+ * `scope.employeeIds` narrows the grant's scope and never widens it. Employees of the
+ * grant who left during or after the period are read when they have data in it, with
+ * their last working day (#1894). Every read is filtered by `organizationId`; an actor
+ * without an active grant in the organization reads nobody.
  */
 export async function readPeriod(
 	organizationId: string,
@@ -47,15 +49,52 @@ export async function readPeriod(
 	period: PayrollPeriodRange,
 	scope: PayrollPeriodScope = {},
 ): Promise<PayrollPeriodRead> {
-	const allowedEmployeeIds = await resolvePayrollAccessibleEmployeeIds({
-		organizationId,
-		payrollEmployeeId: actor.employeeId,
-	});
 	return readPeriodForEmployees(organizationId, actor, period, {
-		employeeIds: intersectPayrollScope({
-			allowedEmployeeIds,
-			requestedEmployeeIds: scope.employeeIds ? [...scope.employeeIds] : undefined,
+		employeeIds: await resolvePeriodEmployeeIds(organizationId, actor, period.startDate, scope),
+	});
+}
+
+/**
+ * The employees a payroll period read covers: the actor's payroll access grant scope,
+ * plus the grant's employees who left during or after the period (#1894), as the
+ * payroll export covers them. `scope.employeeIds` narrows it and never widens it.
+ */
+export async function resolvePeriodEmployeeIds(
+	organizationId: string,
+	actor: Pick<PayrollPeriodActor, "employeeId">,
+	startDate: string,
+	scope: PayrollPeriodScope = {},
+): Promise<string[]> {
+	const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
+		resolvePayrollAccessibleEmployeeIds({
+			organizationId,
+			payrollEmployeeId: actor.employeeId,
 		}),
+		listDepartedPeriodEmployees(organizationId, actor.employeeId, startDate),
+	]);
+	return intersectPayrollScope({
+		allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
+		requestedEmployeeIds: scope.employeeIds ? [...scope.employeeIds] : undefined,
+	});
+}
+
+/** The grant's employees who left after the start of `startDate`. */
+async function listDepartedPeriodEmployees(
+	organizationId: string,
+	actorEmployeeId: string,
+	startDate: string,
+): Promise<string[]> {
+	const { db } = await import("@/db");
+	const [actor] = await db
+		.select({ userId: employee.userId })
+		.from(employee)
+		.where(and(eq(employee.organizationId, organizationId), eq(employee.id, actorEmployeeId)))
+		.limit(1);
+	if (!actor) return [];
+	return listDepartedEmployeesCoveredForExport(db, {
+		organizationId,
+		actorUserId: actor.userId,
+		fromDate: startDate,
 	});
 }
 

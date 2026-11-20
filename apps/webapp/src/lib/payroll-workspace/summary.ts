@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -8,13 +8,19 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
+	employeeDeparture,
 	payrollExportConfig,
 	team,
 	timeRecord,
 	timeRecordAbsence,
 	userSettings,
 } from "@/db/schema";
-import { type Instant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import {
 	findOpenDepartureClockRepairs,
 	type OpenDepartureClockRepair,
@@ -40,6 +46,7 @@ import type { PayrollPeriodSources } from "@/lib/payroll-period/period-read";
 import type {
 	CreditedWorkSpan,
 	PayrollPeriodAbsenceSource,
+	PayrollPeriodDeparture,
 	PayrollPeriodEmployeeSource,
 } from "@/lib/payroll-period/types";
 import { payrollIdentifierCustomFieldId } from "@/lib/payroll-export/personnel-identifier";
@@ -600,23 +607,25 @@ async function getEmployeeRows(
 			teamName: team.name,
 			contractType: employee.contractType,
 			userTimezone: userSettings.timezone,
+			isActive: employee.isActive,
 		})
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
 		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 		.leftJoin(team, and(eq(employee.teamId, team.id), eq(team.organizationId, organizationId)))
+		// The grant scope decides who is read; it includes employees who left only when
+		// the caller resolved them deliberately (#1894).
 		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-				inArray(employee.id, allowedEmployeeIds),
-			),
+			and(eq(employee.organizationId, organizationId), inArray(employee.id, allowedEmployeeIds)),
 		);
 
-	const contractTypes = await loadCurrentContractTypes(db, {
-		organizationId,
-		employees: rows,
-	});
+	const [contractTypes, departures] = await Promise.all([
+		loadCurrentContractTypes(db, { organizationId, employees: rows }),
+		loadLastWorkingDays(
+			organizationId,
+			rows.flatMap((row) => (row.isActive ? [] : [row.id])),
+		),
+	]);
 
 	return rows.map((row) => ({
 		id: row.id,
@@ -625,7 +634,54 @@ async function getEmployeeRows(
 		teamName: row.teamName,
 		contractType: contractTypes.get(row.id) ?? row.contractType,
 		timezone: resolveEffectiveTimezone(row.userTimezone, organizationTimezone),
+		departure: departureOf(departures.get(row.id)),
 	}));
+}
+
+function departureOf(lastWorkingDay: string | undefined): PayrollPeriodDeparture | null {
+	return lastWorkingDay ? { lastWorkingDay } : null;
+}
+
+/**
+ * The last working day of each employee's latest effective departure, for employees
+ * who have left. A departure without a recorded last working day ends on the local
+ * day of its cutoff, in the departure's frozen zone.
+ */
+async function loadLastWorkingDays(
+	organizationId: string,
+	employeeIds: readonly string[],
+): Promise<Map<string, string>> {
+	if (employeeIds.length === 0) return new Map();
+	const { db } = await import("@/db");
+	const rows = await db
+		.select({
+			employeeId: employeeDeparture.employeeId,
+			lastWorkingDay: employeeDeparture.lastWorkingDay,
+			cutoffAt: employeeDeparture.cutoffAt,
+			timezone: employeeDeparture.timezone,
+		})
+		.from(employeeDeparture)
+		.where(
+			and(
+				eq(employeeDeparture.organizationId, organizationId),
+				eq(employeeDeparture.status, "effective"),
+				inArray(employeeDeparture.employeeId, [...employeeIds]),
+			),
+		)
+		.orderBy(desc(employeeDeparture.cutoffAt));
+	const result = new Map<string, string>();
+	for (const row of rows) {
+		if (result.has(row.employeeId)) continue;
+		result.set(
+			row.employeeId,
+			row.lastWorkingDay ??
+				plainDateAt(
+					instantFromDate(row.cutoffAt).subtract({ milliseconds: 1 }),
+					row.timezone,
+				).toString(),
+		);
+	}
+	return result;
 }
 
 async function getWorkRows(

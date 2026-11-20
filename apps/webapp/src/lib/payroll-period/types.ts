@@ -30,6 +30,15 @@ export interface PayrollPeriodScope {
 export interface PayrollPeriodEmployeeSource extends PayrollSummaryEmployeeSource {
 	/** Effective zone whose local days the employee's hours are attributed to. */
 	timezone: string;
+	/**
+	 * Set for an employee who has left (#1894): the last working day of the effective
+	 * departure, an employee-local date. Absent or null for an employee who has not left.
+	 */
+	departure?: PayrollPeriodDeparture | null;
+}
+
+export interface PayrollPeriodDeparture {
+	lastWorkingDay: string;
 }
 
 /**
@@ -116,6 +125,31 @@ export interface PayrollPeriodAbsence extends PayrollPeriodAbsenceSource {
 export interface PayrollPeriodRows {
 	employees: PayrollPeriodEmployee[];
 	absences: PayrollPeriodAbsence[];
+}
+
+/** One work or break record touching an employee-local day (#1894 day side panel). */
+export interface PayrollPeriodDayRecord {
+	id: string;
+	kind: "work" | "break";
+	approvalState: "draft" | "pending" | "approved";
+	/** Local wall clock in the employee's zone, `YYYY-MM-DDTHH:mm`. */
+	start: string;
+	/** Null while the record is still running. */
+	end: string | null;
+	/** Stored minutes of the whole record, null while it runs. */
+	durationMinutes: number | null;
+	/** For breaks: whether the break is paid. */
+	isPaid: boolean | null;
+}
+
+/** The records behind one employee-day of a payroll period. */
+export interface PayrollPeriodDayDetail {
+	employeeId: string;
+	/** Employee-local calendar date. */
+	date: string;
+	/** The zone the local times are shown in. */
+	timezone: string;
+	records: PayrollPeriodDayRecord[];
 }
 
 export interface PayrollPeriodRead extends PayrollPeriodRows {
