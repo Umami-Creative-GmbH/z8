@@ -2,6 +2,7 @@
 // TYPESCRIPT TYPE DEFINITIONS
 // ============================================
 
+import type { SsoButtonIconName } from "@/lib/domain/sso-button";
 import type { PolicyClockOutBreakSnapshot } from "@/lib/time-tracking/policy-clock-out-break-snapshot.types";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot.types";
 
@@ -12,6 +13,8 @@ export type AuthConfig = {
 	socialProvidersEnabled: string[]; // ["google", "github", "linkedin", "apple"]
 	ssoEnabled: boolean;
 	ssoProviderId?: string; // Reference to ssoProvider.providerId
+	ssoButtonLabel?: string;
+	ssoButtonIcon?: SsoButtonIconName;
 	passkeyEnabled: boolean;
 	// New accounts may be created on this host. Missing means true (configs saved before #1885).
 	registrationEnabled?: boolean;
