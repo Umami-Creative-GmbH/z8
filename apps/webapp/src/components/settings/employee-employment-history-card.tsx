@@ -315,8 +315,13 @@ function CancelEmploymentChangeDialog({
 							"settings.employmentHistory.cancelConfirmSummary",
 							"{hours} / week · {workModel} · {reviewState}",
 							{
-								hours: formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes),
-								workModel: pendingCancelEntry.workModel,
+								hours:
+									pendingCancelEntry.weeklyContractMinutes !== null
+										? formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes)
+										: t("settings.employmentHistory.inherited", "Inherited"),
+								workModel:
+									pendingCancelEntry.workModel ??
+									t("settings.employmentHistory.inherited", "Inherited"),
 								reviewState: pendingCancelEntry.reviewState,
 							},
 						)}

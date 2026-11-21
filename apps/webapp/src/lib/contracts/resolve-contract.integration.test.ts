@@ -212,8 +212,12 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		const {
 			rows: [v1Row],
 		} = await admin.query<{ id: string }>(
-			`SELECT id FROM work_policy_version WHERE policy_id = $1 AND version_number = 1`,
-			[policyRow.id],
+			`INSERT INTO work_policy_version (
+				organization_id, policy_id, version_number, effective_from_date,
+				schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, sealed_at, created_by
+			) VALUES ($1, $2, 1, '1970-01-01', true, true, true, true, NULL, $3)
+			RETURNING id`,
+			[ORG_ID, policyRow.id, ADMIN_USER_ID],
 		);
 		const {
 			rows: [schedRow],
@@ -460,8 +464,12 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		const {
 			rows: [v1],
 		} = await admin.query<{ id: string }>(
-			`SELECT id FROM work_policy_version WHERE policy_id = $1 AND version_number = 1`,
-			[policyRow.id],
+			`INSERT INTO work_policy_version (
+				organization_id, policy_id, version_number, effective_from_date,
+				schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, sealed_at, created_by
+			) VALUES ($1, $2, 1, '1970-01-01', true, true, false, true, NULL, $3)
+			RETURNING id`,
+			[ORG_ID, policyRow.id, ADMIN_USER_ID],
 		);
 		const {
 			rows: [reg1],

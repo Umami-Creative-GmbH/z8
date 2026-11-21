@@ -60,10 +60,10 @@ export type EmploymentTermsInput = {
 	validFrom: Date;
 	status: EmploymentStatus;
 	contractType: ContractType;
-	weeklyContractMinutes: number;
+	weeklyContractMinutes: number | null;
 	probationStartsOn?: Date | null;
 	probationEndsOn?: Date | null;
-	workModel: WorkModel;
+	workModel: WorkModel | null;
 	workPolicyId?: string | null;
 	/** Required for hourly terms; dropped for fixed terms. */
 	hourlyRate: number | null;
@@ -71,6 +71,10 @@ export type EmploymentTermsInput = {
 	changeReason?: string | null;
 	reviewState: EmploymentReviewState;
 };
+
+function toUtcPlainDateString(date: Date): string {
+	return date.toISOString().slice(0, 10);
+}
 
 /** Locks the employee row; refuses an employee outside the organization. */
 async function lockEmployee(tx: TermsWriteClient, scope: TermsWriteScope) {
@@ -173,7 +177,12 @@ async function adjustNeighbours(
 	for (const update of adjusted.updates) {
 		await tx
 			.update(employeeEmploymentHistory)
-			.set({ validUntil: update.validUntil, updatedBy: scope.actorUserId, updatedAt: scope.now })
+			.set({
+				validUntil: update.validUntil,
+				validUntilDate: update.validUntil ? toUtcPlainDateString(update.validUntil) : null,
+				updatedBy: scope.actorUserId,
+				updatedAt: scope.now,
+			})
 			.where(
 				and(
 					eq(employeeEmploymentHistory.id, update.id),
@@ -182,7 +191,13 @@ async function adjustNeighbours(
 				),
 			);
 	}
-	return adjusted.next;
+	return {
+		...adjusted.next,
+		validFromDate: toUtcPlainDateString(adjusted.next.validFrom),
+		validUntilDate: adjusted.next.validUntil
+			? toUtcPlainDateString(adjusted.next.validUntil)
+			: null,
+	};
 }
 
 /** Projects the contract type of the terms in force today onto `employee.contract_type`. */
@@ -234,7 +249,7 @@ async function insertTerms(
 		employmentPeriodId,
 		validFrom: terms.validFrom,
 		validUntil: null,
-		validFromDate: null,
+		validFromDate: toUtcPlainDateString(terms.validFrom),
 		validUntilDate: null,
 		status: terms.status,
 		contractType: terms.contractType,
@@ -342,6 +357,7 @@ export async function confirmEmploymentTerms(
 		.set({
 			employmentPeriodId,
 			validUntil: next.validUntil,
+			validUntilDate: next.validUntilDate,
 			reviewState: "confirmed",
 			updatedBy: scope.actorUserId,
 			updatedAt: scope.now,
@@ -496,7 +512,12 @@ export async function cancelEmploymentTerms(
 	const validUntil = next?.validFrom ?? null;
 	await tx
 		.update(employeeEmploymentHistory)
-		.set({ validUntil, updatedBy: scope.actorUserId, updatedAt: scope.now })
+		.set({
+			validUntil,
+			validUntilDate: validUntil ? toUtcPlainDateString(validUntil) : null,
+			updatedBy: scope.actorUserId,
+			updatedAt: scope.now,
+		})
 		.where(and(termsScope, eq(employeeEmploymentHistory.id, previous.id)));
 	return target;
 }

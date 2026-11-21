@@ -158,6 +158,45 @@ export function runPhase1ChunkedBackfill(
 export function verifyPhase1BackfillCompleteness(
 	client: Pick<Client, "query">,
 ): Promise<Record<string, number>>;
+export function runPre0322AssignmentPreClean(
+	client: Pick<Client, "query">,
+	options?: {
+		chunkSize?: number;
+		retryOptions?: {
+			maxRetries?: number;
+			baseDelayMs?: number;
+			maxDelayMs?: number;
+			logger?: Pick<Console, "warn">;
+		};
+		onBackfillChunkCommitted?: RunBoundaryAwareMigrationsOptions["onBackfillChunkCommitted"];
+	},
+): Promise<BackfillStepStats[]>;
+export function runPre0323TermsPreClean(
+	client: Pick<Client, "query">,
+	options?: {
+		chunkSize?: number;
+		retryOptions?: {
+			maxRetries?: number;
+			baseDelayMs?: number;
+			maxDelayMs?: number;
+			logger?: Pick<Console, "warn">;
+		};
+		onBackfillChunkCommitted?: RunBoundaryAwareMigrationsOptions["onBackfillChunkCommitted"];
+	},
+): Promise<BackfillStepStats[]>;
+export function runPre0324PolicyDeltaReconciliation(
+	client: Pick<Client, "query">,
+	options?: {
+		chunkSize?: number;
+		retryOptions?: {
+			maxRetries?: number;
+			baseDelayMs?: number;
+			maxDelayMs?: number;
+			logger?: Pick<Console, "warn">;
+		};
+		onBackfillChunkCommitted?: RunBoundaryAwareMigrationsOptions["onBackfillChunkCommitted"];
+	},
+): Promise<BackfillStepStats[]>;
 export function runBoundaryAwareMigrations(
 	options: RunBoundaryAwareMigrationsOptions,
 ): Promise<BoundaryMigrationRunResult>;

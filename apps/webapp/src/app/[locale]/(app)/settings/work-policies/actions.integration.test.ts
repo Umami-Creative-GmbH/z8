@@ -110,37 +110,49 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		const policyId = policyRow.id;
 
 		const {
+			rows: [versionRow],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (organization_id, policy_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, sealed_at, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, true, true, true, NULL, $3)
+			 returning id`,
+			[ids.organization, policyId, ids.adminUser],
+		);
+		const versionId = versionRow.id;
+
+		const {
 			rows: [scheduleRow],
 		} = await admin.query<{ id: string }>(
 			`insert into work_policy_schedule
-			 (policy_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, home_office_days_per_cycle, updated_at)
-			 values ($1, 'weekly', 'detailed', 'custom', null, 1, now())
+			 (policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, home_office_days_per_cycle, updated_at)
+			 values ($1, $2, 'weekly', 'detailed', 'custom', null, 1, now())
 			 returning id`,
-			[policyId],
+			[policyId, versionId],
 		);
 
 		await admin.query(
 			`insert into work_policy_schedule_day
-			 (schedule_id, day_of_week, hours_per_day, is_work_day, cycle_week, latest_clock_in)
+			 (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day, cycle_week, latest_clock_in)
 			 values
-			 ($1, 'monday', '8.00', true, 1, '09:00'),
-			 ($1, 'tuesday', '8.00', true, 1, '09:30'),
-			 ($1, 'saturday', '0.00', false, 1, null)`,
-			[scheduleRow.id],
+			 ($1, $2, 'monday', '8.00', true, 1, '09:00'),
+			 ($1, $2, 'tuesday', '8.00', true, 1, '09:30'),
+			 ($1, $2, 'saturday', '0.00', false, 1, null)`,
+			[scheduleRow.id, versionId],
 		);
 
 		const {
 			rows: [regulationRow],
 		} = await admin.query<{ id: string }>(
 			`insert into work_policy_regulation
-			 (policy_id, max_daily_minutes, max_weekly_minutes, max_uninterrupted_minutes,
+			 (policy_id, policy_version_id, max_daily_minutes, max_weekly_minutes, max_uninterrupted_minutes,
 			  min_rest_period_minutes, rest_period_enforcement,
 			  overtime_daily_threshold_minutes, overtime_weekly_threshold_minutes, overtime_monthly_threshold_minutes,
 			  alert_before_limit_minutes, alert_threshold_percent, updated_at)
-			 values ($1, 600, 2880, 360, $2, $3, $4, $5, $6, $7, $8, now())
+			 values ($1, $2, 600, 2880, 360, $3, $4, $5, $6, $7, $8, $9, now())
 			 returning id`,
 			[
 				policyId,
+				versionId,
 				INITIAL_ARBZG.minRestPeriodMinutes,
 				INITIAL_ARBZG.restPeriodEnforcement,
 				INITIAL_ARBZG.overtimeDailyThresholdMinutes,
@@ -155,27 +167,31 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 			rows: [ruleRow],
 		} = await admin.query<{ id: string }>(
 			`insert into work_policy_break_rule
-			 (regulation_id, working_minutes_threshold, required_break_minutes, sort_order, updated_at)
-			 values ($1, 360, 30, 0, now())
+			 (regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, sort_order, updated_at)
+			 values ($1, $2, 360, 30, 0, now())
 			 returning id`,
-			[regulationRow.id],
+			[regulationRow.id, versionId],
 		);
 
 		await admin.query(
 			`insert into work_policy_break_option
-			 (break_rule_id, split_count, minimum_split_minutes, minimum_longest_split_minutes, sort_order)
+			 (break_rule_id, policy_version_id, split_count, minimum_split_minutes, minimum_longest_split_minutes, sort_order)
 			 values
-			 ($1, 1, null, null, 0),
-			 ($1, 2, 15, null, 1)`,
-			[ruleRow.id],
+			 ($1, $2, 1, null, null, 0),
+			 ($1, $2, 2, 15, null, 1)`,
+			[ruleRow.id, versionId],
 		);
 
 		await admin.query(
 			`insert into work_policy_presence
-			 (policy_id, presence_mode, required_onsite_days, location_id, evaluation_period, enforcement, updated_at)
-			 values ($1, 'minimum_count', 3, $2, 'weekly', 'warn', now())`,
-			[policyId, locationId],
+			 (policy_id, policy_version_id, presence_mode, required_onsite_days, location_id, evaluation_period, enforcement, updated_at)
+			 values ($1, $2, 'minimum_count', 3, $3, 'weekly', 'warn', now())`,
+			[policyId, versionId, locationId],
 		);
+
+		await admin.query(`update work_policy_version set sealed_at = now() where id = $1`, [
+			versionId,
+		]);
 
 		return { policyId, regulationId: regulationRow.id };
 	}
@@ -194,11 +210,15 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 			alert_before_limit_minutes: number | null;
 			alert_threshold_percent: number | null;
 		}>(
-			`select id, max_daily_minutes, max_weekly_minutes, max_uninterrupted_minutes,
-			        min_rest_period_minutes, rest_period_enforcement,
-			        overtime_daily_threshold_minutes, overtime_weekly_threshold_minutes, overtime_monthly_threshold_minutes,
-			        alert_before_limit_minutes, alert_threshold_percent
-			 from work_policy_regulation where policy_id = $1`,
+			`select r.id, r.max_daily_minutes, r.max_weekly_minutes, r.max_uninterrupted_minutes,
+			        r.min_rest_period_minutes, r.rest_period_enforcement,
+			        r.overtime_daily_threshold_minutes, r.overtime_weekly_threshold_minutes, r.overtime_monthly_threshold_minutes,
+			        r.alert_before_limit_minutes, r.alert_threshold_percent
+			 from work_policy_regulation r
+			 join work_policy_version v on v.id = r.policy_version_id
+			 where r.policy_id = $1
+			 order by v.effective_from_date desc, v.version_number desc
+			 limit 1`,
 			[policyId],
 		);
 		return rows[0] ?? null;
