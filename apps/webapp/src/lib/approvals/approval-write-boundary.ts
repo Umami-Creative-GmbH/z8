@@ -409,6 +409,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	"src/lib/time-tracking/clocking-core.ts": [
 		{
 			columns: [
+				"created_at",
 				"created_by",
 				"device_info",
 				"employee_id",

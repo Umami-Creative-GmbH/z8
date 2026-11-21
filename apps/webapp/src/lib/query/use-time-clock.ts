@@ -236,6 +236,26 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	}
 
 	/**
+	 * Immediately points the cached clock status at the newly resumed live period
+	 * after a confirmed break or resume so a subsequent frozen clock-out never
+	 * targets the closed pre-break period while status invalidation is in flight.
+	 */
+	function syncResumedWorkPeriod(next: { id: string; startTime: Date }) {
+		queryClient.setQueryData<TimeClockState>(queryKeys.timeClock.status(), (previous) => ({
+			hasEmployee: previous?.hasEmployee ?? true,
+			employeeId: previous?.employeeId ?? null,
+			isClockedIn: true,
+			activeWorkPeriod: {
+				...previous?.activeWorkPeriod,
+				id: next.id,
+				startTime: next.startTime,
+				breakStartedAt: null,
+				breakStartedZone: null,
+			},
+		}));
+	}
+
+	/**
 	 * The frozen command for this action (#279), or null to keep the legacy path:
 	 * version 2, or version 3 with the position taken at the event (#826).
 	 * Identity, instant and zone are fixed here, before anything is sent.
@@ -248,6 +268,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		if (!canFreeze || !pageSession) return null;
 		const session = pageSession;
 		const operationId = crypto.randomUUID();
+		const currentStatus =
+			queryClient.getQueryData<TimeClockState>(queryKeys.timeClock.status()) ?? statusQuery.data;
 		const prepare = (vehicleUse: ClockVehicleUse | undefined) =>
 			prepareBrowserClockCommand({
 				kind,
@@ -258,7 +280,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				position: event.position,
 				timezone: resolveBrowserTimezone(params),
 				workLocationType: params?.workLocationType,
-				knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
+				knownWorkPeriodId: currentStatus?.activeWorkPeriod?.id ?? null,
 				projectId: params?.projectId,
 				// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
 				...namedTaskId(params?.taskId),
@@ -530,6 +552,15 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				...(event.position ? { position: event.position } : {}),
 				...(vehicleUse ? { vehicleUse } : {}),
 			});
+			if (result.success && result.data) {
+				syncResumedWorkPeriod({
+					id: result.data.id,
+					startTime:
+						result.data.startTime instanceof Date
+							? result.data.startTime
+							: new Date(result.data.startTime),
+				});
+			}
 			return afterClockEvent(result, event);
 		},
 		onSuccess: (result) => {
@@ -638,6 +669,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				browserTimezone: getBrowserTimezone(),
 				...(event.position ? { position: event.position } : {}),
 			});
+			if (result.success && result.data) {
+				syncResumedWorkPeriod({
+					id: result.data.workPeriodId,
+					startTime: new Date(result.data.at),
+				});
+			}
 			return afterClockEvent(result, event);
 		});
 	}

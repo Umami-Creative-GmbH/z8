@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
@@ -52,8 +52,11 @@ export async function getTimeClockStatus(): Promise<{
 		where: and(
 			eq(workPeriod.employeeId, currentEmployee.id),
 			eq(workPeriod.organizationId, currentEmployee.organizationId),
+			eq(workPeriod.isActive, true),
 			isNull(workPeriod.endTime),
+			isNull(workPeriod.deletedAt),
 		),
+		orderBy: [desc(workPeriod.startTime), desc(workPeriod.createdAt)],
 	});
 
 	return {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { type employee, timeEntry, workPeriod } from "@/db/schema";
 import {
 	compareInstants,
@@ -195,8 +195,10 @@ export async function startClockIn(
 				eq(workPeriod.organizationId, employee.organizationId),
 				eq(workPeriod.employeeId, employee.id),
 				isNull(workPeriod.endTime),
+				isNull(workPeriod.deletedAt),
 			),
 		)
+		.orderBy(desc(workPeriod.startTime), desc(workPeriod.createdAt))
 		.limit(1);
 	if (live) {
 		return {

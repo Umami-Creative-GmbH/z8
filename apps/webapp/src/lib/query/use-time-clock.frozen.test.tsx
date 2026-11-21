@@ -6,6 +6,8 @@ import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	addBreakToActiveSession: vi.fn(),
+	resumeBreakInProgress: vi.fn(),
 	getTimeClockStatus: vi.fn(),
 	useOfflineClock: vi.fn(),
 	postClockIn: vi.fn(),
@@ -15,7 +17,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/time-tracking/web-clock-status-client",()=>({getWebClockStatus:mocks.getTimeClockStatus}));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
-	addBreakToActiveSession: vi.fn(),
+	addBreakToActiveSession: mocks.addBreakToActiveSession,
+	resumeBreakInProgress: mocks.resumeBreakInProgress,
+	startBreakInProgress: vi.fn(),
 	getTimeClockStatus: mocks.getTimeClockStatus,
 	updateTimeEntryNotes: vi.fn(),
 }));
@@ -385,5 +389,92 @@ describe("useTimeClock frozen commands (#279)", () => {
 			data: { id: "entry-1" },
 		});
 		expect(clock.submitClockCommand).not.toHaveBeenCalled();
+	});
+
+	it("immediately binds a subsequent frozen clock-out to the resumed period after addBreak", async () => {
+		const resumedPeriodId = "b4cc290f-9ca0-4999-8823-bdf5f7654113";
+		const clock = offlineClock();
+		mocks.useOfflineClock.mockReturnValue(clock);
+		mocks.addBreakToActiveSession.mockResolvedValue({
+			success: true,
+			data: { id: resumedPeriodId, startTime: new Date("2026-09-25T10:30:00Z") },
+		});
+		// Simulate status refetch hanging or failing right after addBreak so the
+		// cache must already hold the new period ID before clockOut is called.
+		let resolveStatusRefetch: (() => void) | undefined;
+		mocks.getTimeClockStatus
+			.mockResolvedValueOnce({
+				hasEmployee: true,
+				employeeId: "emp-1",
+				isClockedIn: true,
+				activeWorkPeriod: { id: PERIOD_ID, startTime: new Date("2026-09-25T06:00:00Z") },
+			})
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						resolveStatusRefetch = () =>
+							resolve({
+								hasEmployee: true,
+								employeeId: "emp-1",
+								isClockedIn: true,
+								activeWorkPeriod: {
+									id: resumedPeriodId,
+									startTime: new Date("2026-09-25T10:30:00Z"),
+								},
+							});
+					}),
+			);
+
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await expect(result.current.addBreak({ breakMinutes: 30 })).resolves.toMatchObject({
+			success: true,
+		});
+		await result.current.clockOut({ browserTimezone: "Europe/Berlin" });
+
+		expect(clock.submitClockCommand).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "clock_out",
+				knownWorkPeriodId: resumedPeriodId,
+			}),
+		);
+		resolveStatusRefetch?.();
+	});
+
+	it("immediately binds a subsequent frozen clock-out to the resumed period after resumeBreak", async () => {
+		const resumedPeriodId = "c5dd3a10-0db1-4aaa-9934-cef608765224";
+		const clock = offlineClock();
+		mocks.useOfflineClock.mockReturnValue(clock);
+		mocks.resumeBreakInProgress.mockResolvedValue({
+			success: true,
+			data: { workPeriodId: resumedPeriodId, at: "2026-09-25T10:30:00.000Z" },
+		});
+		mocks.getTimeClockStatus
+			.mockResolvedValueOnce({
+				hasEmployee: true,
+				employeeId: "emp-1",
+				isClockedIn: true,
+				activeWorkPeriod: {
+					id: PERIOD_ID,
+					startTime: new Date("2026-09-25T06:00:00Z"),
+					breakStartedAt: new Date("2026-09-25T10:00:00Z"),
+					breakStartedZone: "Europe/Berlin",
+				},
+			})
+			.mockImplementationOnce(() => new Promise(() => {}));
+
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await expect(result.current.resumeBreak()).resolves.toMatchObject({ success: true });
+		await result.current.clockOut({ browserTimezone: "Europe/Berlin" });
+
+		expect(clock.submitClockCommand).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "clock_out",
+				knownWorkPeriodId: resumedPeriodId,
+			}),
+		);
 	});
 });
