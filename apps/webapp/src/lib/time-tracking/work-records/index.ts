@@ -86,6 +86,10 @@ export {
 	type EmployeeWorkHistoryErasure,
 	eraseEmployeeWorkHistory,
 } from "./erase-history";
+export {
+	type OrphanedWorkRecordPruneResult,
+	pruneOrphanedWorkRecord,
+} from "./prune-orphaned-records";
 export { workRecordScopeForFinalizer } from "./finalizer-scope";
 export { CompletedWorkIntegrityError, earliestStartDate } from "./integrity";
 export { correctOpenWorkRecord, type OpenWorkRecordCorrection } from "./open-record";

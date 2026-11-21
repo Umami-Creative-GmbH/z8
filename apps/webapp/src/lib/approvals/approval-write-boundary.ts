@@ -914,6 +914,15 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_allocation",
 		},
 	],
+	// Work records prunes unreferenced canonical work-record residue already replaced by a linked period.
+	"src/lib/time-tracking/work-records/prune-orphaned-records.ts": [
+		{
+			columns: [],
+			functionName: "pruneOrphanedWorkRecord",
+			operation: "delete",
+			table: "time_record",
+		},
+	],
 	// Work records (ADR 0010, #1224, #1226) attaches a missing canonical work record and repairs a pair.
 	"src/lib/time-tracking/work-records/repair.ts": [
 		{
