@@ -12,7 +12,7 @@ import {
 	holidayPresetAssignment,
 	type holidayPresetHoliday,
 } from "@/db/schema";
-import { holidayCalendarDate } from "@/lib/holidays/recurrence";
+import { holidayCalendarDate, holidayStoredDates } from "@/lib/holidays/recurrence";
 import type { DailyWorkRequirements, HolidayEvent } from "./types";
 
 export interface AssignedHolidayRange {
@@ -225,6 +225,20 @@ function overlapsRange(holiday: AssignedHolidayRange, startDate: Date, endDate: 
 	return holiday.startDate <= endDate && holiday.endDate >= startDate;
 }
 
+/** Inclusive calendar dates as UTC midnight to the end of the last day, as presets are. */
+function utcDayRange(
+	start: Temporal.PlainDate,
+	end: Temporal.PlainDate,
+): { startDate: Date; endDate: Date } {
+	return {
+		startDate: new Date(start.toZonedDateTime("UTC").epochMilliseconds),
+		endDate: new Date(
+			end.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 })
+				.epochMilliseconds,
+		),
+	};
+}
+
 function toAssignedHolidayRange(
 	holiday: CustomAssignedHoliday,
 	dateRange: { startDate: Date; endDate: Date },
@@ -266,11 +280,22 @@ export function expandCustomAssignedHoliday(
 		return [];
 	}
 
+	// Imported rows hold local-midnight instants; they are read on their calendar dates.
+	const storedDates = holidayStoredDates(holiday.startDate, holiday.endDate);
+
 	if (holiday.recurrenceType === "none") {
-		const assignedHoliday = toAssignedHolidayRange(holiday, {
-			startDate: holiday.startDate,
-			endDate: holiday.endDate,
-		});
+		const storedAsUtcDates =
+			storedDates.start.equals(holidayCalendarDate(holiday.startDate)) &&
+			storedDates.end.equals(holidayCalendarDate(holiday.endDate));
+		const assignedHoliday = storedAsUtcDates
+			? toAssignedHolidayRange(holiday, {
+					startDate: holiday.startDate,
+					endDate: holiday.endDate,
+				})
+			: {
+					...toAssignedHolidayRange(holiday, utcDayRange(storedDates.start, storedDates.end)),
+					id: holiday.id,
+				};
 		return overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)
 			? [assignedHoliday]
 			: [];
@@ -279,14 +304,14 @@ export function expandCustomAssignedHoliday(
 	if (holiday.recurrenceType !== "yearly") return [];
 
 	// The saved start date is authoritative, including for legacy malformed rules.
-	const originalDate = holidayCalendarDate(holiday.startDate);
+	const originalDate = storedDates.start;
 
-	const durationDays = originalDate.until(holidayCalendarDate(holiday.endDate)).days + 1;
+	const durationDays = originalDate.until(storedDates.end).days + 1;
 	const recurrenceEnd = holiday.recurrenceEndDate
 		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
 		: null;
 	const expanded: AssignedHolidayRange[] = [];
-	const firstExpansionYear = Math.max(requestedStart.year - 1, originalStart.year);
+	const firstExpansionYear = Math.max(requestedStart.year - 1, originalDate.year);
 
 	for (let year = firstExpansionYear; year <= requestedEnd.year; year++) {
 		let occurrence: Temporal.PlainDate;

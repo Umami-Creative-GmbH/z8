@@ -2,17 +2,7 @@
  * Data fetcher for payroll export
  * Fetches work periods, absences, and configuration from database
  */
-import {
-	and,
-	asc,
-	eq,
-	gte,
-	inArray,
-	isNotNull,
-	isNull,
-	lte,
-	or,
-} from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import {
 	absenceCategory,
@@ -34,6 +24,7 @@ import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
 } from "@/lib/payroll-allocation/protected-minutes";
+import { absenceRecordDates } from "@/lib/payroll-workspace/absence-record-dates";
 import {
 	assertCanonicalAbsencesReady,
 	assertCanonicalCutoverReady,
@@ -286,10 +277,8 @@ export async function fetchAbsencesForExport(
 			eq(timeRecord.approvalState, "approved"),
 			inArray(timeRecord.employeeId, employeeIds),
 			lte(timeRecord.startAt, logicalEnd.toJSDate()),
-			or(
-				gte(timeRecord.endAt, logicalStart.toJSDate()),
-				isNull(timeRecord.endAt),
-			),
+			// An end exactly at the first midnight is exclusive (`absenceRecordDates`).
+			or(gt(timeRecord.endAt, logicalStart.toJSDate()), isNull(timeRecord.endAt)),
 		),
 		with: {
 			employee: {
@@ -310,6 +299,8 @@ export async function fetchAbsencesForExport(
 			absence: {
 				columns: {
 					absenceCategoryId: true,
+					startPeriod: true,
+					endPeriod: true,
 				},
 				with: {
 					absenceCategory: {
@@ -330,27 +321,32 @@ export async function fetchAbsencesForExport(
 		"Fetched absences for payroll export",
 	);
 
-	return absences.map((a) => ({
-		id: a.id,
-		sourceActorId: a.updatedBy ?? null,
-		sourceRevision: a.updatedAt
-			? instantFromDate(a.updatedAt).toString()
-			: null,
-		employeeId: a.employeeId,
-		employeeNumber: a.employee?.employeeNumber || null,
-		email: a.employee?.user?.email || null,
-		firstName: a.employee?.user?.firstName || null,
-		lastName: a.employee?.user?.lastName || null,
-		startDate:
-			DateTime.fromJSDate(a.startAt, { zone: "utc" }).toISODate() || "",
-		endDate:
-			DateTime.fromJSDate(a.endAt || a.startAt, { zone: "utc" }).toISODate() ||
-			"",
-		absenceCategoryId: a.absence?.absenceCategoryId || "",
-		absenceCategoryName: a.absence?.absenceCategory?.name || null,
-		absenceType: a.absence?.absenceCategory?.type || null,
-		status: a.approvalState,
-	}));
+	return absences.map((a) => {
+		// Wall clock encoded as UTC; an exclusive next-midnight end (canonical backfill of
+		// legacy entries) belongs to the day before.
+		const { startDate, endDate } = absenceRecordDates({
+			startAt: a.startAt,
+			endAt: a.endAt,
+			startPeriod: a.absence?.startPeriod ?? "full_day",
+			endPeriod: a.absence?.endPeriod ?? "full_day",
+		});
+		return {
+			id: a.id,
+			sourceActorId: a.updatedBy ?? null,
+			sourceRevision: a.updatedAt ? instantFromDate(a.updatedAt).toString() : null,
+			employeeId: a.employeeId,
+			employeeNumber: a.employee?.employeeNumber || null,
+			email: a.employee?.user?.email || null,
+			firstName: a.employee?.user?.firstName || null,
+			lastName: a.employee?.user?.lastName || null,
+			startDate,
+			endDate,
+			absenceCategoryId: a.absence?.absenceCategoryId || "",
+			absenceCategoryName: a.absence?.absenceCategory?.name || null,
+			absenceType: a.absence?.absenceCategory?.type || null,
+			status: a.approvalState,
+		};
+	});
 }
 
 /**

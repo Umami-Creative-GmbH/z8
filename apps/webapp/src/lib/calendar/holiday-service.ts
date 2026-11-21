@@ -7,6 +7,7 @@ import { holiday, holidayCategory } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { compareInstants, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { holidayStoredDatesInclude } from "@/lib/holidays/recurrence";
 import type { HolidayEvent } from "./types";
 
 /** Legacy calculation exclusion semantics, loaded once on the caller's scoped client. */
@@ -48,14 +49,12 @@ export async function loadCalculationExclusions(
 	return (date) => {
 		const instant = instantFromDate(date);
 		const day = instant.toZonedDateTimeISO("UTC");
-		const window = localDayRange(day.toPlainDate().toString(), "UTC");
+		// One-off rows are read on their calendar dates, as the assigned-holiday reader does.
 		if (
 			rows.some(
 				({ holiday: h }) =>
 					h.recurrenceType === "none" &&
-					compareInstants(instantFromDate(h.startDate), window.endExclusive) <
-						0 &&
-					compareInstants(instantFromDate(h.endDate), window.start) >= 0,
+					holidayStoredDatesInclude(h.startDate, h.endDate, day.toPlainDate()),
 			)
 		)
 			return true;
@@ -318,28 +317,35 @@ export async function shouldExcludeFromCalculations(
 	const dateDT = dateFromDB(date);
 	if (!dateDT) return false;
 
-	const dateStart = dateToDB(dateDT.startOf("day"))!;
-	const dateEnd = dateToDB(dateDT.endOf("day"))!;
+	// Imported rows hold local-midnight instants up to 14 hours off the UTC day; the
+	// candidates are read on their calendar dates (`holidayStoredDates`).
+	const instant = instantFromDate(date);
+	const calendarDay = instant.toZonedDateTimeISO("UTC").toPlainDate();
+	const dayWindow = localDayRange(calendarDay.toString(), "UTC");
 
 	// Check non-recurring holidays
 	const nonRecurringHolidays = await db
-		.select()
+		.select({ holiday })
 		.from(holiday)
 		.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
 		.where(
 			and(
 				eq(holiday.organizationId, organizationId),
+				eq(holidayCategory.organizationId, organizationId),
 				eq(holiday.isActive, true),
 				eq(holidayCategory.isActive, true),
 				eq(holidayCategory.excludeFromCalculations, true),
 				eq(holiday.recurrenceType, "none"),
-				lte(holiday.startDate, dateEnd),
-				gte(holiday.endDate, dateStart),
+				lte(holiday.startDate, dateFromInstant(dayWindow.endExclusive.add({ hours: 48 }))),
+				gte(holiday.endDate, dateFromInstant(dayWindow.start.subtract({ hours: 48 }))),
 			),
-		)
-		.limit(1);
+		);
 
-	if (nonRecurringHolidays.length > 0) {
+	if (
+		nonRecurringHolidays.some(({ holiday: h }) =>
+			holidayStoredDatesInclude(h.startDate, h.endDate, calendarDay),
+		)
+	) {
 		return true;
 	}
 
