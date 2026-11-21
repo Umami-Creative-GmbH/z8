@@ -5,18 +5,15 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 export function equipmentDepartureDeadline(
 	cutoff: Instant,
 	timezone: string,
-	mode: "scheduled" | "immediate",
+	mode: "scheduled" | "immediate" | "retrospective",
 ) {
 	const day = cutoff.toZonedDateTimeISO(timezone).toPlainDate();
-	return (mode === "scheduled" ? day.subtract({ days: 1 }) : day).toString();
+	return (
+		mode === "scheduled" || mode === "retrospective" ? day.subtract({ days: 1 }) : day
+	).toString();
 }
-export function effectiveEquipmentDeadline(
-	explicit: string | null,
-	derived: string | null,
-) {
+export function effectiveEquipmentDeadline(explicit: string | null, derived: string | null) {
 	if (!explicit) return derived;
 	if (!derived) return explicit;
-	return Temporal.PlainDate.compare(explicit, derived) <= 0
-		? explicit
-		: derived;
+	return Temporal.PlainDate.compare(explicit, derived) <= 0 ? explicit : derived;
 }

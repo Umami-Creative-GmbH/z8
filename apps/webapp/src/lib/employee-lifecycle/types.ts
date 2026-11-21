@@ -13,7 +13,7 @@ export type LifecycleClient = WorkTransactionClient;
 export type DepartureScope = WorkTransactionScope;
 
 export type DepartureStatus = "pending" | "canceled" | "blocked" | "effective";
-export type DepartureMode = "scheduled" | "immediate";
+export type DepartureMode = "scheduled" | "immediate" | "retrospective";
 
 export type LifecycleActor = { userId: string; organizationId: string };
 
