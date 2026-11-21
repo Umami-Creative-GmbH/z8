@@ -181,6 +181,14 @@ if (buildNativeJob) {
 			),
 			"Docs image build step must set org.opencontainers.image.source to the workflow repository",
 		);
+		expect(
+			!buildStep.includes("type=gha"),
+			"Docs image build step must use GHCR registry cache rather than GHA cache",
+		);
+		expect(
+			buildStep.includes("type=registry,ref=ghcr.io/umami-creative-gmbh/z8-docs:buildcache-${{ matrix.arch }}"),
+			"Docs image build step must use arch-scoped GHCR registry cache",
+		);
 	}
 }
 

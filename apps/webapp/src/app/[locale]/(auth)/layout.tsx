@@ -22,15 +22,10 @@ import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { getDevelopmentTurnstileKeys } from "@/lib/turnstile/development-keys";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	parseCookieConsentScript,
 	selectAuthCookieConsentScript,
 } from "./cookie-consent-script";
-
-export async function generateStaticParams() {
-	return ALL_LANGUAGES.map((locale) => ({ locale }));
-}
 
 export default function AuthLayout({
 	children,

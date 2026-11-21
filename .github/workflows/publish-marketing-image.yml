@@ -42,6 +42,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Verify workflow contract
         run: node scripts/ci/verify-publish-marketing-image-workflow.mjs
@@ -64,8 +66,8 @@ jobs:
           file: ./docker/Dockerfile.marketing
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-marketing,push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=marketing-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=marketing-${{ matrix.arch }}
+          cache-from: type=registry,ref=ghcr.io/umami-creative-gmbh/z8-marketing:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=ghcr.io/umami-creative-gmbh/z8-marketing:buildcache-${{ matrix.arch }},mode=max,image-manifest=true,oci-mediatypes=true,compression=zstd,compression-level=3,ignore-error=true
 
       - name: Export digest artifact
         env:
@@ -160,6 +162,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: app
+          sparse-checkout: scripts/ci
           persist-credentials: false
 
       - name: Checkout infrastructure

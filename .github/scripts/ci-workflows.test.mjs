@@ -62,7 +62,7 @@ test("base dependency warming cannot execute arbitrary PR refs or repeat an exac
   }
 });
 test("draft PRs skip every validation job, including setup, summary and reusable debounce", () => {
-  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce", "work-records-integration"];
+  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce", "work-records-integration", "next-runtime"];
   for (const name of guardJobs) {
     const source = workflow(name);
     if (name !== "ci-debounce") {
@@ -112,6 +112,7 @@ test("the work records job hands the selected suites to the shared runner on a d
   assert.match(source, /create database \\"\$\{database_name\}\\"/);
   assert.match(source, /database_name="approval_workflow_repository_test_/);
   assert.match(source, /bash apps\/webapp\/scripts\/run-postgres-integration-suites\.sh\s+\\\s+"postgresql:\/\/postgres:postgres@127\.0\.0\.1:5432\/\$\{database_name\}" "\$\{suite_paths\[@\]\}"/);
+  assert.match(source, /--fsModuleCache --fsModuleCachePath="\$RUNNER_TEMP\/webapp-vitest-cache"/);
 });
 
 test("PostgreSQL enablement is shared by runner scheduling and the required summary", () => {
