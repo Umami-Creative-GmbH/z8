@@ -914,8 +914,15 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record_allocation",
 		},
 	],
-	// Work records prunes unreferenced canonical work-record residue already replaced by a linked period.
+	// Work records prunes unreferenced canonical work-record residue already replaced by a linked period,
+	// preserving computation_metadata on the linked canonical detail when missing.
 	"src/lib/time-tracking/work-records/prune-orphaned-records.ts": [
+		{
+			columns: ["computation_metadata"],
+			functionName: "pruneOrphanedWorkRecord",
+			operation: "update",
+			table: "time_record_work",
+		},
 		{
 			columns: [],
 			functionName: "pruneOrphanedWorkRecord",
