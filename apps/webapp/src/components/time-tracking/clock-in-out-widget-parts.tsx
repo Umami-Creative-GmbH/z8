@@ -111,7 +111,8 @@ export function WorkLocationSelector({
 			}}
 			className={cn(
 				"grid w-full grid-cols-2 items-stretch gap-1.5 data-[variant=outline]:shadow-none",
-				layout === "responsive" && "@[22rem]/widget:grid-cols-4",
+				// Four across only once each cell fits its longest label ("Homeoffice") on one line.
+				layout === "responsive" && "@[32rem]/widget:grid-cols-4",
 			)}
 		>
 			<WorkLocationOption
@@ -145,10 +146,10 @@ function WorkLocationOption({
 	return (
 		<ToggleGroupItem
 			value={value}
-			className="h-auto min-h-9 rounded-md px-2 py-1.5 shadow-xs data-[variant=outline]:border-l pointer-coarse:min-h-11 @[22rem]/widget:gap-2 data-pressed:border-primary data-pressed:bg-primary/10 data-pressed:text-primary data-pressed:hover:bg-primary/15 data-pressed:hover:text-primary"
+			className="h-auto min-h-9 rounded-md px-2 py-1.5 shadow-xs data-[variant=outline]:border-l pointer-coarse:min-h-11 @[32rem]/widget:gap-2 data-pressed:border-primary data-pressed:bg-primary/10 data-pressed:text-primary data-pressed:hover:bg-primary/15 data-pressed:hover:text-primary"
 		>
 			<Icon aria-hidden="true" className="size-4" />
-			<span className="min-w-0 whitespace-normal break-words text-sm">{label}</span>
+			<span className="min-w-0 whitespace-normal break-words hyphens-auto text-sm">{label}</span>
 		</ToggleGroupItem>
 	);
 }
