@@ -224,6 +224,12 @@ describe("absence days resolved from work policies and holidays", () => {
 			.update(employee)
 			.set({ teamId: teamRow.id })
 			.where(eq(employee.id, individual.employeeId));
+		// Backdate 0120 team history so team membership is effective on 2026-10-12.
+		await fixture.pool.query(
+			`update employee_team_history set effective_from = '2026-01-01T00:00:00Z'
+			 where employee_id = any($1::uuid[])`,
+			[[teamMember.employeeId, individual.employeeId]],
+		);
 
 		await assign(
 			organizationId,
@@ -417,8 +423,8 @@ describe("absence days resolved from work policies and holidays", () => {
 
 		expect(week).toBeGreaterThan(0);
 		expect(year).toBe(week);
-		// Employees and assignments once, then each employee's holidays.
-		expect(year).toBeLessThanOrEqual(2 + 4 * employeeIds.length);
+		// Unified contract batch load (O(1) w.r.t. range length), then each employee's holidays.
+		expect(year).toBeLessThanOrEqual(20 + 4 * employeeIds.length);
 	});
 
 	it("charges a Monday-to-Thursday employee 4 days for a Monday-to-Friday vacation everywhere", async () => {

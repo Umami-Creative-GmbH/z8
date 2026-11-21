@@ -119,6 +119,12 @@ send again.
 
 ## Membership versus employment
 
+### Contract resolution across employment periods and leaving dates
+
+- Daily contract resolution (`src/lib/contracts/`) scopes confirmed employment terms and schedules strictly to the active `employment_period_id` (half-open `[started_at, ended_at)`) in the employee's calendar timezone. Days outside an employment period (after a departure cutoff or between stints) require zero work minutes.
+- On a same-day departure and rehire, calendar-day consumers (Preview, Work Balance, Absences, Presence, Payroll) deduplicate the shared calendar date once using the rehire stint active at end-of-day, while instant clock-out break snapshots (Time Tracking ADR-0003, v2 evidence) capture the exact `employmentPeriodId` and `policyVersionId` active at the clock-out instant.
+- Work policy assignments remain capped/deactivated at the departure cutoff (`closeEmploymentWindows`), while confirmed terms no longer write legacy `syncTermsPolicy` projections into `work_policy_assignment`.
+
 - **Membership** (organization access) and **employment** (periods, terms, time)
   are separate, but losing membership ends employment: member removal (owner-only
   *Remove access*, leaving the organization, rejecting a pending member) and

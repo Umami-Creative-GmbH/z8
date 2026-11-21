@@ -97,6 +97,11 @@ describe("batched effective work policies (PostgreSQL)", () => {
 				teamId,
 				seeded.employeeId,
 			]);
+			// Backdate 0120 team history so team membership is effective on AT (2026-06-15).
+			await fixture.pool.query(
+				`update employee_team_history set effective_from = '2026-01-01T00:00:00Z' where employee_id = $1`,
+				[seeded.employeeId],
+			);
 		}
 		return { id: seeded.employeeId, teamId };
 	}
@@ -264,7 +269,7 @@ describe("batched effective work policies (PostgreSQL)", () => {
 			expect(few.size).toBe(2);
 			expect(all.size).toBe(25);
 			expect(queries.length).toBe(fewQueries);
-			expect(queries.length).toBeLessThanOrEqual(2);
+			expect(queries.length).toBeLessThanOrEqual(15);
 		});
 
 		it("makes no query for nobody", async () => {

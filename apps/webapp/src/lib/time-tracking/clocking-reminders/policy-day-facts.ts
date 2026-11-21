@@ -1,3 +1,5 @@
+import { db } from "@/db";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
@@ -35,9 +37,10 @@ export function latestClockInOn(
 }
 
 /**
- * Reads an employee's work-policy facts for clocking reminders through the existing effective
- * policy resolution (employee, team, organization) and the per-day work requirements, which
- * already zero non-work days, approved absences, holidays and days outside employment.
+ * Reads an employee's work-policy facts for clocking reminders through the unified read-only
+ * contract resolver (covering detailed policy versions AND custom working days' latest clock-in)
+ * and the per-day work requirements, which already zero non-work days, approved absences,
+ * holidays and days outside employment.
  */
 export function createPolicyDayFacts(input: {
 	organizationId: string;
@@ -47,20 +50,17 @@ export function createPolicyDayFacts(input: {
 }): PolicyDayFacts {
 	return {
 		async latestClockIn(day) {
-			const { readEffectiveWorkPolicyAt } = await import(
-				"@/lib/time-tracking/effective-work-policy"
-			);
-			const policy = await readEffectiveWorkPolicyAt({
-				employeeId: input.employeeId,
+			const contract = await resolveEffectiveContractOnDay(db, {
 				organizationId: input.organizationId,
-				at: input.now,
+				employeeId: input.employeeId,
+				date: day,
+				timezoneOverride: input.timezone,
 			});
-			return latestClockInOn(policy, day);
+			return contract?.latestClockIn ? parsePlainTimeMinute(contract.latestClockIn) : null;
 		},
 		async requiredMinutes(day) {
-			const { getDailyWorkRequirementsForEmployee } = await import(
-				"@/lib/calendar/work-policy-requirements"
-			);
+			const { getDailyWorkRequirementsForEmployee } =
+				await import("@/lib/calendar/work-policy-requirements");
 			const dayStart = dateFromInstant(localDayRange(day.toString(), input.timezone).start);
 			const requirements = await getDailyWorkRequirementsForEmployee({
 				organizationId: input.organizationId,

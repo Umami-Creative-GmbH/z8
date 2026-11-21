@@ -14,7 +14,7 @@ An absence takes as many absence days as it covers working days. Whether a day i
 
 ## Consequences
 
-- Editing a work policy's schedule in place changes the absence days, and so the vacation balance, of every past absence of every employee on that policy. A schedule change meant to apply from a date is a new policy assigned from that date.
+- Work policy schedules are immutable effective-dated `work_policy_version` snapshots (including versioned `schedule_enabled`, `regulation_enabled`, and `presence_enabled` flags) resolved per calendar day through the unified read-only contract resolver (`src/lib/contracts/`), alongside employee custom working days and organization/primary-team defaults. Publishing a future-dated schedule change or toggling `schedule_enabled` creates a new version effective from that date and never alters the absence days or vacation balances of earlier dates.
 - A closed month (Time Tracking ADR-0004) freezes absences but not their absence days. Payroll lays absences out by calendar day and never reads absence days, so what payroll was given does not move.
-- Refusing a vacation request that covers no working day decides from the schedule without the organization configuration guard. ADR-0003 still holds: nothing derived from the schedule is stored, so a request admitted or refused next to a concurrent policy change is counted correctly at its next read.
+- Refusing a vacation request that covers no working day decides from the effective contract schedule without the organization configuration guard. ADR-0003 still holds: nothing derived from the schedule is stored, so a request admitted or refused next to a concurrent policy version publication is counted correctly at its next read.
 - Year-end carryover is the one value written from absence days. It keeps the value it was written with.

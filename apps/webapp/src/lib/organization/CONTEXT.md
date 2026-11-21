@@ -148,12 +148,21 @@ _Avoid_: incomplete record, invalid record
 ### Employment
 
 **Employment terms**:
-What the organization has agreed with an employee from a given date: contract type, weekly contract hours, work model, work policy and, for an hourly contract, the hourly wage. Only confirmed terms apply; draft and pending terms are proposals.
+What the organization has agreed with an employee from a given date: employee-owned legal, pay, and statutory fields (`contract_type` fixed/hourly, hourly wage, `employment_profile`, `arbzg_scope`, and § 12 TzBfG on-call terms) plus optional personal divergences from the effective organization or primary-team default contract (work policy, weekly hours, schedule mode and custom working days, work model, presence override, balance mode, and schedule source). Only confirmed terms apply; draft and pending terms are proposals.
 _Avoid_: contract record, employment record, employment history row
 
 **Hourly wage**:
-What an employee on an hourly contract is paid per hour worked. It is part of their employment terms, so the wage in force on a day is the one in the confirmed terms for that day. Changing it means confirming new terms.
+What an employee on an hourly contract is paid per hour worked. It is part of their employee-owned confirmed employment terms (never live-inherited from organization or team defaults), so the wage in force on a day is the one in the confirmed terms for that day. Changing it means confirming new terms.
 _Avoid_: hourly rate, rate, salary, pay rate
+
+**Contract default**:
+A date-effective operational baseline for the whole organization or for a single primary team, backed by a default-eligible contract template version (`schedule_source` in `policy` or `published_shifts`; `on_call` is forbidden in defaults). Employees inherit these operational rules automatically on each calendar day and store only personal divergences.
+
+**Work policy version**:
+An immutable, effective-dated snapshot (`work_policy_version`) of a work policy's schedule, working-time regulation, on-site presence rules, and their enablement flags (`schedule_enabled`, `regulation_enabled`, `presence_enabled`). Every contract reader resolves through the unified read-only contract resolver (`src/lib/contracts/`) so historical absence counts, work balance, presence compliance, payroll, staffing, and exports never drift when policies change.
+
+**Trust-based balance**:
+A contract balance mode (`trust_based`) under which working days contribute exact `0` delta to work balance (preserving prior accrued balance across mode switches) while retaining full BAG/ArbZG compliance checks and schedule-based absence day counting.
 
 ### Personal data
 

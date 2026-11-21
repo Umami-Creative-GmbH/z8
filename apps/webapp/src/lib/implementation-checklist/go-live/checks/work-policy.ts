@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
-import { workPolicy, workPolicyAssignment } from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
+import { hasWorkPolicySettingsInOrg } from "@/lib/work-policy/policy-queries";
 import type { GoLiveFailureGroup, GoLiveFixLink, GoLiveMember } from "../types";
 import type { GoLiveCheck } from "./types";
 
@@ -102,24 +101,7 @@ function uncoveredGroup(
 	};
 }
 
-/** Whether any work policy or assignment is set up: the item is configured, not yet verified. */
+/** Whether any work policy, assignment, or contract default is set up: the item is configured, not yet verified. */
 async function hasWorkPolicySettings(db: DatabaseClient, organizationId: string) {
-	const [policies, assignments] = await Promise.all([
-		db
-			.select({ id: workPolicy.id })
-			.from(workPolicy)
-			.where(and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)))
-			.limit(1),
-		db
-			.select({ id: workPolicyAssignment.id })
-			.from(workPolicyAssignment)
-			.where(
-				and(
-					eq(workPolicyAssignment.organizationId, organizationId),
-					eq(workPolicyAssignment.isActive, true),
-				),
-			)
-			.limit(1),
-	]);
-	return policies.length > 0 || assignments.length > 0;
+	return hasWorkPolicySettingsInOrg(db, organizationId);
 }

@@ -3,16 +3,13 @@ import "server-only";
 import { and, eq, inArray, notExists, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
+import { analyticsContractRevisionSql } from "@/lib/contracts";
 import {
 	activeAnalyticsEmployee,
 	getAnalyticsCalendarRange,
 } from "@/lib/effect/services/analytics.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import type {
-	AnalyticsEmployeeScope,
-	DateRange,
-	OvertimeBurnDownParams,
-} from "./types";
+import type { AnalyticsEmployeeScope, DateRange, OvertimeBurnDownParams } from "./types";
 
 export type RecentAnalyticsRequest =
 	| { kind: "work-hours"; dateRange: DateRange; employeeId?: string }
@@ -35,9 +32,7 @@ export type RecentAnalyticsIdentity = {
 };
 
 /** Fresh visibility and committed source revisions; never cached authorization. */
-export const loadRecentAnalyticsIdentity = Effect.fn(
-	"analytics.recentIdentity",
-)(function* (
+export const loadRecentAnalyticsIdentity = Effect.fn("analytics.recentIdentity")(function* (
 	actor: {
 		id: string;
 		userId: string;
@@ -50,19 +45,15 @@ export const loadRecentAnalyticsIdentity = Effect.fn(
 	// Retain the production reader's strict calendar/epoch validation before lookup.
 	const calendar = getAnalyticsCalendarRange(request.dateRange);
 	const scope: AnalyticsEmployeeScope =
-		actor.role === "admin"
-			? { role: "admin" }
-			: { role: "manager", managerEmployeeId: actor.id };
-	const manager =
-		request.kind === "overtime" ? request.filters?.managerId : undefined;
+		actor.role === "admin" ? { role: "admin" } : { role: "manager", managerEmployeeId: actor.id };
+	const manager = request.kind === "overtime" ? request.filters?.managerId : undefined;
 	const teamId =
 		request.kind === "team"
 			? request.teamId
 			: request.kind === "overtime"
 				? request.filters?.teamId
 				: undefined;
-	const employeeId =
-		request.kind === "work-hours" ? request.employeeId : undefined;
+	const employeeId = request.kind === "work-hours" ? request.employeeId : undefined;
 	const managedBy = (id: string) =>
 		inArray(
 			employee.id,
@@ -79,9 +70,7 @@ export const loadRecentAnalyticsIdentity = Effect.fn(
 				and(
 					eq(employee.organizationId, actor.organizationId),
 					activeAnalyticsEmployee(),
-					scope.role === "manager"
-						? managedBy(scope.managerEmployeeId)
-						: undefined,
+					scope.role === "manager" ? managedBy(scope.managerEmployeeId) : undefined,
 					manager
 						? manager === "unassigned"
 							? notExists(
@@ -104,13 +93,11 @@ export const loadRecentAnalyticsIdentity = Effect.fn(
 	// Only identities and MVCC revisions leave PostgreSQL, not source values.
 	// Include membership of each set, so removals and same-timestamp updates change
 	// the key. This is deliberately an analytics dependency list, not a generic DAL.
-	const versions = yield* database.query(
-		"analytics.recentDependencyVersions",
-		() =>
-			database.db.execute<{
-				revision: string;
-				marker_count: number;
-			}>(sql`
+	const versions = yield* database.query("analytics.recentDependencyVersions", () =>
+		database.db.execute<{
+			revision: string;
+			marker_count: number;
+		}>(sql`
 with visible as materialized (
  select e.id,e.user_id,e.team_id from employee e
  where e.organization_id=${organizationId}
@@ -134,10 +121,7 @@ with visible as materialized (
  union all select 'terms',t.id::text,t.xmin::text from employee_employment_history t join visible v on t.employee_id=v.id where t.organization_id=${organizationId}
  union all select 'absence',a.id::text,a.xmin::text from absence_entry a join visible v on a.employee_id=v.id where a.organization_id=${organizationId}
  union all select 'absence-category',c.id::text,c.xmin::text from absence_category c where c.organization_id=${organizationId}
- union all select 'policy',p.id::text,p.xmin::text from work_policy p where p.organization_id=${organizationId}
- union all select 'policy-assignment',a.id::text,a.xmin::text from work_policy_assignment a where a.organization_id=${organizationId} and (a.assignment_type='organization' or a.employee_id in (select id from visible) or a.team_id in (select team_id from visible))
- union all select 'schedule',s.id::text,s.xmin::text from work_policy_schedule s join work_policy p on p.id=s.policy_id where p.organization_id=${organizationId}
- union all select 'schedule-day',d.id::text,d.xmin::text from work_policy_schedule_day d join work_policy_schedule s on s.id=d.schedule_id join work_policy p on p.id=s.policy_id where p.organization_id=${organizationId}
+ ${analyticsContractRevisionSql(organizationId)}
  union all select 'shift',s.id::text,s.xmin::text from shift s join visible v on v.id=s.employee_id where s.organization_id=${organizationId}
  union all select 'holiday',h.id::text,h.xmin::text from holiday h where h.organization_id=${organizationId}
  union all select 'holiday-category',h.id::text,h.xmin::text from holiday_category h where h.organization_id=${organizationId}
@@ -170,8 +154,7 @@ from revisions
 			revision: revision.revision,
 			// A deleted/missing marker never shares an old unversioned cache entry.
 			cacheable:
-				visibleEmployeeIds.length > 0 &&
-				visibleEmployeeIds.length === revision.marker_count,
+				visibleEmployeeIds.length > 0 && visibleEmployeeIds.length === revision.marker_count,
 		} satisfies RecentAnalyticsIdentity,
 		request: { ...request, dateRange: { ...request.dateRange, ...calendar } },
 	};

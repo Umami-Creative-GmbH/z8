@@ -1,22 +1,18 @@
-import { and, desc, eq, gt, gte, isNull, lte, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
+import { employee, workPolicy, workPolicyPreset, workPolicyViolation } from "@/db/schema";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts";
 import {
-	employee,
-	workPolicy,
-	workPolicyAssignment,
-	workPolicyPreset,
-	workPolicyViolation,
-} from "@/db/schema";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { applicableBreakRule } from "@/lib/time-tracking/break-due";
-import {
-	assignedViaLabel,
-	orderEffectiveAssignments,
-	toEffectiveWorkPolicy,
-	WORK_POLICY_DETAILS_WITH,
-	type WorkPolicyWithDetails,
-} from "@/lib/work-policy/effective-work-policies";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { resolvedPolicyVersionToEffectiveWorkPolicy } from "@/lib/work-policy/effective-work-policies";
+import { loadActiveOrganizationDefaultPolicyId } from "@/lib/work-policy/policy-queries";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -45,6 +41,7 @@ export interface BreakRule {
 
 export interface EffectiveWorkPolicy {
 	policyId: string;
+	policyVersionId?: string | null;
 	policyName: string;
 
 	// Schedule configuration (null if scheduleEnabled = false)
@@ -104,6 +101,8 @@ export interface ComplianceCheckResult {
 	breakRequirement: BreakRequirementResult | null;
 	/** The policy the warnings come from; null when no regulated policy applied. */
 	policyId: string | null;
+	/** The immutable policy version the warnings come from, if resolved. */
+	policyVersionId?: string | null;
 }
 
 export interface CheckComplianceInput {
@@ -122,6 +121,7 @@ export interface LogViolationInput {
 	employeeId: string;
 	organizationId: string;
 	policyId: string;
+	policyVersionId?: string | null;
 	workPeriodId?: string;
 	/** When the violation happened, stored as `violation_date`: the checked work's start. */
 	violationAt: Instant;
@@ -357,134 +357,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 					where: organizationId
 						? and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId))
 						: eq(employee.id, employeeId),
-					with: {
-						team: true,
-					},
+					columns: { id: true, organizationId: true, teamId: true },
 				});
-			});
-
-		/**
-		 * The first active assignment at one level that is in force at `at`. With
-		 * `organizationId`, candidates are ordered deterministically and both the
-		 * assignment and its policy must belong to that organization.
-		 */
-		const findLevelAssignment = (
-			queryName: string,
-			level: SQL | undefined,
-			organizationId: string | undefined,
-			at: Date,
-		) =>
-			dbService.query(queryName, async () => {
-				const query = {
-					where: and(
-						level,
-						organizationId ? eq(workPolicyAssignment.organizationId, organizationId) : undefined,
-						eq(workPolicyAssignment.isActive, true),
-						or(
-							isNull(workPolicyAssignment.effectiveFrom),
-							lte(workPolicyAssignment.effectiveFrom, at),
-						),
-						or(
-							isNull(workPolicyAssignment.effectiveUntil),
-							gt(workPolicyAssignment.effectiveUntil, at),
-						),
-					),
-					with: {
-						policy: {
-							with: WORK_POLICY_DETAILS_WITH,
-						},
-					},
-					orderBy: organizationId ? orderEffectiveAssignments : undefined,
-				} as const;
-
-				if (!organizationId) {
-					return await dbService.db.query.workPolicyAssignment.findFirst(query);
-				}
-
-				const assignments = await dbService.db.query.workPolicyAssignment.findMany(query);
-				return assignments.find(
-					(assignment) =>
-						assignment.policy?.isActive && assignment.policy.organizationId === organizationId,
-				);
-			});
-
-		/**
-		 * The employee's policy as of `at`: employee, then team, then organization
-		 * assignment. With `organizationId`, every assignment and policy must belong
-		 * to that organization.
-		 */
-		const resolveEffectivePolicy = (
-			emp: {
-				id: string;
-				organizationId: string;
-				teamId: string | null;
-				team: { name: string } | null;
-			},
-			organizationId: string | undefined,
-			at: Date,
-		) =>
-			Effect.gen(function* () {
-				// 1. Check employee-level assignment (priority 2 - highest)
-				const employeeAssignment = yield* findLevelAssignment(
-					"getEmployeePolicyAssignment",
-					and(
-						eq(workPolicyAssignment.employeeId, emp.id),
-						eq(workPolicyAssignment.assignmentType, "employee"),
-					),
-					organizationId,
-					at,
-				);
-				if (employeeAssignment?.policy?.isActive) {
-					return toEffectiveWorkPolicy(
-						employeeAssignment.policy as WorkPolicyWithDetails,
-						"employee",
-						assignedViaLabel("employee"),
-					);
-				}
-
-				// 2. Check team-level assignment (priority 1)
-				if (emp.teamId) {
-					const teamAssignment = yield* findLevelAssignment(
-						"getTeamPolicyAssignment",
-						and(
-							eq(workPolicyAssignment.teamId, emp.teamId),
-							eq(workPolicyAssignment.assignmentType, "team"),
-						),
-						organizationId,
-						at,
-					);
-					if (teamAssignment?.policy?.isActive) {
-						return toEffectiveWorkPolicy(
-							teamAssignment.policy as WorkPolicyWithDetails,
-							"team",
-							assignedViaLabel("team", emp.team?.name),
-						);
-					}
-				}
-
-				// 3. Check organization-level assignment (priority 0 - lowest)
-				const orgAssignment = yield* findLevelAssignment(
-					"getOrgPolicyAssignment",
-					and(
-						// A scoped lookup already filters by its organization.
-						organizationId
-							? undefined
-							: eq(workPolicyAssignment.organizationId, emp.organizationId),
-						eq(workPolicyAssignment.assignmentType, "organization"),
-					),
-					organizationId,
-					at,
-				);
-				if (orgAssignment?.policy?.isActive) {
-					return toEffectiveWorkPolicy(
-						orgAssignment.policy as WorkPolicyWithDetails,
-						"organization",
-						assignedViaLabel("organization"),
-					);
-				}
-
-				// No policy assigned
-				return null;
 			});
 
 		/** The employee's policy as of `at`; fails when the employee is not found. */
@@ -504,7 +378,22 @@ export const WorkPolicyServiceLive = Layer.effect(
 						}),
 					);
 				}
-				return yield* resolveEffectivePolicy(emp, organizationId, at);
+
+				const targetOrgId = organizationId ?? emp.organizationId;
+				const atInstant = instantFromDate(at);
+				return yield* dbService.query("resolveEffectivePolicyForEmployee", async () => {
+					const orgTimezone = await loadOrganizationTimezone(dbService.db, targetOrgId);
+					const day = plainDateAt(atInstant, orgTimezone);
+					const contract = await resolveEffectiveContractOnDay(dbService.db, {
+						organizationId: targetOrgId,
+						employeeId: emp.id,
+						date: day,
+						at: atInstant,
+					});
+					return contract?.workPolicy
+						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+						: null;
+				});
 			});
 
 		return WorkPolicyService.of({
@@ -596,6 +485,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 						warnings,
 						breakRequirement: breakReq,
 						policyId: policy.policyId,
+						policyVersionId: policy.policyVersionId ?? null,
 					} as ComplianceCheckResult;
 				}),
 
@@ -644,6 +534,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 							employeeId: input.employeeId,
 							organizationId: input.organizationId,
 							policyId: input.policyId,
+							policyVersionId: input.policyVersionId ?? null,
 							workPeriodId: input.workPeriodId,
 							violationDate: dateFromInstant(input.violationAt),
 							violationType: input.violationType,
@@ -738,15 +629,18 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 			getOrganizationPolicies: (organizationId) =>
 				Effect.gen(function* () {
-					const policies = yield* dbService.query("getOrgPolicies", async () => {
-						return await dbService.db.query.workPolicy.findMany({
-							where: and(
-								eq(workPolicy.organizationId, organizationId),
-								eq(workPolicy.isActive, true),
-							),
-							orderBy: (p, { asc }) => [asc(p.name)],
-						});
-					});
+					const [policies, defaultPolicyId] = yield* dbService.query("getOrgPolicies", () =>
+						Promise.all([
+							dbService.db.query.workPolicy.findMany({
+								where: and(
+									eq(workPolicy.organizationId, organizationId),
+									eq(workPolicy.isActive, true),
+								),
+								orderBy: (p, { asc }) => [asc(p.name)],
+							}),
+							loadActiveOrganizationDefaultPolicyId(dbService.db, organizationId),
+						]),
+					);
 
 					return policies.map((p) => ({
 						id: p.id,
@@ -754,7 +648,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 						description: p.description,
 						scheduleEnabled: p.scheduleEnabled,
 						regulationEnabled: p.regulationEnabled,
-						isDefault: p.isDefault,
+						isDefault: p.id === defaultPolicyId,
 						isActive: p.isActive,
 					}));
 				}),

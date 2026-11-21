@@ -1,6 +1,6 @@
 vi.mock("@/lib/time-tracking/tracking-start", () => ({
- loadEmployeeTrackingStart: async () => null,
- loadEmployeeTrackingContext: async () => null,
+	loadEmployeeTrackingStart: async () => null,
+	loadEmployeeTrackingContext: async () => null,
 }));
 import { eq, gte, isNotNull, lte } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -229,6 +229,47 @@ describe("work balance period aggregation", () => {
 		);
 		expect(mockState.db.select).not.toHaveBeenCalled();
 		expect(mockState.getDailyWorkRequirementsForEmployee).not.toHaveBeenCalled();
+	});
+
+	it("emits exact 0 delta on trust_based days while preserving tracked balance across mode switches", async () => {
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValueOnce({
+			"2026-05-04": {
+				requiredMinutes: 480,
+				policyId: "p-1",
+				policyName: "Standard",
+				balanceMode: "tracked",
+				contributesZeroBalanceDelta: false,
+			},
+			"2026-05-05": {
+				requiredMinutes: 480,
+				policyId: "p-1",
+				policyName: "Standard",
+				balanceMode: "trust_based",
+				contributesZeroBalanceDelta: true,
+			},
+		});
+		mockState.selectWhere.mockResolvedValueOnce([
+			{ startTime: new Date("2026-05-04T08:00:00.000Z"), durationMinutes: 510 }, // +30 tracked
+			{ startTime: new Date("2026-05-05T08:00:00.000Z"), durationMinutes: 600 }, // trust_based -> 0 delta (not +600!)
+		]);
+
+		const result = await computeEmployeePeriodBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-05-01",
+			periodEnd: "2026-05-31",
+			isClosed: false,
+			now: new Date("2026-05-06T08:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				actualMinutes: 510,
+				requiredMinutes: 480,
+				balanceMinutes: 30,
+			}),
+		);
 	});
 
 	it("upserts employee period balances on the organization employee type and start conflict target", async () => {

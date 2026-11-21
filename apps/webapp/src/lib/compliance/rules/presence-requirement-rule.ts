@@ -12,6 +12,7 @@ import type {
 	ComplianceFindingSeverity,
 	PresenceRequirementEvidence,
 } from "@/db/schema/compliance-finding";
+import type { EffectiveContractOnDay } from "@/lib/contracts";
 import type {
 	ComplianceFindingResult,
 	ComplianceRule,
@@ -74,6 +75,32 @@ export interface PresenceRuleDetectionInput extends RuleDetectionInput {
 	presenceConfig: PresenceConfig;
 	absenceDays: AbsenceDay[];
 	holidayDays: HolidayDay[];
+	/** Dates where the employee's effective contract exempts on-site presence (e.g., `remote` work model). */
+	exemptDays?: readonly { date: string; reason: string }[];
+}
+
+/**
+ * Extracts presence-exempt dates from unified per-day contracts so midweek `remote` or
+ * `presence_override = 'exempt'` transitions have exact parity with `loadPresenceStatusForSubject`.
+ */
+export function buildPresenceExemptDaysFromContracts(
+	contractsByDate: ReadonlyMap<string, EffectiveContractOnDay>,
+): Array<{ date: string; reason: string }> {
+	const exempt: Array<{ date: string; reason: string }> = [];
+	for (const [date, contract] of contractsByDate) {
+		if (contract.presenceStatus !== "required") {
+			exempt.push({
+				date,
+				reason:
+					contract.presenceStatus === "exempt"
+						? contract.workModel === "remote"
+							? "remote_work_model"
+							: "presence_exempt"
+						: "presence_not_configured",
+			});
+		}
+	}
+	return exempt;
 }
 
 // ============================================
@@ -143,8 +170,15 @@ export class PresenceRequirementRule implements ComplianceRule {
 		// This rule requires the extended input type
 		const presenceInput = input as PresenceRuleDetectionInput;
 
-		const { employee, workPeriods, dateRange, presenceConfig, absenceDays, holidayDays } =
-			presenceInput;
+		const {
+			employee,
+			workPeriods,
+			dateRange,
+			presenceConfig,
+			absenceDays,
+			holidayDays,
+			exemptDays = [],
+		} = presenceInput;
 
 		// Skip if enforcement is disabled
 		if (presenceConfig.enforcement === "none") {
@@ -157,7 +191,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 		// Filter to completed work periods only
 		const completedPeriods = workPeriods.filter((wp) => wp.endTime !== null && !wp.isActive);
 
-		// Build set of excluded dates (absences + holidays)
+		// Build set of excluded dates (absences + holidays + contract presence exemptions)
 		const excludedDates = new Set<string>();
 		const excludedReasons: string[] = [];
 
@@ -168,6 +202,10 @@ export class PresenceRequirementRule implements ComplianceRule {
 		for (const holiday of holidayDays) {
 			excludedDates.add(holiday.date);
 			excludedReasons.push("holiday");
+		}
+		for (const exempt of exemptDays) {
+			excludedDates.add(exempt.date);
+			excludedReasons.push(exempt.reason);
 		}
 
 		// Determine on-site days: group work periods by calendar date in employee timezone

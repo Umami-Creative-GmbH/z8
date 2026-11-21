@@ -2,25 +2,19 @@ import "server-only";
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import {
-	absenceCategory,
-	absenceEntry,
-	userSettings,
-	workPeriod,
-	workPolicy,
-	workPolicyPresence,
-} from "@/db/schema";
+import { absenceCategory, absenceEntry, userSettings, workPeriod } from "@/db/schema";
+import { loadEffectiveContractsBatch, resolveEffectiveContractOnDay } from "@/lib/contracts";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { normalizeWeekStartDay, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import {
 	calculatePresenceStatusSummary,
 	expandApprovedHomeOfficeDates,
 	getPresencePeriodBounds,
 	getPresenceWorkDays,
+	type PresenceDayOfWeek,
 	type PresenceEvaluationPeriod,
 	type PresenceStatusSummary,
-	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./presence-status";
 
@@ -30,6 +24,7 @@ export function loadPresenceStatusForSubject(subject: {
 	organizationId: string;
 	employeeId: string;
 	preferences?: { weekStartDay: WeekStartDay; timezone: string };
+	now?: DateTime;
 }) {
 	const disabledPresenceStatus = (message: string): PresenceStatusSummary => ({
 		presenceEnabled: false,
@@ -49,41 +44,7 @@ export function loadPresenceStatusForSubject(subject: {
 	});
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		// Get employee's effective work policy
-		const workPolicyService = yield* WorkPolicyService;
-		const effectivePolicy = yield* workPolicyService.getEffectivePolicy(subject.employeeId);
-
-		if (!effectivePolicy) {
-			return disabledPresenceStatus("No effective work policy found.");
-		}
-
-		// Check if presence is enabled on the policy
-		const policyRow = yield* dbService.query("getWorkPolicy", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
-				where: and(
-					eq(workPolicy.id, effectivePolicy.policyId),
-					eq(workPolicy.organizationId, subject.organizationId),
-				),
-				columns: { presenceEnabled: true },
-			});
-		});
-
-		if (!policyRow?.presenceEnabled) {
-			return disabledPresenceStatus("Presence policy is not enabled.");
-		}
-
-		// Load presence config
-		const presenceConfig = yield* dbService.query("getPresenceConfig", async () => {
-			return await dbService.db.query.workPolicyPresence.findFirst({
-				where: eq(workPolicyPresence.policyId, effectivePolicy.policyId),
-			});
-		});
-
-		if (!presenceConfig) {
-			return disabledPresenceStatus("Presence policy configuration is missing.");
-		}
-
-		const now = DateTime.now();
+		const now = subject.now ?? DateTime.now();
 		const settingsData =
 			subject.preferences ??
 			(yield* dbService.query("getPresencePreferences", () =>
@@ -94,35 +55,78 @@ export function loadPresenceStatusForSubject(subject: {
 			));
 		const weekStartDay = normalizeWeekStartDay(settingsData?.weekStartDay);
 		const timezone = settingsData?.timezone || "UTC";
+		const todayStr = now.setZone(timezone).toISODate() ?? now.toUTC().toISODate()!;
+
+		// Resolve today's effective contract through the unified read-only resolver.
+		const todayContract = yield* dbService.query("resolvePresenceContractToday", () =>
+			resolveEffectiveContractOnDay(dbService.db, {
+				organizationId: subject.organizationId,
+				employeeId: subject.employeeId,
+				date: todayStr,
+				timezoneOverride: timezone,
+			}),
+		);
+
+		if (!todayContract?.workPolicy) {
+			return disabledPresenceStatus("No effective work policy found.");
+		}
+
+		if (
+			todayContract.presenceStatus === "not_configured" ||
+			!todayContract.workPolicy.presenceEnabled ||
+			!todayContract.workPolicy.presence
+		) {
+			return disabledPresenceStatus("Presence policy is not enabled.");
+		}
+
+		const presenceConfig = todayContract.workPolicy.presence;
 		const { start: periodStart, end: periodEnd } = getPresencePeriodBounds({
 			period: presenceConfig.evaluationPeriod,
 			now,
 			weekStartDay,
 			timezone,
 		});
+		const periodStartDate = periodStart.toISODate() ?? todayStr;
+		const periodEndDate = periodEnd.toISODate() ?? todayStr;
+
+		// Resolve every day in the evaluation period so midweek remote/exempt changes are honored.
+		const periodDates: string[] = [];
+		for (
+			let cursor = parsePlainDate(periodStartDate);
+			cursor.toString() <= periodEndDate;
+			cursor = cursor.add({ days: 1 })
+		) {
+			periodDates.push(cursor.toString());
+		}
+
+		const periodContracts =
+			(yield* dbService.query("resolvePresenceContractsPeriod", () =>
+				loadEffectiveContractsBatch(dbService.db, {
+					organizationId: subject.organizationId,
+					employeeIds: [subject.employeeId],
+					dates: periodDates,
+					timezoneOverride: timezone,
+				}),
+			)).get(subject.employeeId) ?? new Map();
+
+		const exemptDates: string[] = [];
+		let anyRequiredDayInPeriod = false;
+		for (const dateKey of periodDates) {
+			const dayContract = periodContracts.get(dateKey);
+			if (!dayContract || dayContract.presenceStatus !== "required") {
+				exemptDates.push(dateKey);
+			} else {
+				anyRequiredDayInPeriod = true;
+			}
+		}
+
+		if (!anyRequiredDayInPeriod) {
+			return disabledPresenceStatus("Presence policy is exempt for this period.");
+		}
 
 		const fixedOfficeDays = presenceConfig.requiredOnsiteFixedDays
-			? parsePresenceFixedDays(presenceConfig.requiredOnsiteFixedDays)
+			? ([...presenceConfig.requiredOnsiteFixedDays] as PresenceDayOfWeek[])
 			: null;
-
-		if (presenceConfig.requiredOnsiteFixedDays && fixedOfficeDays === null) {
-			return {
-				presenceEnabled: true,
-				available: false,
-				period: presenceConfig.evaluationPeriod as PresenceEvaluationPeriod,
-				periodStart: periodStart.toISO() ?? "",
-				periodEnd: periodEnd.toISO() ?? "",
-				mode: presenceConfig.presenceMode,
-				homeOfficeDaysLeft: 0,
-				officeDaysRequiredLeft: 0,
-				officeDaysCompleted: 0,
-				homeOfficeDaysUsed: 0,
-				workingDaysRemaining: 0,
-				requiredOfficeDays: 0,
-				fixedOfficeDays: [],
-				message: "Presence policy has invalid fixed office days.",
-			};
-		}
 
 		const fixedDaysConfigMessage = validatePresenceFixedDaysConfig(
 			presenceConfig.presenceMode,
@@ -159,8 +163,6 @@ export function loadPresenceStatusForSubject(subject: {
 				columns: { startTime: true, workLocationType: true },
 			});
 		});
-		const periodStartDate = periodStart.toISODate() ?? "";
-		const periodEndDate = periodEnd.toISODate() ?? "";
 
 		const approvedHomeOfficeEntries = yield* dbService.query(
 			"getApprovedHomeOfficeEntries",
@@ -193,6 +195,16 @@ export function loadPresenceStatusForSubject(subject: {
 			timezone,
 		});
 
+		const scheduleDays = todayContract.weeklyScheduleDays.some((d) => d.isWorkDay)
+			? todayContract.weeklyScheduleDays.map((d) => ({
+					dayOfWeek: d.dayOfWeek,
+					isWorkDay: d.isWorkDay,
+				}))
+			: (todayContract.workPolicy.schedule?.days.map((d) => ({
+					dayOfWeek: d.dayOfWeek,
+					isWorkDay: d.isWorkDay,
+				})) ?? null);
+
 		return calculatePresenceStatusSummary({
 			presenceMode: presenceConfig.presenceMode,
 			requiredOnsiteDays: presenceConfig.requiredOnsiteDays,
@@ -202,9 +214,10 @@ export function loadPresenceStatusForSubject(subject: {
 			periodEnd,
 			now,
 			timezone,
-			workDays: getPresenceWorkDays(effectivePolicy.schedule?.days ?? null),
+			workDays: getPresenceWorkDays(scheduleDays),
 			workPeriods: periods,
 			approvedHomeOfficeDates,
+			exemptDates,
 		});
 	});
 }

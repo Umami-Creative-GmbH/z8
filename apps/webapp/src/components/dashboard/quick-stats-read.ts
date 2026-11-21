@@ -1,16 +1,13 @@
 import "server-only";
 
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import {
-	absenceEntry,
-	employee,
-	workPeriod,
-	workPolicyAssignment,
-} from "@/db/schema";
+import { absenceEntry, employee, workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
@@ -40,24 +37,7 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		const currentEmployee = yield* dbService
 			.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, userId),
-						onCurrentRoster(organizationId),
-					),
-					with: {
-						workPolicyAssignments: {
-							where: eq(workPolicyAssignment.isActive, true),
-							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-							limit: 1,
-							with: {
-								policy: {
-									with: {
-										schedule: true,
-									},
-								},
-							},
-						},
-					},
+					where: and(eq(employee.userId, userId), onCurrentRoster(organizationId)),
 				});
 			})
 			.pipe(
@@ -76,16 +56,11 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		const now = currentTimestamp();
 		const balanceRead = yield* dbService
 			.query("dashboard.workBalance", () =>
-				getEmployeeWorkBalance(
-					{ organizationId, employeeId: currentEmployee.id },
-					dbService.db,
-				),
+				getEmployeeWorkBalance({ organizationId, employeeId: currentEmployee.id }, dbService.db),
 			)
 			.pipe(
 				Effect.map((balance) => ({ balance, unavailable: false })),
-				Effect.catch(() =>
-					Effect.succeed({ balance: null, unavailable: true }),
-				),
+				Effect.catch(() => Effect.succeed({ balance: null, unavailable: true })),
 			);
 		const balance = balanceRead.balance;
 		const workBalanceUnavailable = balanceRead.unavailable;
@@ -95,22 +70,16 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 					computedAt: balance.computedAt.toISOString(),
 				}
 			: null;
-		const weekStartDay = yield* Effect.promise(() =>
-			getUserWeekStartDay(userId),
-		);
+		const weekStartDay = yield* Effect.promise(() => getUserWeekStartDay(userId));
 		const trackedStats = yield* loadTrackedQuickStats({
 			organizationId,
 			employeeId: currentEmployee.id,
 			now,
 			weekStartDay,
 		});
-		if (trackedStats)
-			return { ...trackedStats, workBalance, workBalanceUnavailable };
+		if (trackedStats) return { ...trackedStats, workBalance, workBalanceUnavailable };
 		const nowDT = DateTime.fromJSDate(now);
-		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(
-			nowDT,
-			weekStartDay,
-		);
+		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(nowDT, weekStartDay);
 		const weekStart = weekStartDateTime.toJSDate();
 		const weekEnd = weekEndDateTime.toJSDate();
 		const monthStart = nowDT.startOf("month").toJSDate();
@@ -119,39 +88,33 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		const monthEndStr = nowDT.endOf("month").toISODate()!;
 
 		// Get all work periods for this month (includes this week)
-		const monthPeriods = yield* dbService.query(
-			"getMonthWorkPeriods",
-			async () => {
-				return await dbService.db.query.workPeriod.findMany({
-					where: and(
-						eq(workPeriod.employeeId, currentEmployee.id),
-						eq(workPeriod.organizationId, currentEmployee.organizationId),
-						gte(workPeriod.startTime, monthStart),
-						lte(workPeriod.startTime, monthEnd),
-					),
-				});
-			},
-		);
+		const monthPeriods = yield* dbService.query("getMonthWorkPeriods", async () => {
+			return await dbService.db.query.workPeriod.findMany({
+				where: and(
+					eq(workPeriod.employeeId, currentEmployee.id),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+					gte(workPeriod.startTime, monthStart),
+					lte(workPeriod.startTime, monthEnd),
+				),
+			});
+		});
 
-		const approvedAbsences = yield* dbService.query(
-			"getMonthApprovedAbsences",
-			async () => {
-				return await dbService.db.query.absenceEntry.findMany({
-					where: and(
-						eq(absenceEntry.employeeId, currentEmployee.id),
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
-						eq(absenceEntry.status, "approved"),
-						lte(absenceEntry.startDate, monthEndStr),
-						gte(absenceEntry.endDate, monthStartStr),
-					),
-					with: {
-						category: {
-							columns: { requiresWorkTime: true },
-						},
+		const approvedAbsences = yield* dbService.query("getMonthApprovedAbsences", async () => {
+			return await dbService.db.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, currentEmployee.id),
+					eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					eq(absenceEntry.status, "approved"),
+					lte(absenceEntry.startDate, monthEndStr),
+					gte(absenceEntry.endDate, monthStartStr),
+				),
+				with: {
+					category: {
+						columns: { requiresWorkTime: true },
 					},
-				});
-			},
-		);
+				},
+			});
+		});
 
 		const excludedDates = yield* Effect.promise(async () => {
 			const dates = new Set<string>();
@@ -177,10 +140,7 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			let current = rangeStart;
 			while (current <= rangeEnd) {
 				if (
-					await shouldExcludeFromCalculations(
-						currentEmployee.organizationId,
-						current.toJSDate(),
-					)
+					await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())
 				) {
 					const dateKey = current.toISODate();
 					if (dateKey) dates.add(dateKey);
@@ -211,22 +171,30 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		);
 
 		// Calculate total minutes
-		const weekMinutes = weekPeriods.reduce(
-			(sum, p) => sum + calculatePeriodMinutes(p),
-			0,
-		);
+		const weekMinutes = weekPeriods.reduce((sum, p) => sum + calculatePeriodMinutes(p), 0);
 
-		const monthMinutes = monthPeriods.reduce(
-			(sum, p) => sum + calculatePeriodMinutes(p),
-			0,
-		);
+		const monthMinutes = monthPeriods.reduce((sum, p) => sum + calculatePeriodMinutes(p), 0);
 
 		// Convert to hours
 		const weekActual = weekMinutes / 60;
 		const monthActual = monthMinutes / 60;
 
-		const schedule =
-			currentEmployee.workPolicyAssignments?.[0]?.policy?.schedule ?? null;
+		const resolvedContract = yield* dbService.query("dashboard.quickStatsContract", () =>
+			resolveEffectiveContractOnDay(dbService.db, {
+				organizationId,
+				employeeId: currentEmployee.id,
+				date: plainDateAt(instantFromDate(now), "UTC"),
+			}),
+		);
+		const rawSchedule = resolvedContract?.workPolicy?.scheduleEnabled
+			? (resolvedContract.workPolicy.schedule ?? null)
+			: null;
+		const schedule = rawSchedule
+			? {
+					...rawSchedule,
+					days: rawSchedule.days.map((d) => ({ ...d })),
+				}
+			: null;
 		const weekExpected = calculateAdjustedExpectedHoursForRange({
 			schedule,
 			start: weekStartDateTime,
@@ -248,10 +216,7 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		const monthExpectedToDate = calculateAdjustedExpectedHoursForRange({
 			schedule,
 			start: DateTime.fromJSDate(monthStart),
-			end:
-				nowDT < DateTime.fromJSDate(monthEnd)
-					? nowDT
-					: DateTime.fromJSDate(monthEnd),
+			end: nowDT < DateTime.fromJSDate(monthEnd) ? nowDT : DateTime.fromJSDate(monthEnd),
 			excludedDates,
 		});
 

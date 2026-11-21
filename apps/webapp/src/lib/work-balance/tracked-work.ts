@@ -27,13 +27,38 @@ export async function sumTrackedWorkMinutes(
 	},
 ): Promise<number> {
 	if (input.startDate > input.throughDate) return 0;
-	const window = employeePayrollWindow(
-		input.startDate,
-		input.throughDate,
-		input.timezone,
-	);
+	const window = employeePayrollWindow(input.startDate, input.throughDate, input.timezone);
 	const periods = await loadTrackedWorkPeriods(client, input, window);
 	return allocateTrackedWorkMinutes(periods, window);
+}
+
+/**
+ * Sums tracked work minutes across `[startDate, throughDate]` while excluding any calendar
+ * date in `excludedDates` (such as `trust_based` balance days, which emit exact 0 delta).
+ */
+export async function sumTrackedWorkMinutesExcludingDates(
+	client: Pick<WorkBalanceDbClient, "select">,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		startDate: string;
+		throughDate: string;
+		timezone: string;
+	},
+	excludedDates: ReadonlySet<string>,
+): Promise<number> {
+	if (input.startDate > input.throughDate) return 0;
+	if (excludedDates.size === 0) return sumTrackedWorkMinutes(client, input);
+	const window = employeePayrollWindow(input.startDate, input.throughDate, input.timezone);
+	const periods = await loadTrackedWorkPeriods(client, input, window);
+	const { minutesByDate } = allocateTrackedDailyWorkMinutes(periods, input);
+	let total = 0;
+	for (const [dateKey, minutes] of Object.entries(minutesByDate)) {
+		if (!excludedDates.has(dateKey)) {
+			total += minutes;
+		}
+	}
+	return total;
 }
 
 /** Null lets historical/legacy readers retain their previous aggregation. */
@@ -48,19 +73,13 @@ export async function sumWorkMinutesWithinTracking(
 ): Promise<number | null> {
 	const tracking = await loadEmployeeTrackingContext(client, input);
 	if (!tracking) return null;
-	const firstDay = plainDateAt(
-		instantFromDate(input.startDate),
-		tracking.timezone,
-	).toString();
+	const firstDay = plainDateAt(instantFromDate(input.startDate), tracking.timezone).toString();
 	return sumTrackedWorkMinutes(client, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		timezone: tracking.timezone,
 		startDate: firstDay > tracking.startDate ? firstDay : tracking.startDate,
-		throughDate: plainDateAt(
-			instantFromDate(input.endDate),
-			tracking.timezone,
-		).toString(),
+		throughDate: plainDateAt(instantFromDate(input.endDate), tracking.timezone).toString(),
 	});
 }
 
@@ -80,20 +99,11 @@ export async function readTrackedDailyWorkMinutes(
 		instantFromDate(input.startDate),
 		tracking.timezone,
 	).toString();
-	const startDate =
-		requestedStart > tracking.startDate ? requestedStart : tracking.startDate;
-	const throughDate = plainDateAt(
-		instantFromDate(input.endDate),
-		tracking.timezone,
-	).toString();
+	const startDate = requestedStart > tracking.startDate ? requestedStart : tracking.startDate;
+	const throughDate = plainDateAt(instantFromDate(input.endDate), tracking.timezone).toString();
 	const minutesByDate: Record<string, number> = {};
-	if (startDate > throughDate)
-		return { timezone: tracking.timezone, minutesByDate };
-	const window = employeePayrollWindow(
-		startDate,
-		throughDate,
-		tracking.timezone,
-	);
+	if (startDate > throughDate) return { timezone: tracking.timezone, minutesByDate };
+	const window = employeePayrollWindow(startDate, throughDate, tracking.timezone);
 	const periods = await loadTrackedWorkPeriods(client, input, window);
 	return allocateTrackedDailyWorkMinutes(periods, {
 		startDate,
@@ -125,10 +135,7 @@ export function allocateTrackedDailyWorkMinutes(
 		if (!period.endTime) continue;
 		const start = instantFromDate(period.startTime);
 		const end = instantFromDate(period.endTime);
-		if (
-			compareInstants(start, window.endExclusive) >= 0 ||
-			compareInstants(end, window.start) <= 0
-		)
+		if (compareInstants(start, window.endExclusive) >= 0 || compareInstants(end, window.start) <= 0)
 			continue;
 		if (compareInstants(end, start) < 0) {
 			// Retain the allocator's reconciliation failure for invalid history.
@@ -137,8 +144,7 @@ export function allocateTrackedDailyWorkMinutes(
 		}
 		const periodStartDate = plainDateAt(start, timezone).toString();
 		// A positive interval ending at midnight belongs only to preceding days.
-		const lastInstant =
-			compareInstants(start, end) < 0 ? end.subtract({ nanoseconds: 1 }) : end;
+		const lastInstant = compareInstants(start, end) < 0 ? end.subtract({ nanoseconds: 1 }) : end;
 		const periodEndDate = plainDateAt(lastInstant, timezone).toString();
 		const firstDay = periodStartDate > startDate ? periodStartDate : startDate;
 		const lastDay = periodEndDate < throughDate ? periodEndDate : throughDate;
@@ -148,10 +154,7 @@ export function allocateTrackedDailyWorkMinutes(
 			day = day.add({ days: 1 })
 		) {
 			const date = day.toString();
-			minutesByDate[date] += allocateTrackedWorkMinutes(
-				[period],
-				dayWindows[date],
-			);
+			minutesByDate[date] += allocateTrackedWorkMinutes([period], dayWindows[date]);
 		}
 	}
 	return { timezone: timezone, minutesByDate };

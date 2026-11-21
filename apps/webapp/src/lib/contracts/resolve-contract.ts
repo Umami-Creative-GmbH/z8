@@ -177,6 +177,8 @@ export interface WorkPolicySnapshot {
 
 export interface PureResolveContractInput {
 	readonly date: PlainDate;
+	/** Optional exact instant for legacy timestamp-bounded policy assignments. */
+	readonly at?: Instant;
 	readonly employeeId: string;
 	readonly employeeContractType: ContractType;
 	readonly employeeCalendarTimezone: string;
@@ -330,6 +332,10 @@ function selectConfirmedTermsOnDate(
 ): EmploymentHistorySnapshot | null {
 	const ordered = [...rows]
 		.map((row) => ({ row, bounds: termsDateBounds(row, organizationTimezone) }))
+		.filter(
+			(entry) =>
+				entry.bounds.until === null || comparePlainDates(entry.bounds.from, entry.bounds.until) < 0,
+		)
 		.sort((left, right) => {
 			const fromCmp = comparePlainDates(left.bounds.from, right.bounds.from);
 			if (fromCmp !== 0) return fromCmp;
@@ -429,7 +435,26 @@ function assignmentCoversDay(
 	day: PlainDate,
 	dayStr: string,
 	organizationTimezone: string,
+	at?: Instant,
 ): boolean {
+	if (
+		at !== undefined &&
+		(assignment.effectiveFrom !== null || assignment.effectiveUntil !== null)
+	) {
+		if (
+			assignment.effectiveFrom !== null &&
+			compareInstants(instantFromDate(assignment.effectiveFrom), at) > 0
+		) {
+			return false;
+		}
+		if (
+			assignment.effectiveUntil !== null &&
+			compareInstants(at, instantFromDate(assignment.effectiveUntil)) >= 0
+		) {
+			return false;
+		}
+		return true;
+	}
 	if (assignment.effectiveFromDate !== null) {
 		if (assignment.effectiveFromDate > dayStr) return false;
 		if (assignment.effectiveUntilDate !== null && assignment.effectiveUntilDate <= dayStr) {
@@ -457,6 +482,7 @@ function selectPolicyAssignmentAtLevel(input: {
 	day: PlainDate;
 	dayStr: string;
 	organizationTimezone: string;
+	at?: Instant;
 }): PolicyAssignmentSnapshot | null {
 	const matching = input.assignments.filter((row) => {
 		if (row.assignmentType !== input.level) return false;
@@ -464,7 +490,7 @@ function selectPolicyAssignmentAtLevel(input: {
 		if (input.level === "team" && (input.teamId === null || row.teamId !== input.teamId)) {
 			return false;
 		}
-		if (!assignmentCoversDay(row, input.day, input.dayStr, input.organizationTimezone)) {
+		if (!assignmentCoversDay(row, input.day, input.dayStr, input.organizationTimezone, input.at)) {
 			return false;
 		}
 		const policy = input.policiesById.get(row.policyId);
@@ -787,14 +813,16 @@ export function resolveEffectiveContractPure(
 		foreignTeamIds: input.foreignTeamIds,
 	});
 
-	// 3. Confirmed employee terms for the active stint
-	const employeeTerms = selectConfirmedTermsForPeriodOnDay({
-		confirmedTerms: input.confirmedTerms,
-		period,
-		day,
-		employeeCalendarTimezone: input.employeeCalendarTimezone,
-		organizationTimezone: input.organizationTimezone,
-	});
+	// 3. Confirmed employee terms for the active stint (never leak across closed employment periods)
+	const employeeTerms = isEmployed
+		? selectConfirmedTermsForPeriodOnDay({
+				confirmedTerms: input.confirmedTerms,
+				period,
+				day,
+				employeeCalendarTimezone: input.employeeCalendarTimezone,
+				organizationTimezone: input.organizationTimezone,
+			})
+		: null;
 
 	// 4. Primary Team Default & Organization Default
 	const teamDefault =
@@ -825,7 +853,7 @@ export function resolveEffectiveContractPure(
 		}
 	}
 
-	if (!workPolicyResolved) {
+	if (!workPolicyResolved && employeeTerms === null && isEmployed) {
 		const empAssignment = selectPolicyAssignmentAtLevel({
 			assignments: input.policyAssignments,
 			policiesById: input.policiesById,
@@ -835,6 +863,7 @@ export function resolveEffectiveContractPure(
 			day,
 			dayStr,
 			organizationTimezone: input.organizationTimezone,
+			at: input.at,
 		});
 		if (empAssignment) {
 			const policy = input.policiesById.get(empAssignment.policyId);
@@ -871,6 +900,7 @@ export function resolveEffectiveContractPure(
 			day,
 			dayStr,
 			organizationTimezone: input.organizationTimezone,
+			at: input.at,
 		});
 		if (teamAssignment) {
 			const policy = input.policiesById.get(teamAssignment.policyId);
@@ -907,6 +937,7 @@ export function resolveEffectiveContractPure(
 			day,
 			dayStr,
 			organizationTimezone: input.organizationTimezone,
+			at: input.at,
 		});
 		if (orgAssignment) {
 			const policy = input.policiesById.get(orgAssignment.policyId);
@@ -1071,6 +1102,7 @@ export async function loadEffectiveContractsBatch(
 		employeeIds: readonly string[];
 		dates: readonly (PlainDate | string)[];
 		timezoneOverride?: string;
+		at?: Instant;
 	},
 ): Promise<Map<string, Map<string, EffectiveContractOnDay>>> {
 	const result = new Map<string, Map<string, EffectiveContractOnDay>>();
@@ -1243,83 +1275,79 @@ export async function loadEffectiveContractsBatch(
 		]),
 	];
 
-	const [
-		historyDayRows,
-		templateDayRows,
-		referencedTeams,
-		policyRows,
-		versionRows,
-		scheduleRows,
-		regulationRows,
-		presenceRows,
-	] = await Promise.all([
-		historyIds.length > 0
-			? db
-					.select()
-					.from(employeeEmploymentHistoryDay)
-					.where(
-						and(
-							eq(employeeEmploymentHistoryDay.organizationId, input.organizationId),
-							inArray(employeeEmploymentHistoryDay.employmentHistoryId, historyIds),
-						),
-					)
-			: Promise.resolve([]),
-		templateVersionIds.length > 0
-			? db
-					.select()
-					.from(contractTemplateVersionDay)
-					.where(
-						and(
-							eq(contractTemplateVersionDay.organizationId, input.organizationId),
-							inArray(contractTemplateVersionDay.templateVersionId, templateVersionIds),
-						),
-					)
-			: Promise.resolve([]),
-		allReferencedTeamIds.length > 0
-			? db
-					.select({ id: team.id, organizationId: team.organizationId, name: team.name })
-					.from(team)
-					.where(inArray(team.id, allReferencedTeamIds))
-			: Promise.resolve([]),
-		allReferencedPolicyIds.length > 0
-			? db
-					.select()
-					.from(workPolicy)
-					.where(
-						and(
-							eq(workPolicy.organizationId, input.organizationId),
-							inArray(workPolicy.id, allReferencedPolicyIds),
-						),
-					)
-			: Promise.resolve([]),
-		allReferencedPolicyIds.length > 0
-			? db
-					.select()
-					.from(workPolicyVersion)
-					.where(
-						and(
-							eq(workPolicyVersion.organizationId, input.organizationId),
-							inArray(workPolicyVersion.policyId, allReferencedPolicyIds),
-						),
-					)
-			: Promise.resolve([]),
-		allReferencedPolicyIds.length > 0
+	const [historyDayRows, templateDayRows, referencedTeams, policyRows, versionRows] =
+		await Promise.all([
+			historyIds.length > 0
+				? db
+						.select()
+						.from(employeeEmploymentHistoryDay)
+						.where(
+							and(
+								eq(employeeEmploymentHistoryDay.organizationId, input.organizationId),
+								inArray(employeeEmploymentHistoryDay.employmentHistoryId, historyIds),
+							),
+						)
+				: Promise.resolve([]),
+			templateVersionIds.length > 0
+				? db
+						.select()
+						.from(contractTemplateVersionDay)
+						.where(
+							and(
+								eq(contractTemplateVersionDay.organizationId, input.organizationId),
+								inArray(contractTemplateVersionDay.templateVersionId, templateVersionIds),
+							),
+						)
+				: Promise.resolve([]),
+			allReferencedTeamIds.length > 0
+				? db
+						.select({ id: team.id, organizationId: team.organizationId, name: team.name })
+						.from(team)
+						.where(inArray(team.id, allReferencedTeamIds))
+				: Promise.resolve([]),
+			allReferencedPolicyIds.length > 0
+				? db
+						.select()
+						.from(workPolicy)
+						.where(
+							and(
+								eq(workPolicy.organizationId, input.organizationId),
+								inArray(workPolicy.id, allReferencedPolicyIds),
+							),
+						)
+				: Promise.resolve([]),
+			allReferencedPolicyIds.length > 0
+				? db
+						.select()
+						.from(workPolicyVersion)
+						.where(
+							and(
+								eq(workPolicyVersion.organizationId, input.organizationId),
+								inArray(workPolicyVersion.policyId, allReferencedPolicyIds),
+							),
+						)
+				: Promise.resolve([]),
+		]);
+
+	const versionIds = versionRows.map((row) => row.id);
+	const [scheduleRows, regulationRows, presenceRows] = await Promise.all([
+		versionIds.length > 0
 			? db
 					.select()
 					.from(workPolicySchedule)
-					.where(inArray(workPolicySchedule.policyId, allReferencedPolicyIds))
+					.where(inArray(workPolicySchedule.policyVersionId, versionIds))
 			: Promise.resolve([]),
-		allReferencedPolicyIds.length > 0
+		versionIds.length > 0
 			? db
 					.select()
 					.from(workPolicyRegulation)
-					.where(inArray(workPolicyRegulation.policyId, allReferencedPolicyIds))
+					.where(inArray(workPolicyRegulation.policyVersionId, versionIds))
 			: Promise.resolve([]),
-		allReferencedPolicyIds.length > 0
+		versionIds.length > 0
 			? db
 					.select()
 					.from(workPolicyPresence)
-					.where(inArray(workPolicyPresence.policyId, allReferencedPolicyIds))
+					.where(inArray(workPolicyPresence.policyVersionId, versionIds))
 			: Promise.resolve([]),
 	]);
 
@@ -1609,6 +1637,7 @@ export async function loadEffectiveContractsBatch(
 		for (const day of uniqueDates) {
 			const resolved = resolveEffectiveContractPure({
 				date: day,
+				at: input.at,
 				employeeId: emp.id,
 				employeeContractType: emp.contractType,
 				employeeCalendarTimezone: empCalendarTz,
@@ -1642,6 +1671,7 @@ export async function resolveEffectiveContractOnDay(
 		employeeId: string;
 		date: PlainDate | string;
 		timezoneOverride?: string;
+		at?: Instant;
 	},
 ): Promise<EffectiveContractOnDay | null> {
 	const day = toPlainDate(input.date);
@@ -1650,6 +1680,7 @@ export async function resolveEffectiveContractOnDay(
 		employeeIds: [input.employeeId],
 		dates: [day],
 		timezoneOverride: input.timezoneOverride,
+		at: input.at,
 	});
 	return batch.get(input.employeeId)?.get(day.toString()) ?? null;
 }
