@@ -6,12 +6,16 @@ import { createAuthEndpoint } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { organization } from "better-auth/plugins/organization";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-	createSsoEnforcementPlugin,
-	recordVerifiedSsoLogin,
-} from "./sso-enforcement-plugin";
+import { createSsoEnforcementPlugin, recordVerifiedSsoLogin } from "./sso-enforcement-plugin";
 import type { SessionSsoProvenance, SessionSsoStore } from "./session-sso";
 import { startOrganizationSsoReauthentication } from "./sso-reauthentication";
+import { ssoRequestOrigin } from "./sso-request-origin";
+
+const brandedOrigin = "https://work.customer.test";
+vi.mock("@/lib/domain/domain-service", () => ({
+	getDomainConfig: async (host: string) =>
+		host === "work.customer.test" ? { organizationId: "locked", domain: host } : null,
+}));
 
 /**
  * The Cookie header a browser sends after these Set-Cookie headers. A browser
@@ -86,12 +90,13 @@ async function fixture(realSso = false) {
 		},
 	} satisfies BetterAuthPlugin;
 	const auth = betterAuth({
-		baseURL: "http://localhost:3000",
+		baseURL: { allowedHosts: ["localhost:3000"], fallback: "http://localhost:3000" },
 		secret: "test-sso-enforcement-secret-at-least-32-characters",
-		trustedOrigins: ["https://idp.example.test"],
+		trustedOrigins: ["https://idp.example.test", brandedOrigin],
 		database: memoryAdapter(data),
 		session: { cookieCache: { enabled: true, maxAge: 300 } },
 		plugins: [
+			ssoRequestOrigin,
 			organization({ teams: { enabled: true } }),
 			realSso
 				? sso({
@@ -176,16 +181,49 @@ describe("SSO enforcement in installed Better Auth endpoint dispatch", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it.each([brandedOrigin, "http://localhost:3000"])(
+		"sends the provider back to the browser sign-in origin %s",
+		async (origin) => {
+			const { auth } = await fixture(true);
+			const response = await auth.handler(
+				new Request(`${origin}/api/auth/sign-in/sso`, {
+					method: "POST",
+					headers: { host: new URL(origin).host, origin, "content-type": "application/json" },
+					body: JSON.stringify({ providerId: "verified-idp", callbackURL: "/init" }),
+				}),
+			);
+			expect(response.status).toBe(200);
+			const authorization = new URL((await response.json()).url);
+			expect(authorization.searchParams.get("redirect_uri")).toBe(
+				`${origin}/api/auth/sso/callback`,
+			);
+		},
+	);
+
+	it("requires domain verification before using a custom host for SSO", async () => {
+		const { auth } = await fixture(true);
+		await expect(
+			auth.api.signInSSO({
+				headers: new Headers({ host: "pending.customer.test" }),
+				body: { providerId: "verified-idp", callbackURL: "/init" },
+			}),
+		).rejects.toMatchObject({ status: "FORBIDDEN" });
+	});
+
 	it("uses the installed SSO plugin's verified state and records proof on every successful login", async () => {
 		const { auth, proofs, store, headers } = await fixture(true);
-		const fetch = vi.fn(async (url: string | URL | Request) => {
+		headers.set("host", "work.customer.test");
+		const redirectUri = `${brandedOrigin}/api/auth/sso/callback`;
+		const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
 			const address = url instanceof Request ? url.url : String(url);
-			if (address === "https://idp.example.test/token")
+			if (address === "https://idp.example.test/token") {
+				expect(new URLSearchParams(String(init?.body)).get("redirect_uri")).toBe(redirectUri);
 				return Response.json({
 					access_token: "verified-token",
 					token_type: "Bearer",
 					expires_in: 3600,
 				});
+			}
 			if (address === "https://idp.example.test/userinfo")
 				return Response.json({
 					sub: "idp-actor",
@@ -201,18 +239,18 @@ describe("SSO enforcement in installed Better Auth endpoint dispatch", () => {
 				{
 					getMembership: async () => true,
 					getPolicy: store.getPolicy,
-					start: (body) =>
-						auth.api.signInSSO({ headers, body, asResponse: true }),
+					start: (body) => auth.api.signInSSO({ headers, body, asResponse: true }),
 				},
 				{
 					userId: "actor",
 					organizationId: "locked",
-					origin: "http://localhost:3000",
+					origin: brandedOrigin,
 					callbackUrl: "/reports",
 				},
 			);
 			expect(start.status).toBe(200);
 			const { url } = await start.json();
+			expect(new URL(url).searchParams.get("redirect_uri")).toBe(redirectUri);
 			const state = new URL(url).searchParams.get("state");
 			const cookie = start.headers
 				.getSetCookie()
@@ -220,11 +258,12 @@ describe("SSO enforcement in installed Better Auth endpoint dispatch", () => {
 				.join("; ");
 			const callback = await auth.handler(
 				new Request(
-					`http://localhost:3000/api/auth/sso/callback?code=verified-code&state=${state}&providerId=forged&organizationId=open`,
-					{ headers: { cookie } },
+					`${redirectUri}?code=verified-code&state=${state}&providerId=forged&organizationId=open`,
+					{ headers: { cookie, host: "work.customer.test" } },
 				),
 			);
 			const destination = new URL(callback.headers.get("location")!);
+			expect(destination.origin).toBe(brandedOrigin);
 			expect(destination.pathname).toBe("/init");
 			expect(destination.searchParams.get("organizationId")).toBe("locked");
 			expect(destination.searchParams.get("callbackUrl")).toBe("/reports");
