@@ -5,6 +5,7 @@ export default {
 		minScore: 0.46,
 	},
 	ignore: {
+		files: [".tmp/**"],
 		rules: [
 			"react-doctor/nextjs-no-img-element",
 			"react-doctor/server-auth-actions",
