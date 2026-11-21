@@ -381,7 +381,7 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		const { policyId } = await seedPolicyWithAllArbzgFields("Rollback Target");
 		const nonexistentLocationId = "00000000-0000-4000-8000-000000000999";
 
-		// Trigger FK failure on presence insert AFTER policy, schedule, and regulation writes run
+		// Trigger failure on presence location validation AFTER policy, schedule, and regulation checks
 		const failedUpdate = await updateWorkPolicy({
 			policyId,
 			data: {
@@ -411,7 +411,11 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 			},
 		});
 
-		expect(failedUpdate).toMatchObject({ success: false, code: "DatabaseError" });
+		expect(failedUpdate).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "location_inactive",
+		});
 
 		// Verify original policy, schedule, schedule days, regulation + 7 ArbZG cols, break rules/options, and presence are intact
 		const fetched = await getWorkPolicy(policyId);
@@ -439,29 +443,25 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 			locationId,
 		});
 
-		// Create rollback: failing on presence leaves zero rows in work_policy
+		// Create rollback: failing mid-transaction on duplicate schedule day unique constraint leaves zero rows in work_policy
 		const failedCreate = await createWorkPolicy({
 			name: "Failed Create Policy",
 			scheduleEnabled: true,
 			regulationEnabled: true,
-			presenceEnabled: true,
+			presenceEnabled: false,
 			schedule: {
 				scheduleCycle: "weekly",
-				scheduleType: "simple",
-				workingDaysPreset: "weekdays",
-				hoursPerCycle: "40",
+				scheduleType: "detailed",
+				workingDaysPreset: "custom",
+				days: [
+					{ dayOfWeek: "monday", hoursPerDay: "8", isWorkDay: true },
+					{ dayOfWeek: "monday", hoursPerDay: "4", isWorkDay: true },
+				],
 			},
 			regulation: {
 				maxDailyMinutes: 600,
 				...INITIAL_ARBZG,
 				breakRules: [],
-			},
-			presence: {
-				presenceMode: "minimum_count",
-				requiredOnsiteDays: 2,
-				locationId: nonexistentLocationId,
-				evaluationPeriod: "weekly",
-				enforcement: "warn",
 			},
 		});
 		expect(failedCreate).toMatchObject({ success: false, code: "DatabaseError" });
