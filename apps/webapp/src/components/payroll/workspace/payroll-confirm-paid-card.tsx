@@ -24,7 +24,7 @@ import {
 import type { PayrollExportToConfirm } from "@/lib/payroll-period/export-confirmation";
 import { queryKeys } from "@/lib/query/keys";
 import { formatPlainDateRange } from "@/lib/travel-expenses/format";
-import { SettlePreview } from "./payroll-settlement-card";
+import { SettlePreview } from "./payroll-settle-preview";
 import type { PayrollTranslate } from "./state";
 import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
@@ -153,8 +153,8 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 				)}
 				<p className="mt-3 text-muted-foreground text-sm">
 					{t(
-						"payroll.confirmPaid.notConfirmable",
-						"Files made before settled days existed, and deliveries to a connected payroll system, recorded no days and can't be confirmed as paid. Settle their days by hand with Settle days below.",
+						"payroll.confirmPaid.notConfirmableSettleByHand",
+						"Files made before settled days existed, and deliveries to a connected payroll system, recorded no days and can't be confirmed as paid. Settle their days by hand in the Settlement tab.",
 					)}
 				</p>
 			</CardContent>

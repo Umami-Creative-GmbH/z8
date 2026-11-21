@@ -3,20 +3,36 @@
 import {
 	IconAlertCircle,
 	IconAlertTriangle,
+	IconChecks,
 	IconCircleCheck,
 	IconConfetti,
+	IconLoader2,
 } from "@tabler/icons-react";
 import { useLocale } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
+import {
+	type PayrollSettleSpecificDaysRequest,
+	previewSettleSpecificPayrollDaysAction,
+	settleSpecificPayrollDaysAction,
+} from "@/app/[locale]/(app)/payroll/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { PayrollDayPanel, type PayrollDaySelection } from "./payroll-day-panel";
+import {
+	currentDaySelection,
+	EMPTY_DAY_SELECTION,
+	payrollDayKey,
+	payrollDaySelectionReducer,
+	settleableGroups,
+} from "./payroll-day-selection";
 import { PayrollDaySettlement } from "./payroll-day-settlement";
-import { PayrollDaysGrid } from "./payroll-days-grid";
+import { type PayrollDayPicking, PayrollDaysGrid } from "./payroll-days-grid";
 import { payrollDaysFormat } from "./payroll-day-format";
 import { PayrollDaysList } from "./payroll-days-list";
+import { PayrollSettleConfirmDialog, usePayrollSettle } from "./payroll-settle-dialog";
 import { PayrollPlaceholderTab } from "./payroll-workspace-tabs";
 import type { PayrollPeriodRequest, PayrollTranslate } from "./state";
 import { usePayrollPeriod } from "./use-payroll-period";
@@ -27,7 +43,8 @@ const SKELETON_ROWS = ["first", "second", "third", "fourth", "fifth", "sixth"] a
  * The Days tab: credited hours per employee and local day, with required hours, the
  * difference, absences and holidays. Everything shown comes from the payroll period read.
  * A day opens a read-only side panel; below the mobile breakpoint the grid becomes a list
- * of days for one employee at a time (#1894).
+ * of days for one employee at a time (#1894). "Select days to settle" picks unsettled
+ * days with entries and settles exactly those, after a preview.
  */
 export function PayrollDaysTab({
 	filtersHaveNoMatches,
@@ -47,6 +64,26 @@ export function PayrollDaysTab({
 	const [selection, setSelection] = useState<PayrollDaySelection | null>(null);
 	const selectDay = (employee: PayrollPeriodEmployee, day: PayrollPeriodDay) =>
 		setSelection({ employee, day });
+	// Picking days to settle: leaving the mode drops the picked days.
+	const [picking, setPicking] = useState(false);
+	const [picked, dispatchPicked] = useReducer(payrollDaySelectionReducer, EMPTY_DAY_SELECTION);
+	// Each row's and column's pickable days, once per read rather than on every toggle.
+	const loadedEmployees = data?.employees;
+	const groups = useMemo(
+		() => (picking ? settleableGroups(loadedEmployees ?? []) : null),
+		[picking, loadedEmployees],
+	);
+	const settle = usePayrollSettle<PayrollSettleSpecificDaysRequest>({
+		preview: previewSettleSpecificPayrollDaysAction,
+		settle: settleSpecificPayrollDaysAction,
+		onSettled: () => dispatchPicked({ type: "clear" }),
+		t,
+	});
+	function togglePicking() {
+		if (picking) dispatchPicked({ type: "clear" });
+		else setSelection(null);
+		setPicking(!picking);
+	}
 
 	if (filtersHaveNoMatches) {
 		return (
@@ -88,20 +125,83 @@ export function PayrollDaysTab({
 	const dates = data.employees[0]?.days.map((day) => day.date) ?? [];
 	// The open day follows refetches of the period, for example after unsettling it.
 	const currentSelection = selection ? currentDay(data.employees, selection) : null;
+	// Picked days survive refetches while they can still be settled.
+	const pickedDays = currentDaySelection(picked, data.employees);
+	const employees = data.employees;
+	const pickingControls: PayrollDayPicking | undefined = groups
+		? {
+				selected: new Set(pickedDays.map((day) => payrollDayKey(day.employeeId, day.date))),
+				groups,
+				onToggleDay: (employee, day, extend) =>
+					dispatchPicked({ type: "toggleDay", employee, date: day.date, extend }),
+				onToggleEmployee: (employee) => dispatchPicked({ type: "toggleEmployee", employee }),
+				onToggleDate: (date) => dispatchPicked({ type: "toggleDate", date, employees }),
+			}
+		: undefined;
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
-			<PayrollDaysLegend t={t} />
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+				<PayrollDaysLegend t={t} />
+				<Button
+					type="button"
+					size="sm"
+					variant={picking ? "secondary" : "outline"}
+					aria-pressed={picking}
+					className="shrink-0 self-start"
+					onClick={togglePicking}
+				>
+					<IconChecks aria-hidden="true" className="size-4" />
+					{t("payroll.days.select.toggle", "Select days to settle")}
+				</Button>
+			</div>
+			{picking ? (
+				<p className="text-muted-foreground text-xs">
+					{isMobile
+						? t(
+								"payroll.days.select.hintList",
+								"Tap unsettled days with entries to select them for settling.",
+							)
+						: t(
+								"payroll.days.select.hint",
+								"Click unsettled days with entries to select them. Click a name or a date to select its row or column; Shift-click selects a range in a row.",
+							)}
+				</p>
+			) : null}
 			{isMobile ? (
-				<PayrollDaysList employees={data.employees} format={format} onSelectDay={selectDay} t={t} />
+				<PayrollDaysList
+					employees={employees}
+					format={format}
+					onSelectDay={selectDay}
+					picking={pickingControls}
+					t={t}
+				/>
 			) : (
 				<PayrollDaysGrid
 					dates={dates}
-					employees={data.employees}
+					employees={employees}
 					format={format}
 					onSelectDay={selectDay}
+					picking={pickingControls}
 					t={t}
 				/>
 			)}
+			{picking ? (
+				<PayrollDaySelectionBar
+					count={pickedDays.length}
+					isPreviewing={settle.isPreviewing}
+					onClear={() => dispatchPicked({ type: "clear" })}
+					onSettle={() => settle.requestPreview({ days: pickedDays })}
+					t={t}
+				/>
+			) : null}
+			<PayrollSettleConfirmDialog
+				description={t(
+					"payroll.days.select.confirmDescription",
+					"Settling records that the selected days' worked hours and approved absences have been paid.",
+				)}
+				settle={settle}
+				t={t}
+			/>
 			<PayrollDayPanel
 				format={format}
 				onClose={() => setSelection(null)}
@@ -130,6 +230,45 @@ function currentDay(
 	const employee = employees.find((row) => row.id === selection.employee.id);
 	const day = employee?.days.find((row) => row.date === selection.day.date);
 	return employee && day ? { employee, day } : selection;
+}
+
+/** The sticky bar of the picked days: how many, settling them, and clearing the selection. */
+function PayrollDaySelectionBar({
+	count,
+	isPreviewing,
+	onClear,
+	onSettle,
+	t,
+}: {
+	count: number;
+	isPreviewing: boolean;
+	onClear: () => void;
+	onSettle: () => void;
+	t: PayrollTranslate;
+}) {
+	return (
+		<section
+			aria-label={t("payroll.days.select.barLabel", "Selected days")}
+			className="sticky bottom-4 z-30 flex flex-wrap items-center gap-3 rounded-lg border bg-background/95 px-4 py-2 shadow-lg backdrop-blur"
+		>
+			<span className="font-medium text-sm tabular-nums" aria-live="polite">
+				{t("payroll.days.select.count", "{count} days selected", { count })}
+			</span>
+			<span className="ml-auto flex gap-2">
+				<Button type="button" variant="ghost" size="sm" disabled={count === 0} onClick={onClear}>
+					{t("payroll.days.select.clear", "Clear")}
+				</Button>
+				<Button type="button" size="sm" disabled={count === 0 || isPreviewing} onClick={onSettle}>
+					{isPreviewing ? (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					) : (
+						<IconCircleCheck aria-hidden="true" className="size-4" />
+					)}
+					{t("payroll.days.select.settle", "Settle…")}
+				</Button>
+			</span>
+		</section>
+	);
 }
 
 function PayrollDaysLegend({ t }: { t: PayrollTranslate }) {

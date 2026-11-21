@@ -15,8 +15,14 @@ vi.mock("next/cache", async (importOriginal) =>
 );
 
 const { readPeriod } = await import("./read-period");
-const { previewSettleDays, settleDays, settlementHistory, unsettleDays } =
-	await import("./settlement");
+const {
+	previewSettleDays,
+	previewSettleSpecificDays,
+	settleDays,
+	settleSpecificDays,
+	settlementHistory,
+	unsettleDays,
+} = await import("./settlement");
 const { getPayrollWorkspaceSummary } = await import("@/lib/payroll-workspace/summary");
 
 const admin = integrationAdminPool();
@@ -71,8 +77,13 @@ async function work(
 	return rows[0].id as string;
 }
 
-/** An approved full-day canonical absence, encoded as the absence writers store it. */
-async function approvedAbsence(organizationId: string, employeeId: string, date: string) {
+/** A full-day canonical absence, encoded as the absence writers store it. */
+async function approvedAbsence(
+	organizationId: string,
+	employeeId: string,
+	date: string,
+	approvalState: "approved" | "pending" = "approved",
+) {
 	const { rows: category } = await admin.query(
 		`insert into absence_category
 		 (organization_id, type, name, color, requires_approval, counts_against_vacation, is_active, updated_at)
@@ -83,9 +94,9 @@ async function approvedAbsence(organizationId: string, employeeId: string, date:
 		`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
 		   approval_state, origin, created_by, updated_at)
 		 values (gen_random_uuid(), $1, $2, 'absence', $3::date,
-		   ($3::date + interval '1 day' - interval '1 millisecond'), 'approved', 'manual',
+		   ($3::date + interval '1 day' - interval '1 millisecond'), $4, 'manual',
 		   't1896-owner', now()) returning id`,
-		[organizationId, employeeId, date],
+		[organizationId, employeeId, date, approvalState],
 	);
 	await admin.query(
 		`insert into time_record_absence (record_id, organization_id, record_kind, absence_category_id)
@@ -171,11 +182,26 @@ describe("settling payroll days on PostgreSQL", () => {
 	beforeEach(seed);
 	afterAll(cleanup);
 
-	it("settles the grant's employees for a date range, keeping a copy of each day", async () => {
+	it("settles the grant's employees' days with entries for a date range, keeping a copy of each day", async () => {
 		const result = await settleDays(ORG, holder, { employeeIds: [ids.anna] }, week);
 
-		expect(result).toMatchObject({ status: "settled", alreadySettled: [] });
-		expect(result.status === "settled" && result.newlySettled).toHaveLength(7);
+		expect(result).toMatchObject({
+			status: "settled",
+			alreadySettled: [],
+			newlySettled: [
+				{ employeeId: ids.anna, date: "2026-11-10" },
+				{ employeeId: ids.anna, date: "2026-11-12" },
+			],
+			employees: [{ employeeId: ids.anna, name: "t1896-anna", days: 2, creditedMinutes: 480 }],
+		});
+		// Nobody recorded anything on the other days, so settling never marks them as paid.
+		expect(result.status === "settled" && result.skippedWithoutEntries).toEqual(
+			["09", "11", "13", "14", "15"].map((day) => ({
+				employeeId: ids.anna,
+				date: `2026-11-${day}`,
+			})),
+		);
+		expect((await annaDay("2026-11-09"))?.settlement).toEqual({ state: "unsettled" });
 
 		expect((await annaDay("2026-11-10"))?.settlement).toMatchObject({
 			state: "settled",
@@ -199,9 +225,9 @@ describe("settling payroll days on PostgreSQL", () => {
 		});
 		expect((await annaDay("2026-11-16"))?.settlement).toEqual({ state: "unsettled" });
 		expect((await readPeriod(ORG, holder, november)).settlement).toEqual({
-			settledDays: 7,
+			settledDays: 2,
 			changedSinceSettledDays: 0,
-			unsettledDays: 23,
+			unsettledDays: 28,
 		});
 	});
 
@@ -209,7 +235,7 @@ describe("settling payroll days on PostgreSQL", () => {
 		const result = await settleDays(ORG, holder, {}, week);
 
 		expect(result.status === "settled" && result.newlySettled.map((day) => day.employeeId)).toEqual(
-			Array(7).fill(ids.anna),
+			Array(2).fill(ids.anna),
 		);
 	});
 
@@ -220,42 +246,180 @@ describe("settling payroll days on PostgreSQL", () => {
 		const again = await settleDays(ORG, holder, {}, week);
 
 		for (const result of [preview, again]) {
-			expect(result.status !== "out_of_scope" && result.status !== "invalid_range").toBe(true);
-			if (result.status === "out_of_scope" || result.status === "invalid_range") continue;
-			expect(result.newlySettled).toHaveLength(5);
-			expect(result.alreadySettled).toEqual([
-				{ employeeId: ids.anna, date: "2026-11-09" },
-				{ employeeId: ids.anna, date: "2026-11-10" },
-			]);
+			if (result.status !== "ready" && result.status !== "settled") {
+				throw new Error(`Unexpected ${result.status}`);
+			}
+			expect(result.newlySettled).toEqual([{ employeeId: ids.anna, date: "2026-11-12" }]);
+			expect(result.alreadySettled).toEqual([{ employeeId: ids.anna, date: "2026-11-10" }]);
+			expect(result.skippedWithoutEntries).toHaveLength(5);
 		}
-		expect(await settledRowCount()).toBe(7);
+		expect(await settledRowCount()).toBe(2);
 	});
 
-	it("previews without settling anything", async () => {
+	it("previews without settling anything, leaving out the days without entries", async () => {
 		const preview = await previewSettleDays(ORG, holder, {}, week);
 
-		expect(preview.status).toBe("ready");
+		expect(preview).toMatchObject({
+			status: "ready",
+			newlySettled: [
+				{ employeeId: ids.anna, date: "2026-11-10" },
+				{ employeeId: ids.anna, date: "2026-11-12" },
+			],
+			employees: [{ employeeId: ids.anna, days: 2, creditedMinutes: 480 }],
+		});
+		expect(preview.status === "ready" && preview.skippedWithoutEntries).toHaveLength(5);
 		expect(await settledRowCount()).toBe(0);
 	});
 
 	it("warns about days in months that are not closed, and settles them anyway", async () => {
+		await work(ORG, ids.anna, "2026-10-30T08:00:00Z", "2026-10-30T12:00:00Z", 240);
+		await work(ORG, ids.anna, "2026-11-02T08:00:00Z", "2026-11-02T12:00:00Z", 240);
 		await closeNovemberForAnna();
+		const range = { startDate: "2026-10-30", endDate: "2026-11-02" };
 
-		const result = await settleDays(
-			ORG,
-			holder,
-			{},
-			{ startDate: "2026-10-30", endDate: "2026-11-02" },
-		);
+		const result = await settleDays(ORG, holder, {}, range);
 
 		expect(result).toMatchObject({
 			status: "settled",
-			inUnclosedMonths: [
+			newlySettled: [
 				{ employeeId: ids.anna, date: "2026-10-30" },
-				{ employeeId: ids.anna, date: "2026-10-31" },
+				{ employeeId: ids.anna, date: "2026-11-02" },
 			],
+			inUnclosedMonths: [{ employeeId: ids.anna, date: "2026-10-30" }],
+			skippedUnclosedMonths: [],
 		});
-		expect(await settledRowCount()).toBe(4);
+		expect(await settledRowCount()).toBe(2);
+	});
+
+	it("leaves out days in months that are not closed when asked to", async () => {
+		await work(ORG, ids.anna, "2026-10-30T08:00:00Z", "2026-10-30T12:00:00Z", 240);
+		await work(ORG, ids.anna, "2026-11-02T08:00:00Z", "2026-11-02T12:00:00Z", 240);
+		await closeNovemberForAnna();
+		const range = { startDate: "2026-10-30", endDate: "2026-11-02" };
+
+		const preview = await previewSettleDays(ORG, holder, {}, range, { skipUnclosedMonths: true });
+		const result = await settleDays(ORG, holder, {}, range, { skipUnclosedMonths: true });
+
+		for (const plan of [preview, result]) {
+			expect(plan).toMatchObject({
+				newlySettled: [{ employeeId: ids.anna, date: "2026-11-02" }],
+				inUnclosedMonths: [],
+				skippedUnclosedMonths: [{ employeeId: ids.anna, date: "2026-10-30" }],
+			});
+		}
+		expect(await settledRowCount()).toBe(1);
+	});
+
+	it("leaves out days with a pending absence by default, and settles them when asked to", async () => {
+		await approvedAbsence(ORG, ids.anna, "2026-11-13", "pending");
+		const pendingDay = { employeeId: ids.anna, date: "2026-11-13" };
+
+		const preview = await previewSettleDays(ORG, holder, {}, week);
+		expect(preview).toMatchObject({
+			status: "ready",
+			skippedPendingAbsences: [pendingDay],
+			withPendingAbsences: [],
+		});
+		expect(preview.status === "ready" && preview.newlySettled).toHaveLength(2);
+
+		const settled = await settleDays(ORG, holder, {}, week, { skipPendingAbsences: false });
+		expect(settled).toMatchObject({
+			status: "settled",
+			skippedPendingAbsences: [],
+			withPendingAbsences: [pendingDay],
+		});
+		expect(settled.status === "settled" && settled.newlySettled).toContainEqual(pendingDay);
+		// The pending absence is not paid: the copy keeps no absence for the day.
+		expect((await annaDay("2026-11-13"))?.settlement).toMatchObject({
+			state: "settled",
+			paid: { creditedMinutes: 0, absences: [] },
+		});
+	});
+
+	it("settles specific days, leaving out those without entries", async () => {
+		const days = [
+			{ employeeId: ids.anna, date: "2026-11-10" },
+			{ employeeId: ids.anna, date: "2026-11-11" },
+			{ employeeId: ids.anna, date: "2026-11-10" },
+		];
+
+		const preview = await previewSettleSpecificDays(ORG, holder, days);
+		expect(await settledRowCount()).toBe(0);
+		const result = await settleSpecificDays(ORG, holder, days);
+
+		for (const plan of [preview, result]) {
+			expect(plan).toMatchObject({
+				newlySettled: [{ employeeId: ids.anna, date: "2026-11-10" }],
+				alreadySettled: [],
+				skippedWithoutEntries: [{ employeeId: ids.anna, date: "2026-11-11" }],
+				employees: [{ employeeId: ids.anna, days: 1, creditedMinutes: 480 }],
+			});
+		}
+		expect(result.status).toBe("settled");
+		expect((await annaDay("2026-11-10"))?.settlement).toMatchObject({
+			state: "settled",
+			method: "manual",
+			paid: { creditedMinutes: 480 },
+		});
+		expect((await annaDay("2026-11-11"))?.settlement).toEqual({ state: "unsettled" });
+
+		const again = await settleSpecificDays(ORG, holder, days.slice(0, 1));
+		expect(again).toMatchObject({
+			newlySettled: [],
+			alreadySettled: [{ employeeId: ids.anna, date: "2026-11-10" }],
+		});
+		expect(await settledRowCount()).toBe(1);
+	});
+
+	it("settles picked days with a pending absence unless asked to leave them out", async () => {
+		await approvedAbsence(ORG, ids.anna, "2026-11-13", "pending");
+		const pendingDay = { employeeId: ids.anna, date: "2026-11-13" };
+
+		const skipped = await settleSpecificDays(ORG, holder, [pendingDay], {
+			skipPendingAbsences: true,
+		});
+		expect(skipped).toMatchObject({ newlySettled: [], skippedPendingAbsences: [pendingDay] });
+		expect(await settledRowCount()).toBe(0);
+
+		const settled = await settleSpecificDays(ORG, holder, [pendingDay]);
+		expect(settled).toMatchObject({
+			newlySettled: [pendingDay],
+			withPendingAbsences: [pendingDay],
+		});
+		expect(await settledRowCount()).toBe(1);
+	});
+
+	it("rejects specific days of employees outside the grant or the organization as a whole", async () => {
+		const outside = await settleSpecificDays(ORG, holder, [
+			{ employeeId: ids.anna, date: "2026-11-10" },
+			{ employeeId: ids.ben, date: "2026-11-10" },
+		]);
+		const foreign = await previewSettleSpecificDays(ORG, holder, [
+			{ employeeId: ids.foreign, date: "2026-11-10" },
+		]);
+		const otherOrganization = await settleSpecificDays(OTHER_ORG, holder, [
+			{ employeeId: ids.foreign, date: "2026-11-10" },
+		]);
+
+		expect(outside).toEqual({ status: "out_of_scope", employeeIds: [ids.ben] });
+		expect(foreign).toEqual({ status: "out_of_scope", employeeIds: [ids.foreign] });
+		expect(otherOrganization.status).toBe("out_of_scope");
+		expect(await settledRowCount()).toBe(0);
+		expect(await settledRowCount(OTHER_ORG)).toBe(0);
+	});
+
+	it("rejects no, malformed or more than a year of specific days", async () => {
+		const none = await settleSpecificDays(ORG, holder, []);
+		const malformed = await settleSpecificDays(ORG, holder, [
+			{ employeeId: ids.anna, date: "2026-11-31" },
+		]);
+		const tooWide = await settleSpecificDays(ORG, holder, [
+			{ employeeId: ids.anna, date: "2025-11-10" },
+			{ employeeId: ids.anna, date: "2026-11-12" },
+		]);
+
+		expect([none, malformed, tooWide]).toEqual(Array(3).fill({ status: "invalid_days" }));
+		expect(await settledRowCount()).toBe(0);
 	});
 
 	it("rejects employees outside the grant or the organization on the server", async () => {
@@ -307,9 +471,9 @@ describe("settling payroll days on PostgreSQL", () => {
 		};
 		expect(read.blockers).toEqual([expect.objectContaining(blocker)]);
 		expect(read.settlement).toEqual({
-			settledDays: 7,
+			settledDays: 2,
 			changedSinceSettledDays: 1,
-			unsettledDays: 23,
+			unsettledDays: 28,
 		});
 		// The Overview shows it with the existing blockers.
 		const summary = await getPayrollWorkspaceSummary({
@@ -390,7 +554,16 @@ describe("settling payroll days on PostgreSQL", () => {
 		await work(ORG, leftId, "2026-11-12T08:00:00Z", "2026-11-12T12:00:00Z", 240);
 
 		const settled = await settleDays(ORG, holder, { employeeIds: [leftId] }, week);
-		expect(settled.status).toBe("settled");
+		expect(settled).toMatchObject({
+			status: "settled",
+			newlySettled: [{ employeeId: leftId, date: "2026-11-12" }],
+		});
+		// A day after the last working day settled before days needed entries.
+		await admin.query(
+			`insert into payroll_settled_day (organization_id, employee_id, date, timezone, credited_minutes, method)
+			 values ($1, $2, '2026-11-15', 'Europe/Berlin', 0, 'manual')`,
+			[ORG, leftId],
+		);
 		const read = await readPeriod(ORG, holder, november);
 		const leftDay = read.employees
 			.find((row) => row.id === leftId)
@@ -533,7 +706,7 @@ describe("settling payroll days on PostgreSQL", () => {
 		const { rows } = await admin.query(
 			"select count(*)::int as count from payroll_settled_day where unsettled_at is null",
 		);
-		expect(rows[0].count).toBeGreaterThanOrEqual(8);
+		expect(rows[0].count).toBeGreaterThanOrEqual(3);
 	});
 
 	it("keeps the history append-only", async () => {

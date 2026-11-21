@@ -275,11 +275,12 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 
 	it("previews the newly settled, already settled and unclosed-month days without settling", async () => {
 		const jobId = await exportFile([ids.anna]);
+		// Settling by hand settles the days with entries: the 10th and the 12th.
 		await settleDays(
 			ORG,
 			holder,
 			{ employeeIds: [ids.anna] },
-			{ startDate: "2026-11-09", endDate: "2026-11-10" },
+			{ startDate: "2026-11-10", endDate: "2026-11-12" },
 		);
 
 		const preview = await previewConfirmExportAsPaid(ORG, holder, jobId);
@@ -288,8 +289,8 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 		if (preview.status !== "ready") return;
 		expect(preview.newlySettled).toHaveLength(5);
 		expect(preview.alreadySettled).toEqual([
-			{ employeeId: ids.anna, date: "2026-11-09" },
 			{ employeeId: ids.anna, date: "2026-11-10" },
+			{ employeeId: ids.anna, date: "2026-11-12" },
 		]);
 		expect(preview.inUnclosedMonths).toHaveLength(5);
 		expect(await settledRowCount()).toBe(2);
@@ -417,7 +418,7 @@ describe("confirming a payroll export as paid on PostgreSQL", () => {
 			ORG,
 			holder,
 			{ employeeIds: [ids.anna] },
-			{ startDate: "2026-11-09", endDate: "2026-11-09" },
+			{ startDate: "2026-11-10", endDate: "2026-11-10" },
 		);
 
 		const before = await listExportsToConfirm(ORG, holder);

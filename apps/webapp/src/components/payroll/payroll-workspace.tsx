@@ -17,6 +17,7 @@ import { PayrollExportTab } from "./workspace/payroll-export-tab";
 import { PayrollOverviewTab } from "./workspace/payroll-overview-tab";
 import { PayrollPeriodBar } from "./workspace/payroll-period-bar";
 import { PayrollSettlementFigures } from "./workspace/payroll-settlement-figures";
+import { PayrollSettlementTab } from "./workspace/payroll-settlement-tab";
 import { PayrollStatusStrip } from "./workspace/payroll-status-strip";
 import { PayrollWorkspaceTabs } from "./workspace/payroll-workspace-tabs";
 import {
@@ -54,7 +55,8 @@ export function PayrollWorkspace(props: PayrollWorkspaceProps) {
 
 /**
  * The payroll workspace: a period and scope bar, a status strip, and the Overview,
- * Days, Absences and Export tabs. The period, scope and format state is shared by all tabs.
+ * Days, Absences, Settlement and Export tabs. The period, scope and format state is
+ * shared by all tabs.
  */
 function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
@@ -285,6 +287,14 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 								t={t}
 							/>
 						),
+						settlement: (
+							<PayrollSettlementTab
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
 						export: (
 							<PayrollExportTab
 								dispatch={dispatch}
@@ -296,8 +306,6 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 								onDownloadPdf={downloadPdf}
 								onTriggerExport={triggerExport}
 								period={summary.period}
-								refreshedAt={summary.generatedAt}
-								request={request}
 								t={t}
 							/>
 						),

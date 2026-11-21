@@ -1,7 +1,7 @@
 "use client";
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -12,13 +12,20 @@ import {
 } from "@/components/ui/select";
 import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { cn } from "@/lib/utils";
-import { DifferenceValue, PayrollLeftOn, PayrollSettlementMarker } from "./payroll-days-grid";
+import {
+	DifferenceValue,
+	dayButtonPicking,
+	type PayrollDayPicking,
+	PayrollLeftOn,
+	PayrollSettlementMarker,
+} from "./payroll-days-grid";
 import {
 	isAfterDeparture,
 	type PayrollDaysFormat,
 	absencePeriodLabel,
 	dayTitle,
 } from "./payroll-day-format";
+import { groupSelectionState, payrollDayKey, settleableGroup } from "./payroll-day-selection";
 import type { PayrollTranslate } from "./state";
 
 /**
@@ -30,14 +37,18 @@ export function PayrollDaysList({
 	employees,
 	format,
 	onSelectDay,
+	picking,
 	t,
 }: {
 	employees: readonly PayrollPeriodEmployee[];
 	format: PayrollDaysFormat;
 	onSelectDay: (employee: PayrollPeriodEmployee, day: PayrollPeriodDay) => void;
+	/** Set while days are picked to settle: a day toggles instead of opening its panel. */
+	picking?: PayrollDayPicking;
 	t: PayrollTranslate;
 }) {
 	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const nothingToSettleId = useId();
 	const index = Math.max(
 		0,
 		employees.findIndex((employee) => employee.id === selectedId),
@@ -45,6 +56,7 @@ export function PayrollDaysList({
 	const employee = employees[index];
 	if (!employee) return null;
 	const select = (next: number) => setSelectedId(employees[next]?.id ?? null);
+	const pickableDays = picking ? settleableGroup(picking.groups.byEmployee, employee.id) : [];
 
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
@@ -105,21 +117,63 @@ export function PayrollDaysList({
 				</span>
 			</div>
 
+			{picking ? (
+				<div className="flex flex-col gap-1">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="self-start"
+						aria-pressed={groupSelectionState(picking.selected, pickableDays) === "all"}
+						aria-describedby={pickableDays.length === 0 ? nothingToSettleId : undefined}
+						disabled={pickableDays.length === 0}
+						onClick={() => picking.onToggleEmployee(employee)}
+					>
+						{t("payroll.days.select.employee", "Select every day of {name} to settle", {
+							name: employee.name,
+						})}
+					</Button>
+					{pickableDays.length === 0 ? (
+						<p id={nothingToSettleId} className="text-muted-foreground text-xs">
+							{t(
+								"payroll.days.select.employeeNothingToSettle",
+								"{name} has no unsettled days with entries in this period.",
+								{ name: employee.name },
+							)}
+						</p>
+					) : null}
+				</div>
+			) : null}
+
 			<ul
 				className="flex flex-col divide-y rounded-lg border bg-background"
 				aria-label={t("payroll.days.list.label", "Days of {name}", { name: employee.name })}
 			>
 				{employee.days.map((day) => {
 					const afterDeparture = isAfterDeparture(employee, day.date);
+					const { className: pickingClassName, ...pickingProps } = dayButtonPicking(
+						day,
+						dayTitle(day, format, t, afterDeparture),
+						picking !== undefined,
+						picking?.selected.has(payrollDayKey(employee.id, day.date)),
+						t,
+					);
 					return (
 						<li key={day.date}>
 							<button
 								type="button"
-								aria-label={dayTitle(day, format, t, afterDeparture)}
-								onClick={() => onSelectDay(employee, day)}
+								aria-pressed={pickingProps["aria-pressed"]}
+								aria-disabled={pickingProps["aria-disabled"]}
+								aria-label={pickingProps.title}
+								onClick={() => {
+									if (!picking) onSelectDay(employee, day);
+									else if (!pickingProps["aria-disabled"])
+										picking.onToggleDay(employee, day, false);
+								}}
 								className={cn(
 									"flex w-full min-w-0 items-center gap-3 px-3 py-2 text-left text-sm tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 									afterDeparture && "bg-muted text-muted-foreground",
+									pickingClassName,
 								)}
 							>
 								<span className="w-14 shrink-0">

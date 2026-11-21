@@ -46,7 +46,9 @@ vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
 // The Days grid only displays the payroll period read; it has no seam of its own (#1891).
 vi.mock("./workspace/payroll-days-tab", () => ({ PayrollDaysTab: () => null }));
 // Settling reads and writes through the payroll period module, tested on PostgreSQL (#1896).
-vi.mock("./workspace/payroll-settlement-card", () => ({ PayrollSettlementCard: () => null }));
+vi.mock("./workspace/payroll-settlement-tab", () => ({
+	PayrollSettlementTab: () => <p>Settlement tab</p>,
+}));
 // Confirming an export as paid is tested on PostgreSQL at the payroll period module (#1899).
 vi.mock("./workspace/payroll-confirm-paid-card", () => ({ PayrollConfirmPaidCard: () => null }));
 vi.mock("./workspace/payroll-settlement-figures", () => ({
@@ -146,7 +148,7 @@ function blockerSelector(type: PayrollBlockerType, id: string) {
 	return `[data-payroll-blocker-key="${payrollBlockerIdentity({ id, type })}"]`;
 }
 
-function openPayrollTab(name: "Overview" | "Days" | "Absences" | "Export") {
+function openPayrollTab(name: "Overview" | "Days" | "Absences" | "Settlement" | "Export") {
 	fireEvent.click(screen.getByRole("tab", { name }));
 }
 
@@ -180,10 +182,10 @@ function deferred<T>() {
 }
 
 describe("PayrollWorkspace", () => {
-	it("opens on the Overview tab with the Days, Absences and Export tabs beside it", () => {
+	it("opens on the Overview tab with the Days, Absences, Settlement and Export tabs beside it", () => {
 		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
 		const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
-		expect(tabs).toEqual(["Overview", "Days", "Absences", "Export"]);
+		expect(tabs).toEqual(["Overview", "Days", "Absences", "Settlement", "Export"]);
 		expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe(
 			"true",
 		);
@@ -199,6 +201,28 @@ describe("PayrollWorkspace", () => {
 		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
 		expect(screen.getByRole("tab", { name: "Export" }).getAttribute("aria-selected")).toBe("true");
 		expect(screen.getByRole("button", { name: "Trigger export" })).toBeTruthy();
+	});
+	it("moves settling days by hand from the Export tab to the Settlement tab", () => {
+		window.history.replaceState(null, "", "/payroll");
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+
+		openPayrollTab("Settlement");
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe("settlement");
+		expect(screen.getByText("Settlement tab")).toBeTruthy();
+
+		openPayrollTab("Export");
+		expect(
+			screen.getByText(
+				"To settle days by hand, for example when you pay from the PDF, use the Settlement tab.",
+			),
+		).toBeTruthy();
+	});
+	it("opens the Settlement tab from a shared link", () => {
+		window.history.replaceState(null, "", "/payroll?tab=settlement");
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Settlement" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
 	});
 	it("opens the tab named in a shared link and ignores an unknown one", () => {
 		window.history.replaceState(null, "", "/payroll?tab=absences");
