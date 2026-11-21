@@ -422,12 +422,12 @@ describe("PayrollWorkspace", () => {
 		);
 		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
-		await waitFor(() =>
-			expect(toastMocks.error).toHaveBeenCalledWith("Payroll workspace action failed"),
-		);
-		expect(screen.getByRole("button", { name: "Trigger export" }).hasAttribute("disabled")).toBe(
-			false,
-		);
+		await waitFor(() => {
+			expect(toastMocks.error).toHaveBeenCalledWith("Payroll workspace action failed");
+			expect(screen.getByRole("button", { name: "Trigger export" }).hasAttribute("disabled")).toBe(
+				false,
+			);
+		});
 	});
 	it("does not announce a late export after leaving the payroll workspace", async () => {
 		const pending =
