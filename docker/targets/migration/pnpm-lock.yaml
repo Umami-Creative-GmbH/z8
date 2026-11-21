@@ -175,6 +175,8 @@ overrides:
   esbuild: 0.25.12
   pako: 1.0.11
   uuid: 14.0.3
+  gcp-metadata@8.1.4>gaxios: 7.3.1
+  '@ts-morph/common@0.27.0>minimatch': 11.0.9
 
 importers:
 

@@ -98,6 +98,10 @@ overrides:
   pako: 1.0.11
   # ExcelJS and BotBuilder still request versions affected by GHSA-w5hq-g745-h8pq.
   uuid: 14.0.3
+  # gaxios 7.3 drops rimraf 5 and its vulnerable glob dependency.
+  "gcp-metadata@8.1.4>gaxios": 7.3.1
+  # ts-morph uses the named minimatch function, retained in the patched major.
+  "@ts-morph/common@0.27.0>minimatch": 11.0.9
 
 patchedDependencies:
   drizzle-kit@0.31.11: patches/drizzle-kit@0.31.11.patch
