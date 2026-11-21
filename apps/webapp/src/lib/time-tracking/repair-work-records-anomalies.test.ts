@@ -160,6 +160,15 @@ describe("repair-work-records-anomalies CLI", () => {
 describe("pruneOrphanedWorkRecord safety guards", () => {
 	function fakeScope(selectResults: unknown[][], deleteReturning: unknown[] = [{ id: "rec-1" }]) {
 		let selectIndex = 0;
+		const updates: Array<{ set: Record<string, unknown> }> = [];
+		const updateFn = vi.fn(() => ({
+			set: vi.fn((values: Record<string, unknown>) => {
+				updates.push({ set: values });
+				return {
+					where: vi.fn(async () => undefined),
+				};
+			}),
+		}));
 		const deleteFn = vi.fn(() => ({
 			where: vi.fn(() => ({
 				returning: vi.fn(async () => deleteReturning),
@@ -168,14 +177,16 @@ describe("pruneOrphanedWorkRecord safety guards", () => {
 		const tx = {
 			select: vi.fn(() => {
 				const rows = selectResults[selectIndex++] ?? [];
-				const chain = {
+				const chain = Object.assign(Promise.resolve(rows), {
 					from: () => chain,
 					where: () => chain,
+					orderBy: async () => rows,
 					for: async () => rows,
 					limit: async () => rows,
-				};
+				});
 				return chain;
 			}),
+			update: updateFn,
 			delete: deleteFn,
 		};
 		const scope = sealWorkTransactionScope({
@@ -183,15 +194,38 @@ describe("pruneOrphanedWorkRecord safety guards", () => {
 			admission: "legacy" as const,
 			assertEmployee: () => undefined,
 		});
-		return { scope, deleteFn };
+		return { scope, updateFn, updates, deleteFn };
 	}
 
 	const baseRecord = {
 		id: "rec-1",
-		startAt: new Date("2026-10-02T15:12:04.344Z"),
-		endAt: new Date("2026-10-02T15:21:27.216Z"),
+		startAt: new Date("2026-09-11T06:10:08.174Z"),
+		endAt: new Date("2026-09-11T12:10:08.174Z"),
+		durationMinutes: 360,
 		approvalState: "pending",
 		origin: "clock",
+	};
+
+	const baseReplacement = {
+		id: "wp-1",
+		endTime: new Date("2026-09-11T12:10:08.174Z"),
+		durationMinutes: 360,
+		wasAutoAdjusted: false,
+		originalEndTime: null,
+		originalDurationMinutes: null,
+		deletedAt: null,
+		canonicalRecordId: "wp-1",
+	};
+
+	const emptyDetail = {
+		workCategoryId: null,
+		workLocationType: "office",
+		computationMetadata: null,
+		vehicleKind: null,
+		vehicleId: null,
+		odometerStartKm: null,
+		odometerEndKm: null,
+		drivenDistanceKm: null,
 	};
 
 	it("refuses to delete a record still referenced by a work_period", async () => {
@@ -208,7 +242,7 @@ describe("pruneOrphanedWorkRecord safety guards", () => {
 	});
 
 	it("refuses to delete a record without a linked replacement work_period", async () => {
-		const { scope, deleteFn } = fakeScope([[baseRecord], [], [], [], []]);
+		const { scope, deleteFn } = fakeScope([[baseRecord], [], [], []]);
 
 		await expect(
 			pruneOrphanedWorkRecord(scope, {
@@ -218,5 +252,119 @@ describe("pruneOrphanedWorkRecord safety guards", () => {
 			}),
 		).resolves.toEqual({ kind: "no_linked_replacement" });
 		expect(deleteFn).not.toHaveBeenCalled();
+	});
+
+	it("refuses to delete when interval differs without auto-adjustment match", async () => {
+		const { scope, deleteFn } = fakeScope([
+			[{ ...baseRecord, endAt: new Date("2026-09-11T15:00:00.000Z"), durationMinutes: 530 }],
+			[],
+			[],
+			[baseReplacement],
+			[{ id: "wp-1" }],
+		]);
+
+		await expect(
+			pruneOrphanedWorkRecord(scope, {
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				recordId: "rec-1",
+			}),
+		).resolves.toEqual({ kind: "interval_mismatch" });
+		expect(deleteFn).not.toHaveBeenCalled();
+	});
+
+	it("refuses to delete when orphan carries unique allocations", async () => {
+		const { scope, deleteFn } = fakeScope([
+			[baseRecord],
+			[],
+			[],
+			[baseReplacement],
+			[{ id: "wp-1" }],
+			[{ id: "alloc-1" }],
+		]);
+
+		await expect(
+			pruneOrphanedWorkRecord(scope, {
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				recordId: "rec-1",
+			}),
+		).resolves.toEqual({ kind: "has_allocations" });
+		expect(deleteFn).not.toHaveBeenCalled();
+	});
+
+	it("refuses to delete when non-null work detail fields differ", async () => {
+		const { scope, deleteFn } = fakeScope([
+			[baseRecord],
+			[],
+			[],
+			[baseReplacement],
+			[{ id: "wp-1" }],
+			[],
+			[{ ...emptyDetail, workCategoryId: "cat-1" }],
+			[emptyDetail],
+		]);
+
+		await expect(
+			pruneOrphanedWorkRecord(scope, {
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				recordId: "rec-1",
+			}),
+		).resolves.toEqual({ kind: "detail_mismatch", field: "workCategoryId" });
+		expect(deleteFn).not.toHaveBeenCalled();
+	});
+
+	it("copies computation_metadata and repoints approval decisions before pruning a pre-auto-adjustment duplicate", async () => {
+		const autoAdjustedReplacement = {
+			...baseReplacement,
+			wasAutoAdjusted: true,
+			originalEndTime: new Date("2026-09-14T07:07:02.060Z"),
+			originalDurationMinutes: 4377,
+		};
+		const preAdjustRecord = {
+			...baseRecord,
+			endAt: new Date("2026-09-14T07:07:02.060Z"),
+			durationMinutes: 4376,
+		};
+		const { scope, updates, deleteFn } = fakeScope([
+			[preAdjustRecord],
+			[],
+			[],
+			[autoAdjustedReplacement],
+			[{ id: "wp-1" }],
+			[],
+			[{ ...emptyDetail, computationMetadata: '{"version":1}' }],
+			[emptyDetail],
+			[{ id: "dec-1" }],
+			[], // closedRangesForEmployee
+		]);
+
+		await expect(
+			pruneOrphanedWorkRecord(scope, {
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				recordId: "rec-1",
+			}),
+		).resolves.toEqual({
+			kind: "pruned",
+			recordId: "rec-1",
+			approvalState: "pending",
+			origin: "clock",
+			startAt: "2026-09-11T06:10:08.174Z",
+			endAt: "2026-09-14T07:07:02.06Z",
+			replacementWorkPeriodId: "wp-1",
+			replacementCanonicalRecordId: "wp-1",
+			replacementSoftDeleted: false,
+			matchKind: "pre_auto_adjustment",
+			migratedComputationMetadata: true,
+			migratedDecisionCount: 1,
+		});
+
+		expect(updates).toEqual([
+			{ set: { computationMetadata: '{"version":1}' } },
+			{ set: { recordId: "wp-1" } },
+		]);
+		expect(deleteFn).toHaveBeenCalledOnce();
 	});
 });
