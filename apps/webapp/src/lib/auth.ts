@@ -57,6 +57,7 @@ import {
 	refuseInvitationOutsideEnterpriseIdentity,
 } from "@/lib/enterprise-identity/invitation-restriction";
 import { sessionSsoStore } from "@/lib/enterprise-identity/session-sso-store";
+import { ssoRequestOrigin } from "@/lib/enterprise-identity/sso-request-origin";
 import {
 	createSsoEnforcementPlugin,
 	recordVerifiedSsoLogin,
@@ -501,6 +502,7 @@ export const auth = betterAuth({
 			// For multi-tenant with custom domains, consider using the origin option instead.
 			rpID: env.PASSKEY_RP_ID || "localhost",
 		}),
+		ssoRequestOrigin,
 		sso({
 			// Enable domain verification for SSO providers
 			domainVerification: AUTH_SSO_DOMAIN_VERIFICATION,

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 	auditConfig: vi.fn(),
 	packages: vi.fn(),
 	identity: vi.fn(),
+	organizationBaseUrl: vi.fn(),
 	domains: vi.fn(),
 	branding: vi.fn(),
 	platformAuthConfig: vi.fn(),
@@ -49,6 +50,7 @@ vi.mock("@/db", () => ({
 vi.mock("@/lib/auth-domain-config", () => ({
 	getOrganizationPlatformOrigins: () => ["https://org-1.example.com"],
 }));
+vi.mock("@/lib/app-url", () => ({ getOrganizationBaseUrl: mocks.organizationBaseUrl }));
 vi.mock("../enterprise/email/actions", () => ({
 	getEmailConfig: mocks.email,
 	getSecretStoreConnectionStatus: mocks.secretStatus,
@@ -210,6 +212,7 @@ beforeEach(() => {
 	});
 	mocks.packages.mockResolvedValue({ success: true, data: [] });
 	mocks.identity.mockResolvedValue({ success: true, data: { step: "provider" } });
+	mocks.organizationBaseUrl.mockResolvedValue("https://work.customer.test");
 	mocks.providers.mockResolvedValue({ success: true, data: [] });
 	mocks.domains.mockResolvedValue({ success: true, data: [] });
 	mocks.branding.mockResolvedValue({ success: true, data: { appName: "Z8" } });
@@ -302,12 +305,10 @@ describe("merged organization settings", () => {
 	it("puts guided identity setup, SSO and social login together using the organization callback origin", async () => {
 		const page = await content(IdentityPage);
 		expect(tabs(page)).toEqual(["local-mfa", "setup", "sso", "social-oauth"]);
-		expect(page.props.tabs[2].panel.props.callbackBaseUrl).toBe(
-			"https://org-1.example.com",
-		);
-		expect(page.props.tabs[3].panel.props.callbackBaseUrl).toBe(
-			"https://org-1.example.com",
-		);
+		expect(mocks.organizationBaseUrl).toHaveBeenCalledWith("org-1");
+		for (const tab of page.props.tabs.slice(1)) {
+			expect(tab.panel.props.callbackBaseUrl).toBe("https://work.customer.test");
+		}
 	});
 	it("combines the four chat services", async () => {
 		const page = await content(ChatPage);

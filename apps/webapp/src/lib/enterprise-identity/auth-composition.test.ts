@@ -297,6 +297,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 			"organization",
 			"two-factor",
 			"passkey",
+			"z8-sso-request-origin",
 			"sso",
 			"z8-sso-verified-domain-membership",
 			"z8-auth-mutation-coordination",
