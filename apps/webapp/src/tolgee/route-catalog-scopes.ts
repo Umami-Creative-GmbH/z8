@@ -66,6 +66,7 @@ const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/platform-admin": ["settings/generic"],
 	"/settings/approval-policies": ["settings/people"],
 	"/settings/employees": ["organization"],
+	"/settings/enterprise": ["auth"],
 	"/settings/teams": ["organization"],
 	"/settings/vacation": ["settings/rules"],
 };
