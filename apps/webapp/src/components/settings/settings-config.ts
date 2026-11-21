@@ -74,6 +74,7 @@ export type SettingsIconName =
 	| "droplet"
 	| "building"
 	| "users"
+	| "users-group"
 	| "map-pin"
 	| "calendar-event"
 	| "calendar-clock"
@@ -296,7 +297,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault:
 			"Organize employees into teams and manage team assignments",
 		href: "/settings/teams",
-		icon: "users",
+		icon: "users-group",
 		minimumTier: "manager",
 		group: "organization",
 	},
@@ -320,6 +321,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure SSO, social login, provisioning and organization access",
 		href: "/settings/enterprise/identity-setup",
 		icon: "key",
+		minimumTier: "orgAdmin",
+		group: "organization",
+	},
+	{
+		id: "custom-domains",
+		titleKey: "settings.customDomains.title",
+		titleDefault: "Domain & Branding",
+		descriptionKey: "settings.navigation.domainBranding.description",
+		descriptionDefault:
+			"Configure your organization’s custom domain and branding",
+		href: "/settings/enterprise/domains",
+		icon: "world",
 		minimumTier: "orgAdmin",
 		group: "organization",
 	},
@@ -391,18 +404,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Your own fields on employees, projects and customers",
 		href: "/settings/custom-fields",
 		icon: "forms",
-		minimumTier: "orgAdmin",
-		group: "organization",
-	},
-	{
-		id: "custom-domains",
-		titleKey: "settings.customDomains.title",
-		titleDefault: "Domain & Branding",
-		descriptionKey: "settings.navigation.domainBranding.description",
-		descriptionDefault:
-			"Configure your organization’s custom domain and branding",
-		href: "/settings/enterprise/domains",
-		icon: "world",
 		minimumTier: "orgAdmin",
 		group: "organization",
 	},
