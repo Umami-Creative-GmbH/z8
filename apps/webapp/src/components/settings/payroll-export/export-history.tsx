@@ -218,6 +218,27 @@ export function ExportHistory({ exports, organizationTimezone }: ExportHistoryPr
 												)}
 											</Badge>
 										)}
+										{exp.settledDaysLeftOut > 0 && (
+											<Badge variant="outline" className="ml-2">
+												{t(
+													"settings.payrollExport.history.settledDaysLeftOut",
+													"{count, plural, one {# settled day} other {# settled days}} left out",
+													{ count: exp.settledDaysLeftOut },
+												)}
+											</Badge>
+										)}
+										{exp.includesSettledDays && (
+											<Badge
+												variant="outline"
+												className="ml-2 gap-1 border-warning/50 text-warning"
+											>
+												<IconAlertTriangle className="size-3" aria-hidden="true" />
+												{t(
+													"settings.payrollExport.history.includesSettledDays",
+													"Settled days included",
+												)}
+											</Badge>
+										)}
 									</TableCell>
 									<TableCell className="tabular-nums">
 										{formatFileSize(exp.fileSizeBytes)}

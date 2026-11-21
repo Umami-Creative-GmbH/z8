@@ -136,6 +136,9 @@ export enum AuditAction {
 	PAYROLL_EXPENSE_WAGE_TYPE_CHANGED = "payroll_export.expense_wage_type_changed",
 	// #852
 	PAYROLL_RUN_DISCARDED = "payroll_export.payroll_run_discarded",
+	// #1896: an employee's days were settled or unsettled (payroll-export ADR 0004)
+	PAYROLL_DAYS_SETTLED = "payroll_export.days_settled",
+	PAYROLL_DAYS_UNSETTLED = "payroll_export.days_unsettled",
 
 	// Position Capture Operations (#825)
 	POSITION_CAPTURE_SETTINGS_CHANGED = "position_capture.settings_changed",

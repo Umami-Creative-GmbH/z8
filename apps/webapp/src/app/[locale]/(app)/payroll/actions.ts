@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
@@ -11,7 +12,6 @@ import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
 import {
 	hasActivePayrollAccessGrant,
 	intersectPayrollScope,
@@ -32,7 +32,32 @@ import {
 	payrollWorkspaceExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
 import {
-	exportPayrollSummaryToPDF,
+	type ConfirmExportPreview,
+	type ConfirmExportResult,
+	confirmExportAsPaid,
+	listExportsToConfirm,
+	type PayrollExportToConfirm,
+	previewConfirmExportAsPaid,
+} from "@/lib/payroll-period/export-confirmation";
+import { readPeriodDay } from "@/lib/payroll-period/read-day";
+import {
+	listDepartedGrantEmployees,
+	readPeriodForEmployees,
+	resolvePeriodEmployeeIds,
+} from "@/lib/payroll-period/read-period";
+import { loadActiveSettledDays } from "@/lib/payroll-period/settled-days-store";
+import {
+	type PayrollSettlementHistoryEntry,
+	previewSettleDays,
+	type SettleDaysPreview,
+	type SettleDaysResult,
+	settleDays,
+	settlementHistory,
+	unsettleDays,
+} from "@/lib/payroll-period/settlement";
+import type { PayrollPeriodDayDetail, PayrollPeriodRead } from "@/lib/payroll-period/types";
+import {
+	exportPayrollPeriodToPDF,
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
@@ -86,16 +111,377 @@ export async function getPayrollWorkspaceSummaryAction(
 	return runPayrollWorkspaceAction((t) => buildScopedPayrollWorkspaceSummary(t, request));
 }
 
+/** The period's day rows and absence list (#1891), for the Days and Absences tabs. */
+export type PayrollPeriodView = Pick<
+	PayrollPeriodRead,
+	"period" | "employees" | "absences" | "settlement"
+>;
+
+export async function getPayrollPeriodAction(
+	request: PayrollWorkspaceRequest,
+): Promise<ServerActionResult<PayrollPeriodView>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+			undefined,
+			{ includeDeparted: true },
+		);
+		const read = await readPeriodForEmployees(
+			authContext.employee.organizationId,
+			payrollActor(authContext),
+			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
+			{ employeeIds: scopedEmployeeIds },
+		);
+		return {
+			period: read.period,
+			employees: read.employees,
+			absences: read.absences,
+			settlement: read.settlement,
+		};
+	});
+}
+
+/** What settling the workspace's scope and period does or did (#1896), as counts. */
+export interface PayrollSettlementCounts {
+	newDays: number;
+	alreadySettledDays: number;
+	/** Days to settle whose month is not closed, per month (YYYY-MM): a warning only. */
+	unclosedMonths: { month: string; days: number }[];
+	/**
+	 * Confirming an export as paid (#1899): days this export settled that were unsettled
+	 * since, which confirming again skips.
+	 */
+	previouslyUnsettledDays?: number;
+}
+
+export async function previewSettlePayrollDaysAction(
+	request: PayrollWorkspaceRequest,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor, scope, range } = await resolvePayrollSettlementRequest(
+			t,
+			request,
+		);
+		const preview = await previewSettleDays(organizationId, actor, scope, range);
+		return settlementCounts(t, actor.userId, preview);
+	});
+}
+
+/** Settles every day of the workspace's scope and period by hand (#1896). */
+export async function settlePayrollDaysAction(
+	request: PayrollWorkspaceRequest,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor, scope, range } = await resolvePayrollSettlementRequest(
+			t,
+			request,
+		);
+		const result = await settleDays(organizationId, actor, scope, range);
+		const counts = settlementCounts(t, actor.userId, result);
+		revalidatePath("/payroll");
+		return counts;
+	});
+}
+
+/** Unsettles every settled day of the workspace's scope and period, with a reason (#1896). */
+export async function unsettlePayrollDaysAction(
+	request: PayrollWorkspaceRequest & { reason: string },
+): Promise<ServerActionResult<{ unsettledDays: number }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor, scope, range } = await resolvePayrollSettlementRequest(
+			t,
+			request,
+		);
+		// Employees who left during or after the period are in scope too (#1894).
+		const settled = await loadActiveSettledDays(db, {
+			organizationId,
+			employeeIds: await resolvePeriodEmployeeIds(organizationId, actor, range.startDate, scope),
+			...range,
+		});
+		const result = await unsettleDays(
+			organizationId,
+			actor,
+			settled.map(({ employeeId, date }) => ({ employeeId, date })),
+			request.reason,
+		);
+		if (result.status === "reason_required") throwUnsettleReasonRequired(t);
+		if (result.status !== "unsettled") throwPayrollSettlementOutOfScope(t, actor.userId);
+		revalidatePath("/payroll");
+		return { unsettledDays: result.unsettled.length };
+	});
+}
+
+/** The completed exports the grant holder may confirm as paid (#1899), newest first. */
+export async function getPayrollExportsToConfirmAction(): Promise<
+	ServerActionResult<PayrollExportToConfirm[]>
+> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		return listExportsToConfirm(organizationId, actor);
+	});
+}
+
+/** What confirming the export as paid would settle (#1899), as counts. */
+export async function previewConfirmPayrollExportPaidAction(
+	jobId: string,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		const preview = await previewConfirmExportAsPaid(organizationId, actor, jobId);
+		return exportConfirmationCounts(t, actor.userId, preview);
+	});
+}
+
+/** Confirms a completed export as paid (#1899): settles the employee-days it carried. */
+export async function confirmPayrollExportPaidAction(
+	jobId: string,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		const result = await confirmExportAsPaid(organizationId, actor, jobId);
+		const counts = exportConfirmationCounts(t, actor.userId, result);
+		revalidatePath("/payroll");
+		return counts;
+	});
+}
+
+async function resolvePayrollSettlementActor(t: PayrollTranslate) {
+	const authContext = await requirePayrollGrantHolder(t);
+	return {
+		organizationId: authContext.employee.organizationId,
+		actor: payrollActor(authContext),
+	};
+}
+
+/** The signed-in grant holder as the payroll period module names an actor. */
+function payrollActor(
+	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
+) {
+	return {
+		employeeId: authContext.employee.id,
+		userId: authContext.user.id,
+		name: authContext.user.name || authContext.user.email,
+	};
+}
+
+/** Days to settle in months that are not closed, counted per month (YYYY-MM). */
+function unclosedMonthCounts(
+	days: readonly { date: string }[],
+): PayrollSettlementCounts["unclosedMonths"] {
+	return [...Map.groupBy(days, (day) => day.date.slice(0, 7))]
+		.map(([month, monthDays]) => ({ month, days: monthDays.length }))
+		.toSorted((left, right) => left.month.localeCompare(right.month));
+}
+
+function throwUnsettleReasonRequired(t: PayrollTranslate): never {
+	throw new ValidationError({
+		message: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
+		field: "reason",
+	});
+}
+
+function exportConfirmationCounts(
+	t: PayrollTranslate,
+	userId: string,
+	result: ConfirmExportPreview | ConfirmExportResult,
+): PayrollSettlementCounts {
+	switch (result.status) {
+		case "not_found":
+			throw new ValidationError({
+				message: t("payroll.confirmPaid.notFound", "This export was not found"),
+				field: "jobId",
+			});
+		case "not_completed":
+			throw new ValidationError({
+				message: t(
+					"payroll.confirmPaid.notCompleted",
+					"Only a completed export can be confirmed as paid",
+				),
+				field: "jobId",
+			});
+		case "nothing_carried":
+			throw new ValidationError({
+				message: t(
+					"payroll.confirmPaid.nothingCarried",
+					"This export recorded no days, so it can't be confirmed as paid: it was made before settled days existed, or delivered to a connected payroll system. Settle its days by hand with Settle days.",
+				),
+				field: "jobId",
+			});
+		case "out_of_scope":
+			throwPayrollSettlementOutOfScope(t, userId);
+	}
+	return {
+		newDays: result.newlySettled.length,
+		alreadySettledDays: result.alreadySettled.length,
+		unclosedMonths: unclosedMonthCounts(result.inUnclosedMonths),
+		previouslyUnsettledDays: result.previouslyUnsettled.length,
+	};
+}
+
+/**
+ * The settlement history of one employee-day (#1897), newest first, for the Days
+ * tab's side panel: who settled or unsettled it, when, how, why, and what was paid.
+ */
+export async function getPayrollDaySettlementHistoryAction(request: {
+	employeeId: string;
+	date: string;
+}): Promise<ServerActionResult<PayrollSettlementHistoryEntry[]>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const day = parsePayrollActionInput(t, payrollDaySchema, request);
+		const { organizationId, actor, scope, range } = await resolvePayrollDayRequest(t, day);
+		return settlementHistory(organizationId, actor, scope, range);
+	});
+}
+
+/** Unsettles one employee-day from the side panel, with a required reason (#1897). */
+export async function unsettlePayrollDayAction(request: {
+	employeeId: string;
+	date: string;
+	reason: string;
+}): Promise<ServerActionResult<{ unsettled: boolean }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { reason, ...day } = parsePayrollActionInput(t, unsettlePayrollDaySchema, request);
+		if (reason.length === 0) throwUnsettleReasonRequired(t);
+		const { organizationId, actor } = await resolvePayrollDayRequest(t, day);
+		const result = await unsettleDays(organizationId, actor, [day], reason);
+		if (result.status === "reason_required") throwUnsettleReasonRequired(t);
+		if (result.status !== "unsettled") throwPayrollSettlementOutOfScope(t, actor.userId);
+		revalidatePath("/payroll");
+		return { unsettled: result.unsettled.length === 1 };
+	});
+}
+
+/** One employee and one employee-local date, as the Days tab's side panel names a day. */
+const payrollDaySchema = z.object({
+	employeeId: z.string().trim().min(1),
+	date: z.iso.date(),
+});
+
+const unsettlePayrollDaySchema = payrollDaySchema.extend({
+	reason: z.string().trim().max(2_000),
+});
+
+/** The parsed input, or a ValidationError naming the first invalid field. */
+function parsePayrollActionInput<Schema extends z.ZodType>(
+	t: PayrollTranslate,
+	schema: Schema,
+	input: unknown,
+): z.output<Schema> {
+	const parsed = schema.safeParse(input);
+	if (parsed.success) return parsed.data;
+	const field = parsed.error.issues[0]?.path.join(".") || undefined;
+	throw new ValidationError({
+		message: t("payroll.errors.invalidRequest", "The request is not valid"),
+		field,
+	});
+}
+
+async function resolvePayrollDayRequest(
+	t: PayrollTranslate,
+	day: { employeeId: string; date: string },
+) {
+	return resolvePayrollSettlementRequest(t, {
+		startDate: day.date,
+		endDate: day.date,
+		label: day.date,
+		employeeIds: [day.employeeId],
+	});
+}
+
+async function resolvePayrollSettlementRequest(
+	t: PayrollTranslate,
+	request: PayrollWorkspaceRequest,
+) {
+	const authContext = await requirePayrollGrantHolder(t);
+	validatePayrollWorkspaceRequest(t, request);
+	const employeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
+	return {
+		organizationId: authContext.employee.organizationId,
+		actor: payrollActor(authContext),
+		scope: { employeeIds },
+		range: { startDate: request.startDate, endDate: request.endDate },
+	};
+}
+
+function settlementCounts(
+	t: PayrollTranslate,
+	userId: string,
+	result: SettleDaysPreview | SettleDaysResult,
+): PayrollSettlementCounts {
+	if (result.status === "invalid_range") {
+		throw new ValidationError({
+			message: t(
+				"payroll.settle.invalidRange",
+				"Choose a period of at most one year to settle days",
+			),
+			field: "endDate",
+		});
+	}
+	if (result.status === "out_of_scope") throwPayrollSettlementOutOfScope(t, userId);
+	return {
+		newDays: result.newlySettled.length,
+		alreadySettledDays: result.alreadySettled.length,
+		unclosedMonths: unclosedMonthCounts(result.inUnclosedMonths),
+	};
+}
+
+function throwPayrollSettlementOutOfScope(t: PayrollTranslate, userId: string): never {
+	throw new AuthorizationError({
+		message: t(
+			"payroll.settle.outOfScope",
+			"Some selected employees are outside your payroll access",
+		),
+		userId,
+		resource: "payroll_workspace",
+		action: "write",
+	});
+}
+
+/**
+ * The work and break records of one employee-day (#1894), for the Days tab's read-only
+ * side panel. Limited to the payroll access grant's scope, like the period read.
+ */
+export async function getPayrollDayRecordsAction(request: {
+	employeeId: string;
+	date: string;
+}): Promise<ServerActionResult<PayrollPeriodDayDetail>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const day = parsePayrollActionInput(t, payrollDaySchema, request);
+		const authContext = await requirePayrollGrantHolder(t);
+		// The module checks the grant's scope, employees who left during or after the day included.
+		const detail = await readPeriodDay(
+			authContext.employee.organizationId,
+			payrollActor(authContext),
+			day,
+		);
+		if (!detail) {
+			throw new AuthorizationError({
+				message: t(
+					"payroll.errors.noAvailableEmployees",
+					"No payroll employees are available in your access scope",
+				),
+				userId: authContext.user.id,
+				resource: "payroll_workspace",
+				action: "read",
+			});
+		}
+		return detail;
+	});
+}
+
 export async function dismissPayrollBlockerAction(
 	request: DismissPayrollBlockerRequest,
 ): Promise<ServerActionResult<{ dismissed: true }>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const authenticatedContext = await requireActiveOrganizationEmployee(t);
 		const { blockerId, blockerType } = validatePayrollBlockerDismissalRequest(t, request);
+		// Blockers of employees who left are in the workspace's summary, so they can be dismissed.
 		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
 			authenticatedContext,
+			{ includeDeparted: true },
 		);
 		const organizationId = authContext.employee.organizationId;
 		const findExistingDismissal = () =>
@@ -112,9 +498,7 @@ export async function dismissPayrollBlockerAction(
 					eq(payrollBlockerDismissal.sourceId, blockerId),
 				),
 			});
-		const dismissalIsInScope = (
-			dismissal: Awaited<ReturnType<typeof findExistingDismissal>>,
-		) =>
+		const dismissalIsInScope = (dismissal: Awaited<ReturnType<typeof findExistingDismissal>>) =>
 			dismissal?.organizationId === organizationId &&
 			dismissal.blockerType === blockerType &&
 			dismissal.sourceId === blockerId &&
@@ -183,18 +567,34 @@ export async function exportPayrollPdfAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<{ filename: string; data: number[] }>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const summary = await buildScopedPayrollWorkspaceSummary(t, request);
-		const pdfBytes = await exportPayrollSummaryToPDF(summary);
+		// The PDF reads the payroll period module, so it matches the Days tab (#1900).
+		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+			undefined,
+			{ includeDeparted: true },
+		);
+		const read = await readPeriodForEmployees(
+			authContext.employee.organizationId,
+			payrollActor(authContext),
+			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
+			{ employeeIds: scopedEmployeeIds },
+		);
+		const pdfBytes = await exportPayrollPeriodToPDF(read, { t, locale: await getLocale() });
 
 		return {
-			filename: generatePayrollPDFFilename(summary),
+			filename: generatePayrollPDFFilename(read.summary),
 			data: Array.from(pdfBytes),
 		};
 	});
 }
 
 export async function startScopedPayrollExportAction(
-	request: PayrollWorkspaceRequest & { formatId: string },
+	request: PayrollWorkspaceRequest & {
+		formatId: string;
+		/** Reissue the file with its settled days (#1898); the Export tab warns first. */
+		includeSettledDays?: boolean;
+	},
 ): Promise<
 	ServerActionResult<{
 		jobId: string;
@@ -202,6 +602,8 @@ export async function startScopedPayrollExportAction(
 		fileContent?: string;
 		/** Overtime payouts the file left out for want of an "overtime" mapping (#1001). */
 		unmappedOvertimePayoutCount?: number;
+		/** Settled and changed-since-settled employee-days the file left out (#1898). */
+		settledDaysLeftOut?: number;
 	}>
 > {
 	return runPayrollWorkspaceAction(async (t) => {
@@ -248,6 +650,8 @@ export async function startScopedPayrollExportAction(
 			requestedById: authContext.employee.id,
 			filters,
 			repairActorUserId: ability?.can("manage", "OrgSettings") ? authContext.user.id : null,
+			// The workspace prepares the file: settled days are left out unless reissued.
+			settledDays: request.includeSettledDays === true ? "include" : "leave_out",
 		});
 
 		if (isAsync) {
@@ -258,7 +662,7 @@ export async function startScopedPayrollExportAction(
 			return { jobId, isAsync };
 		}
 
-		const { result } = await processExportJob({
+		const { result, settledDaysLeftOut } = await processExportJob({
 			jobId,
 			organizationId: authContext.employee.organizationId,
 		});
@@ -273,6 +677,7 @@ export async function startScopedPayrollExportAction(
 			isAsync,
 			fileContent,
 			unmappedOvertimePayoutCount: result?.metadata.unmappedOvertimePayouts.length ?? 0,
+			settledDaysLeftOut: settledDaysLeftOut ?? 0,
 		};
 	});
 }
@@ -337,10 +742,8 @@ async function resolvePayrollExportScope(
 			organizationId: authContext.employee.organizationId,
 			payrollEmployeeId: authContext.employee.id,
 		}),
-		listDepartedEmployeesCoveredForExport(db, {
-			organizationId: authContext.employee.organizationId,
-			actorUserId: authContext.user.id,
-			fromDate: parsePlainDate(request.startDate).toString(),
+		listDepartedGrantEmployees(authContext.employee.organizationId, payrollActor(authContext), {
+			leftAfterStartOf: request.startDate,
 		}),
 	]);
 	return {
@@ -482,6 +885,8 @@ async function buildScopedPayrollWorkspaceSummary(
 	const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 		t,
 		request,
+		undefined,
+		{ includeDeparted: true },
 	);
 
 	return getPayrollWorkspaceSummary({
@@ -499,6 +904,13 @@ async function resolvePayrollWorkspaceActionContext(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
 	authenticatedContext?: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
+	options: {
+		/**
+		 * Period reads (#1894) also cover the grant's employees who left during or after
+		 * the period, as the export does; the period read keeps those with data in it.
+		 */
+		includeDeparted?: boolean;
+	} = {},
 ): Promise<{
 	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 	period: { start: DateTime; end: DateTime; label: string };
@@ -507,10 +919,17 @@ async function resolvePayrollWorkspaceActionContext(
 	const authContext = authenticatedContext ?? (await requireActiveOrganizationEmployee(t));
 	const period = validatePayrollWorkspaceRequest(t, request);
 	const requestedEmployeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
-	const allowedEmployeeIds = await resolvePayrollAccessibleEmployeeIds({
-		organizationId: authContext.employee.organizationId,
-		payrollEmployeeId: authContext.employee.id,
-	});
+	const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
+		resolvePayrollAccessibleEmployeeIds({
+			organizationId: authContext.employee.organizationId,
+			payrollEmployeeId: authContext.employee.id,
+		}),
+		options.includeDeparted
+			? listDepartedGrantEmployees(authContext.employee.organizationId, payrollActor(authContext), {
+					leftAfterStartOf: request.startDate,
+				})
+			: [],
+	]);
 
 	if (allowedEmployeeIds.length === 0) {
 		throw new AuthorizationError({
@@ -527,7 +946,7 @@ async function resolvePayrollWorkspaceActionContext(
 	const scopedResult = resolveScopedPayrollEmployeeIdsForAction({
 		role: authContext.employee.role,
 		requestedEmployeeIds,
-		allowedEmployeeIds,
+		allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
 	});
 
 	if (!scopedResult.hasScope) {
@@ -575,10 +994,7 @@ function validatePayrollBlockerDismissalRequest(
 
 function throwPayrollBlockerAuthorizationError(t: PayrollTranslate, userId: string): never {
 	throw new AuthorizationError({
-		message: t(
-			"payroll.errors.blockerNotDismissible",
-			"Payroll blocker cannot be dismissed",
-		),
+		message: t("payroll.errors.blockerNotDismissible", "Payroll blocker cannot be dismissed"),
 		userId,
 		resource: "payroll_workspace",
 		action: "write",

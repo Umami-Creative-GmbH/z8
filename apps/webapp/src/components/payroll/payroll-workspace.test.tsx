@@ -34,11 +34,25 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("next-intl", () => ({
 	useLocale: () => activeLocale,
 }));
+// The app router keeps useSearchParams in step with history.replaceState.
+vi.mock("next/navigation", () => ({
+	useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 vi.mock("@tanstack/react-query", () => ({
 	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
 }));
 vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
+// The Days grid only displays the payroll period read; it has no seam of its own (#1891).
+vi.mock("./workspace/payroll-days-tab", () => ({ PayrollDaysTab: () => null }));
+// Settling reads and writes through the payroll period module, tested on PostgreSQL (#1896).
+vi.mock("./workspace/payroll-settlement-card", () => ({ PayrollSettlementCard: () => null }));
+// Confirming an export as paid is tested on PostgreSQL at the payroll period module (#1899).
+vi.mock("./workspace/payroll-confirm-paid-card", () => ({ PayrollConfirmPaidCard: () => null }));
+vi.mock("./workspace/payroll-settlement-figures", () => ({
+	PayrollSettlementFigures: () => null,
+}));
+vi.mock("./workspace/payroll-absences-tab", () => ({ PayrollAbsencesTab: () => null }));
 vi.mock("./payroll-baselines-card", () => ({
 	PayrollBaselinesCard: () => null,
 }));
@@ -132,6 +146,10 @@ function blockerSelector(type: PayrollBlockerType, id: string) {
 	return `[data-payroll-blocker-key="${payrollBlockerIdentity({ id, type })}"]`;
 }
 
+function openPayrollTab(name: "Overview" | "Days" | "Absences" | "Export") {
+	fireEvent.click(screen.getByRole("tab", { name }));
+}
+
 function expandPayrollBlockers(name: string | RegExp = /payroll blockers need review/) {
 	const region = screen.getByRole("region", { name });
 	const trigger = within(region).getByRole("button", { name });
@@ -162,6 +180,39 @@ function deferred<T>() {
 }
 
 describe("PayrollWorkspace", () => {
+	it("opens on the Overview tab with the Days, Absences and Export tabs beside it", () => {
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+		expect(tabs).toEqual(["Overview", "Days", "Absences", "Export"]);
+		expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(screen.getByRole("heading", { name: "Employee totals" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Trigger export" })).toBeNull();
+	});
+	it("stores the selected tab in the URL and keeps it on the next visit", () => {
+		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		openPayrollTab("Export");
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe("export");
+		expect(screen.getByRole("button", { name: "Trigger export" })).toBeTruthy();
+		view.unmount();
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Export" }).getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByRole("button", { name: "Trigger export" })).toBeTruthy();
+	});
+	it("opens the tab named in a shared link and ignores an unknown one", () => {
+		window.history.replaceState(null, "", "/payroll?tab=absences");
+		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Absences" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		view.unmount();
+		window.history.replaceState(null, "", "/payroll?tab=nonsense");
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+	});
 	it("replaces records when another organization arrives for the same actor and organization name", () => {
 		const formats = [{ id: "datev_lohn", label: "DATEV" }];
 		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
@@ -213,6 +264,7 @@ describe("PayrollWorkspace", () => {
 			actionMocks.startScopedPayrollExportAction.mockReturnValueOnce(pending.promise);
 			const formats = [{ id: "datev_lohn", label: "DATEV" }];
 			const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+			openPayrollTab("Export");
 			fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 			view.rerender(
 				<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
@@ -243,6 +295,7 @@ describe("PayrollWorkspace", () => {
 			try {
 				const formats = [{ id: "datev_lohn", label: "DATEV" }];
 				const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+				openPayrollTab("Export");
 				fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
 				view.rerender(
 					<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
@@ -301,6 +354,7 @@ describe("PayrollWorkspace", () => {
 			/>
 		);
 		const view = render(<Activity mode="visible">{workspace}</Activity>);
+		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 		view.rerender(<Activity mode="hidden">{workspace}</Activity>);
 		view.rerender(<Activity mode="visible">{workspace}</Activity>);
@@ -321,6 +375,7 @@ describe("PayrollWorkspace", () => {
 		vi.stubGlobal("URL", { createObjectURL, revokeObjectURL: vi.fn() });
 		try {
 			const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+			openPayrollTab("Export");
 			fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
 			view.unmount();
 			await act(async () =>
@@ -341,6 +396,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 		await waitFor(() =>
 			expect(toastMocks.error).toHaveBeenCalledWith("Payroll workspace action failed"),
@@ -365,6 +421,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 		view.unmount();
 		await act(async () =>
@@ -372,7 +429,7 @@ describe("PayrollWorkspace", () => {
 		);
 		expect(toastMocks.success).not.toHaveBeenCalled();
 	});
-	it("states the organization and puts employee totals before supporting comparison records", () => {
+	it("states the organization, shows employee totals on Overview and comparison records on Export", () => {
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -380,11 +437,11 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expect(screen.getByText("Acme GmbH")).toBeTruthy();
-		const totals = screen.getByRole("heading", { name: "Employee totals" });
-		const comparison = screen.getByLabelText("Comparison selection");
-		expect(
-			totals.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING,
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Employee totals" })).toBeTruthy();
+		expect(screen.queryByLabelText("Comparison selection")).toBeNull();
+		openPayrollTab("Export");
+		expect(screen.getByLabelText("Comparison selection")).toBeTruthy();
+		expect(screen.queryByRole("heading", { name: "Employee totals" })).toBeNull();
 		expect(
 			screen.getByText("Export prepares payroll data. It does not make a payment."),
 		).toBeTruthy();
@@ -409,6 +466,7 @@ describe("PayrollWorkspace", () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
+		window.history.replaceState(null, "", "/payroll");
 		translateOverrides = {};
 		activeLocale = "en";
 		actionMocks.dismissPayrollBlockerAction.mockResolvedValue({
@@ -440,6 +498,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Translated payroll")).toBeTruthy();
 		expect(screen.getByText("Translated payroll description")).toBeTruthy();
 		expect(screen.getByText("Translated selected period")).toBeTruthy();
+		openPayrollTab("Export");
 		expect(screen.getByRole("button", { name: "Translated download PDF" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Translated trigger export" })).toBeTruthy();
 	});
@@ -511,6 +570,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
 		expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(1);
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
+		openPayrollTab("Export");
 		expect(screen.getByText("Download PDF")).toBeTruthy();
 		expect(screen.getByText("Trigger export")).toBeTruthy();
 	});
@@ -829,11 +889,10 @@ describe("PayrollWorkspace", () => {
 			})),
 			blockers: [],
 		});
-		actionMocks.dismissPayrollBlockerAction.mockImplementation(
-			(request: { blockerType: string }) =>
-				request.blockerType === "missing_clock_out"
-					? firstDismissal.promise
-					: secondDismissal.promise,
+		actionMocks.dismissPayrollBlockerAction.mockImplementation((request: { blockerType: string }) =>
+			request.blockerType === "missing_clock_out"
+				? firstDismissal.promise
+				: secondDismissal.promise,
 		);
 		actionMocks.getPayrollWorkspaceSummaryAction
 			.mockReturnValueOnce(firstRefresh.promise)
@@ -1451,7 +1510,7 @@ describe("PayrollWorkspace", () => {
 		await waitFor(() =>
 			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
 		);
-		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
+		const chosenControl = screen.getByRole("button", { name: "Specific teams" });
 		chosenControl.focus();
 		expect(document.activeElement).toBe(chosenControl);
 
@@ -1604,7 +1663,7 @@ describe("PayrollWorkspace", () => {
 		clearButton.focus();
 		fireEvent.click(clearButton);
 		await waitFor(() => expect(clearButton).toHaveProperty("disabled", true));
-		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
+		const chosenControl = screen.getByRole("button", { name: "Specific teams" });
 		chosenControl.focus();
 		expect(document.activeElement).toBe(chosenControl);
 		await act(async () => dismissal.resolve({ success: false, error: "Still blocked" }));
@@ -1926,22 +1985,20 @@ describe("PayrollWorkspace", () => {
 			"[data-payroll-period-controls]",
 		);
 		expect(controlsRail).toBeTruthy();
-		expect(controlsRail?.className).toContain("lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)]");
 
 		const dateControls = (periodCard as HTMLElement).querySelector("[data-payroll-date-controls]");
 		expect(dateControls).toBeTruthy();
 		expect(dateControls?.className).toContain("lg:grid-cols-[auto_minmax(0,1fr)]");
 
-		const exportControls = (periodCard as HTMLElement).querySelector(
-			"[data-payroll-export-controls]",
-		);
-		expect(exportControls).toBeTruthy();
-		expect(exportControls?.className).toContain("sm:grid-cols-[minmax(0,1fr)]");
+		// The period and scope share one bar; the export controls live on the Export tab.
+		expect((periodCard as HTMLElement).querySelector("[data-payroll-scope-controls]")).toBeTruthy();
+		expect((periodCard as HTMLElement).querySelector("[data-payroll-export-controls]")).toBeNull();
 	});
 
 	it("disables export controls when no export formats are configured", () => {
 		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
 
+		openPayrollTab("Export");
 		const exportLabel = screen.getByText("Payroll export target");
 		const exportTarget = screen.getByLabelText("Payroll export target") as HTMLButtonElement;
 		const triggerExportButton = screen.getByRole("button", {
@@ -1969,6 +2026,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+		openPayrollTab("Export");
 		expect(
 			(
 				screen.getByRole("button", {
@@ -2228,6 +2286,7 @@ describe("PayrollWorkspace", () => {
 		expect(employeeSummaryCard).toBeTruthy();
 		expect(within(employeeSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
 		expect(screen.queryByText("E-1")).toBeNull();
+		openPayrollTab("Export");
 		expect(
 			(
 				screen.getByRole("button", {
@@ -2542,6 +2601,7 @@ it.each([
 			exportFormats={[{ id: formatId, label: formatId }]}
 		/>,
 	);
+	openPayrollTab("Export");
 	const comparison = screen.queryByLabelText("Comparison selection");
 	expect(Boolean(comparison)).toBe(visible);
 	if (comparison)

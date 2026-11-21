@@ -63,7 +63,8 @@ export type DismissiblePayrollBlockerType =
  * safely. Under scoped payroll collection (#322), `open_work`, `pending_work_approval`,
  * `pending_work_correction` and `uncertain_historical_work` mark work an export cannot omit.
  * `missing_identifier` marks work of an employee without a value for the configured custom field
- * identifier (#821). All of them block exports, so they cannot be cleared as false positives.
+ * identifier (#821). `changed_since_settled` marks a settled day whose values changed after
+ * settling (#1897); its `id` is the settlement's. None of them can be cleared as false positives.
  */
 export type PayrollBlockerType =
 	| DismissiblePayrollBlockerType
@@ -73,15 +74,23 @@ export type PayrollBlockerType =
 	| "pending_work_approval"
 	| "pending_work_correction"
 	| "uncertain_historical_work"
-	| "missing_identifier";
+	| "missing_identifier"
+	| "changed_since_settled";
 
 export interface PayrollBlocker {
 	id: string;
 	employeeId: string;
 	type: PayrollBlockerType;
-	label: string;
+	/**
+	 * A plain-text note of the older blocker sources. Views show the translated label of
+	 * `payrollBlockerTypeLabel` (blocker-labels.ts); `changed_since_settled` has none and
+	 * carries `settledChange` instead.
+	 */
+	label?: string;
 	date: string | null;
 	time: string | null;
+	/** For `changed_since_settled`: how the day differs from what was paid. */
+	settledChange?: { creditedMinutesDifference: number; absencesChanged: boolean };
 }
 
 export interface PayrollAbsenceDaysByCategory {
