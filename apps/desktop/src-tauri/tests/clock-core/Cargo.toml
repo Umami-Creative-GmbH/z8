@@ -2,6 +2,7 @@
 name = "z8-desktop-clock-tests"
 version = "0.0.0"
 edition = "2021"
+rust-version = "1.95"
 publish = false
 
 [features]
@@ -15,18 +16,18 @@ path = "lib.rs"
 anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 log = "0.4"
-parking_lot = "0.12"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
-rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+parking_lot = "0.13"
+reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
+rusqlite = { version = "0.43", features = ["bundled", "backup"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 tempfile = "3"
 uuid = { version = "1", features = ["v4"] }
-sha2 = "0.10"
+sha2 = "0.11"
 url = "2"
-base64 = "0.22"
-rand = "0.8"
+base64 = "0.23"
+rand = "0.10"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security_Credentials"] }
