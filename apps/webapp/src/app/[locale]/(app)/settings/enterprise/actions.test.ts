@@ -328,6 +328,27 @@ describe("enterprise settings actions", () => {
 		expect(mocks.domain.verifyDomainOwnership).toHaveBeenCalledWith(domainId);
 	});
 
+	it("saves SSO button overrides in the custom domain's authentication settings", async () => {
+		mocks.domainFindFirst.mockResolvedValue({ id: domainId, organizationId: "org-1" });
+		const config = {
+			emailPasswordEnabled: true,
+			socialProvidersEnabled: [],
+			ssoEnabled: false,
+			passkeyEnabled: true,
+			ssoButtonLabel: "  Company login  ",
+			ssoButtonIcon: "google" as const,
+		};
+		await expect(actions.updateDomainAuthConfigAction({ domainId, config })).resolves.toMatchObject(
+			{
+				success: true,
+			},
+		);
+		expect(mocks.domain.updateDomainAuthConfig).toHaveBeenCalledWith(domainId, {
+			...config,
+			ssoButtonLabel: "Company login",
+		});
+	});
+
 	it("refuses an SSO provider of another organization", async () => {
 		mocks.sso.listSsoProviders.mockResolvedValue([
 			{ providerId: "acme", organizationId: "org-2", domain: "example.com" },

@@ -107,6 +107,7 @@ export * from "./payroll-baseline";
 export * from "./payroll-blocker";
 export * from "./payroll-comparison";
 export * from "./payroll-export";
+export * from "./payroll-settlement";
 export * from "./period-submission";
 // Personal data exports: one employee's data as a ZIP (#811)
 export * from "./personal-data-export";

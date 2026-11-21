@@ -213,6 +213,8 @@ export const queryKeys = {
 		/** How many employees an export of the period would cover (#1001). */
 		exportScope: (request: { startDate: string; endDate: string }) =>
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
+		/** Completed exports the reader may confirm as paid (#1899). */
+		exportsToConfirm: () => ["payroll", "exports-to-confirm"] as const,
 		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
 		overtimePayoutReadiness: (request: {
 			startDate: string;
@@ -228,6 +230,32 @@ export const queryKeys = {
 				request.formatId,
 				request.employeeIds?.join(",") ?? "scope",
 			] as const,
+		/** Every payroll period read, to refetch them all after a settlement change. */
+		periods: () => ["payroll", "period"] as const,
+		/**
+		 * The payroll period read (#1891) behind the Days and Absences tabs. `refreshedAt`
+		 * is the summary's generation time, so a workspace refresh refetches it too.
+		 */
+		period: (request: {
+			startDate: string;
+			endDate: string;
+			employeeIds?: readonly string[];
+			refreshedAt: string;
+		}) =>
+			[
+				"payroll",
+				"period",
+				request.startDate,
+				request.endDate,
+				request.employeeIds?.join(",") ?? "scope",
+				request.refreshedAt,
+			] as const,
+		/** The records of one employee-day, for the Days tab's side panel (#1894). */
+		dayRecords: (request: { employeeId: string; date: string; refreshedAt: string }) =>
+			["payroll", "day-records", request.employeeId, request.date, request.refreshedAt] as const,
+		/** The settlement history of one employee-day, for the side panel (#1897). */
+		daySettlementHistory: (request: { employeeId: string; date: string }) =>
+			["payroll", "day-settlement-history", request.employeeId, request.date] as const,
 	},
 
 	// Closed months

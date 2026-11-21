@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -8,13 +8,19 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
+	employeeDeparture,
 	payrollExportConfig,
 	team,
 	timeRecord,
 	timeRecordAbsence,
 	userSettings,
 } from "@/db/schema";
-import { type Instant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import {
 	findOpenDepartureClockRepairs,
 	type OpenDepartureClockRepair,
@@ -36,6 +42,13 @@ import {
 	readPayrollWorkCollection,
 } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { buildPayrollQueryEnvelope } from "@/lib/payroll-export/calendar-boundaries";
+import type { PayrollPeriodSources } from "@/lib/payroll-period/period-read";
+import type {
+	CreditedWorkSpan,
+	PayrollPeriodAbsenceSource,
+	PayrollPeriodDeparture,
+	PayrollPeriodEmployeeSource,
+} from "@/lib/payroll-period/types";
 import { payrollIdentifierCustomFieldId } from "@/lib/payroll-export/personnel-identifier";
 import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
 import {
@@ -158,8 +171,14 @@ export function buildPayrollSummaryFromRows(input: {
 export function calculatePayrollWorkedMinutes(
 	workRows: PayrollSummaryWorkRow[],
 	period: Pick<PayrollPeriod, "start" | "end">,
-): { workedMinutesByEmployee: Map<string, number>; blockers: PayrollBlocker[] } {
+): {
+	workedMinutesByEmployee: Map<string, number>;
+	/** The credited part of each allocated record, for attributing it to local days. */
+	credited: CreditedWorkSpan[];
+	blockers: PayrollBlocker[];
+} {
 	const workedMinutesByEmployee = new Map<string, number>();
+	const credited: CreditedWorkSpan[] = [];
 	const blockers: PayrollBlocker[] = [];
 	for (const row of workRows) {
 		const allocation = allocateProtectedMinutes(
@@ -183,9 +202,16 @@ export function calculatePayrollWorkedMinutes(
 			row.employeeId,
 			(workedMinutesByEmployee.get(row.employeeId) ?? 0) + allocation.minutes,
 		);
+		credited.push({
+			recordId: row.id,
+			employeeId: row.employeeId,
+			startAt: allocation.overlap.start,
+			endExclusive: allocation.overlap.endExclusive,
+			minutes: allocation.minutes,
+		});
 	}
 
-	return { workedMinutesByEmployee, blockers };
+	return { workedMinutesByEmployee, credited, blockers };
 }
 
 function sumCollectedMinutes(
@@ -346,6 +372,10 @@ export function buildPendingAbsenceBlockers(
 	}));
 }
 
+/**
+ * The Overview summary. It is the payroll period module's read (#1893) without daily
+ * requirements, so its worked hours are exactly the totals of the Days grid.
+ */
 export async function getPayrollWorkspaceSummary(input: {
 	organizationId: string;
 	allowedEmployeeIds: string[];
@@ -353,6 +383,46 @@ export async function getPayrollWorkspaceSummary(input: {
 	generatedBy: { id: string; name: string };
 	generatedAt?: DateTime;
 }): Promise<PayrollWorkspaceSummary> {
+	const [{ period, sources }, { buildPayrollPeriodRead }, { loadActiveSettledDays }, { db }] =
+		await Promise.all([
+			loadPayrollPeriodSources(input),
+			// Imported lazily: the period read builds on this module's summary builder.
+			import("@/lib/payroll-period/period-read"),
+			import("@/lib/payroll-period/settled-days-store"),
+			import("@/db"),
+		]);
+	// Settled days give the Overview its changed-since-settled blockers (#1897).
+	const settledDays = await loadActiveSettledDays(db, {
+		organizationId: input.organizationId,
+		employeeIds: sources.employees.map((row) => row.id),
+		startDate: period.start,
+		endDate: period.end,
+	});
+	return buildPayrollPeriodRead({
+		organizationId: input.organizationId,
+		period,
+		generatedAt: input.generatedAt
+			? Temporal.Instant.fromEpochMilliseconds(input.generatedAt.toMillis())
+			: Temporal.Now.instant(),
+		generatedBy: input.generatedBy,
+		sources: { ...sources, settledDays },
+	}).summary;
+}
+
+/**
+ * The database part of a payroll period read: employees, work credited by the payroll
+ * credit rule (scoped collection when active, else approved completed records),
+ * approved and pending absences, and blockers, for already grant-scoped employees.
+ */
+export async function loadPayrollPeriodSources(input: {
+	organizationId: string;
+	allowedEmployeeIds: readonly string[];
+	period: { start: DateTime; end: DateTime; label: string };
+}): Promise<{
+	period: PayrollPeriod;
+	organizationTimezone: string | null;
+	sources: PayrollPeriodSources;
+}> {
 	const { db } = await import("@/db");
 	// Scoped collection (#322) owns work readiness; the organization-wide backfill must
 	// not run for it, so only absences keep their organization-wide (read-only) check.
@@ -369,22 +439,16 @@ export async function getPayrollWorkspaceSummary(input: {
 		.where(eq(organization.id, input.organizationId))
 		.limit(1);
 
-	const summaryInput = {
-		organizationId: input.organizationId,
-		organizationName: organizationRow?.name ?? "",
-		period: toPayrollPeriod(input.period),
-		generatedAt: input.generatedAt ?? DateTime.utc(),
-		generatedBy: input.generatedBy,
-	};
+	const period = toPayrollPeriod(input.period);
+	const organizationTimezone = organizationRow?.timezone ?? null;
+	const organizationName = organizationRow?.name ?? "";
 
 	if (input.allowedEmployeeIds.length === 0) {
-		return buildPayrollSummaryFromRows({
-			...summaryInput,
-			employees: [],
-			workRows: [],
-			absenceRows: [],
-			blockers: [],
-		});
+		return {
+			period,
+			organizationTimezone,
+			sources: { organizationName, employees: [], work: [], absences: [], blockers: [] },
+		};
 	}
 
 	const allowedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
@@ -392,78 +456,81 @@ export async function getPayrollWorkspaceSummary(input: {
 		getMissingIdentifierBlockers({
 			organizationId: input.organizationId,
 			allowedEmployeeIds,
-			period: summaryInput.period,
+			period,
 			employeesWithRows,
 		});
+	const approvedAbsenceEmployees = (absences: readonly PayrollPeriodAbsenceSource[]) =>
+		absences.flatMap((row) => (row.approvalState === "approved" ? [row.employeeId] : []));
+
 	if (scopedCollection) {
-		const [employeeRows, collection, absenceRows, blockers] = await Promise.all([
-			getEmployeeRows(input.organizationId, allowedEmployeeIds),
+		const [employeeRows, collection, absences, blockers] = await Promise.all([
+			getEmployeeRows(input.organizationId, allowedEmployeeIds, organizationTimezone),
 			readPayrollWorkCollection(db, input.organizationId, {
-				startDate: summaryInput.period.start,
-				endDate: summaryInput.period.end,
+				startDate: period.start,
+				endDate: period.end,
 				employeeIds: allowedEmployeeIds,
 			}),
-			getAbsenceRows(input.organizationId, allowedEmployeeIds, input.period),
-			getBlockers(
-				input.organizationId,
-				allowedEmployeeIds,
-				input.period,
-				organizationRow?.timezone ?? null,
-				{ collectionOwnsWorkBlockers: true },
-			),
+			getAbsenceRows(input.organizationId, allowedEmployeeIds, period),
+			getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone, {
+				collectionOwnsWorkBlockers: true,
+			}),
 		]);
 
 		// Explicitly incomplete: unaffected work is credited, uncertain work is listed.
-		return buildPayrollSummaryFromRows({
-			...summaryInput,
-			employees: employeeRows,
-			workRows: [],
-			collectedWork: collection.input.work,
-			absenceRows,
-			blockers: [
-				...blockers,
-				...payrollBlockersFromCollection(collection),
-				...(await identifierBlockers([
-					...collection.input.work.map((line) => line.employeeId),
-					...absenceRows.map((row) => row.employeeId),
-				])),
-			],
-		});
+		return {
+			period,
+			organizationTimezone,
+			sources: {
+				organizationName,
+				employees: employeeRows,
+				work: collection.input.work.map((line) => ({
+					recordId: line.recordId,
+					employeeId: line.employeeId,
+					startAt: Temporal.Instant.from(line.startAt),
+					endExclusive: Temporal.Instant.from(line.endExclusive),
+					minutes: line.minutes,
+				})),
+				absences,
+				blockers: [
+					...blockers,
+					...payrollBlockersFromCollection(collection),
+					...(await identifierBlockers([
+						...collection.input.work.map((line) => line.employeeId),
+						...approvedAbsenceEmployees(absences),
+					])),
+				],
+			},
+		};
 	}
 
-	const [employeeRows, workRows, absenceRows, blockers] = await Promise.all([
-		getEmployeeRows(input.organizationId, allowedEmployeeIds),
-		getWorkRows(
-			input.organizationId,
-			allowedEmployeeIds,
-			summaryInput.period,
-			organizationRow?.timezone ?? null,
-		),
-		getAbsenceRows(input.organizationId, allowedEmployeeIds, input.period),
-		getBlockers(
-			input.organizationId,
-			allowedEmployeeIds,
-			input.period,
-			organizationRow?.timezone ?? null,
-		),
+	const [employeeRows, workRows, absences, blockers] = await Promise.all([
+		getEmployeeRows(input.organizationId, allowedEmployeeIds, organizationTimezone),
+		getWorkRows(input.organizationId, allowedEmployeeIds, period, organizationTimezone),
+		getAbsenceRows(input.organizationId, allowedEmployeeIds, period),
+		getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone),
 	]);
 
-	const { workedMinutesByEmployee } = calculatePayrollWorkedMinutes(workRows, summaryInput.period);
-	return buildPayrollSummaryFromRows({
-		...summaryInput,
-		employees: employeeRows,
-		workRows,
-		absenceRows,
-		blockers: [
-			...blockers,
-			...(await identifierBlockers([
-				...[...workedMinutesByEmployee].flatMap(([employeeId, minutes]) =>
-					minutes > 0 ? [employeeId] : [],
-				),
-				...absenceRows.map((row) => row.employeeId),
-			])),
-		],
-	});
+	const work = calculatePayrollWorkedMinutes(workRows, period);
+	return {
+		period,
+		organizationTimezone,
+		sources: {
+			organizationName,
+			employees: employeeRows,
+			work: work.credited,
+			absences,
+			blockers: [
+				...work.blockers,
+				...blockers,
+				...(await identifierBlockers([
+					...[...work.workedMinutesByEmployee].flatMap(([employeeId, minutes]) =>
+						minutes > 0 ? [employeeId] : [],
+					),
+					...approvedAbsenceEmployees(absences),
+				])),
+			],
+		},
+	};
 }
 
 /**
@@ -541,7 +608,8 @@ async function getMissingIdentifierBlockers(input: {
 async function getEmployeeRows(
 	organizationId: string,
 	allowedEmployeeIds: string[],
-): Promise<PayrollSummaryEmployeeSource[]> {
+	organizationTimezone: string | null,
+): Promise<PayrollPeriodEmployeeSource[]> {
 	const { db } = await import("@/db");
 	const rows = await db
 		.select({
@@ -550,22 +618,26 @@ async function getEmployeeRows(
 			employeeNumber: employee.employeeNumber,
 			teamName: team.name,
 			contractType: employee.contractType,
+			userTimezone: userSettings.timezone,
+			isActive: employee.isActive,
 		})
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 		.leftJoin(team, and(eq(employee.teamId, team.id), eq(team.organizationId, organizationId)))
+		// The grant scope decides who is read; it includes employees who left only when
+		// the caller resolved them deliberately (#1894).
 		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-				inArray(employee.id, allowedEmployeeIds),
-			),
+			and(eq(employee.organizationId, organizationId), inArray(employee.id, allowedEmployeeIds)),
 		);
 
-	const contractTypes = await loadCurrentContractTypes(db, {
-		organizationId,
-		employees: rows,
-	});
+	const [contractTypes, departures] = await Promise.all([
+		loadCurrentContractTypes(db, { organizationId, employees: rows }),
+		loadLastWorkingDays(
+			organizationId,
+			rows.flatMap((row) => (row.isActive ? [] : [row.id])),
+		),
+	]);
 
 	return rows.map((row) => ({
 		id: row.id,
@@ -573,7 +645,55 @@ async function getEmployeeRows(
 		employeeNumber: row.employeeNumber,
 		teamName: row.teamName,
 		contractType: contractTypes.get(row.id) ?? row.contractType,
+		timezone: resolveEffectiveTimezone(row.userTimezone, organizationTimezone),
+		departure: departureOf(departures.get(row.id)),
 	}));
+}
+
+function departureOf(lastWorkingDay: string | undefined): PayrollPeriodDeparture | null {
+	return lastWorkingDay ? { lastWorkingDay } : null;
+}
+
+/**
+ * The last working day of each employee's latest effective departure, for employees
+ * who have left. A departure without a recorded last working day ends on the local
+ * day of its cutoff, in the departure's frozen zone.
+ */
+async function loadLastWorkingDays(
+	organizationId: string,
+	employeeIds: readonly string[],
+): Promise<Map<string, string>> {
+	if (employeeIds.length === 0) return new Map();
+	const { db } = await import("@/db");
+	const rows = await db
+		.select({
+			employeeId: employeeDeparture.employeeId,
+			lastWorkingDay: employeeDeparture.lastWorkingDay,
+			cutoffAt: employeeDeparture.cutoffAt,
+			timezone: employeeDeparture.timezone,
+		})
+		.from(employeeDeparture)
+		.where(
+			and(
+				eq(employeeDeparture.organizationId, organizationId),
+				eq(employeeDeparture.status, "effective"),
+				inArray(employeeDeparture.employeeId, [...employeeIds]),
+			),
+		)
+		.orderBy(desc(employeeDeparture.cutoffAt));
+	const result = new Map<string, string>();
+	for (const row of rows) {
+		if (result.has(row.employeeId)) continue;
+		result.set(
+			row.employeeId,
+			row.lastWorkingDay ??
+				plainDateAt(
+					instantFromDate(row.cutoffAt).subtract({ milliseconds: 1 }),
+					row.timezone,
+				).toString(),
+		);
+	}
+	return result;
 }
 
 async function getWorkRows(
@@ -628,19 +748,36 @@ async function getWorkRows(
 	);
 }
 
+/**
+ * Approved and pending absences overlapping the period, on their employee-local dates.
+ *
+ * Canonical absence instants encode the employee's local wall clock as if it were UTC
+ * (a full day is UTC midnight to midnight, a half day starts or ends at UTC noon, a timed
+ * partial day carries its local times). So the employee-local date is the encoded date:
+ * converting the instants into the employee's zone would move absences to a neighbouring
+ * day. The period filter compares the same encoding.
+ */
 async function getAbsenceRows(
 	organizationId: string,
 	allowedEmployeeIds: string[],
-	period: { start: DateTime; end: DateTime },
-): Promise<PayrollSummaryAbsenceRow[]> {
+	period: Pick<PayrollPeriod, "start" | "end">,
+): Promise<PayrollPeriodAbsenceSource[]> {
 	const { db } = await import("@/db");
+	const encodedStart = new Date(`${period.start}T00:00:00.000Z`);
+	const encodedEndExclusive = new Date(
+		`${parsePlainDate(period.end).add({ days: 1 }).toString()}T00:00:00.000Z`,
+	);
 	const rows = await db
 		.select({
+			id: timeRecord.id,
 			employeeId: timeRecord.employeeId,
 			startAt: timeRecord.startAt,
 			endAt: timeRecord.endAt,
+			approvalState: timeRecord.approvalState,
 			categoryId: absenceCategory.id,
 			categoryName: absenceCategory.name,
+			categoryType: absenceCategory.type,
+			categoryColor: absenceCategory.color,
 			startPeriod: timeRecordAbsence.startPeriod,
 			endPeriod: timeRecordAbsence.endPeriod,
 		})
@@ -663,17 +800,21 @@ async function getAbsenceRows(
 			and(
 				eq(timeRecord.organizationId, organizationId),
 				eq(timeRecord.recordKind, "absence"),
-				eq(timeRecord.approvalState, "approved"),
+				inArray(timeRecord.approvalState, ["approved", "pending"]),
 				inArray(timeRecord.employeeId, allowedEmployeeIds),
-				lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
-				or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate())),
+				lt(timeRecord.startAt, encodedEndExclusive),
+				or(isNull(timeRecord.endAt), gte(timeRecord.endAt, encodedStart)),
 			),
 		);
 
 	return rows.map((row) => ({
+		id: row.id,
 		employeeId: row.employeeId,
+		approvalState: row.approvalState === "approved" ? "approved" : "pending",
 		categoryId: row.categoryId,
 		categoryName: row.categoryName,
+		categoryType: row.categoryType,
+		categoryColor: row.categoryColor,
 		startDate: row.startAt.toISOString().slice(0, 10),
 		endDate: (row.endAt ?? row.startAt).toISOString().slice(0, 10),
 		startPeriod: row.startPeriod,

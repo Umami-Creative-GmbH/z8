@@ -1,6 +1,6 @@
 "use client";
 
-import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
@@ -12,6 +12,7 @@ import { LoginAlternativeAuth } from "./alternative-auth";
 import { LoginCredentialsFields } from "./credentials-fields";
 import { LoginActions } from "./login-actions";
 import { LoginVerification } from "./login-verification";
+import { SsoButtonIcon } from "./sso-button-icon";
 import { useLoginArrival, useLoginAuth } from "./use-login-auth";
 
 const TwoFactorForm = dynamic(() => import("./two-factor-form").then((mod) => mod.TwoFactorForm), {
@@ -21,6 +22,33 @@ const TwoFactorForm = dynamic(() => import("./two-factor-form").then((mod) => mo
 export function LoginFormContent(props: React.ComponentProps<"div">) {
 	const arrival = useLoginArrival();
 	return <LoginFormArrival key={arrival.scope} arrival={arrival} {...props} />;
+}
+
+function SsoSignInButton({ auth }: { auth: ReturnType<typeof useLoginAuth> }) {
+	const { t } = useTranslate();
+	const pending = auth.pendingMethod === "sso";
+	return (
+		<Button
+			type="button"
+			className="h-auto min-h-11 w-full whitespace-normal"
+			onClick={auth.handleSSOLogin}
+			disabled={auth.isLoading}
+		>
+			{pending ? (
+				<IconLoader2
+					aria-hidden="true"
+					className="size-4 animate-spin motion-reduce:animate-none"
+				/>
+			) : (
+				<SsoButtonIcon name={auth.ssoButtonIcon} />
+			)}
+			<span className="min-w-0 [overflow-wrap:anywhere]">
+				{pending
+					? t("auth.signIn.ssoPending", "Connecting to SSO…")
+					: auth.ssoButtonLabel?.trim() || t("auth.login-with-sso", "Sign in with SSO")}
+			</span>
+		</Button>
+	);
 }
 
 function LoginFormArrival({
@@ -51,26 +79,7 @@ function LoginFormArrival({
 					{auth.error}
 				</div>
 			) : null}
-			{auth.showSSO && !auth.requires2FA ? (
-				<Button
-					type="button"
-					className="h-auto min-h-11 w-full whitespace-normal"
-					onClick={auth.handleSSOLogin}
-					disabled={auth.isLoading}
-				>
-					{auth.pendingMethod === "sso" ? (
-						<IconLoader2
-							aria-hidden="true"
-							className="size-4 animate-spin motion-reduce:animate-none"
-						/>
-					) : (
-						<IconFingerprint aria-hidden="true" className="size-4" />
-					)}
-					{auth.pendingMethod === "sso"
-						? t("auth.signIn.ssoPending", "Connecting to SSO…")
-						: t("auth.login-with-sso", "Sign in with SSO")}
-				</Button>
-			) : null}
+			{auth.showSSO && !auth.requires2FA ? <SsoSignInButton auth={auth} /> : null}
 			{auth.showSSO && auth.showEmailPassword && !auth.requires2FA ? (
 				<p className="border-t pt-5 text-center text-sm text-muted-foreground">
 					{t("auth.signIn.credentials", "Sign in with email")}

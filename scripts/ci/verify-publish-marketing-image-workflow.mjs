@@ -138,6 +138,8 @@ const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
 expect(buildNativeJob, "Missing build-native job");
 expect(publishManifestJob, "Missing publish-manifest job");
 
+expect(!/arm64|ubuntu-24\.04-arm/i.test(workflow), "ARM64 image publishing is paused");
+
 expectPushPathFilters([
 	"apps/marketing/**",
 	"docker/Dockerfile.marketing",
@@ -182,9 +184,6 @@ if (publishManifestJob) {
 			"name: Download amd64 digest",
 			"name: digests-marketing-amd64",
 			"path: /tmp/digests/amd64",
-			"name: Download arm64 digest",
-			"name: digests-marketing-arm64",
-			"path: /tmp/digests/arm64",
 			"uses: docker/metadata-action@",
 			"images: ghcr.io/umami-creative-gmbh/z8-marketing",
 			"type=raw,value=latest,enable={{is_default_branch}}",
@@ -196,22 +195,19 @@ if (publishManifestJob) {
 			"TAGS: ${{ steps.meta.outputs.tags }}",
 			'set -- /tmp/digests/amd64/*',
 			'AMD64_DIGEST="sha256:${1##*/}"',
-			'set -- /tmp/digests/arm64/*',
-			'ARM64_DIGEST="sha256:${1##*/}"',
 			'for tag in $TAGS; do',
 			'docker buildx imagetools create \\',
 			'-t "$tag" \\',
-			'"$IMAGE_NAME@$AMD64_DIGEST" \\',
-			'"$IMAGE_NAME@$ARM64_DIGEST"',
+			'"$IMAGE_NAME@$AMD64_DIGEST"',
 		],
 		"publish-manifest",
 	);
 
 	const publishStep = getStepBlock(
 		publishManifestJob,
-		"Create and push multi-arch manifests",
+		"Create and push manifests",
 	);
-	expect(publishStep, "Missing multi-arch manifest publish step");
+	expect(publishStep, "Missing manifest publish step");
 }
 
 expect(
