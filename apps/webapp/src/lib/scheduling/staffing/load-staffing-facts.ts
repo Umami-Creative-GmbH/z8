@@ -1,15 +1,4 @@
-import {
-	and,
-	asc,
-	eq,
-	gte,
-	inArray,
-	isNotNull,
-	lt,
-	lte,
-	ne,
-	or,
-} from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, lt, lte, ne, or } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import {
 	absenceCategory,
@@ -25,9 +14,8 @@ import {
 	skill,
 	subareaSkillRequirement,
 	workPeriod,
-	workPolicy,
-	workPolicySchedule,
 } from "@/db/schema";
+import { loadEffectiveContractsBatch } from "@/lib/contracts";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type PlainDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
@@ -83,72 +71,60 @@ export async function loadStaffingShiftContext(
 		.limit(1);
 	if (!subarea) return null;
 
-	const [subareaRequirements, templateRequirements, pickupRequests] =
-		await Promise.all([
-			database
-				.select({
-					skillId: subareaSkillRequirement.skillId,
-					skillName: skill.name,
-					isRequired: subareaSkillRequirement.isRequired,
-				})
-				.from(subareaSkillRequirement)
-				.innerJoin(skill, eq(subareaSkillRequirement.skillId, skill.id))
-				.where(
-					and(
-						eq(subareaSkillRequirement.subareaId, input.subareaId),
-						eq(skill.organizationId, input.organizationId),
-					),
-				)
-				.orderBy(asc(skill.name)),
-			input.templateId
-				? database
-						.select({
-							skillId: shiftTemplateSkillRequirement.skillId,
-							skillName: skill.name,
-							isRequired: shiftTemplateSkillRequirement.isRequired,
-						})
-						.from(shiftTemplateSkillRequirement)
-						.innerJoin(
-							shiftTemplate,
-							eq(shiftTemplateSkillRequirement.templateId, shiftTemplate.id),
-						)
-						.innerJoin(
-							skill,
-							eq(shiftTemplateSkillRequirement.skillId, skill.id),
-						)
-						.where(
-							and(
-								eq(shiftTemplateSkillRequirement.templateId, input.templateId),
-								eq(shiftTemplate.organizationId, input.organizationId),
-								eq(skill.organizationId, input.organizationId),
-							),
-						)
-						.orderBy(asc(skill.name))
-				: Promise.resolve([]),
-			input.shiftId
-				? database
-						.select({ requesterId: shiftRequest.requesterId })
-						.from(shiftRequest)
-						.innerJoin(shift, eq(shiftRequest.shiftId, shift.id))
-						.where(
-							and(
-								eq(shiftRequest.shiftId, input.shiftId),
-								eq(shift.organizationId, input.organizationId),
-								eq(shiftRequest.type, "pickup"),
-								eq(shiftRequest.status, "pending"),
-							),
-						)
-				: Promise.resolve([]),
-		]);
+	const [subareaRequirements, templateRequirements, pickupRequests] = await Promise.all([
+		database
+			.select({
+				skillId: subareaSkillRequirement.skillId,
+				skillName: skill.name,
+				isRequired: subareaSkillRequirement.isRequired,
+			})
+			.from(subareaSkillRequirement)
+			.innerJoin(skill, eq(subareaSkillRequirement.skillId, skill.id))
+			.where(
+				and(
+					eq(subareaSkillRequirement.subareaId, input.subareaId),
+					eq(skill.organizationId, input.organizationId),
+				),
+			)
+			.orderBy(asc(skill.name)),
+		input.templateId
+			? database
+					.select({
+						skillId: shiftTemplateSkillRequirement.skillId,
+						skillName: skill.name,
+						isRequired: shiftTemplateSkillRequirement.isRequired,
+					})
+					.from(shiftTemplateSkillRequirement)
+					.innerJoin(shiftTemplate, eq(shiftTemplateSkillRequirement.templateId, shiftTemplate.id))
+					.innerJoin(skill, eq(shiftTemplateSkillRequirement.skillId, skill.id))
+					.where(
+						and(
+							eq(shiftTemplateSkillRequirement.templateId, input.templateId),
+							eq(shiftTemplate.organizationId, input.organizationId),
+							eq(skill.organizationId, input.organizationId),
+						),
+					)
+					.orderBy(asc(skill.name))
+			: Promise.resolve([]),
+		input.shiftId
+			? database
+					.select({ requesterId: shiftRequest.requesterId })
+					.from(shiftRequest)
+					.innerJoin(shift, eq(shiftRequest.shiftId, shift.id))
+					.where(
+						and(
+							eq(shiftRequest.shiftId, input.shiftId),
+							eq(shift.organizationId, input.organizationId),
+							eq(shiftRequest.type, "pickup"),
+							eq(shiftRequest.status, "pending"),
+						),
+					)
+			: Promise.resolve([]),
+	]);
 
 	return {
-		requirements: resolveSkillRequirements([
-			...subareaRequirements,
-			...templateRequirements,
-		]),
-		pickupRequesterIds: new Set(
-			pickupRequests.map((request) => request.requesterId),
-		),
+		requirements: resolveSkillRequirements([...subareaRequirements, ...templateRequirements]),
+		pickupRequesterIds: new Set(pickupRequests.map((request) => request.requesterId)),
 	};
 }
 
@@ -194,10 +170,7 @@ export async function loadStaffingBlockerFacts(
 			.select({ id: employee.id })
 			.from(employee)
 			.where(
-				and(
-					eq(employee.organizationId, input.organizationId),
-					inArray(employee.id, employeeIds),
-				),
+				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
 			),
 		loadEmploymentCoverageByEmployee(database, {
 			organizationId: input.organizationId,
@@ -214,10 +187,7 @@ export async function loadStaffingBlockerFacts(
 				categoryName: absenceCategory.name,
 			})
 			.from(absenceEntry)
-			.innerJoin(
-				absenceCategory,
-				eq(absenceEntry.categoryId, absenceCategory.id),
-			)
+			.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
 			.where(
 				and(
 					eq(absenceEntry.organizationId, input.organizationId),
@@ -225,10 +195,7 @@ export async function loadStaffingBlockerFacts(
 					inArray(absenceEntry.employeeId, employeeIds),
 					// Approved absences block only outside work time; any pending one is a warning.
 					or(
-						and(
-							eq(absenceEntry.status, "approved"),
-							eq(absenceCategory.requiresWorkTime, false),
-						),
+						and(eq(absenceEntry.status, "approved"), eq(absenceCategory.requiresWorkTime, false)),
 						eq(absenceEntry.status, "pending"),
 					),
 					lte(absenceEntry.startDate, nextDay),
@@ -276,8 +243,7 @@ export async function loadStaffingBlockerFacts(
 		else target?.pendingAbsences.push(range);
 	}
 	for (const nearby of nearbyShifts) {
-		if (nearby.employeeId)
-			facts.get(nearby.employeeId)?.nearbyShifts.push(nearby);
+		if (nearby.employeeId) facts.get(nearby.employeeId)?.nearbyShifts.push(nearby);
 	}
 	return facts;
 }
@@ -318,11 +284,7 @@ export async function loadStaffingRankingFacts(
 	const facts = new Map<string, StaffingRankingFacts>();
 	if (input.employeeIds.length === 0) return facts;
 	const employeeIds = [...input.employeeIds];
-	const shiftBounds = shiftDateRangeBounds(
-		input.shiftsFrom,
-		input.until,
-		input.timezone,
-	);
+	const shiftBounds = shiftDateRangeBounds(input.shiftsFrom, input.until, input.timezone);
 	const lookbackStart = dateFromInstant(
 		localDayRange(
 			input.shiftDate.subtract({ days: STAFFING_LOOKBACK_DAYS }).toString(),
@@ -330,7 +292,7 @@ export async function loadStaffingRankingFacts(
 		).start,
 	);
 
-	const [shifts, periods, skills, employees, terms] = await Promise.all([
+	const [shifts, periods, skills, employees, terms, contractsByEmployee] = await Promise.all([
 		database
 			.select({
 				employeeId: shift.employeeId,
@@ -384,10 +346,7 @@ export async function loadStaffingRankingFacts(
 			.select({ id: employee.id, contractType: employee.contractType })
 			.from(employee)
 			.where(
-				and(
-					eq(employee.organizationId, input.organizationId),
-					inArray(employee.id, employeeIds),
-				),
+				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
 			),
 		loadTermsInForceOnByEmployee(database, {
 			organizationId: input.organizationId,
@@ -395,49 +354,39 @@ export async function loadStaffingRankingFacts(
 			date: input.shiftDate,
 			timezone: input.timezone,
 		}),
+		loadEffectiveContractsBatch(database, {
+			organizationId: input.organizationId,
+			employeeIds,
+			dates: [input.shiftDate],
+			timezoneOverride: input.timezone,
+		}),
 	]);
 
-	const policyIds = [
-		...new Set(
-			[...terms.values()].flatMap((row) =>
-				row.workPolicyId ? [row.workPolicyId] : [],
-			),
-		),
-	];
-	const policies =
-		policyIds.length === 0
-			? []
-			: await database
-					.select({
-						id: workPolicy.id,
-						isActive: workPolicy.isActive,
-						scheduleEnabled: workPolicy.scheduleEnabled,
-						scheduleCycle: workPolicySchedule.scheduleCycle,
-					})
-					.from(workPolicy)
-					.leftJoin(
-						workPolicySchedule,
-						eq(workPolicySchedule.policyId, workPolicy.id),
-					)
-					.where(
-						and(
-							eq(workPolicy.organizationId, input.organizationId),
-							inArray(workPolicy.id, policyIds),
-						),
-					);
-	const policiesById = new Map(policies.map((policy) => [policy.id, policy]));
-
-	const contractTypeByEmployee = new Map(
-		employees.map((row) => [row.id, row.contractType]),
-	);
+	const shiftDateKey = input.shiftDate.toString();
+	const contractTypeByEmployee = new Map(employees.map((row) => [row.id, row.contractType]));
 	for (const employeeId of employeeIds) {
+		const resolvedContract = contractsByEmployee.get(employeeId)?.get(shiftDateKey);
+		const resolvedPolicy = resolvedContract?.workPolicy ?? null;
+		const termsRow = terms.get(employeeId);
+		const hasTermsOrPolicy = Boolean(termsRow?.workPolicyId || resolvedPolicy);
 		facts.set(employeeId, {
 			shifts: [],
 			workPeriods: [],
 			heldSkills: [],
 			contract: {
-				contractType: contractTypeByEmployee.get(employeeId) ?? "fixed",
-				termsScheduleCycle: null,
+				contractType:
+					resolvedContract?.contractType ??
+					termsRow?.contractType ??
+					contractTypeByEmployee.get(employeeId) ??
+					"fixed",
+				termsScheduleCycle: hasTermsOrPolicy
+					? {
+							cycle:
+								resolvedPolicy?.scheduleEnabled && resolvedPolicy.schedule
+									? resolvedPolicy.schedule.scheduleCycle
+									: null,
+						}
+					: null,
 			},
 		});
 	}
@@ -458,24 +407,6 @@ export async function loadStaffingRankingFacts(
 			expiresAt: row.expiresAt,
 			certificateOnFile: certificatesOnFile.has(row.id),
 		});
-	}
-	for (const row of terms.values()) {
-		const target = facts.get(row.employeeId);
-		if (!target) continue;
-		const policy = row.workPolicyId
-			? policiesById.get(row.workPolicyId)
-			: undefined;
-		target.contract = {
-			contractType: row.contractType,
-			termsScheduleCycle: row.workPolicyId
-				? {
-						cycle:
-							policy?.isActive && policy.scheduleEnabled
-								? (policy.scheduleCycle ?? null)
-								: null,
-					}
-				: null,
-		};
 	}
 	return facts;
 }

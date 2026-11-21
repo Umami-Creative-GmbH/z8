@@ -100,17 +100,10 @@ describe("employment terms work-policy assignments", () => {
 	afterAll(async () => {
 		await fixture?.close();
 	});
-	it("makes initial confirmed terms visible to assignment-based policy readers", async () => {
+	it("makes initial confirmed terms visible to policy readers without projecting legacy assignments", async () => {
 		await write("2026-01-01", policyA);
 		expect((await effectivePolicy("2026-01-02T00:00:00Z"))?.policyId).toBe(policyA);
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: null,
-				priority: 2,
-			},
-		]);
+		expect(await assignments()).toEqual([]);
 	});
 	it("switches future policies at their boundary and releases an employee override for unlinked terms", async () => {
 		await write("2026-01-01", policyA);
@@ -119,20 +112,7 @@ describe("employment terms work-policy assignments", () => {
 		expect((await effectivePolicy("2026-04-30T23:59:59.999Z"))?.policyId).toBe(policyA);
 		expect((await effectivePolicy("2026-05-01T00:00:00Z"))?.policyId).toBe(policyB);
 		expect(await effectivePolicy("2026-09-01T00:00:00Z")).toBeNull();
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: day("2026-05-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyB,
-				effective_from: day("2026-05-01"),
-				effective_until: day("2026-09-01"),
-				priority: 2,
-			},
-		]);
+		expect(await assignments()).toEqual([]);
 	});
 	it.each(["draft", "pending"] as const)(
 		"keeps %s terms inert until confirmation",
@@ -144,7 +124,7 @@ describe("employment terms work-policy assignments", () => {
 				confirmEmploymentTerms(tx, { ...scope(), termsId: proposal.id }),
 			);
 			expect((await effectivePolicy("2026-05-01T00:00:00Z"))?.policyId).toBe(policyB);
-			expect(await assignments()).toHaveLength(2);
+			expect(await assignments()).toEqual([]);
 		},
 	);
 	it("cancels a future change and restores the previous policy only until the next terms", async () => {
@@ -156,20 +136,7 @@ describe("employment terms work-policy assignments", () => {
 		);
 		expect((await effectivePolicy("2026-05-01T00:00:00Z"))?.policyId).toBe(policyA);
 		expect((await effectivePolicy("2026-09-01T00:00:00Z"))?.policyId).toBe(policyB);
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: day("2026-09-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyB,
-				effective_from: day("2026-09-01"),
-				effective_until: null,
-				priority: 2,
-			},
-		]);
+		expect(await assignments()).toEqual([]);
 	});
 	it("adjusts inserted, backdated, and same-start terms without overlapping coverage", async () => {
 		await write("2026-01-01", policyA);
@@ -177,32 +144,11 @@ describe("employment terms work-policy assignments", () => {
 		await write("2026-05-01", policyB);
 		await write("2026-03-01", policyB);
 		await write("2026-05-01", policyA);
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: day("2026-03-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyB,
-				effective_from: day("2026-03-01"),
-				effective_until: day("2026-05-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyA,
-				effective_from: day("2026-05-01"),
-				effective_until: day("2026-09-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyA,
-				effective_from: day("2026-09-01"),
-				effective_until: null,
-				priority: 2,
-			},
-		]);
+		expect((await effectivePolicy("2026-02-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect((await effectivePolicy("2026-04-01T00:00:00Z"))?.policyId).toBe(policyB);
+		expect((await effectivePolicy("2026-06-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect((await effectivePolicy("2026-10-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect(await assignments()).toEqual([]);
 	});
 	it("restores an open-ended policy after cancelling the last scheduled change", async () => {
 		await write("2026-01-01", policyA);
@@ -211,14 +157,7 @@ describe("employment terms work-policy assignments", () => {
 			cancelEmploymentTerms(tx, { ...scope(), termsId: next.id }),
 		);
 		expect((await effectivePolicy("2027-01-01T00:00:00Z"))?.policyId).toBe(policyA);
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: null,
-				priority: 2,
-			},
-		]);
+		expect(await assignments()).toEqual([]);
 	});
 	it.each(["draft", "pending"] as const)(
 		"cancels %s terms without changing policy coverage",
@@ -230,6 +169,7 @@ describe("employment terms work-policy assignments", () => {
 				cancelEmploymentTerms(tx, { ...scope(), termsId: proposal.id }),
 			);
 			expect(await assignments()).toEqual(before);
+			expect((await effectivePolicy("2026-02-01T00:00:00Z"))?.policyId).toBe(policyA);
 		},
 	);
 	it("does not cancel confirmed terms at their start boundary", async () => {
@@ -252,9 +192,9 @@ describe("employment terms work-policy assignments", () => {
 			cancelEmploymentTerms(tx, { ...scope(), termsId: old.id }),
 		);
 		expect((await effectivePolicy("2026-05-01T00:00:00Z"))?.policyId).toBe(policyA);
-		expect(await assignments()).toHaveLength(1);
+		expect(await assignments()).toEqual([]);
 	});
-	it("keeps terms and assignment changes together on write and cancellation rollback", async () => {
+	it("rolls back terms changes cleanly on transaction abort", async () => {
 		await write("2026-01-01", policyA);
 		await expect(
 			fixture.db.transaction(async (tx) => {
@@ -292,33 +232,17 @@ describe("employment terms work-policy assignments", () => {
 			}),
 		).rejects.toThrow("abort cancellation");
 		expect((await effectivePolicy("2026-06-01T00:00:00Z"))?.policyId).toBe(policyB);
-		expect(await assignments()).toHaveLength(2);
+		expect(await assignments()).toEqual([]);
 	});
 	it("serializes concurrent confirmed changes for the same employee", async () => {
 		await write("2026-01-01", policyA);
 		await Promise.all([write("2026-05-01", policyA), write("2026-03-01", policyB)]);
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: day("2026-03-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyB,
-				effective_from: day("2026-03-01"),
-				effective_until: day("2026-05-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyA,
-				effective_from: day("2026-05-01"),
-				effective_until: null,
-				priority: 2,
-			},
-		]);
+		expect((await effectivePolicy("2026-02-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect((await effectivePolicy("2026-04-01T00:00:00Z"))?.policyId).toBe(policyB);
+		expect((await effectivePolicy("2026-06-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect(await assignments()).toEqual([]);
 	});
-	it("syncs wage-only changes without competing assignments for the same policy", async () => {
+	it("preserves policy coverage across wage-only changes without writing legacy assignments", async () => {
 		await fixture.db.transaction((tx) =>
 			writeEmploymentTerms(tx, {
 				...scope(),
@@ -344,20 +268,9 @@ describe("employment terms work-policy assignments", () => {
 				reviewState: "confirmed",
 			}),
 		);
-		expect(await assignments()).toEqual([
-			{
-				policy_id: policyA,
-				effective_from: day("2026-01-01"),
-				effective_until: day("2026-05-01"),
-				priority: 2,
-			},
-			{
-				policy_id: policyA,
-				effective_from: day("2026-05-01"),
-				effective_until: null,
-				priority: 2,
-			},
-		]);
+		expect((await effectivePolicy("2026-04-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect((await effectivePolicy("2026-06-01T00:00:00Z"))?.policyId).toBe(policyA);
+		expect(await assignments()).toEqual([]);
 	});
 	it("preserves manual coverage before linked terms and organization inheritance afterwards", async () => {
 		const other = await fixture.seedEmployee();
@@ -453,7 +366,7 @@ describe("employment terms work-policy assignments", () => {
 			[fixture.employmentPeriodId],
 		);
 	});
-	it("rolls terms back when inserting their policy projection fails", async () => {
+	it("does not write to work_policy_assignment when writing confirmed terms", async () => {
 		await write("2026-01-01", policyA);
 		await fixture.pool.query(
 			`create function test_1160_refuse_assignment() returns trigger language plpgsql as $$ begin raise exception 'assignment projection refused'; end $$`,
@@ -462,16 +375,9 @@ describe("employment terms work-policy assignments", () => {
 			await fixture.pool.query(
 				`create trigger test_1160_refuse_assignment before insert on work_policy_assignment for each row execute function test_1160_refuse_assignment()`,
 			);
-			await expect(write("2026-05-01", policyB)).rejects.toThrow();
-			expect((await effectivePolicy("2026-06-01T00:00:00Z"))?.policyId).toBe(policyA);
-			expect(
-				(
-					await fixture.pool.query(
-						"select count(*)::int as count from employee_employment_history where employee_id=$1",
-						[fixture.employeeId],
-					)
-				).rows[0].count,
-			).toBe(1);
+			await write("2026-05-01", policyB);
+			expect((await effectivePolicy("2026-06-01T00:00:00Z"))?.policyId).toBe(policyB);
+			expect(await assignments()).toEqual([]);
 		} finally {
 			await fixture.pool.query(
 				"drop trigger if exists test_1160_refuse_assignment on work_policy_assignment",
@@ -513,6 +419,10 @@ describe("employment terms work-policy assignments", () => {
 			fixture.employeeId,
 			teamId,
 		]);
+		await fixture.pool.query(
+			"update employee_team_history set effective_from = '2026-01-01T00:00:00Z' where employee_id = $1",
+			[fixture.employeeId],
+		);
 		await fixture.pool.query(
 			"insert into work_policy_assignment(policy_id,organization_id,assignment_type,team_id,priority,created_by,updated_at) values($1,$2,'team',$3,1,$4,now())",
 			[policyA, fixture.organizationId, teamId, fixture.ownerUserId],

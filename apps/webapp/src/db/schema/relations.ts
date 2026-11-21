@@ -2278,9 +2278,6 @@ export const workPolicyRelations = relations(workPolicy, ({ one, many }) => ({
 		fields: [workPolicy.organizationId],
 		references: [organization.id],
 	}),
-	schedule: one(workPolicySchedule),
-	regulation: one(workPolicyRegulation),
-	presence: one(workPolicyPresence),
 	versions: many(workPolicyVersion),
 	assignments: many(workPolicyAssignment),
 	violations: many(workPolicyViolation),
@@ -2297,9 +2294,9 @@ export const workPolicyRelations = relations(workPolicy, ({ one, many }) => ({
 }));
 
 export const workPolicyScheduleRelations = relations(workPolicySchedule, ({ one, many }) => ({
-	policy: one(workPolicy, {
-		fields: [workPolicySchedule.policyId],
-		references: [workPolicy.id],
+	policyVersion: one(workPolicyVersion, {
+		fields: [workPolicySchedule.policyVersionId],
+		references: [workPolicyVersion.id],
 	}),
 	days: many(workPolicyScheduleDay),
 }));
@@ -2312,9 +2309,9 @@ export const workPolicyScheduleDayRelations = relations(workPolicyScheduleDay, (
 }));
 
 export const workPolicyPresenceRelations = relations(workPolicyPresence, ({ one }) => ({
-	policy: one(workPolicy, {
-		fields: [workPolicyPresence.policyId],
-		references: [workPolicy.id],
+	policyVersion: one(workPolicyVersion, {
+		fields: [workPolicyPresence.policyVersionId],
+		references: [workPolicyVersion.id],
 	}),
 	location: one(location, {
 		fields: [workPolicyPresence.locationId],
@@ -2323,9 +2320,9 @@ export const workPolicyPresenceRelations = relations(workPolicyPresence, ({ one 
 }));
 
 export const workPolicyRegulationRelations = relations(workPolicyRegulation, ({ one, many }) => ({
-	policy: one(workPolicy, {
-		fields: [workPolicyRegulation.policyId],
-		references: [workPolicy.id],
+	policyVersion: one(workPolicyVersion, {
+		fields: [workPolicyRegulation.policyVersionId],
+		references: [workPolicyVersion.id],
 	}),
 	breakRules: many(workPolicyBreakRule),
 }));
@@ -2409,9 +2406,9 @@ export const workPolicyVersionRelations = relations(workPolicyVersion, ({ one, m
 		fields: [workPolicyVersion.createdBy],
 		references: [user.id],
 	}),
-	schedules: many(workPolicySchedule),
-	regulations: many(workPolicyRegulation),
-	presences: many(workPolicyPresence),
+	schedule: one(workPolicySchedule),
+	regulation: one(workPolicyRegulation),
+	presence: one(workPolicyPresence),
 	violations: many(workPolicyViolation),
 }));
 

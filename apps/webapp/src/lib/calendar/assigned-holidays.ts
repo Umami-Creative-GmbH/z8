@@ -13,6 +13,7 @@ import {
 	type holidayPresetHoliday,
 } from "@/db/schema";
 import { holidayCalendarDate, holidayStoredDates } from "@/lib/holidays/recurrence";
+import { preserveTrustBasedBalanceDates } from "./trust-based-dates";
 import type { DailyWorkRequirements, HolidayEvent } from "./types";
 
 export interface AssignedHolidayRange {
@@ -114,7 +115,7 @@ export function applyAssignedHolidayAdjustmentsToRequirements(
 		};
 	}
 
-	return adjusted;
+	return preserveTrustBasedBalanceDates(requirements, adjusted);
 }
 
 export function assignedHolidayToCalendarEvent(holiday: AssignedHolidayRange): HolidayEvent {
@@ -148,9 +149,7 @@ function assignmentAppliesTo(
 	return (
 		row.assignmentType === "organization" ||
 		(row.assignmentType === "employee" && row.employeeId === person.id) ||
-		(row.assignmentType === "team" &&
-			row.teamId !== null &&
-			row.teamId === person.teamId)
+		(row.assignmentType === "team" && row.teamId !== null && row.teamId === person.teamId)
 	);
 }
 function getBatchAssignmentScope(
@@ -163,10 +162,7 @@ function getBatchAssignmentScope(
 ) {
 	return [
 		eq(table.assignmentType, "organization"),
-		and(
-			eq(table.assignmentType, "employee"),
-			inArray(table.employeeId, employeeIds),
-		),
+		and(eq(table.assignmentType, "employee"), inArray(table.employeeId, employeeIds)),
 		teamIds.length
 			? and(eq(table.assignmentType, "team"), inArray(table.teamId, teamIds))
 			: undefined,
@@ -408,8 +404,7 @@ export async function getAssignedHolidaysForEmployees(params: {
 	const scopedEmployees = params.employees
 		? params.employees.filter(
 				(person) =>
-					person.organizationId === params.organizationId &&
-					params.employeeIds.includes(person.id),
+					person.organizationId === params.organizationId && params.employeeIds.includes(person.id),
 			)
 		: await database.query.employee.findMany({
 				where: and(
@@ -421,9 +416,7 @@ export async function getAssignedHolidaysForEmployees(params: {
 
 	if (!scopedEmployees.length) return new Map();
 	const employeeIds = scopedEmployees.map((person) => person.id);
-	const teamIds = scopedEmployees.flatMap((person) =>
-		person.teamId ? [person.teamId] : [],
-	);
+	const teamIds = scopedEmployees.flatMap((person) => (person.teamId ? [person.teamId] : []));
 
 	const customAssignments = (await database.query.holidayAssignment.findMany({
 		where: and(
@@ -450,128 +443,110 @@ export async function getAssignedHolidaysForEmployees(params: {
 		},
 	})) as unknown as (DirectCustomHolidayAssignment & AssignmentScope)[];
 
-	const categoryAssignments =
-		(await database.query.holidayCategoryAssignment.findMany({
-			where: and(
-				eq(holidayCategoryAssignment.organizationId, params.organizationId),
-				eq(holidayCategoryAssignment.isActive, true),
-				or(
-					...getBatchAssignmentScope(
-						holidayCategoryAssignment,
-						employeeIds,
-						teamIds,
-					),
-				),
-			),
-			with: {
-				category: {
-					columns: { organizationId: true, isActive: true },
-					with: {
-						holidays: {
-							columns: {
-								id: true,
-								name: true,
-								organizationId: true,
-								startDate: true,
-								endDate: true,
-								categoryId: true,
-								description: true,
-								isActive: true,
-								recurrenceType: true,
-								recurrenceRule: true,
-								recurrenceEndDate: true,
-							},
-							where: and(
-								eq(holiday.organizationId, params.organizationId),
-								eq(holiday.isActive, true),
-								or(
-									and(
-										eq(holiday.recurrenceType, "none"),
-										lte(holiday.startDate, params.endDate),
-										gte(holiday.endDate, params.startDate),
-									),
-									and(
-										eq(holiday.recurrenceType, "yearly"),
-										lte(holiday.startDate, params.endDate),
-										or(
-											isNull(holiday.recurrenceEndDate),
-											gte(holiday.recurrenceEndDate, params.startDate),
-										),
+	const categoryAssignments = (await database.query.holidayCategoryAssignment.findMany({
+		where: and(
+			eq(holidayCategoryAssignment.organizationId, params.organizationId),
+			eq(holidayCategoryAssignment.isActive, true),
+			or(...getBatchAssignmentScope(holidayCategoryAssignment, employeeIds, teamIds)),
+		),
+		with: {
+			category: {
+				columns: { organizationId: true, isActive: true },
+				with: {
+					holidays: {
+						columns: {
+							id: true,
+							name: true,
+							organizationId: true,
+							startDate: true,
+							endDate: true,
+							categoryId: true,
+							description: true,
+							isActive: true,
+							recurrenceType: true,
+							recurrenceRule: true,
+							recurrenceEndDate: true,
+						},
+						where: and(
+							eq(holiday.organizationId, params.organizationId),
+							eq(holiday.isActive, true),
+							or(
+								and(
+									eq(holiday.recurrenceType, "none"),
+									lte(holiday.startDate, params.endDate),
+									gte(holiday.endDate, params.startDate),
+								),
+								and(
+									eq(holiday.recurrenceType, "yearly"),
+									lte(holiday.startDate, params.endDate),
+									or(
+										isNull(holiday.recurrenceEndDate),
+										gte(holiday.recurrenceEndDate, params.startDate),
 									),
 								),
 							),
-						},
+						),
 					},
 				},
 			},
-		})) as unknown as (CategoryCustomHolidayAssignment & AssignmentScope)[];
+		},
+	})) as unknown as (CategoryCustomHolidayAssignment & AssignmentScope)[];
 
-	const presetAssignments =
-		(await database.query.holidayPresetAssignment.findMany({
-			columns: {
-				assignmentType: true,
-				employeeId: true,
-				teamId: true,
-				effectiveFrom: true,
-				effectiveUntil: true,
-			},
-			where: and(
-				eq(holidayPresetAssignment.organizationId, params.organizationId),
-				eq(holidayPresetAssignment.isActive, true),
-				or(
-					...getBatchAssignmentScope(
-						holidayPresetAssignment,
-						employeeIds,
-						teamIds,
-					),
-				),
-				or(
-					isNull(holidayPresetAssignment.effectiveFrom),
-					lte(holidayPresetAssignment.effectiveFrom, params.endDate),
-				),
-				or(
-					isNull(holidayPresetAssignment.effectiveUntil),
-					gte(holidayPresetAssignment.effectiveUntil, params.startDate),
-				),
+	const presetAssignments = (await database.query.holidayPresetAssignment.findMany({
+		columns: {
+			assignmentType: true,
+			employeeId: true,
+			teamId: true,
+			effectiveFrom: true,
+			effectiveUntil: true,
+		},
+		where: and(
+			eq(holidayPresetAssignment.organizationId, params.organizationId),
+			eq(holidayPresetAssignment.isActive, true),
+			or(...getBatchAssignmentScope(holidayPresetAssignment, employeeIds, teamIds)),
+			or(
+				isNull(holidayPresetAssignment.effectiveFrom),
+				lte(holidayPresetAssignment.effectiveFrom, params.endDate),
 			),
-			with: {
-				preset: {
-					columns: {
-						id: true,
-						name: true,
-						organizationId: true,
-						color: true,
-						isActive: true,
-					},
-					with: {
-						holidays: {
-							columns: {
-								id: true,
-								name: true,
-								description: true,
-								month: true,
-								day: true,
-								durationDays: true,
-								categoryId: true,
-								isActive: true,
-							},
+			or(
+				isNull(holidayPresetAssignment.effectiveUntil),
+				gte(holidayPresetAssignment.effectiveUntil, params.startDate),
+			),
+		),
+		with: {
+			preset: {
+				columns: {
+					id: true,
+					name: true,
+					organizationId: true,
+					color: true,
+					isActive: true,
+				},
+				with: {
+					holidays: {
+						columns: {
+							id: true,
+							name: true,
+							description: true,
+							month: true,
+							day: true,
+							durationDays: true,
+							categoryId: true,
+							isActive: true,
 						},
 					},
 				},
 			},
-		})) as unknown as (HolidayPresetAssignmentWithPreset & AssignmentScope)[];
+		},
+	})) as unknown as (HolidayPresetAssignmentWithPreset & AssignmentScope)[];
 
 	const result = new Map<string, AssignedHolidayRange[]>();
 	for (const person of scopedEmployees) {
 		const holidaysById = new Map<string, AssignedHolidayRange>();
 
 		for (const expandedHoliday of mergeAssignedCustomHolidays({
-			directAssignments: customAssignments.filter((row) =>
-				assignmentAppliesTo(row, person),
-			),
-			categoryAssignments: categoryAssignments.filter((row) =>
-				assignmentAppliesTo(row, person),
-			),
+			directAssignments: customAssignments.filter((row) => assignmentAppliesTo(row, person)),
+			categoryAssignments: categoryAssignments.filter((row) => assignmentAppliesTo(row, person)),
 			organizationId: params.organizationId,
 			startDate: params.startDate,
 			endDate: params.endDate,
@@ -579,16 +554,10 @@ export async function getAssignedHolidaysForEmployees(params: {
 			holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
 		}
 
-		const expansionYears = getPresetHolidayExpansionYears(
-			params.startDate,
-			params.endDate,
-		);
-		for (const assignment of presetAssignments.filter((row) =>
-			assignmentAppliesTo(row, person),
-		)) {
+		const expansionYears = getPresetHolidayExpansionYears(params.startDate, params.endDate);
+		for (const assignment of presetAssignments.filter((row) => assignmentAppliesTo(row, person))) {
 			const preset = assignment.preset;
-			if (!preset?.isActive || preset.organizationId !== params.organizationId)
-				continue;
+			if (!preset?.isActive || preset.organizationId !== params.organizationId) continue;
 
 			for (const year of expansionYears) {
 				for (const presetHoliday of preset.holidays) {

@@ -11,6 +11,10 @@ export {
 	WEEKDAY_NAMES,
 } from "./custom-days";
 export {
+	analyticsContractRevisionSql,
+	loadContractTrackingReviewEvidence,
+} from "./evidence-queries";
+export {
 	type ContractDefaultSnapshot,
 	type EmploymentHistorySnapshot,
 	type EmploymentPeriodSnapshot,

@@ -1,11 +1,4 @@
-import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import {
-	workPolicy,
-	workPolicyAssignment,
-	workPolicySchedule,
-	workPolicyScheduleDay,
-} from "@/db/schema";
 import {
 	AuthenticationError,
 	AuthorizationError,
@@ -28,6 +21,8 @@ import {
 	type OnboardingWorkTemplateFormValues,
 	onboardingWorkTemplateSchema,
 } from "@/lib/validations/onboarding";
+import { createOnboardingWorkTemplateInTx } from "@/lib/work-policy/policy-queries";
+import type { PolicyTransaction } from "@/lib/work-policy/versioned-policy-writer";
 
 type Dependencies = {
 	database: DatabaseService["Service"];
@@ -52,78 +47,14 @@ async function insertTemplate(
 	caller: { userId: string; organizationId: string },
 	data: OnboardingWorkTemplateFormValues,
 ) {
-	if (data.setAsDefault) {
-		const existing = await transaction.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, caller.organizationId),
-				eq(workPolicyAssignment.assignmentType, "organization"),
-				eq(workPolicyAssignment.isActive, true),
-			),
-			columns: { id: true },
-		});
-		if (existing)
-			throw new ValidationError({
-				message:
-					"An organization default already exists. Create a non-default template or manage work policies in settings.",
-				field: "setAsDefault",
-				refusal: "work_template_default_exists",
-			});
-	}
-	const [policy] = await transaction
-		.insert(workPolicy)
-		.values({
-			organizationId: caller.organizationId,
-			name: data.name,
-			description: "Created during onboarding",
-			scheduleEnabled: true,
-			regulationEnabled: false,
-			isActive: true,
-			isDefault: data.setAsDefault,
-			createdBy: caller.userId,
-			updatedAt: new Date(),
-		})
-		.returning();
-	if (!policy) throw new Error("Work template creation did not return a policy");
-	const [schedule] = await transaction
-		.insert(workPolicySchedule)
-		.values({
-			policyId: policy.id,
-			scheduleCycle: "weekly",
-			scheduleType: "simple",
-			workingDaysPreset: "weekdays",
-			hoursPerCycle: data.hoursPerWeek.toString(),
-			homeOfficeDaysPerCycle: 0,
-		})
-		.returning();
-	if (!schedule) throw new Error("Work template creation did not return a schedule");
-	const allDays = [
-		"monday",
-		"tuesday",
-		"wednesday",
-		"thursday",
-		"friday",
-		"saturday",
-		"sunday",
-	] as const;
-	const hoursPerDay = data.workingDays.length > 0 ? data.hoursPerWeek / data.workingDays.length : 0;
-	await transaction.insert(workPolicyScheduleDay).values(
-		allDays.map((day) => ({
-			scheduleId: schedule.id,
-			dayOfWeek: day,
-			hoursPerDay: data.workingDays.includes(day) ? hoursPerDay.toFixed(1) : "0",
-			isWorkDay: data.workingDays.includes(day),
-		})),
-	);
-	if (data.setAsDefault)
-		await transaction.insert(workPolicyAssignment).values({
-			policyId: policy.id,
-			organizationId: caller.organizationId,
-			assignmentType: "organization",
-			priority: 0,
-			effectiveFrom: new Date(),
-			isActive: true,
-			createdBy: caller.userId,
-		});
+	await createOnboardingWorkTemplateInTx(transaction as unknown as PolicyTransaction, {
+		organizationId: caller.organizationId,
+		actorUserId: caller.userId,
+		name: data.name,
+		hoursPerWeek: data.hoursPerWeek,
+		workingDays: data.workingDays,
+		setAsDefault: data.setAsDefault,
+	});
 }
 
 const mutateTemplate = Effect.fnUntraced(function* (

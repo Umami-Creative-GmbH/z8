@@ -25,7 +25,6 @@ import {
 import { loadTermsInForceOn } from "./load-terms-in-force";
 import { utcMidnight } from "./terms-in-force";
 import { adjustConfirmedTimeline } from "./timeline";
-import { removeTermsPolicy, syncTermsPolicy } from "./assignment-sync";
 
 /**
  * The one command that writes employment terms, and with them every hourly
@@ -171,7 +170,6 @@ async function adjustNeighbours(
 	next: EmployeeEmploymentHistory,
 ) {
 	const adjusted = adjustConfirmedTimeline({ existing, next });
-	const existingById = new Map(existing.map((row) => [row.id, row]));
 	for (const update of adjusted.updates) {
 		await tx
 			.update(employeeEmploymentHistory)
@@ -183,10 +181,6 @@ async function adjustNeighbours(
 					eq(employeeEmploymentHistory.organizationId, scope.organizationId),
 				),
 			);
-		const previous = existingById.get(update.id);
-		if (previous) {
-			await syncTermsPolicy(tx, scope, { ...previous, validUntil: update.validUntil });
-		}
 	}
 	return adjusted.next;
 }
@@ -275,7 +269,6 @@ async function insertTerms(
 	if (!inserted) throw new Error("Employment history insert returned no row");
 
 	await projectCurrentTerms(tx, scope, inserted);
-	await syncTermsPolicy(tx, scope, inserted);
 	return inserted;
 }
 
@@ -364,7 +357,6 @@ export async function confirmEmploymentTerms(
 	if (!updated) throw new Error("Employment history update returned no row");
 
 	await projectCurrentTerms(tx, scope, updated);
-	await syncTermsPolicy(tx, scope, updated);
 	return updated;
 }
 
@@ -455,7 +447,6 @@ export async function cancelEmploymentTerms(
 		.where(and(termsScope, eq(employeeEmploymentHistory.id, target.id)));
 	if (target.reviewState !== "confirmed") return target;
 
-	await removeTermsPolicy(tx, scope, target);
 	const period = await resolveCurrentEmploymentPeriod(tx, {
 		organizationId: scope.organizationId,
 		employeeId: scope.employeeId,
@@ -473,14 +464,12 @@ export async function cancelEmploymentTerms(
 					compareInstants(instantFromDate(row.validUntil), instantFromDate(row.validFrom)) > 0),
 		)
 		.sort((a, b) => compareInstants(instantFromDate(a.validFrom), instantFromDate(b.validFrom)));
-	// A superseded same-start row owns no interval. Its cancellation must not
-	// remove a replacement that happens to carry the same policy/natural key.
+	// A superseded same-start row owns no interval; leave the active replacement intact.
 	const replacement = confirmed.find(
 		(row) =>
 			compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) === 0,
 	);
 	if (replacement) {
-		await syncTermsPolicy(tx, scope, replacement);
 		return target;
 	}
 	if (
@@ -509,6 +498,5 @@ export async function cancelEmploymentTerms(
 		.update(employeeEmploymentHistory)
 		.set({ validUntil, updatedBy: scope.actorUserId, updatedAt: scope.now })
 		.where(and(termsScope, eq(employeeEmploymentHistory.id, previous.id)));
-	await syncTermsPolicy(tx, scope, { ...previous, validUntil });
 	return target;
 }

@@ -8,6 +8,7 @@ import {
 	workBalanceRebuildIntent,
 	workPeriod,
 } from "@/db/schema";
+import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import {
 	loadEmployeeTrackingContext,
@@ -271,8 +272,8 @@ async function getFirstRelevantDate(
 		employeeId: string;
 		organizationId: string;
 		trackingStartDateOverride?: string | null;
- employeeTrackingStartDateOverride?: string | null;
- employeeEmploymentStartDateOverride?: string;
+		employeeTrackingStartDateOverride?: string | null;
+		employeeEmploymentStartDateOverride?: string;
 	},
 	dbClient: WorkBalanceDbClient = db,
 	knownEmployee?: { id: string; startDate: Date | string | null },
@@ -291,7 +292,8 @@ async function getFirstRelevantDate(
 
 	const trackingStartDate = await loadEmployeeTrackingStart(dbClient, input);
 	if (trackingStartDate) return trackingStartDate;
-	const employeeStartDate = input.employeeEmploymentStartDateOverride ?? toUtcIsoDate(scopedEmployee.startDate);
+	const employeeStartDate =
+		input.employeeEmploymentStartDateOverride ?? toUtcIsoDate(scopedEmployee.startDate);
 	if (employeeStartDate) return employeeStartDate;
 
 	const [firstWorkPeriod] = await dbClient
@@ -393,20 +395,44 @@ export async function computeEmployeeWorkBalance(input: {
 	const startDate = start.toJSDate();
 	const endDate = through.endOf("day").toJSDate();
 
-	const [actualMinutes, requirements] = await Promise.all([
-		getActualMinutes({ ...input, startDate, endDate }),
-		getDailyWorkRequirementsForEmployee({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			startDate,
-			endDate,
-		}),
-	]);
+	const requirements = await getDailyWorkRequirementsForEmployee({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		startDate,
+		endDate,
+	});
+	const trustBasedDates = collectTrustBasedBalanceDates(requirements);
+	const actualMinutes =
+		trustBasedDates.size > 0
+			? await db
+					.select({
+						startTime: workPeriod.startTime,
+						durationMinutes: workPeriod.durationMinutes,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.employeeId, input.employeeId),
+							eq(workPeriod.organizationId, input.organizationId),
+							isNotNull(workPeriod.endTime),
+							isNotNull(workPeriod.durationMinutes),
+							gte(workPeriod.startTime, startDate),
+							lte(workPeriod.startTime, endDate),
+						),
+					)
+					.then((rows) =>
+						rows.reduce((total, row) => {
+							const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" }).toISODate();
+							if (dayKey && trustBasedDates.has(dayKey)) return total;
+							return total + Number(row.durationMinutes ?? 0);
+						}, 0),
+					)
+			: await getActualMinutes({ ...input, startDate, endDate });
 
-	const requiredMinutes = Object.values(requirements).reduce(
-		(total, requirement) => total + requirement.requiredMinutes,
-		0,
-	);
+	const requiredMinutes = Object.entries(requirements).reduce((total, [dateKey, requirement]) => {
+		if (trustBasedDates.has(dateKey)) return total;
+		return total + requirement.requiredMinutes;
+	}, 0);
 
 	return buildWorkBalanceValues({
 		employeeId: input.employeeId,
@@ -708,8 +734,8 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		day: string;
 		/** Server-side proposed organization date for reviewed impact calculations; never persisted here. */
 		trackingStartDateOverride?: string | null;
- employeeTrackingStartDateOverride?: string | null;
- employeeEmploymentStartDateOverride?: string;
+		employeeTrackingStartDateOverride?: string | null;
+		employeeEmploymentStartDateOverride?: string;
 		/** A closed month retains the timezone captured by its close. */
 		employeeTimezoneOverride?: string;
 	},
@@ -719,8 +745,8 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		employeeId: input.employee.id,
 		organizationId: input.organizationId,
 		trackingStartDateOverride: input.trackingStartDateOverride,
- employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
- employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
+		employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
+		employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
 		employeeTimezoneOverride: input.employeeTimezoneOverride,
 	};
 	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
@@ -733,7 +759,13 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 	]);
 	const calculationStartDate = laterIsoDate(firstRelevantDate, countFrom);
 	if (!calculationStartDate || calculationStartDate > input.day) {
-		return { actualMinutes: 0, requiredMinutes: 0, adjustmentMinutes, balanceMinutes: adjustmentMinutes, calculationStartDate };
+		return {
+			actualMinutes: 0,
+			requiredMinutes: 0,
+			adjustmentMinutes,
+			balanceMinutes: adjustmentMinutes,
+			calculationStartDate,
+		};
 	}
 
 	const work = await computeEmployeePeriodBalance({
@@ -746,8 +778,13 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		...(input.employee.timezone === "UTC" ? {} : { timezone: input.employee.timezone }),
 		isClosed: false,
 	});
-	return { actualMinutes: work.actualMinutes, requiredMinutes: work.requiredMinutes, adjustmentMinutes,
-		balanceMinutes: work.actualMinutes - work.requiredMinutes + adjustmentMinutes, calculationStartDate };
+	return {
+		actualMinutes: work.actualMinutes,
+		requiredMinutes: work.requiredMinutes,
+		adjustmentMinutes,
+		balanceMinutes: work.actualMinutes - work.requiredMinutes + adjustmentMinutes,
+		calculationStartDate,
+	};
 }
 
 export async function computeEmployeeWorkBalanceAtEndOfDay(

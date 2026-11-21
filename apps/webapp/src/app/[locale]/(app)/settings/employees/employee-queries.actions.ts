@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 import { Effect } from "effect";
 import { z } from "zod";
 import { invitation, member, user } from "@/db/auth-schema";
-import { employee, employeeInvitationDraft, team, workPolicyAssignment } from "@/db/schema";
+import { employee, employeeInvitationDraft, team } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
@@ -232,15 +232,14 @@ function enrichEmployeeDirectoryRows(viewer: DirectoryViewer, rows: EmployeeDire
 				}),
 			),
 		]);
-		return rows.map(
-			(row): EmployeeDirectoryRow =>
-				row.kind === "employee"
-					? {
-							...row,
-							contractType: contractTypes.get(row.id) ?? row.contractType,
-							missingRequiredCustomFields: missing.has(row.id),
-						}
-					: row,
+		return rows.map((row): EmployeeDirectoryRow =>
+			row.kind === "employee"
+				? {
+						...row,
+						contractType: contractTypes.get(row.id) ?? row.contractType,
+						missingRequiredCustomFields: missing.has(row.id),
+					}
+				: row,
 		);
 	});
 }
@@ -480,21 +479,6 @@ export const getEmployeeAction = organizationAction(
 									},
 								},
 							},
-						},
-						workPolicyAssignments: {
-							with: {
-								policy: {
-									with: {
-										schedule: {
-											with: {
-												days: true,
-											},
-										},
-									},
-								},
-							},
-							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-							limit: 1,
 						},
 					},
 				});

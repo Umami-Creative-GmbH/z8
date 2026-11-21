@@ -2,11 +2,12 @@ import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
+import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import type { WorkBalanceDbClient } from "./db-client";
-import { sumTrackedWorkMinutes } from "./tracked-work";
 import { getYearPeriodForDate } from "./periods";
+import { sumTrackedWorkMinutes, sumTrackedWorkMinutesExcludingDates } from "./tracked-work";
 
 export type EmployeeWorkBalancePeriodType = "month" | "year";
 
@@ -51,8 +52,8 @@ export async function computeEmployeePeriodBalance(input: {
 	periodEnd: string;
 	calculationStartDate?: string | null;
 	trackingStartDateOverride?: string | null;
- employeeTrackingStartDateOverride?: string | null;
- employeeEmploymentStartDateOverride?: string;
+	employeeTrackingStartDateOverride?: string | null;
+	employeeEmploymentStartDateOverride?: string;
 	employeeTimezoneOverride?: string;
 	timezone?: string;
 	isClosed: boolean;
@@ -92,49 +93,84 @@ export async function computeEmployeePeriodBalance(input: {
 	const startDate = effectiveStart.toJSDate();
 	const endDate = periodEnd.toJSDate();
 
-	const [actualRow, requirements] = await Promise.all([
-		tracking
-			? sumTrackedWorkMinutes(dbClient, {
-					...input,
-					startDate: effectiveStart.toISODate()!,
-					throughDate: input.periodEnd,
-					timezone,
-				}).then((totalMinutes) => [{ totalMinutes }])
-			: dbClient
-					.select({
-						totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
-					})
-					.from(workPeriod)
-					.where(
-						and(
-							eq(workPeriod.employeeId, input.employeeId),
-							eq(workPeriod.organizationId, input.organizationId),
-							isNotNull(workPeriod.endTime),
-							isNotNull(workPeriod.durationMinutes),
-							gte(workPeriod.startTime, startDate),
-							lte(workPeriod.startTime, endDate),
-						),
-					),
-		getDailyWorkRequirementsForEmployee(
-			{
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				startDate,
-				endDate,
-				timezone,
-				trackingStartDateOverride: input.trackingStartDateOverride,
- employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
- employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
-				employeeTimezoneOverride: input.employeeTimezoneOverride,
-			},
-			...(input.dbClient ? ([input.dbClient] as const) : []),
-		),
-	]);
-
-	const requiredMinutes = Object.values(requirements).reduce(
-		(total, requirement) => total + requirement.requiredMinutes,
-		0,
+	const requirements = await getDailyWorkRequirementsForEmployee(
+		{
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			startDate,
+			endDate,
+			timezone,
+			trackingStartDateOverride: input.trackingStartDateOverride,
+			employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
+			employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
+			employeeTimezoneOverride: input.employeeTimezoneOverride,
+		},
+		...(input.dbClient ? ([input.dbClient] as const) : []),
 	);
+
+	// Trust-based days emit exact 0 delta (neither actual nor required contributes to balance),
+	// preserving prior accrued balance across tracked <-> trust_based transitions.
+	const trustBasedDates = collectTrustBasedBalanceDates(requirements);
+
+	let actualMinutes: number;
+	if (tracking) {
+		const windowInput = {
+			...input,
+			startDate: effectiveStart.toISODate()!,
+			throughDate: input.periodEnd,
+			timezone,
+		};
+		actualMinutes =
+			trustBasedDates.size > 0
+				? await sumTrackedWorkMinutesExcludingDates(dbClient, windowInput, trustBasedDates)
+				: await sumTrackedWorkMinutes(dbClient, windowInput);
+	} else if (trustBasedDates.size > 0) {
+		const rows = await dbClient
+			.select({
+				startTime: workPeriod.startTime,
+				durationMinutes: workPeriod.durationMinutes,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.employeeId, input.employeeId),
+					eq(workPeriod.organizationId, input.organizationId),
+					isNotNull(workPeriod.endTime),
+					isNotNull(workPeriod.durationMinutes),
+					gte(workPeriod.startTime, startDate),
+					lte(workPeriod.startTime, endDate),
+				),
+			);
+		actualMinutes = rows.reduce((total, row) => {
+			const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" })
+				.setZone(timezone)
+				.toISODate();
+			if (dayKey && trustBasedDates.has(dayKey)) return total;
+			return total + Number(row.durationMinutes ?? 0);
+		}, 0);
+	} else {
+		const actualRow = await dbClient
+			.select({
+				totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.employeeId, input.employeeId),
+					eq(workPeriod.organizationId, input.organizationId),
+					isNotNull(workPeriod.endTime),
+					isNotNull(workPeriod.durationMinutes),
+					gte(workPeriod.startTime, startDate),
+					lte(workPeriod.startTime, endDate),
+				),
+			);
+		actualMinutes = Number(actualRow[0]?.totalMinutes ?? 0);
+	}
+
+	const requiredMinutes = Object.entries(requirements).reduce((total, [dateKey, requirement]) => {
+		if (trustBasedDates.has(dateKey)) return total;
+		return total + requirement.requiredMinutes;
+	}, 0);
 
 	return buildPeriodBalanceValues({
 		employeeId: input.employeeId,
@@ -142,7 +178,7 @@ export async function computeEmployeePeriodBalance(input: {
 		periodType: input.periodType,
 		periodStart: input.periodStart,
 		periodEnd: input.periodEnd,
-		actualMinutes: Number(actualRow[0]?.totalMinutes ?? 0),
+		actualMinutes,
 		requiredMinutes,
 		computedAt: input.now ?? new Date(),
 		isClosed: input.isClosed,

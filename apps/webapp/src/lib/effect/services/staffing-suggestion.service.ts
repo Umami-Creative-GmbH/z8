@@ -281,7 +281,6 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 										}).pipe(
 											Effect.provideService(DatabaseService, dbService),
 											Effect.provideService(WorkPolicyService, workPolicyService),
-											Effect.catchTag("NotFoundError", () => Effect.succeed(null)),
 										)
 									: null;
 

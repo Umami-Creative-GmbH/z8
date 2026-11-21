@@ -1,8 +1,7 @@
-import { desc, type SQL, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { workPolicyAssignment } from "@/db/schema";
 import type { StubCaller } from "@/test/organization-action";
 
 // oxlint-disable-next-line typescript/no-explicit-any -- loose row stand-ins for a mocked database
@@ -28,6 +27,26 @@ const state = vi.hoisted(() => ({
 	updateWhereArgs: [] as Row[],
 	markOrganizationWorkBalancesDirty: vi.fn(),
 	formerEmployeeIds: new Set<string>(),
+	resolveEffectiveContractOnDay: vi.fn(),
+	setOrganizationDefaultWorkPolicy: vi.fn(),
+}));
+
+vi.mock("@/lib/contracts", () => ({
+	resolveEffectiveContractOnDay: state.resolveEffectiveContractOnDay,
+}));
+
+vi.mock("@/lib/work-policy/policy-queries", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/work-policy/policy-queries")>();
+	return {
+		...actual,
+		loadWorkPoliciesWithLatestVersion: vi.fn(async () => state.workPolicies),
+		loadWorkPolicyWithLatestVersion: vi.fn(async () => state.workPolicyQueue.shift() ?? null),
+		setOrganizationDefaultWorkPolicy: state.setOrganizationDefaultWorkPolicy,
+	};
+});
+
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: vi.fn(async () => "UTC"),
 }));
 
 vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
@@ -775,11 +794,16 @@ describe("work policy settings scope actions", () => {
 
 	it("marks organization work balances dirty after changing the default work policy", async () => {
 		state.caller = orgAdmin;
-		state.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		state.setOrganizationDefaultWorkPolicy.mockResolvedValueOnce(undefined);
 
 		const result = await actions.setDefaultWorkPolicy("policy-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(state.setOrganizationDefaultWorkPolicy).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			policyId: "policy-1",
+		});
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
@@ -847,24 +871,22 @@ describe("work policy settings scope actions", () => {
 		expect(conflictingIds).toMatchObject({ success: false, code: "ValidationError" });
 	});
 
-	it("looks up effective assignments using date predicates and null effective dates as fallback", async () => {
+	it("resolves effective schedule details through the unified contract resolver", async () => {
 		state.employeeQueue = [
 			{ id: "employee-1", organizationId: "org-1", teamId: "team-1", team: null },
 		];
+		state.resolveEffectiveContractOnDay.mockResolvedValueOnce(null);
 
 		const result = await actions.getEmployeeEffectiveScheduleDetails("employee-1");
 
 		expect(result).toEqual({ success: true, data: null });
-		expect(state.assignmentFindFirstArgs).toHaveLength(3);
-		for (const assignmentLookup of state.assignmentFindFirstArgs) {
-			const where = rendered(assignmentLookup.where).sql;
-			expect(where).toContain("effective_from");
-			expect(where).toContain("effective_until");
-			const orderBy = rendered(
-				sql.join(assignmentLookup.orderBy(workPolicyAssignment, { desc }), sql`, `),
-			).sql;
-			expect(orderBy).toContain("DESC NULLS LAST");
-		}
+		expect(state.resolveEffectiveContractOnDay).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			}),
+		);
 	});
 
 	it("reads an employee outside the active organization as not found", async () => {

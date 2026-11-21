@@ -1,7 +1,10 @@
-import { desc, eq, sql } from "drizzle-orm";
-import { employee, workPolicyAssignment } from "@/db/schema";
+import { sql } from "drizzle-orm";
+import { employee } from "@/db/schema";
+import { loadEffectiveContractsBatch } from "@/lib/contracts";
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 /**
  * The dashboard's reads of who works here now (#1438): the organization's
@@ -33,42 +36,57 @@ export async function currentRosterCount(
 }
 
 /**
- * The current roster's average weekly hours, from each employee's latest
- * active simple schedule. 40 when nobody has one.
+ * The current roster's average weekly hours, resolved through the unified contract
+ * resolver (honoring org/team defaults, custom working days, and versioned policies).
+ * Returns 40 when nobody has a configured schedule or weekly hours.
  */
 export async function currentRosterAverageWeeklyHours(
 	db: DatabaseClient,
 	organizationId: string,
 ): Promise<number> {
-	const employeesWithSchedules = await db.query.employee.findMany({
-		where: onCurrentRoster(organizationId),
-		columns: { id: true },
-		with: {
-			workPolicyAssignments: {
-				where: eq(workPolicyAssignment.isActive, true),
-				orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-				limit: 1,
-				with: { policy: { with: { schedule: true } } },
-			},
-		},
+	const employeeIds = await currentRosterEmployeeIds(db, organizationId);
+	if (employeeIds.length === 0) return 40;
+
+	const orgTimezone = await loadOrganizationTimezone(db, organizationId);
+	const today = plainDateAt(systemClock.nowInstant(), orgTimezone);
+	const todayKey = today.toString();
+	const contractsByEmployee = await loadEffectiveContractsBatch(db, {
+		organizationId,
+		employeeIds,
+		dates: [today],
 	});
 
 	let totalHours = 0;
 	let countWithSchedule = 0;
-	for (const entry of employeesWithSchedules) {
-		const schedule = entry.workPolicyAssignments[0]?.policy?.schedule;
-		if (schedule?.scheduleType !== "simple" || !schedule.hoursPerCycle) continue;
+	for (const employeeId of employeeIds) {
+		const contract = contractsByEmployee.get(employeeId)?.get(todayKey);
+		if (!contract) continue;
 
-		// Convert hoursPerCycle to weekly hours based on scheduleCycle
-		const hoursPerCycle = Number.parseFloat(schedule.hoursPerCycle);
-		let weeklyHours = hoursPerCycle;
-		if (schedule.scheduleCycle === "biweekly") {
-			weeklyHours = hoursPerCycle / 2;
-		} else if (schedule.scheduleCycle === "monthly") {
-			weeklyHours = (hoursPerCycle * 12) / 52;
+		const weeklyMinutesFromDays = contract.weeklyScheduleDays.reduce(
+			(sum, day) => sum + (day.isWorkDay ? day.minutesPerDay : 0),
+			0,
+		);
+		if (weeklyMinutesFromDays > 0) {
+			totalHours += weeklyMinutesFromDays / 60;
+			countWithSchedule++;
+			continue;
 		}
-		totalHours += weeklyHours;
-		countWithSchedule++;
+
+		const schedule = contract.workPolicy?.scheduleEnabled ? contract.workPolicy.schedule : null;
+		if (schedule?.scheduleType === "simple" && schedule.hoursPerCycle) {
+			const hoursPerCycle = Number.parseFloat(schedule.hoursPerCycle);
+			if (!Number.isFinite(hoursPerCycle) || hoursPerCycle <= 0) continue;
+			let weeklyHours = hoursPerCycle;
+			if (schedule.scheduleCycle === "biweekly") {
+				weeklyHours = hoursPerCycle / 2;
+			} else if (schedule.scheduleCycle === "monthly") {
+				weeklyHours = (hoursPerCycle * 12) / 52;
+			} else if (schedule.scheduleCycle === "yearly") {
+				weeklyHours = hoursPerCycle / 52;
+			}
+			totalHours += weeklyHours;
+			countWithSchedule++;
+		}
 	}
 
 	return countWithSchedule > 0 ? totalHours / countWithSchedule : 40;
