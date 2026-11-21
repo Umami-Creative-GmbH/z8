@@ -203,23 +203,23 @@ async function readCorrectionRequest(
 			lifecycle.canonicalRecordId !== period.canonicalRecordId)
 	)
 		return null;
-	const [record, subject] = await Promise.all([
-		database.query.timeRecord.findFirst({
-			where: and(
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.id, period.canonicalRecordId),
-				eq(timeRecord.recordKind, "work"),
-				eq(timeRecord.employeeId, period.employeeId),
-			),
-		}),
-		database.query.employee.findFirst({
-			where: and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.id, period.employeeId),
-			),
-			columns: { id: true, userId: true },
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const record = await database.query.timeRecord.findFirst({
+		where: and(
+			eq(timeRecord.organizationId, organizationId),
+			eq(timeRecord.id, period.canonicalRecordId),
+			eq(timeRecord.recordKind, "work"),
+			eq(timeRecord.employeeId, period.employeeId),
+		),
+	});
+	const subject = await database.query.employee.findFirst({
+		where: and(
+			eq(employee.organizationId, organizationId),
+			eq(employee.id, period.employeeId),
+		),
+		columns: { id: true, userId: true },
+	});
 	if (!record?.endAt || !subject) return null;
 	const legacyApprovalRequestId = lifecycle.legacyApprovalRequestId;
 	if (legacyApprovalRequestId) {
@@ -292,16 +292,14 @@ async function readCorrectionRequest(
 		) &&
 		record.durationMinutes === revision.facts.baseline.storedDurationMinutes &&
 		record.approvalState === period.approvalStatus;
-	const [settings, organization] = await Promise.all([
-		database.query.userSettings.findFirst({
-			where: eq(userSettings.userId, subject.userId),
-			columns: { timezone: true },
-		}),
-		database.query.organization.findFirst({
-			where: (table, { eq }) => eq(table.id, organizationId),
-			columns: { timezone: true },
-		}),
-	]);
+	const settings = await database.query.userSettings.findFirst({
+		where: eq(userSettings.userId, subject.userId),
+		columns: { timezone: true },
+	});
+	const organization = await database.query.organization.findFirst({
+		where: (table, { eq }) => eq(table.id, organizationId),
+		columns: { timezone: true },
+	});
 	return {
 		context: {
 			...target.context,
@@ -361,24 +359,24 @@ export async function readPayrollTriageRequest(
 			lifecycle.canonicalRecordId !== absence.canonicalRecordId)
 	)
 		return null;
-	const [record, subject] = await Promise.all([
-		database.query.timeRecord.findFirst({
-			where: and(
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.id, absence.canonicalRecordId),
-				eq(timeRecord.recordKind, "absence"),
-				eq(timeRecord.employeeId, absence.employeeId),
-				eq(timeRecord.approvalState, "pending"),
-			),
-		}),
-		database.query.employee.findFirst({
-			where: and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.id, absence.employeeId),
-			),
-			columns: { id: true },
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const record = await database.query.timeRecord.findFirst({
+		where: and(
+			eq(timeRecord.organizationId, organizationId),
+			eq(timeRecord.id, absence.canonicalRecordId),
+			eq(timeRecord.recordKind, "absence"),
+			eq(timeRecord.employeeId, absence.employeeId),
+			eq(timeRecord.approvalState, "pending"),
+		),
+	});
+	const subject = await database.query.employee.findFirst({
+		where: and(
+			eq(employee.organizationId, organizationId),
+			eq(employee.id, absence.employeeId),
+		),
+		columns: { id: true },
+	});
 	if (!record?.endAt || !subject) return null;
 	const revision = lifecycle.workflowId
 		? await loadCurrentAbsenceSubmittedRevision(database, {

@@ -113,14 +113,14 @@ export async function captureCanonicalAbsenceSubmissionEvidence(
 		});
 	}
 
-	const [subject, submitter] = await Promise.all([
-		loadEmployeeLabel(database, input.organizationId, {
-			employeeId: input.subjectEmployeeId,
-		}),
-		loadEmployeeLabel(database, input.organizationId, {
-			userId: input.submitterUserId,
-		}),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const subject = await loadEmployeeLabel(database, input.organizationId, {
+		employeeId: input.subjectEmployeeId,
+	});
+	const submitter = await loadEmployeeLabel(database, input.organizationId, {
+		userId: input.submitterUserId,
+	});
 	if (!subject || !submitter || submitter.userId !== input.submitterUserId) {
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "roles" });
 	}

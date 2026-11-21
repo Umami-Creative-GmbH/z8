@@ -81,127 +81,112 @@ export async function reconcileLegacyToCanonical(
 	organizationId: string,
 	reader: Pick<typeof db, "query"> = db,
 ): Promise<LegacyCanonicalReconciliation> {
-	const [
-		allLegacyWork,
-		legacyAbsence,
-		canonicalWork,
-		canonicalAbsence,
-		linkedAbsenceEntries,
-		nullOrgAbsenceEntries,
-		targetEmployees,
-		canonicalWorkDetails,
-		canonicalAbsenceDetails,
-		canonicalWorkAllocations,
-	] = await Promise.all([
-		reader.query.workPeriod.findMany({
-			where: eq(workPeriod.organizationId, organizationId),
-			columns: {
-				id: true,
-				canonicalRecordId: true,
-				clockOutId: true,
-				isActive: true,
-				deletedAt: true,
-				startTime: true,
-				endTime: true,
-				durationMinutes: true,
-				approvalStatus: true,
-				projectId: true,
-				taskId: true,
-				isBillable: true,
-				missingTask: true,
-				workCategoryId: true,
-				workLocationType: true,
-				...vehicleColumns,
-			},
-			// The closed month an unlinked period's work touches, if any (#1213).
-			extras: (period, { sql }) => ({
-				unlinkedClosedMonth: sql<
-					string | null
-				>`case when ${period.canonicalRecordId} is null then public.closed_month_touching_work(${period.employeeId}, ${period.startTime}, ${period.endTime}) end`.as(
-					"unlinked_closed_month",
-				),
-			}),
-		}),
-		reader.query.absenceEntry.findMany({
-			where: eq(absenceEntry.organizationId, organizationId),
-			columns: {
-				id: true,
-				canonicalRecordId: true,
-				endDate: true,
-				endPeriod: true,
-				startDate: true,
-				startPeriod: true,
-				status: true,
-			},
-		}),
-		reader.query.timeRecord.findMany({
-			where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "work")),
-			columns: {
-				id: true,
-				startAt: true,
-				endAt: true,
-				durationMinutes: true,
-				approvalState: true,
-			},
-		}),
-		reader.query.timeRecord.findMany({
-			where: and(
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.recordKind, "absence"),
+	// One after another: `reader` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const allLegacyWork = await reader.query.workPeriod.findMany({
+		where: eq(workPeriod.organizationId, organizationId),
+		columns: {
+			id: true,
+			canonicalRecordId: true,
+			clockOutId: true,
+			isActive: true,
+			deletedAt: true,
+			startTime: true,
+			endTime: true,
+			durationMinutes: true,
+			approvalStatus: true,
+			projectId: true,
+			taskId: true,
+			isBillable: true,
+			missingTask: true,
+			workCategoryId: true,
+			workLocationType: true,
+			...vehicleColumns,
+		},
+		// The closed month an unlinked period's work touches, if any (#1213).
+		extras: (period, { sql }) => ({
+			unlinkedClosedMonth: sql<
+				string | null
+			>`case when ${period.canonicalRecordId} is null then public.closed_month_touching_work(${period.employeeId}, ${period.startTime}, ${period.endTime}) end`.as(
+				"unlinked_closed_month",
 			),
-			columns: { id: true, durationMinutes: true, approvalState: true },
 		}),
-		reader.query.absenceEntry.findMany({
-			where: eq(absenceEntry.organizationId, organizationId),
-			columns: { id: true, canonicalRecordId: true },
-		}),
-		reader.query.absenceEntry.findMany({
-			where: isNull(absenceEntry.organizationId),
-			columns: {
-				id: true,
-				employeeId: true,
-				canonicalRecordId: true,
-				organizationId: true,
-				endDate: true,
-				endPeriod: true,
-				startDate: true,
-				startPeriod: true,
-				status: true,
-			},
-		}),
-		reader.query.employee.findMany({
-			where: eq(employee.organizationId, organizationId),
-			columns: { id: true },
-		}),
-		reader.query.timeRecordWork.findMany({
-			where: eq(timeRecordWork.organizationId, organizationId),
-			columns: {
-				recordId: true,
-				workCategoryId: true,
-				workLocationType: true,
-				...vehicleColumns,
-			},
-		}),
-		reader.query.timeRecordAbsence.findMany({
-			where: eq(timeRecordAbsence.organizationId, organizationId),
-			columns: { recordId: true },
-		}),
-		reader.query.timeRecordAllocation.findMany({
-			where: eq(timeRecordAllocation.organizationId, organizationId),
-			columns: {
-				recordId: true,
-				allocationKind: true,
-				projectId: true,
-				taskId: true,
-				costCenterId: true,
-				weightPercent: true,
-				isBillable: true,
-				missingTask: true,
-			},
-			// A stable order: the record agreement rule reads the first project allocation.
-			orderBy: [asc(timeRecordAllocation.createdAt), asc(timeRecordAllocation.id)],
-		}),
-	]);
+	});
+	const legacyAbsence = await reader.query.absenceEntry.findMany({
+		where: eq(absenceEntry.organizationId, organizationId),
+		columns: {
+			id: true,
+			canonicalRecordId: true,
+			endDate: true,
+			endPeriod: true,
+			startDate: true,
+			startPeriod: true,
+			status: true,
+		},
+	});
+	const canonicalWork = await reader.query.timeRecord.findMany({
+		where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "work")),
+		columns: {
+			id: true,
+			startAt: true,
+			endAt: true,
+			durationMinutes: true,
+			approvalState: true,
+		},
+	});
+	const canonicalAbsence = await reader.query.timeRecord.findMany({
+		where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "absence")),
+		columns: { id: true, durationMinutes: true, approvalState: true },
+	});
+	const linkedAbsenceEntries = await reader.query.absenceEntry.findMany({
+		where: eq(absenceEntry.organizationId, organizationId),
+		columns: { id: true, canonicalRecordId: true },
+	});
+	const nullOrgAbsenceEntries = await reader.query.absenceEntry.findMany({
+		where: isNull(absenceEntry.organizationId),
+		columns: {
+			id: true,
+			employeeId: true,
+			canonicalRecordId: true,
+			organizationId: true,
+			endDate: true,
+			endPeriod: true,
+			startDate: true,
+			startPeriod: true,
+			status: true,
+		},
+	});
+	const targetEmployees = await reader.query.employee.findMany({
+		where: eq(employee.organizationId, organizationId),
+		columns: { id: true },
+	});
+	const canonicalWorkDetails = await reader.query.timeRecordWork.findMany({
+		where: eq(timeRecordWork.organizationId, organizationId),
+		columns: {
+			recordId: true,
+			workCategoryId: true,
+			workLocationType: true,
+			...vehicleColumns,
+		},
+	});
+	const canonicalAbsenceDetails = await reader.query.timeRecordAbsence.findMany({
+		where: eq(timeRecordAbsence.organizationId, organizationId),
+		columns: { recordId: true },
+	});
+	const canonicalWorkAllocations = await reader.query.timeRecordAllocation.findMany({
+		where: eq(timeRecordAllocation.organizationId, organizationId),
+		columns: {
+			recordId: true,
+			allocationKind: true,
+			projectId: true,
+			taskId: true,
+			costCenterId: true,
+			weightPercent: true,
+			isBillable: true,
+			missingTask: true,
+		},
+		// A stable order: the record agreement rule reads the first project allocation.
+		orderBy: [asc(timeRecordAllocation.createdAt), asc(timeRecordAllocation.id)],
+	});
 
 	const canonicalWorkIds = new Set(canonicalWork.map((row) => row.id));
 	// Live work receives its completed canonical representation at clock-out. A completed

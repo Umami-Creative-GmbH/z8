@@ -52,24 +52,24 @@ export async function loadTravelExpenseFactsInput(
 	database: ApprovalDatabase,
 	scope: { organizationId: string; claimId: string },
 ) {
-	const [claims, attachments] = await Promise.all([
-		database
-			.select()
-			.from(travelExpenseClaim)
-			.where(
-				and(
-					eq(travelExpenseClaim.id, scope.claimId),
-					eq(travelExpenseClaim.organizationId, scope.organizationId),
-				),
-			)
-			.limit(2),
-		// Every row linked to the claim, so a foreign-organization row is verified
-		// (and refused) rather than silently left out of the manifest.
-		database
-			.select()
-			.from(travelExpenseAttachment)
-			.where(eq(travelExpenseAttachment.claimId, scope.claimId)),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const claims = await database
+		.select()
+		.from(travelExpenseClaim)
+		.where(
+			and(
+				eq(travelExpenseClaim.id, scope.claimId),
+				eq(travelExpenseClaim.organizationId, scope.organizationId),
+			),
+		)
+		.limit(2);
+	// Every row linked to the claim, so a foreign-organization row is verified
+	// (and refused) rather than silently left out of the manifest.
+	const attachments = await database
+		.select()
+		.from(travelExpenseAttachment)
+		.where(eq(travelExpenseAttachment.claimId, scope.claimId));
 	const claim = claims[0];
 	if (claims.length !== 1 || !claim) return null;
 	return { claim, attachments } satisfies TravelExpenseFactsInput;
@@ -101,31 +101,31 @@ async function verifyLegacyLifecycle(
 		input.routing.kind === "default_created" ? null : input.routing.chainInstanceId;
 	if (!chainInstanceId) return { chainInstanceId: null, chainStageId: null };
 
-	const [chains, stages] = await Promise.all([
-		database
-			.select({ id: approvalChainInstance.id })
-			.from(approvalChainInstance)
-			.where(
-				and(
-					eq(approvalChainInstance.id, chainInstanceId),
-					eq(approvalChainInstance.organizationId, input.organizationId),
-					eq(approvalChainInstance.entityType, "travel_expense_claim"),
-					eq(approvalChainInstance.entityId, input.claimId),
-				),
-			)
-			.limit(2),
-		database
-			.select({ id: approvalChainStageInstance.id })
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.routing.approvalRequestId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const chains = await database
+		.select({ id: approvalChainInstance.id })
+		.from(approvalChainInstance)
+		.where(
+			and(
+				eq(approvalChainInstance.id, chainInstanceId),
+				eq(approvalChainInstance.organizationId, input.organizationId),
+				eq(approvalChainInstance.entityType, "travel_expense_claim"),
+				eq(approvalChainInstance.entityId, input.claimId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({ id: approvalChainStageInstance.id })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.routing.approvalRequestId),
+			),
+		)
+		.limit(2);
 	if (chains.length !== 1 || stages.length > 1) {
 		throw new ApprovalEvidenceError("evidence_incomplete", {
 			field: "legacy_lifecycle",
@@ -178,15 +178,15 @@ export async function captureTravelExpenseSubmissionEvidence(
 	}
 	const lifecycle = await verifyLegacyLifecycle(database, input);
 
-	const [subject, submitter, projectName] = await Promise.all([
-		loadEmployeeLabel(database, input.organizationId, {
-			employeeId: claim.employeeId,
-		}),
-		loadEmployeeLabel(database, input.organizationId, {
-			userId: input.submitter.userId,
-		}),
-		loadProjectName(database, input.organizationId, claim.projectId),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const subject = await loadEmployeeLabel(database, input.organizationId, {
+		employeeId: claim.employeeId,
+	});
+	const submitter = await loadEmployeeLabel(database, input.organizationId, {
+		userId: input.submitter.userId,
+	});
+	const projectName = await loadProjectName(database, input.organizationId, claim.projectId);
 	if (
 		!subject ||
 		!submitter ||

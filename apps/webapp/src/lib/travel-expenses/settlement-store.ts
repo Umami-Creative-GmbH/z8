@@ -413,22 +413,26 @@ export async function buildSettlementAccounts(
 		...claims.map(({ row }) => ({ type: "legacy_claim" as const, id: row.id })),
 	];
 	const approvedReportIds = approvedReports.map(({ row }) => row.id);
-	const [decisions, entries, adjustments, adjustmentOriginals, payrollRuns, confirmedRuns] =
-		await Promise.all([
-			loadApprovedRevisionDecisions(
-				database,
-				organizationId,
-				[...revisions.values()].map((revision) => revision.id),
-			),
-			loadEntries(database, organizationId, sources),
-			loadApprovedAdjustmentComponents(database, { organizationId, sources }),
-			loadAdjustmentOriginals(database, {
-				organizationId,
-				reportIds: reports.map(({ row }) => row.id),
-			}),
-			loadIncludedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
-			loadConfirmedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
-		]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const decisions = await loadApprovedRevisionDecisions(
+		database,
+		organizationId,
+		[...revisions.values()].map((revision) => revision.id),
+	);
+	const entries = await loadEntries(database, organizationId, sources);
+	const adjustments = await loadApprovedAdjustmentComponents(database, { organizationId, sources });
+	const adjustmentOriginals = await loadAdjustmentOriginals(database, {
+		organizationId,
+		reportIds: reports.map(({ row }) => row.id),
+	});
+	const payrollRuns = await loadIncludedPayrollRuns(database, {
+		organizationId,
+		reportIds: approvedReportIds,
+	});
+	const confirmedRuns = await loadConfirmedPayrollRuns(database, {
+		organizationId,
+		reportIds: approvedReportIds,
+	});
 
 	const accounts: SettlementAccount[] = [];
 	for (const { row, employeeName } of reports) {
@@ -636,28 +640,27 @@ export async function listOwnSettlementAccounts(
 	database: Executor,
 	owner: { organizationId: string; employeeId: string },
 ): Promise<SettlementAccount[]> {
-	const [reports, claims] = await Promise.all([
-		database
-			.select({ row: travelExpenseReport })
-			.from(travelExpenseReport)
-			.where(
-				and(
-					eq(travelExpenseReport.organizationId, owner.organizationId),
-					eq(travelExpenseReport.employeeId, owner.employeeId),
-					eq(travelExpenseReport.status, "approved"),
-				),
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const reports = await database
+		.select({ row: travelExpenseReport })
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.organizationId, owner.organizationId),
+				eq(travelExpenseReport.employeeId, owner.employeeId),
+				eq(travelExpenseReport.status, "approved"),
 			),
-		database
-			.select({ row: travelExpenseClaim })
-			.from(travelExpenseClaim)
-			.where(
-				and(
-					eq(travelExpenseClaim.organizationId, owner.organizationId),
-					eq(travelExpenseClaim.employeeId, owner.employeeId),
-					eq(travelExpenseClaim.status, "approved"),
-				),
+		);
+	const claims = await database
+		.select({ row: travelExpenseClaim })
+		.from(travelExpenseClaim)
+		.where(
+			and(
+				eq(travelExpenseClaim.organizationId, owner.organizationId),
+				eq(travelExpenseClaim.employeeId, owner.employeeId),
+				eq(travelExpenseClaim.status, "approved"),
 			),
-	]);
+		);
 	const accounts = await buildSettlementAccounts(
 		database,
 		owner.organizationId,

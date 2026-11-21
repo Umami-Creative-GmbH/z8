@@ -570,65 +570,60 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 
 	if (affectedStartDate < hotWindow.startDate) {
 		const months = getMonthPeriodsBetween(affectedStartDate, closedMonthEnd);
-		await Promise.all(
-			months.map(async (month) => {
-				const values = await computeEmployeePeriodBalance({
-					employeeId: input.employeeId,
-					organizationId: input.organizationId,
-					dbClient,
-					periodType: "month",
-					periodStart: month.periodStart,
-					periodEnd: month.periodEnd,
-					calculationStartDate,
-					...timezoneInput,
-					isClosed: true,
-					now,
-				});
-				await upsertEmployeeWorkBalancePeriod(values, {
-					dbClient,
-					refreshStartedAt: now,
-				});
-			}),
-		);
-
-		const touchedYears = new Set(months.map((month) => month.periodStart.slice(0, 4)));
-		await Promise.all(
-			[...touchedYears].map((year) =>
-				rebuildEmployeeYearBalanceFromMonths({
-					employeeId: input.employeeId,
-					organizationId: input.organizationId,
-					dbClient,
-					dateInYear: `${year}-01-01`,
-					calculationStartDate,
-					now,
-				}),
-			),
-		);
-	}
-
-	const [hotWindowValues, closedTotals] = await Promise.all([
-		computeEmployeePeriodBalance({
-			employeeId: input.employeeId,
-			organizationId: input.organizationId,
-			dbClient,
-			periodType: "month",
-			periodStart: hotWindow.startDate,
-			periodEnd: hotWindow.endDate,
-			calculationStartDate,
-			...timezoneInput,
-			isClosed: false,
-			now,
-		}),
-		sumClosedMonthlyPeriodTotalsBefore(
-			{
+		// One after another: `dbClient` is one connection, and pg@9 refuses a query while another is executing.
+		for (const month of months) {
+			const values = await computeEmployeePeriodBalance({
 				employeeId: input.employeeId,
 				organizationId: input.organizationId,
-				beforeDate: hotWindow.startDate,
-				fromDate: calculationStartDate,
-			},
-			dbClient,
-		),
-	]);
+				dbClient,
+				periodType: "month",
+				periodStart: month.periodStart,
+				periodEnd: month.periodEnd,
+				calculationStartDate,
+				...timezoneInput,
+				isClosed: true,
+				now,
+			});
+			await upsertEmployeeWorkBalancePeriod(values, {
+				dbClient,
+				refreshStartedAt: now,
+			});
+		}
+
+		const touchedYears = new Set(months.map((month) => month.periodStart.slice(0, 4)));
+		for (const year of touchedYears) {
+			await rebuildEmployeeYearBalanceFromMonths({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				dbClient,
+				dateInYear: `${year}-01-01`,
+				calculationStartDate,
+				now,
+			});
+		}
+	}
+
+	const hotWindowValues = await computeEmployeePeriodBalance({
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		dbClient,
+		periodType: "month",
+		periodStart: hotWindow.startDate,
+		periodEnd: hotWindow.endDate,
+		calculationStartDate,
+		...timezoneInput,
+		isClosed: false,
+		now,
+	});
+	const closedTotals = await sumClosedMonthlyPeriodTotalsBefore(
+		{
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			beforeDate: hotWindow.startDate,
+			fromDate: calculationStartDate,
+		},
+		dbClient,
+	);
 
 	await upsertEmployeeWorkBalance(
 		buildWorkBalanceValues({
@@ -723,14 +718,18 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
  employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
 		employeeTimezoneOverride: input.employeeTimezoneOverride,
 	};
-	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
-		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
-		readWorkBalanceAdjustments(dbClient, {
-			...scope,
-			throughDate: input.day,
-			openingBalanceDatedLater: "ignore",
-		}),
-	]);
+	// One after another: `dbClient` may be one connection, and pg@9 refuses a query while another is executing.
+	const firstRelevantDate = await getFirstRelevantDate(
+		scope,
+		dbClient,
+		input.employee,
+		input.employee.timezone,
+	);
+	const { countFrom, adjustmentMinutes } = await readWorkBalanceAdjustments(dbClient, {
+		...scope,
+		throughDate: input.day,
+		openingBalanceDatedLater: "ignore",
+	});
 	const calculationStartDate = laterIsoDate(firstRelevantDate, countFrom);
 	if (!calculationStartDate || calculationStartDate > input.day) {
 		return { actualMinutes: 0, requiredMinutes: 0, adjustmentMinutes, balanceMinutes: adjustmentMinutes, calculationStartDate };
@@ -934,17 +933,17 @@ export async function requestOrganizationWorkBalanceFullRebuild(
 			orderBy: (employeeRow, { asc }) => [asc(employeeRow.id)],
 		});
 
-		await Promise.all(
-			organizationEmployees.map((organizationEmployee) =>
-				requestEmployeeWorkBalanceFullRebuild(
-					{
-						employeeId: organizationEmployee.id,
-						organizationId: organizationEmployee.organizationId,
-					},
-					{ dbClient, requestedAt },
-				),
-			),
-		);
+		// One after another: `dbClient` is one connection, and pg@9 refuses a query while another is executing.
+		// Each employee's lock is still taken in ascending employee id order.
+		for (const organizationEmployee of organizationEmployees) {
+			await requestEmployeeWorkBalanceFullRebuild(
+				{
+					employeeId: organizationEmployee.id,
+					organizationId: organizationEmployee.organizationId,
+				},
+				{ dbClient, requestedAt },
+			);
+		}
 	};
 
 	if (options?.dbClient) {

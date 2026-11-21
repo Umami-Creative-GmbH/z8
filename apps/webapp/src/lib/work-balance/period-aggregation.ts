@@ -92,44 +92,43 @@ export async function computeEmployeePeriodBalance(input: {
 	const startDate = effectiveStart.toJSDate();
 	const endDate = periodEnd.toJSDate();
 
-	const [actualRow, requirements] = await Promise.all([
-		tracking
-			? sumTrackedWorkMinutes(dbClient, {
-					...input,
-					startDate: effectiveStart.toISODate()!,
-					throughDate: input.periodEnd,
-					timezone,
-				}).then((totalMinutes) => [{ totalMinutes }])
-			: dbClient
-					.select({
-						totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
-					})
-					.from(workPeriod)
-					.where(
-						and(
-							eq(workPeriod.employeeId, input.employeeId),
-							eq(workPeriod.organizationId, input.organizationId),
-							isNotNull(workPeriod.endTime),
-							isNotNull(workPeriod.durationMinutes),
-							gte(workPeriod.startTime, startDate),
-							lte(workPeriod.startTime, endDate),
-						),
-					),
-		getDailyWorkRequirementsForEmployee(
-			{
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				startDate,
-				endDate,
+	// One after another: `dbClient` may be one connection, and pg@9 refuses a query while another is executing.
+	const actualRow = tracking
+		? await sumTrackedWorkMinutes(dbClient, {
+				...input,
+				startDate: effectiveStart.toISODate()!,
+				throughDate: input.periodEnd,
 				timezone,
-				trackingStartDateOverride: input.trackingStartDateOverride,
+			}).then((totalMinutes) => [{ totalMinutes }])
+		: await dbClient
+				.select({
+					totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
+				})
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, input.employeeId),
+						eq(workPeriod.organizationId, input.organizationId),
+						isNotNull(workPeriod.endTime),
+						isNotNull(workPeriod.durationMinutes),
+						gte(workPeriod.startTime, startDate),
+						lte(workPeriod.startTime, endDate),
+					),
+				);
+	const requirements = await getDailyWorkRequirementsForEmployee(
+		{
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			startDate,
+			endDate,
+			timezone,
+			trackingStartDateOverride: input.trackingStartDateOverride,
  employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
  employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
-				employeeTimezoneOverride: input.employeeTimezoneOverride,
-			},
-			...(input.dbClient ? ([input.dbClient] as const) : []),
-		),
-	]);
+			employeeTimezoneOverride: input.employeeTimezoneOverride,
+		},
+		...(input.dbClient ? ([input.dbClient] as const) : []),
+	);
 
 	const requiredMinutes = Object.values(requirements).reduce(
 		(total, requirement) => total + requirement.requiredMinutes,

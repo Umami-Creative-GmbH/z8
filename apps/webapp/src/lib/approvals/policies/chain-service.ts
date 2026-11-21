@@ -1,4 +1,4 @@
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	approvalChainInstance,
@@ -7,6 +7,7 @@ import {
 	approvalRequest,
 	employee,
 	employeeGroup,
+	employeeManagers,
 	employeeGroupMember,
 	team,
 	teamMembership,
@@ -381,7 +382,17 @@ async function loadPolicyContext(
 	const employees = await dbService.db.query.employee.findMany({
 		where: eq(employee.organizationId, context.organizationId),
 	});
-	const managerLinks = await dbService.db.query.employeeManagers.findMany();
+	// Manager links carry no organization of their own: scope them through the
+	// organization's employees instead of reading every tenant's links.
+	const organizationEmployeeIds = (employees as Array<{ id: string }>).map(
+		(row) => row.id,
+	);
+	const managerLinks =
+		organizationEmployeeIds.length === 0
+			? []
+			: await dbService.db.query.employeeManagers.findMany({
+					where: inArray(employeeManagers.employeeId, organizationEmployeeIds),
+				});
 	const teamMemberships = await dbService.db.query.teamMembership.findMany({
 		where: and(
 			eq(teamMembership.organizationId, context.organizationId),

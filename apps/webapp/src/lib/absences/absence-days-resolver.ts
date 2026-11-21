@@ -44,26 +44,24 @@ export async function loadWorkingDaysForEmployees(
 	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
 ): Promise<Map<string, IsWorkingDay>> {
 	const assignments = await loadWorkPolicyAssignments(database, input);
-	return new Map(
-		await Promise.all(
-			[...assignments].map(
-				async ([employeeId, employeeAssignments]) =>
-					[
-						employeeId,
-						workingDaysFrom({
-							assignments: employeeAssignments,
-							holidays: await getVacationHolidays({
-								database,
-								organizationId: input.organizationId,
-								employeeId,
-								startDate: input.startDate,
-								endDate: input.endDate,
-							}),
-						}),
-					] as const,
-			),
-		),
-	);
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const workingDays = new Map<string, IsWorkingDay>();
+	for (const [employeeId, employeeAssignments] of assignments) {
+		workingDays.set(
+			employeeId,
+			workingDaysFrom({
+				assignments: employeeAssignments,
+				holidays: await getVacationHolidays({
+					database,
+					organizationId: input.organizationId,
+					employeeId,
+					startDate: input.startDate,
+					endDate: input.endDate,
+				}),
+			}),
+		);
+	}
+	return workingDays;
 }
 
 /**

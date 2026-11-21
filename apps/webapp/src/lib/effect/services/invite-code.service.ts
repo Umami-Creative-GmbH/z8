@@ -973,19 +973,19 @@ export const InviteCodeServiceLive = Layer.effect(
 								});
 								if (!existing) return null;
 
-								const [usages, rejectionAudits] = await Promise.all([
-									tx.query.inviteCodeUsage.findMany({
-										where: eq(inviteCodeUsage.inviteCodeId, inviteCodeId),
-									}),
-									tx.query.auditLog.findMany({
-										where: and(
-											eq(auditLog.organizationId, organizationId),
-											eq(auditLog.entityType, "membership"),
-											eq(auditLog.entityId, inviteCodeId),
-											eq(auditLog.action, "reject"),
-										),
-									}),
-								]);
+								// One after another: `tx` is one connection, and pg@9 refuses a query
+								// while another is executing.
+								const usages = await tx.query.inviteCodeUsage.findMany({
+									where: eq(inviteCodeUsage.inviteCodeId, inviteCodeId),
+								});
+								const rejectionAudits = await tx.query.auditLog.findMany({
+									where: and(
+										eq(auditLog.organizationId, organizationId),
+										eq(auditLog.entityType, "membership"),
+										eq(auditLog.entityId, inviteCodeId),
+										eq(auditLog.action, "reject"),
+									),
+								});
 
 								const rejectedUserIds = new Set<string>();
 								for (const audit of rejectionAudits) {

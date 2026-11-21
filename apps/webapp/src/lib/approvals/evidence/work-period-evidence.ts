@@ -353,31 +353,31 @@ async function verifyLegacySubmissionLifecycle(
 	}
 	const chainInstanceId = routing.kind === "default_created" ? null : routing.chainInstanceId;
 	if (!chainInstanceId) return { request, chainInstanceId: null, chainStageId: null };
-	const [chains, stages] = await Promise.all([
-		database
-			.select({ id: approvalChainInstance.id })
-			.from(approvalChainInstance)
-			.where(
-				and(
-					eq(approvalChainInstance.id, chainInstanceId),
-					eq(approvalChainInstance.organizationId, input.organizationId),
-					eq(approvalChainInstance.entityType, "time_entry"),
-					eq(approvalChainInstance.entityId, input.facts.workPeriodId),
-				),
-			)
-			.limit(2),
-		database
-			.select({ id: approvalChainStageInstance.id })
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, routing.approvalRequestId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const chains = await database
+		.select({ id: approvalChainInstance.id })
+		.from(approvalChainInstance)
+		.where(
+			and(
+				eq(approvalChainInstance.id, chainInstanceId),
+				eq(approvalChainInstance.organizationId, input.organizationId),
+				eq(approvalChainInstance.entityType, "time_entry"),
+				eq(approvalChainInstance.entityId, input.facts.workPeriodId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({ id: approvalChainStageInstance.id })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, routing.approvalRequestId),
+			),
+		)
+		.limit(2);
 	if (chains.length !== 1 || stages.length > 1) return incomplete("legacy_lifecycle");
 	return { request, chainInstanceId, chainStageId: stages[0]?.id ?? null };
 }
@@ -395,14 +395,14 @@ export async function captureWorkPeriodSubmissionEvidence(
 	if (facts.organizationId !== input.organizationId) {
 		throw new ApprovalEvidenceError("invariant", { field: "organization" });
 	}
-	const [subject, submitter] = await Promise.all([
-		loadEmployeeLabel(database, input.organizationId, {
-			employeeId: facts.subjectEmployeeId,
-		}),
-		loadEmployeeLabel(database, input.organizationId, {
-			userId: input.submitterUserId,
-		}),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const subject = await loadEmployeeLabel(database, input.organizationId, {
+		employeeId: facts.subjectEmployeeId,
+	});
+	const submitter = await loadEmployeeLabel(database, input.organizationId, {
+		userId: input.submitterUserId,
+	});
 	if (
 		!subject ||
 		!submitter ||
@@ -595,16 +595,16 @@ async function loadCanonicalDecisionRevision(
 		workflow: ApprovalWorkflowSnapshot;
 	},
 ): Promise<WorkPeriodSubmittedRevisionRecord | null> {
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: input.kind,
-		}),
-		loadCanonicalWorkPeriodSubmittedRevision(database, {
-			organizationId: input.organizationId,
-			workflowId: input.workflow.id,
-		}),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: input.kind,
+	});
+	const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, {
+		organizationId: input.organizationId,
+		workflowId: input.workflow.id,
+	});
 	if (!revision) {
 		if (mode === "capture") throw new ApprovalEvidenceError("evidence_required");
 		return null;
@@ -787,13 +787,13 @@ export async function prepareLegacyWorkPeriodDecisionEvidence(
 		chainInstanceId: string | null;
 	},
 ): Promise<LegacyWorkPeriodDecisionPlan | null> {
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: input.kind,
-		}),
-		loadLegacyWorkPeriodSubmittedRevision(database, input),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: input.kind,
+	});
+	const revision = await loadLegacyWorkPeriodSubmittedRevision(database, input);
 	if (!revision) {
 		if (mode === "capture") throw new ApprovalEvidenceError("evidence_required");
 		return null;

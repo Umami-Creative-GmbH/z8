@@ -96,25 +96,25 @@ export async function readEquipmentSetup(
 	db: Pick<typeof database, "select">,
 	organizationId: string,
 ): Promise<EquipmentSetupView> {
-	const [policies, types, items] = await Promise.all([
-		db
-			.select({
-				retentionMonths: equipmentPolicy.retentionMonths,
-				revision: equipmentPolicy.revision,
-			})
-			.from(equipmentPolicy)
-			.where(eq(equipmentPolicy.organizationId, organizationId)),
-		db
-			.select()
-			.from(equipmentType)
-			.where(eq(equipmentType.organizationId, organizationId))
-			.orderBy(asc(equipmentType.name), asc(equipmentType.id)),
-		db
-			.select()
-			.from(equipmentItem)
-			.where(eq(equipmentItem.organizationId, organizationId))
-			.orderBy(asc(equipmentItem.identifier), asc(equipmentItem.id)),
-	]);
+	// One after another: `db` may be a transaction, which is one connection, and
+	// pg@9 refuses a query while another is executing.
+	const policies = await db
+		.select({
+			retentionMonths: equipmentPolicy.retentionMonths,
+			revision: equipmentPolicy.revision,
+		})
+		.from(equipmentPolicy)
+		.where(eq(equipmentPolicy.organizationId, organizationId));
+	const types = await db
+		.select()
+		.from(equipmentType)
+		.where(eq(equipmentType.organizationId, organizationId))
+		.orderBy(asc(equipmentType.name), asc(equipmentType.id));
+	const items = await db
+		.select()
+		.from(equipmentItem)
+		.where(eq(equipmentItem.organizationId, organizationId))
+		.orderBy(asc(equipmentItem.identifier), asc(equipmentItem.id));
 	const views = types.map(typeView);
 	return {
 		policy: policies[0] ?? null,

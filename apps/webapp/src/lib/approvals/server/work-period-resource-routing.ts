@@ -25,27 +25,27 @@ export async function routeWorkPeriodApprovalParticipants(input: {
 	organizationId: string;
 	requesterEmployeeId: string;
 }) {
-	const [employees, policies, memberships, teams] = await Promise.all([
-		input.db.query.employee.findMany({
-			where: eq(employee.organizationId, input.organizationId),
-		}),
-		input.db.query.approvalPolicy.findMany({
-			where: and(
-				eq(approvalPolicy.organizationId, input.organizationId),
-				eq(approvalPolicy.isActive, true),
-			),
-			with: { stages: true },
-		}),
-		input.db.query.teamMembership.findMany({
-			where: and(
-				eq(teamMembership.organizationId, input.organizationId),
-				eq(teamMembership.employeeId, input.requesterEmployeeId),
-			),
-		}),
-		input.db.query.team.findMany({
-			where: eq(team.organizationId, input.organizationId),
-		}),
-	]);
+	// One after another: `input.db` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const employees = await input.db.query.employee.findMany({
+		where: eq(employee.organizationId, input.organizationId),
+	});
+	const policies = await input.db.query.approvalPolicy.findMany({
+		where: and(
+			eq(approvalPolicy.organizationId, input.organizationId),
+			eq(approvalPolicy.isActive, true),
+		),
+		with: { stages: true },
+	});
+	const memberships = await input.db.query.teamMembership.findMany({
+		where: and(
+			eq(teamMembership.organizationId, input.organizationId),
+			eq(teamMembership.employeeId, input.requesterEmployeeId),
+		),
+	});
+	const teams = await input.db.query.team.findMany({
+		where: eq(team.organizationId, input.organizationId),
+	});
 	const managerLinks =
 		employees.length === 0
 			? []

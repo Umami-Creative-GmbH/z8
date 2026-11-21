@@ -425,19 +425,21 @@ export async function loadApprovalStageDirectory(
 			`);
 	const directory = decodeDirectoryEnvelope(directoryResult);
 	const replacements = decodeDepartureReplacements(directory.departureReplacements);
-	const allowed =
-		named === null
-			? []
-			: await Promise.all(
-					replacements.map((row) =>
-						hasDecisionPath(executor as EscalationCandidateExecutor, {
-							organizationId,
-							requesterEmployeeId: named.requesterEmployeeId,
-							managerEmployeeId: row.replacementEmployeeId,
-							managerUserId: row.replacementUserId,
-						}),
-					),
-				);
+	// One after another: `executor` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const allowed: boolean[] = [];
+	if (named !== null) {
+		for (const row of replacements) {
+			allowed.push(
+				await hasDecisionPath(executor as EscalationCandidateExecutor, {
+					organizationId,
+					requesterEmployeeId: named.requesterEmployeeId,
+					managerEmployeeId: row.replacementEmployeeId,
+					managerUserId: row.replacementUserId,
+				}),
+			);
+		}
+	}
 	return {
 		employees: decodeEmployees(directory.employees),
 		managerLinks: decodeManagerLinks(directory.managerLinks),

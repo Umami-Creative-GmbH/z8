@@ -503,21 +503,20 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 					.values(canonicalValues.timeRecord)
 					.returning({ id: timeRecord.id });
 
-				await Promise.all([
-					tx.insert(timeRecordAbsence).values({
-						recordId: canonicalRecord.id,
-						...canonicalValues.timeRecordAbsence,
-					}),
-					tx
-						.update(absenceEntry)
-						.set({ canonicalRecordId: canonicalRecord.id })
-						.where(
-							and(
-								eq(absenceEntry.id, newAbsence.id),
-								eq(absenceEntry.organizationId, currentEmployee.organizationId),
-							),
+				// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+				await tx.insert(timeRecordAbsence).values({
+					recordId: canonicalRecord.id,
+					...canonicalValues.timeRecordAbsence,
+				});
+				await tx
+					.update(absenceEntry)
+					.set({ canonicalRecordId: canonicalRecord.id })
+					.where(
+						and(
+							eq(absenceEntry.id, newAbsence.id),
+							eq(absenceEntry.organizationId, currentEmployee.organizationId),
 						),
-				]);
+					);
 
 				let approvalWorkflowResult: RequestedAbsenceApprovalWorkflowResult | undefined;
 				let autoCompletion: ApprovedAbsenceResult | undefined;

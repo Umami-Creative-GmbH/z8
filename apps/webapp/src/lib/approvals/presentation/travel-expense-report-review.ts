@@ -108,33 +108,34 @@ async function loadEarlierCycles(
 		)
 		.orderBy(asc(travelExpenseReportCycleClosure.submissionCycle));
 	if (closures.length === 0) return [];
-	const [notes, revisions] = await Promise.all([
-		database
-			.select({
-				closureId: travelExpenseReportReviewNote.closureId,
-				itemId: travelExpenseReportReviewNote.itemId,
-				body: travelExpenseReportReviewNote.body,
-			})
-			.from(travelExpenseReportReviewNote)
-			.where(
-				and(
-					eq(travelExpenseReportReviewNote.organizationId, input.organizationId),
-					inArray(
-						travelExpenseReportReviewNote.closureId,
-						closures.map((closure) => closure.id),
-					),
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const notes = await database
+		.select({
+			closureId: travelExpenseReportReviewNote.closureId,
+			itemId: travelExpenseReportReviewNote.itemId,
+			body: travelExpenseReportReviewNote.body,
+		})
+		.from(travelExpenseReportReviewNote)
+		.where(
+			and(
+				eq(travelExpenseReportReviewNote.organizationId, input.organizationId),
+				inArray(
+					travelExpenseReportReviewNote.closureId,
+					closures.map((closure) => closure.id),
 				),
 			),
-		Promise.all(
-			closures.map((closure) =>
-				loadTravelExpenseReportSubmittedRevision(database, {
-					organizationId: input.organizationId,
-					reportId: input.reportId,
-					submissionCycle: closure.submissionCycle,
-				}),
-			),
-		),
-	]);
+		);
+	const revisions: (TravelExpenseReportSubmittedRevisionRecord | null)[] = [];
+	for (const closure of closures) {
+		revisions.push(
+			await loadTravelExpenseReportSubmittedRevision(database, {
+				organizationId: input.organizationId,
+				reportId: input.reportId,
+				submissionCycle: closure.submissionCycle,
+			}),
+		);
+	}
 	return closures.map((closure, index) => {
 		const items = revisions[index]?.facts.items ?? [];
 		return {
@@ -193,21 +194,21 @@ export async function prepareTravelExpenseReportReviewEvidence(
 				});
 	if (!revision) return { status: "not_captured" };
 	const latestCycle = revision.submissionCycle === report.submissionCount;
-	const [comparison, decisions, earlierCycles] = await Promise.all([
-		// Only the current cycle can still be decided; an earlier one is history.
-		latestCycle
-			? compareTravelExpenseReportWithSubmittedRevision(database, revision)
-			: Promise.resolve<TravelExpenseReportRevisionComparison>({ kind: "current" }),
-		listLegacyDecisionEvidence(database, {
-			organizationId: input.organizationId,
-			submittedRevisionId: revision.id,
-		}),
-		loadEarlierCycles(database, {
-			organizationId: input.organizationId,
-			reportId: input.reportId,
-			beforeCycle: revision.submissionCycle,
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	// Only the current cycle can still be decided; an earlier one is history.
+	const comparison: TravelExpenseReportRevisionComparison = latestCycle
+		? await compareTravelExpenseReportWithSubmittedRevision(database, revision)
+		: { kind: "current" };
+	const decisions = await listLegacyDecisionEvidence(database, {
+		organizationId: input.organizationId,
+		submittedRevisionId: revision.id,
+	});
+	const earlierCycles = await loadEarlierCycles(database, {
+		organizationId: input.organizationId,
+		reportId: input.reportId,
+		beforeCycle: revision.submissionCycle,
+	});
 	return { status: "evidenced", revision, comparison, decisions, latestCycle, earlierCycles };
 }
 

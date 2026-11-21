@@ -47,47 +47,46 @@ export async function listEmployeeAssignedLocations(
 	input: { organizationId: string; employeeId: string },
 ): Promise<{ assigned: AssignedLocationOfEmployee[]; available: AssignableLocation[] }> {
 	await assertEmployeeInOrganization(client, input);
-	const [assigned, available] = await Promise.all([
-		client
-			.select({ locationId: location.id, name: location.name, isActive: location.isActive })
-			.from(employeeAssignedLocation)
-			.innerJoin(
-				location,
-				and(
-					eq(location.id, employeeAssignedLocation.locationId),
-					eq(location.organizationId, employeeAssignedLocation.organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(employeeAssignedLocation.organizationId, input.organizationId),
-					eq(employeeAssignedLocation.employeeId, input.employeeId),
-				),
-			)
-			.orderBy(asc(location.name)),
-		client
-			.select({ locationId: location.id, name: location.name })
-			.from(location)
-			.where(
-				and(
-					eq(location.organizationId, input.organizationId),
-					eq(location.isActive, true),
-					notExists(
-						client
-							.select({ id: employeeAssignedLocation.id })
-							.from(employeeAssignedLocation)
-							.where(
-								and(
-									eq(employeeAssignedLocation.organizationId, input.organizationId),
-									eq(employeeAssignedLocation.employeeId, input.employeeId),
-									sql`${employeeAssignedLocation.locationId} = "location"."id"`,
-								),
+	// One after another: `client` may be one connection, and pg@9 refuses a query while another is executing.
+	const assigned = await client
+		.select({ locationId: location.id, name: location.name, isActive: location.isActive })
+		.from(employeeAssignedLocation)
+		.innerJoin(
+			location,
+			and(
+				eq(location.id, employeeAssignedLocation.locationId),
+				eq(location.organizationId, employeeAssignedLocation.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employeeAssignedLocation.organizationId, input.organizationId),
+				eq(employeeAssignedLocation.employeeId, input.employeeId),
+			),
+		)
+		.orderBy(asc(location.name));
+	const available = await client
+		.select({ locationId: location.id, name: location.name })
+		.from(location)
+		.where(
+			and(
+				eq(location.organizationId, input.organizationId),
+				eq(location.isActive, true),
+				notExists(
+					client
+						.select({ id: employeeAssignedLocation.id })
+						.from(employeeAssignedLocation)
+						.where(
+							and(
+								eq(employeeAssignedLocation.organizationId, input.organizationId),
+								eq(employeeAssignedLocation.employeeId, input.employeeId),
+								sql`${employeeAssignedLocation.locationId} = "location"."id"`,
 							),
-					),
+						),
 				),
-			)
-			.orderBy(asc(location.name)),
-	]);
+			),
+		)
+		.orderBy(asc(location.name));
 	return { assigned, available };
 }
 
@@ -100,54 +99,53 @@ export async function listLocationAssignedEmployees(
 	input: { organizationId: string; locationId: string },
 ): Promise<{ assigned: AssignedEmployeeOfLocation[]; available: AssignableEmployee[] }> {
 	await assertLocationInOrganization(client, input);
-	const [assigned, available] = await Promise.all([
-		client
-			.select({
-				employeeId: employee.id,
-				name: employeeName,
-				email: user.email,
-				isActive: employeeHasOrganizationAccess(),
-			})
-			.from(employeeAssignedLocation)
-			.innerJoin(
-				employee,
-				and(
-					eq(employee.id, employeeAssignedLocation.employeeId),
-					eq(employee.organizationId, employeeAssignedLocation.organizationId),
-				),
-			)
-			.innerJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(
-					eq(employeeAssignedLocation.organizationId, input.organizationId),
-					eq(employeeAssignedLocation.locationId, input.locationId),
-				),
-			)
-			.orderBy(asc(sql`lower(${employeeName})`), asc(employee.id)),
-		client
-			.select({ employeeId: employee.id, name: employeeName, email: user.email })
-			.from(employee)
-			.innerJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(
-					eq(employee.organizationId, input.organizationId),
-					employeeHasOrganizationAccess(),
-					notExists(
-						client
-							.select({ id: employeeAssignedLocation.id })
-							.from(employeeAssignedLocation)
-							.where(
-								and(
-									eq(employeeAssignedLocation.organizationId, input.organizationId),
-									eq(employeeAssignedLocation.locationId, input.locationId),
-									sql`${employeeAssignedLocation.employeeId} = "employee"."id"`,
-								),
+	// One after another: `client` may be one connection, and pg@9 refuses a query while another is executing.
+	const assigned = await client
+		.select({
+			employeeId: employee.id,
+			name: employeeName,
+			email: user.email,
+			isActive: employeeHasOrganizationAccess(),
+		})
+		.from(employeeAssignedLocation)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, employeeAssignedLocation.employeeId),
+				eq(employee.organizationId, employeeAssignedLocation.organizationId),
+			),
+		)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(employeeAssignedLocation.organizationId, input.organizationId),
+				eq(employeeAssignedLocation.locationId, input.locationId),
+			),
+		)
+		.orderBy(asc(sql`lower(${employeeName})`), asc(employee.id));
+	const available = await client
+		.select({ employeeId: employee.id, name: employeeName, email: user.email })
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				employeeHasOrganizationAccess(),
+				notExists(
+					client
+						.select({ id: employeeAssignedLocation.id })
+						.from(employeeAssignedLocation)
+						.where(
+							and(
+								eq(employeeAssignedLocation.organizationId, input.organizationId),
+								eq(employeeAssignedLocation.locationId, input.locationId),
+								sql`${employeeAssignedLocation.employeeId} = "employee"."id"`,
 							),
-					),
+						),
 				),
-			)
-			.orderBy(asc(sql`lower(${employeeName})`), asc(employee.id)),
-	]);
+			),
+		)
+		.orderBy(asc(sql`lower(${employeeName})`), asc(employee.id));
 	return { assigned, available };
 }
 
@@ -157,10 +155,9 @@ export async function addAssignedLocation(
 	audit: AuditTrail,
 	input: { organizationId: string; actorUserId: string; employeeId: string; locationId: string },
 ): Promise<void> {
-	await Promise.all([
-		assertEmployeeInOrganization(tx, input),
-		assertLocationInOrganization(tx, input),
-	]);
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	await assertEmployeeInOrganization(tx, input);
+	await assertLocationInOrganization(tx, input);
 	// A former employee gets no new assigned location (#1438).
 	const former = await findEmployeesNotOnCurrentRoster(tx, {
 		organizationId: input.organizationId,
