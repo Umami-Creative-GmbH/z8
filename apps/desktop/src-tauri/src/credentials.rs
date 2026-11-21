@@ -9,8 +9,12 @@ pub struct Credentials {
 impl Credentials {
     pub fn new(directory: &Path, server: &str) -> Self {
         let scope = format!("{}\n{}", directory.display(), server.trim_end_matches('/'));
+        let digest: String = Sha256::digest(scope.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
         Self {
-            target: format!("Z8/desktop/{:x}", Sha256::digest(scope.as_bytes())),
+            target: format!("Z8/desktop/{digest}"),
         }
     }
     #[cfg(windows)]
@@ -90,5 +94,19 @@ impl Credentials {
         Err(anyhow!(
             "Protected sign-in is supported on Windows in this release."
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn preserves_the_target_name_for_existing_vault_entries() {
+        let credentials = Credentials::new(Path::new("profile"), "https://first.example/");
+        assert_eq!(
+            credentials.target,
+            "Z8/desktop/b2f240f25ab36142b30624c5ac8457b7e5bfb79bf586cc0f1f8de4fb396a9ba2"
+        );
     }
 }

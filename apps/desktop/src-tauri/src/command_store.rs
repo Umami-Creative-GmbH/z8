@@ -351,8 +351,11 @@ impl CommandStore {
             health == "ok",
             "Clock storage failed its integrity check. Review saved work before updating."
         );
-        self.conn
-            .backup(rusqlite::DatabaseName::Main, destination, None)?;
+        self.conn.backup(
+            rusqlite::MAIN_DB,
+            destination,
+            rusqlite::backup::NO_PROGRESS,
+        )?;
         Ok(())
     }
 
