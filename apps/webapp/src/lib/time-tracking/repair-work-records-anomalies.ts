@@ -1,13 +1,7 @@
-import { and, asc, eq, inArray, isNotNull, isNull, ne, notExists, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, notExists, or } from "drizzle-orm";
 import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import {
-	approvalRequest,
-	approvalWorkflow,
-	timeRecord,
-	timeRecordApprovalDecision,
-	workPeriod,
-} from "@/db/schema";
+import { approvalRequest, approvalWorkflow, timeRecord, workPeriod } from "@/db/schema";
 import {
 	compareInstants,
 	instantFromDate,
@@ -16,7 +10,10 @@ import {
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import {
 	applyWorkRecordChange,
+	inspectOrphanedWorkRecord,
 	isWorkRecordRefusal,
+	type OrphanedWorkRecordMatchKind,
+	type OrphanedWorkRecordSkipResult,
 	pruneOrphanedWorkRecord,
 	readWorkRecord,
 	type WorkRecordRefusal,
@@ -516,6 +513,47 @@ async function processOrphanedPending(
 	}
 }
 
+function formatOrphanSkipReason(outcome: OrphanedWorkRecordSkipResult): string {
+	switch (outcome.kind) {
+		case "still_referenced":
+			return `still_referenced (${outcome.by})`;
+		case "detail_mismatch":
+			return `detail_mismatch (${outcome.field})`;
+		case "month_closed":
+			return `month_closed (${outcome.month})`;
+		default:
+			return outcome.kind;
+	}
+}
+
+function formatOrphanDetail(input: {
+	applied: boolean;
+	origin: string;
+	approvalState: string;
+	replacementWorkPeriodId: string;
+	replacementSoftDeleted: boolean;
+	matchKind: OrphanedWorkRecordMatchKind;
+	migratedComputationMetadata: boolean;
+	migratedDecisionCount: number;
+}): string {
+	const verb = input.applied ? "pruned" : "prune";
+	const parts: string[] = [
+		`${verb} unlinked ${input.origin}/${input.approvalState} duplicate`,
+		`match=${input.matchKind}`,
+		`period=${input.replacementWorkPeriodId}${input.replacementSoftDeleted ? " (soft-deleted)" : ""}`,
+	];
+	if (input.migratedComputationMetadata) {
+		parts.push(input.applied ? "copied computation_metadata" : "copy computation_metadata");
+	}
+	if (input.migratedDecisionCount > 0) {
+		const plural = input.migratedDecisionCount === 1 ? "decision" : "decisions";
+		parts.push(
+			`${input.applied ? "repointed" : "repoint"} ${input.migratedDecisionCount} ${plural}`,
+		);
+	}
+	return parts.join(", ");
+}
+
 async function processUnlinkedRecords(
 	database: typeof db,
 	organizationId: string,
@@ -527,10 +565,6 @@ async function processUnlinkedRecords(
 			recordId: timeRecord.id,
 			employeeId: timeRecord.employeeId,
 			startAt: timeRecord.startAt,
-			endAt: timeRecord.endAt,
-			durationMinutes: timeRecord.durationMinutes,
-			approvalState: timeRecord.approvalState,
-			origin: timeRecord.origin,
 		})
 		.from(timeRecord)
 		.where(
@@ -556,72 +590,20 @@ async function processUnlinkedRecords(
 
 	for (const row of candidates) {
 		const startAt = instantToCanonicalString(instantFromDate(row.startAt));
-		const endAt = row.endAt ? instantToCanonicalString(instantFromDate(row.endAt)) : null;
 
 		if (!apply) {
-			const [referencingApproval] = await database
-				.select({ id: approvalRequest.id })
-				.from(approvalRequest)
-				.where(
-					and(
-						eq(approvalRequest.organizationId, organizationId),
-						eq(approvalRequest.canonicalRecordId, row.recordId),
-					),
-				)
-				.limit(1);
-			if (referencingApproval) {
+			const inspection = await inspectOrphanedWorkRecord(database, {
+				organizationId,
+				employeeId: row.employeeId,
+				recordId: row.recordId,
+			});
+			if (inspection.kind !== "eligible") {
 				report.skipped.push({
 					category: "unlinked-records",
 					employeeId: row.employeeId,
 					recordId: row.recordId,
 					startAt,
-					reason: "still_referenced (approval_request)",
-				});
-				continue;
-			}
-
-			const [referencingDecision] = await database
-				.select({ id: timeRecordApprovalDecision.id })
-				.from(timeRecordApprovalDecision)
-				.where(
-					and(
-						eq(timeRecordApprovalDecision.organizationId, organizationId),
-						eq(timeRecordApprovalDecision.recordId, row.recordId),
-					),
-				)
-				.limit(1);
-			if (referencingDecision) {
-				report.skipped.push({
-					category: "unlinked-records",
-					employeeId: row.employeeId,
-					recordId: row.recordId,
-					startAt,
-					reason: "still_referenced (approval_decision)",
-				});
-				continue;
-			}
-
-			const [replacement] = await database
-				.select({ id: workPeriod.id })
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.employeeId, row.employeeId),
-						eq(workPeriod.startTime, row.startAt),
-						isNull(workPeriod.deletedAt),
-						isNotNull(workPeriod.canonicalRecordId),
-						ne(workPeriod.canonicalRecordId, row.recordId),
-					),
-				)
-				.limit(1);
-			if (!replacement) {
-				report.skipped.push({
-					category: "unlinked-records",
-					employeeId: row.employeeId,
-					recordId: row.recordId,
-					startAt,
-					reason: "no_linked_replacement",
+					reason: formatOrphanSkipReason(inspection),
 				});
 				continue;
 			}
@@ -629,11 +611,20 @@ async function processUnlinkedRecords(
 			report.repaired.push({
 				category: "unlinked-records",
 				employeeId: row.employeeId,
-				workPeriodId: replacement.id,
+				workPeriodId: inspection.replacementWorkPeriodId,
 				recordId: row.recordId,
-				startAt,
-				endAt,
-				detail: `prune unlinked ${row.origin}/${row.approvalState} duplicate (replaced by period ${replacement.id})`,
+				startAt: inspection.startAt,
+				endAt: inspection.endAt,
+				detail: formatOrphanDetail({
+					applied: false,
+					origin: inspection.origin,
+					approvalState: inspection.approvalState,
+					replacementWorkPeriodId: inspection.replacementWorkPeriodId,
+					replacementSoftDeleted: inspection.replacementSoftDeleted,
+					matchKind: inspection.matchKind,
+					migratedComputationMetadata: inspection.willMigrateComputationMetadata,
+					migratedDecisionCount: inspection.decisionCount,
+				}),
 			});
 			continue;
 		}
@@ -653,24 +644,28 @@ async function processUnlinkedRecords(
 				report.repaired.push({
 					category: "unlinked-records",
 					employeeId: row.employeeId,
+					workPeriodId: outcome.replacementWorkPeriodId,
 					recordId: row.recordId,
 					startAt: outcome.startAt,
 					endAt: outcome.endAt,
-					detail: `pruned unlinked ${outcome.origin}/${outcome.approvalState} duplicate`,
+					detail: formatOrphanDetail({
+						applied: true,
+						origin: outcome.origin,
+						approvalState: outcome.approvalState,
+						replacementWorkPeriodId: outcome.replacementWorkPeriodId,
+						replacementSoftDeleted: outcome.replacementSoftDeleted,
+						matchKind: outcome.matchKind,
+						migratedComputationMetadata: outcome.migratedComputationMetadata,
+						migratedDecisionCount: outcome.migratedDecisionCount,
+					}),
 				});
 			} else {
-				const reason =
-					outcome.kind === "still_referenced"
-						? `still_referenced (${outcome.by})`
-						: outcome.kind === "month_closed"
-							? `month_closed (${outcome.month})`
-							: outcome.kind;
 				report.skipped.push({
 					category: "unlinked-records",
 					employeeId: row.employeeId,
 					recordId: row.recordId,
 					startAt,
-					reason,
+					reason: formatOrphanSkipReason(outcome),
 				});
 			}
 		} catch (error) {
