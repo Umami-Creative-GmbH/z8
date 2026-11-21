@@ -475,7 +475,7 @@ describe("current-domain sign-in journey", () => {
 		await act(async () => {});
 		expect(mocks.email).not.toHaveBeenCalled();
 	});
-	it("keeps the configured SSO method and exact canonical callback payload", async () => {
+	it("uses the domain's button label and icon while signing in through the configured SSO provider", async () => {
 		mocks.search = new URLSearchParams({ callbackUrl: "/calendar" });
 		arrival({
 			...domain,
@@ -484,11 +484,15 @@ describe("current-domain sign-in journey", () => {
 				passkeyEnabled: false,
 				ssoEnabled: true,
 				ssoProviderId: "unit-sso",
+				ssoButtonLabel: "Mit Microsoft anmelden",
+				ssoButtonIcon: "microsoft",
 				socialProvidersEnabled: [],
 			},
 		});
 		expect(screen.queryByLabelText("Email")).toBeNull();
-		fireEvent.click(screen.getByRole("button", { name: "Sign in with SSO" }));
+		const button = screen.getByRole("button", { name: "Mit Microsoft anmelden" });
+		expect(button.querySelector(".tabler-icon-brand-windows")).toBeTruthy();
+		fireEvent.click(button);
 		await waitFor(() =>
 			expect(mocks.sso).toHaveBeenCalledWith({
 				providerId: "unit-sso",
@@ -504,7 +508,9 @@ describe("current-domain sign-in journey", () => {
 	});
 	it("reports missing SSO configuration without invoking a provider", async () => {
 		arrival({ ...domain, authConfig: { ...DEFAULT_AUTH_CONFIG, ssoEnabled: true } });
-		fireEvent.click(screen.getByRole("button", { name: "Sign in with SSO" }));
+		const button = screen.getByRole("button", { name: "Sign in with SSO" });
+		expect(button.querySelector(".tabler-icon-fingerprint")).toBeTruthy();
+		fireEvent.click(button);
 		expect(await screen.findByText("SSO is not configured for this domain")).toBeTruthy();
 		expect(mocks.sso).not.toHaveBeenCalled();
 	});

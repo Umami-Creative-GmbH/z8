@@ -59,6 +59,8 @@ export function DomainManagement({
 			socialProvidersEnabled: config.socialProvidersEnabled,
 			ssoEnabled: config.ssoEnabled,
 			ssoProviderId: config.ssoProviderId,
+			ssoButtonLabel: config.ssoButtonLabel,
+			ssoButtonIcon: config.ssoButtonIcon,
 			passkeyEnabled: config.passkeyEnabled,
 			registrationEnabled: config.registrationEnabled,
 		};

@@ -33,6 +33,7 @@ import {
 	verifyDomainOwnership,
 	withUsableSsoProvider,
 } from "@/lib/domain";
+import { SSO_BUTTON_ICONS, SSO_BUTTON_LABEL_MAX_LENGTH } from "@/lib/domain/sso-button";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { selectVerifiedEnterpriseIdentityDomain } from "@/lib/enterprise-identity/enforcement";
 import type {
@@ -686,6 +687,13 @@ const signInMethodsSchema = {
 	socialProvidersEnabled: z.array(z.string().max(50)).max(20),
 	ssoEnabled: z.boolean(),
 	ssoProviderId: z.string().max(255).optional(),
+	ssoButtonLabel: z
+		.string()
+		.trim()
+		.max(SSO_BUTTON_LABEL_MAX_LENGTH)
+		.transform((label) => label || undefined)
+		.optional(),
+	ssoButtonIcon: z.enum(SSO_BUTTON_ICONS).optional(),
 	passkeyEnabled: z.boolean(),
 	registrationEnabled: z.boolean().optional(),
 };

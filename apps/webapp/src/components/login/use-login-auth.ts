@@ -393,6 +393,8 @@ export function useLoginAuth(
 		showEmailPassword,
 		showPasskey,
 		showSSO,
+		ssoButtonLabel: authConfig?.ssoButtonLabel,
+		ssoButtonIcon: authConfig?.ssoButtonIcon,
 		showSignUp,
 		turnstileConfig,
 		turnstileToken,

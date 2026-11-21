@@ -1,7 +1,9 @@
 "use client";
 
+import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { SsoButtonIcon } from "@/components/login/sso-button-icon";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -15,11 +17,22 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { AuthConfig } from "@/lib/domain";
-import { runWithBusyState } from "../run-with-busy-state";
+import {
+	SSO_BUTTON_ICONS,
+	SSO_BUTTON_LABEL_MAX_LENGTH,
+	type SsoButtonIconName,
+} from "@/lib/domain/sso-button";
 
 interface Domain {
 	id: string;
@@ -52,6 +65,8 @@ const getInitialConfig = (domain: Domain | null): AuthConfig => ({
 	ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
 	// Kept so saving does not detach SSO from its provider.
 	ssoProviderId: domain?.authConfig.ssoProviderId,
+	ssoButtonLabel: domain?.authConfig.ssoButtonLabel,
+	ssoButtonIcon: domain?.authConfig.ssoButtonIcon,
 	passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
 	registrationEnabled: domain?.authConfig.registrationEnabled !== false,
 	turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
@@ -59,38 +74,34 @@ const getInitialConfig = (domain: Domain | null): AuthConfig => ({
 });
 
 function useDomainAuthConfigController({
-	open,
-	onOpenChange,
 	domain,
-	organizationId: _organizationId,
 	variant = "customDomain",
 	ssoProviderAvailable,
 	onSave,
 }: DomainAuthConfigDialogProps) {
 	const { t } = useTranslate();
-	const [config, setConfig] = useState<AuthConfig>(() =>
-		getInitialConfig(domain),
-	);
-	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
-	const [isSaving, setIsSaving] = useState(false);
-	const resetKey = open && domain ? domain.id : null;
-	const [lastResetKey, setLastResetKey] = useState<string | null>(resetKey);
-
-	if (lastResetKey !== resetKey) {
-		setLastResetKey(resetKey);
-		if (resetKey && domain) {
-			setConfig(getInitialConfig(domain));
-			setTurnstileSecretKey("");
-		}
-	}
-
-	const handleOpenChange = (nextOpen: boolean) => {
-		if (nextOpen && domain) {
-			setConfig(getInitialConfig(domain));
-			setTurnstileSecretKey("");
-		}
-		onOpenChange(nextOpen);
-	};
+	const form = useForm({
+		defaultValues: { config: getInitialConfig(domain), turnstileSecretKey: "" },
+		onSubmit: async ({ value }) => {
+			if (!domain) return;
+			try {
+				await onSave(
+					domain.id,
+					{
+						...value.config,
+						ssoButtonLabel: value.config.ssoButtonLabel?.trim() || undefined,
+					},
+					value.turnstileSecretKey || undefined,
+				);
+			} catch {
+				// The parent owns save-error presentation.
+			}
+		},
+	});
+	const { config, turnstileSecretKey } = useStore(form.store, (state) => state.values);
+	const isSaving = useStore(form.store, (state) => state.isSubmitting);
+	const setConfig = (update: (previous: AuthConfig) => AuthConfig) =>
+		form.setFieldValue("config", update);
 
 	const handleSocialProviderToggle = (providerId: string, checked: boolean) => {
 		setConfig((prev) => ({
@@ -101,30 +112,13 @@ function useDomainAuthConfigController({
 		}));
 	};
 
-	const handleSave = async () => {
-		if (!domain) return;
-
-		await runWithBusyState(setIsSaving, async () => {
-			try {
-				// Pass the secret key only if it was entered (non-empty)
-				await onSave(domain.id, config, turnstileSecretKey || undefined);
-			} catch {
-				// The parent owns save-error presentation.
-			}
-		});
-	};
-
 	return {
 		config,
-		domain,
-		handleOpenChange,
-		handleSave,
+		handleSave: form.handleSubmit,
 		handleSocialProviderToggle,
 		isSaving,
-		onOpenChange,
-		open,
 		setConfig,
-		setTurnstileSecretKey,
+		setTurnstileSecretKey: (value: string) => form.setFieldValue("turnstileSecretKey", value),
 		ssoProviderAvailable,
 		t,
 		turnstileSecretKey,
@@ -132,9 +126,67 @@ function useDomainAuthConfigController({
 	};
 }
 
-type DomainAuthConfigController = ReturnType<
-	typeof useDomainAuthConfigController
->;
+type DomainAuthConfigController = ReturnType<typeof useDomainAuthConfigController>;
+
+function SsoButtonFields({ controller }: { controller: DomainAuthConfigController }) {
+	const { config, setConfig, t } = controller;
+	const iconLabels = {
+		fingerprint: t("settings.enterprise.domains.ssoIconFingerprint", "Fingerprint"),
+		microsoft: "Microsoft",
+		google: "Google",
+		github: "GitHub",
+		apple: "Apple",
+		auth0: "Auth0",
+		key: t("settings.enterprise.domains.ssoIconKey", "Key"),
+		lock: t("settings.enterprise.domains.ssoIconLock", "Lock"),
+		shield: t("settings.enterprise.domains.ssoIconShield", "Shield"),
+		badge: t("settings.enterprise.domains.ssoIconBadge", "ID badge"),
+	} satisfies Record<SsoButtonIconName, string>;
+	return (
+		<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+			<div className="space-y-1.5">
+				<Label htmlFor="sso-button-label">
+					{t("settings.enterprise.domains.ssoButtonLabel", "SSO button label (optional)")}
+				</Label>
+				<Input
+					id="sso-button-label"
+					value={config.ssoButtonLabel ?? ""}
+					maxLength={SSO_BUTTON_LABEL_MAX_LENGTH}
+					placeholder={t("auth.login-with-sso", "Sign in with SSO")}
+					onChange={(event) =>
+						setConfig((prev) => ({ ...prev, ssoButtonLabel: event.target.value }))
+					}
+				/>
+			</div>
+			<div className="space-y-1.5">
+				<Label htmlFor="sso-button-icon">
+					{t("settings.enterprise.domains.ssoButtonIcon", "SSO button icon")}
+				</Label>
+				<Select<SsoButtonIconName>
+					value={config.ssoButtonIcon ?? "fingerprint"}
+					onValueChange={(icon) =>
+						setConfig((prev) => ({
+							...prev,
+							ssoButtonIcon: icon === "fingerprint" ? undefined : icon,
+						}))
+					}
+				>
+					<SelectTrigger id="sso-button-icon" className="w-full">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{SSO_BUTTON_ICONS.map((icon) => (
+							<SelectItem key={icon} value={icon}>
+								<SsoButtonIcon name={icon} />
+								{iconLabels[icon]}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+		</div>
+	);
+}
 
 function AuthenticationMethodsSection({ controller }: { controller: DomainAuthConfigController }) {
 	const { config, handleSocialProviderToggle, setConfig, ssoProviderAvailable, t } = controller;
@@ -190,12 +242,7 @@ function AuthenticationMethodsSection({ controller }: { controller: DomainAuthCo
 			<Separator />
 			<div className="space-y-3">
 				<div>
-					<Label>
-						{t(
-							"settings.enterprise.domains.socialProviders",
-							"Social Providers",
-						)}
-					</Label>
+					<Label>{t("settings.enterprise.domains.socialProviders", "Social Providers")}</Label>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.enterprise.domains.socialProvidersHelp",
@@ -243,13 +290,14 @@ function AuthenticationMethodsSection({ controller }: { controller: DomainAuthCo
 					onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, ssoEnabled: checked }))}
 				/>
 			</div>
+			{config.ssoEnabled && ssoProviderAvailable ? (
+				<SsoButtonFields controller={controller} />
+			) : null}
 
 			<Separator />
 			<div className="flex items-center justify-between">
 				<div className="space-y-0.5">
-					<Label htmlFor="passkey">
-						{t("settings.enterprise.domains.passkey", "Passkey")}
-					</Label>
+					<Label htmlFor="passkey">{t("settings.enterprise.domains.passkey", "Passkey")}</Label>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.enterprise.domains.passkeyHelp",
@@ -260,31 +308,22 @@ function AuthenticationMethodsSection({ controller }: { controller: DomainAuthCo
 				<Switch
 					id="passkey"
 					checked={config.passkeyEnabled}
-					onCheckedChange={(checked) =>
-						setConfig((prev) => ({ ...prev, passkeyEnabled: checked }))
-					}
+					onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, passkeyEnabled: checked }))}
 				/>
 			</div>
 		</>
 	);
 }
 
-function DomainSecuritySection({
-	controller,
-}: {
-	controller: DomainAuthConfigController;
-}) {
-	const { config, setConfig, setTurnstileSecretKey, t, turnstileSecretKey } =
-		controller;
+function DomainSecuritySection({ controller }: { controller: DomainAuthConfigController }) {
+	const { config, setConfig, setTurnstileSecretKey, t, turnstileSecretKey } = controller;
 
 	return (
 		<>
 			<Separator />
 			<div className="space-y-3">
 				<div>
-					<Label>
-						{t("settings.enterprise.domains.turnstile", "Cloudflare Turnstile")}
-					</Label>
+					<Label>{t("settings.enterprise.domains.turnstile", "Cloudflare Turnstile")}</Label>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.enterprise.domains.turnstileHelp",
@@ -325,10 +364,7 @@ function DomainSecuritySection({
 							placeholder={
 								config.turnstileSiteKey
 									? "••••••••••••••••"
-									: t(
-											"settings.enterprise.domains.secretKeyPlaceholder",
-											"Enter secret key",
-										)
+									: t("settings.enterprise.domains.secretKeyPlaceholder", "Enter secret key")
 							}
 						/>
 						<p className="text-xs text-muted-foreground">
@@ -351,10 +387,7 @@ function DomainSecuritySection({
 			<div className="space-y-3">
 				<div>
 					<Label htmlFor="cookie-consent-script">
-						{t(
-							"settings.enterprise.domains.cookieConsentScript",
-							"Cookie Consent Script",
-						)}
+						{t("settings.enterprise.domains.cookieConsentScript", "Cookie Consent Script")}
 					</Label>
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -386,50 +419,51 @@ function DomainSecuritySection({
 }
 
 export function DomainAuthConfigDialog(props: DomainAuthConfigDialogProps) {
-	const controller = useDomainAuthConfigController(props);
-	const { domain, handleOpenChange, handleSave, isSaving, onOpenChange, open, t, variant } =
-		controller;
-
+	const { domain, open, onOpenChange } = props;
 	if (!domain) return null;
-
 	return (
-		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{t(
-							"settings.enterprise.domains.authConfigTitle",
-							"Auth Configuration",
-						)}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{t(
-							"settings.enterprise.domains.authConfigDescription",
-							"Configure which authentication methods are available for users signing in via {domain}",
-							{ domain: domain.domain },
-						)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
-
-				<ActionPanelBody className="space-y-6">
-					<AuthenticationMethodsSection controller={controller} />
-					{variant === "customDomain" ? <DomainSecuritySection controller={controller} /> : null}
-				</ActionPanelBody>
-
-				<ActionPanelFooter>
-					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						{t("common.cancel", "Cancel")}
-					</Button>
-					<Button onClick={handleSave} disabled={isSaving}>
-						{isSaving
-							? t("common.saving", "Saving…")
-							: t(
-									"settings.enterprise.domains.saveConfiguration",
-									"Save Configuration",
-								)}
-					</Button>
-				</ActionPanelFooter>
+				<DomainAuthConfigFields key={`${domain.id}-${open}`} {...props} domain={domain} />
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function DomainAuthConfigFields(props: DomainAuthConfigDialogProps & { domain: Domain }) {
+	const { domain, onOpenChange } = props;
+	const controller = useDomainAuthConfigController(props);
+	const { handleSave, isSaving, t, variant } = controller;
+	return (
+		<form className="flex min-h-0 flex-1 flex-col" action={() => handleSave()}>
+			<ActionPanelHeader>
+				<ActionPanelTitle>
+					{t("settings.enterprise.domains.authConfigTitle", "Auth Configuration")}
+				</ActionPanelTitle>
+				<ActionPanelDescription>
+					{t(
+						"settings.enterprise.domains.authConfigDescription",
+						"Configure which authentication methods are available for users signing in via {domain}",
+						{ domain: domain.domain },
+					)}
+				</ActionPanelDescription>
+			</ActionPanelHeader>
+
+			<ActionPanelBody className="space-y-6">
+				<AuthenticationMethodsSection controller={controller} />
+				{variant === "customDomain" ? <DomainSecuritySection controller={controller} /> : null}
+			</ActionPanelBody>
+
+			<ActionPanelFooter>
+				<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+					{t("common.cancel", "Cancel")}
+				</Button>
+				<Button type="submit" disabled={isSaving}>
+					{isSaving
+						? t("common.saving", "Saving…")
+						: t("settings.enterprise.domains.saveConfiguration", "Save Configuration")}
+				</Button>
+			</ActionPanelFooter>
+		</form>
 	);
 }
