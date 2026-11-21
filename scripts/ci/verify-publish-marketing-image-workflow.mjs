@@ -170,6 +170,14 @@ if (buildNativeJob) {
 			buildStep.includes("file: ./docker/Dockerfile.marketing"),
 			"Marketing image build step must use file: ./docker/Dockerfile.marketing",
 		);
+		expect(
+			!buildStep.includes("type=gha"),
+			"Marketing image build step must use GHCR registry cache rather than GHA cache",
+		);
+		expect(
+			buildStep.includes("type=registry,ref=ghcr.io/umami-creative-gmbh/z8-marketing:buildcache-${{ matrix.arch }}"),
+			"Marketing image build step must use arch-scoped GHCR registry cache",
+		);
 	}
 }
 

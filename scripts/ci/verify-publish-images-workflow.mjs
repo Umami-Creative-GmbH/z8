@@ -306,6 +306,19 @@ if (publishTargetsJob) {
 	);
 
 	expect(
+		!publishTargetsJob.includes("type=gha"),
+		"publish-targets must use GHCR registry cache rather than GHA cache to avoid exhausting the 10 GB repo cache quota",
+	);
+	includesAll(
+		publishTargetsJob,
+		[
+			"cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }}:buildcache-${{ matrix.arch }}",
+			"image-manifest=true,oci-mediatypes=true,compression=zstd",
+		],
+		"publish-targets registry build cache",
+	);
+
+	expect(
 		expectedMatrixEntries.size === 0,
 		`publish-targets missing matrix entries: ${[...expectedMatrixEntries].join(", ")}`,
 	);

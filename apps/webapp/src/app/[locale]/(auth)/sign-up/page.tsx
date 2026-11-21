@@ -1,11 +1,6 @@
 import { Suspense } from "react";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { SignupForm } from "@/components/signup-form";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
-
-export async function generateStaticParams() {
-	return ALL_LANGUAGES.map((locale) => ({ locale }));
-}
 
 interface PageProps {
 	searchParams: Promise<{

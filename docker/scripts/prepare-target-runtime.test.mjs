@@ -252,7 +252,7 @@ test("marketing and webapp use TypeScript 7 supported by their Next.js builds", 
 
 test("webapp build includes the formatter configuration needed by catalog generation", async () => {
 	const dockerfile = await fs.readFile(new URL("../Dockerfile.webapp", import.meta.url), "utf8");
-	const workspace = dockerfile.split("FROM base AS workspace")[1]?.split("FROM workspace AS webapp-builder")[0];
+	const workspace = dockerfile.split("FROM deps AS workspace")[1]?.split("FROM workspace AS webapp-builder")[0];
 	assert.ok(workspace, "webapp build must inherit the workspace stage");
 	assert.match(workspace, /^COPY \.oxfmtrc\.json \.\/$/m);
 });

@@ -12,6 +12,8 @@ on:
     paths:
       - "apps/webapp/**"
       - "!**/*.md"
+      - "!apps/webapp/messages/**"
+      - "!apps/webapp/public/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -63,7 +65,18 @@ jobs:
           cache: pnpm
       - name: Install web-app dependencies
         run: pnpm --filter webapp... install --frozen-lockfile
+      - name: Restore Vitest transforms
+        id: vitest-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/webapp-vitest-cache
+          key: webapp-vitest-${{ runner.os }}-node26-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-work-records-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            webapp-vitest-${{ runner.os }}-node26-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-work-records-
+      - name: Prepare transform cache directory
+        run: mkdir -p "$RUNNER_TEMP/webapp-vitest-cache"
       - name: Run work records PostgreSQL suites
+        id: test-run
         run: |
           set -euo pipefail
           suites="$(node .github/scripts/work-records-suites.mjs)"
@@ -73,4 +86,10 @@ jobs:
           PGPASSWORD=postgres psql --host 127.0.0.1 --port 5432 --username postgres --dbname postgres \
             --command "create database \"${database_name}\""
           bash apps/webapp/scripts/run-postgres-integration-suites.sh \
-            "postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" "${suite_paths[@]}"
+            "postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" "${suite_paths[@]}" --fsModuleCache --fsModuleCachePath="$RUNNER_TEMP/webapp-vitest-cache"
+      - name: Save Vitest transforms
+        if: ${{ always() && (steps.test-run.outcome == 'success' || steps.test-run.outcome == 'failure') }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/webapp-vitest-cache
+          key: ${{ steps.vitest-cache.outputs.cache-primary-key }}
