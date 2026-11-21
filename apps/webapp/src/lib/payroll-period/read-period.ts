@@ -17,6 +17,7 @@ import {
 	resolvePayrollAccessibleEmployeeIds,
 } from "@/lib/payroll-access/permissions";
 import { loadEmployeeTrackingContexts } from "@/lib/time-tracking/tracking-start";
+import { payrollHolidayRequestRange, payrollHolidaySources } from "./holiday-sources";
 import { loadPeriodSources } from "./legacy-sources";
 import { buildPayrollPeriodRead } from "./period-read";
 import { loadActiveSettledDays } from "./settled-days-store";
@@ -249,31 +250,18 @@ async function loadHolidays(
 		.where(
 			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
 		);
-	// Holidays are calendar dates, stored at UTC midnight.
+	// Holidays are calendar dates, stored at UTC midnight (imported ones at local midnights).
 	const holidays = await getAssignedHolidaysForEmployees({
 		organizationId,
 		employeeIds: people.map((row) => row.id),
 		employees: people,
-		startDate: new Date(`${period.startDate}T00:00:00.000Z`),
-		endDate: new Date(`${period.endDate}T00:00:00.000Z`),
+		...payrollHolidayRequestRange(period),
 		database: db,
 	});
 	return new Map(
 		[...holidays].map(([employeeId, ranges]) => [
 			employeeId,
-			ranges.flatMap((range) => {
-				const startDate = laterDate(range.startDate.toISOString().slice(0, 10), period.startDate);
-				const endDate = earlierDate(range.endDate.toISOString().slice(0, 10), period.endDate);
-				return startDate <= endDate ? [{ name: range.name, startDate, endDate }] : [];
-			}),
+			payrollHolidaySources(ranges, period),
 		]),
 	);
-}
-
-function laterDate(left: string, right: string): string {
-	return left > right ? left : right;
-}
-
-function earlierDate(left: string, right: string): string {
-	return left < right ? left : right;
 }

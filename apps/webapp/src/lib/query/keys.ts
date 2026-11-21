@@ -253,9 +253,26 @@ export const queryKeys = {
 		/** The records of one employee-day, for the Days tab's side panel (#1894). */
 		dayRecords: (request: { employeeId: string; date: string; refreshedAt: string }) =>
 			["payroll", "day-records", request.employeeId, request.date, request.refreshedAt] as const,
+		/** Every employee-day's settlement history, to refetch them after a settlement change. */
+		daySettlementHistories: () => ["payroll", "day-settlement-history"] as const,
 		/** The settlement history of one employee-day, for the side panel (#1897). */
 		daySettlementHistory: (request: { employeeId: string; date: string }) =>
 			["payroll", "day-settlement-history", request.employeeId, request.date] as const,
+		/** Every settlement history of a period, to refetch them after a settlement change. */
+		settlementHistories: () => ["payroll", "settlement-history"] as const,
+		/** The settlement history of the workspace's period and scope, for the Settlement tab. */
+		settlementHistory: (request: {
+			startDate: string;
+			endDate: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"payroll",
+				"settlement-history",
+				request.startDate,
+				request.endDate,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
 	},
 
 	// Closed months

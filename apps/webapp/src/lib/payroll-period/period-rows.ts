@@ -65,10 +65,13 @@ export function buildPayrollPeriodRows(input: {
 		// employee changed zones) can reach past it: those minutes belong to days outside
 		// the period and are never moved onto its first or last day.
 		const credited = new Map<string, number>();
+		// Days a credited span touches, even where its share rounds to no minutes.
+		const workedDates = new Set<string>();
 		for (const row of workByEmployee.get(source.id) ?? []) {
 			for (const [date, minutes] of splitCreditByLocalDay(row, source.timezone)) {
 				credited.set(date, (credited.get(date) ?? 0) + minutes);
 			}
+			for (const date of spanLocalDates(row, source.timezone)) workedDates.add(date);
 		}
 		const requirements = input.requirements?.get(source.id);
 		const holidayByDate = holidayNamesByDate(input.holidays?.get(source.id) ?? []);
@@ -77,15 +80,17 @@ export function buildPayrollPeriodRows(input: {
 			// A requirement source lists only days that require time; other days require none.
 			const requiredMinutes = requirements ? (requirements[date]?.requiredMinutes ?? 0) : null;
 			const holiday = holidayByDate.get(date);
+			const absences = (marksByDate.get(date) ?? []).map(
+				({ employeeId: _employeeId, date: _date, ...mark }) => mark,
+			);
 			const day: PayrollPeriodDay = {
 				date,
 				creditedMinutes,
 				requiredMinutes,
 				differenceMinutes: requiredMinutes === null ? null : creditedMinutes - requiredMinutes,
-				absences: (marksByDate.get(date) ?? []).map(
-					({ employeeId: _employeeId, date: _date, ...mark }) => mark,
-				),
+				absences,
 				holiday: holiday ? { name: holiday } : null,
+				hasEntries: creditedMinutes !== 0 || workedDates.has(date) || absences.length > 0,
 			};
 			// The comparison with the copy taken at settling (#1897).
 			day.settlement = daySettlement(settledByEmployeeDay.get(`${source.id}:${date}`), day);
@@ -205,6 +210,17 @@ export function splitCreditByLocalDay(
 		date = parsePlainDate(date).add({ days: 1 }).toString();
 	}
 	return result;
+}
+
+/** The employee-local dates a span touches: from its start up to its last instant. */
+function spanLocalDates(
+	span: Pick<CreditedWorkSpan, "startAt" | "endExclusive">,
+	timezone: string,
+): string[] {
+	const first = plainDateAt(span.startAt, timezone).toString();
+	if (span.endExclusive.epochNanoseconds <= span.startAt.epochNanoseconds) return [first];
+	const last = plainDateAt(span.endExclusive.subtract({ nanoseconds: 1 }), timezone).toString();
+	return periodDates(first, last);
 }
 
 function periodDates(startDate: string, endDate: string): string[] {

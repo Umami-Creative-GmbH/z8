@@ -26,8 +26,9 @@ export function PayrollSettlementRefreshProvider({
 
 /**
  * What to run after days were settled or unsettled (#1896, #1897, #1899): refreshes the
- * workspace summary, every period read and the exports to confirm, so the status strip,
- * the Overview's changed-since-settled blockers and the tabs all show the new state.
+ * workspace summary, every period read, the exports to confirm and the settlement
+ * histories, so the status strip, the Overview's changed-since-settled blockers and the
+ * tabs all show the new state.
  */
 export function usePayrollSettlementChanged(): () => Promise<void> {
 	const queryClient = useQueryClient();
@@ -37,6 +38,8 @@ export function usePayrollSettlementChanged(): () => Promise<void> {
 			refreshSummary?.(),
 			queryClient.invalidateQueries({ queryKey: queryKeys.payroll.periods() }),
 			queryClient.invalidateQueries({ queryKey: queryKeys.payroll.exportsToConfirm() }),
+			queryClient.invalidateQueries({ queryKey: queryKeys.payroll.settlementHistories() }),
+			queryClient.invalidateQueries({ queryKey: queryKeys.payroll.daySettlementHistories() }),
 		]);
 	};
 }
