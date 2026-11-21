@@ -25,15 +25,24 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	noInput,
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
 import { storeStep } from "@/lib/organization-action/store-step";
-import { hasValidLatestClockIns, latestClockInForDay } from "@/lib/scheduling/latest-clock-in";
+import { hasValidLatestClockIns } from "@/lib/scheduling/latest-clock-in";
 import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
+import {
+	createVersionedWorkPolicy,
+	duplicateVersionedWorkPolicy,
+	type PublishWorkPolicyVersionResult,
+	type SameDayReplacementWarning,
+	updateOrPublishWorkPolicy,
+} from "@/lib/work-policy/versioned-policy-writer";
+
+export type { PublishWorkPolicyVersionResult, SameDayReplacementWarning };
 
 // ============================================
 // TYPES
@@ -187,9 +196,25 @@ const workPolicyFieldsSchema = z.object({
 		.optional(),
 });
 
+const effectiveFromDateSchema = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}$/, "Effective date must use YYYY-MM-DD format")
+	.optional();
+
 const updateWorkPolicySchema = z.object({
 	policyId: z.string().min(1),
-	data: workPolicyFieldsSchema.partial(),
+	data: workPolicyFieldsSchema.partial().extend({
+		isActive: z.boolean().optional(),
+		effectiveFromDate: effectiveFromDateSchema,
+	}),
+});
+
+const publishWorkPolicyVersionSchema = z.object({
+	policyId: z.string().min(1),
+	effectiveFromDate: effectiveFromDateSchema,
+	data: workPolicyFieldsSchema.partial().extend({
+		isActive: z.boolean().optional(),
+	}),
 });
 
 const workPolicyPresetInputSchema = z.object({
@@ -352,189 +377,6 @@ function validateLatestClockIns(days: ScheduleDayInput[] | undefined) {
 		: Effect.void;
 }
 
-type ScheduleFields = NonNullable<ParsedWorkPolicy["schedule"]>;
-type RegulationFields = NonNullable<ParsedWorkPolicy["regulation"]>;
-type PresenceFields = NonNullable<ParsedWorkPolicy["presence"]>;
-type PolicyTransaction = Parameters<Parameters<DatabaseClient["transaction"]>[0]>[0];
-
-async function findPolicyWithDetailsIn(
-	tx: PolicyTransaction,
-	policyId: string,
-	organizationId: string,
-): Promise<WorkPolicyWithDetails | null> {
-	const policy = await tx.query.workPolicy.findFirst({
-		where: and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)),
-		with: policyDetails,
-	});
-	return (policy ?? null) as WorkPolicyWithDetails | null;
-}
-
-function resolveRegulationValues(
-	incoming: RegulationFields,
-	existing: typeof workPolicyRegulation.$inferSelect | null,
-) {
-	return {
-		maxDailyMinutes:
-			incoming.maxDailyMinutes !== undefined
-				? incoming.maxDailyMinutes
-				: (existing?.maxDailyMinutes ?? null),
-		maxWeeklyMinutes:
-			incoming.maxWeeklyMinutes !== undefined
-				? incoming.maxWeeklyMinutes
-				: (existing?.maxWeeklyMinutes ?? null),
-		maxUninterruptedMinutes:
-			incoming.maxUninterruptedMinutes !== undefined
-				? incoming.maxUninterruptedMinutes
-				: (existing?.maxUninterruptedMinutes ?? null),
-		minRestPeriodMinutes:
-			incoming.minRestPeriodMinutes !== undefined
-				? incoming.minRestPeriodMinutes
-				: (existing?.minRestPeriodMinutes ?? null),
-		restPeriodEnforcement:
-			incoming.restPeriodEnforcement !== undefined
-				? incoming.restPeriodEnforcement
-				: (existing?.restPeriodEnforcement ?? "warn"),
-		overtimeDailyThresholdMinutes:
-			incoming.overtimeDailyThresholdMinutes !== undefined
-				? incoming.overtimeDailyThresholdMinutes
-				: (existing?.overtimeDailyThresholdMinutes ?? null),
-		overtimeWeeklyThresholdMinutes:
-			incoming.overtimeWeeklyThresholdMinutes !== undefined
-				? incoming.overtimeWeeklyThresholdMinutes
-				: (existing?.overtimeWeeklyThresholdMinutes ?? null),
-		overtimeMonthlyThresholdMinutes:
-			incoming.overtimeMonthlyThresholdMinutes !== undefined
-				? incoming.overtimeMonthlyThresholdMinutes
-				: (existing?.overtimeMonthlyThresholdMinutes ?? null),
-		alertBeforeLimitMinutes:
-			incoming.alertBeforeLimitMinutes !== undefined
-				? incoming.alertBeforeLimitMinutes
-				: (existing?.alertBeforeLimitMinutes ?? 30),
-		alertThresholdPercent:
-			incoming.alertThresholdPercent !== undefined
-				? incoming.alertThresholdPercent
-				: (existing?.alertThresholdPercent ?? 80),
-	};
-}
-
-async function insertScheduleIn(tx: PolicyTransaction, policyId: string, schedule: ScheduleFields) {
-	const [created] = await tx
-		.insert(workPolicySchedule)
-		.values({
-			policyId,
-			scheduleCycle: schedule.scheduleCycle,
-			scheduleType: schedule.scheduleType,
-			workingDaysPreset:
-				schedule.scheduleType === "detailed" ? "custom" : schedule.workingDaysPreset,
-			hoursPerCycle: schedule.scheduleType === "simple" ? schedule.hoursPerCycle : null,
-			homeOfficeDaysPerCycle: schedule.homeOfficeDaysPerCycle ?? 0,
-			updatedAt: currentTimestamp(),
-		})
-		.returning();
-
-	const days = schedule.days;
-	if (schedule.scheduleType === "detailed" && days && days.length > 0) {
-		await tx.insert(workPolicyScheduleDay).values(
-			days.map((day) => ({
-				scheduleId: created.id,
-				dayOfWeek: day.dayOfWeek,
-				hoursPerDay: day.hoursPerDay,
-				isWorkDay: day.isWorkDay,
-				cycleWeek: day.cycleWeek ?? 1,
-				latestClockIn: latestClockInForDay(day),
-			})),
-		);
-	}
-}
-
-async function insertBreakRulesIn(
-	tx: PolicyTransaction,
-	regulationId: string,
-	breakRules: RegulationFields["breakRules"],
-) {
-	for (const [ruleIndex, rule] of breakRules.entries()) {
-		const [breakRule] = await tx
-			.insert(workPolicyBreakRule)
-			.values({
-				regulationId,
-				workingMinutesThreshold: rule.workingMinutesThreshold,
-				requiredBreakMinutes: rule.requiredBreakMinutes,
-				sortOrder: ruleIndex,
-				updatedAt: currentTimestamp(),
-			})
-			.returning();
-
-		for (const [optIndex, option] of rule.options.entries()) {
-			await tx.insert(workPolicyBreakOption).values({
-				breakRuleId: breakRule.id,
-				splitCount: option.splitCount,
-				minimumSplitMinutes: option.minimumSplitMinutes,
-				minimumLongestSplitMinutes: option.minimumLongestSplitMinutes,
-				sortOrder: optIndex,
-			});
-		}
-	}
-}
-
-async function insertRegulationIn(
-	tx: PolicyTransaction,
-	policyId: string,
-	regulation: RegulationFields,
-) {
-	const [created] = await tx
-		.insert(workPolicyRegulation)
-		.values({
-			policyId,
-			...resolveRegulationValues(regulation, null),
-			updatedAt: currentTimestamp(),
-		})
-		.returning();
-
-	await insertBreakRulesIn(tx, created.id, regulation.breakRules);
-}
-
-async function upsertRegulationIn(
-	tx: PolicyTransaction,
-	policyId: string,
-	regulation: RegulationFields,
-	existingRegulation: typeof workPolicyRegulation.$inferSelect | null,
-) {
-	if (!existingRegulation) {
-		await insertRegulationIn(tx, policyId, regulation);
-		return;
-	}
-
-	await tx
-		.update(workPolicyRegulation)
-		.set({
-			...resolveRegulationValues(regulation, existingRegulation),
-			updatedAt: currentTimestamp(),
-		})
-		.where(eq(workPolicyRegulation.id, existingRegulation.id));
-
-	// Replace break rules (cascade deletes break options) inside the same transaction.
-	await tx
-		.delete(workPolicyBreakRule)
-		.where(eq(workPolicyBreakRule.regulationId, existingRegulation.id));
-
-	await insertBreakRulesIn(tx, existingRegulation.id, regulation.breakRules);
-}
-
-async function insertPresenceIn(tx: PolicyTransaction, policyId: string, presence: PresenceFields) {
-	await tx.insert(workPolicyPresence).values({
-		policyId,
-		presenceMode: presence.presenceMode,
-		requiredOnsiteDays: presence.requiredOnsiteDays ?? null,
-		requiredOnsiteFixedDays: presence.requiredOnsiteFixedDays
-			? JSON.stringify(presence.requiredOnsiteFixedDays)
-			: null,
-		locationId: presence.locationId || null,
-		evaluationPeriod: presence.evaluationPeriod ?? "weekly",
-		enforcement: presence.enforcement ?? "warn",
-		updatedAt: currentTimestamp(),
-	});
-}
-
 /** Creates a policy in the organization; shared by the policy and preset actions. */
 function createPolicyIn(organizationId: string, userId: string, data: ParsedWorkPolicy) {
 	return Effect.gen(function* () {
@@ -549,62 +391,17 @@ function createPolicyIn(organizationId: string, userId: string, data: ParsedWork
 		}
 		yield* validateLatestClockIns(data.schedule?.days);
 
-		const completePolicy = yield* storeStep("workPolicies.create", (db) =>
-			db.transaction(async (tx) => {
-				const existingPolicy = await tx.query.workPolicy.findFirst({
-					where: and(
-						eq(workPolicy.organizationId, organizationId),
-						eq(workPolicy.name, data.name),
-						eq(workPolicy.isActive, true),
-					),
-				});
-
-				if (existingPolicy) {
-					throw new ConflictError({
-						message: "A policy with this name already exists",
-						conflictType: "duplicate_name",
-						details: { entityType: "work_policy", field: "name" },
-					});
-				}
-
-				const [newPolicy] = await tx
-					.insert(workPolicy)
-					.values({
-						organizationId,
-						name: data.name,
-						description: data.description,
-						scheduleEnabled: data.scheduleEnabled,
-						regulationEnabled: data.regulationEnabled,
-						presenceEnabled: data.presenceEnabled ?? false,
-						createdBy: userId,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-
-				if (data.scheduleEnabled && data.schedule) {
-					await insertScheduleIn(tx, newPolicy.id, data.schedule);
-				}
-				if (data.regulationEnabled && data.regulation) {
-					await insertRegulationIn(tx, newPolicy.id, data.regulation);
-				}
-				if (data.presenceEnabled && data.presence) {
-					await insertPresenceIn(tx, newPolicy.id, data.presence);
-				}
-
-				const saved = await findPolicyWithDetailsIn(tx, newPolicy.id, organizationId);
-				if (!saved) {
-					throw new NotFoundError({
-						message: "Failed to fetch created policy",
-						entityType: "work_policy",
-					});
-				}
-				return saved;
+		const created = yield* storeStep("workPolicies.create", (db) =>
+			createVersionedWorkPolicy(db, {
+				organizationId,
+				actorUserId: userId,
+				data,
 			}),
 		);
 
 		yield* markWorkBalancesDirty(organizationId);
 
-		return completePolicy;
+		return created.policy as WorkPolicyWithDetails;
 	});
 }
 
@@ -668,93 +465,12 @@ export const updateWorkPolicy = organizationAction(
 			const shouldDirtyWorkBalances =
 				data.scheduleEnabled !== undefined || data.schedule !== undefined;
 
-			const updatedPolicy = yield* storeStep("workPolicies.update", (db) =>
-				db.transaction(async (tx) => {
-					const existingPolicy = await tx.query.workPolicy.findFirst({
-						where: and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)),
-						with: {
-							schedule: true,
-							regulation: true,
-							presence: true,
-						},
-					});
-
-					if (!existingPolicy) {
-						throw new NotFoundError({
-							message: "Policy not found",
-							entityType: "work_policy",
-							entityId: policyId,
-						});
-					}
-
-					if (data.schedule?.days && !hasValidLatestClockIns(data.schedule.days)) {
-						throw new ValidationError({
-							message: "Latest clock-in must be a time between 00:00 and 23:59",
-							field: "schedule.days.latestClockIn",
-						});
-					}
-
-					// Check for duplicate name if name is being changed
-					const name = data.name;
-					if (name && name !== existingPolicy.name) {
-						const duplicatePolicy = await tx.query.workPolicy.findFirst({
-							where: and(
-								eq(workPolicy.organizationId, organizationId),
-								eq(workPolicy.name, name),
-								eq(workPolicy.isActive, true),
-							),
-						});
-
-						if (duplicatePolicy && duplicatePolicy.id !== policyId) {
-							throw new ConflictError({
-								message: "A policy with this name already exists",
-								conflictType: "duplicate_name",
-								details: { entityType: "work_policy", field: "name" },
-							});
-						}
-					}
-
-					await tx
-						.update(workPolicy)
-						.set({
-							name: data.name ?? existingPolicy.name,
-							description: data.description ?? existingPolicy.description,
-							scheduleEnabled: data.scheduleEnabled ?? existingPolicy.scheduleEnabled,
-							regulationEnabled: data.regulationEnabled ?? existingPolicy.regulationEnabled,
-							presenceEnabled: data.presenceEnabled ?? existingPolicy.presenceEnabled,
-							updatedBy: actor.userId,
-							updatedAt: currentTimestamp(),
-						})
-						.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
-
-					if (data.schedule) {
-						// Delete existing schedule (cascade deletes days) inside the transaction.
-						if (existingPolicy.schedule) {
-							await tx.delete(workPolicySchedule).where(eq(workPolicySchedule.policyId, policyId));
-						}
-						await insertScheduleIn(tx, policyId, data.schedule);
-					}
-
-					if (data.regulation) {
-						await upsertRegulationIn(tx, policyId, data.regulation, existingPolicy.regulation);
-					}
-
-					if (data.presence !== undefined) {
-						await tx.delete(workPolicyPresence).where(eq(workPolicyPresence.policyId, policyId));
-
-						if ((data.presenceEnabled ?? existingPolicy.presenceEnabled) && data.presence) {
-							await insertPresenceIn(tx, policyId, data.presence);
-						}
-					}
-
-					const saved = await findPolicyWithDetailsIn(tx, policyId, organizationId);
-					if (!saved) {
-						throw new NotFoundError({
-							message: "Failed to fetch updated policy",
-							entityType: "work_policy",
-						});
-					}
-					return saved;
+			const result = yield* storeStep("workPolicies.update", (db) =>
+				updateOrPublishWorkPolicy(db, {
+					organizationId,
+					actorUserId: actor.userId,
+					policyId,
+					data,
 				}),
 			);
 
@@ -762,7 +478,37 @@ export const updateWorkPolicy = organizationAction(
 				yield* markWorkBalancesDirty(organizationId);
 			}
 
-			return updatedPolicy;
+			return result.policy as WorkPolicyWithDetails;
+		}),
+);
+
+/**
+ * Publishes an effective-dated immutable work policy version (post-cutover) or updates
+ * unsealed v1 (pre-cutover), returning version metadata and any same-day replacement warning.
+ */
+export const publishWorkPolicyVersion = organizationAction(
+	{
+		name: "workPolicies.publishVersion",
+		requires: "orgAdmin",
+		schema: publishWorkPolicyVersionSchema,
+	},
+	({ actor, organizationId, input: { policyId, effectiveFromDate, data } }) =>
+		Effect.gen(function* () {
+			const result = yield* storeStep("workPolicies.publishVersion", (db) =>
+				updateOrPublishWorkPolicy(db, {
+					organizationId,
+					actorUserId: actor.userId,
+					policyId,
+					data: { ...data, effectiveFromDate },
+					forceNewVersion: true,
+				}),
+			);
+
+			if (data.scheduleEnabled !== undefined || data.schedule !== undefined) {
+				yield* markWorkBalancesDirty(organizationId);
+			}
+
+			return result;
 		}),
 );
 
@@ -1738,151 +1484,12 @@ export const getEmployeesForAssignment = organizationAction(
 export const duplicateWorkPolicy = organizationAction(
 	{ name: "workPolicies.duplicate", requires: "orgAdmin", schema: idSchema },
 	({ actor, organizationId, input: policyId }) =>
-		storeStep("workPolicies.duplicate", (db) =>
-			db.transaction(async (tx) => {
-				const existingPolicy = await findPolicyWithDetailsIn(tx, policyId, organizationId);
-				if (!existingPolicy) {
-					throw new NotFoundError({
-						message: "Policy not found",
-						entityType: "work_policy",
-						entityId: policyId,
-					});
-				}
-
-				// Generate unique name across the organization's policies (unique index covers all rows).
-				let newName = `${existingPolicy.name} (Copy)`;
-				let copyNumber = 1;
-
-				let nameExists = true;
-				while (nameExists) {
-					const candidate = newName;
-					const duplicate = await tx.query.workPolicy.findFirst({
-						where: and(
-							eq(workPolicy.organizationId, organizationId),
-							eq(workPolicy.name, candidate),
-						),
-					});
-
-					if (duplicate) {
-						copyNumber++;
-						newName = `${existingPolicy.name} (Copy ${copyNumber})`;
-					} else {
-						nameExists = false;
-					}
-				}
-
-				const [newPolicy] = await tx
-					.insert(workPolicy)
-					.values({
-						organizationId,
-						name: newName,
-						description: existingPolicy.description,
-						scheduleEnabled: existingPolicy.scheduleEnabled,
-						regulationEnabled: existingPolicy.regulationEnabled,
-						presenceEnabled: existingPolicy.presenceEnabled,
-						isDefault: false,
-						createdBy: actor.userId,
-						updatedAt: currentTimestamp(),
-					})
-					.returning();
-
-				if (existingPolicy.schedule) {
-					const scheduleSource = existingPolicy.schedule;
-					const [schedule] = await tx
-						.insert(workPolicySchedule)
-						.values({
-							policyId: newPolicy.id,
-							scheduleCycle: scheduleSource.scheduleCycle,
-							scheduleType: scheduleSource.scheduleType,
-							workingDaysPreset: scheduleSource.workingDaysPreset,
-							hoursPerCycle: scheduleSource.hoursPerCycle,
-							homeOfficeDaysPerCycle: scheduleSource.homeOfficeDaysPerCycle,
-							updatedAt: currentTimestamp(),
-						})
-						.returning();
-
-					if (scheduleSource.days.length > 0) {
-						await tx.insert(workPolicyScheduleDay).values(
-							scheduleSource.days.map((day) => ({
-								scheduleId: schedule.id,
-								dayOfWeek: day.dayOfWeek,
-								hoursPerDay: day.hoursPerDay,
-								isWorkDay: day.isWorkDay,
-								cycleWeek: day.cycleWeek,
-								latestClockIn: day.latestClockIn,
-							})),
-						);
-					}
-				}
-
-				if (existingPolicy.regulation) {
-					const regulationSource = existingPolicy.regulation;
-					const [regulation] = await tx
-						.insert(workPolicyRegulation)
-						.values({
-							policyId: newPolicy.id,
-							maxDailyMinutes: regulationSource.maxDailyMinutes,
-							maxWeeklyMinutes: regulationSource.maxWeeklyMinutes,
-							maxUninterruptedMinutes: regulationSource.maxUninterruptedMinutes,
-							minRestPeriodMinutes: regulationSource.minRestPeriodMinutes,
-							restPeriodEnforcement: regulationSource.restPeriodEnforcement,
-							overtimeDailyThresholdMinutes: regulationSource.overtimeDailyThresholdMinutes,
-							overtimeWeeklyThresholdMinutes: regulationSource.overtimeWeeklyThresholdMinutes,
-							overtimeMonthlyThresholdMinutes: regulationSource.overtimeMonthlyThresholdMinutes,
-							alertBeforeLimitMinutes: regulationSource.alertBeforeLimitMinutes,
-							alertThresholdPercent: regulationSource.alertThresholdPercent,
-							updatedAt: currentTimestamp(),
-						})
-						.returning();
-
-					for (const rule of regulationSource.breakRules) {
-						const [breakRule] = await tx
-							.insert(workPolicyBreakRule)
-							.values({
-								regulationId: regulation.id,
-								workingMinutesThreshold: rule.workingMinutesThreshold,
-								requiredBreakMinutes: rule.requiredBreakMinutes,
-								sortOrder: rule.sortOrder,
-								updatedAt: currentTimestamp(),
-							})
-							.returning();
-
-						if (rule.options.length > 0) {
-							await tx.insert(workPolicyBreakOption).values(
-								rule.options.map((opt) => ({
-									breakRuleId: breakRule.id,
-									splitCount: opt.splitCount,
-									minimumSplitMinutes: opt.minimumSplitMinutes,
-									minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
-									sortOrder: opt.sortOrder,
-								})),
-							);
-						}
-					}
-				}
-
-				if (existingPolicy.presence) {
-					const presenceSource = existingPolicy.presence;
-					await tx.insert(workPolicyPresence).values({
-						policyId: newPolicy.id,
-						presenceMode: presenceSource.presenceMode,
-						requiredOnsiteDays: presenceSource.requiredOnsiteDays,
-						requiredOnsiteFixedDays: presenceSource.requiredOnsiteFixedDays,
-						locationId: presenceSource.locationId,
-						evaluationPeriod: presenceSource.evaluationPeriod,
-						enforcement: presenceSource.enforcement,
-						updatedAt: currentTimestamp(),
-					});
-				}
-
-				const duplicated = await findPolicyWithDetailsIn(tx, newPolicy.id, organizationId);
-				if (!duplicated) {
-					throw new NotFoundError({
-						message: "Failed to fetch duplicated policy",
-						entityType: "work_policy",
-					});
-				}
-				return duplicated;
-			}),
-		),
+		storeStep("workPolicies.duplicate", async (db) => {
+			const duplicated = await duplicateVersionedWorkPolicy(db, {
+				organizationId,
+				actorUserId: actor.userId,
+				policyId,
+			});
+			return duplicated.policy as WorkPolicyWithDetails;
+		}),
 );

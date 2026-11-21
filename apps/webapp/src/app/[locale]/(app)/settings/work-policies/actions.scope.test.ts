@@ -46,6 +46,35 @@ vi.mock("@/lib/datetime/drizzle-adapter", () => ({
 
 const db: Row = {
 	transaction: vi.fn(async (fn: (tx: Row) => Promise<unknown>) => fn(db)),
+	execute: vi.fn(async (query: SQL) => {
+		const renderedSql = dialect.sqlToQuery(query).sql;
+		if (renderedSql.includes('FROM "work_policy"') && renderedSql.includes("FOR UPDATE")) {
+			const row = state.workPolicyQueue.shift() ?? null;
+			return { rows: row ? [row] : [] };
+		}
+		if (renderedSql.includes('FROM "work_policy_versioning_state"')) {
+			return { rows: [{ sealedCutoverAt: null }] };
+		}
+		if (
+			renderedSql.includes('FROM "work_policy_version"') &&
+			renderedSql.includes("version_number")
+		) {
+			return {
+				rows: [
+					{
+						id: "version-1",
+						versionNumber: 1,
+						effectiveFromDate: "1970-01-01",
+						scheduleEnabled: true,
+						regulationEnabled: false,
+						presenceEnabled: false,
+						sealedAt: null,
+					},
+				],
+			};
+		}
+		return { rows: [] };
+	}),
 	query: {
 		workPolicy: {
 			findMany: vi.fn(async () => state.workPolicies),
@@ -73,9 +102,21 @@ const db: Row = {
 		employee: { findFirst: vi.fn(async () => state.employeeQueue.shift() ?? null) },
 	},
 	select: vi.fn(() => ({
-		from: vi.fn(() => ({
-			where: vi.fn(() => ({ limit: vi.fn(async () => state.selectQueue.shift() ?? []) })),
-		})),
+		from: vi.fn(() => {
+			const makeResult = () => {
+				const rows = state.selectQueue.shift() ?? [];
+				const promise = Promise.resolve(rows) as Promise<Row[]> & {
+					limit: ReturnType<typeof vi.fn>;
+					orderBy: ReturnType<typeof vi.fn>;
+				};
+				promise.limit = vi.fn(async () => rows);
+				promise.orderBy = vi.fn(async () => rows);
+				return promise;
+			};
+			return {
+				where: vi.fn(() => makeResult()),
+			};
+		}),
 	})),
 	insert: vi.fn(() => ({
 		values: vi.fn((input: unknown) => {
@@ -398,11 +439,15 @@ describe("work policy settings scope actions", () => {
 			id: "policy-from-preset",
 			organizationId: "org-1",
 			name: "Reviewed Policy",
+			scheduleEnabled: false,
+			regulationEnabled: true,
+			presenceEnabled: false,
 			schedule: null,
 			regulation: null,
 			presence: null,
 		};
-		state.workPolicyQueue = [null, created];
+		state.workPolicyQueue = [null];
+		state.selectQueue = [[created], [], [], [], []];
 		state.insertQueue = [
 			[{ id: "policy-from-preset" }],
 			[{ id: "regulation-1" }],
@@ -604,21 +649,18 @@ describe("work policy settings scope actions", () => {
 
 	it("marks organization work balances dirty after schedule-affecting work policy updates", async () => {
 		state.caller = orgAdmin;
-		state.workPolicyQueue = [
-			{
-				id: "policy-1",
-				organizationId: "org-1",
-				name: "Standard",
-				description: null,
-				scheduleEnabled: true,
-				regulationEnabled: false,
-				presenceEnabled: false,
-				schedule: null,
-				regulation: null,
-				presence: null,
-			},
-			{ id: "policy-1", organizationId: "org-1", name: "Standard", schedule: null },
-		];
+		const existingPolicy = {
+			id: "policy-1",
+			organizationId: "org-1",
+			name: "Standard",
+			description: null,
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			presenceEnabled: false,
+			isActive: true,
+		};
+		state.workPolicyQueue = [existingPolicy];
+		state.selectQueue = [[existingPolicy], [], [], [], [], [existingPolicy], [], [], [], []];
 
 		const result = await actions.updateWorkPolicy({
 			policyId: "policy-1",
@@ -640,9 +682,7 @@ describe("work policy settings scope actions", () => {
 			scheduleEnabled: true,
 			regulationEnabled: false,
 			presenceEnabled: false,
-			schedule: null,
-			regulation: null,
-			presence: null,
+			isActive: true,
 		};
 		const day = (
 			dayOfWeek: "monday" | "tuesday" | "saturday",
@@ -669,7 +709,8 @@ describe("work policy settings scope actions", () => {
 
 		beforeEach(() => {
 			state.caller = orgAdmin;
-			state.workPolicyQueue = [existing, { ...existing, schedule: null }];
+			state.workPolicyQueue = [existing];
+			state.selectQueue = [[existing], [], [], [], [], [existing], [], [], [], []];
 			state.insertQueue = [[{ id: "schedule-1" }]];
 		});
 

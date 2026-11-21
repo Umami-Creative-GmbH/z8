@@ -15,8 +15,14 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	deleteOrArchiveLocationGuarded,
+	type DeleteLocationOutcome,
+	updateLocationGuarded,
+} from "@/lib/locations/location-lifecycle";
 import { logger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	locationSchema,
 	subareaSchema,
@@ -328,7 +334,7 @@ export const createLocation = organizationAction(
 		}),
 );
 
-/** Updates a location of the session's organization. */
+/** Updates a location of the session's organization (refusing deactivation if active/future work policies require it). */
 export const updateLocation = organizationAction(
 	{
 		name: "locations.update",
@@ -340,26 +346,13 @@ export const updateLocation = organizationAction(
 	},
 	({ actor, organizationId, input: { locationId, data } }) =>
 		Effect.gen(function* () {
-			const dbService = yield* DatabaseService;
-			const existing = yield* loadLocation(organizationId, locationId);
-
-			if (data.name && data.name !== existing.name) {
-				const name = data.name;
-				const duplicate = yield* dbService.query("locations.checkDuplicate", () =>
-					dbService.db.query.location.findFirst({
-						where: and(eq(location.organizationId, organizationId), eq(location.name, name)),
-					}),
-				);
-				if (duplicate) {
-					return yield* Effect.fail(duplicateName("A location with this name already exists"));
-				}
-			}
-
-			yield* dbService.query("locations.update", () =>
-				dbService.db
-					.update(location)
-					.set({ ...data, updatedBy: actor.userId })
-					.where(and(eq(location.id, locationId), eq(location.organizationId, organizationId))),
+			const updated = yield* storeStep("locations.update", (db) =>
+				updateLocationGuarded(db, {
+					organizationId,
+					locationId,
+					actorUserId: actor.userId,
+					data,
+				}),
 			);
 
 			audit({
@@ -369,7 +362,7 @@ export const updateLocation = organizationAction(
 				targetType: "location",
 				organizationId,
 				changes: data,
-				metadata: { locationName: data.name || existing.name },
+				metadata: { locationName: updated.updatedName },
 				timestamp: new Date(),
 			});
 			revalidateTag(CACHE_TAGS.LOCATIONS(organizationId), "max");
@@ -378,32 +371,43 @@ export const updateLocation = organizationAction(
 		}),
 );
 
-/** Deletes a location of the session's organization (cascades to subareas and assignments). */
+/**
+ * Deletes an unreferenced location, archives (`isActive = false`) a location referenced
+ * only by sealed historical work policy versions, or refuses deletion with blocking policy
+ * names if any active or future work policy version requires on-site presence there.
+ */
 export const deleteLocation = organizationAction(
 	{ name: "locations.delete", requires: "orgAdmin", schema: z.uuid() },
 	({ actor, organizationId, input: locationId }) =>
 		Effect.gen(function* () {
-			const dbService = yield* DatabaseService;
-			const existing = yield* loadLocation(organizationId, locationId);
-
-			yield* dbService.query("locations.delete", () =>
-				dbService.db
-					.delete(location)
-					.where(and(eq(location.id, locationId), eq(location.organizationId, organizationId))),
+			const result: DeleteLocationOutcome = yield* storeStep("locations.delete", (db) =>
+				deleteOrArchiveLocationGuarded(db, {
+					organizationId,
+					locationId,
+					actorUserId: actor.userId,
+				}),
 			);
 
 			audit({
-				action: AuditAction.LOCATION_DELETED,
+				action:
+					result.outcome === "archived"
+						? AuditAction.LOCATION_UPDATED
+						: AuditAction.LOCATION_DELETED,
 				actorId: actor.userId,
 				targetId: locationId,
 				targetType: "location",
 				organizationId,
-				changes: { deleted: true },
-				metadata: { locationName: existing.name },
+				changes:
+					result.outcome === "archived" ? { isActive: false, archived: true } : { deleted: true },
+				metadata: { locationName: result.name },
 				timestamp: new Date(),
 			});
 			revalidateTag(CACHE_TAGS.LOCATIONS(organizationId), "max");
 			revalidatePath("/settings/locations");
+			if (result.outcome === "archived") {
+				revalidatePath(`/settings/locations/${locationId}`);
+			}
+			return result;
 		}),
 );
 
