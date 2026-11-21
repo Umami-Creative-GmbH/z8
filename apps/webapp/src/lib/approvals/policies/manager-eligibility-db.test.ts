@@ -10,95 +10,88 @@ function createPgError(code: string) {
 	return Object.assign(new Error(`Postgres error ${code}`), { code });
 }
 
-function createDeferred<T>() {
-	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((resolvePromise) => {
-		resolve = resolvePromise;
-	});
-
-	return { promise, resolve };
-}
-
-function createDeferredEligibilityDb() {
-	const employees = createDeferred<unknown[]>();
-	const managerLinks = createDeferred<unknown[]>();
-	const memberships = createDeferred<unknown[]>();
-	const teams = createDeferred<unknown[]>();
+/**
+ * A db whose reads settle on a later macrotask and that counts how many are in
+ * flight at once: `db` may be a transaction, one connection, which must not be
+ * handed a query while another is still executing (pg@9 drops that).
+ */
+function createOneConnectionDb(rows: {
+	employees: unknown[];
+	managerLinks: unknown[];
+	memberships: unknown[];
+	teams: unknown[];
+}) {
+	const reads: string[] = [];
+	let inFlight = 0;
+	let maxInFlight = 0;
+	const read = (name: string, result: unknown[]) =>
+		vi.fn(async () => {
+			reads.push(name);
+			inFlight += 1;
+			maxInFlight = Math.max(maxInFlight, inFlight);
+			await new Promise((resolve) => setTimeout(resolve, 0));
+			inFlight -= 1;
+			return result;
+		});
 
 	return {
-		employees,
-		managerLinks,
-		memberships,
-		teams,
+		reads,
+		maxInFlight: () => maxInFlight,
 		db: {
 			query: {
-				employee: { findMany: vi.fn(() => employees.promise) },
-				employeeManagers: { findMany: vi.fn(() => managerLinks.promise) },
-				teamMembership: { findMany: vi.fn(() => memberships.promise) },
-				team: { findMany: vi.fn(() => teams.promise) },
+				employee: { findMany: read("employee", rows.employees) },
+				employeeManagers: { findMany: read("employeeManagers", rows.managerLinks) },
+				teamMembership: { findMany: read("teamMembership", rows.memberships) },
+				team: { findMany: read("team", rows.teams) },
 			},
 		},
 	};
 }
 
+const lonelyRequester = {
+	employees: [{ id: "requester-1", organizationId: "org-1", isActive: true, role: "employee" }],
+	managerLinks: [],
+	memberships: [],
+	teams: [],
+};
+
 describe("getEligibleApprovalScopesForManager", () => {
-	it("starts manager and team eligibility reads after the organization employee read resolves", async () => {
-		const employees = createDeferred<unknown[]>();
-		const managerLinks = createDeferred<unknown[]>();
-		const memberships = createDeferred<unknown[]>();
-		const teams = createDeferred<unknown[]>();
-		const db = {
-			query: {
-				employee: { findMany: vi.fn(() => employees.promise) },
-				employeeManagers: { findMany: vi.fn(() => managerLinks.promise) },
-				teamMembership: { findMany: vi.fn(() => memberships.promise) },
-				team: { findMany: vi.fn(() => teams.promise) },
-			},
-		};
+	it("reads one query at a time, the organization's employees first", async () => {
+		const pending = createOneConnectionDb({
+			employees: [
+				{
+					id: "requester-1",
+					organizationId: "org-1",
+					isActive: true,
+					role: "employee",
+				},
+				{
+					id: "manager-1",
+					organizationId: "org-1",
+					isActive: true,
+					role: "manager",
+				},
+			],
+			managerLinks: [{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true }],
+			memberships: [],
+			teams: [],
+		});
 
 		const result = getEligibleApprovalScopesForManager({
-			db,
+			db: pending.db,
 			managerEmployeeId: "manager-1",
 			organizationId: "org-1",
 		});
 
-		expect(db.query.employee.findMany).toHaveBeenCalledOnce();
-		expect(db.query.employeeManagers.findMany).not.toHaveBeenCalled();
-		expect(db.query.teamMembership.findMany).not.toHaveBeenCalled();
-		expect(db.query.team.findMany).not.toHaveBeenCalled();
-
-		employees.resolve([
-			{
-				id: "requester-1",
-				organizationId: "org-1",
-				isActive: true,
-				role: "employee",
-			},
-			{
-				id: "manager-1",
-				organizationId: "org-1",
-				isActive: true,
-				role: "manager",
-			},
-		]);
-		await employees.promise;
-		await Promise.resolve();
-
-		expect(db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
-		expect(db.query.teamMembership.findMany).toHaveBeenCalledOnce();
-		expect(db.query.team.findMany).toHaveBeenCalledOnce();
-
-		managerLinks.resolve([
-			{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
-		]);
-		memberships.resolve([]);
-		teams.resolve([]);
 		await expect(result).resolves.toEqual([
 			{
 				requesterEmployeeId: "requester-1",
 				eligibleApproverIds: ["manager-1"],
 			},
 		]);
+		expect(pending.reads[0]).toBe("employee");
+		expect(pending.reads).toHaveLength(4);
+		expect(pending.maxInFlight()).toBe(1);
 	});
 
 	it("falls back to direct approval visibility when team eligibility schema is not migrated", async () => {
@@ -156,60 +149,34 @@ describe("getEligibleApprovalScopesForManager", () => {
 });
 
 describe("getEligibleManagerIdsForRequester", () => {
-	it("starts all reads concurrently", async () => {
-		const pending = createDeferredEligibilityDb();
-		const result = getEligibleManagerIdsForRequester({
-			db: pending.db,
-			requesterEmployeeId: "requester-1",
-			organizationId: "org-1",
-		});
+	it("reads one query at a time", async () => {
+		const pending = createOneConnectionDb(lonelyRequester);
 
-		expect(pending.db.query.employee.findMany).toHaveBeenCalledOnce();
-		expect(pending.db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
-		expect(pending.db.query.teamMembership.findMany).toHaveBeenCalledOnce();
-		expect(pending.db.query.team.findMany).toHaveBeenCalledOnce();
-
-		pending.employees.resolve([
-			{
-				id: "requester-1",
+		await expect(
+			getEligibleManagerIdsForRequester({
+				db: pending.db,
+				requesterEmployeeId: "requester-1",
 				organizationId: "org-1",
-				isActive: true,
-				role: "employee",
-			},
-		]);
-		pending.managerLinks.resolve([]);
-		pending.memberships.resolve([]);
-		pending.teams.resolve([]);
-		await expect(result).resolves.toEqual([]);
+			}),
+		).resolves.toEqual([]);
+		expect(pending.reads).toHaveLength(4);
+		expect(pending.maxInFlight()).toBe(1);
 	});
 });
 
 describe("getPrimaryEligibleManagerIdForRequester", () => {
-	it("starts all reads concurrently", async () => {
-		const pending = createDeferredEligibilityDb();
-		const result = getPrimaryEligibleManagerIdForRequester({
-			db: pending.db,
-			requesterEmployeeId: "requester-1",
-			organizationId: "org-1",
-		});
+	it("reads one query at a time", async () => {
+		const pending = createOneConnectionDb(lonelyRequester);
 
-		expect(pending.db.query.employee.findMany).toHaveBeenCalledOnce();
-		expect(pending.db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
-		expect(pending.db.query.teamMembership.findMany).toHaveBeenCalledOnce();
-		expect(pending.db.query.team.findMany).toHaveBeenCalledOnce();
-
-		pending.employees.resolve([
-			{
-				id: "requester-1",
+		await expect(
+			getPrimaryEligibleManagerIdForRequester({
+				db: pending.db,
+				requesterEmployeeId: "requester-1",
 				organizationId: "org-1",
-				isActive: true,
-				role: "employee",
-			},
-		]);
-		pending.managerLinks.resolve([]);
-		pending.memberships.resolve([]);
-		pending.teams.resolve([]);
-		await expect(result).resolves.toBeNull();
+			}),
+		).resolves.toBeNull();
+		expect(pending.reads).toHaveLength(4);
+		expect(pending.maxInFlight()).toBe(1);
 	});
 
 	it("returns the primary direct manager when multiple direct manager links exist", async () => {

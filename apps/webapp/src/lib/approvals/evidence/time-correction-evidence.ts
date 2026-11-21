@@ -796,47 +796,47 @@ export async function recordLegacyTimeCorrectionDecisionEvidence(
 	},
 ): Promise<LegacyDecisionEvidenceRecord> {
 	const { revision } = plan;
-	const [requests, stages, period] = await Promise.all([
-		database
-			.select({
-				id: approvalRequest.id,
-				status: approvalRequest.status,
-				approverId: approvalRequest.approverId,
-				approvedAt: approvalRequest.approvedAt,
-				updatedAt: approvalRequest.updatedAt,
-			})
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.id, input.approvalRequestId),
-					eq(approvalRequest.organizationId, input.organizationId),
-					eq(approvalRequest.entityType, "time_entry"),
-					eq(approvalRequest.entityId, revision.workPeriodId),
-				),
-			)
-			.limit(2),
-		database
-			.select({
-				id: approvalChainStageInstance.id,
-				chainInstanceId: approvalChainStageInstance.chainInstanceId,
-				status: approvalChainStageInstance.status,
-				decidedBy: approvalChainStageInstance.decidedBy,
-				decidedAt: approvalChainStageInstance.decidedAt,
-			})
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
-				),
-			)
-			.limit(2),
-		loadPeriod(database, {
-			organizationId: input.organizationId,
-			employeeId: revision.subjectEmployeeId,
-			workPeriodId: revision.workPeriodId,
-		}),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 drops queries queued on a connection still executing another.
+	const requests = await database
+		.select({
+			id: approvalRequest.id,
+			status: approvalRequest.status,
+			approverId: approvalRequest.approverId,
+			approvedAt: approvalRequest.approvedAt,
+			updatedAt: approvalRequest.updatedAt,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, revision.workPeriodId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({
+			id: approvalChainStageInstance.id,
+			chainInstanceId: approvalChainStageInstance.chainInstanceId,
+			status: approvalChainStageInstance.status,
+			decidedBy: approvalChainStageInstance.decidedBy,
+			decidedAt: approvalChainStageInstance.decidedAt,
+		})
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(2);
+	const period = await loadPeriod(database, {
+		organizationId: input.organizationId,
+		employeeId: revision.subjectEmployeeId,
+		workPeriodId: revision.workPeriodId,
+	});
 	const request = requests[0];
 	const stage = stages[0] ?? null;
 	const expected = input.action === "approve" ? "approved" : "rejected";

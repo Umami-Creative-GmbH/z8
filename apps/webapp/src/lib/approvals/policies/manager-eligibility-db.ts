@@ -78,19 +78,17 @@ async function getTeamEligibilityInputs(input: {
 	requesterEmployeeIds?: string[];
 }) {
 	try {
-		const [memberships, teams] = await Promise.all([
-			input.db.query.teamMembership.findMany({
-				where: input.requesterEmployeeIds
-					? and(
-							eq(teamMembership.organizationId, input.organizationId),
-							inArray(teamMembership.employeeId, input.requesterEmployeeIds),
-						)
-					: eq(teamMembership.organizationId, input.organizationId),
-			}),
-			input.db.query.team.findMany({
-				where: eq(team.organizationId, input.organizationId),
-			}),
-		]);
+		const memberships = await input.db.query.teamMembership.findMany({
+			where: input.requesterEmployeeIds
+				? and(
+						eq(teamMembership.organizationId, input.organizationId),
+						inArray(teamMembership.employeeId, input.requesterEmployeeIds),
+					)
+				: eq(teamMembership.organizationId, input.organizationId),
+		});
+		const teams = await input.db.query.team.findMany({
+			where: eq(team.organizationId, input.organizationId),
+		});
 
 		return {
 			memberships: memberships as EligibleTeamMembership[],
@@ -105,6 +103,29 @@ async function getTeamEligibilityInputs(input: {
 	}
 }
 
+/**
+ * Queries run one after another: `db` may be a transaction, which is one
+ * connection, and pg@9 drops queries queued on a connection still executing another.
+ */
+async function loadRequesterEligibilityInputs(input: {
+	db: ApprovalEligibilityDb;
+	requesterEmployeeId: string;
+	organizationId: string;
+}) {
+	const employees = await input.db.query.employee.findMany({
+		where: eq(employee.organizationId, input.organizationId),
+	});
+	const managerLinks = await input.db.query.employeeManagers.findMany({
+		where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
+	});
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+		requesterEmployeeIds: [input.requesterEmployeeId],
+	});
+	return { employees, managerLinks, memberships, teams };
+}
+
 export async function getEligibleManagerIdsForRequester(input: {
 	db: ApprovalEligibilityDb;
 	requesterEmployeeId: string;
@@ -112,19 +133,8 @@ export async function getEligibleManagerIdsForRequester(input: {
 	/** Defaults to `new_submission`; only a persisted-request loader passes `existing_workflow`. */
 	requesterMode?: RequesterEligibilityMode;
 }) {
-	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employee.findMany({
-			where: eq(employee.organizationId, input.organizationId),
-		}),
-		input.db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
-		}),
-		getTeamEligibilityInputs({
-			db: input.db,
-			organizationId: input.organizationId,
-			requesterEmployeeIds: [input.requesterEmployeeId],
-		}),
-	]);
+	const { employees, managerLinks, memberships, teams } =
+		await loadRequesterEligibilityInputs(input);
 
 	return getEligibleManagerIds({
 		organizationId: input.organizationId,
@@ -142,19 +152,8 @@ export async function getPrimaryEligibleManagerIdForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }): Promise<string | null> {
-	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employee.findMany({
-			where: eq(employee.organizationId, input.organizationId),
-		}),
-		input.db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
-		}),
-		getTeamEligibilityInputs({
-			db: input.db,
-			organizationId: input.organizationId,
-			requesterEmployeeIds: [input.requesterEmployeeId],
-		}),
-	]);
+	const { employees, managerLinks, memberships, teams } =
+		await loadRequesterEligibilityInputs(input);
 
 	const result = resolvePrimaryEligibleManager({
 		organizationId: input.organizationId,
@@ -215,15 +214,13 @@ export async function getEligibleApprovalScopesForManager(input: {
 		return [];
 	}
 
-	const [managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employeeManagers.findMany({
-			where: inArray(employeeManagers.employeeId, requesterIds),
-		}),
-		getTeamEligibilityInputs({
-			db: input.db,
-			organizationId: input.organizationId,
-		}),
-	]);
+	const managerLinks = await input.db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, requesterIds),
+	});
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+	});
 
 	return typedEmployees.flatMap((requester: { id: string }) => {
 		// Scopes filter already persisted requests, including those of
