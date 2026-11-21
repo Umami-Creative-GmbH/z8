@@ -45,6 +45,9 @@ export * from "./closed-month";
 export * from "./completed-work";
 // ArbZG Compliance
 export * from "./compliance";
+// Contract defaults, templates, statutory thresholds, and durable batches (#1921, #1923)
+export * from "./contract";
+export * from "./contract-reviews";
 export * from "./cost-center";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";

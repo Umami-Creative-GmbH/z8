@@ -1,17 +1,10 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import {
-	dateFromInstant,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import type { EquipmentDepartureReturn } from "./contracts";
-import {
-	effectiveEquipmentDeadline,
-	equipmentDepartureDeadline,
-} from "./deadlines";
+import { effectiveEquipmentDeadline, equipmentDepartureDeadline } from "./deadlines";
 import { outstandingSql } from "./settlement";
 import { lockEquipmentOrganization } from "./setup";
 
@@ -90,7 +83,7 @@ export async function endEquipmentEmployment(
 		actorUserId: string;
 		cutoff: Instant;
 		timezone: string;
-		mode: "scheduled" | "immediate";
+		mode: "scheduled" | "immediate" | "retrospective";
 	},
 ) {
 	await lockEquipmentOrganization(tx, input.organizationId);

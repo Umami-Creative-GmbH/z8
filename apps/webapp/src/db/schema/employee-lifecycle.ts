@@ -24,7 +24,7 @@ type JsonObject = Record<string, unknown>;
 // migration that is unusable inside the transaction that adds it.
 export const employmentPeriodStatuses = ["open", "closed", "legacy_unknown"] as const;
 export const employmentPeriodStartProvenances = ["recorded", "legacy", "unknown"] as const;
-export const departureModes = ["scheduled", "immediate"] as const;
+export const departureModes = ["scheduled", "immediate", "retrospective"] as const;
 export const departureStatuses = ["pending", "canceled", "blocked", "effective"] as const;
 export const departureEventKinds = [
 	"departure_scheduled",
@@ -40,6 +40,9 @@ export const departureEventKinds = [
 	// Employment history of a deactivation without a departure (#1440, #1441).
 	"employee_deactivated",
 	"employee_reactivated",
+	// Retrospective leaving date and date-only correction (#1921, #1923).
+	"departure_recorded_retrospectively",
+	"departure_date_corrected",
 ] as const;
 /** Audit reason a deactivation row was written under (#1440, #1442, #1629). */
 export const deactivationReasons = [
@@ -75,6 +78,8 @@ export const departureReviewKinds = [
 	"approval_handover",
 	"future_work",
 	"employment_terms",
+	"work_after_cutoff",
+	"payroll_reconciliation",
 ] as const;
 export const departureReviewStatuses = ["open", "resolved"] as const;
 
@@ -227,7 +232,7 @@ export const employeeDeparture = pgTable(
 		check("employeeDeparture_revision_check", sql`revision > 0`),
 		check(
 			"employeeDeparture_scheduled_day_check",
-			sql`mode <> 'scheduled' OR last_working_day IS NOT NULL`,
+			sql`mode NOT IN ('scheduled', 'retrospective') OR last_working_day IS NOT NULL`,
 		),
 		check(
 			"employeeDeparture_effective_at_check",

@@ -240,6 +240,8 @@ async function insertTerms(
 		employmentPeriodId,
 		validFrom: terms.validFrom,
 		validUntil: null,
+		validFromDate: null,
+		validUntilDate: null,
 		status: terms.status,
 		contractType: terms.contractType,
 		weeklyContractMinutes: terms.weeklyContractMinutes,
@@ -247,6 +249,18 @@ async function insertTerms(
 		probationEndsOn: terms.probationEndsOn ?? null,
 		workModel: terms.workModel,
 		workPolicyId: terms.workPolicyId ?? null,
+		scheduleMode: null,
+		presenceOverride: null,
+		balanceMode: null,
+		scheduleSource: null,
+		sourceTemplateVersionId: null,
+		sourceBatchItemId: null,
+		employmentProfile: "regular",
+		arbzgScope: "standard",
+		onCallHoursKind: null,
+		onCallWeeklyMinutes: null,
+		onCallDailyMinutes: null,
+		migratedLegacyTerms: false,
 		hourlyRate: wageForContract(terms.contractType, terms.hourlyRate),
 		currency: terms.currency,
 		changeReason: terms.changeReason ?? null,
@@ -422,10 +436,7 @@ export async function cancelEmploymentTerms(
 		eq(employeeEmploymentHistory.employeeId, scope.employeeId),
 		eq(employeeEmploymentHistory.organizationId, scope.organizationId),
 	);
-	const existing = await tx
-		.select()
-		.from(employeeEmploymentHistory)
-		.where(termsScope);
+	const existing = await tx.select().from(employeeEmploymentHistory).where(termsScope);
 	const target = existing.find((row) => row.id === input.termsId);
 	if (!target)
 		throw new NotFoundError({
@@ -459,25 +470,14 @@ export async function cancelEmploymentTerms(
 				row.reviewState === "confirmed" &&
 				row.employmentPeriodId === target.employmentPeriodId &&
 				(!row.validUntil ||
-					compareInstants(
-						instantFromDate(row.validUntil),
-						instantFromDate(row.validFrom),
-					) > 0),
+					compareInstants(instantFromDate(row.validUntil), instantFromDate(row.validFrom)) > 0),
 		)
-		.sort((a, b) =>
-			compareInstants(
-				instantFromDate(a.validFrom),
-				instantFromDate(b.validFrom),
-			),
-		);
+		.sort((a, b) => compareInstants(instantFromDate(a.validFrom), instantFromDate(b.validFrom)));
 	// A superseded same-start row owns no interval. Its cancellation must not
 	// remove a replacement that happens to carry the same policy/natural key.
 	const replacement = confirmed.find(
 		(row) =>
-			compareInstants(
-				instantFromDate(row.validFrom),
-				instantFromDate(target.validFrom),
-			) === 0,
+			compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) === 0,
 	);
 	if (replacement) {
 		await syncTermsPolicy(tx, scope, replacement);
@@ -485,37 +485,24 @@ export async function cancelEmploymentTerms(
 	}
 	if (
 		target.validUntil &&
-		compareInstants(
-			instantFromDate(target.validUntil),
-			instantFromDate(target.validFrom),
-		) <= 0
+		compareInstants(instantFromDate(target.validUntil), instantFromDate(target.validFrom)) <= 0
 	)
 		return target;
 
 	const previous = confirmed
 		.filter(
 			(row) =>
-				compareInstants(
-					instantFromDate(row.validFrom),
-					instantFromDate(target.validFrom),
-				) < 0,
+				compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) < 0,
 		)
 		.at(-1);
 	// Only undo a boundary introduced by these terms; do not bridge a pre-existing gap.
 	if (
 		!previous?.validUntil ||
-		compareInstants(
-			instantFromDate(previous.validUntil),
-			instantFromDate(target.validFrom),
-		) !== 0
+		compareInstants(instantFromDate(previous.validUntil), instantFromDate(target.validFrom)) !== 0
 	)
 		return target;
 	const next = confirmed.find(
-		(row) =>
-			compareInstants(
-				instantFromDate(row.validFrom),
-				instantFromDate(target.validFrom),
-			) > 0,
+		(row) => compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) > 0,
 	);
 	const validUntil = next?.validFrom ?? null;
 	await tx

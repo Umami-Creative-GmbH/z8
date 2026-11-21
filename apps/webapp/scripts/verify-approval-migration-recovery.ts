@@ -11,6 +11,7 @@ import {
 	integrationDatabaseSentinel,
 	parseIntegrationDatabaseUrl,
 } from "../src/test/integration-database";
+import { runBoundaryAwareMigrations } from "./boundary-migration-engine.js";
 
 const INCIDENT_LATEST_CREATED_AT = "1785493929039";
 const INCIDENT_LATEST_TAG = "0059_payroll_blocker_dismissal";
@@ -18,9 +19,7 @@ const EXPAND_CREATED_AT = "1785232090757";
 const CYCLE_IDENTITY_CREATED_AT = "1785232118219";
 const RECOVERY_CREATED_AT = "1785493929040";
 const RECOVERY_TAG = "0060_approval_workflow_recovery";
-const REAL_MIGRATIONS_FOLDER = fileURLToPath(
-	new URL("../drizzle", import.meta.url),
-);
+const REAL_MIGRATIONS_FOLDER = fileURLToPath(new URL("../drizzle", import.meta.url));
 const JOURNAL_TAGS_TO_SKIP = new Set([
 	"0055_approval_workflow_expand",
 	"0056_approval_workflow_cycle_identity",
@@ -105,26 +104,20 @@ export function filterIncidentJournal(
 	journal: MigrationJournal,
 	latestTag = INCIDENT_LATEST_TAG,
 ): MigrationJournal {
-	const incidentLatestIndex = journal.entries.findIndex(
-		(entry) => entry.tag === latestTag,
-	);
+	const incidentLatestIndex = journal.entries.findIndex((entry) => entry.tag === latestTag);
 	if (incidentLatestIndex < 0) {
 		throw new Error(`Missing incident migration ${latestTag}`);
 	}
 
 	return {
 		...journal,
-		entries: journal.entries.slice(0, incidentLatestIndex + 1).filter(
-			(entry) =>
-				!JOURNAL_TAGS_TO_SKIP.has(entry.tag) || entry.tag === latestTag,
-		),
+		entries: journal.entries
+			.slice(0, incidentLatestIndex + 1)
+			.filter((entry) => !JOURNAL_TAGS_TO_SKIP.has(entry.tag) || entry.tag === latestTag),
 	};
 }
 
-function normalizeLedgerValue(
-	value: unknown,
-	field: "id" | "created_at",
-): string {
+function normalizeLedgerValue(value: unknown, field: "id" | "created_at"): string {
 	if (value instanceof Date) return value.toISOString();
 	if (typeof value === "bigint") return value.toString();
 	if (typeof value === "number" && Number.isFinite(value)) return String(value);
@@ -176,25 +169,16 @@ export function formatMigrationVerificationFailure(error: unknown): string {
 		code?: unknown;
 		detail?: unknown;
 	};
-	const message =
-		typeof postgresError.message === "string"
-			? postgresError.message
-			: String(error);
+	const message = typeof postgresError.message === "string" ? postgresError.message : String(error);
 	const diagnostics = [
-		typeof postgresError.code === "string"
-			? `PostgreSQL code ${postgresError.code}`
-			: undefined,
-		typeof postgresError.detail === "string"
-			? `detail: ${postgresError.detail}`
-			: undefined,
+		typeof postgresError.code === "string" ? `PostgreSQL code ${postgresError.code}` : undefined,
+		typeof postgresError.detail === "string" ? `detail: ${postgresError.detail}` : undefined,
 	].filter((diagnostic): diagnostic is string => diagnostic !== undefined);
 
 	return diagnostics.length > 0 ? `${message} (${diagnostics.join("; ")})` : message;
 }
 
-export function buildCatalogNamespaceCountQuery(
-	reference: CatalogNamespaceReference,
-): string {
+export function buildCatalogNamespaceCountQuery(reference: CatalogNamespaceReference): string {
 	if (
 		!/^pg_[a-z0-9_]+$/.test(reference.tableName) ||
 		!/^[a-z_][a-z0-9_]*namespace$/.test(reference.columnName)
@@ -209,8 +193,7 @@ export function sumCatalogNamespaceCounts(
 ): bigint {
 	return counts.reduce((total, row) => {
 		if (
-			(typeof row.count === "number" &&
-				(!Number.isSafeInteger(row.count) || row.count < 0)) ||
+			(typeof row.count === "number" && (!Number.isSafeInteger(row.count) || row.count < 0)) ||
 			(typeof row.count === "string" && !/^\d+$/.test(row.count)) ||
 			(typeof row.count === "bigint" && row.count < BigInt(0))
 		) {
@@ -220,9 +203,7 @@ export function sumCatalogNamespaceCounts(
 	}, BigInt(0));
 }
 
-export function assertDisposableDatabasePreflight(
-	evidence: DisposableDatabasePreflight,
-): void {
+export function assertDisposableDatabasePreflight(evidence: DisposableDatabasePreflight): void {
 	if (
 		evidence.currentDatabaseName !== evidence.expectedDatabaseName ||
 		evidence.drizzleSchemaExists ||
@@ -236,36 +217,25 @@ export function assertDisposableDatabasePreflight(
 }
 
 export function assertApprovalCatalog(catalog: ApprovalCatalog): void {
-	const missingTables = APPROVAL_TABLES.filter(
-		(table) => !catalog.tables.includes(table),
-	);
+	const missingTables = APPROVAL_TABLES.filter((table) => !catalog.tables.includes(table));
 	if (missingTables.length > 0) {
-		throw new Error(
-			`Missing canonical approval tables: ${missingTables.join(", ")}`,
-		);
+		throw new Error(`Missing canonical approval tables: ${missingTables.join(", ")}`);
 	}
 
 	const invalidColumns = APPROVAL_SOURCE_TABLES.filter((table) => {
 		const column = catalog.columns.find(
-			(candidate) =>
-				candidate.table === table && candidate.name === "approval_workflow_id",
+			(candidate) => candidate.table === table && candidate.name === "approval_workflow_id",
 		);
 		return column?.type !== "uuid";
 	});
 	if (invalidColumns.length > 0) {
-		throw new Error(
-			`Missing UUID approval_workflow_id columns: ${invalidColumns.join(", ")}`,
-		);
+		throw new Error(`Missing UUID approval_workflow_id columns: ${invalidColumns.join(", ")}`);
 	}
 
-	const index = catalog.indexes.find(
-		(candidate) => candidate.name === PENDING_INDEX_NAME,
-	);
+	const index = catalog.indexes.find((candidate) => candidate.name === PENDING_INDEX_NAME);
 	const hasExpectedColumns =
 		index?.columns.length === PENDING_INDEX_COLUMNS.length &&
-		index.columns.every(
-			(column, position) => column === PENDING_INDEX_COLUMNS[position],
-		);
+		index.columns.every((column, position) => column === PENDING_INDEX_COLUMNS[position]);
 	const normalizedPredicate = index?.predicate
 		?.toLowerCase()
 		.replaceAll('"', "")
@@ -284,16 +254,11 @@ export function assertApprovalCatalog(catalog: ApprovalCatalog): void {
 }
 
 function requireTestDatabaseConfig(): IntegrationDatabaseConfig {
-	const databaseUrl =
-		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
+	const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 	if (!databaseUrl) {
-		throw new Error(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL is required",
-		);
+		throw new Error("APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL is required");
 	}
-	if (
-		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== integrationDatabaseSentinel
-	) {
+	if (process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== integrationDatabaseSentinel) {
 		throw new Error(
 			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${integrationDatabaseSentinel}`,
 		);
@@ -396,15 +361,9 @@ async function assertAnchorLedgerState(
 		`,
 		[[EXPAND_CREATED_AT, CYCLE_IDENTITY_CREATED_AT, RECOVERY_CREATED_AT]],
 	);
-	const expandRows = result.rows.filter(
-		(row) => row.created_at === EXPAND_CREATED_AT,
-	);
-	const cycleRows = result.rows.filter(
-		(row) => row.created_at === CYCLE_IDENTITY_CREATED_AT,
-	);
-	const recoveryRows = result.rows.filter(
-		(row) => row.created_at === RECOVERY_CREATED_AT,
-	);
+	const expandRows = result.rows.filter((row) => row.created_at === EXPAND_CREATED_AT);
+	const cycleRows = result.rows.filter((row) => row.created_at === CYCLE_IDENTITY_CREATED_AT);
+	const recoveryRows = result.rows.filter((row) => row.created_at === RECOVERY_CREATED_AT);
 	if (
 		expandRows.length !== 1 ||
 		expandRows[0]?.hash !== expandHash ||
@@ -417,9 +376,7 @@ async function assertAnchorLedgerState(
 	}
 }
 
-async function loadMigrationLedger(
-	pool: Pool,
-): Promise<RawMigrationLedgerRow[]> {
+async function loadMigrationLedger(pool: Pool): Promise<RawMigrationLedgerRow[]> {
 	const result = await pool.query<RawMigrationLedgerRow>(`
 		select id, hash, created_at
 		from drizzle.__drizzle_migrations
@@ -431,9 +388,7 @@ async function loadMigrationLedger(
 async function assertIncidentState(pool: Pool): Promise<void> {
 	const ledger = normalizeMigrationLedger(await loadMigrationLedger(pool));
 	if (ledger.at(-1)?.createdAt !== INCIDENT_LATEST_CREATED_AT) {
-		throw new Error(
-			`Incident ledger latest created_at must be ${INCIDENT_LATEST_CREATED_AT}`,
-		);
+		throw new Error(`Incident ledger latest created_at must be ${INCIDENT_LATEST_CREATED_AT}`);
 	}
 	const result = await pool.query<{
 		approval_table_exists: boolean;
@@ -543,27 +498,18 @@ async function run(): Promise<void> {
 	let temporaryDirectory: string | undefined;
 	let destructiveResetAuthorized = false;
 	try {
-		temporaryDirectory = await mkdtemp(
-			join(tmpdir(), "z8-approval-migration-recovery-"),
-		);
+		temporaryDirectory = await mkdtemp(join(tmpdir(), "z8-approval-migration-recovery-"));
 		const incidentMigrationsFolder = join(temporaryDirectory, "drizzle");
 		await cp(REAL_MIGRATIONS_FOLDER, incidentMigrationsFolder, {
 			recursive: true,
 		});
 		const journalPath = join(incidentMigrationsFolder, "meta", "_journal.json");
-		const journal = JSON.parse(
-			await readFile(journalPath, "utf8"),
-		) as MigrationJournal;
-		await writeFile(
-			journalPath,
-			`${JSON.stringify(filterIncidentJournal(journal), null, 2)}\n`,
-		);
+		const journal = JSON.parse(await readFile(journalPath, "utf8")) as MigrationJournal;
+		await writeFile(journalPath, `${JSON.stringify(filterIncidentJournal(journal), null, 2)}\n`);
 
 		pool = new Pool({ connectionString: databaseConfig.databaseUrl });
 		await preflightDisposableDatabase(pool, databaseConfig.databaseName);
-		console.log(
-			"Migration recovery verification: probing custom schema refusal",
-		);
+		console.log("Migration recovery verification: probing custom schema refusal");
 		await pool.query('create schema "approval_migration_preflight_probe"');
 		let customSchemaRefused = false;
 		try {
@@ -571,9 +517,7 @@ async function run(): Promise<void> {
 		} catch (error) {
 			if (
 				!(error instanceof Error) ||
-				!error.message.startsWith(
-					"Refusing destructive approval migration verification",
-				)
+				!error.message.startsWith("Refusing destructive approval migration verification")
 			) {
 				throw error;
 			}
@@ -607,9 +551,7 @@ async function run(): Promise<void> {
 		assertMigrationLedgerUnchanged(beforeRetry, afterRetry);
 		await assertRecoveryState(pool);
 
-		console.log(
-			"Migration recovery verification: checking anchor-present index recovery",
-		);
+		console.log("Migration recovery verification: checking anchor-present index recovery");
 		await pool.query(`drop index public."${PENDING_INDEX_NAME}"`);
 		await pool.query(`
 			create unique index "${PENDING_INDEX_NAME}"
@@ -621,9 +563,7 @@ async function run(): Promise<void> {
 			select to_regclass('public.approval_workflow') is not null as exists
 		`);
 		if (anchorResult.rows[0]?.exists !== true) {
-			throw new Error(
-				"Approval workflow anchor table is absent before recovery replay",
-			);
+			throw new Error("Approval workflow anchor table is absent before recovery replay");
 		}
 		const deletedRecovery = await pool.query(
 			"delete from drizzle.__drizzle_migrations where created_at = $1",
@@ -654,19 +594,20 @@ async function run(): Promise<void> {
 		await assertAnchorLedgerState(pool, expandHash, true);
 		await assertRecoveryState(pool);
 
-		console.log(
-			"Migration recovery verification: checking fresh migration chain",
-		);
+		console.log("Migration recovery verification: checking fresh migration chain");
 		if (!destructiveResetAuthorized) {
-			throw new Error(
-				"Refusing destructive schema reset without same-run test DB preflight",
-			);
+			throw new Error("Refusing destructive schema reset without same-run test DB preflight");
 		}
 		await pool.query("drop schema if exists drizzle cascade");
 		await pool.query("drop schema public cascade");
 		await pool.query("create schema public authorization current_user");
 		await pool.query("grant all on schema public to public");
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await runBoundaryAwareMigrations({
+			pool,
+			migrationsFolder: REAL_MIGRATIONS_FOLDER,
+			allowContractConstraints: true,
+			allowPolicyV1Seal: true,
+		});
 		await assertRecoveryState(pool);
 
 		console.log("Migration recovery verification: passed");
@@ -681,9 +622,7 @@ async function run(): Promise<void> {
 	}
 }
 
-const invokedPath = process.argv[1]
-	? pathToFileURL(resolve(process.argv[1])).href
-	: "";
+const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : "";
 if (import.meta.url === invokedPath) {
 	run().catch((error: unknown) => {
 		console.error(formatMigrationVerificationFailure(error));

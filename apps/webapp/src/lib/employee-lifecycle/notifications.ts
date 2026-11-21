@@ -155,6 +155,18 @@ const REVIEW_MESSAGES: Record<
 		fallback:
 			"{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone}).",
 	},
+	work_after_cutoff: {
+		label: "Work recorded after leaving date needs review",
+		key: "common:notifications.content.employeeOffboardingReview.work_after_cutoff",
+		fallback:
+			"{employeeName}: Work recorded after leaving date needs review (departure effective {cutoff}, {timezone}).",
+	},
+	payroll_reconciliation: {
+		label: "Settled payroll needs reconciliation",
+		key: "common:notifications.content.employeeOffboardingReview.payroll_reconciliation",
+		fallback:
+			"{employeeName}: Settled payroll needs reconciliation (departure effective {cutoff}, {timezone}).",
+	},
 };
 
 // A deactivation (#1440) raises only approval handover reviews.

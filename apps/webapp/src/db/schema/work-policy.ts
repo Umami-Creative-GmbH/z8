@@ -1,13 +1,17 @@
 import { sql } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	boolean,
 	check,
+	date,
 	decimal,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -15,6 +19,8 @@ import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
+import { contractDefault, type WorkPolicyAssignmentSourceKind } from "./contract";
+import { employeeEmploymentHistory } from "./employment-history";
 import {
 	dayOfWeekEnum,
 	holidayPresetAssignmentTypeEnum,
@@ -74,7 +80,74 @@ export const workPolicy = pgTable(
 		index("workPolicy_organizationId_idx").on(table.organizationId),
 		index("workPolicy_isActive_idx").on(table.isActive),
 		uniqueIndex("workPolicy_org_name_idx").on(table.organizationId, table.name),
+		unique("work_policy_id_org_uidx").on(table.id, table.organizationId),
 	],
+);
+
+/**
+ * Effective-dated immutable version of a work policy (0318).
+ * Carries versioned schedule/regulation/presence enablement flags and seal state.
+ */
+export const workPolicyVersion = pgTable(
+	"work_policy_version",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		policyId: uuid("policy_id").notNull(),
+		versionNumber: integer("version_number").notNull(),
+		effectiveFromDate: date("effective_from_date", { mode: "string" }).notNull(),
+		scheduleEnabled: boolean("schedule_enabled").notNull(),
+		regulationEnabled: boolean("regulation_enabled").notNull(),
+		presenceEnabled: boolean("presence_enabled").notNull(),
+		isLegacyBaseline: boolean("is_legacy_baseline").default(false).notNull(),
+		sealedAt: timestamp("sealed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		foreignKey({
+			name: "work_policy_version_policy_fk",
+			columns: [table.policyId, table.organizationId],
+			foreignColumns: [workPolicy.id, workPolicy.organizationId],
+		}).onDelete("cascade"),
+		unique("work_policy_version_id_policy_unique").on(table.id, table.policyId),
+		unique("work_policy_version_id_org_policy_unique").on(
+			table.id,
+			table.organizationId,
+			table.policyId,
+		),
+		unique("work_policy_version_policy_version_number_unique").on(
+			table.policyId,
+			table.versionNumber,
+		),
+		index("workPolicyVersion_organizationId_idx").on(table.organizationId),
+		index("workPolicyVersion_policy_effective_idx").on(
+			table.policyId,
+			table.effectiveFromDate.desc(),
+			table.versionNumber.desc(),
+		),
+		check("work_policy_version_version_number_check", sql`"version_number" >= 1`),
+		check(
+			"work_policy_version_legacy_v1_check",
+			sql`NOT "is_legacy_baseline" OR "version_number" = 1`,
+		),
+	],
+);
+
+/** Singleton cutover state row recording when Drain Gate 2 sealed legacy v1 policy versions. */
+export const workPolicyVersioningState = pgTable(
+	"work_policy_versioning_state",
+	{
+		singleton: boolean("singleton").default(true).primaryKey().notNull(),
+		sealedCutoverAt: timestamp("sealed_cutover_at", { withTimezone: true }),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	() => [check("work_policy_versioning_state_singleton_check", sql`"singleton" = true`)],
 );
 
 // ============================================
@@ -93,6 +166,7 @@ export const workPolicySchedule = pgTable(
 			.notNull()
 			.unique()
 			.references(() => workPolicy.id, { onDelete: "cascade" }),
+		policyVersionId: uuid("policy_version_id"),
 
 		// Schedule configuration
 		scheduleCycle: scheduleCycleEnum("schedule_cycle").default("weekly").notNull(),
@@ -126,6 +200,7 @@ export const workPolicyScheduleDay = pgTable(
 		scheduleId: uuid("schedule_id")
 			.notNull()
 			.references(() => workPolicySchedule.id, { onDelete: "cascade" }),
+		policyVersionId: uuid("policy_version_id"),
 
 		// Day configuration
 		dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
@@ -171,6 +246,7 @@ export const workPolicyPresence = pgTable(
 			.notNull()
 			.unique()
 			.references(() => workPolicy.id, { onDelete: "cascade" }),
+		policyVersionId: uuid("policy_version_id"),
 
 		// Mode: minimum count of days or fixed specific days
 		presenceMode: presenceModeEnum("presence_mode").default("minimum_count").notNull(),
@@ -219,6 +295,7 @@ export const workPolicyRegulation = pgTable(
 			.notNull()
 			.unique()
 			.references(() => workPolicy.id, { onDelete: "cascade" }),
+		policyVersionId: uuid("policy_version_id"),
 
 		// Maximum working time limits (in minutes)
 		maxDailyMinutes: integer("max_daily_minutes"), // e.g., 600 = 10 hours
@@ -261,6 +338,7 @@ export const workPolicyBreakRule = pgTable(
 		regulationId: uuid("regulation_id")
 			.notNull()
 			.references(() => workPolicyRegulation.id, { onDelete: "cascade" }),
+		policyVersionId: uuid("policy_version_id"),
 
 		// Trigger condition: "In case of more than X minutes of working time"
 		workingMinutesThreshold: integer("working_minutes_threshold").notNull(),
@@ -290,6 +368,7 @@ export const workPolicyBreakOption = pgTable(
 		breakRuleId: uuid("break_rule_id")
 			.notNull()
 			.references(() => workPolicyBreakRule.id, { onDelete: "cascade" }),
+		policyVersionId: uuid("policy_version_id"),
 
 		// null = any number of splits allowed
 		splitCount: integer("split_count"), // 1 = no split (take at once), 2 = two parts, 3 = three parts, null = any
@@ -336,6 +415,18 @@ export const workPolicyAssignment = pgTable(
 		// Half-open effective interval [from, until); null means unbounded.
 		effectiveFrom: timestamp("effective_from"),
 		effectiveUntil: timestamp("effective_until"),
+		// Canonical calendar-date interval & provenance (0319)
+		effectiveFromDate: date("effective_from_date", { mode: "string" }),
+		effectiveUntilDate: date("effective_until_date", { mode: "string" }),
+		sourceKind: text("source_kind").$type<WorkPolicyAssignmentSourceKind>(),
+		sourceContractDefaultId: uuid("source_contract_default_id").references(
+			(): AnyPgColumn => contractDefault.id,
+			{ onDelete: "cascade" },
+		),
+		sourceEmploymentHistoryId: uuid("source_employment_history_id").references(
+			(): AnyPgColumn => employeeEmploymentHistory.id,
+			{ onDelete: "set null" },
+		),
 
 		isActive: boolean("is_active").default(true).notNull(),
 
@@ -367,6 +458,10 @@ export const workPolicyAssignment = pgTable(
 			table.effectiveUntil,
 		),
 		index("workPolicyAssignment_employee_active_idx").on(table.employeeId, table.isActive),
+		check(
+			"work_policy_assignment_source_kind_check",
+			sql`"source_kind" IS NULL OR "source_kind" IN ('contract_default', 'employment_terms', 'manager_assignment', 'legacy')`,
+		),
 	],
 );
 
@@ -391,6 +486,7 @@ export const workPolicyViolation = pgTable(
 		policyId: uuid("policy_id").references(() => workPolicy.id, {
 			onDelete: "set null",
 		}),
+		policyVersionId: uuid("policy_version_id"),
 
 		// What triggered the violation
 		workPeriodId: uuid("work_period_id").references(() => workPeriod.id, {
@@ -418,6 +514,19 @@ export const workPolicyViolation = pgTable(
 		index("workPolicyViolation_violationType_idx").on(table.violationType),
 		index("workPolicyViolation_org_date_idx").on(table.organizationId, table.violationDate),
 		index("workPolicyViolation_emp_date_idx").on(table.employeeId, table.violationDate),
+		check(
+			"work_policy_violation_version_requires_policy_check",
+			sql`"policy_version_id" IS NULL OR "policy_id" IS NOT NULL`,
+		),
+		foreignKey({
+			name: "work_policy_violation_policy_version_fk",
+			columns: [table.policyVersionId, table.organizationId, table.policyId],
+			foreignColumns: [
+				workPolicyVersion.id,
+				workPolicyVersion.organizationId,
+				workPolicyVersion.policyId,
+			],
+		}).onDelete("no action"),
 	],
 );
 

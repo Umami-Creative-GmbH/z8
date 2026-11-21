@@ -14,6 +14,10 @@ data:
   postgres-host: "z8-postgresql"
   postgres-port: "5432"
   postgres-db: "z8"
+  # Migration drain gates and lock retries
+  db-allow-contract-constraints: "false"
+  db-allow-policy-v1-seal: "false"
+  db-migration-lock-retries: "20"
 
   # Cache
   redis-host: "z8-valkey"
