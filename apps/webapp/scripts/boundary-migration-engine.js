@@ -1280,6 +1280,684 @@ export async function verifyPhase1BackfillCompleteness(client) {
 	return counts;
 }
 
+/**
+ * Chunked, crash-safe pre-0322 reconciliation and overlap pre-clean on `work_policy_assignment`:
+ * - Normalizes any newly written rows missing `effective_from_date` or `source_kind`
+ * - Fixes priority mismatches and inverted/empty date ranges (`effective_until_date <= effective_from_date`)
+ * - Resolves overlapping active intervals per scope (`organization`, `team`, `employee`)
+ *   while idempotently recording `legacy_assignment_conflict` entries.
+ */
+export async function runPre0322AssignmentPreClean(client, options = {}) {
+	const {
+		chunkSize = DEFAULT_BACKFILL_CHUNK_SIZE,
+		retryOptions = {},
+		onBackfillChunkCommitted,
+	} = options;
+	const stats = [];
+
+	// 1. Delta canonical backfill + priority normalization
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0322_assignment_canonical",
+			chunkSize,
+			async (tx, limit) => {
+				const res = await tx.query(
+					`
+					WITH batch AS (
+						SELECT
+							a.id,
+							COALESCE(
+								a.effective_from_date,
+								CASE
+									WHEN a.effective_from IS NOT NULL
+										THEN z8_terms_timestamp_to_calendar_date(a.effective_from, a.organization_id)
+									ELSE DATE '1970-01-01'
+								END
+							) AS next_from_date,
+							COALESCE(
+								a.effective_until_date,
+								CASE
+									WHEN a.effective_until IS NOT NULL
+										THEN z8_terms_timestamp_to_calendar_date(a.effective_until, a.organization_id)
+									ELSE NULL
+								END
+							) AS next_until_date,
+							COALESCE(
+								a.source_kind,
+								CASE
+									WHEN a.source_contract_default_id IS NOT NULL THEN 'contract_default'
+									WHEN a.source_employment_history_id IS NOT NULL THEN 'employment_terms'
+									WHEN a.assignment_type IN ('organization', 'team') THEN 'legacy'
+									ELSE 'manager_assignment'
+								END
+							) AS next_source_kind,
+							CASE a.assignment_type
+								WHEN 'organization' THEN 0
+								WHEN 'team' THEN 1
+								ELSE 2
+							END AS expected_priority
+						FROM "work_policy_assignment" a
+						WHERE a.effective_from_date IS NULL
+							OR a.source_kind IS NULL
+							OR a.priority <> CASE a.assignment_type
+								WHEN 'organization' THEN 0
+								WHEN 'team' THEN 1
+								ELSE 2
+							END
+						ORDER BY a.id
+						LIMIT $1
+						FOR UPDATE OF a SKIP LOCKED
+					)
+					UPDATE "work_policy_assignment" a
+					SET
+						"effective_from_date" = batch.next_from_date,
+						"effective_until_date" = batch.next_until_date,
+						"source_kind" = batch.next_source_kind,
+						"priority" = batch.expected_priority
+					FROM batch
+					WHERE a.id = batch.id
+					`,
+					[limit],
+				);
+				return res.rowCount ?? 0;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	// 2. Deactivate & normalize any rows with inverted/empty intervals (effective_until_date <= effective_from_date)
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0322_assignment_inverted_dates",
+			chunkSize,
+			async (tx, limit) => {
+				const rowsRes = await tx.query(
+					`
+					SELECT id, organization_id, policy_id, effective_from_date::text, effective_until_date::text
+					FROM "work_policy_assignment"
+					WHERE "effective_until_date" IS NOT NULL
+						AND "effective_until_date" <= "effective_from_date"
+					ORDER BY id
+					LIMIT $1
+					FOR UPDATE SKIP LOCKED
+					`,
+					[limit],
+				);
+				for (const row of rowsRes.rows) {
+					await tx.query(
+						`
+						INSERT INTO "contract_migration_conflict" (
+							"organization_id", "work_policy_id", "conflict_kind", "dedupe_key", "details"
+						)
+						VALUES ($1, $2, 'legacy_assignment_conflict', $3, $4::jsonb)
+						ON CONFLICT ("organization_id", "dedupe_key") DO NOTHING
+						`,
+						[
+							row.organization_id,
+							row.policy_id,
+							`legacy_assignment_inverted:${row.id}`,
+							JSON.stringify({
+								assignmentId: row.id,
+								effectiveFromDate: row.effective_from_date,
+								effectiveUntilDate: row.effective_until_date,
+								resolution: "deactivated_and_cleared_until",
+							}),
+						],
+					);
+					await tx.query(
+						`
+						UPDATE "work_policy_assignment"
+						SET "is_active" = false, "effective_until_date" = NULL, "effective_until" = NULL
+						WHERE id = $1
+						`,
+						[row.id],
+					);
+				}
+				return rowsRes.rows.length;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	// 3. Resolve overlapping active intervals per scope (organization, team, employee)
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0322_assignment_overlaps",
+			chunkSize,
+			async (tx, limit) => {
+				const overlapRes = await tx.query(
+					`
+					WITH ordered AS (
+						SELECT
+							id,
+							organization_id,
+							policy_id,
+							assignment_type::text AS assignment_type,
+							team_id,
+							employee_id,
+							effective_from_date,
+							effective_until_date,
+							LEAD(id) OVER (
+								PARTITION BY organization_id, assignment_type, team_id, employee_id
+								ORDER BY effective_from_date ASC, created_at ASC, id ASC
+							) AS next_id,
+							LEAD(effective_from_date) OVER (
+								PARTITION BY organization_id, assignment_type, team_id, employee_id
+								ORDER BY effective_from_date ASC, created_at ASC, id ASC
+							) AS next_from_date
+						FROM "work_policy_assignment"
+						WHERE "is_active" = true
+					)
+					SELECT
+						o.id,
+						o.organization_id,
+						o.policy_id,
+						o.assignment_type,
+						o.effective_from_date::text AS effective_from_date,
+						o.effective_until_date::text AS effective_until_date,
+						o.next_id,
+						o.next_from_date::text AS next_from_date
+					FROM ordered o
+					WHERE o.next_id IS NOT NULL
+						AND (o.effective_until_date IS NULL OR o.effective_until_date > o.next_from_date)
+					ORDER BY o.id
+					LIMIT $1
+					`,
+					[limit],
+				);
+
+				let resolved = 0;
+				for (const row of overlapRes.rows) {
+					await tx.query(
+						`
+						INSERT INTO "contract_migration_conflict" (
+							"organization_id", "work_policy_id", "conflict_kind", "dedupe_key", "details"
+						)
+						VALUES ($1, $2, 'legacy_assignment_conflict', $3, $4::jsonb)
+						ON CONFLICT ("organization_id", "dedupe_key") DO NOTHING
+						`,
+						[
+							row.organization_id,
+							row.policy_id,
+							`legacy_assignment_overlap:${row.id}:${row.next_id}`,
+							JSON.stringify({
+								assignmentId: row.id,
+								overlappingNextId: row.next_id,
+								assignmentType: row.assignment_type,
+								effectiveFromDate: row.effective_from_date,
+								effectiveUntilDate: row.effective_until_date,
+								nextFromDate: row.next_from_date,
+								resolution:
+									row.effective_from_date === row.next_from_date
+										? "deactivated_older_same_start"
+										: "clamped_effective_until_date",
+							}),
+						],
+					);
+
+					if (row.effective_from_date === row.next_from_date) {
+						await tx.query(
+							`UPDATE "work_policy_assignment" SET "is_active" = false WHERE id = $1`,
+							[row.id],
+						);
+					} else {
+						await tx.query(
+							`
+							UPDATE "work_policy_assignment"
+							SET
+								"effective_until_date" = $2::date,
+								"effective_until" = $2::date::timestamp
+							WHERE id = $1
+							`,
+							[row.id, row.next_from_date],
+						);
+					}
+					resolved += 1;
+				}
+				return resolved;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	return stats;
+}
+
+/**
+ * Chunked, crash-safe pre-0323 reconciliation and confirmed-interval overlap pre-clean
+ * on `employee_employment_history` before installing `btree_gist` exclusion constraints.
+ */
+export async function runPre0323TermsPreClean(client, options = {}) {
+	const {
+		chunkSize = DEFAULT_BACKFILL_CHUNK_SIZE,
+		retryOptions = {},
+		onBackfillChunkCommitted,
+	} = options;
+	const stats = [];
+
+	// 1. Delta backfill any newly written rows missing valid_from_date
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0323_terms_canonical",
+			chunkSize,
+			async (tx, limit) => {
+				const res = await tx.query(
+					`
+					WITH batch AS (
+						SELECT
+							h.id,
+							z8_terms_timestamp_to_calendar_date(h.valid_from, h.organization_id) AS next_from_date,
+							CASE
+								WHEN h.valid_until IS NOT NULL
+									THEN z8_terms_timestamp_to_calendar_date(h.valid_until, h.organization_id)
+								ELSE NULL
+							END AS next_until_date
+						FROM "employee_employment_history" h
+						WHERE h.valid_from_date IS NULL
+						ORDER BY h.id
+						LIMIT $1
+						FOR UPDATE OF h SKIP LOCKED
+					)
+					UPDATE "employee_employment_history" h
+					SET
+						"valid_from_date" = batch.next_from_date,
+						"valid_until_date" = batch.next_until_date
+					FROM batch
+					WHERE h.id = batch.id
+					`,
+					[limit],
+				);
+				return res.rowCount ?? 0;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	// 2. Clamp inverted intervals (valid_until_date < valid_from_date) to zero-length superseded rows
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0323_terms_inverted_dates",
+			chunkSize,
+			async (tx, limit) => {
+				const rowsRes = await tx.query(
+					`
+					SELECT id, organization_id, employee_id, valid_from_date::text, valid_until_date::text
+					FROM "employee_employment_history"
+					WHERE "valid_until_date" IS NOT NULL
+						AND "valid_until_date" < "valid_from_date"
+					ORDER BY id
+					LIMIT $1
+					FOR UPDATE SKIP LOCKED
+					`,
+					[limit],
+				);
+				for (const row of rowsRes.rows) {
+					await tx.query(
+						`
+						INSERT INTO "contract_migration_conflict" (
+							"organization_id", "employee_id", "employment_history_id", "conflict_kind", "dedupe_key", "details"
+						)
+						VALUES ($1, $2, $3, 'legacy_terms_overlap', $4, $5::jsonb)
+						ON CONFLICT ("organization_id", "dedupe_key") DO NOTHING
+						`,
+						[
+							row.organization_id,
+							row.employee_id,
+							row.id,
+							`legacy_terms_inverted:${row.id}`,
+							JSON.stringify({
+								employmentHistoryId: row.id,
+								validFromDate: row.valid_from_date,
+								validUntilDate: row.valid_until_date,
+								resolution: "clamped_to_zero_length",
+							}),
+						],
+					);
+					await tx.query(
+						`
+						UPDATE "employee_employment_history"
+						SET "valid_until_date" = "valid_from_date", "valid_until" = "valid_from_date"::timestamp
+						WHERE id = $1
+						`,
+						[row.id],
+					);
+				}
+				return rowsRes.rows.length;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	// 3. Resolve overlapping confirmed non-empty intervals within the same stint
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0323_terms_overlaps",
+			chunkSize,
+			async (tx, limit) => {
+				const overlapRes = await tx.query(
+					`
+					WITH ordered AS (
+						SELECT
+							id,
+							organization_id,
+							employee_id,
+							employment_period_id,
+							valid_from_date,
+							valid_until_date,
+							LEAD(id) OVER (
+								PARTITION BY organization_id, employee_id, employment_period_id
+								ORDER BY valid_from_date ASC, created_at ASC, id ASC
+							) AS next_id,
+							LEAD(valid_from_date) OVER (
+								PARTITION BY organization_id, employee_id, employment_period_id
+								ORDER BY valid_from_date ASC, created_at ASC, id ASC
+							) AS next_from_date
+						FROM "employee_employment_history"
+						WHERE "review_state" = 'confirmed'
+							AND "employment_period_id" IS NOT NULL
+							AND ("valid_until_date" IS NULL OR "valid_until_date" > "valid_from_date")
+					)
+					SELECT
+						o.id,
+						o.organization_id,
+						o.employee_id,
+						o.valid_from_date::text AS valid_from_date,
+						o.valid_until_date::text AS valid_until_date,
+						o.next_id,
+						o.next_from_date::text AS next_from_date
+					FROM ordered o
+					WHERE o.next_id IS NOT NULL
+						AND (o.valid_until_date IS NULL OR o.valid_until_date > o.next_from_date)
+					ORDER BY o.id
+					LIMIT $1
+					`,
+					[limit],
+				);
+
+				let resolved = 0;
+				for (const row of overlapRes.rows) {
+					await tx.query(
+						`
+						INSERT INTO "contract_migration_conflict" (
+							"organization_id", "employee_id", "employment_history_id", "conflict_kind", "dedupe_key", "details"
+						)
+						VALUES ($1, $2, $3, 'legacy_terms_overlap', $4, $5::jsonb)
+						ON CONFLICT ("organization_id", "dedupe_key") DO NOTHING
+						`,
+						[
+							row.organization_id,
+							row.employee_id,
+							row.id,
+							`legacy_terms_overlap:${row.id}:${row.next_id}`,
+							JSON.stringify({
+								employmentHistoryId: row.id,
+								overlappingNextId: row.next_id,
+								validFromDate: row.valid_from_date,
+								validUntilDate: row.valid_until_date,
+								nextFromDate: row.next_from_date,
+								resolution:
+									row.valid_from_date === row.next_from_date
+										? "superseded_zero_length"
+										: "clamped_valid_until_date",
+							}),
+						],
+					);
+
+					await tx.query(
+						`
+						UPDATE "employee_employment_history"
+						SET
+							"valid_until_date" = $2::date,
+							"valid_until" = $2::date::timestamp
+						WHERE id = $1
+						`,
+						[row.id, row.next_from_date],
+					);
+					resolved += 1;
+				}
+				return resolved;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	return stats;
+}
+
+/**
+ * Pre-0324 non-transactional final delta reconciliation across all policy tables
+ * and `work_policy_violation` before concurrently building the 6 policy-version staging indexes.
+ */
+export async function runPre0324PolicyDeltaReconciliation(client, options = {}) {
+	const {
+		chunkSize = DEFAULT_BACKFILL_CHUNK_SIZE,
+		retryOptions = {},
+		onBackfillChunkCommitted,
+	} = options;
+	const stats = [];
+
+	// Delta v1 versions for any newly created work_policy rows
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0324_work_policy_v1",
+			chunkSize,
+			async (tx, limit) => {
+				const res = await tx.query(
+					`
+					WITH batch AS (
+						SELECT
+							wp.id,
+							wp.organization_id,
+							wp.schedule_enabled,
+							wp.regulation_enabled,
+							wp.presence_enabled,
+							wp.created_by
+						FROM "work_policy" wp
+						WHERE NOT EXISTS (
+							SELECT 1
+							FROM "work_policy_version" v
+							WHERE v.policy_id = wp.id
+								AND v.version_number = 1
+						)
+						ORDER BY wp.id
+						LIMIT $1
+					)
+					INSERT INTO "work_policy_version" (
+						"organization_id",
+						"policy_id",
+						"version_number",
+						"effective_from_date",
+						"schedule_enabled",
+						"regulation_enabled",
+						"presence_enabled",
+						"is_legacy_baseline",
+						"sealed_at",
+						"created_by"
+					)
+					SELECT
+						b.organization_id,
+						b.id,
+						1,
+						DATE '1970-01-01',
+						b.schedule_enabled,
+						b.regulation_enabled,
+						b.presence_enabled,
+						true,
+						NULL,
+						b.created_by
+					FROM batch b
+					ON CONFLICT ("policy_id", "version_number") DO NOTHING
+					`,
+					[limit],
+				);
+				return res.rowCount ?? 0;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	for (const tableName of [
+		"work_policy_schedule",
+		"work_policy_presence",
+		"work_policy_regulation",
+	]) {
+		const quoted = quoteIdentifier(tableName);
+		stats.push(
+			await runChunkLoop(
+				client,
+				`pre_0324_${tableName}_version`,
+				chunkSize,
+				async (tx, limit) => {
+					const res = await tx.query(
+						`
+						WITH batch AS (
+							SELECT t.id, v.id AS version_id
+							FROM ${quoted} t
+							JOIN "work_policy_version" v
+								ON v.policy_id = t.policy_id
+								AND v.version_number = 1
+							WHERE t.policy_version_id IS NULL
+							ORDER BY t.id
+							LIMIT $1
+							FOR UPDATE OF t SKIP LOCKED
+						)
+						UPDATE ${quoted} t
+						SET "policy_version_id" = batch.version_id
+						FROM batch
+						WHERE t.id = batch.id
+						`,
+						[limit],
+					);
+					return res.rowCount ?? 0;
+				},
+				{ retryOptions, onBackfillChunkCommitted },
+			),
+		);
+	}
+
+	const grandchildSpecs = [
+		{
+			table: "work_policy_schedule_day",
+			parentTable: "work_policy_schedule",
+			fkColumn: "schedule_id",
+		},
+		{
+			table: "work_policy_break_rule",
+			parentTable: "work_policy_regulation",
+			fkColumn: "regulation_id",
+		},
+		{
+			table: "work_policy_break_option",
+			parentTable: "work_policy_break_rule",
+			fkColumn: "break_rule_id",
+		},
+	];
+	for (const spec of grandchildSpecs) {
+		const quotedChild = quoteIdentifier(spec.table);
+		const quotedParent = quoteIdentifier(spec.parentTable);
+		const quotedFk = quoteIdentifier(spec.fkColumn);
+		stats.push(
+			await runChunkLoop(
+				client,
+				`pre_0324_${spec.table}_version`,
+				chunkSize,
+				async (tx, limit) => {
+					const res = await tx.query(
+						`
+						WITH batch AS (
+							SELECT c.id, p.policy_version_id AS version_id
+							FROM ${quotedChild} c
+							JOIN ${quotedParent} p ON p.id = c.${quotedFk}
+							WHERE c.policy_version_id IS NULL
+								AND p.policy_version_id IS NOT NULL
+							ORDER BY c.id
+							LIMIT $1
+							FOR UPDATE OF c SKIP LOCKED
+						)
+						UPDATE ${quotedChild} c
+						SET "policy_version_id" = batch.version_id
+						FROM batch
+						WHERE c.id = batch.id
+						`,
+						[limit],
+					);
+					return res.rowCount ?? 0;
+				},
+				{ retryOptions, onBackfillChunkCommitted },
+			),
+		);
+	}
+
+	stats.push(
+		await runChunkLoop(
+			client,
+			"pre_0324_work_policy_violation_version",
+			chunkSize,
+			async (tx, limit) => {
+				const res = await tx.query(
+					`
+					WITH batch AS (
+						SELECT t.id, v.id AS version_id
+						FROM "work_policy_violation" t
+						JOIN "work_policy_version" v
+							ON v.policy_id = t.policy_id
+							AND v.organization_id = t.organization_id
+							AND v.version_number = 1
+						WHERE t.policy_id IS NOT NULL
+							AND t.policy_version_id IS NULL
+						ORDER BY t.id
+						LIMIT $1
+						FOR UPDATE OF t SKIP LOCKED
+					)
+					UPDATE "work_policy_violation" t
+					SET "policy_version_id" = batch.version_id
+					FROM batch
+					WHERE t.id = batch.id
+					`,
+					[limit],
+				);
+				return res.rowCount ?? 0;
+			},
+			{ retryOptions, onBackfillChunkCommitted },
+		),
+	);
+
+	// Verify zero unbackfilled policy/child/grandchild/violation rows remain
+	const check = await client.query(`
+		SELECT
+			(
+				SELECT COUNT(*)::int FROM "work_policy" wp
+				WHERE NOT EXISTS (
+					SELECT 1 FROM "work_policy_version" v
+					WHERE v.policy_id = wp.id AND v.version_number = 1
+				)
+			) AS missing_work_policy_v1,
+			(SELECT COUNT(*)::int FROM "work_policy_schedule" WHERE "policy_version_id" IS NULL) AS missing_schedule_version,
+			(SELECT COUNT(*)::int FROM "work_policy_schedule_day" WHERE "policy_version_id" IS NULL) AS missing_schedule_day_version,
+			(SELECT COUNT(*)::int FROM "work_policy_presence" WHERE "policy_version_id" IS NULL) AS missing_presence_version,
+			(SELECT COUNT(*)::int FROM "work_policy_regulation" WHERE "policy_version_id" IS NULL) AS missing_regulation_version,
+			(SELECT COUNT(*)::int FROM "work_policy_break_rule" WHERE "policy_version_id" IS NULL) AS missing_break_rule_version,
+			(SELECT COUNT(*)::int FROM "work_policy_break_option" WHERE "policy_version_id" IS NULL) AS missing_break_option_version,
+			(SELECT COUNT(*)::int FROM "work_policy_violation" WHERE "policy_id" IS NOT NULL AND "policy_version_id" IS NULL) AS missing_violation_version
+	`);
+	const remaining = Object.entries(check.rows[0] ?? {}).filter(([, count]) => Number(count) > 0);
+	if (remaining.length > 0) {
+		const summary = remaining.map(([key, count]) => `${key}=${count}`).join(", ");
+		throw new Error(
+			`Pre-0324 policy delta reconciliation incomplete; unbackfilled rows remain: ${summary}`,
+		);
+	}
+
+	return stats;
+}
+
 async function relationExists(client, relationName) {
 	const res = await client.query("SELECT to_regclass($1) IS NOT NULL AS exists", [relationName]);
 	return res.rows[0]?.exists === true;
@@ -1448,7 +2126,28 @@ export async function runBoundaryAwareMigrations(options) {
 				}
 			}
 
+			if (stage.id === "phase2_0322") {
+				await runPre0322AssignmentPreClean(client, {
+					chunkSize: backfillChunkSize,
+					retryOptions,
+					onBackfillChunkCommitted,
+				});
+			}
+
+			if (stage.id === "phase2_0323") {
+				await runPre0323TermsPreClean(client, {
+					chunkSize: backfillChunkSize,
+					retryOptions,
+					onBackfillChunkCommitted,
+				});
+			}
+
 			if (stage.id === "phase2_0324") {
+				await runPre0324PolicyDeltaReconciliation(client, {
+					chunkSize: backfillChunkSize,
+					retryOptions,
+					onBackfillChunkCommitted,
+				});
 				for (const indexSpec of pre0324Indexes) {
 					const action = await ensureAttachableUniqueIndex(client, indexSpec, retryOptions);
 					indexActions.push(action);

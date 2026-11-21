@@ -54,15 +54,15 @@ export const employeeEmploymentHistory = pgTable(
 		employmentPeriodId: uuid("employment_period_id"),
 		validFrom: timestamp("valid_from").notNull(),
 		validUntil: timestamp("valid_until"),
-		/** Canonical calendar-date interval [validFromDate, validUntilDate) (0320). */
-		validFromDate: date("valid_from_date", { mode: "string" }),
+		/** Canonical calendar-date interval [validFromDate, validUntilDate) (0320/0323). */
+		validFromDate: date("valid_from_date", { mode: "string" }).notNull(),
 		validUntilDate: date("valid_until_date", { mode: "string" }),
 		status: employmentStatusEnum("status").default("active").notNull(),
 		contractType: contractTypeEnum("contract_type").default("fixed").notNull(),
-		weeklyContractMinutes: integer("weekly_contract_minutes").notNull(),
+		weeklyContractMinutes: integer("weekly_contract_minutes"),
 		probationStartsOn: timestamp("probation_starts_on", { mode: "date" }),
 		probationEndsOn: timestamp("probation_ends_on", { mode: "date" }),
-		workModel: workModelEnum("work_model").default("onsite").notNull(),
+		workModel: workModelEnum("work_model"),
 		workPolicyId: uuid("work_policy_id").references(() => workPolicy.id, { onDelete: "set null" }),
 		/** Operational divergence columns (null / 'inherit' means live-inherited from org/team default). */
 		scheduleMode: text("schedule_mode").$type<ScheduleMode>(),
@@ -158,6 +158,17 @@ export const employeeEmploymentHistory = pgTable(
 			"employee_employment_history_on_call_check",
 			sql`((("schedule_source" IS DISTINCT FROM 'on_call' AND "on_call_hours_kind" IS NULL AND "on_call_weekly_minutes" IS NULL AND "on_call_daily_minutes" IS NULL) OR ("schedule_source" = 'on_call' AND "on_call_hours_kind" IN ('exact', 'minimum', 'maximum', 'unspecified') AND (("on_call_hours_kind" = 'unspecified' AND "on_call_weekly_minutes" IS NULL) OR ("on_call_hours_kind" IN ('exact', 'minimum', 'maximum') AND "on_call_weekly_minutes" BETWEEN 1 AND 10080)) AND ("on_call_daily_minutes" IS NULL OR "on_call_daily_minutes" BETWEEN 1 AND 1440))) IS TRUE)`,
 		),
+		check(
+			"employee_employment_history_date_range_check",
+			sql`"valid_until_date" IS NULL OR "valid_until_date" >= "valid_from_date"`,
+		),
+		check(
+			"employee_employment_history_weekly_min_check",
+			sql`"weekly_contract_minutes" IS NULL OR ("weekly_contract_minutes" >= 0 AND "weekly_contract_minutes" <= 10080)`,
+		),
+		uniqueIndex("employeeEmploymentHistory_source_batch_item_uidx")
+			.on(table.sourceBatchItemId)
+			.where(sql`"source_batch_item_id" IS NOT NULL`),
 	],
 );
 

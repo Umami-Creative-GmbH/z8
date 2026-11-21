@@ -2255,6 +2255,48 @@
       "when": 1812470400000,
       "tag": "0321_retrospective_departure_and_contract_batch",
       "breakpoints": true
+    },
+    {
+      "idx": 322,
+      "version": "7",
+      "when": 1812556800000,
+      "tag": "0322_work_policy_assignment_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 323,
+      "version": "7",
+      "when": 1812643200000,
+      "tag": "0323_employment_terms_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 324,
+      "version": "7",
+      "when": 1812729600000,
+      "tag": "0324_work_policy_version_constraints_prep",
+      "breakpoints": true
+    },
+    {
+      "idx": 325,
+      "version": "7",
+      "when": 1812816000000,
+      "tag": "0325_work_policy_version_constraints_validate",
+      "breakpoints": true
+    },
+    {
+      "idx": 326,
+      "version": "7",
+      "when": 1812902400000,
+      "tag": "0326_work_policy_version_metadata_swap",
+      "breakpoints": true
+    },
+    {
+      "idx": 327,
+      "version": "7",
+      "when": 1812988800000,
+      "tag": "0327_work_policy_v1_seal",
+      "breakpoints": true
     }
   ]
 }

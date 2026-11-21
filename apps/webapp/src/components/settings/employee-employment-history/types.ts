@@ -34,10 +34,10 @@ export type EmploymentHistoryEntry = {
 	validUntil: Date | string | null;
 	status: string;
 	contractType: ContractType;
-	weeklyContractMinutes: number;
+	weeklyContractMinutes: number | null;
 	probationStartsOn: Date | string | null;
 	probationEndsOn: Date | string | null;
-	workModel: WorkModel;
+	workModel: WorkModel | null;
 	workPolicyId: string | null;
 	workPolicy?: EmploymentHistoryWorkPolicyOption | null;
 	hourlyRate: number | null;

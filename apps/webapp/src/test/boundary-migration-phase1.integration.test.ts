@@ -153,36 +153,11 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 				).rows;
 				expect(stateRows).toEqual([{ singleton: true, sealed_cutover_at: null }]);
 
-				// Verify Drain Gate 1 & Drain Gate 2 stop/resume & isolated xids with synthetic 0322-0327 entries
-				const stagedFolder = join(tempDir, "drizzle_staged");
-				await cp(migrationsFolder, stagedFolder, { recursive: true });
-				const journalPath = join(stagedFolder, "meta", "_journal.json");
-				const baseJournal = JSON.parse(await readFile(journalPath, "utf8")) as Journal;
-				const lastEntry = baseJournal.entries[baseJournal.entries.length - 1]!;
-				const syntheticTags = [
-					"0322_synthetic_assign",
-					"0323_synthetic_terms",
-					"0324_synthetic_policy_prep",
-					"0325_synthetic_policy_validate",
-					"0326_synthetic_policy_cutover",
-					"0327_synthetic_policy_seal",
-				];
-				for (const [offset, tag] of syntheticTags.entries()) {
-					await writeFile(join(stagedFolder, `${tag}.sql`), `SELECT ${322 + offset};\n`);
-					baseJournal.entries.push({
-						idx: lastEntry.idx + offset + 1,
-						version: "7",
-						when: lastEntry.when + (offset + 1) * 86_400_000,
-						tag,
-						breakpoints: true,
-					});
-				}
-				await writeFile(journalPath, `${JSON.stringify(baseJournal, null, 2)}\n`);
-
+				// Verify Drain Gate 1 & Drain Gate 2 stop/resume & isolated xids on the real 0322-0327 chain
 				// Drain Gate 1 default (false): must stop cleanly at 0321
 				const gate1Stop = await runBoundaryAwareMigrations({
 					pool: sibling.pool,
-					migrationsFolder: stagedFolder,
+					migrationsFolder,
 					allowContractConstraints: false,
 					allowPolicyV1Seal: false,
 				});
@@ -193,7 +168,7 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 				const gate2Stages: Array<{ stageId: string; xid: string | null }> = [];
 				const gate2Stop = await runBoundaryAwareMigrations({
 					pool: sibling.pool,
-					migrationsFolder: stagedFolder,
+					migrationsFolder,
 					allowContractConstraints: true,
 					allowPolicyV1Seal: false,
 					onStageCommitted: (info) => {
@@ -214,7 +189,7 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 				const sealStages: Array<{ stageId: string; xid: string | null }> = [];
 				const sealDone = await runBoundaryAwareMigrations({
 					pool: sibling.pool,
-					migrationsFolder: stagedFolder,
+					migrationsFolder,
 					allowContractConstraints: true,
 					allowPolicyV1Seal: true,
 					onStageCommitted: (info) => {
@@ -666,9 +641,11 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 
 	it(
 		"enforces #1922 bridge compatibility, sealed-version immutability (never on violations) with full-org cascade delete, on-call constraints, linear agreement chains, and 0321 retrospective departures & batches",
-		{ timeout: 60000 },
+		{ timeout: 120000 },
 		async () => {
-			const pool = integrationAdminPool();
+			// Run against a sibling DB stopped at 0321 (Drain Gate 1) so Phase 1 bridge triggers are active.
+			const sibling = await createSiblingDatabase("p1_bridges");
+			const pool = sibling.pool;
 			const orgId = `org_p1_${randomBytes(4).toString("hex")}`;
 			const userId = `usr_p1_${randomBytes(4).toString("hex")}`;
 			const empId = randomUUID();
@@ -677,6 +654,12 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 			const policyId = randomUUID();
 
 			try {
+				await runBoundaryAwareMigrations({
+					pool,
+					migrationsFolder,
+					allowContractConstraints: false,
+					allowPolicyV1Seal: false,
+				});
 				await pool.query(
 					`INSERT INTO "organization" ("id", "name", "slug", "created_at", "timezone") VALUES ($1, 'Bridge Co', $2, now(), 'Europe/Berlin')`,
 					[orgId, orgId],
@@ -917,8 +900,7 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 				).rowCount;
 				expect(remaining).toBe(0);
 			} finally {
-				await pool.query(`DELETE FROM "organization" WHERE id = $1`, [orgId]).catch(() => {});
-				await pool.query(`DELETE FROM "user" WHERE id = $1`, [userId]).catch(() => {});
+				await sibling.cleanup();
 			}
 		},
 	);

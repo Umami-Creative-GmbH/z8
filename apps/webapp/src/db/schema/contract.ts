@@ -275,6 +275,7 @@ export const contractDefault = pgTable(
 		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 	},
 	(table) => [
+		unique("contract_default_id_org_unique").on(table.id, table.organizationId),
 		index("contractDefault_org_scope_date_idx").on(
 			table.organizationId,
 			table.scope,

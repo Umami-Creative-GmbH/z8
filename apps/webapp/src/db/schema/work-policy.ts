@@ -19,7 +19,11 @@ import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { contractDefault, type WorkPolicyAssignmentSourceKind } from "./contract";
+import {
+	contractChangeBatchItem,
+	contractDefault,
+	type WorkPolicyAssignmentSourceKind,
+} from "./contract";
 import { employeeEmploymentHistory } from "./employment-history";
 import {
 	dayOfWeekEnum,
@@ -164,9 +168,8 @@ export const workPolicySchedule = pgTable(
 		id: uuid("id").defaultRandom().primaryKey(),
 		policyId: uuid("policy_id")
 			.notNull()
-			.unique()
 			.references(() => workPolicy.id, { onDelete: "cascade" }),
-		policyVersionId: uuid("policy_version_id"),
+		policyVersionId: uuid("policy_version_id").notNull(),
 
 		// Schedule configuration
 		scheduleCycle: scheduleCycleEnum("schedule_cycle").default("weekly").notNull(),
@@ -186,7 +189,16 @@ export const workPolicySchedule = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("workPolicySchedule_policyId_idx").on(table.policyId)],
+	(table) => [
+		index("workPolicySchedule_policyId_idx").on(table.policyId),
+		unique("work_policy_schedule_version_uidx").on(table.policyVersionId),
+		unique("work_policy_schedule_id_version_uidx").on(table.id, table.policyVersionId),
+		foreignKey({
+			name: "work_policy_schedule_policy_version_fk",
+			columns: [table.policyVersionId, table.policyId],
+			foreignColumns: [workPolicyVersion.id, workPolicyVersion.policyId],
+		}).onDelete("cascade"),
+	],
 );
 
 /**
@@ -200,7 +212,7 @@ export const workPolicyScheduleDay = pgTable(
 		scheduleId: uuid("schedule_id")
 			.notNull()
 			.references(() => workPolicySchedule.id, { onDelete: "cascade" }),
-		policyVersionId: uuid("policy_version_id"),
+		policyVersionId: uuid("policy_version_id").notNull(),
 
 		// Day configuration
 		dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
@@ -227,11 +239,16 @@ export const workPolicyScheduleDay = pgTable(
 			table.dayOfWeek,
 			table.cycleWeek,
 		),
+		foreignKey({
+			name: "work_policy_schedule_day_schedule_version_fk",
+			columns: [table.scheduleId, table.policyVersionId],
+			foreignColumns: [workPolicySchedule.id, workPolicySchedule.policyVersionId],
+		}).onDelete("cascade"),
 	],
 );
 
 // ============================================
-// PRESENCE CONFIGURATION (1:1 with workPolicy)
+// PRESENCE CONFIGURATION (1:1 with workPolicyVersion)
 // ============================================
 
 /**
@@ -244,9 +261,8 @@ export const workPolicyPresence = pgTable(
 		id: uuid("id").defaultRandom().primaryKey(),
 		policyId: uuid("policy_id")
 			.notNull()
-			.unique()
 			.references(() => workPolicy.id, { onDelete: "cascade" }),
-		policyVersionId: uuid("policy_version_id"),
+		policyVersionId: uuid("policy_version_id").notNull(),
 
 		// Mode: minimum count of days or fixed specific days
 		presenceMode: presenceModeEnum("presence_mode").default("minimum_count").notNull(),
@@ -259,7 +275,7 @@ export const workPolicyPresence = pgTable(
 
 		// Optional: restrict to a specific location (null = any on-site location)
 		locationId: uuid("location_id").references(() => location.id, {
-			onDelete: "set null",
+			onDelete: "no action",
 		}),
 
 		// How often to evaluate compliance
@@ -276,11 +292,17 @@ export const workPolicyPresence = pgTable(
 	(table) => [
 		index("workPolicyPresence_policyId_idx").on(table.policyId),
 		index("workPolicyPresence_locationId_idx").on(table.locationId),
+		unique("work_policy_presence_version_uidx").on(table.policyVersionId),
+		foreignKey({
+			name: "work_policy_presence_policy_version_fk",
+			columns: [table.policyVersionId, table.policyId],
+			foreignColumns: [workPolicyVersion.id, workPolicyVersion.policyId],
+		}).onDelete("cascade"),
 	],
 );
 
 // ============================================
-// REGULATION CONFIGURATION (1:1 with workPolicy)
+// REGULATION CONFIGURATION (1:1 with workPolicyVersion)
 // ============================================
 
 /**
@@ -293,9 +315,8 @@ export const workPolicyRegulation = pgTable(
 		id: uuid("id").defaultRandom().primaryKey(),
 		policyId: uuid("policy_id")
 			.notNull()
-			.unique()
 			.references(() => workPolicy.id, { onDelete: "cascade" }),
-		policyVersionId: uuid("policy_version_id"),
+		policyVersionId: uuid("policy_version_id").notNull(),
 
 		// Maximum working time limits (in minutes)
 		maxDailyMinutes: integer("max_daily_minutes"), // e.g., 600 = 10 hours
@@ -324,7 +345,16 @@ export const workPolicyRegulation = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("workPolicyRegulation_policyId_idx").on(table.policyId)],
+	(table) => [
+		index("workPolicyRegulation_policyId_idx").on(table.policyId),
+		unique("work_policy_regulation_version_uidx").on(table.policyVersionId),
+		unique("work_policy_regulation_id_version_uidx").on(table.id, table.policyVersionId),
+		foreignKey({
+			name: "work_policy_regulation_policy_version_fk",
+			columns: [table.policyVersionId, table.policyId],
+			foreignColumns: [workPolicyVersion.id, workPolicyVersion.policyId],
+		}).onDelete("cascade"),
+	],
 );
 
 /**
@@ -338,7 +368,7 @@ export const workPolicyBreakRule = pgTable(
 		regulationId: uuid("regulation_id")
 			.notNull()
 			.references(() => workPolicyRegulation.id, { onDelete: "cascade" }),
-		policyVersionId: uuid("policy_version_id"),
+		policyVersionId: uuid("policy_version_id").notNull(),
 
 		// Trigger condition: "In case of more than X minutes of working time"
 		workingMinutesThreshold: integer("working_minutes_threshold").notNull(),
@@ -354,6 +384,12 @@ export const workPolicyBreakRule = pgTable(
 	(table) => [
 		index("workPolicyBreakRule_regulationId_idx").on(table.regulationId),
 		index("workPolicyBreakRule_sortOrder_idx").on(table.regulationId, table.sortOrder),
+		unique("work_policy_break_rule_id_version_uidx").on(table.id, table.policyVersionId),
+		foreignKey({
+			name: "work_policy_break_rule_regulation_version_fk",
+			columns: [table.regulationId, table.policyVersionId],
+			foreignColumns: [workPolicyRegulation.id, workPolicyRegulation.policyVersionId],
+		}).onDelete("cascade"),
 	],
 );
 
@@ -368,7 +404,7 @@ export const workPolicyBreakOption = pgTable(
 		breakRuleId: uuid("break_rule_id")
 			.notNull()
 			.references(() => workPolicyBreakRule.id, { onDelete: "cascade" }),
-		policyVersionId: uuid("policy_version_id"),
+		policyVersionId: uuid("policy_version_id").notNull(),
 
 		// null = any number of splits allowed
 		splitCount: integer("split_count"), // 1 = no split (take at once), 2 = two parts, 3 = three parts, null = any
@@ -380,7 +416,14 @@ export const workPolicyBreakOption = pgTable(
 		sortOrder: integer("sort_order").default(0).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(table) => [index("workPolicyBreakOption_breakRuleId_idx").on(table.breakRuleId)],
+	(table) => [
+		index("workPolicyBreakOption_breakRuleId_idx").on(table.breakRuleId),
+		foreignKey({
+			name: "work_policy_break_option_break_rule_version_fk",
+			columns: [table.breakRuleId, table.policyVersionId],
+			foreignColumns: [workPolicyBreakRule.id, workPolicyBreakRule.policyVersionId],
+		}).onDelete("cascade"),
+	],
 );
 
 // ============================================
@@ -415,18 +458,18 @@ export const workPolicyAssignment = pgTable(
 		// Half-open effective interval [from, until); null means unbounded.
 		effectiveFrom: timestamp("effective_from"),
 		effectiveUntil: timestamp("effective_until"),
-		// Canonical calendar-date interval & provenance (0319)
-		effectiveFromDate: date("effective_from_date", { mode: "string" }),
+		// Canonical calendar-date interval & provenance (0319/0322)
+		effectiveFromDate: date("effective_from_date", { mode: "string" })
+			.default("1970-01-01")
+			.notNull(),
 		effectiveUntilDate: date("effective_until_date", { mode: "string" }),
-		sourceKind: text("source_kind").$type<WorkPolicyAssignmentSourceKind>(),
-		sourceContractDefaultId: uuid("source_contract_default_id").references(
-			(): AnyPgColumn => contractDefault.id,
-			{ onDelete: "cascade" },
-		),
-		sourceEmploymentHistoryId: uuid("source_employment_history_id").references(
-			(): AnyPgColumn => employeeEmploymentHistory.id,
-			{ onDelete: "set null" },
-		),
+		sourceKind: text("source_kind")
+			.$type<WorkPolicyAssignmentSourceKind>()
+			.default("legacy")
+			.notNull(),
+		sourceContractDefaultId: uuid("source_contract_default_id"),
+		sourceEmploymentHistoryId: uuid("source_employment_history_id"),
+		sourceBatchItemId: uuid("source_batch_item_id"),
 
 		isActive: boolean("is_active").default(true).notNull(),
 
@@ -444,23 +487,69 @@ export const workPolicyAssignment = pgTable(
 		index("workPolicyAssignment_organizationId_idx").on(table.organizationId),
 		index("workPolicyAssignment_teamId_idx").on(table.teamId),
 		index("workPolicyAssignment_employeeId_idx").on(table.employeeId),
-		// One org default per organization
-		uniqueIndex("workPolicyAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
-			.where(sql`assignment_type = 'organization' AND is_active = true`),
-		// One assignment per team
-		uniqueIndex("workPolicyAssignment_team_idx")
-			.on(table.teamId)
-			.where(sql`team_id IS NOT NULL AND is_active = true`),
 		index("workPolicyAssignment_employee_effective_idx").on(
 			table.employeeId,
 			table.effectiveFrom,
 			table.effectiveUntil,
 		),
 		index("workPolicyAssignment_employee_active_idx").on(table.employeeId, table.isActive),
+		uniqueIndex("workPolicyAssignment_source_batch_item_uidx")
+			.on(table.sourceBatchItemId)
+			.where(sql`"source_batch_item_id" IS NOT NULL`),
+		foreignKey({
+			name: "work_policy_assignment_policy_tenant_fk",
+			columns: [table.policyId, table.organizationId],
+			foreignColumns: [workPolicy.id, workPolicy.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "work_policy_assignment_team_tenant_fk",
+			columns: [table.teamId, table.organizationId],
+			foreignColumns: [team.id, team.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "work_policy_assignment_employee_tenant_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "work_policy_assignment_source_contract_default_fk",
+			columns: [table.sourceContractDefaultId, table.organizationId],
+			foreignColumns: [
+				contractDefault.id as AnyPgColumn,
+				contractDefault.organizationId as AnyPgColumn,
+			],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "work_policy_assignment_source_employment_history_fk",
+			columns: [table.sourceEmploymentHistoryId, table.organizationId],
+			foreignColumns: [
+				employeeEmploymentHistory.id as AnyPgColumn,
+				employeeEmploymentHistory.organizationId as AnyPgColumn,
+			],
+		}).onDelete("set null"),
+		foreignKey({
+			name: "work_policy_assignment_batch_item_fk",
+			columns: [table.sourceBatchItemId, table.organizationId],
+			foreignColumns: [
+				contractChangeBatchItem.id as AnyPgColumn,
+				contractChangeBatchItem.organizationId as AnyPgColumn,
+			],
+		}).onDelete("no action"),
 		check(
 			"work_policy_assignment_source_kind_check",
-			sql`"source_kind" IS NULL OR "source_kind" IN ('contract_default', 'employment_terms', 'manager_assignment', 'legacy')`,
+			sql`"source_kind" IN ('contract_default', 'employment_terms', 'manager_assignment', 'legacy')`,
+		),
+		check(
+			"work_policy_assignment_scope_target_check",
+			sql`((("assignment_type" = 'organization' AND "team_id" IS NULL AND "employee_id" IS NULL AND "priority" = 0) OR ("assignment_type" = 'team' AND "team_id" IS NOT NULL AND "employee_id" IS NULL AND "priority" = 1) OR ("assignment_type" = 'employee' AND "team_id" IS NULL AND "employee_id" IS NOT NULL AND "priority" = 2)) IS TRUE)`,
+		),
+		check(
+			"work_policy_assignment_source_provenance_check",
+			sql`((("source_kind" = 'contract_default' AND "assignment_type" IN ('organization', 'team') AND "source_contract_default_id" IS NOT NULL AND "source_employment_history_id" IS NULL) OR ("source_kind" = 'employment_terms' AND "assignment_type" = 'employee' AND "source_contract_default_id" IS NULL) OR ("source_kind" = 'manager_assignment' AND "assignment_type" = 'employee' AND "source_contract_default_id" IS NULL AND "source_employment_history_id" IS NULL) OR ("source_kind" = 'legacy' AND "source_contract_default_id" IS NULL AND "source_employment_history_id" IS NULL)) IS TRUE)`,
+		),
+		check(
+			"work_policy_assignment_date_range_check",
+			sql`"effective_until_date" IS NULL OR "effective_until_date" > "effective_from_date"`,
 		),
 	],
 );

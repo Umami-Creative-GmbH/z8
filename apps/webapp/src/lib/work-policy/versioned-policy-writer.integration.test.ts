@@ -102,13 +102,21 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 	vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
 	const sharedAdmin = integrationAdminPool();
+	const pre0326DbName = `approval_workflow_repository_test_1924_pre_${randomBytes(4).toString("hex")}`;
 	const siblingDbName = `approval_workflow_repository_test_1924_${randomBytes(4).toString("hex")}`;
+	let pre0326Pool: Pool;
+	let pre0326Db: DatabaseClient;
 	let siblingPool: Pool;
 	let siblingDb: DatabaseClient;
 
 	beforeAll(async () => {
-		// Create an isolated sibling database to test parked-0326 and post-0327 DDL states
-		// without mutating the shared integration database's triggers/constraints.
+		// Create two isolated sibling databases:
+		// 1) pre0326Pool stopped at Drain Gate 1 (0321) to test real pre-0326 bridge-active state;
+		// 2) siblingPool stopped at Drain Gate 2 (0326) and later transitioned to post-0327.
+		await sharedAdmin.query(`CREATE DATABASE "${pre0326DbName}"`);
+		pre0326Pool = openIntegrationPool({ databaseName: pre0326DbName, max: 4 });
+		pre0326Db = wrapPoolAsDrizzle(pre0326Pool);
+
 		await sharedAdmin.query(`CREATE DATABASE "${siblingDbName}"`);
 		siblingPool = openIntegrationPool({ databaseName: siblingDbName, max: 8 });
 		siblingDb = wrapPoolAsDrizzle(siblingPool);
@@ -116,10 +124,18 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 		const engineModule = await import("../../../scripts/boundary-migration-engine.js");
 		const migrationsFolder = path.resolve(process.cwd(), "drizzle");
 		await engineModule.runBoundaryAwareMigrations({
+			pool: pre0326Pool,
+			migrationsFolder,
+			allowContractConstraints: false,
+			allowPolicyV1Seal: false,
+			lockRetries: 5,
+			logger: { log: () => {}, warn: () => {}, error: () => {} },
+		});
+		await engineModule.runBoundaryAwareMigrations({
 			pool: siblingPool,
 			migrationsFolder,
 			allowContractConstraints: true,
-			allowPolicyV1Seal: true,
+			allowPolicyV1Seal: false,
 			lockRetries: 5,
 			logger: { log: () => {}, warn: () => {}, error: () => {} },
 		});
@@ -128,28 +144,32 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 	afterAll(async () => {
 		await sharedAdmin.query("DELETE FROM organization WHERE id = $1", [ORG_ID]);
 		await sharedAdmin.query('DELETE FROM "user" WHERE id = $1', [USER_ID]);
-		if (siblingPool) {
-			await siblingPool.end();
+		for (const [pool, dbName] of [
+			[pre0326Pool, pre0326DbName],
+			[siblingPool, siblingDbName],
+		] as const) {
+			if (pool) {
+				await pool.end();
+			}
+			await sharedAdmin.query(
+				`SELECT pg_terminate_backend(pid)
+				 FROM pg_stat_activity
+				 WHERE datname = $1 AND pid <> pg_backend_pid()`,
+				[dbName],
+			);
+			await sharedAdmin.query(`DROP DATABASE IF EXISTS "${dbName}"`);
 		}
-		await sharedAdmin.query(
-			`SELECT pg_terminate_backend(pid)
-			 FROM pg_stat_activity
-			 WHERE datname = $1 AND pid <> pg_backend_pid()`,
-			[siblingDbName],
-		);
-		await sharedAdmin.query(`DROP DATABASE IF EXISTS "${siblingDbName}"`);
 	});
 
 	beforeEach(async () => {
-		await seedOrgAndAdmin(sharedAdmin);
+		await seedOrgAndAdmin(pre0326Pool);
 		await seedOrgAndAdmin(siblingPool);
 	});
 
 	it("pre-0326: creates v1 idempotently, skips metadata-only edits, dual-writes flags, and preserves all 7 ArbZG columns", async () => {
-		const sharedDb = wrapPoolAsDrizzle(sharedAdmin);
-		const locId = await seedLocation(sharedAdmin, ORG_ID, USER_ID, "Berlin HQ");
+		const locId = await seedLocation(pre0326Pool, ORG_ID, USER_ID, "Berlin HQ");
 
-		const created = await createVersionedWorkPolicy(sharedDb, {
+		const created = await createVersionedWorkPolicy(pre0326Db, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
 			data: {
@@ -199,7 +219,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 		expect(created.version.sealedAt).toBeNull();
 
 		// Metadata-only edit does not create any new version
-		const metadataRes = await updateOrPublishWorkPolicy(sharedDb, {
+		const metadataRes = await updateOrPublishWorkPolicy(pre0326Db, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
 			policyId: created.policy.id,
@@ -208,14 +228,14 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 		expect(metadataRes.metadataOnly).toBe(true);
 		expect(metadataRes.version.versionNumber).toBe(1);
 
-		const { rows: versionsAfterMeta } = await sharedAdmin.query(
+		const { rows: versionsAfterMeta } = await pre0326Pool.query(
 			"SELECT id FROM work_policy_version WHERE policy_id = $1",
 			[created.policy.id],
 		);
 		expect(versionsAfterMeta).toHaveLength(1);
 
 		// Pre-cutover versioned edit toggles scheduleEnabled off and updates break rules without wiping 7 ArbZG cols
-		const edited = await updateOrPublishWorkPolicy(sharedDb, {
+		const edited = await updateOrPublishWorkPolicy(pre0326Db, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
 			policyId: created.policy.id,
@@ -242,7 +262,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 		});
 
 		// Duplicate copies all 7 ArbZG columns atomically
-		const copy = await duplicateVersionedWorkPolicy(sharedDb, {
+		const copy = await duplicateVersionedWorkPolicy(pre0326Db, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
 			policyId: created.policy.id,
