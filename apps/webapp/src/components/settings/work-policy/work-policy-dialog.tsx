@@ -96,6 +96,24 @@ type WorkingDaysPresetType = "weekdays" | "weekends" | "all_days" | "custom";
 type PresenceModeType = "minimum_count" | "fixed_days";
 type PresenceEvaluationPeriodType = "weekly" | "biweekly" | "monthly";
 type PresenceEnforcementType = "none" | "warn" | "block";
+type RestPeriodEnforcementType = "none" | "warn" | "block";
+
+function formatMinutesAsHours(minutes: number | null): string {
+	if (minutes === null) return "";
+	return String(Number((minutes / 60).toFixed(2)));
+}
+
+function parseHoursInputToMinutes(raw: string): number | null {
+	if (raw.trim() === "") return null;
+	const hours = Number(raw);
+	return Number.isNaN(hours) ? null : Math.round(hours * 60);
+}
+
+function parseNumericInput(raw: string): number | null {
+	if (raw.trim() === "") return null;
+	const parsed = Number(raw);
+	return Number.isNaN(parsed) ? null : parsed;
+}
 
 const formDefaultValues = {
 	name: "",
@@ -112,6 +130,13 @@ const formDefaultValues = {
 	maxDailyMinutes: null as number | null,
 	maxWeeklyMinutes: null as number | null,
 	maxUninterruptedMinutes: null as number | null,
+	minRestPeriodMinutes: null as number | null,
+	restPeriodEnforcement: "warn" as RestPeriodEnforcementType,
+	overtimeDailyThresholdMinutes: null as number | null,
+	overtimeWeeklyThresholdMinutes: null as number | null,
+	overtimeMonthlyThresholdMinutes: null as number | null,
+	alertBeforeLimitMinutes: 30 as number | null,
+	alertThresholdPercent: 80 as number | null,
 	breakRules: [] as BreakRuleInput[],
 	presence: {
 		presenceMode: "minimum_count" as PresenceModeType,
@@ -166,6 +191,19 @@ function buildWorkPolicyFormValues(
 		maxDailyMinutes: editingPolicy.regulation?.maxDailyMinutes ?? null,
 		maxWeeklyMinutes: editingPolicy.regulation?.maxWeeklyMinutes ?? null,
 		maxUninterruptedMinutes: editingPolicy.regulation?.maxUninterruptedMinutes ?? null,
+		minRestPeriodMinutes: editingPolicy.regulation?.minRestPeriodMinutes ?? null,
+		restPeriodEnforcement: editingPolicy.regulation?.restPeriodEnforcement ?? "warn",
+		overtimeDailyThresholdMinutes: editingPolicy.regulation?.overtimeDailyThresholdMinutes ?? null,
+		overtimeWeeklyThresholdMinutes:
+			editingPolicy.regulation?.overtimeWeeklyThresholdMinutes ?? null,
+		overtimeMonthlyThresholdMinutes:
+			editingPolicy.regulation?.overtimeMonthlyThresholdMinutes ?? null,
+		alertBeforeLimitMinutes: editingPolicy.regulation
+			? (editingPolicy.regulation.alertBeforeLimitMinutes ?? null)
+			: 30,
+		alertThresholdPercent: editingPolicy.regulation
+			? (editingPolicy.regulation.alertThresholdPercent ?? null)
+			: 80,
 		breakRules: (editingPolicy.regulation?.breakRules || []).map((rule) => ({
 			workingMinutesThreshold: rule.workingMinutesThreshold,
 			requiredBreakMinutes: rule.requiredBreakMinutes,
@@ -229,9 +267,16 @@ function useWorkPolicyForm({
 					: undefined,
 				regulation: value.regulationEnabled
 					? {
-							maxDailyMinutes: value.maxDailyMinutes ?? undefined,
-							maxWeeklyMinutes: value.maxWeeklyMinutes ?? undefined,
-							maxUninterruptedMinutes: value.maxUninterruptedMinutes ?? undefined,
+							maxDailyMinutes: value.maxDailyMinutes ?? null,
+							maxWeeklyMinutes: value.maxWeeklyMinutes ?? null,
+							maxUninterruptedMinutes: value.maxUninterruptedMinutes ?? null,
+							minRestPeriodMinutes: value.minRestPeriodMinutes ?? null,
+							restPeriodEnforcement: value.restPeriodEnforcement,
+							overtimeDailyThresholdMinutes: value.overtimeDailyThresholdMinutes ?? null,
+							overtimeWeeklyThresholdMinutes: value.overtimeWeeklyThresholdMinutes ?? null,
+							overtimeMonthlyThresholdMinutes: value.overtimeMonthlyThresholdMinutes ?? null,
+							alertBeforeLimitMinutes: value.alertBeforeLimitMinutes ?? null,
+							alertThresholdPercent: value.alertThresholdPercent ?? null,
 							breakRules: value.breakRules,
 						}
 					: undefined,
@@ -338,10 +383,7 @@ function useWorkPolicyForm({
 	const regulationEnabled = useStore(form.store, (state) => state.values.regulationEnabled);
 	const presenceEnabled = useStore(form.store, (state) => state.values.presenceEnabled);
 	const presenceMode = useStore(form.store, (state) => state.values.presence.presenceMode);
-	useStore(
-		form.store,
-		(state) => state.values.presence.requiredOnsiteFixedDays,
-	);
+	useStore(form.store, (state) => state.values.presence.requiredOnsiteFixedDays);
 	const scheduleType = useStore(form.store, (state) => state.values.scheduleType);
 	const days = useStore(form.store, (state) => state.values.days) || defaultDays;
 	const workingDaysPreset = useStore(form.store, (state) => state.values.workingDaysPreset);
@@ -455,10 +497,7 @@ export function WorkPolicyDialog({
 											return t("settings.workPolicies.nameRequired", "Enter a policy name");
 										}
 										if (value.length > 100) {
-											return t(
-												"settings.workPolicies.nameTooLong",
-												"Use 100 characters or fewer",
-											);
+											return t("settings.workPolicies.nameTooLong", "Use 100 characters or fewer");
 										}
 										return undefined;
 									},
@@ -781,91 +820,93 @@ export function WorkPolicyDialog({
 														{DAYS_OF_WEEK.map((day, index) => {
 															const dayLabel = t(`common.days.${day.value}`, day.label);
 															return (
-															<div
-																key={day.value}
-																className="flex flex-wrap items-center gap-4 p-3 rounded-lg border"
-															>
-																<Checkbox
-																	id={`work-policy-work-day-${day.value}`}
-																	aria-label={t(
-																		"settings.workSchedules.workDayToggle",
-																		"{day} is a work day",
-																		{ day: dayLabel },
-																	)}
-																	checked={days[index]?.isWorkDay ?? false}
-																	onCheckedChange={(checked) => {
-																		const newDays = [...days];
-																		newDays[index] = {
-																			...newDays[index],
-																			isWorkDay: !!checked,
-																			// A latest clock-in applies only to work days.
-																			latestClockIn: checked ? newDays[index]?.latestClockIn : null,
-																		};
-																		form.setFieldValue("days", newDays);
-																	}}
-																/>
-																<label
-																	htmlFor={`work-policy-work-day-${day.value}`}
-																	className="w-24 font-medium"
+																<div
+																	key={day.value}
+																	className="flex flex-wrap items-center gap-4 p-3 rounded-lg border"
 																>
-																	{dayLabel}
-																</label>
-																<div className="flex-1">
-																	<Input
-																		type="number"
-																		min="0"
-																		max="24"
-																		step="0.5"
-																		inputMode="decimal"
-																		className="tabular-nums"
+																	<Checkbox
+																		id={`work-policy-work-day-${day.value}`}
 																		aria-label={t(
-																			"settings.workSchedules.hoursOnDay",
-																			"Hours on {day}",
+																			"settings.workSchedules.workDayToggle",
+																			"{day} is a work day",
 																			{ day: dayLabel },
 																		)}
-																		disabled={!days[index]?.isWorkDay}
-																		placeholder="0"
-																		value={days[index]?.hoursPerDay ?? "0"}
-																		onChange={(e) => {
+																		checked={days[index]?.isWorkDay ?? false}
+																		onCheckedChange={(checked) => {
 																			const newDays = [...days];
 																			newDays[index] = {
 																				...newDays[index],
-																				hoursPerDay: e.target.value,
+																				isWorkDay: !!checked,
+																				// A latest clock-in applies only to work days.
+																				latestClockIn: checked
+																					? newDays[index]?.latestClockIn
+																					: null,
 																			};
 																			form.setFieldValue("days", newDays);
 																		}}
 																	/>
+																	<label
+																		htmlFor={`work-policy-work-day-${day.value}`}
+																		className="w-24 font-medium"
+																	>
+																		{dayLabel}
+																	</label>
+																	<div className="flex-1">
+																		<Input
+																			type="number"
+																			min="0"
+																			max="24"
+																			step="0.5"
+																			inputMode="decimal"
+																			className="tabular-nums"
+																			aria-label={t(
+																				"settings.workSchedules.hoursOnDay",
+																				"Hours on {day}",
+																				{ day: dayLabel },
+																			)}
+																			disabled={!days[index]?.isWorkDay}
+																			placeholder="0"
+																			value={days[index]?.hoursPerDay ?? "0"}
+																			onChange={(e) => {
+																				const newDays = [...days];
+																				newDays[index] = {
+																					...newDays[index],
+																					hoursPerDay: e.target.value,
+																				};
+																				form.setFieldValue("days", newDays);
+																			}}
+																		/>
+																	</div>
+																	<span className="text-sm text-muted-foreground w-12">
+																		{t("settings.workSchedules.hoursUnit", "hours")}
+																	</span>
+																	{days[index]?.isWorkDay ? (
+																		<Input
+																			type="time"
+																			className="w-32"
+																			aria-label={t(
+																				"settings.workSchedules.latestClockIn.dayLabel",
+																				"Latest clock-in on {day}",
+																				{ day: dayLabel },
+																			)}
+																			title={t(
+																				"settings.workSchedules.latestClockIn.label",
+																				"Latest clock-in",
+																			)}
+																			value={days[index]?.latestClockIn ?? ""}
+																			onChange={(e) => {
+																				const newDays = [...days];
+																				newDays[index] = {
+																					...newDays[index],
+																					latestClockIn: e.target.value || null,
+																				};
+																				form.setFieldValue("days", newDays);
+																			}}
+																		/>
+																	) : (
+																		<span className="w-32" aria-hidden="true" />
+																	)}
 																</div>
-																<span className="text-sm text-muted-foreground w-12">
-																	{t("settings.workSchedules.hoursUnit", "hours")}
-																</span>
-																{days[index]?.isWorkDay ? (
-																	<Input
-																		type="time"
-																		className="w-32"
-																		aria-label={t(
-																			"settings.workSchedules.latestClockIn.dayLabel",
-																			"Latest clock-in on {day}",
-																			{ day: dayLabel },
-																		)}
-																		title={t(
-																			"settings.workSchedules.latestClockIn.label",
-																			"Latest clock-in",
-																		)}
-																		value={days[index]?.latestClockIn ?? ""}
-																		onChange={(e) => {
-																			const newDays = [...days];
-																			newDays[index] = {
-																				...newDays[index],
-																				latestClockIn: e.target.value || null,
-																			};
-																			form.setFieldValue("days", newDays);
-																		}}
-																	/>
-																) : (
-																	<span className="w-32" aria-hidden="true" />
-																)}
-															</div>
 															);
 														})}
 													</div>
@@ -1383,6 +1424,450 @@ function WorkRegulationFields({ form }: { form: ReturnType<typeof useWorkPolicyF
 								</div>
 							</div>
 						)}
+					</form.Field>
+				</div>
+			</div>
+
+			{/* Rest Period (ArbZG §5) */}
+			<div className="space-y-4">
+				<h4 className="text-sm text-muted-foreground">
+					{t("settings.timeRegulations.restPeriodSection", "Rest Period (ArbZG §5)")}
+				</h4>
+				<div className="space-y-4">
+					<form.Field
+						name="minRestPeriodMinutes"
+						validators={{
+							onChange: ({ value, fieldApi }) => {
+								if (!fieldApi.form.state.values.regulationEnabled) return undefined;
+								if (value === null) return undefined;
+								if (!Number.isInteger(value) || value < 1 || value > 1440) {
+									return t(
+										"settings.timeRegulations.minRestPeriodError",
+										"Must be greater than 0 and at most 24 hours",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="work-policy-min-rest-period">
+										{t("settings.timeRegulations.minRestPeriod", "Minimum Rest Period")}
+									</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											id="work-policy-min-rest-period"
+											name="minRestPeriodHours"
+											inputMode="decimal"
+											type="number"
+											min="0.5"
+											max="24"
+											step="0.5"
+											value={formatMinutesAsHours(field.state.value)}
+											onChange={(e) => field.handleChange(parseHoursInputToMinutes(e.target.value))}
+											onBlur={field.handleBlur}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={error ? "work-policy-min-rest-period-error" : undefined}
+											placeholder="—"
+											className="w-24 tabular-nums"
+										/>
+										<span className="text-sm text-muted-foreground">
+											{t("settings.workSchedules.hoursUnit", "hours")}
+										</span>
+									</div>
+									{error && (
+										<p
+											id="work-policy-min-rest-period-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{error}
+										</p>
+									)}
+								</div>
+							);
+						}}
+					</form.Field>
+
+					<div className="space-y-2">
+						<Label id="work-policy-rest-enforcement-label">
+							{t("settings.timeRegulations.restPeriodEnforcement", "Rest Period Enforcement")}
+						</Label>
+						<form.Field name="restPeriodEnforcement">
+							{(field) => (
+								<RadioGroup
+									aria-labelledby="work-policy-rest-enforcement-label"
+									value={field.state.value}
+									onValueChange={(v) => field.handleChange(v as RestPeriodEnforcementType)}
+									className="grid gap-3 sm:grid-cols-3"
+								>
+									<label
+										htmlFor="rest-period-enforcement-none"
+										className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer has-data-checked:border-primary"
+									>
+										<RadioGroupItem id="rest-period-enforcement-none" value="none" />
+										<div className="space-y-0.5">
+											<span className="text-sm font-medium">
+												{t("settings.timeRegulations.restEnforcementNone", "None")}
+											</span>
+											<p className="text-xs text-muted-foreground">
+												{t("settings.timeRegulations.restEnforcementNoneDescription", "Track only")}
+											</p>
+										</div>
+									</label>
+									<label
+										htmlFor="rest-period-enforcement-warn"
+										className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer has-data-checked:border-primary"
+									>
+										<RadioGroupItem id="rest-period-enforcement-warn" value="warn" />
+										<div className="space-y-0.5">
+											<span className="text-sm font-medium">
+												{t("settings.timeRegulations.restEnforcementWarn", "Warn")}
+											</span>
+											<p className="text-xs text-muted-foreground">
+												{t(
+													"settings.timeRegulations.restEnforcementWarnDescription",
+													"Warn on clock-in",
+												)}
+											</p>
+										</div>
+									</label>
+									<label
+										htmlFor="rest-period-enforcement-block"
+										className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer has-data-checked:border-primary"
+									>
+										<RadioGroupItem id="rest-period-enforcement-block" value="block" />
+										<div className="space-y-0.5">
+											<span className="text-sm font-medium">
+												{t("settings.timeRegulations.restEnforcementBlock", "Block")}
+											</span>
+											<p className="text-xs text-muted-foreground">
+												{t(
+													"settings.timeRegulations.restEnforcementBlockDescription",
+													"Prevent clock-in",
+												)}
+											</p>
+										</div>
+									</label>
+								</RadioGroup>
+							)}
+						</form.Field>
+					</div>
+				</div>
+			</div>
+
+			{/* Overtime Thresholds */}
+			<div className="space-y-4">
+				<h4 className="text-sm text-muted-foreground">
+					{t("settings.timeRegulations.overtimeThresholdsSection", "Overtime Thresholds")}
+				</h4>
+				<div className="grid gap-4 sm:grid-cols-3">
+					<form.Field
+						name="overtimeDailyThresholdMinutes"
+						validators={{
+							onChange: ({ value, fieldApi }) => {
+								if (!fieldApi.form.state.values.regulationEnabled) return undefined;
+								if (value === null) return undefined;
+								if (!Number.isInteger(value) || value < 1 || value > 1440) {
+									return t(
+										"settings.timeRegulations.overtimeDailyThresholdError",
+										"Must be greater than 0 and at most 24 hours",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="work-policy-overtime-daily">
+										{t(
+											"settings.timeRegulations.overtimeDailyThreshold",
+											"Daily Overtime Threshold",
+										)}
+									</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											id="work-policy-overtime-daily"
+											name="overtimeDailyThresholdHours"
+											inputMode="decimal"
+											type="number"
+											min="0.5"
+											max="24"
+											step="0.5"
+											value={formatMinutesAsHours(field.state.value)}
+											onChange={(e) => field.handleChange(parseHoursInputToMinutes(e.target.value))}
+											onBlur={field.handleBlur}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={error ? "work-policy-overtime-daily-error" : undefined}
+											placeholder="—"
+											className="w-24 tabular-nums"
+										/>
+										<span className="text-sm text-muted-foreground">
+											{t("settings.workSchedules.hoursUnit", "hours")}
+										</span>
+									</div>
+									{error && (
+										<p
+											id="work-policy-overtime-daily-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{error}
+										</p>
+									)}
+								</div>
+							);
+						}}
+					</form.Field>
+
+					<form.Field
+						name="overtimeWeeklyThresholdMinutes"
+						validators={{
+							onChange: ({ value, fieldApi }) => {
+								if (!fieldApi.form.state.values.regulationEnabled) return undefined;
+								if (value === null) return undefined;
+								if (!Number.isInteger(value) || value < 1 || value > 10080) {
+									return t(
+										"settings.timeRegulations.overtimeWeeklyThresholdError",
+										"Must be greater than 0 and at most 168 hours",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="work-policy-overtime-weekly">
+										{t(
+											"settings.timeRegulations.overtimeWeeklyThreshold",
+											"Weekly Overtime Threshold",
+										)}
+									</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											id="work-policy-overtime-weekly"
+											name="overtimeWeeklyThresholdHours"
+											inputMode="decimal"
+											type="number"
+											min="0.5"
+											max="168"
+											step="0.5"
+											value={formatMinutesAsHours(field.state.value)}
+											onChange={(e) => field.handleChange(parseHoursInputToMinutes(e.target.value))}
+											onBlur={field.handleBlur}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={error ? "work-policy-overtime-weekly-error" : undefined}
+											placeholder="—"
+											className="w-24 tabular-nums"
+										/>
+										<span className="text-sm text-muted-foreground">
+											{t("settings.workSchedules.hoursUnit", "hours")}
+										</span>
+									</div>
+									{error && (
+										<p
+											id="work-policy-overtime-weekly-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{error}
+										</p>
+									)}
+								</div>
+							);
+						}}
+					</form.Field>
+
+					<form.Field
+						name="overtimeMonthlyThresholdMinutes"
+						validators={{
+							onChange: ({ value, fieldApi }) => {
+								if (!fieldApi.form.state.values.regulationEnabled) return undefined;
+								if (value === null) return undefined;
+								if (!Number.isInteger(value) || value < 1 || value > 44640) {
+									return t(
+										"settings.timeRegulations.overtimeMonthlyThresholdError",
+										"Must be greater than 0 and at most 744 hours",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="work-policy-overtime-monthly">
+										{t(
+											"settings.timeRegulations.overtimeMonthlyThreshold",
+											"Monthly Overtime Threshold",
+										)}
+									</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											id="work-policy-overtime-monthly"
+											name="overtimeMonthlyThresholdHours"
+											inputMode="decimal"
+											type="number"
+											min="0.5"
+											max="744"
+											step="0.5"
+											value={formatMinutesAsHours(field.state.value)}
+											onChange={(e) => field.handleChange(parseHoursInputToMinutes(e.target.value))}
+											onBlur={field.handleBlur}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={error ? "work-policy-overtime-monthly-error" : undefined}
+											placeholder="—"
+											className="w-24 tabular-nums"
+										/>
+										<span className="text-sm text-muted-foreground">
+											{t("settings.workSchedules.hoursUnit", "hours")}
+										</span>
+									</div>
+									{error && (
+										<p
+											id="work-policy-overtime-monthly-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{error}
+										</p>
+									)}
+								</div>
+							);
+						}}
+					</form.Field>
+				</div>
+			</div>
+
+			{/* Proactive Alerts */}
+			<div className="space-y-4">
+				<h4 className="text-sm text-muted-foreground">
+					{t("settings.timeRegulations.proactiveAlertsSection", "Proactive Alerts")}
+				</h4>
+				<div className="grid gap-4 sm:grid-cols-2">
+					<form.Field
+						name="alertBeforeLimitMinutes"
+						validators={{
+							onChange: ({ value, fieldApi }) => {
+								if (!fieldApi.form.state.values.regulationEnabled) return undefined;
+								if (value === null) return undefined;
+								if (!Number.isInteger(value) || value < 0 || value > 1440) {
+									return t(
+										"settings.timeRegulations.alertBeforeLimitError",
+										"Must be between 0 and 1440 minutes",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="work-policy-alert-before-limit">
+										{t("settings.timeRegulations.alertBeforeLimit", "Alert Before Limit")}
+									</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											id="work-policy-alert-before-limit"
+											name="alertBeforeLimitMinutes"
+											inputMode="numeric"
+											type="number"
+											min="0"
+											max="1440"
+											value={field.state.value !== null ? String(field.state.value) : ""}
+											onChange={(e) => field.handleChange(parseNumericInput(e.target.value))}
+											onBlur={field.handleBlur}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={error ? "work-policy-alert-before-limit-error" : undefined}
+											placeholder="—"
+											className="w-24 tabular-nums"
+										/>
+										<span className="text-sm text-muted-foreground">
+											{t("settings.timeRegulations.minutes", "minutes")}
+										</span>
+									</div>
+									{error && (
+										<p
+											id="work-policy-alert-before-limit-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{error}
+										</p>
+									)}
+								</div>
+							);
+						}}
+					</form.Field>
+
+					<form.Field
+						name="alertThresholdPercent"
+						validators={{
+							onChange: ({ value, fieldApi }) => {
+								if (!fieldApi.form.state.values.regulationEnabled) return undefined;
+								if (value === null) return undefined;
+								if (!Number.isInteger(value) || value < 1 || value > 100) {
+									return t(
+										"settings.timeRegulations.alertThresholdPercentError",
+										"Must be between 1 and 100%",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const error = field.state.meta.errors[0];
+							return (
+								<div className="space-y-2">
+									<Label htmlFor="work-policy-alert-threshold-percent">
+										{t("settings.timeRegulations.alertThresholdPercent", "Alert Threshold")}
+									</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											id="work-policy-alert-threshold-percent"
+											name="alertThresholdPercent"
+											inputMode="numeric"
+											type="number"
+											min="1"
+											max="100"
+											value={field.state.value !== null ? String(field.state.value) : ""}
+											onChange={(e) => field.handleChange(parseNumericInput(e.target.value))}
+											onBlur={field.handleBlur}
+											aria-invalid={error ? true : undefined}
+											aria-describedby={
+												error ? "work-policy-alert-threshold-percent-error" : undefined
+											}
+											placeholder="—"
+											className="w-24 tabular-nums"
+										/>
+										<span className="text-sm text-muted-foreground">%</span>
+									</div>
+									{error && (
+										<p
+											id="work-policy-alert-threshold-percent-error"
+											role="alert"
+											className="text-sm text-destructive"
+										>
+											{error}
+										</p>
+									)}
+								</div>
+							);
+						}}
 					</form.Field>
 				</div>
 			</div>
