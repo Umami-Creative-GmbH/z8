@@ -80,6 +80,28 @@ function absenceMarks(rows: ReturnType<typeof buildPayrollPeriodRows>, employeeI
 }
 
 describe("buildPayrollPeriodRows", () => {
+	it("marks the days with credited work or an absence as having entries, holidays alone not", () => {
+		const rows = buildPayrollPeriodRows({
+			period: NOVEMBER,
+			employees: [person()],
+			work: [
+				// 22:00-06:00 Berlin on 2/3 November.
+				span("2026-11-02T21:00:00Z", "2026-11-03T05:00:00Z", 480),
+				// A zero-minute span still records that the employee was there.
+				span("2026-11-05T08:00:00Z", "2026-11-05T08:00:00Z", 0),
+			],
+			absences: [absence({ startDate: "2026-11-10", endDate: "2026-11-10", approvalState: "pending" })],
+			holidays: new Map([
+				["employee-1", [{ name: "Holiday", startDate: "2026-11-18", endDate: "2026-11-18" }]],
+			]),
+		});
+
+		const withEntries = (rows.employees[0]?.days ?? [])
+			.filter((day) => day.hasEntries)
+			.map((day) => day.date);
+		expect(withEntries).toEqual(["2026-11-02", "2026-11-03", "2026-11-05", "2026-11-10"]);
+	});
+
 	it("splits a 22:00-06:00 night shift at the employee's local midnight", () => {
 		const rows = buildPayrollPeriodRows({
 			period: NOVEMBER,

@@ -15,6 +15,8 @@ export interface PayrollDaysFormat {
 	longDate: (date: string) => string;
 	/** For example "10 Nov". */
 	shortDate: (date: string) => string;
+	/** The month of a date, for example "November 2026". */
+	monthYear: (date: string) => string;
 }
 
 export function payrollDaysFormat(locale: string): PayrollDaysFormat {
@@ -27,6 +29,11 @@ export function payrollDaysFormat(locale: string): PayrollDaysFormat {
 		month: "short",
 		timeZone: "UTC",
 	});
+	const monthYear = new Intl.DateTimeFormat(locale, {
+		month: "long",
+		year: "numeric",
+		timeZone: "UTC",
+	});
 	// A calendar date shown as itself: formatted at UTC midnight in UTC, never the viewer's zone.
 	const asDate = (date: string) => new Date(`${date}T00:00:00Z`);
 	return {
@@ -36,6 +43,7 @@ export function payrollDaysFormat(locale: string): PayrollDaysFormat {
 		dayOfMonth: (date) => day.format(asDate(date)),
 		longDate: (date) => longDate.format(asDate(date)),
 		shortDate: (date) => shortDate.format(asDate(date)),
+		monthYear: (date) => monthYear.format(asDate(date)),
 	};
 }
 

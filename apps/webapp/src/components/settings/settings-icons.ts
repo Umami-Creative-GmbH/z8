@@ -43,6 +43,7 @@ import {
 	IconUserCircle,
 	IconUserDollar,
 	IconUsers,
+	IconUsersGroup,
 	IconWebhook,
 	IconWorld,
 } from "@tabler/icons-react";
@@ -62,6 +63,7 @@ export const SETTINGS_ICON_MAP: Record<
 	droplet: IconDroplet,
 	building: IconBuilding,
 	users: IconUsers,
+	"users-group": IconUsersGroup,
 	"map-pin": IconMapPin,
 	"calendar-event": IconCalendarEvent,
 	"calendar-clock": IconCalendarClock,

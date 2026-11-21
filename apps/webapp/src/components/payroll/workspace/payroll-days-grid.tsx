@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertCircle, IconCircleCheck, IconConfetti } from "@tabler/icons-react";
-import { usePayrollRows } from "./use-payroll-rows";
+import type React from "react";
 import { Temporal } from "temporal-polyfill";
 import { absenceCategoryColor } from "@/components/absences/category-color";
 import type {
@@ -9,9 +9,19 @@ import type {
 	PayrollPeriodDayAbsence,
 	PayrollPeriodEmployee,
 } from "@/lib/payroll-period/types";
-import { type PayrollDaysFormat, isAfterDeparture, dayTitle } from "./payroll-day-format";
 import { cn } from "@/lib/utils";
+import { dayTitle, isAfterDeparture, type PayrollDaysFormat } from "./payroll-day-format";
+import {
+	groupSelectionState,
+	type PayrollSettleableGroups,
+	payrollDayKey,
+	settleableGroup,
+	unsettleableReason,
+} from "./payroll-day-selection";
+import { PAYROLL_MONTH_START_CLASS, PayrollMonthHeaderRow } from "./payroll-month-header";
+import { startsNewMonth } from "./payroll-month-segments";
 import type { PayrollTranslate } from "./state";
+import { usePayrollRows } from "./use-payroll-rows";
 
 const ROW_HEIGHT = 64;
 const EMPLOYEE_COLUMN = "13rem";
@@ -23,14 +33,33 @@ function isWeekend(date: string): boolean {
 }
 
 /**
- * Employees against the period's days. The employee column and the date header stay
- * fixed while the grid scrolls, and only the rows in view are rendered.
+ * Picking days to settle in the Days tab. While it is passed, a day toggles instead of
+ * opening its side panel, an employee's name toggles their row and a date toggles its
+ * column; only unsettled days with entries can be picked.
+ */
+export interface PayrollDayPicking {
+	/** Keys (`payrollDayKey`) of the picked days still pickable. */
+	selected: ReadonlySet<string>;
+	/** The pickable keys of each row and column, computed once per read of the period. */
+	groups: PayrollSettleableGroups;
+	/** `extend` (Shift) picks the row's days from the last clicked day. */
+	onToggleDay: (employee: PayrollPeriodEmployee, day: PayrollPeriodDay, extend: boolean) => void;
+	onToggleEmployee: (employee: PayrollPeriodEmployee) => void;
+	onToggleDate: (date: string) => void;
+}
+
+/**
+ * Employees against the period's days. A month row and the date header stay fixed above
+ * the grid and the employee column at its left while it scrolls; each month's label
+ * stays in view until the month ends, and a stronger border opens each month. Only the
+ * rows in view are rendered.
  */
 export function PayrollDaysGrid({
 	dates,
 	employees,
 	format,
 	onSelectDay,
+	picking,
 	t,
 }: {
 	dates: readonly string[];
@@ -38,10 +67,13 @@ export function PayrollDaysGrid({
 	format: PayrollDaysFormat;
 	/** Opens the day's side panel (#1894). */
 	onSelectDay: (employee: PayrollPeriodEmployee, day: PayrollPeriodDay) => void;
+	/** Set while days are picked to settle. */
+	picking?: PayrollDayPicking;
 	t: PayrollTranslate;
 }) {
 	const { scrollRef, start, end } = usePayrollRows(employees.length, ROW_HEIGHT, 8);
 	const gridTemplateColumns = `${EMPLOYEE_COLUMN} repeat(${dates.length}, ${DAY_COLUMN}) ${TOTAL_COLUMN}`;
+	const monthStarts = new Set(dates.filter((_, index) => startsNewMonth(dates, index)));
 
 	return (
 		<div
@@ -51,12 +83,20 @@ export function PayrollDaysGrid({
 			<table
 				className="block w-max min-w-full"
 				aria-label={t("payroll.days.gridLabel", "Hours per employee and day")}
-				aria-rowcount={employees.length + 1}
+				aria-rowcount={employees.length + 2}
 				aria-colcount={dates.length + 2}
 			>
 				<thead className="sticky top-0 z-20 block min-w-max">
+					<PayrollMonthHeaderRow
+						ariaRowIndex={1}
+						dates={dates}
+						employeeColumn={EMPLOYEE_COLUMN}
+						format={format}
+						gridTemplateColumns={gridTemplateColumns}
+						trailingColumns={1}
+					/>
 					<tr
-						aria-rowindex={1}
+						aria-rowindex={2}
 						className="grid border-b bg-muted text-muted-foreground text-xs"
 						style={{ gridTemplateColumns }}
 					>
@@ -71,12 +111,12 @@ export function PayrollDaysGrid({
 								key={date}
 								scope="col"
 								className={cn(
-									"flex flex-col items-center justify-end px-1 py-2 tabular-nums",
+									"flex",
 									isWeekend(date) && "bg-muted-foreground/10",
+									monthStarts.has(date) && PAYROLL_MONTH_START_CLASS,
 								)}
 							>
-								<span>{format.weekday(date)}</span>
-								<span className="font-medium text-foreground">{format.dayOfMonth(date)}</span>
+								<PayrollDateHeader date={date} format={format} picking={picking} t={t} />
 							</th>
 						))}
 						<th scope="col" className="flex items-end justify-end border-l px-3 py-2 font-medium">
@@ -93,7 +133,7 @@ export function PayrollDaysGrid({
 						return (
 							<tr
 								key={employee.id}
-								aria-rowindex={index + 2}
+								aria-rowindex={index + 3}
 								className="absolute top-0 left-0 grid w-full border-b"
 								style={{
 									gridTemplateColumns,
@@ -101,15 +141,13 @@ export function PayrollDaysGrid({
 									transform: `translateY(${index * ROW_HEIGHT}px)`,
 								}}
 							>
-								<th
-									scope="row"
-									className="sticky left-0 z-10 flex min-w-0 flex-col justify-center border-r bg-background px-3"
-								>
-									<span className="truncate font-medium text-sm">{employee.name}</span>
-									<span className="truncate text-muted-foreground text-xs">
-										{[employee.employeeNumber, employee.teamName].filter(Boolean).join(" · ")}
-									</span>
-									<PayrollLeftOn employee={employee} format={format} t={t} />
+								<th scope="row" className="sticky left-0 z-10 flex min-w-0 border-r bg-background">
+									<PayrollEmployeeHeader
+										employee={employee}
+										format={format}
+										picking={picking}
+										t={t}
+									/>
 								</th>
 								{employee.days.map((day) => (
 									<PayrollDayCell
@@ -117,7 +155,14 @@ export function PayrollDaysGrid({
 										afterDeparture={isAfterDeparture(employee, day.date)}
 										day={day}
 										format={format}
-										onSelect={() => onSelectDay(employee, day)}
+										monthStart={monthStarts.has(day.date)}
+										onSelect={(event) =>
+											picking
+												? picking.onToggleDay(employee, day, event.shiftKey)
+												: onSelectDay(employee, day)
+										}
+										picked={picking?.selected.has(payrollDayKey(employee.id, day.date))}
+										picking={picking !== undefined}
 										t={t}
 									/>
 								))}
@@ -128,6 +173,95 @@ export function PayrollDaysGrid({
 				</tbody>
 			</table>
 		</div>
+	);
+}
+
+function PayrollDateHeader({
+	date,
+	format,
+	picking,
+	t,
+}: {
+	date: string;
+	format: PayrollDaysFormat;
+	picking?: PayrollDayPicking;
+	t: PayrollTranslate;
+}) {
+	const label = (
+		<>
+			<span>{format.weekday(date)}</span>
+			<span className="font-medium text-foreground">{format.dayOfMonth(date)}</span>
+		</>
+	);
+	const layout = "flex w-full flex-col items-center justify-end px-1 py-2 tabular-nums";
+	if (!picking) return <div className={layout}>{label}</div>;
+	const group = settleableGroup(picking.groups.byDate, date);
+	const state = groupSelectionState(picking.selected, group);
+	const pickable = group.length > 0;
+	return (
+		<button
+			type="button"
+			aria-pressed={state === "all"}
+			disabled={!pickable}
+			aria-label={t("payroll.days.select.date", "Select {date} for every employee", {
+				date: format.longDate(date),
+			})}
+			onClick={() => picking.onToggleDate(date)}
+			className={cn(
+				layout,
+				"outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-50",
+				state === "all" && "bg-primary/15 text-foreground",
+				state === "some" && "bg-primary/5",
+			)}
+		>
+			{label}
+		</button>
+	);
+}
+
+function PayrollEmployeeHeader({
+	employee,
+	format,
+	picking,
+	t,
+}: {
+	employee: PayrollPeriodEmployee;
+	format: PayrollDaysFormat;
+	picking?: PayrollDayPicking;
+	t: PayrollTranslate;
+}) {
+	const content = (
+		<>
+			<span className="truncate font-medium text-sm">{employee.name}</span>
+			<span className="truncate text-muted-foreground text-xs">
+				{[employee.employeeNumber, employee.teamName].filter(Boolean).join(" · ")}
+			</span>
+			<PayrollLeftOn employee={employee} format={format} t={t} />
+		</>
+	);
+	const layout = "flex w-full min-w-0 flex-col justify-center px-3 text-left";
+	if (!picking) return <div className={layout}>{content}</div>;
+	const group = settleableGroup(picking.groups.byEmployee, employee.id);
+	const state = groupSelectionState(picking.selected, group);
+	const pickable = group.length > 0;
+	return (
+		<button
+			type="button"
+			aria-pressed={state === "all"}
+			disabled={!pickable}
+			aria-label={t("payroll.days.select.employee", "Select every day of {name} to settle", {
+				name: employee.name,
+			})}
+			onClick={() => picking.onToggleEmployee(employee)}
+			className={cn(
+				layout,
+				"outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-60",
+				state === "all" && "bg-primary/15",
+				state === "some" && "bg-primary/5",
+			)}
+		>
+			{content}
+		</button>
 	);
 }
 
@@ -151,32 +285,95 @@ export function PayrollLeftOn({
 	);
 }
 
+/** Why a day cannot be picked to settle, for its tooltip; null when it can. */
+export function unpickableText(day: PayrollPeriodDay, t: PayrollTranslate): string | null {
+	switch (unsettleableReason(day)) {
+		case "settled":
+			return t("payroll.days.select.alreadySettled", "Already settled");
+		case "no_entries":
+			return t(
+				"payroll.days.select.noEntries",
+				"Nothing was recorded on this day, so it can't be settled",
+			);
+		default:
+			return null;
+	}
+}
+
+/** The button props of a day while days are picked, or while they are not. */
+export function dayButtonPicking(
+	day: PayrollPeriodDay,
+	description: string,
+	picking: boolean,
+	picked: boolean | undefined,
+	t: PayrollTranslate,
+): {
+	title: string;
+	"aria-pressed"?: boolean;
+	"aria-disabled"?: true;
+	className?: string;
+} {
+	if (!picking) return { title: description };
+	const reason = unpickableText(day, t);
+	if (reason) {
+		return {
+			title: `${description}\n${reason}`,
+			"aria-disabled": true,
+			className: "cursor-not-allowed opacity-40 hover:bg-transparent",
+		};
+	}
+	return {
+		title: description,
+		"aria-pressed": picked === true,
+		className: picked
+			? "bg-primary/15 ring-2 ring-primary ring-inset hover:bg-primary/20"
+			: undefined,
+	};
+}
+
 function PayrollDayCell({
 	afterDeparture,
 	day,
 	format,
+	monthStart,
 	onSelect,
+	picked,
+	picking,
 	t,
 }: {
 	afterDeparture: boolean;
 	day: PayrollPeriodDay;
 	format: PayrollDaysFormat;
-	onSelect: () => void;
+	monthStart: boolean;
+	onSelect: (event: React.MouseEvent<HTMLButtonElement>) => void;
+	picked: boolean | undefined;
+	picking: boolean;
 	t: PayrollTranslate;
 }) {
 	const pending = day.absences.some((absence) => absence.approvalState === "pending");
 	const description = dayTitle(day, format, t, afterDeparture);
+	const { className: pickingClassName, ...pickingProps } = dayButtonPicking(
+		day,
+		description,
+		picking,
+		picked,
+		t,
+	);
 	return (
-		<td className="min-w-0">
+		<td className={cn("min-w-0", monthStart && PAYROLL_MONTH_START_CLASS)}>
 			<button
 				type="button"
-				title={description}
-				aria-label={description}
-				onClick={onSelect}
+				{...pickingProps}
+				aria-label={pickingProps.title}
+				onClick={(event) => {
+					if (pickingProps["aria-disabled"]) return;
+					onSelect(event);
+				}}
 				className={cn(
 					"flex h-full w-full min-w-0 flex-col justify-between gap-0.5 px-1.5 py-1 text-left text-xs tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 					isWeekend(day.date) && "bg-muted/50",
 					afterDeparture && "bg-muted text-muted-foreground",
+					pickingClassName,
 				)}
 				style={
 					pending

@@ -6,6 +6,8 @@ import { absenceSwatchStyle } from "./payroll-absence-style";
 import type { PayrollPeriodDayAbsence, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { cn } from "@/lib/utils";
 import type { PayrollDaysFormat } from "./payroll-day-format";
+import { PAYROLL_MONTH_START_CLASS, PayrollMonthHeaderRow } from "./payroll-month-header";
+import { startsNewMonth } from "./payroll-month-segments";
 import type { PayrollTranslate } from "./state";
 
 const EMPLOYEE_COLUMN = "11rem";
@@ -21,7 +23,8 @@ function isWeekend(date: string): boolean {
  * The period's absences as employees against days. Each day cell has a morning (left)
  * and an afternoon (right) half, so half days never read as full days. The calendar
  * scrolls inside its own frame, keeping the employee column and the date header fixed,
- * and only the rows in view are rendered, as in the Days grid.
+ * and only the rows in view are rendered, as in the Days grid. Its month row and month
+ * borders are the Days grid's too.
  */
 export function PayrollAbsenceCalendar({
 	dates,
@@ -36,6 +39,7 @@ export function PayrollAbsenceCalendar({
 }) {
 	const { scrollRef, start, end } = usePayrollRows(employees.length, ROW_HEIGHT, 12);
 	const gridTemplateColumns = `${EMPLOYEE_COLUMN} repeat(${dates.length}, ${DAY_COLUMN})`;
+	const monthStarts = new Set(dates.filter((_, index) => startsNewMonth(dates, index)));
 	return (
 		<div
 			ref={scrollRef}
@@ -44,12 +48,20 @@ export function PayrollAbsenceCalendar({
 			<table
 				className="block w-max min-w-full"
 				aria-label={t("payroll.absences.calendarLabel", "Absences per employee and day")}
-				aria-rowcount={employees.length + 1}
+				aria-rowcount={employees.length + 2}
 				aria-colcount={dates.length + 1}
 			>
 				<thead className="sticky top-0 z-20 block min-w-max">
+					<PayrollMonthHeaderRow
+						ariaRowIndex={1}
+						className="text-[0.6875rem]"
+						dates={dates}
+						employeeColumn={EMPLOYEE_COLUMN}
+						format={format}
+						gridTemplateColumns={gridTemplateColumns}
+					/>
 					<tr
-						aria-rowindex={1}
+						aria-rowindex={2}
 						className="grid border-b bg-muted text-muted-foreground text-[0.6875rem]"
 						style={{ gridTemplateColumns }}
 					>
@@ -66,6 +78,7 @@ export function PayrollAbsenceCalendar({
 								className={cn(
 									"flex flex-col items-center justify-end py-1.5 tabular-nums",
 									isWeekend(date) && "bg-muted-foreground/10",
+									monthStarts.has(date) && PAYROLL_MONTH_START_CLASS,
 								)}
 							>
 								<span>{format.weekday(date)}</span>
@@ -83,7 +96,7 @@ export function PayrollAbsenceCalendar({
 						return (
 							<tr
 								key={employee.id}
-								aria-rowindex={index + 2}
+								aria-rowindex={index + 3}
 								className="absolute top-0 left-0 grid w-full border-b"
 								style={{
 									gridTemplateColumns,
@@ -104,6 +117,7 @@ export function PayrollAbsenceCalendar({
 										date={day.date}
 										employeeName={employee.name}
 										format={format}
+										monthStart={monthStarts.has(day.date)}
 										t={t}
 									/>
 								))}
@@ -121,12 +135,14 @@ function PayrollAbsenceCalendarCell({
 	date,
 	employeeName,
 	format,
+	monthStart,
 	t,
 }: {
 	absences: readonly PayrollPeriodDayAbsence[];
 	date: string;
 	employeeName: string;
 	format: PayrollDaysFormat;
+	monthStart: boolean;
 	t: PayrollTranslate;
 }) {
 	const morning = absences.find(
@@ -148,7 +164,11 @@ function PayrollAbsenceCalendarCell({
 		<td
 			title={description}
 			aria-label={description}
-			className={cn("relative flex h-7 gap-px p-0.5", isWeekend(date) && "bg-muted/50")}
+			className={cn(
+				"relative flex h-7 gap-px p-0.5",
+				isWeekend(date) && "bg-muted/50",
+				monthStart && PAYROLL_MONTH_START_CLASS,
+			)}
 		>
 			<AbsenceHalf absence={morning} side="am" />
 			<AbsenceHalf absence={afternoon} side="pm" />

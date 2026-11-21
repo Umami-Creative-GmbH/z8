@@ -5,7 +5,7 @@ import { type ReactNode, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PayrollTranslate } from "./state";
 
-const PAYROLL_WORKSPACE_TABS = ["overview", "days", "absences", "export"] as const;
+const PAYROLL_WORKSPACE_TABS = ["overview", "days", "absences", "settlement", "export"] as const;
 export type PayrollWorkspaceTab = (typeof PAYROLL_WORKSPACE_TABS)[number];
 
 const DEFAULT_TAB: PayrollWorkspaceTab = "overview";
@@ -64,6 +64,7 @@ export function PayrollWorkspaceTabs({
 		overview: t("payroll.tabs.overview", "Overview"),
 		days: t("payroll.tabs.days", "Days"),
 		absences: t("payroll.tabs.absences", "Absences"),
+		settlement: t("payroll.tabs.settlement", "Settlement"),
 		export: t("payroll.tabs.export", "Export"),
 	};
 
@@ -71,7 +72,7 @@ export function PayrollWorkspaceTabs({
 		<Tabs value={active} onValueChange={select} className="min-w-0 gap-4">
 			<TabsList
 				aria-label={t("payroll.tabs.label", "Payroll workspace sections")}
-				className="grid w-full grid-cols-4 sm:inline-flex sm:w-fit"
+				className="w-full sm:w-fit"
 			>
 				{PAYROLL_WORKSPACE_TABS.map((tab) => (
 					<TabsTrigger key={tab} value={tab}>

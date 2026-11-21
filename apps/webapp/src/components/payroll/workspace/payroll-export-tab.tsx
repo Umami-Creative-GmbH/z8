@@ -1,6 +1,12 @@
 "use client";
 
-import { IconAlertTriangle, IconDownload, IconFileExport, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconDownload,
+	IconFileExport,
+	IconInfoCircle,
+	IconLoader2,
+} from "@tabler/icons-react";
 import type React from "react";
 import { useState } from "react";
 import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/actions";
@@ -22,13 +28,12 @@ import { PayrollBaselinesCard } from "../payroll-baselines-card";
 import { PayrollComparisonCard } from "../payroll-comparison-card";
 import { PayrollRunsCard } from "../payroll-runs-card";
 import { PayrollConfirmPaidCard } from "./payroll-confirm-paid-card";
-import { PayrollSettlementCard } from "./payroll-settlement-card";
-import type { PayrollPeriodRequest, PayrollTranslate, PayrollWorkspaceAction } from "./state";
+import type { PayrollTranslate, PayrollWorkspaceAction } from "./state";
 
 /**
  * The Export tab: everything that leaves Z8. The export format, the PDF download,
- * starting an export, confirming an export as paid, settling days, unconfirmed payroll
- * runs, baselines and comparison.
+ * starting an export, confirming an export as paid, unconfirmed payroll runs, baselines
+ * and comparison. Settling days by hand is on the Settlement tab.
  */
 export function PayrollExportTab({
 	dispatch,
@@ -40,8 +45,6 @@ export function PayrollExportTab({
 	onDownloadPdf,
 	onTriggerExport,
 	period,
-	refreshedAt,
-	request,
 	t,
 }: {
 	dispatch: React.Dispatch<PayrollWorkspaceAction>;
@@ -53,8 +56,6 @@ export function PayrollExportTab({
 	onDownloadPdf: () => void;
 	onTriggerExport: (options: { includeSettledDays: boolean }) => void;
 	period: PayrollWorkspaceSummary["period"];
-	refreshedAt: string;
-	request: PayrollPeriodRequest;
 	t: PayrollTranslate;
 }) {
 	const hasExportFormats = exportFormats.length > 0;
@@ -178,18 +179,13 @@ export function PayrollExportTab({
 				</CardContent>
 			</Card>
 			<PayrollConfirmPaidCard t={t} />
-			<PayrollSettlementCard
-				key={JSON.stringify([
-					request.startDate,
-					request.endDate,
-					request.employeeIds,
-					filtersHaveNoMatches,
-				])}
-				filtersHaveNoMatches={filtersHaveNoMatches}
-				refreshedAt={refreshedAt}
-				request={request}
-				t={t}
-			/>
+			<p className="-mt-3 flex items-center gap-2 text-muted-foreground text-sm">
+				<IconInfoCircle aria-hidden="true" className="size-4 shrink-0" />
+				{t(
+					"payroll.export.settleByHandPointer",
+					"To settle days by hand, for example when you pay from the PDF, use the Settlement tab.",
+				)}
+			</p>
 			<PayrollRunsCard />
 			<PayrollBaselinesCard
 				key={formatId}

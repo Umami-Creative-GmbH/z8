@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
 ARG PNPM_VERSION=12.21.0
-ARG TURBO_VERSION=2.11.7
+ARG TURBO_VERSION=2.11.12
 
 FROM node:${NODE_VERSION}-alpine AS base
 
@@ -19,6 +19,7 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    TURBO_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
@@ -46,12 +47,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --store-dir /root/.local/share/pnpm/store --lockfile-only && \
     pnpm install --store-dir /root/.local/share/pnpm/store --frozen-lockfile
 
-FROM base AS marketing-workspace
+FROM marketing-deps AS marketing-workspace
 ENV SKIP_ENV_VALIDATION=1
-COPY --from=marketing-deps /app/node_modules ./node_modules
-COPY --from=marketing-deps /app/apps/marketing/node_modules ./apps/marketing/node_modules
 COPY --from=marketing-pruner /app/out/full/ ./
-COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
 FROM marketing-workspace AS marketing-builder
 RUN mkdir -p /app/apps/marketing/public

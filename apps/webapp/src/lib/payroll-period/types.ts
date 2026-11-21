@@ -152,6 +152,12 @@ export interface PayrollPeriodDay {
 	differenceMinutes: number | null;
 	absences: PayrollPeriodDayAbsence[];
 	holiday: { name: string } | null;
+	/**
+	 * Whether the employee recorded anything on this day: credited work touching it or an
+	 * absence (pending included). A holiday alone is not an entry. Read it through
+	 * `dayHasEntries`. Always set by the row builder; optional only for hand-built fixtures.
+	 */
+	hasEntries?: boolean;
 	/** Always set by the row builder; optional only for hand-built fixtures. */
 	settlement?: PayrollPeriodDaySettlement;
 }

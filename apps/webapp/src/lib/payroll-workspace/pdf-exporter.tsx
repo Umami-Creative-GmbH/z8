@@ -1,3 +1,4 @@
+import type { PayrollPeriodRecordsByDay } from "@/lib/payroll-period/day-records";
 import type { PayrollPeriodRead } from "@/lib/payroll-period/types";
 import { absenceCalendarSection } from "./pdf/absence-calendar";
 import { absenceListSection } from "./pdf/absence-list";
@@ -23,16 +24,19 @@ const PAYROLL_PDF_SECTIONS: readonly PayrollPdfSection[] = [
 /**
  * The payroll PDF of a period read (#1891): the summary page, then a day sheet per
  * employee, then the period's absences as a landscape calendar and as a list. Every
- * figure comes from `read`, so the PDF matches the workspace; every label goes through
- * `t` in the exporter's language and dates and numbers are formatted for `locale`.
+ * figure comes from `read`, so the PDF matches the workspace; the day sheets' clock
+ * times and breaks come from `records` (`readPeriodRecordsForEmployees` for the read's
+ * employees and period). Every label goes through `t` in the exporter's language and
+ * dates and numbers are formatted for `locale`.
  */
 export async function exportPayrollPeriodToPDF(
 	read: PayrollPeriodRead,
-	options: { t: PayrollPdfTranslate; locale: string },
+	options: { t: PayrollPdfTranslate; locale: string; records?: PayrollPeriodRecordsByDay },
 ): Promise<Uint8Array> {
 	const { Document, Page, pdf, Text, View } = await import("@react-pdf/renderer");
 	const context: PayrollPdfContext = {
 		read,
+		records: options.records ?? new Map(),
 		t: options.t,
 		locale: options.locale,
 		format: payrollPdfFormat(options.locale),

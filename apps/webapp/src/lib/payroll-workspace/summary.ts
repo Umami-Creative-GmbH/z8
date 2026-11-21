@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -61,6 +61,7 @@ import {
 	exportIsPayrollRun,
 } from "@/lib/travel-expenses/payroll-run";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
+import { absenceRecordDates } from "./absence-record-dates";
 import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
 import type {
 	PayrollBlocker,
@@ -755,7 +756,8 @@ async function getWorkRows(
  * (a full day is UTC midnight to midnight, a half day starts or ends at UTC noon, a timed
  * partial day carries its local times). So the employee-local date is the encoded date:
  * converting the instants into the employee's zone would move absences to a neighbouring
- * day. The period filter compares the same encoding.
+ * day. The period filter compares the same encoding; an end exactly at the period's first
+ * midnight is exclusive (`absenceRecordDates`), so it does not reach into the period.
  */
 async function getAbsenceRows(
 	organizationId: string,
@@ -763,10 +765,6 @@ async function getAbsenceRows(
 	period: Pick<PayrollPeriod, "start" | "end">,
 ): Promise<PayrollPeriodAbsenceSource[]> {
 	const { db } = await import("@/db");
-	const encodedStart = new Date(`${period.start}T00:00:00.000Z`);
-	const encodedEndExclusive = new Date(
-		`${parsePlainDate(period.end).add({ days: 1 }).toString()}T00:00:00.000Z`,
-	);
 	const rows = await db
 		.select({
 			id: timeRecord.id,
@@ -802,8 +800,7 @@ async function getAbsenceRows(
 				eq(timeRecord.recordKind, "absence"),
 				inArray(timeRecord.approvalState, ["approved", "pending"]),
 				inArray(timeRecord.employeeId, allowedEmployeeIds),
-				lt(timeRecord.startAt, encodedEndExclusive),
-				or(isNull(timeRecord.endAt), gte(timeRecord.endAt, encodedStart)),
+				absenceOverlapsPeriod(period),
 			),
 		);
 
@@ -815,13 +812,25 @@ async function getAbsenceRows(
 		categoryName: row.categoryName,
 		categoryType: row.categoryType,
 		categoryColor: row.categoryColor,
-		startDate: row.startAt.toISOString().slice(0, 10),
-		endDate: (row.endAt ?? row.startAt).toISOString().slice(0, 10),
+		...absenceRecordDates(row),
 		startPeriod: row.startPeriod,
 		endPeriod: row.endPeriod,
-		startTime: row.startAt.toISOString().slice(11, 19),
-		endTime: (row.endAt ?? row.startAt).toISOString().slice(11, 19),
 	}));
+}
+
+/**
+ * Canonical absence records touching the period's logical dates, compared in their
+ * wall-clock-as-UTC encoding. An end exactly at the first midnight is exclusive.
+ */
+function absenceOverlapsPeriod(period: Pick<PayrollPeriod, "start" | "end">) {
+	const encodedStart = new Date(`${parsePlainDate(period.start).toString()}T00:00:00.000Z`);
+	const encodedEndExclusive = new Date(
+		`${parsePlainDate(period.end).add({ days: 1 }).toString()}T00:00:00.000Z`,
+	);
+	return and(
+		lt(timeRecord.startAt, encodedEndExclusive),
+		or(isNull(timeRecord.endAt), gt(timeRecord.endAt, encodedStart)),
+	);
 }
 
 async function getBlockers(
@@ -861,6 +870,10 @@ async function getBlockers(
 				id: timeRecord.id,
 				employeeId: timeRecord.employeeId,
 				startDate: absenceEntry.startDate,
+				startAt: timeRecord.startAt,
+				endAt: timeRecord.endAt,
+				startPeriod: timeRecordAbsence.startPeriod,
+				endPeriod: timeRecordAbsence.endPeriod,
 			})
 			.from(timeRecord)
 			.innerJoin(
@@ -883,8 +896,8 @@ async function getBlockers(
 					eq(timeRecord.recordKind, "absence"),
 					eq(timeRecord.approvalState, "pending"),
 					inArray(timeRecord.employeeId, allowedEmployeeIds),
-					lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
-					or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate())),
+					// Absence instants encode wall clocks as UTC, compared on the period's dates.
+					absenceOverlapsPeriod(toPayrollPeriod({ ...period, label: "" })),
 				),
 			),
 		collectionOwnsWorkBlockers
@@ -1001,7 +1014,14 @@ async function getBlockers(
 
 	const blockerCandidates = [
 		...missingClockOutBlockers,
-		...buildPendingAbsenceBlockers(pendingAbsenceRows),
+		...buildPendingAbsenceBlockers(
+			pendingAbsenceRows.map((row) => ({
+				id: row.id,
+				employeeId: row.employeeId,
+				// A record without a legacy entry falls back to its own logical start date.
+				startDate: row.startDate ?? absenceRecordDates(row).startDate,
+			})),
+		),
 		...pendingApprovalBlockers,
 	];
 

@@ -45,13 +45,19 @@ import {
 	readPeriodForEmployees,
 	resolvePeriodEmployeeIds,
 } from "@/lib/payroll-period/read-period";
+import { readPeriodRecordsForEmployees } from "@/lib/payroll-period/read-period-records";
 import { loadActiveSettledDays } from "@/lib/payroll-period/settled-days-store";
 import {
+	MAX_SETTLE_SPECIFIC_DAYS,
+	type PayrollSettleEmployeeBreakdown,
 	type PayrollSettlementHistoryEntry,
 	previewSettleDays,
+	previewSettleSpecificDays,
+	type SettleDaysOptions,
 	type SettleDaysPreview,
 	type SettleDaysResult,
 	settleDays,
+	settleSpecificDays,
 	settlementHistory,
 	unsettleDays,
 } from "@/lib/payroll-period/settlement";
@@ -153,34 +159,109 @@ export interface PayrollSettlementCounts {
 	 * since, which confirming again skips.
 	 */
 	previouslyUnsettledDays?: number;
+	/** Settling by hand: unsettled days nobody recorded anything on, never settled. */
+	skippedWithoutEntriesDays?: number;
+	/** Settling by hand: days with a pending absence left out by the option. */
+	skippedPendingAbsenceDays?: number;
+	/** Settling by hand: days in months not closed left out by the option. */
+	skippedUnclosedMonthDays?: number;
+	/** Settling by hand: days settled although a pending absence on them is not paid. */
+	pendingAbsenceDays?: number;
+	/** Settling by hand: the days to settle per employee, with their credited minutes. */
+	employees?: PayrollSettleEmployeeBreakdown[];
+}
+
+/**
+ * Settling a date range by hand (#1896): `startDate`, `endDate` and `employeeIds` name
+ * the days, inside the grant; the options leave out days not to settle yet.
+ */
+export type PayrollSettleDaysRequest = PayrollWorkspaceRequest & SettleDaysOptions;
+
+/** Settling the employee-days picked in the Days tab. */
+export interface PayrollSettleSpecificDaysRequest {
+	days: { employeeId: string; date: string }[];
+	skipPendingAbsences?: boolean;
 }
 
 export async function previewSettlePayrollDaysAction(
-	request: PayrollWorkspaceRequest,
+	request: PayrollSettleDaysRequest,
 ): Promise<ServerActionResult<PayrollSettlementCounts>> {
 	return runPayrollWorkspaceAction(async (t) => {
+		const options = parsePayrollActionInput(t, settleOptionsSchema, request);
 		const { organizationId, actor, scope, range } = await resolvePayrollSettlementRequest(
 			t,
 			request,
 		);
-		const preview = await previewSettleDays(organizationId, actor, scope, range);
+		const preview = await previewSettleDays(organizationId, actor, scope, range, options);
 		return settlementCounts(t, actor.userId, preview);
 	});
 }
 
-/** Settles every day of the workspace's scope and period by hand (#1896). */
+/** Settles the days with entries of the scope and range by hand (#1896). */
 export async function settlePayrollDaysAction(
-	request: PayrollWorkspaceRequest,
+	request: PayrollSettleDaysRequest,
 ): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const options = parsePayrollActionInput(t, settleOptionsSchema, request);
+		const { organizationId, actor, scope, range } = await resolvePayrollSettlementRequest(
+			t,
+			request,
+		);
+		const result = await settleDays(organizationId, actor, scope, range, options);
+		const counts = settlementCounts(t, actor.userId, result);
+		revalidatePath("/payroll");
+		return counts;
+	});
+}
+
+/** What settling the employee-days picked in the Days tab would do. */
+export async function previewSettleSpecificPayrollDaysAction(
+	request: PayrollSettleSpecificDaysRequest,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { days, ...options } = parsePayrollActionInput(t, settleSpecificDaysSchema, request);
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		const preview = await previewSettleSpecificDays(organizationId, actor, days, options);
+		return settlementCounts(t, actor.userId, preview);
+	});
+}
+
+/** Settles the employee-days picked in the Days tab or its side panel. */
+export async function settleSpecificPayrollDaysAction(
+	request: PayrollSettleSpecificDaysRequest,
+): Promise<ServerActionResult<PayrollSettlementCounts>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { days, ...options } = parsePayrollActionInput(t, settleSpecificDaysSchema, request);
+		const { organizationId, actor } = await resolvePayrollSettlementActor(t);
+		const result = await settleSpecificDays(organizationId, actor, days, options);
+		const counts = settlementCounts(t, actor.userId, result);
+		revalidatePath("/payroll");
+		return counts;
+	});
+}
+
+/** The most settlement events the Settlement tab lists. */
+const SETTLEMENT_HISTORY_LIMIT = 200;
+
+/**
+ * The settlement history of the workspace's scope and range, newest first, for the
+ * Settlement tab; `hasMore` when older events were left out.
+ */
+export async function getPayrollSettlementHistoryAction(
+	request: PayrollWorkspaceRequest,
+): Promise<ServerActionResult<{ entries: PayrollSettlementHistoryEntry[]; hasMore: boolean }>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const { organizationId, actor, scope, range } = await resolvePayrollSettlementRequest(
 			t,
 			request,
 		);
-		const result = await settleDays(organizationId, actor, scope, range);
-		const counts = settlementCounts(t, actor.userId, result);
-		revalidatePath("/payroll");
-		return counts;
+		const entries = await settlementHistory(organizationId, actor, scope, range, {
+			limit: SETTLEMENT_HISTORY_LIMIT + 1,
+		});
+		return {
+			entries: entries.slice(0, SETTLEMENT_HISTORY_LIMIT),
+			hasMore: entries.length > SETTLEMENT_HISTORY_LIMIT,
+		};
 	});
 }
 
@@ -362,6 +443,17 @@ const unsettlePayrollDaySchema = payrollDaySchema.extend({
 	reason: z.string().trim().max(2_000),
 });
 
+/** The options of settling by hand; absent options keep the module's defaults. */
+const settleOptionsSchema = z.object({
+	skipUnclosedMonths: z.boolean().optional(),
+	skipPendingAbsences: z.boolean().optional(),
+});
+
+const settleSpecificDaysSchema = z.object({
+	days: z.array(payrollDaySchema).min(1).max(MAX_SETTLE_SPECIFIC_DAYS),
+	skipPendingAbsences: z.boolean().optional(),
+});
+
 /** The parsed input, or a ValidationError naming the first invalid field. */
 function parsePayrollActionInput<Schema extends z.ZodType>(
 	t: PayrollTranslate,
@@ -418,11 +510,25 @@ function settlementCounts(
 			field: "endDate",
 		});
 	}
+	if (result.status === "invalid_days") {
+		throw new ValidationError({
+			message: t(
+				"payroll.settle.invalidDays",
+				"Choose at most 5,000 days within one year to settle",
+			),
+			field: "days",
+		});
+	}
 	if (result.status === "out_of_scope") throwPayrollSettlementOutOfScope(t, userId);
 	return {
 		newDays: result.newlySettled.length,
 		alreadySettledDays: result.alreadySettled.length,
 		unclosedMonths: unclosedMonthCounts(result.inUnclosedMonths),
+		skippedWithoutEntriesDays: result.skippedWithoutEntries.length,
+		skippedPendingAbsenceDays: result.skippedPendingAbsences.length,
+		skippedUnclosedMonthDays: result.skippedUnclosedMonths.length,
+		pendingAbsenceDays: result.withPendingAbsences.length,
+		employees: result.employees,
 	};
 }
 
@@ -580,7 +686,17 @@ export async function exportPayrollPdfAction(
 			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
 			{ employeeIds: scopedEmployeeIds },
 		);
-		const pdfBytes = await exportPayrollPeriodToPDF(read, { t, locale: await getLocale() });
+		// The day sheets' clock times and breaks, for the employees and days of the read.
+		const records = await readPeriodRecordsForEmployees(authContext.employee.organizationId, {
+			employees: read.employees,
+			startDate: read.period.start,
+			endDate: read.period.end,
+		});
+		const pdfBytes = await exportPayrollPeriodToPDF(read, {
+			t,
+			locale: await getLocale(),
+			records,
+		});
 
 		return {
 			filename: generatePayrollPDFFilename(read.summary),

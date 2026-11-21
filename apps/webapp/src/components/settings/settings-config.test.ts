@@ -142,12 +142,12 @@ describe("settings visibility tiers", () => {
 			"teams",
 			"roles",
 			"identity-access",
+			"custom-domains",
 			"locations",
 			"vehicles",
 			"equipment",
 			"personnel-files",
 			"custom-fields",
-			"custom-domains",
 			"implementation-checklist",
 			"billing",
 		]);

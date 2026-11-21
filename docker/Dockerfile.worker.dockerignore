@@ -24,9 +24,17 @@ out
 .gitignore
 .github
 
-# IDE and editor
+# IDE, editor, and local agent tooling
 .vscode
 .idea
+.agent
+.agents
+.claude
+.cursor
+.gemini
+.interface-design
+.out-of-scope
+.react-doctor
 *.swp
 *.swo
 *~

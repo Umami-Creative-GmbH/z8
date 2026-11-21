@@ -14,6 +14,7 @@ import {
 import { user } from "@/db/auth-schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { dayHasEntries } from "./day-entries";
 import {
 	type DepartedEmployees,
 	readPeriodForEmployees,
@@ -21,12 +22,19 @@ import {
 } from "./read-period";
 import { loadActiveSettledDays } from "./settled-days-store";
 import { settledDayValues } from "./settlement-values";
-import type { PayrollPeriodActor, PayrollPeriodScope, PayrollSettledDayValues } from "./types";
+import type {
+	PayrollPeriodActor,
+	PayrollPeriodDay,
+	PayrollPeriodScope,
+	PayrollSettledDayValues,
+} from "./types";
 
 /**
  * Settling and unsettling employee-days (#1896, payroll-export ADR 0004). A settled
  * day records that its worked hours and absences were paid; it keeps a copy of
- * them, never freezes data and needs no closed month. Every operation is
+ * them, never freezes data and needs no closed month. Settling by hand covers only
+ * days with entries (`dayHasEntries`); confirming an export as paid settles exactly
+ * the days the export carried (export-confirmation.ts). Every operation is
  * organization-scoped and resolves employees through the actor's payroll access
  * grant: a request naming anyone outside it is rejected as a whole.
  */
@@ -52,6 +60,8 @@ export interface PayrollDateRange {
 export const MAX_SETTLE_RANGE_DAYS = 366;
 /** The most days one unsettle names. */
 export const MAX_UNSETTLE_DAYS = 5_000;
+/** The most days one settle of specific days names, as for unsettling. */
+export const MAX_SETTLE_SPECIFIC_DAYS = MAX_UNSETTLE_DAYS;
 /**
  * Unsettling and the history cover the grant's employees whenever they left: a
  * settlement exists only for a day the grant could settle, so its record stays
@@ -68,12 +78,54 @@ export interface SettleDaysPlan {
 	inUnclosedMonths: PayrollDayKey[];
 }
 
+/** How settling by hand treats days a payroll officer may not want to settle yet. */
+export interface SettleDaysOptions {
+	/**
+	 * Leave out days in months not closed for the employee. Default false: they are
+	 * settled, and reported as a warning.
+	 */
+	skipUnclosedMonths?: boolean;
+	/**
+	 * Leave out days with a pending absence, which the settlement's copy does not pay.
+	 * Default true for a date range; false for specific days, which the officer picked.
+	 */
+	skipPendingAbsences?: boolean;
+}
+
+/** One employee's part of a settle: the days it settles and their credited minutes. */
+export interface PayrollSettleEmployeeBreakdown {
+	employeeId: string;
+	name: string;
+	days: number;
+	creditedMinutes: number;
+}
+
+/**
+ * A settle by hand (#1896): the plan, plus the days it leaves out. Days without entries
+ * (`dayHasEntries`) are never settled by hand, so settling shows no empty days as paid.
+ */
+export interface ManualSettlePlan extends SettleDaysPlan {
+	/** Unsettled days nobody recorded anything on: never settled by hand. */
+	skippedWithoutEntries: PayrollDayKey[];
+	/** Unsettled days with a pending absence, left out by `skipPendingAbsences`. */
+	skippedPendingAbsences: PayrollDayKey[];
+	/** Unsettled days in months not closed, left out by `skipUnclosedMonths`. */
+	skippedUnclosedMonths: PayrollDayKey[];
+	/** Days settled with a pending absence, which their copy does not pay: a warning. */
+	withPendingAbsences: PayrollDayKey[];
+	/** The days settled per employee, by name. */
+	employees: PayrollSettleEmployeeBreakdown[];
+}
+
 export type SettleDaysRejection =
 	/** Employees outside the grant or the organization; nothing was settled. */
-	{ status: "out_of_scope"; employeeIds: string[] } | { status: "invalid_range" };
+	| { status: "out_of_scope"; employeeIds: string[] }
+	| { status: "invalid_range" }
+	/** Specific days: none, too many, malformed, or spread over more than a year. */
+	| { status: "invalid_days" };
 
-export type SettleDaysPreview = SettleDaysRejection | ({ status: "ready" } & SettleDaysPlan);
-export type SettleDaysResult = SettleDaysRejection | ({ status: "settled" } & SettleDaysPlan);
+export type SettleDaysPreview = SettleDaysRejection | ({ status: "ready" } & ManualSettlePlan);
+export type SettleDaysResult = SettleDaysRejection | ({ status: "settled" } & ManualSettlePlan);
 
 export type UnsettleDaysResult =
 	| { status: "reason_required" }
@@ -106,45 +158,69 @@ export async function previewSettleDays(
 	actor: PayrollSettlementActor,
 	scope: PayrollPeriodScope,
 	range: PayrollDateRange,
+	options: SettleDaysOptions = {},
 ): Promise<SettleDaysPreview> {
-	const resolved = await resolveSettlement(organizationId, actor, scope, range);
+	const resolved = await resolveRangeSettlement(organizationId, actor, scope, range, options);
 	if (!resolved.ok) return resolved.rejection;
-	return { status: "ready", ...(await planSettlement(organizationId, resolved)) };
+	const { plan } = await planManualSettlement(organizationId, actor, resolved);
+	return { status: "ready", ...plan };
 }
 
 /**
- * Settles the employees' days in the range by hand (#1896): each day not settled
- * yet gets a settlement with a copy of its current credited minutes and approved
- * absences, and a history event. Days settled before are reported, not duplicated.
+ * Settles the employees' days in the range by hand (#1896): each day with entries not
+ * settled yet gets a settlement with a copy of its current credited minutes and
+ * approved absences, and a history event. Days settled before are reported, not
+ * duplicated; days without entries, and the days the options leave out, are reported.
  */
 export async function settleDays(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	scope: PayrollPeriodScope,
 	range: PayrollDateRange,
+	options: SettleDaysOptions = {},
 ): Promise<SettleDaysResult> {
-	const resolved = await resolveSettlement(organizationId, actor, scope, range);
+	const resolved = await resolveRangeSettlement(organizationId, actor, scope, range, options);
 	if (!resolved.ok) return resolved.rejection;
-	const plan = await planSettlement(organizationId, resolved);
-	if (plan.newlySettled.length === 0) return { status: "settled", ...plan };
+	return settlePlanned(organizationId, actor, resolved);
+}
 
-	const read = await readPeriodForEmployees(
-		organizationId,
-		actor,
-		{ ...range, label: `${range.startDate} – ${range.endDate}` },
-		{ employeeIds: [...new Set(plan.newlySettled.map((day) => day.employeeId))] },
-	);
-	const toSettle = new Set(plan.newlySettled.map(dayKey));
-	const values = read.employees.flatMap((employee) =>
-		employee.days
-			.filter((day) => toSettle.has(dayKey({ employeeId: employee.id, date: day.date })))
-			.map((day) => ({
-				employeeId: employee.id,
-				date: day.date,
-				timezone: employee.timezone,
-				...settledDayValues(day),
-			})),
-	);
+/** What settling the named employee-days would do, without settling anything. */
+export async function previewSettleSpecificDays(
+	organizationId: string,
+	actor: PayrollSettlementActor,
+	days: readonly PayrollDayKey[],
+	options: SettleDaysOptions = {},
+): Promise<SettleDaysPreview> {
+	const resolved = await resolveSpecificSettlement(organizationId, actor, days, options);
+	if (!resolved.ok) return resolved.rejection;
+	const { plan } = await planManualSettlement(organizationId, actor, resolved);
+	return { status: "ready", ...plan };
+}
+
+/**
+ * Settles the named employee-days by hand, as picked in the Days tab: the same rules as
+ * a range, except that a day with a pending absence is settled unless
+ * `skipPendingAbsences` says otherwise. A request naming any employee outside the grant
+ * is rejected as a whole.
+ */
+export async function settleSpecificDays(
+	organizationId: string,
+	actor: PayrollSettlementActor,
+	days: readonly PayrollDayKey[],
+	options: SettleDaysOptions = {},
+): Promise<SettleDaysResult> {
+	const resolved = await resolveSpecificSettlement(organizationId, actor, days, options);
+	if (!resolved.ok) return resolved.rejection;
+	return settlePlanned(organizationId, actor, resolved);
+}
+
+async function settlePlanned(
+	organizationId: string,
+	actor: PayrollSettlementActor,
+	resolved: ResolvedSettlement,
+): Promise<SettleDaysResult> {
+	const { plan, values, names } = await planManualSettlement(organizationId, actor, resolved);
+	if (values.length === 0) return { status: "settled", ...plan };
 
 	const inserted = await insertSettlements(organizationId, actor, values, {
 		method: "manual",
@@ -153,16 +229,18 @@ export async function settleDays(
 
 	// A day a concurrent settle took between the plan and the insert is already settled.
 	const settledNow = new Set(inserted.map(dayKey));
+	const isSettledNow = (day: PayrollDayKey) => settledNow.has(dayKey(day));
 	return {
 		status: "settled",
+		...plan,
 		newlySettled: sortDays(inserted),
 		alreadySettled: sortDays([
 			...plan.alreadySettled,
-			...plan.newlySettled.filter(
-				(day) => !settledNow.has(dayKey(day)) && values.some((value) => sameDay(value, day)),
-			),
+			...plan.newlySettled.filter((day) => !isSettledNow(day)),
 		]),
-		inUnclosedMonths: plan.inUnclosedMonths,
+		inUnclosedMonths: plan.inUnclosedMonths.filter(isSettledNow),
+		withPendingAbsences: plan.withPendingAbsences.filter(isSettledNow),
+		employees: employeeBreakdown(values.filter(isSettledNow), names),
 	};
 }
 
@@ -328,13 +406,14 @@ export async function unsettleDays(
 /**
  * The settlement history of the grant's employees in the range, newest first: who
  * settled or unsettled each day, when, how, why, and the values it paid. Employees
- * outside the grant are left out.
+ * outside the grant are left out. `limit` keeps only the newest events.
  */
 export async function settlementHistory(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	scope: PayrollPeriodScope,
 	range: PayrollDateRange,
+	options: { limit?: number } = {},
 ): Promise<PayrollSettlementHistoryEntry[]> {
 	if (!rangeDates(range)) return [];
 	const employeeIds = await resolveGrantEmployeeIds(
@@ -344,7 +423,7 @@ export async function settlementHistory(
 		scope,
 	);
 	if (employeeIds.length === 0) return [];
-	const rows = await db
+	const query = db
 		.select({
 			id: payrollSettledDayEvent.id,
 			employeeId: payrollSettledDayEvent.employeeId,
@@ -390,7 +469,9 @@ export async function settlementHistory(
 			desc(payrollSettledDayEvent.kind),
 			asc(payrollSettledDayEvent.employeeId),
 			asc(payrollSettledDayEvent.date),
-		);
+		)
+		.$dynamic();
+	const rows = await (options.limit === undefined ? query : query.limit(options.limit));
 	return rows.map(({ creditedMinutes, absences, occurredAt, ...row }) => ({
 		...row,
 		occurredAt: occurredAt.toISOString(),
@@ -405,16 +486,22 @@ export async function settlementHistory(
 interface ResolvedSettlement {
 	ok: true;
 	employeeIds: string[];
-	dates: string[];
+	/** The employee-days asked for, within `range`. */
+	days: PayrollDayKey[];
+	/** The range the days span, read once for their values and entries. */
 	range: PayrollDateRange;
+	options: Required<SettleDaysOptions>;
 }
 
-async function resolveSettlement(
+type SettlementResolution = ResolvedSettlement | { ok: false; rejection: SettleDaysRejection };
+
+async function resolveRangeSettlement(
 	organizationId: string,
 	actor: PayrollSettlementActor,
 	scope: PayrollPeriodScope,
 	range: PayrollDateRange,
-): Promise<ResolvedSettlement | { ok: false; rejection: SettleDaysRejection }> {
+	options: SettleDaysOptions,
+): Promise<SettlementResolution> {
 	const dates = rangeDates(range);
 	if (!dates) return { ok: false, rejection: { status: "invalid_range" } };
 	const resolved = await resolveScope(organizationId, actor, scope.employeeIds, {
@@ -423,7 +510,138 @@ async function resolveSettlement(
 	if (!resolved.ok) {
 		return { ok: false, rejection: { status: "out_of_scope", employeeIds: resolved.employeeIds } };
 	}
-	return { ok: true, employeeIds: resolved.employeeIds, dates, range };
+	return {
+		ok: true,
+		employeeIds: resolved.employeeIds,
+		days: resolved.employeeIds.flatMap((employeeId) => dates.map((date) => ({ employeeId, date }))),
+		range: { startDate: range.startDate, endDate: range.endDate },
+		options: {
+			skipUnclosedMonths: options.skipUnclosedMonths === true,
+			skipPendingAbsences: options.skipPendingAbsences !== false,
+		},
+	};
+}
+
+async function resolveSpecificSettlement(
+	organizationId: string,
+	actor: PayrollSettlementActor,
+	days: readonly PayrollDayKey[],
+	options: SettleDaysOptions,
+): Promise<SettlementResolution> {
+	const unique = uniqueDays(days);
+	if (!unique || unique.length === 0 || unique.length > MAX_SETTLE_SPECIFIC_DAYS) {
+		return { ok: false, rejection: { status: "invalid_days" } };
+	}
+	const dates = unique.map((day) => day.date).toSorted();
+	const range = { startDate: dates[0], endDate: dates[dates.length - 1] };
+	if (!rangeDates(range)) return { ok: false, rejection: { status: "invalid_days" } };
+	const resolved = await resolveScope(
+		organizationId,
+		actor,
+		[...new Set(unique.map((day) => day.employeeId))],
+		{ leftAfterStartOf: range.startDate },
+	);
+	if (!resolved.ok) {
+		return { ok: false, rejection: { status: "out_of_scope", employeeIds: resolved.employeeIds } };
+	}
+	return {
+		ok: true,
+		employeeIds: resolved.employeeIds,
+		days: unique,
+		range,
+		options: {
+			skipUnclosedMonths: options.skipUnclosedMonths === true,
+			skipPendingAbsences: options.skipPendingAbsences === true,
+		},
+	};
+}
+
+/**
+ * Reads the days once and sorts them: already settled, without entries (never settled
+ * by hand), left out by the options, or to settle with the values of the read.
+ */
+async function planManualSettlement(
+	organizationId: string,
+	actor: PayrollSettlementActor,
+	resolved: ResolvedSettlement,
+): Promise<{
+	plan: ManualSettlePlan;
+	values: PayrollSettlementValues[];
+	names: ReadonlyMap<string, string>;
+}> {
+	const { range, options } = resolved;
+	const [read, base] = await Promise.all([
+		readPeriodForEmployees(
+			organizationId,
+			actor,
+			{ ...range, label: `${range.startDate} – ${range.endDate}` },
+			{ employeeIds: resolved.employeeIds },
+		),
+		planDays(organizationId, resolved.days),
+	]);
+	const names = new Map(read.employees.map((employee) => [employee.id, employee.name]));
+	const readDays = new Map<string, { day: PayrollPeriodDay; timezone: string }>();
+	for (const employee of read.employees) {
+		for (const day of employee.days) {
+			readDays.set(dayKey({ employeeId: employee.id, date: day.date }), {
+				day,
+				timezone: employee.timezone,
+			});
+		}
+	}
+
+	const unclosed = new Set(base.inUnclosedMonths.map(dayKey));
+	const plan: ManualSettlePlan = {
+		newlySettled: [],
+		alreadySettled: base.alreadySettled,
+		inUnclosedMonths: [],
+		skippedWithoutEntries: [],
+		skippedPendingAbsences: [],
+		skippedUnclosedMonths: [],
+		withPendingAbsences: [],
+		employees: [],
+	};
+	const values: PayrollSettlementValues[] = [];
+	for (const key of base.newlySettled) {
+		const entry = readDays.get(dayKey(key));
+		if (!entry || !dayHasEntries(entry.day)) {
+			plan.skippedWithoutEntries.push(key);
+			continue;
+		}
+		const pending = entry.day.absences.some((absence) => absence.approvalState === "pending");
+		if (pending && options.skipPendingAbsences) {
+			plan.skippedPendingAbsences.push(key);
+			continue;
+		}
+		const inUnclosedMonth = unclosed.has(dayKey(key));
+		if (inUnclosedMonth && options.skipUnclosedMonths) {
+			plan.skippedUnclosedMonths.push(key);
+			continue;
+		}
+		plan.newlySettled.push(key);
+		if (inUnclosedMonth) plan.inUnclosedMonths.push(key);
+		if (pending) plan.withPendingAbsences.push(key);
+		values.push({ ...key, timezone: entry.timezone, ...settledDayValues(entry.day) });
+	}
+	plan.employees = employeeBreakdown(values, names);
+	return { plan, values, names };
+}
+
+function employeeBreakdown(
+	values: readonly PayrollSettlementValues[],
+	names: ReadonlyMap<string, string>,
+): PayrollSettleEmployeeBreakdown[] {
+	return [...Map.groupBy(values, (value) => value.employeeId)]
+		.map(([employeeId, days]) => ({
+			employeeId,
+			name: names.get(employeeId) ?? employeeId,
+			days: days.length,
+			creditedMinutes: days.reduce((sum, day) => sum + day.creditedMinutes, 0),
+		}))
+		.toSorted(
+			(left, right) =>
+				left.name.localeCompare(right.name) || left.employeeId.localeCompare(right.employeeId),
+		);
 }
 
 /**
@@ -447,17 +665,6 @@ async function resolveScope(
 	return outside.length > 0
 		? { ok: false, employeeIds: outside }
 		: { ok: true, employeeIds: requestedIds };
-}
-
-async function planSettlement(
-	organizationId: string,
-	resolved: ResolvedSettlement,
-): Promise<SettleDaysPlan> {
-	const { employeeIds, dates } = resolved;
-	return planDays(
-		organizationId,
-		employeeIds.flatMap((employeeId) => dates.map((date) => ({ employeeId, date }))),
-	);
 }
 
 /**
@@ -539,10 +746,6 @@ function firstDayOfMonth(date: string): string {
 
 function dayKey(day: PayrollDayKey): string {
 	return `${day.employeeId}:${day.date}`;
-}
-
-function sameDay(left: PayrollDayKey, right: PayrollDayKey): boolean {
-	return left.employeeId === right.employeeId && left.date === right.date;
 }
 
 function sortDays(days: PayrollDayKey[]): PayrollDayKey[] {

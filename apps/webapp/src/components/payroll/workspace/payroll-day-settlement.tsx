@@ -10,15 +10,17 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	getPayrollDaySettlementHistoryAction,
+	settleSpecificPayrollDaysAction,
 	unsettlePayrollDayAction,
 } from "@/app/[locale]/(app)/payroll/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { dayHasEntries } from "@/lib/payroll-period/day-entries";
 import type { PayrollSettlementHistoryEntry } from "@/lib/payroll-period/settlement";
 import type { PayrollPeriodDay, PayrollSettledDayValues } from "@/lib/payroll-period/types";
 import { queryKeys } from "@/lib/query/keys";
@@ -33,8 +35,8 @@ import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
 /**
  * The settlement part of the Days tab's side panel (#1897): the day's settlement
- * state, what was paid and what changed since, the full settlement history, and
- * unsettling this one day with a required reason.
+ * state, what was paid and what changed since, the full settlement history, settling
+ * this one day when it has entries, and unsettling it with a required reason.
  */
 export function PayrollDaySettlement({
 	day,
@@ -49,15 +51,44 @@ export function PayrollDaySettlement({
 }) {
 	const settlement = day.settlement ?? { state: "unsettled" as const };
 	const [unsettling, setUnsettling] = useState(false);
+	const [settling, setSettling] = useState(false);
 
 	return (
 		<section className="flex flex-col gap-2">
 			<h3 className="font-medium text-sm">{t("payroll.days.panel.settlement", "Settlement")}</h3>
 
 			{settlement.state === "unsettled" ? (
-				<p className="text-muted-foreground text-sm">
-					{t("payroll.days.panel.notSettled", "This day is not settled.")}
-				</p>
+				<>
+					<p className="text-muted-foreground text-sm">
+						{t("payroll.days.panel.notSettled", "This day is not settled.")}
+					</p>
+					{!dayHasEntries(day) ? (
+						<p className="text-muted-foreground text-sm">
+							{t(
+								"payroll.days.panel.noEntriesToSettle",
+								"Nothing was recorded on this day, so it can't be settled.",
+							)}
+						</p>
+					) : settling ? (
+						<SettleDayForm
+							day={day}
+							employeeId={employeeId}
+							onDone={() => setSettling(false)}
+							t={t}
+						/>
+					) : (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="self-start"
+							onClick={() => setSettling(true)}
+						>
+							<IconCircleCheck aria-hidden="true" className="size-4" />
+							{t("payroll.days.panel.settleDay", "Settle this day…")}
+						</Button>
+					)}
+				</>
 			) : settlement.state === "settled" ? (
 				<p className="flex flex-wrap items-center gap-2 text-sm">
 					<IconCircleCheck
@@ -111,6 +142,74 @@ export function PayrollDaySettlement({
 
 			<SettlementHistory date={day.date} employeeId={employeeId} format={format} t={t} />
 		</section>
+	);
+}
+
+/** Settling this one day by hand, after a confirmation in place. */
+function SettleDayForm({
+	day,
+	employeeId,
+	onDone,
+	t,
+}: {
+	day: PayrollPeriodDay;
+	employeeId: string;
+	onDone: () => void;
+	t: PayrollTranslate;
+}) {
+	const settlementChanged = usePayrollSettlementChanged();
+	const [isSettling, startSettling] = useTransition();
+	const pending = day.absences.some((absence) => absence.approvalState === "pending");
+
+	function settle() {
+		startSettling(async () => {
+			const result = await settleSpecificPayrollDaysAction({
+				days: [{ employeeId, date: day.date }],
+			});
+			if (!result.success) {
+				toast.error(result.error);
+				return;
+			}
+			toast.success(
+				result.data.newDays === 1
+					? t("payroll.days.panel.daySettled", "Day settled")
+					: t(
+							"payroll.days.panel.dayNotSettled",
+							"This day was not settled: it is settled already or has no entries anymore",
+						),
+			);
+			onDone();
+			await settlementChanged();
+		});
+	}
+
+	return (
+		<div className="flex flex-col gap-3 rounded-lg border bg-background p-3">
+			<p className="text-muted-foreground text-sm">
+				{t(
+					"payroll.days.panel.settleDescription",
+					"Records that this day's worked hours and approved absences have been paid. Later payroll files leave it out.",
+				)}
+			</p>
+			{pending ? (
+				<p className="flex items-start gap-2 text-amber-700 text-sm dark:text-amber-400">
+					<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+					{t(
+						"payroll.days.panel.settlePending",
+						"The pending absence is not paid with the day. If it is approved later, the day shows as changed since settled.",
+					)}
+				</p>
+			) : null}
+			<div className="flex flex-wrap justify-end gap-2">
+				<Button type="button" variant="outline" size="sm" onClick={onDone}>
+					{t("payroll.settle.cancel", "Cancel")}
+				</Button>
+				<Button type="button" size="sm" disabled={isSettling} onClick={settle}>
+					{isSettling ? <IconLoader2 aria-hidden="true" className="size-4 animate-spin" /> : null}
+					{t("payroll.days.panel.settleConfirm", "Settle day")}
+				</Button>
+			</div>
+		</div>
 	);
 }
 

@@ -620,6 +620,54 @@ describe("payroll export canonical data fetching", () => {
 		]);
 	});
 
+	it("exports a backfilled Friday sick day ending at the next midnight as Friday only", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-3",
+				employeeId: "emp-2",
+				// The canonical backfill ends a legacy full day exclusively at the next midnight.
+				startAt: new Date("2026-11-20T00:00:00.000Z"),
+				endAt: new Date("2026-11-21T00:00:00.000Z"),
+				approvalState: "approved",
+				employee: null,
+				absence: {
+					absenceCategoryId: "ac-2",
+					startPeriod: "full_day",
+					endPeriod: "full_day",
+					absenceCategory: { name: "Sick", type: "sick" },
+				},
+			},
+			{
+				id: "record-4",
+				employeeId: "emp-2",
+				// A morning half day as the backfill stores it.
+				startAt: new Date("2026-11-23T00:00:00.000Z"),
+				endAt: new Date("2026-11-23T12:00:00.000Z"),
+				approvalState: "approved",
+				employee: null,
+				absence: {
+					absenceCategoryId: "ac-1",
+					startPeriod: "am",
+					endPeriod: "am",
+					absenceCategory: { name: "Vacation", type: "vacation" },
+				},
+			},
+		]);
+
+		const results = await dataFetcher.fetchAbsencesForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-11-01T00:00:00.000Z"),
+				end: DateTime.fromISO("2026-11-30T23:59:59.999Z"),
+			},
+			employeeIds: ["emp-2"],
+		});
+
+		expect(results.map(({ id, startDate, endDate }) => ({ id, startDate, endDate }))).toEqual([
+			{ id: "record-3", startDate: "2026-11-20", endDate: "2026-11-20" },
+			{ id: "record-4", startDate: "2026-11-23", endDate: "2026-11-23" },
+		]);
+	});
+
 	it("returns no absence export rows for an explicit empty employee scope", async () => {
 		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-2" }]);
 		mockState.timeRecordFindMany.mockResolvedValue([
