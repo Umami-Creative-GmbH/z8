@@ -530,14 +530,18 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					eq(workPeriod.organizationId, plan.employee.organizationId),
 					eq(workPeriod.employeeId, plan.employee.id),
 					target.kind === "active"
-						? isNull(workPeriod.endTime)
+						? and(
+								eq(workPeriod.isActive, true),
+								isNull(workPeriod.endTime),
+								isNull(workPeriod.deletedAt),
+							)
 						: target.kind === "period"
 							? eq(workPeriod.id, target.workPeriodId)
 							: eq(workPeriod.clockInId, target.operationId),
 				),
 			)
 			// A start names its own period; should other work share the entry, the open one wins.
-			.orderBy(desc(workPeriod.isActive))
+			.orderBy(desc(workPeriod.isActive), desc(workPeriod.startTime), desc(workPeriod.createdAt))
 			.limit(1);
 		if (!period) {
 			return { refusal: target.kind === "active" ? "not_clocked_in" : "target_unknown" };

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import * as z from "zod";
 import { db } from "@/db";
@@ -236,8 +236,11 @@ export async function getTimeClockStatus(): Promise<{
 		where: and(
 			eq(workPeriod.employeeId, emp.id),
 			eq(workPeriod.organizationId, emp.organizationId),
+			eq(workPeriod.isActive, true),
 			isNull(workPeriod.endTime),
+			isNull(workPeriod.deletedAt),
 		),
+		orderBy: [desc(workPeriod.startTime), desc(workPeriod.createdAt)],
 		// The task key keeps the task in the period's project and organization.
 		with: { task: { columns: { id: true, name: true, state: true, projectId: true } } },
 	});
