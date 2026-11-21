@@ -44,7 +44,8 @@ vi.mock("@/lib/datetime/drizzle-adapter", () => ({
 	currentTimestamp: () => new Date("2026-01-01T00:00:00.000Z"),
 }));
 
-const db = {
+const db: Row = {
+	transaction: vi.fn(async (fn: (tx: Row) => Promise<unknown>) => fn(db)),
 	query: {
 		workPolicy: {
 			findMany: vi.fn(async () => state.workPolicies),
@@ -695,6 +696,28 @@ describe("work policy settings scope actions", () => {
 			expect(result).toMatchObject({ success: false, code: "ValidationError" });
 			expect(state.insertValues).toHaveLength(0);
 		});
+	});
+
+	it("rejects out-of-range ArbZG regulation fields via Zod schema validation", async () => {
+		state.caller = orgAdmin;
+
+		const invalidRest = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { regulation: { minRestPeriodMinutes: 0, breakRules: [] } },
+		});
+		const invalidAlertPercent = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { regulation: { alertThresholdPercent: 101, breakRules: [] } },
+		});
+		const invalidAlertMinutes = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { regulation: { alertBeforeLimitMinutes: -5, breakRules: [] } },
+		});
+
+		expect(invalidRest).toMatchObject({ success: false, code: "ValidationError" });
+		expect(invalidAlertPercent).toMatchObject({ success: false, code: "ValidationError" });
+		expect(invalidAlertMinutes).toMatchObject({ success: false, code: "ValidationError" });
+		expect(db.transaction).not.toHaveBeenCalled();
 	});
 
 	it("marks organization work balances dirty after deleting a work policy", async () => {
