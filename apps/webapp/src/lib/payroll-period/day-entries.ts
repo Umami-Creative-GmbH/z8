@@ -10,3 +10,15 @@ export function dayHasEntries(
 ): boolean {
 	return day.hasEntries ?? (day.creditedMinutes !== 0 || day.absences.length > 0);
 }
+
+/**
+ * Whether a view that leaves out days without entries keeps the day: it has entries, or
+ * it changed since it was settled, which payroll must see even once its entries are gone.
+ * A day settled with nothing on it is left out like any other empty day: settling an
+ * empty day pays nothing.
+ */
+export function dayHasEntriesOrChange(
+	day: Pick<PayrollPeriodDay, "hasEntries" | "creditedMinutes" | "absences" | "settlement">,
+): boolean {
+	return dayHasEntries(day) || day.settlement?.state === "changed_since_settled";
+}

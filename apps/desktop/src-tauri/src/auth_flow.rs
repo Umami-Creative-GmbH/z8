@@ -1,7 +1,6 @@
 //! Browser sign-in attempt: the server and verifier belong to one native attempt.
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
-use rand::RngCore;
 use sha2::{Digest, Sha256};
 use std::time::Instant;
 use url::Url;
@@ -21,9 +20,7 @@ pub enum Callback {
 
 impl LoginAttempt {
     pub fn begin(server: &str, started: Instant) -> Result<(Self, String)> {
-        let mut bytes = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut bytes);
-        let verifier = URL_SAFE_NO_PAD.encode(bytes);
+        let verifier = URL_SAFE_NO_PAD.encode(rand::random::<[u8; 32]>());
         let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
         let mut login = Url::parse(&format!(
             "{}/api/auth/app-login",
