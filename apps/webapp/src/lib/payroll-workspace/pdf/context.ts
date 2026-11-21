@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import type { PayrollPeriodRecordsByDay } from "@/lib/payroll-period/day-records";
 import type { PayrollPeriodRead } from "@/lib/payroll-period/types";
 import type { PayrollLabelTranslate } from "../blocker-labels";
 import type { PayrollPdfFormat } from "./format";
@@ -13,6 +14,11 @@ export type PayrollPdfKit = Pick<typeof import("@react-pdf/renderer"), "Page" | 
 export interface PayrollPdfContext {
 	/** The payroll period read (#1893): the only source of the PDF's figures. */
 	read: PayrollPeriodRead;
+	/**
+	 * The work and break records of the read's employee-days, for the day sheets' clock
+	 * times and breaks. Empty when the caller loaded none.
+	 */
+	records: PayrollPeriodRecordsByDay;
 	t: PayrollPdfTranslate;
 	locale: string;
 	format: PayrollPdfFormat;

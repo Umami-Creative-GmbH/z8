@@ -6,6 +6,11 @@ import {
 	buildPayrollPeriodRead,
 	type PayrollPeriodSources,
 } from "@/lib/payroll-period/period-read";
+import {
+	attributeRecordsToLocalDays,
+	type PayrollPeriodRecordSource,
+	type PayrollPeriodRecordsByDay,
+} from "@/lib/payroll-period/day-records";
 import type { PayrollPeriodRead } from "@/lib/payroll-period/types";
 import {
 	exportPayrollPeriodToPDF,
@@ -118,8 +123,52 @@ function daySheetPages(text: string, employeeName: string): string[] {
 	return text.split("\n").filter((page) => page.includes(`Day sheet ${employeeName}`));
 }
 
+/** Builds the records loader's result from stored records, as it attributes them. */
+function recordsByDay(
+	read: PayrollPeriodRead,
+	records: Array<{ employeeId: string } & PayrollPeriodRecordSource>,
+	now = Temporal.Instant.from("2026-11-07T12:00:00Z"),
+): PayrollPeriodRecordsByDay {
+	return new Map(
+		read.employees.map((employee) => [
+			employee.id,
+			attributeRecordsToLocalDays(
+				records.filter((record) => record.employeeId === employee.id),
+				{
+					timezone: employee.timezone,
+					startDate: read.period.start,
+					endDate: read.period.end,
+					now,
+				},
+			),
+		]),
+	);
+}
+
+function storedRecord(
+	employeeId: string,
+	id: string,
+	startAt: string,
+	endAt: string | null,
+	overrides: Partial<PayrollPeriodRecordSource> = {},
+): { employeeId: string } & PayrollPeriodRecordSource {
+	const start = Temporal.Instant.from(startAt);
+	const end = endAt ? Temporal.Instant.from(endAt) : null;
+	return {
+		employeeId,
+		id,
+		kind: "work",
+		approvalState: "approved",
+		startAt: start,
+		endAt: end,
+		durationMinutes: end ? start.until(end).total("minutes") : null,
+		isPaid: null,
+		...overrides,
+	};
+}
+
 describe("payroll PDF day sheets", () => {
-	it("gives each employee in scope a day sheet with one row per local day", async () => {
+	it("gives each employee in scope a day sheet with a row per local day with entries", async () => {
 		const text = await pdfText(
 			await exportPayrollPeriodToPDF(periodRead(), { t: englishT, locale: "en" }),
 		);
@@ -127,11 +176,48 @@ describe("payroll PDF day sheets", () => {
 		const [annaSheet] = daySheetPages(text, "Anna Berg");
 		expect(annaSheet).toBeDefined();
 		expect(daySheetPages(text, "Ben Cole")).toHaveLength(1);
-		for (const date of ["11/1/2026", "11/2/2026", "11/7/2026"]) {
-			expect(annaSheet).toContain(date);
+		// Work on 2 to 4 November, a vacation morning on 6 November.
+		for (const day of ["Mon\\s+11/2/2026", "Tue\\s+11/3/2026", "Wed\\s+11/4/2026"]) {
+			expect(annaSheet).toMatch(new RegExp(day.replaceAll("/", "\\/")));
 		}
-		expect(annaSheet).toContain("Founders Day");
-		expect(annaSheet).toContain("Vacation (AM)");
+		expect(annaSheet).toMatch(/Fri\s+11\/6\/2026.*Vacation \(AM\)/);
+		// The weekend and the holiday without entries are left out, and the sheet says so.
+		expect(annaSheet).not.toMatch(/Sun\s+11\/1\/2026/);
+		expect(annaSheet).not.toMatch(/Thu\s+11\/5\/2026/);
+		expect(annaSheet).not.toMatch(/Sat\s+11\/7\/2026/);
+		expect(annaSheet).not.toContain("Founders Day");
+		expect(annaSheet).toContain("Days without entries are left out.");
+	});
+
+	it("shows the holiday of a day with entries next to its absences", async () => {
+		const text = await pdfText(
+			await exportPayrollPeriodToPDF(
+				periodRead({
+					work: [work(anna.id, "2026-11-05", 240)],
+					absences: [
+						{
+							id: "absence-5",
+							employeeId: anna.id,
+							categoryId: "sick",
+							categoryName: "Sick leave",
+							categoryType: "sick",
+							categoryColor: null,
+							startDate: "2026-11-05",
+							endDate: "2026-11-05",
+							startPeriod: "pm",
+							endPeriod: "pm",
+							approvalState: "pending",
+						},
+					],
+					settledDays: [],
+				}),
+				{ t: englishT, locale: "en" },
+			),
+		);
+
+		expect(daySheetPages(text, "Anna Berg")[0]).toMatch(
+			/Thu\s+11\/5\/2026.*4\.00 h.*Founders Day\s+Sick leave\s+\(PM,\s+pending\)/,
+		);
 	});
 
 	it("ends each sheet with a total row matching the summary totals", async () => {
@@ -154,7 +240,7 @@ describe("payroll PDF day sheets", () => {
 		const sheet = daySheetPages(text, "Anna Berg")[0] ?? "";
 
 		// 3 Nov was settled at 8 h and now has 9.5 h; 4 Nov is unchanged.
-		expect(sheet).toMatch(/11\/3\/2026.*Changed since settled\s+\+1\.5 h/);
+		expect(sheet).toMatch(/11\/3\/2026.*Changed\s+since\s+settled\s+\+1\.5 h/);
 		expect(sheet).toMatch(/11\/4\/2026.*Settled/);
 		expect(sheet).not.toMatch(/11\/2\/2026[^/]*Settled/);
 	});
@@ -180,16 +266,19 @@ describe("payroll PDF day sheets", () => {
 		expect(text).toMatch(/Gearbeitete Stunden/i);
 		expect(sheet).toContain("3.11.2026");
 		expect(sheet).toMatch(/Summe\s+25,50 h/);
-		expect(sheet).toMatch(/Seit Abrechnung geändert\s+\+1,5 h/);
+		expect(sheet).toMatch(/Seit\s+Abrechnung\s+geändert\s+\+1,5 h/);
 		expect(sheet).toContain("Abgerechnet");
 		expect(text).not.toContain("Day sheet");
 	});
 
 	it("repeats the page header when a long period flows across pages", async () => {
+		const quarter = Array.from({ length: 90 }, (_, index) =>
+			Temporal.PlainDate.from("2026-01-01").add({ days: index }).toString(),
+		);
 		const read = periodRead(
 			{
 				employees: [anna],
-				work: [],
+				work: quarter.map((date) => work(anna.id, date, 480)),
 				absences: [],
 				settledDays: [],
 				requirements: new Map(),
@@ -204,10 +293,216 @@ describe("payroll PDF day sheets", () => {
 
 		expect(pages.length).toBeGreaterThan(1);
 		for (const page of pages) {
-			expect(page).toMatch(/Date\s+Worked\s+Required\s+Difference/i);
+			expect(page).toMatch(
+				/Date\s+Clock in – out\s+Breaks\s+Worked\s+Required\s+Difference\s+Absence \/\s+holiday\s+Settlement/i,
+			);
 		}
 	}, 15_000);
 });
+
+describe("payroll PDF day sheet clock times and breaks", () => {
+	it("shows each work record's clock-in and clock-out and the breaks with their minutes", async () => {
+		const read = periodRead();
+		const records = recordsByDay(read, [
+			// Berlin wall clock, UTC+1.
+			storedRecord(anna.id, "w-1", "2026-11-02T07:02:00Z", "2026-11-02T11:00:00Z"),
+			storedRecord(anna.id, "b-1", "2026-11-02T11:00:00Z", "2026-11-02T11:31:00Z", {
+				kind: "break",
+				isPaid: false,
+			}),
+			storedRecord(anna.id, "w-2", "2026-11-02T11:31:00Z", "2026-11-02T16:05:00Z"),
+			storedRecord(anna.id, "b-2", "2026-11-02T14:00:00Z", "2026-11-02T14:10:00Z", {
+				kind: "break",
+				isPaid: true,
+			}),
+		]);
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en", records })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(
+			/Mon\s+11\/2\/2026\s+08:02–12:00\s+12:31–17:05\s+12:00–12:31 \(31 min\)\s+15:00–15:10 \(10 min, paid\)\s+8\.00 h/,
+		);
+		expect(sheet).not.toContain("Not approved yet");
+	});
+
+	it("shows a clocked break, stored as the gap between two work records, in the Breaks column", async () => {
+		const read = periodRead();
+		// A clocked break closes the work at 12:00 and resumes it at 12:31, Berlin.
+		const records = recordsByDay(read, [
+			storedRecord(anna.id, "w-1", "2026-11-02T07:02:00Z", "2026-11-02T11:00:00Z"),
+			storedRecord(anna.id, "w-2", "2026-11-02T11:31:00Z", "2026-11-02T16:05:00Z"),
+		]);
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en", records })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(
+			/Mon\s+11\/2\/2026\s+08:02–12:00\s+12:31–17:05\s+12:00–12:31 \(31 min\)\s+8\.00 h/,
+		);
+	});
+
+	it("keeps a long absence category inside its column", async () => {
+		const read = periodRead({
+			absences: [
+				{
+					id: "absence-long",
+					employeeId: anna.id,
+					categoryId: "parental",
+					categoryName: "Elternzeit/Mutterschutz",
+					categoryType: "vacation",
+					categoryColor: null,
+					startDate: "2026-11-04",
+					endDate: "2026-11-04",
+					startPeriod: "full_day",
+					endPeriod: "full_day",
+					approvalState: "approved",
+				},
+			],
+		});
+
+		const pdf = await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" });
+		const items = await pageTextItems(pdf, "Day sheet Anna Berg");
+		const settlementColumn = items.find((item) => /^settlement$/i.test(item.str));
+		const category = items.filter((item) => /Eltern|Mutter|schutz/.test(item.str));
+
+		expect(settlementColumn).toBeDefined();
+		expect(category.length).toBeGreaterThan(1);
+		// Wrapped over lines, with a hyphen where a word is broken.
+		expect(
+			category
+				.map((item) => item.str.trim())
+				.join("")
+				.replaceAll("-", ""),
+		).toBe("Elternzeit/Mutterschutz");
+		for (const item of category) {
+			expect(item.x + item.width).toBeLessThan(settlementColumn?.x ?? 0);
+		}
+	});
+
+	it("shows a record across local midnight on both days with the day it starts or ends", async () => {
+		const read = periodRead();
+		const records = recordsByDay(read, [
+			// 22:00 on 2 November to 06:00 on 3 November, Berlin.
+			storedRecord(anna.id, "night", "2026-11-02T21:00:00Z", "2026-11-03T05:00:00Z"),
+		]);
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en", records })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(/Mon\s+11\/2\/2026\s+22:00–06:00 \(\+1\)/);
+		expect(sheet).toMatch(/Tue\s+11\/3\/2026\s+22:00 \(-1\)–06:00/);
+	});
+
+	it("marks records not approved yet and shows a running record as open", async () => {
+		const read = periodRead();
+		const records = recordsByDay(read, [
+			storedRecord(anna.id, "pending", "2026-11-02T07:00:00Z", "2026-11-02T11:00:00Z", {
+				approvalState: "pending",
+			}),
+			storedRecord(anna.id, "running", "2026-11-04T08:00:00Z", null, {
+				approvalState: "draft",
+			}),
+		]);
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en", records })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(/Mon\s+11\/2\/2026\s+08:00–12:00\*/);
+		expect(sheet).toMatch(/Wed\s+11\/4\/2026\s+09:00–open\*/);
+		expect(sheet).toContain("* Not approved yet (pending or draft)");
+	});
+
+	it("keeps a day without credited work that has a record, such as a pending one", async () => {
+		const read = periodRead();
+		const records = recordsByDay(read, [
+			// Saturday 7 November: pending, so not credited.
+			storedRecord(anna.id, "saturday", "2026-11-07T08:00:00Z", "2026-11-07T10:00:00Z", {
+				approvalState: "pending",
+			}),
+		]);
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en", records })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(/Sat\s+11\/7\/2026\s+09:00–11:00\*\s+0\.00 h/);
+	});
+
+	it("keeps a settled day without entries, as it carries payout information", async () => {
+		// 5 November has only a holiday; it was settled at no hours.
+		const read = periodRead({
+			settledDays: [settled(anna.id, "2026-11-03", 480), settled(anna.id, "2026-11-05", 0)],
+		});
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(/Thu\s+11\/5\/2026\s+0\.00 h.*Founders Day\s+Settled/);
+		expect(sheet).not.toMatch(/Sun\s+11\/1\/2026/);
+	});
+
+	it("keeps the sheet of an employee without entries, with the total row", async () => {
+		const read = periodRead({ work: [work(anna.id, "2026-11-02", 480)], absences: [] });
+
+		const text = await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" }));
+		const benSheet = daySheetPages(text, "Ben Cole");
+
+		expect(benSheet).toHaveLength(1);
+		expect(benSheet[0]).toMatch(/No entries in this period\s+Total\s+0\.00 h/);
+		expect(benSheet[0]).toContain("Days without entries are left out.");
+		expect(benSheet[0]).not.toMatch(/\d+\/\d+\/2026\s+0\.00 h/);
+	});
+
+	it("keeps the totals over the whole period when days are left out", async () => {
+		// Anna's 2 November is credited 8 h but its records are not loaded: totals stay.
+		const text = await pdfText(
+			await exportPayrollPeriodToPDF(periodRead(), { t: englishT, locale: "en" }),
+		);
+
+		expect(daySheetPages(text, "Anna Berg")[0]).toMatch(
+			/Total\s+25\.50 h\s+40\.00 h\s+-14\.50 h\s+0\.5 absence days\s+2 settled/,
+		);
+	});
+});
+
+/** The text items of the first page containing `marker`, with where each starts and its width. */
+async function pageTextItems(
+	pdf: Uint8Array,
+	marker: string,
+): Promise<Array<{ str: string; x: number; width: number }>> {
+	const task = getDocument({ data: new Uint8Array(pdf) });
+	const document = await task.promise;
+	try {
+		for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
+			const content = await (await document.getPage(pageNumber)).getTextContent();
+			const items = content.items.flatMap((item) =>
+				"str" in item ? [{ str: item.str, x: item.transform[4] as number, width: item.width }] : [],
+			);
+			if (items.some((item) => item.str.includes(marker))) return items;
+		}
+		return [];
+	} finally {
+		await task.destroy();
+	}
+}
 
 /** Each page's text and whether it is laid out in landscape. */
 async function pdfPages(pdf: Uint8Array): Promise<Array<{ text: string; landscape: boolean }>> {
