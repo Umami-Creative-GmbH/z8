@@ -70,6 +70,45 @@ function renderList(employees: PayrollPeriodEmployee[]) {
 	return picking;
 }
 
+describe("PayrollDaysList hiding days without entries", () => {
+	afterEach(cleanup);
+
+	function renderDays(employees: PayrollPeriodEmployee[], hideEmptyDays: boolean) {
+		render(
+			<PayrollDaysList
+				employees={employees}
+				format={payrollDaysFormat("en")}
+				hideEmptyDays={hideEmptyDays}
+				onSelectDay={vi.fn()}
+				t={t}
+			/>,
+		);
+	}
+
+	it("lists only the employee's days with entries", () => {
+		renderDays([employee("Anna", [day("2026-11-02", "work"), day("2026-11-03", "empty")])], true);
+
+		const list = screen.getByRole("list", { name: "Days of Anna" });
+		expect(list.querySelectorAll("li")).toHaveLength(1);
+		expect(list.textContent).toContain("Nov 2");
+	});
+
+	it("lists every day while empty days are shown", () => {
+		renderDays([employee("Anna", [day("2026-11-02", "work"), day("2026-11-03", "empty")])], false);
+
+		expect(screen.getByRole("list", { name: "Days of Anna" }).querySelectorAll("li")).toHaveLength(
+			2,
+		);
+	});
+
+	it("says so when the employee has no days with entries", () => {
+		renderDays([employee("Ben", [day("2026-11-02", "empty")])], true);
+
+		expect(screen.queryByRole("list", { name: "Days of Ben" })).toBeNull();
+		expect(screen.getByText("Ben has no days with entries in this period.")).toBeTruthy();
+	});
+});
+
 describe("PayrollDaysList while picking days", () => {
 	afterEach(cleanup);
 

@@ -9,7 +9,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useLocale } from "next-intl";
-import { useMemo, useReducer, useState } from "react";
+import { useId, useMemo, useReducer, useState } from "react";
 import {
 	type PayrollSettleSpecificDaysRequest,
 	previewSettleSpecificPayrollDaysAction,
@@ -17,7 +17,9 @@ import {
 } from "@/app/[locale]/(app)/payroll/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { PayrollDayPanel, type PayrollDaySelection } from "./payroll-day-panel";
@@ -32,6 +34,7 @@ import { PayrollDaySettlement } from "./payroll-day-settlement";
 import { type PayrollDayPicking, PayrollDaysGrid } from "./payroll-days-grid";
 import { payrollDaysFormat } from "./payroll-day-format";
 import { PayrollDaysList } from "./payroll-days-list";
+import { datesWithEntries, useHideEmptyPayrollDays } from "./payroll-empty-days";
 import { PayrollSettleConfirmDialog, usePayrollSettle } from "./payroll-settle-dialog";
 import { PayrollPlaceholderTab } from "./payroll-workspace-tabs";
 import type { PayrollPeriodRequest, PayrollTranslate } from "./state";
@@ -44,7 +47,9 @@ const SKELETON_ROWS = ["first", "second", "third", "fourth", "fifth", "sixth"] a
  * difference, absences and holidays. Everything shown comes from the payroll period read.
  * A day opens a read-only side panel; below the mobile breakpoint the grid becomes a list
  * of days for one employee at a time (#1894). "Select days to settle" picks unsettled
- * days with entries and settles exactly those, after a preview.
+ * days with entries and settles exactly those, after a preview. "Hide days without
+ * entries" drops the dates nobody shown recorded anything on (the list: the employee's
+ * own empty days); totals still cover the whole period.
  */
 export function PayrollDaysTab({
 	filtersHaveNoMatches,
@@ -67,6 +72,8 @@ export function PayrollDaysTab({
 	// Picking days to settle: leaving the mode drops the picked days.
 	const [picking, setPicking] = useState(false);
 	const [picked, dispatchPicked] = useReducer(payrollDaySelectionReducer, EMPTY_DAY_SELECTION);
+	const [hideEmptyDays, setHideEmptyDays] = useHideEmptyPayrollDays();
+	const hideEmptyDaysId = useId();
 	// Each row's and column's pickable days, once per read rather than on every toggle.
 	const loadedEmployees = data?.employees;
 	const groups = useMemo(
@@ -122,7 +129,8 @@ export function PayrollDaysTab({
 		);
 	}
 
-	const dates = data.employees[0]?.days.map((day) => day.date) ?? [];
+	const periodDates = data.employees[0]?.days.map((day) => day.date) ?? [];
+	const dates = hideEmptyDays ? datesWithEntries(periodDates, data.employees) : periodDates;
 	// The open day follows refetches of the period, for example after unsettling it.
 	const currentSelection = selection ? currentDay(data.employees, selection) : null;
 	// Picked days survive refetches while they can still be settled.
@@ -142,17 +150,28 @@ export function PayrollDaysTab({
 		<div className="flex min-w-0 flex-col gap-3">
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 				<PayrollDaysLegend t={t} />
-				<Button
-					type="button"
-					size="sm"
-					variant={picking ? "secondary" : "outline"}
-					aria-pressed={picking}
-					className="shrink-0 self-start"
-					onClick={togglePicking}
-				>
-					<IconChecks aria-hidden="true" className="size-4" />
-					{t("payroll.days.select.toggle", "Select days to settle")}
-				</Button>
+				<div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 self-start">
+					<div className="flex items-center gap-2">
+						<Switch
+							id={hideEmptyDaysId}
+							checked={hideEmptyDays}
+							onCheckedChange={(checked) => setHideEmptyDays(checked === true)}
+						/>
+						<Label htmlFor={hideEmptyDaysId} className="font-normal text-sm">
+							{t("payroll.days.hideEmptyDays", "Hide days without entries")}
+						</Label>
+					</div>
+					<Button
+						type="button"
+						size="sm"
+						variant={picking ? "secondary" : "outline"}
+						aria-pressed={picking}
+						onClick={togglePicking}
+					>
+						<IconChecks aria-hidden="true" className="size-4" />
+						{t("payroll.days.select.toggle", "Select days to settle")}
+					</Button>
+				</div>
 			</div>
 			{picking ? (
 				<p className="text-muted-foreground text-xs">
@@ -171,9 +190,17 @@ export function PayrollDaysTab({
 				<PayrollDaysList
 					employees={employees}
 					format={format}
+					hideEmptyDays={hideEmptyDays}
 					onSelectDay={selectDay}
 					picking={pickingControls}
 					t={t}
+				/>
+			) : dates.length === 0 ? (
+				<PayrollPlaceholderTab
+					description={t(
+						"payroll.days.noDaysWithEntries",
+						"Nobody recorded anything in this period. Turn off “Hide days without entries” to see every day.",
+					)}
 				/>
 			) : (
 				<PayrollDaysGrid

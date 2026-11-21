@@ -443,10 +443,14 @@ describe("payroll PDF day sheet clock times and breaks", () => {
 		expect(sheet).toMatch(/Sat\s+11\/7\/2026\s+09:00–11:00\*\s+0\.00 h/);
 	});
 
-	it("keeps a settled day without entries, as it carries payout information", async () => {
-		// 5 November has only a holiday; it was settled at no hours.
+	it("leaves out a day settled with nothing on it", async () => {
+		// 5 November has only a holiday and 7 November nothing; both were settled at no hours.
 		const read = periodRead({
-			settledDays: [settled(anna.id, "2026-11-03", 480), settled(anna.id, "2026-11-05", 0)],
+			settledDays: [
+				settled(anna.id, "2026-11-03", 480),
+				settled(anna.id, "2026-11-05", 0),
+				settled(anna.id, "2026-11-07", 0),
+			],
 		});
 
 		const sheet =
@@ -455,8 +459,45 @@ describe("payroll PDF day sheet clock times and breaks", () => {
 				"Anna Berg",
 			)[0] ?? "";
 
-		expect(sheet).toMatch(/Thu\s+11\/5\/2026\s+0\.00 h.*Founders Day\s+Settled/);
-		expect(sheet).not.toMatch(/Sun\s+11\/1\/2026/);
+		expect(sheet).not.toMatch(/Thu\s+11\/5\/2026/);
+		expect(sheet).not.toMatch(/Sat\s+11\/7\/2026/);
+		expect(sheet).not.toContain("Founders Day");
+		// The total still counts every settled day.
+		expect(sheet).toMatch(/Total.*3 settled/);
+	});
+
+	it("keeps a day changed since settled even once its entries are gone", async () => {
+		// 5 November was settled at 8 h; its work was deleted since.
+		const read = periodRead({ settledDays: [settled(anna.id, "2026-11-05", 480)] });
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(/Thu\s+11\/5\/2026\s+0\.00 h.*Changed\s+since\s+settled\s+-8 h/);
+	});
+
+	it("shows a running record on the day it started only, not on every day up to now", async () => {
+		const read = periodRead({ work: [], absences: [], settledDays: [] });
+		const records = recordsByDay(read, [
+			// Started Monday 2 November and never stopped; now is Saturday noon.
+			storedRecord(anna.id, "forgotten", "2026-11-02T08:00:00Z", null, {
+				approvalState: "draft",
+			}),
+		]);
+
+		const sheet =
+			daySheetPages(
+				await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en", records })),
+				"Anna Berg",
+			)[0] ?? "";
+
+		expect(sheet).toMatch(/Mon\s+11\/2\/2026\s+09:00–open\*/);
+		for (const day of ["Tue", "Wed", "Thu", "Fri", "Sat"]) {
+			expect(sheet).not.toMatch(new RegExp(`${day}\\s+11\\/\\d\\/2026`));
+		}
 	});
 
 	it("keeps the sheet of an employee without entries, with the total row", async () => {
