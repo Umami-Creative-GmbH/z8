@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
+import { useMemo } from "react";
 import type React from "react";
 import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
 import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
@@ -90,7 +91,7 @@ function EmployeeTotalsCard({
 }) {
 	const locale = useLocale();
 	const hours = payrollHoursFormat(locale);
-	const days = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+	const days = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale]);
 	return (
 		<Card>
 			<CardHeader>

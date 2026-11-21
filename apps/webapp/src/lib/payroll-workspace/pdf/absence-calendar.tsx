@@ -2,7 +2,8 @@ import { Temporal } from "temporal-polyfill";
 import type { PayrollPeriodDayAbsence, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { type PayrollPdfAbsenceCategory, payrollPdfAbsenceCategories } from "./absence-codes";
 import type { PayrollPdfContext, PayrollPdfSection } from "./context";
-import { PDF_COLORS, payrollPdfPage } from "./page-frame";
+import { PDF_COLORS } from "./page-styles";
+import { payrollPdfPage } from "./page-frame";
 
 /** Content width of a landscape A4 page (842 pt) inside the page frame's side margins. */
 const CONTENT_WIDTH = 770;

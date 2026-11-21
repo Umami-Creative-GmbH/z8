@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getPayrollDayRecordsAction } from "@/app/[locale]/(app)/payroll/actions";
-import { absenceCategoryColor } from "@/components/absences/category-badge";
+import { absenceCategoryColor } from "@/components/absences/category-color";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import type {
 } from "@/lib/payroll-period/types";
 import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
-import { absencePeriodLabel, type PayrollDaysFormat } from "./payroll-days-grid";
+import { absencePeriodLabel, type PayrollDaysFormat } from "./payroll-day-format";
 import type { PayrollTranslate } from "./state";
 
 export interface PayrollDaySelection {

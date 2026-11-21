@@ -1,49 +1,17 @@
 "use client";
 
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { type CSSProperties, useRef } from "react";
+import { usePayrollRows } from "./use-payroll-rows";
 import { Temporal } from "temporal-polyfill";
-import { absenceCategoryColor } from "@/components/absences/category-badge";
+import { absenceSwatchStyle } from "./payroll-absence-style";
 import type { PayrollPeriodDayAbsence, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { cn } from "@/lib/utils";
-import type { PayrollDaysFormat } from "./payroll-days-grid";
+import type { PayrollDaysFormat } from "./payroll-day-format";
 import type { PayrollTranslate } from "./state";
 
 const EMPLOYEE_COLUMN = "11rem";
 const DAY_COLUMN = "2rem";
 /** h-7 cells plus the row border. */
 const ROW_HEIGHT = 29;
-
-/** Diagonal stripes over a category colour mark an absence that is still pending. */
-export const PENDING_HATCH =
-	"repeating-linear-gradient(135deg, transparent 0 3px, rgb(255 255 255 / 0.65) 3px 5px)";
-
-export interface PayrollAbsenceLegendCategory {
-	categoryId: string;
-	categoryName: string;
-	color: string;
-}
-
-/** The categories of the absences shown, in name order, each with its calendar colour. */
-export function payrollAbsenceLegend(
-	absences: readonly Pick<
-		PayrollPeriodDayAbsence,
-		"categoryId" | "categoryName" | "categoryType" | "categoryColor"
-	>[],
-): PayrollAbsenceLegendCategory[] {
-	const categories = new Map<string, PayrollAbsenceLegendCategory>();
-	for (const absence of absences) {
-		if (categories.has(absence.categoryId)) continue;
-		categories.set(absence.categoryId, {
-			categoryId: absence.categoryId,
-			categoryName: absence.categoryName,
-			color: absenceCategoryColor(absence.categoryType, absence.categoryColor),
-		});
-	}
-	return [...categories.values()].toSorted((left, right) =>
-		left.categoryName.localeCompare(right.categoryName),
-	);
-}
 
 function isWeekend(date: string): boolean {
 	return Temporal.PlainDate.from(date).dayOfWeek >= 6;
@@ -66,94 +34,84 @@ export function PayrollAbsenceCalendar({
 	format: PayrollDaysFormat;
 	t: PayrollTranslate;
 }) {
-	// The virtualizer changes its rows in place, so the compiler must not memoize this component.
-	"use no memo";
-	const scrollRef = useRef<HTMLDivElement | null>(null);
-	// oxlint-disable-next-line react/incompatible-library -- memoization is opted out above
-	const virtualizer = useVirtualizer({
-		count: employees.length,
-		getScrollElement: () => scrollRef.current,
-		estimateSize: () => ROW_HEIGHT,
-		overscan: 12,
-	});
+	const { scrollRef, start, end } = usePayrollRows(employees.length, ROW_HEIGHT, 12);
 	const gridTemplateColumns = `${EMPLOYEE_COLUMN} repeat(${dates.length}, ${DAY_COLUMN})`;
 	return (
 		<div
 			ref={scrollRef}
 			className="relative max-h-[60vh] overflow-auto rounded-lg border bg-background"
-			role="table"
-			aria-label={t("payroll.absences.calendarLabel", "Absences per employee and day")}
-			aria-rowcount={employees.length + 1}
-			aria-colcount={dates.length + 1}
 		>
-			<div role="rowgroup" className="sticky top-0 z-20 min-w-max">
-				<div
-					role="row"
-					aria-rowindex={1}
-					className="grid border-b bg-muted text-muted-foreground text-[0.6875rem]"
-					style={{ gridTemplateColumns }}
-				>
-					<div
-						role="columnheader"
-						className="sticky left-0 z-10 flex items-end border-r bg-muted px-3 py-1.5 font-medium text-xs"
-					>
-						{t("payroll.days.employee", "Employee")}
-					</div>
-					{dates.map((date) => (
-						<div
-							key={date}
-							role="columnheader"
-							className={cn(
-								"flex flex-col items-center justify-end py-1.5 tabular-nums",
-								isWeekend(date) && "bg-muted-foreground/10",
-							)}
-						>
-							<span>{format.weekday(date)}</span>
-							<span className="font-medium text-foreground">{format.dayOfMonth(date)}</span>
-						</div>
-					))}
-				</div>
-			</div>
-			<div
-				role="rowgroup"
-				className="relative min-w-max"
-				style={{ height: virtualizer.getTotalSize() }}
+			<table
+				className="block w-max min-w-full"
+				aria-label={t("payroll.absences.calendarLabel", "Absences per employee and day")}
+				aria-rowcount={employees.length + 1}
+				aria-colcount={dates.length + 1}
 			>
-				{virtualizer.getVirtualItems().map((item) => {
-					const employee = employees[item.index];
-					if (!employee) return null;
-					return (
-						<div
-							key={employee.id}
-							role="row"
-							aria-rowindex={item.index + 2}
-							className="absolute top-0 left-0 grid w-full border-b"
-							style={{
-								gridTemplateColumns,
-								height: item.size,
-								transform: `translateY(${item.start}px)`,
-							}}
+				<thead className="sticky top-0 z-20 block min-w-max">
+					<tr
+						aria-rowindex={1}
+						className="grid border-b bg-muted text-muted-foreground text-[0.6875rem]"
+						style={{ gridTemplateColumns }}
+					>
+						<th
+							scope="col"
+							className="sticky left-0 z-10 flex items-end border-r bg-muted px-3 py-1.5 font-medium text-xs"
 						>
-							<div
-								role="rowheader"
-								className="sticky left-0 z-10 flex min-w-0 items-center border-r bg-background px-3 py-1"
+							{t("payroll.days.employee", "Employee")}
+						</th>
+						{dates.map((date) => (
+							<th
+								key={date}
+								scope="col"
+								className={cn(
+									"flex flex-col items-center justify-end py-1.5 tabular-nums",
+									isWeekend(date) && "bg-muted-foreground/10",
+								)}
 							>
-								<span className="truncate text-xs font-medium">{employee.name}</span>
-							</div>
-							{employee.days.map((day) => (
-								<PayrollAbsenceCalendarCell
-									key={day.date}
-									absences={day.absences}
-									date={day.date}
-									employeeName={employee.name}
-									format={format}
-									t={t}
-								/>
-							))}
-						</div>
-					);
-				})}
-			</div>
+								<span>{format.weekday(date)}</span>
+								<span className="font-medium text-foreground">{format.dayOfMonth(date)}</span>
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody
+					className="relative block min-w-max"
+					style={{ height: employees.length * ROW_HEIGHT }}
+				>
+					{employees.slice(start, end).map((employee, offset) => {
+						const index = start + offset;
+						return (
+							<tr
+								key={employee.id}
+								aria-rowindex={index + 2}
+								className="absolute top-0 left-0 grid w-full border-b"
+								style={{
+									gridTemplateColumns,
+									height: ROW_HEIGHT,
+									transform: `translateY(${index * ROW_HEIGHT}px)`,
+								}}
+							>
+								<th
+									scope="row"
+									className="sticky left-0 z-10 flex min-w-0 items-center border-r bg-background px-3 py-1"
+								>
+									<span className="truncate text-xs font-medium">{employee.name}</span>
+								</th>
+								{employee.days.map((day) => (
+									<PayrollAbsenceCalendarCell
+										key={day.date}
+										absences={day.absences}
+										date={day.date}
+										employeeName={employee.name}
+										format={format}
+										t={t}
+									/>
+								))}
+							</tr>
+						);
+					})}
+				</tbody>
+			</table>
 		</div>
 	);
 }
@@ -187,8 +145,7 @@ function PayrollAbsenceCalendarCell({
 				].join("\n");
 
 	return (
-		<div
-			role="cell"
+		<td
 			title={description}
 			aria-label={description}
 			className={cn("relative flex h-7 gap-px p-0.5", isWeekend(date) && "bg-muted/50")}
@@ -205,7 +162,7 @@ function PayrollAbsenceCalendarCell({
 					style={absenceSwatchStyle(partial)}
 				/>
 			) : null}
-		</div>
+		</td>
 	);
 }
 
@@ -228,15 +185,6 @@ function AbsenceHalf({
 			style={absenceSwatchStyle(absence)}
 		/>
 	);
-}
-
-export function absenceSwatchStyle(
-	absence: Pick<PayrollPeriodDayAbsence, "categoryType" | "categoryColor" | "approvalState">,
-): CSSProperties {
-	const color = absenceCategoryColor(absence.categoryType, absence.categoryColor);
-	return absence.approvalState === "pending"
-		? { backgroundColor: color, backgroundImage: PENDING_HATCH, outlineColor: color }
-		: { backgroundColor: color };
 }
 
 function payrollAbsenceMarkLabel(absence: PayrollPeriodDayAbsence, t: PayrollTranslate): string {

@@ -1,16 +1,15 @@
 "use client";
 
 import { IconAlertCircle, IconCircleCheck, IconConfetti } from "@tabler/icons-react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
+import { usePayrollRows } from "./use-payroll-rows";
 import { Temporal } from "temporal-polyfill";
-import { absenceCategoryColor } from "@/components/absences/category-badge";
+import { absenceCategoryColor } from "@/components/absences/category-color";
 import type {
 	PayrollPeriodDay,
 	PayrollPeriodDayAbsence,
 	PayrollPeriodEmployee,
 } from "@/lib/payroll-period/types";
-import { payrollHoursFormat } from "@/lib/payroll-workspace/hours-format";
+import { type PayrollDaysFormat, isAfterDeparture, dayTitle } from "./payroll-day-format";
 import { cn } from "@/lib/utils";
 import type { PayrollTranslate } from "./state";
 
@@ -18,44 +17,6 @@ const ROW_HEIGHT = 64;
 const EMPLOYEE_COLUMN = "13rem";
 const DAY_COLUMN = "4.75rem";
 const TOTAL_COLUMN = "6.5rem";
-
-export interface PayrollDaysFormat {
-	hours: (minutes: number) => string;
-	difference: (minutes: number) => string;
-	weekday: (date: string) => string;
-	dayOfMonth: (date: string) => string;
-	/** For example "Tuesday, 10 November 2026". */
-	longDate: (date: string) => string;
-	/** For example "10 Nov". */
-	shortDate: (date: string) => string;
-}
-
-export function payrollDaysFormat(locale: string): PayrollDaysFormat {
-	const hours = payrollHoursFormat(locale);
-	const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
-	const day = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
-	const longDate = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
-	const shortDate = new Intl.DateTimeFormat(locale, {
-		day: "numeric",
-		month: "short",
-		timeZone: "UTC",
-	});
-	// A calendar date shown as itself: formatted at UTC midnight in UTC, never the viewer's zone.
-	const asDate = (date: string) => new Date(`${date}T00:00:00Z`);
-	return {
-		hours: hours.minutes,
-		difference: hours.signedMinutes,
-		weekday: (date) => weekday.format(asDate(date)),
-		dayOfMonth: (date) => day.format(asDate(date)),
-		longDate: (date) => longDate.format(asDate(date)),
-		shortDate: (date) => shortDate.format(asDate(date)),
-	};
-}
-
-/** Whether the day lies after the last working day of an employee who left (#1894). */
-export function isAfterDeparture(employee: PayrollPeriodEmployee, date: string): boolean {
-	return employee.departure ? date > employee.departure.lastWorkingDay : false;
-}
 
 function isWeekend(date: string): boolean {
 	return Temporal.PlainDate.from(date).dayOfWeek >= 6;
@@ -79,106 +40,93 @@ export function PayrollDaysGrid({
 	onSelectDay: (employee: PayrollPeriodEmployee, day: PayrollPeriodDay) => void;
 	t: PayrollTranslate;
 }) {
-	// The virtualizer changes its rows in place, so the compiler must not memoize this component.
-	"use no memo";
-	const scrollRef = useRef<HTMLDivElement | null>(null);
-	// oxlint-disable-next-line react/incompatible-library -- memoization is opted out above
-	const virtualizer = useVirtualizer({
-		count: employees.length,
-		getScrollElement: () => scrollRef.current,
-		estimateSize: () => ROW_HEIGHT,
-		overscan: 8,
-	});
+	const { scrollRef, start, end } = usePayrollRows(employees.length, ROW_HEIGHT, 8);
 	const gridTemplateColumns = `${EMPLOYEE_COLUMN} repeat(${dates.length}, ${DAY_COLUMN}) ${TOTAL_COLUMN}`;
 
 	return (
 		<div
 			ref={scrollRef}
 			className="relative max-h-[70vh] overflow-auto rounded-lg border bg-background"
-			role="table"
-			aria-label={t("payroll.days.gridLabel", "Hours per employee and day")}
-			aria-rowcount={employees.length + 1}
-			aria-colcount={dates.length + 2}
 		>
-			<div role="rowgroup" className="sticky top-0 z-20 min-w-max">
-				<div
-					role="row"
-					aria-rowindex={1}
-					className="grid border-b bg-muted text-muted-foreground text-xs"
-					style={{ gridTemplateColumns }}
-				>
-					<div
-						role="columnheader"
-						className="sticky left-0 z-10 flex items-end border-r bg-muted px-3 py-2 font-medium"
-					>
-						{t("payroll.days.employee", "Employee")}
-					</div>
-					{dates.map((date) => (
-						<div
-							key={date}
-							role="columnheader"
-							className={cn(
-								"flex flex-col items-center justify-end px-1 py-2 tabular-nums",
-								isWeekend(date) && "bg-muted-foreground/10",
-							)}
-						>
-							<span>{format.weekday(date)}</span>
-							<span className="font-medium text-foreground">{format.dayOfMonth(date)}</span>
-						</div>
-					))}
-					<div
-						role="columnheader"
-						className="flex items-end justify-end border-l px-3 py-2 font-medium"
-					>
-						{t("payroll.days.total", "Total")}
-					</div>
-				</div>
-			</div>
-			<div
-				role="rowgroup"
-				className="relative min-w-max"
-				style={{ height: virtualizer.getTotalSize() }}
+			<table
+				className="block w-max min-w-full"
+				aria-label={t("payroll.days.gridLabel", "Hours per employee and day")}
+				aria-rowcount={employees.length + 1}
+				aria-colcount={dates.length + 2}
 			>
-				{virtualizer.getVirtualItems().map((item) => {
-					const employee = employees[item.index];
-					if (!employee) return null;
-					return (
-						<div
-							key={employee.id}
-							role="row"
-							aria-rowindex={item.index + 2}
-							className="absolute top-0 left-0 grid w-full border-b"
-							style={{
-								gridTemplateColumns,
-								height: item.size,
-								transform: `translateY(${item.start}px)`,
-							}}
+				<thead className="sticky top-0 z-20 block min-w-max">
+					<tr
+						aria-rowindex={1}
+						className="grid border-b bg-muted text-muted-foreground text-xs"
+						style={{ gridTemplateColumns }}
+					>
+						<th
+							scope="col"
+							className="sticky left-0 z-10 flex items-end border-r bg-muted px-3 py-2 font-medium"
 						>
-							<div
-								role="rowheader"
-								className="sticky left-0 z-10 flex min-w-0 flex-col justify-center border-r bg-background px-3"
+							{t("payroll.days.employee", "Employee")}
+						</th>
+						{dates.map((date) => (
+							<th
+								key={date}
+								scope="col"
+								className={cn(
+									"flex flex-col items-center justify-end px-1 py-2 tabular-nums",
+									isWeekend(date) && "bg-muted-foreground/10",
+								)}
 							>
-								<span className="truncate font-medium text-sm">{employee.name}</span>
-								<span className="truncate text-muted-foreground text-xs">
-									{[employee.employeeNumber, employee.teamName].filter(Boolean).join(" · ")}
-								</span>
-								<PayrollLeftOn employee={employee} format={format} t={t} />
-							</div>
-							{employee.days.map((day) => (
-								<PayrollDayCell
-									key={day.date}
-									afterDeparture={isAfterDeparture(employee, day.date)}
-									day={day}
-									format={format}
-									onSelect={() => onSelectDay(employee, day)}
-									t={t}
-								/>
-							))}
-							<PayrollTotalCell employee={employee} format={format} t={t} />
-						</div>
-					);
-				})}
-			</div>
+								<span>{format.weekday(date)}</span>
+								<span className="font-medium text-foreground">{format.dayOfMonth(date)}</span>
+							</th>
+						))}
+						<th scope="col" className="flex items-end justify-end border-l px-3 py-2 font-medium">
+							{t("payroll.days.total", "Total")}
+						</th>
+					</tr>
+				</thead>
+				<tbody
+					className="relative block min-w-max"
+					style={{ height: employees.length * ROW_HEIGHT }}
+				>
+					{employees.slice(start, end).map((employee, offset) => {
+						const index = start + offset;
+						return (
+							<tr
+								key={employee.id}
+								aria-rowindex={index + 2}
+								className="absolute top-0 left-0 grid w-full border-b"
+								style={{
+									gridTemplateColumns,
+									height: ROW_HEIGHT,
+									transform: `translateY(${index * ROW_HEIGHT}px)`,
+								}}
+							>
+								<th
+									scope="row"
+									className="sticky left-0 z-10 flex min-w-0 flex-col justify-center border-r bg-background px-3"
+								>
+									<span className="truncate font-medium text-sm">{employee.name}</span>
+									<span className="truncate text-muted-foreground text-xs">
+										{[employee.employeeNumber, employee.teamName].filter(Boolean).join(" · ")}
+									</span>
+									<PayrollLeftOn employee={employee} format={format} t={t} />
+								</th>
+								{employee.days.map((day) => (
+									<PayrollDayCell
+										key={day.date}
+										afterDeparture={isAfterDeparture(employee, day.date)}
+										day={day}
+										format={format}
+										onSelect={() => onSelectDay(employee, day)}
+										t={t}
+									/>
+								))}
+								<PayrollTotalCell employee={employee} format={format} t={t} />
+							</tr>
+						);
+					})}
+				</tbody>
+			</table>
 		</div>
 	);
 }
@@ -219,7 +167,7 @@ function PayrollDayCell({
 	const pending = day.absences.some((absence) => absence.approvalState === "pending");
 	const description = dayTitle(day, format, t, afterDeparture);
 	return (
-		<div role="cell" className="min-w-0">
+		<td className="min-w-0">
 			<button
 				type="button"
 				title={description}
@@ -241,7 +189,7 @@ function PayrollDayCell({
 			>
 				<PayrollDayCellContent day={day} format={format} />
 			</button>
-		</div>
+		</td>
 	);
 }
 
@@ -356,10 +304,7 @@ function PayrollTotalCell({
 }) {
 	const { totals } = employee;
 	return (
-		<div
-			role="cell"
-			className="flex flex-col items-end justify-center gap-0.5 border-l bg-muted/30 px-3 text-xs tabular-nums"
-		>
+		<td className="flex flex-col items-end justify-center gap-0.5 border-l bg-muted/30 px-3 text-xs tabular-nums">
 			<span className="font-semibold text-sm">{format.hours(totals.creditedMinutes)}</span>
 			{totals.requiredMinutes !== null ? (
 				<span className="text-muted-foreground">
@@ -372,88 +317,6 @@ function PayrollTotalCell({
 					{t("payroll.days.absenceDays", "{count} absence days", { count: totals.absenceDays })}
 				</span>
 			) : null}
-		</div>
+		</td>
 	);
-}
-
-/** The cell's full meaning as text, for the tooltip and assistive technology. */
-export function dayTitle(
-	day: PayrollPeriodDay,
-	format: PayrollDaysFormat,
-	t: PayrollTranslate,
-	afterDeparture = false,
-): string {
-	const parts = [
-		format.longDate(day.date),
-		t("payroll.days.cell.worked", "Worked {hours} h", { hours: format.hours(day.creditedMinutes) }),
-	];
-	if (afterDeparture) {
-		parts.push(t("payroll.days.cell.afterDeparture", "After the last working day"));
-	}
-	if (day.requiredMinutes !== null) {
-		parts.push(
-			t("payroll.days.cell.required", "Required {hours} h", {
-				hours: format.hours(day.requiredMinutes),
-			}),
-			t("payroll.days.cell.difference", "Difference {hours} h", {
-				hours: format.difference(day.differenceMinutes ?? 0),
-			}),
-		);
-	}
-	for (const absence of day.absences) {
-		parts.push(
-			[
-				absence.categoryName,
-				absencePeriodLabel(absence.period, t),
-				absence.approvalState === "pending" ? t("payroll.days.cell.pending", "pending") : null,
-			]
-				.filter(Boolean)
-				.join(" · "),
-		);
-	}
-	if (day.holiday) {
-		parts.push(t("payroll.days.cell.holiday", "Holiday: {name}", { name: day.holiday.name }));
-	}
-	if (day.settlement?.state === "settled") {
-		parts.push(t("payroll.days.cell.settled", "Settled"));
-	}
-	if (day.settlement?.state === "changed_since_settled") {
-		parts.push(settledChangeText(day.settlement.change, format, t));
-	}
-	return parts.join("\n");
-}
-
-/** "Changed since settled: +1.5 h, absence changed" (#1897). */
-export function settledChangeText(
-	change: { creditedMinutesDifference: number; absencesChanged: boolean },
-	format: Pick<PayrollDaysFormat, "difference">,
-	t: PayrollTranslate,
-): string {
-	const details = [
-		change.creditedMinutesDifference !== 0
-			? t("payroll.days.cell.changedHours", "{hours} h", {
-					hours: format.difference(change.creditedMinutesDifference),
-				})
-			: null,
-		change.absencesChanged ? t("payroll.days.cell.changedAbsence", "absence changed") : null,
-	].filter(Boolean);
-	return t("payroll.days.cell.changedSinceSettled", "Changed since settled: {details}", {
-		details: details.join(", "),
-	});
-}
-
-export function absencePeriodLabel(
-	period: PayrollPeriodDayAbsence["period"],
-	t: PayrollTranslate,
-): string | null {
-	switch (period) {
-		case "am":
-			return t("payroll.days.cell.am", "AM");
-		case "pm":
-			return t("payroll.days.cell.pm", "PM");
-		case "partial_day":
-			return t("payroll.days.cell.partialDay", "Part of the day");
-		default:
-			return null;
-	}
 }

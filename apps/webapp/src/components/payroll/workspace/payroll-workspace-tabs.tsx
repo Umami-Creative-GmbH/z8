@@ -5,7 +5,7 @@ import { type ReactNode, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PayrollTranslate } from "./state";
 
-export const PAYROLL_WORKSPACE_TABS = ["overview", "days", "absences", "export"] as const;
+const PAYROLL_WORKSPACE_TABS = ["overview", "days", "absences", "export"] as const;
 export type PayrollWorkspaceTab = (typeof PAYROLL_WORKSPACE_TABS)[number];
 
 const DEFAULT_TAB: PayrollWorkspaceTab = "overview";

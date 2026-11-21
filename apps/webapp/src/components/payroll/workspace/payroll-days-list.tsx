@@ -12,15 +12,13 @@ import {
 } from "@/components/ui/select";
 import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { cn } from "@/lib/utils";
+import { DifferenceValue, PayrollLeftOn, PayrollSettlementMarker } from "./payroll-days-grid";
 import {
-	DifferenceValue,
 	isAfterDeparture,
 	type PayrollDaysFormat,
-	PayrollLeftOn,
-	PayrollSettlementMarker,
 	absencePeriodLabel,
 	dayTitle,
-} from "./payroll-days-grid";
+} from "./payroll-day-format";
 import type { PayrollTranslate } from "./state";
 
 /**

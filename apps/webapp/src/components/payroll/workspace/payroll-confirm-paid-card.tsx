@@ -1,14 +1,13 @@
 "use client";
 
 import { IconCircleCheck, IconLoader2 } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import {
 	confirmPayrollExportPaidAction,
 	getPayrollExportsToConfirmAction,
-	type PayrollSettlementCounts,
 	previewConfirmPayrollExportPaidAction,
 } from "@/app/[locale]/(app)/payroll/actions";
 import { Badge } from "@/components/ui/badge";
@@ -45,50 +44,33 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 			return result.data;
 		},
 	});
-	const [selected, setSelected] = useState<PayrollExportToConfirm | null>(null);
-	const [preview, setPreview] = useState<PayrollSettlementCounts | null>(null);
-	const [loadingJobId, setLoadingJobId] = useState<string | null>(null);
-	const [isConfirming, setIsConfirming] = useState(false);
-
-	function close() {
-		setSelected(null);
-		setPreview(null);
-	}
-
-	async function openPreview(exportToConfirm: PayrollExportToConfirm) {
-		setLoadingJobId(exportToConfirm.jobId);
-		try {
-			const result = await previewConfirmPayrollExportPaidAction(exportToConfirm.jobId);
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-			setSelected(exportToConfirm);
-			setPreview(result.data);
-		} finally {
-			setLoadingJobId(null);
-		}
-	}
-
-	async function confirm() {
-		if (!selected) return;
-		setIsConfirming(true);
-		try {
-			const result = await confirmPayrollExportPaidAction(selected.jobId);
+	const previewRequest = useMutation({
+		mutationFn: async (job: PayrollExportToConfirm) => {
+			const result = await previewConfirmPayrollExportPaidAction(job.jobId);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
+	const selected = previewRequest.variables;
+	const preview = previewRequest.data;
+	const close = previewRequest.reset;
+	const [isConfirming, startConfirmation] = useTransition();
+	function confirm(jobId: string) {
+		startConfirmation(async () => {
+			const result = await confirmPayrollExportPaidAction(jobId);
 			if (!result.success) {
 				toast.error(result.error);
 				return;
 			}
 			toast.success(
-				t("payroll.confirmPaid.confirmed", "{count} days settled", {
-					count: result.data.newDays,
-				}),
+				t("payroll.confirmPaid.confirmed", "{count} days settled", { count: result.data.newDays }),
 			);
 			close();
 			await settlementChanged();
-		} finally {
-			setIsConfirming(false);
-		}
+		});
 	}
 
 	return (
@@ -153,10 +135,10 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 										<Button
 											type="button"
 											variant="outline"
-											disabled={loadingJobId !== null || isConfirming}
-											onClick={() => void openPreview(exportToConfirm)}
+											disabled={previewRequest.isPending || isConfirming}
+											onClick={() => previewRequest.mutate(exportToConfirm)}
 										>
-											{loadingJobId === exportToConfirm.jobId ? (
+											{previewRequest.isPending && selected?.jobId === exportToConfirm.jobId ? (
 												<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 											) : (
 												<IconCircleCheck aria-hidden="true" className="size-4" />
@@ -177,7 +159,7 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 				</p>
 			</CardContent>
 
-			<Dialog open={preview !== null} onOpenChange={(open) => !open && close()}>
+			<Dialog open={preview !== undefined} onOpenChange={(open) => !open && close()}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>
@@ -203,7 +185,7 @@ export function PayrollConfirmPaidCard({ t }: { t: PayrollTranslate }) {
 						<Button
 							type="button"
 							disabled={isConfirming || !preview || preview.newDays === 0}
-							onClick={() => void confirm()}
+							onClick={() => selected && confirm(selected.jobId)}
 						>
 							{isConfirming ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />

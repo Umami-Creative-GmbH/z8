@@ -10,7 +10,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	getPayrollDaySettlementHistoryAction,
@@ -19,14 +19,16 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
 import type { PayrollSettlementHistoryEntry } from "@/lib/payroll-period/settlement";
 import type { PayrollPeriodDay, PayrollSettledDayValues } from "@/lib/payroll-period/types";
 import { queryKeys } from "@/lib/query/keys";
-import { absencePeriodLabel, type PayrollDaysFormat, settledChangeText } from "./payroll-days-grid";
+import {
+	absencePeriodLabel,
+	type PayrollDaysFormat,
+	settledChangeText,
+} from "./payroll-day-format";
 import type { PayrollTranslate } from "./state";
+import { UnsettleReasonInput } from "./unsettle-reason-input";
 import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
 /**
@@ -152,11 +154,7 @@ function UnsettleDayForm({
 	return (
 		<form
 			className="flex flex-col gap-3 rounded-lg border bg-background p-3"
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				void form.handleSubmit();
-			}}
+			action={() => form.handleSubmit()}
 		>
 			<p className="text-muted-foreground text-sm">
 				{t(
@@ -173,23 +171,7 @@ function UnsettleDayForm({
 							: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
 				}}
 			>
-				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)} required>
-							{t("payroll.settle.reason", "Reason")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Textarea
-								name={field.name}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(event) => field.handleChange(event.target.value)}
-								rows={3}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
-				)}
+				{(field) => <UnsettleReasonInput field={field} t={t} />}
 			</form.Field>
 			<div className="flex flex-wrap justify-end gap-2">
 				<Button type="button" variant="outline" size="sm" onClick={onDone}>
@@ -222,6 +204,10 @@ function SettlementHistory({
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
+	const occurredAt = useMemo(
+		() => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }),
+		[locale],
+	);
 	const { data, error, isPending } = useQuery({
 		queryKey: queryKeys.payroll.daySettlementHistory({ employeeId, date }),
 		queryFn: async () => {
@@ -229,6 +215,11 @@ function SettlementHistory({
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
+		select: (entries) =>
+			entries.map((entry) => ({
+				...entry,
+				occurredAtLabel: occurredAt.format(new Date(entry.occurredAt)),
+			})),
 	});
 
 	if (error) {
@@ -244,7 +235,6 @@ function SettlementHistory({
 	}
 	if (data.length === 0) return null;
 
-	const occurredAt = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 	return (
 		<ol
 			className="flex flex-col divide-y rounded-lg border bg-background text-sm"
@@ -262,7 +252,7 @@ function SettlementHistory({
 								})}
 					</span>
 					<span className="text-muted-foreground text-xs">
-						{occurredAt.format(new Date(entry.occurredAt))}
+						{entry.occurredAtLabel}
 						{" · "}
 						{entry.method === "export"
 							? t("payroll.days.panel.methodExport", "With export {file}", {

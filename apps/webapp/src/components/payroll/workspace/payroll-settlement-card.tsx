@@ -1,8 +1,9 @@
 "use client";
 
 import { IconAlertTriangle, IconCircleCheck, IconLoader2, IconRotate } from "@tabler/icons-react";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type PayrollSettlementCounts,
@@ -21,11 +22,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
 import type { PayrollPeriodRequest, PayrollTranslate } from "./state";
 import { usePayrollPeriod } from "./use-payroll-period";
+import { UnsettleReasonInput } from "./unsettle-reason-input";
 import { usePayrollSettlementChanged } from "./use-payroll-settlement-changed";
 
 /**
@@ -46,30 +45,22 @@ export function PayrollSettlementCard({
 }) {
 	const settlementChanged = usePayrollSettlementChanged();
 	const { data } = usePayrollPeriod(request, refreshedAt);
-	const [preview, setPreview] = useState<PayrollSettlementCounts | null>(null);
-	const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-	const [isSettling, setIsSettling] = useState(false);
 	const [unsettleOpen, setUnsettleOpen] = useState(false);
 	const settledDays = data?.settlement.settledDays ?? 0;
-	const disabled = filtersHaveNoMatches || isLoadingPreview || isSettling;
-
-	async function openPreview() {
-		setIsLoadingPreview(true);
-		try {
+	const previewRequest = useMutation({
+		mutationFn: async () => {
 			const result = await previewSettlePayrollDaysAction(request);
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-			setPreview(result.data);
-		} finally {
-			setIsLoadingPreview(false);
-		}
-	}
-
-	async function confirmSettle() {
-		setIsSettling(true);
-		try {
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
+	const preview = previewRequest.data;
+	const [isSettling, startConfirmation] = useTransition();
+	function confirm() {
+		startConfirmation(async () => {
 			const result = await settlePayrollDaysAction(request);
 			if (!result.success) {
 				toast.error(result.error);
@@ -78,12 +69,11 @@ export function PayrollSettlementCard({
 			toast.success(
 				t("payroll.settle.settled", "{count} days settled", { count: result.data.newDays }),
 			);
-			setPreview(null);
+			previewRequest.reset();
 			await settlementChanged();
-		} finally {
-			setIsSettling(false);
-		}
+		});
 	}
+	const disabled = filtersHaveNoMatches || previewRequest.isPending || isSettling;
 
 	return (
 		<Card>
@@ -117,8 +107,8 @@ export function PayrollSettlementCard({
 						<IconRotate aria-hidden="true" className="size-4" />
 						{t("payroll.settle.unsettleAction", "Unsettle days…")}
 					</Button>
-					<Button type="button" disabled={disabled} onClick={() => void openPreview()}>
-						{isLoadingPreview ? (
+					<Button type="button" disabled={disabled} onClick={() => previewRequest.mutate()}>
+						{previewRequest.isPending ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 						) : (
 							<IconCircleCheck aria-hidden="true" className="size-4" />
@@ -128,7 +118,7 @@ export function PayrollSettlementCard({
 				</div>
 			</CardContent>
 
-			<Dialog open={preview !== null} onOpenChange={(open) => !open && setPreview(null)}>
+			<Dialog open={preview !== undefined} onOpenChange={(open) => !open && previewRequest.reset()}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>{t("payroll.settle.confirmTitle", "Settle these days?")}</DialogTitle>
@@ -142,13 +132,13 @@ export function PayrollSettlementCard({
 					</DialogHeader>
 					{preview ? <SettlePreview preview={preview} t={t} /> : null}
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => setPreview(null)}>
+						<Button type="button" variant="outline" onClick={() => previewRequest.reset()}>
 							{t("payroll.settle.cancel", "Cancel")}
 						</Button>
 						<Button
 							type="button"
 							disabled={isSettling || !preview || preview.newDays === 0}
-							onClick={() => void confirmSettle()}
+							onClick={() => confirm()}
 						>
 							{isSettling ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
@@ -257,14 +247,7 @@ function UnsettleDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
-				<form
-					className="flex flex-col gap-4"
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
-						void form.handleSubmit();
-					}}
-				>
+				<form className="flex flex-col gap-4" action={() => form.handleSubmit()}>
 					<DialogHeader>
 						<DialogTitle>{t("payroll.settle.unsettleTitle", "Unsettle days?")}</DialogTitle>
 						<DialogDescription>
@@ -284,23 +267,7 @@ function UnsettleDialog({
 									: t("payroll.settle.reasonRequired", "A reason is required to unsettle days"),
 						}}
 					>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)} required>
-									{t("payroll.settle.reason", "Reason")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Textarea
-										name={field.name}
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-										rows={3}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
+						{(field) => <UnsettleReasonInput field={field} t={t} />}
 					</form.Field>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

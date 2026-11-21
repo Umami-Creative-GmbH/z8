@@ -2,7 +2,8 @@ import { payrollBlockerIdentity } from "../blocker-identity";
 import { payrollBlockerTypeLabel } from "../blocker-labels";
 import type { PayrollBlocker, PayrollEmployeeSummary } from "../types";
 import type { PayrollPdfContext, PayrollPdfSection } from "./context";
-import { basePageStyle, PayrollPdfFooter } from "./page-frame";
+import { basePageStyle } from "./page-styles";
+import { PayrollPdfFooter } from "./page-footer";
 
 const styles = {
 	header: {

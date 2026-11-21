@@ -5,7 +5,8 @@ import type {
 	PayrollPeriodEmployee,
 } from "@/lib/payroll-period/types";
 import type { PayrollPdfContext, PayrollPdfSection } from "./context";
-import { PDF_COLORS, payrollPdfPage } from "./page-frame";
+import { PDF_COLORS } from "./page-styles";
+import { payrollPdfPage } from "./page-frame";
 
 const HEADER_HEIGHT = 78;
 

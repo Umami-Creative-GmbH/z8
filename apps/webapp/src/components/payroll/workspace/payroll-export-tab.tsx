@@ -179,6 +179,12 @@ export function PayrollExportTab({
 			</Card>
 			<PayrollConfirmPaidCard t={t} />
 			<PayrollSettlementCard
+				key={JSON.stringify([
+					request.startDate,
+					request.endDate,
+					request.employeeIds,
+					filtersHaveNoMatches,
+				])}
 				filtersHaveNoMatches={filtersHaveNoMatches}
 				refreshedAt={refreshedAt}
 				request={request}

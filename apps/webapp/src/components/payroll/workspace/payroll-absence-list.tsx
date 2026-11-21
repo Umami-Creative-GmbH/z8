@@ -23,38 +23,15 @@ import {
 import type { PayrollDayPeriod } from "@/lib/payroll-workspace/types";
 import type { PayrollPeriodAbsence } from "@/lib/payroll-period/types";
 import { cn } from "@/lib/utils";
-import { PENDING_HATCH } from "./payroll-absence-calendar";
+import { PENDING_HATCH } from "./payroll-absence-style";
 import type { PayrollTranslate } from "./state";
+
+import type { PayrollAbsenceListFormat } from "./payroll-absence-list-format";
 
 const ALL = "all";
 
 type SortKey = "employee" | "category" | "from" | "days";
 type SortDirection = "asc" | "desc";
-
-export interface PayrollAbsenceListFormat {
-	date: (date: string) => string;
-	days: (days: number) => string;
-}
-
-export function payrollAbsenceListFormat(locale: string): PayrollAbsenceListFormat {
-	// A calendar date shown as itself: formatted at UTC midnight in UTC, never the viewer's zone.
-	const date = new Intl.DateTimeFormat(locale, {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-		timeZone: "UTC",
-	});
-	const whole = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
-	return {
-		date: (value) => date.format(new Date(`${value}T00:00:00Z`)),
-		days: (value) => {
-			const full = Math.floor(value);
-			const half = value - full >= 0.5;
-			if (!half) return whole.format(full);
-			return full === 0 ? "½" : `${whole.format(full)}½`;
-		},
-	};
-}
 
 /**
  * One row per absence in the period: employee, category, from–to with half days, and

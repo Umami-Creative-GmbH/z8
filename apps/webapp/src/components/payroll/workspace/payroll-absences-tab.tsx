@@ -5,14 +5,15 @@ import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PayrollAbsenceCalendar } from "./payroll-absence-calendar";
 import {
-	PayrollAbsenceCalendar,
 	type PayrollAbsenceLegendCategory,
 	PENDING_HATCH,
 	payrollAbsenceLegend,
-} from "./payroll-absence-calendar";
-import { PayrollAbsenceList, payrollAbsenceListFormat } from "./payroll-absence-list";
-import { payrollDaysFormat } from "./payroll-days-grid";
+} from "./payroll-absence-style";
+import { PayrollAbsenceList } from "./payroll-absence-list";
+import { payrollAbsenceListFormat } from "./payroll-absence-list-format";
+import { payrollDaysFormat } from "./payroll-day-format";
 import { PayrollPlaceholderTab } from "./payroll-workspace-tabs";
 import type { PayrollPeriodRequest, PayrollTranslate } from "./state";
 import { usePayrollPeriod } from "./use-payroll-period";

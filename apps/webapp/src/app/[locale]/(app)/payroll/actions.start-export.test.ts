@@ -241,11 +241,18 @@ describe("getScopedPayrollRunsAction", () => {
 
 		const result = await getScopedPayrollRunsAction();
 
-		const { employeeIds: _firstIds, ...expectedFirst } = first;
-		const { employeeIds: _lastIds, ...expectedLast } = last;
+		const expectedRun = (jobId: string, includedReports: number) => ({
+			jobId,
+			includedReports,
+			formatId: "datev_lohn",
+			periodStart: "2026-01-01",
+			periodEnd: "2026-01-31",
+			exportedAt: "2026-02-01T12:00:00Z",
+			partlyConfirmed: false,
+		});
 		expect(result).toEqual({
 			success: true,
-			data: [expectedFirst, expectedLast],
+			data: [expectedRun("first", 3), expectedRun("last", 1)],
 		});
 		expect(mockState.resolvePayrollAccessibleEmployeeIds).toHaveBeenCalledExactlyOnceWith({
 			organizationId: "org-1",

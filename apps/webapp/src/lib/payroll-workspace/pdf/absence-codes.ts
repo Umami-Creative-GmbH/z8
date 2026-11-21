@@ -1,4 +1,4 @@
-import { absenceCategoryColor } from "@/components/absences/category-badge";
+import { absenceCategoryColor } from "@/components/absences/category-color";
 import type { PayrollPeriodAbsence } from "@/lib/payroll-period/types";
 
 /** One absence category of the PDF legend: its short code and calendar colour. */
