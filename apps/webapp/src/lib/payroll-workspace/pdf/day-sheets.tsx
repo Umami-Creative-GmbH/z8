@@ -1,5 +1,5 @@
 import { Temporal } from "temporal-polyfill";
-import { dayHasEntries } from "@/lib/payroll-period/day-entries";
+import { dayHasEntriesOrChange } from "@/lib/payroll-period/day-entries";
 import type {
 	PayrollPeriodDay,
 	PayrollPeriodDayAbsence,
@@ -114,9 +114,9 @@ const NO_RECORDS: readonly PayrollPeriodDayRecord[] = [];
  * One day sheet per employee in scope (#1900): a row per employee-local day of the
  * period with entries, showing the exact clock-in and clock-out times of each work record
  * and the breaks, worked, required and difference hours, absences and holiday, and the
- * settlement marker, ending in a total row. Days without entries or records are left out
- * unless they were settled (they carry payout information); the totals still cover the
- * whole period, so a sheet's total matches the summary page. Figures come from the period read, the
+ * settlement marker, ending in a total row. Days without entries or records are left out,
+ * settled ones too (`isDayShown`); the totals still cover the whole period, so a sheet's
+ * total matches the summary page. Figures come from the period read, the
  * times from the period's records, so a sheet matches the Days tab and its side panel.
  */
 export const daySheetsSection: PayrollPdfSection = (context) =>
@@ -127,7 +127,9 @@ function daySheet(context: PayrollPdfContext, employee: PayrollPeriodEmployee) {
 	const { read, t, format } = context;
 	const recordsByDay = context.records.get(employee.id);
 	const recordsOf = (day: PayrollPeriodDay) => recordsByDay?.get(day.date) ?? NO_RECORDS;
-	const shownDays = employee.days.filter((day) => isDayShown(day, recordsOf(day)));
+	const shownDays = employee.days.filter((day) =>
+		isDayShown(day, recordsOf(day), read.period.start),
+	);
 	const anyNotApproved = shownDays.some((day) =>
 		recordsOf(day).some((record) => record.approvalState !== "approved"),
 	);
@@ -209,16 +211,24 @@ function daySheet(context: PayrollPdfContext, employee: PayrollPeriodEmployee) {
 }
 
 /**
- * A day is on the sheet when the employee recorded anything on it, or it has work or
- * break records (a pending, draft or running record is not credited, yet payroll must
- * see it), or it was settled: a settled day carries payout information.
+ * A day is on the sheet when the employee recorded anything on it, or it changed since
+ * it was settled (`dayHasEntriesOrChange`), or a work or break record was recorded on it:
+ * a pending or draft record is not credited, yet payroll must see it. A day settled with
+ * nothing on it is left out. A running record counts on the day it started only (or the
+ * period's first day, when it started before), not on every day up to now.
  */
-function isDayShown(day: PayrollPeriodDay, records: readonly PayrollPeriodDayRecord[]): boolean {
+function isDayShown(
+	day: PayrollPeriodDay,
+	records: readonly PayrollPeriodDayRecord[],
+	periodStart: string,
+): boolean {
 	return (
-		dayHasEntries(day) ||
-		records.length > 0 ||
-		day.settlement?.state === "settled" ||
-		day.settlement?.state === "changed_since_settled"
+		dayHasEntriesOrChange(day) ||
+		records.some((record) => {
+			if (record.end !== null) return true;
+			const startDate = record.start.slice(0, 10);
+			return startDate === day.date || (startDate < periodStart && day.date === periodStart);
+		})
 	);
 }
 

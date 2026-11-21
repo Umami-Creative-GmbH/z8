@@ -52,7 +52,8 @@ export interface PayrollDayPicking {
  * Employees against the period's days. A month row and the date header stay fixed above
  * the grid and the employee column at its left while it scrolls; each month's label
  * stays in view until the month ends, and a stronger border opens each month. Only the
- * rows in view are rendered.
+ * rows in view are rendered. Only the days in `dates` get a column, so the Days tab can
+ * hide days without entries.
  */
 export function PayrollDaysGrid({
 	dates,
@@ -74,6 +75,8 @@ export function PayrollDaysGrid({
 	const { scrollRef, start, end } = usePayrollRows(employees.length, ROW_HEIGHT, 8);
 	const gridTemplateColumns = `${EMPLOYEE_COLUMN} repeat(${dates.length}, ${DAY_COLUMN}) ${TOTAL_COLUMN}`;
 	const monthStarts = new Set(dates.filter((_, index) => startsNewMonth(dates, index)));
+	// `dates` may leave days out (days without entries hidden); rows follow its columns.
+	const shownDates = new Set(dates);
 
 	return (
 		<div
@@ -149,23 +152,25 @@ export function PayrollDaysGrid({
 										t={t}
 									/>
 								</th>
-								{employee.days.map((day) => (
-									<PayrollDayCell
-										key={day.date}
-										afterDeparture={isAfterDeparture(employee, day.date)}
-										day={day}
-										format={format}
-										monthStart={monthStarts.has(day.date)}
-										onSelect={(event) =>
-											picking
-												? picking.onToggleDay(employee, day, event.shiftKey)
-												: onSelectDay(employee, day)
-										}
-										picked={picking?.selected.has(payrollDayKey(employee.id, day.date))}
-										picking={picking !== undefined}
-										t={t}
-									/>
-								))}
+								{employee.days
+									.filter((day) => shownDates.has(day.date))
+									.map((day) => (
+										<PayrollDayCell
+											key={day.date}
+											afterDeparture={isAfterDeparture(employee, day.date)}
+											day={day}
+											format={format}
+											monthStart={monthStarts.has(day.date)}
+											onSelect={(event) =>
+												picking
+													? picking.onToggleDay(employee, day, event.shiftKey)
+													: onSelectDay(employee, day)
+											}
+											picked={picking?.selected.has(payrollDayKey(employee.id, day.date))}
+											picking={picking !== undefined}
+											t={t}
+										/>
+									))}
 								<PayrollTotalCell employee={employee} format={format} t={t} />
 							</tr>
 						);
