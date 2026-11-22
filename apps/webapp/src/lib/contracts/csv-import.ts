@@ -1934,13 +1934,45 @@ export async function commitCsvImportBatch(
 									.from(organization)
 									.where(eq(organization.id, input.organizationId))
 									.limit(1);
-								const orgTimezone = orgRow?.timezone ?? "UTC";
-								const batchToday = plainDateAt(instantFromDate(existing.createdAt), orgTimezone);
+								const fallbackOrgTimezone = orgRow?.timezone ?? "UTC";
+								// Astra #13: Use each departure's frozen creation timezone when available so an
+								// organization timezone change after commit does not invalidate identical legacy retries.
+								const depTzRows =
+									parsedInstructions.length > 0
+										? await db
+												.select({
+													employeeId: employeeDeparture.employeeId,
+													lastWorkingDay: employeeDeparture.lastWorkingDay,
+													timezone: employeeDeparture.timezone,
+												})
+												.from(employeeDeparture)
+												.where(
+													and(
+														eq(employeeDeparture.organizationId, input.organizationId),
+														inArray(
+															employeeDeparture.employeeId,
+															parsedInstructions.map((r) => r.employeeId),
+														),
+													),
+												)
+												.orderBy(desc(employeeDeparture.createdAt))
+										: [];
+								const frozenTzByEmpAndDay = new Map<string, string>();
+								for (const depRow of depTzRows) {
+									const key = `${depRow.employeeId}:${depRow.lastWorkingDay ?? ""}`;
+									if (!frozenTzByEmpAndDay.has(key)) {
+										frozenTzByEmpAndDay.set(key, depRow.timezone);
+									}
+								}
 								parsedInstructions.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
 								intentMatches = parsedInstructions.every((row, idx) => {
 									const persisted = persistedItems[idx];
 									const persistedPayload = (persisted?.payload ?? {}) as Record<string, unknown>;
 									const action = persistedPayload.action;
+									const rowTz =
+										frozenTzByEmpAndDay.get(`${row.employeeId}:${row.lastWorkingDay}`) ??
+										fallbackOrgTimezone;
+									const batchToday = plainDateAt(instantFromDate(existing.createdAt), rowTz);
 									const dayCmp = comparePlainDates(parsePlainDate(row.lastWorkingDay), batchToday);
 									const modeMatchesAction =
 										row.departureMode !== null

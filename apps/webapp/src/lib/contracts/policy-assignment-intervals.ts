@@ -2,7 +2,14 @@ import { and, eq, sql } from "drizzle-orm";
 import { workPolicyAssignment } from "@/db/schema";
 import type { WorkPolicyAssignmentSourceKind } from "@/db/schema/contract-types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { dateFromInstant, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { ContractWriteTx } from "./contract-validation";
@@ -211,6 +218,7 @@ export async function replacePolicyAssignmentWindowInTx(
 			sourceBatchItemId: input.sourceBatchItemId ?? null,
 			isActive: true,
 			createdBy: input.actorUserId,
+			createdAt: now,
 			updatedAt: now,
 		})
 		.returning({ id: workPolicyAssignment.id });
@@ -225,6 +233,151 @@ export interface CappedPolicyAssignmentRecord {
 	readonly id: string;
 	readonly previousEffectiveUntilDate: string | null;
 	readonly previousEffectiveUntil: string | null;
+}
+
+/**
+ * Locks active employee `work_policy_assignment` rows in ascending `id` order (level 3)
+ * before locking `work_policy` rows (level 4) to preserve the universal deadlock-free order.
+ */
+export async function lockEmployeeActivePolicyAssignmentsInTx(
+	tx: Pick<ContractWriteTx, "execute">,
+	organizationId: string,
+	employeeId: string,
+): Promise<void> {
+	await tx.execute(sql`
+		SELECT id
+		FROM work_policy_assignment
+		WHERE organization_id = ${organizationId}
+			AND assignment_type = 'employee'
+			AND employee_id = ${employeeId}::uuid
+			AND is_active = true
+		ORDER BY id
+		FOR UPDATE
+	`);
+}
+
+/**
+ * Locks `work_policy` FOR SHARE (level 4) and returns whether it exists and is active in `organizationId`.
+ */
+export async function verifyActiveWorkPolicyForShareInTx(
+	tx: Pick<ContractWriteTx, "execute">,
+	organizationId: string,
+	policyId: string,
+): Promise<boolean> {
+	const res = await tx.execute<{ id: string; is_active: boolean }>(sql`
+		SELECT id, is_active
+		FROM work_policy
+		WHERE id = ${policyId}::uuid
+			AND organization_id = ${organizationId}
+		LIMIT 1
+		FOR SHARE
+	`);
+	return Boolean(res.rows[0]?.is_active);
+}
+
+function parsePgInstant(raw: Date | string): Instant {
+	if (raw instanceof Date) return instantFromDate(raw);
+	let normalized = raw.trim().replace(" ", "T");
+	if (/[+-]\d{2}$/.test(normalized)) {
+		normalized = `${normalized}:00`;
+	} else if (/[+-]\d{4}$/.test(normalized)) {
+		normalized = `${normalized.slice(0, -2)}:${normalized.slice(-2)}`;
+	} else if (!/[zZ]|[+-]\d{2}:\d{2}$/.test(normalized)) {
+		normalized = `${normalized}Z`;
+	}
+	return parseInstant(normalized);
+}
+
+function parsePgTimestampToDate(raw: Date | string): Date {
+	if (raw instanceof Date) return raw;
+	return dateFromInstant(
+		parsePgInstant(raw).round({ smallestUnit: "millisecond", roundingMode: "trunc" }),
+	);
+}
+
+/**
+ * Finds the earliest intervening policy retirement date (`retiredOnDate` in
+ * `[previousCutoffLocalDate, nextCutoffLocalDate)`) that occurred on or after `createdAt`
+ * for an unlinked confirmed `employee_employment_history` row pinned to `policyId`, locking
+ * `work_policy FOR SHARE` at level (4) so forward departure corrections never revive a retired
+ * unlinked terms pin (Astra #5 / #7 / M9).
+ */
+export async function findInterveningPolicyRetirementForTermsInTx(
+	tx: ContractWriteTx,
+	input: {
+		organizationId: string;
+		policyId: string;
+		effectiveFromDate: string;
+		createdAt: Date;
+		previousCutoffLocalDate: string;
+		nextCutoffLocalDate: string;
+	},
+): Promise<string | null> {
+	const orgTimezone = await loadOrganizationTimezone(tx, input.organizationId);
+	const polRes = await tx.execute<{
+		is_active: boolean;
+		retired_on_date: string | null;
+		updated_at: Date | string;
+	}>(sql`
+		SELECT
+			is_active,
+			to_char((updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date,
+			updated_at
+		FROM work_policy
+		WHERE organization_id = ${input.organizationId}
+			AND id = ${input.policyId}::uuid
+		LIMIT 1
+		FOR SHARE
+	`);
+	const auditRes = await tx.execute<{ metadata: string | null; timestamp: Date | string }>(sql`
+		SELECT metadata, timestamp
+		FROM audit_log
+		WHERE organization_id = ${input.organizationId}
+			AND entity_type = 'work_policy'
+			AND entity_id = ${input.policyId}
+			AND action = 'work_policy.retired'
+	`);
+
+	const createdInstant = instantFromDate(input.createdAt);
+	let earliestRetirementDate: string | null = null;
+	for (const row of auditRes.rows) {
+		if (!row.metadata) continue;
+		try {
+			const parsed = JSON.parse(row.metadata) as Record<string, unknown>;
+			if (typeof parsed.retiredOnDate !== "string" || parsed.retiredOnDate.length !== 10) continue;
+			const evInstant = parsePgInstant(row.timestamp);
+			if (compareInstants(evInstant, createdInstant) < 0) continue;
+			if (
+				parsed.retiredOnDate < input.effectiveFromDate ||
+				parsed.retiredOnDate < input.previousCutoffLocalDate ||
+				parsed.retiredOnDate >= input.nextCutoffLocalDate
+			) {
+				continue;
+			}
+			if (earliestRetirementDate === null || parsed.retiredOnDate < earliestRetirementDate) {
+				earliestRetirementDate = parsed.retiredOnDate;
+			}
+		} catch {
+			// ignore malformed metadata
+		}
+	}
+
+	const polRow = polRes.rows[0];
+	if (polRow && !polRow.is_active && polRow.retired_on_date) {
+		const polInstant = parsePgInstant(polRow.updated_at);
+		if (
+			compareInstants(polInstant, createdInstant) >= 0 &&
+			polRow.retired_on_date >= input.effectiveFromDate &&
+			polRow.retired_on_date >= input.previousCutoffLocalDate &&
+			polRow.retired_on_date < input.nextCutoffLocalDate
+		) {
+			if (earliestRetirementDate === null || polRow.retired_on_date < earliestRetirementDate) {
+				earliestRetirementDate = polRow.retired_on_date;
+			}
+		}
+	}
+
+	return earliestRetirementDate;
 }
 
 /**
@@ -357,15 +510,6 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 				? input.nextPeriodStart
 				: input.newCutoffDate;
 
-		const parseTs = (raw: string): Date =>
-			dateFromInstant(
-				parseInstant(
-					raw.includes("T")
-						? raw
-						: `${raw.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw) ? "" : "Z"}`,
-				),
-			);
-
 		// Universal lock order (Astra #4 / M9): Caller already holds (2 employee FOR UPDATE).
 		// Acquire (3) capped assignments ORDER BY id FOR UPDATE, then (4) referenced work_policy
 		// ORDER BY id FOR SHARE so a concurrent policy retirement cannot commit mid-correction.
@@ -374,7 +518,13 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		);
 		const lockedAssignmentsById = new Map<
 			string,
-			{ id: string; policyId: string; sourceKind: string | null; effectiveFromDate: string }
+			{
+				id: string;
+				policyId: string;
+				sourceKind: string | null;
+				effectiveFromDate: string;
+				createdAt: Instant;
+			}
 		>();
 		for (const capped of sortedCapped) {
 			const res = await tx.execute<{
@@ -382,12 +532,14 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 				policy_id: string;
 				source_kind: string | null;
 				effective_from_date: string;
+				created_at: Date | string;
 			}>(sql`
 				SELECT
 					id,
 					policy_id,
 					source_kind,
-					to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date
+					to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date,
+					created_at
 				FROM work_policy_assignment
 				WHERE organization_id = ${input.organizationId}
 					AND id = ${capped.id}::uuid
@@ -403,6 +555,7 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 					policyId: row.policy_id,
 					sourceKind: row.source_kind,
 					effectiveFromDate: row.effective_from_date,
+					createdAt: parsePgInstant(row.created_at),
 				});
 			}
 		}
@@ -412,16 +565,18 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		].sort((a, b) => a.localeCompare(b));
 		const lockedPoliciesById = new Map<
 			string,
-			{ isActive: boolean; retiredOnDate: string | null }
+			{ isActive: boolean; retiredOnDate: string | null; updatedAt: Instant }
 		>();
 		for (const polId of uniquePolicyIds) {
 			const polRes = await tx.execute<{
 				is_active: boolean;
 				retired_on_date: string | null;
+				updated_at: Date | string;
 			}>(sql`
 				SELECT
 					is_active,
-					to_char((updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date
+					to_char((updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date,
+					updated_at
 				FROM work_policy
 				WHERE organization_id = ${input.organizationId}
 					AND id = ${polId}::uuid
@@ -433,24 +588,28 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 				lockedPoliciesById.set(polId, {
 					isActive: Boolean(row.is_active),
 					retiredOnDate: row.retired_on_date,
+					updatedAt: parsePgInstant(row.updated_at),
 				});
 			}
 		}
 
 		// Read append-only durable retirement boundaries recorded in `audit_log` by
 		// `retirePolicyReferencesInTx` AFTER acquiring (3)/(4) so a later policy rename or
-		// reactivation (or a concurrent retire+reactivate) preserves the original retirement boundary.
+		// reactivation preserves the original retirement boundary, while filtering by
+		// `ev.timestamp >= lockedAssignment.createdAt` so old pre-reactivation retirements never
+		// truncate brand-new backdated assignments created after reactivation (Astra #4 / #7).
 		const durableRetirementsByPolicyId = new Map<
 			string,
 			Array<{
 				retiredOnDate: string;
 				retiredAtLocalStart: Date | null;
 				retiredAtUtcMidnight: Date | null;
+				timestamp: Instant;
 			}>
 		>();
 		for (const polId of uniquePolicyIds) {
-			const auditRes = await tx.execute<{ metadata: string | null }>(sql`
-				SELECT metadata
+			const auditRes = await tx.execute<{ metadata: string | null; timestamp: Date | string }>(sql`
+				SELECT metadata, timestamp
 				FROM audit_log
 				WHERE organization_id = ${input.organizationId}
 					AND entity_type = 'work_policy'
@@ -461,6 +620,7 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 				retiredOnDate: string;
 				retiredAtLocalStart: Date | null;
 				retiredAtUtcMidnight: Date | null;
+				timestamp: Instant;
 			}> = [];
 			for (const row of auditRes.rows) {
 				if (!row.metadata) continue;
@@ -471,12 +631,13 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 							retiredOnDate: parsed.retiredOnDate,
 							retiredAtLocalStart:
 								typeof parsed.retiredAtLocalStart === "string"
-									? parseTs(parsed.retiredAtLocalStart)
+									? parsePgTimestampToDate(parsed.retiredAtLocalStart)
 									: null,
 							retiredAtUtcMidnight:
 								typeof parsed.retiredAtUtcMidnight === "string"
-									? parseTs(parsed.retiredAtUtcMidnight)
+									? parsePgTimestampToDate(parsed.retiredAtUtcMidnight)
 									: null,
+							timestamp: parsePgInstant(row.timestamp),
 						});
 					}
 				} catch {
@@ -500,7 +661,7 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 			}
 
 			const parsedOriginalUntilTs = capped.previousEffectiveUntil
-				? parseTs(capped.previousEffectiveUntil)
+				? parsePgTimestampToDate(capped.previousEffectiveUntil)
 				: originalUntilDate !== null
 					? utcMidnight(parsePlainDate(originalUntilDate))
 					: null;
@@ -519,6 +680,7 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 			let blockedByDurableRetirement = false;
 			for (const ev of durableEvents) {
 				if (
+					compareInstants(ev.timestamp, lockedAssignment.createdAt) < 0 ||
 					ev.retiredOnDate < lockedAssignment.effectiveFromDate ||
 					ev.retiredOnDate < input.previousCutoffLocalDate
 				) {

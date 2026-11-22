@@ -135,12 +135,18 @@ export async function assignEmployeeWorkPolicyInTx(
 ): Promise<AssignEmployeeWorkPolicyResult> {
 	const now = input.now ?? currentTimestamp();
 
-	// Universal deadlock-free lock order (Astra #5 / H8 / M3 / M4):
-	// (0) org defaults/policy advisory lock SHARED -> (2) employee FOR UPDATE ->
-	// (3) active employee work_policy_assignment rows ORDER BY id FOR UPDATE ->
+	// Universal deadlock-free lock order (Astra #2 / #5 / H8 / M3 / M4):
+	// (0) org policy advisory lock SHARED -> (1.5) organization FOR KEY SHARE ->
+	// (2) employee FOR UPDATE -> (3) active employee work_policy_assignment ORDER BY id FOR UPDATE ->
 	// (4) work_policy FOR SHARE.
 	const orgLockKey = `contract_default_org:${input.organizationId}`;
 	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 
 	const lockedEmployee = await tx.execute<{ id: string }>(sql`
 		SELECT id

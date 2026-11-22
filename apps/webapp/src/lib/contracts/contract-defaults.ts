@@ -341,6 +341,14 @@ export async function scheduleContractDefaultInTx(
 		validated.teamId,
 	);
 	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+	// Level (1.5): Lock organization FOR KEY SHARE before locking employees/assignments so FK
+	// inserts on contract_template / contract_default never invert organization <-> employee/assignment.
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 
 	const candidateEmployees =
 		validated.workPolicyId !== null
@@ -1099,6 +1107,7 @@ export async function previewContractDefaultChange(
 					priority: workPolicyAssignment.priority,
 					sourceKind: workPolicyAssignment.sourceKind,
 					sourceEmploymentHistoryId: workPolicyAssignment.sourceEmploymentHistoryId,
+					sourceEmploymentPeriodId: employeeEmploymentHistory.employmentPeriodId,
 					isActive: workPolicyAssignment.isActive,
 					effectiveFrom: workPolicyAssignment.effectiveFrom,
 					effectiveUntil: workPolicyAssignment.effectiveUntil,
@@ -1107,6 +1116,13 @@ export async function previewContractDefaultChange(
 					createdAt: workPolicyAssignment.createdAt,
 				})
 				.from(workPolicyAssignment)
+				.leftJoin(
+					employeeEmploymentHistory,
+					and(
+						eq(employeeEmploymentHistory.id, workPolicyAssignment.sourceEmploymentHistoryId),
+						eq(employeeEmploymentHistory.organizationId, workPolicyAssignment.organizationId),
+					),
+				)
 				.where(
 					and(
 						eq(workPolicyAssignment.organizationId, input.organizationId),
@@ -1461,6 +1477,7 @@ export async function previewContractDefaultChange(
 							priority: validated.scope === "team" ? 1 : 0,
 							sourceKind: "contract_default" as const,
 							sourceEmploymentHistoryId: null,
+							sourceEmploymentPeriodId: null,
 							isActive: true,
 							effectiveFrom: null,
 							effectiveUntil: null,

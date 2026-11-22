@@ -901,6 +901,18 @@ async function executeSparseContractMutationInTx(
 		};
 	}
 
+	// Astra #1: Acquire (0) org policy advisory lock SHARED + (1.5) organization FOR KEY SHARE
+	// BEFORE locking (2) employee FOR UPDATE so nested `commitContractChangeInTx` can never invert
+	// (0) <-> (2) against concurrent policy retirement!
+	const orgLockKey = `contract_default_org:${input.organizationId}`;
+	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
+
 	// A1-20: Acquire the employee row lock BEFORE reading prior sparse state so concurrent
 	// contract edits on other fields cannot commit between read and write and be clobbered.
 	await tx.execute(sql`

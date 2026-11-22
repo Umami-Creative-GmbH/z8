@@ -1374,8 +1374,8 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 		} = await fixture.pool.query<{ id: string }>(
 			`INSERT INTO work_policy_assignment (
 				policy_id, organization_id, assignment_type, employee_id, priority,
-				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
-			) VALUES ($1, $2, 'employee', $3, 2, '2026-01-01T00:00:00Z', '2026-01-01', 'manager_assignment', true, $4, now())
+				effective_from, effective_from_date, source_kind, is_active, created_by, created_at, updated_at
+			) VALUES ($1, $2, 'employee', $3, 2, '2026-01-01T00:00:00Z', '2026-01-01', 'manager_assignment', true, $4, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
 			RETURNING id`,
 			[polRetiring!.id, fixture.organizationId, personRetired.employeeId, fixture.ownerUserId],
 		);
@@ -1419,5 +1419,126 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			[asgnRetiring!.id],
 		);
 		expect(afterM9?.effective_until_date).toBe("2026-06-15");
+
+		// Astra #7: A brand-new backdated assignment created AFTER reactivation on 2026-06-18 must NOT
+		// be clamped by the older 2026-06-15 pre-reactivation retirement event when correcting a departure!
+		now = parseInstant("2026-06-25T12:00:00Z");
+		const personPostReact = await fixture.seedEmployee();
+		await seedConfirmedTerms(personPostReact, "2026-01-01", null);
+		const {
+			rows: [asgnPostReact],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, created_at, updated_at
+			) VALUES ($1, $2, 'employee', $3, 2, '2026-06-01T00:00:00Z', '2026-06-01', 'manager_assignment', true, $4, '2026-06-19T12:00:00Z', '2026-06-19T12:00:00Z')
+			RETURNING id`,
+			[polRetiring!.id, fixture.organizationId, personPostReact.employeeId, fixture.ownerUserId],
+		);
+		const depPostReact = await commands().recordPastDeparture(ownerActor(), {
+			employeeId: personPostReact.employeeId,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-09", // cutoff = 2026-06-10
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		if (depPostReact.status !== "effective") throw new Error("expected effective departure");
+		await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personPostReact.employeeId,
+			departureId: depPostReact.departureId,
+			expectedRevision: depPostReact.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-19", // cutoff = 2026-06-20
+		});
+		const {
+			rows: [afterA7],
+		} = await fixture.pool.query<{ effective_until_date: string | null }>(
+			`SELECT to_char(effective_until_date, 'YYYY-MM-DD') AS effective_until_date
+			 FROM work_policy_assignment WHERE id = $1`,
+			[asgnPostReact!.id],
+		);
+		expect(afterA7?.effective_until_date).toBe("2026-06-20");
+
+		// Astra #5: Forward past-departure correction splits an unlinked confirmed terms row pinned to
+		// a policy retired in [previousCutoff, nextCutoff) at the retirement date instead of extending
+		// the retired policy pin past its retirement!
+		now = TODAY;
+		const personUnlinkedPin = await fixture.seedEmployee();
+		const {
+			rows: [polTermRetiring],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, is_active, created_by, updated_at)
+			 VALUES ($1, 'Astra5 Unlinked Pin Policy', true, false, false, true, $2, '2026-01-01T00:00:00Z')
+			 RETURNING id`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, employment_period_id, valid_from, valid_from_date,
+				status, review_state, contract_type, weekly_contract_minutes, currency, work_policy_id,
+				created_by, created_at, updated_at
+			) VALUES (
+				$1, $2, $3, '2026-01-01T00:00:00Z', '2026-01-01',
+				'active', 'confirmed', 'fixed', 2400, 'EUR', $4,
+				$5, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'
+			)`,
+			[
+				fixture.organizationId,
+				personUnlinkedPin.employeeId,
+				personUnlinkedPin.employmentPeriodId,
+				polTermRetiring!.id,
+				fixture.ownerUserId,
+			],
+		);
+		const depA5 = await commands().recordPastDeparture(ownerActor(), {
+			employeeId: personUnlinkedPin.employeeId,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-09", // cutoff = 2026-06-10
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		if (depA5.status !== "effective") throw new Error("expected effective departure");
+		await updateOrPublishWorkPolicy(fixture.db, {
+			organizationId: fixture.organizationId,
+			actorUserId: fixture.ownerUserId,
+			policyId: polTermRetiring!.id,
+			now: new Date("2026-06-15T12:00:00Z"),
+			data: { isActive: false },
+		});
+		await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personUnlinkedPin.employeeId,
+			departureId: depA5.departureId,
+			expectedRevision: depA5.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-19", // cutoff = 2026-06-20
+		});
+		const { rows: a5Terms } = await fixture.pool.query<{
+			valid_from_date: string;
+			valid_until_date: string | null;
+			work_policy_id: string | null;
+			weekly_contract_minutes: number | null;
+		}>(
+			`SELECT to_char(valid_from_date, 'YYYY-MM-DD') AS valid_from_date,
+				to_char(valid_until_date, 'YYYY-MM-DD') AS valid_until_date,
+				work_policy_id, weekly_contract_minutes
+			 FROM employee_employment_history
+			 WHERE organization_id = $1 AND employee_id = $2
+			 ORDER BY valid_from_date ASC`,
+			[fixture.organizationId, personUnlinkedPin.employeeId],
+		);
+		expect(a5Terms).toEqual([
+			{
+				valid_from_date: "2026-01-01",
+				valid_until_date: "2026-06-15",
+				work_policy_id: polTermRetiring!.id,
+				weekly_contract_minutes: 2400,
+			},
+			{
+				valid_from_date: "2026-06-15",
+				valid_until_date: "2026-06-20",
+				work_policy_id: null,
+				weekly_contract_minutes: 2400,
+			},
+		]);
 	});
 });

@@ -265,6 +265,7 @@ export async function previewPrimaryTeamMove(
 				priority: workPolicyAssignment.priority,
 				sourceKind: workPolicyAssignment.sourceKind,
 				sourceEmploymentHistoryId: workPolicyAssignment.sourceEmploymentHistoryId,
+				sourceEmploymentPeriodId: employeeEmploymentHistory.employmentPeriodId,
 				isActive: workPolicyAssignment.isActive,
 				effectiveFrom: workPolicyAssignment.effectiveFrom,
 				effectiveUntil: workPolicyAssignment.effectiveUntil,
@@ -273,6 +274,13 @@ export async function previewPrimaryTeamMove(
 				createdAt: workPolicyAssignment.createdAt,
 			})
 			.from(workPolicyAssignment)
+			.leftJoin(
+				employeeEmploymentHistory,
+				and(
+					eq(employeeEmploymentHistory.id, workPolicyAssignment.sourceEmploymentHistoryId),
+					eq(employeeEmploymentHistory.organizationId, workPolicyAssignment.organizationId),
+				),
+			)
 			.where(
 				and(
 					eq(workPolicyAssignment.organizationId, input.organizationId),

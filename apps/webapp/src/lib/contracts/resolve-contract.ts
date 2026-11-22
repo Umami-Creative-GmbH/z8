@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {
@@ -415,19 +415,23 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 		return { terms: null, inEndedTermsGap: false, effectivePolicyEvaluationDate: null };
 	}
 
+	const nonEmptyTerms = confirmedTerms.filter((row) => {
+		const bounds = termsDateBounds(row, organizationTimezone);
+		return bounds.until === null || comparePlainDates(bounds.from, bounds.until) < 0;
+	});
+	if (nonEmptyTerms.length === 0) {
+		return { terms: null, inEndedTermsGap: false, effectivePolicyEvaluationDate: null };
+	}
+
 	const periodScoped = period
-		? confirmedTerms.filter((row) => {
-				if (row.employmentPeriodId !== period.id) return false;
-				const bounds = termsDateBounds(row, organizationTimezone);
-				return bounds.until === null || comparePlainDates(bounds.from, bounds.until) < 0;
-			})
-		: confirmedTerms;
+		? nonEmptyTerms.filter((row) => row.employmentPeriodId === period.id)
+		: nonEmptyTerms;
 	const candidateRows =
 		periodScoped.length > 0
 			? periodScoped
 			: period
-				? confirmedTerms.filter((row) => row.employmentPeriodId === null)
-				: confirmedTerms;
+				? nonEmptyTerms.filter((row) => row.employmentPeriodId === null)
+				: nonEmptyTerms;
 
 	const direct = selectConfirmedTermsOnDate(candidateRows, day, organizationTimezone);
 	if (direct) {
@@ -543,8 +547,10 @@ function assignmentCoversDay(
 	if (assignment.effectiveFromDate !== null) {
 		if (assignment.effectiveFromDate > dayStr) return false;
 		if (assignment.sourceKind === "legacy" && assignment.effectiveUntil !== null) {
-			const legacyEndDate = plainDateAt(
-				instantFromDate(assignment.effectiveUntil),
+			// F11-1 / Astra #8: Preserve UTC-midnight calendar-date semantics via `termsCalendarDate`
+			// so legacy assignments ending at 00:00Z never lose their final local day west of UTC.
+			const legacyEndDate = termsCalendarDate(
+				assignment.effectiveUntil,
 				organizationTimezone,
 			).toString();
 			if (legacyEndDate <= dayStr) return false;
@@ -565,6 +571,31 @@ function assignmentCoversDay(
 	return true;
 }
 
+function isPreservedLegacyPriorEveningWindow(
+	row: PolicyAssignmentSnapshot,
+	organizationTimezone: string,
+	at: Instant | undefined,
+): boolean {
+	if (
+		at === undefined ||
+		row.sourceKind !== "legacy" ||
+		row.effectiveFrom === null ||
+		row.effectiveUntil === null ||
+		row.effectiveFromDate === null ||
+		row.effectiveUntilDate === null
+	) {
+		return false;
+	}
+	if (row.effectiveFrom.getTime() >= row.effectiveUntil.getTime()) return false;
+	const expectedNextDay = parsePlainDate(row.effectiveFromDate).add({ days: 1 }).toString();
+	if (row.effectiveUntilDate !== expectedNextDay) return false;
+	const localFromDate = plainDateAt(
+		instantFromDate(row.effectiveFrom),
+		organizationTimezone,
+	).toString();
+	return localFromDate < row.effectiveFromDate;
+}
+
 function selectPolicyAssignmentAtLevel(input: {
 	assignments: readonly PolicyAssignmentSnapshot[];
 	policiesById: ReadonlyMap<string, WorkPolicySnapshot>;
@@ -577,7 +608,12 @@ function selectPolicyAssignmentAtLevel(input: {
 	at?: Instant;
 }): PolicyAssignmentSnapshot | null {
 	const matching = input.assignments.filter((row) => {
-		if (row.isActive === false) return false;
+		if (
+			row.isActive === false &&
+			!isPreservedLegacyPriorEveningWindow(row, input.organizationTimezone, input.at)
+		) {
+			return false;
+		}
 		if (row.assignmentType !== input.level) return false;
 		if (input.level === "employee" && row.employeeId !== input.employeeId) return false;
 		if (input.level === "team" && (input.teamId === null || row.teamId !== input.teamId)) {
@@ -590,7 +626,7 @@ function selectPolicyAssignmentAtLevel(input: {
 		if (!policy) return false;
 		const intervalEndDate =
 			row.sourceKind === "legacy" && row.effectiveUntil !== null
-				? plainDateAt(instantFromDate(row.effectiveUntil), input.organizationTimezone).toString()
+				? termsCalendarDate(row.effectiveUntil, input.organizationTimezone).toString()
 				: row.effectiveUntilDate;
 		return isPolicyEligibleOnDay(policy, input.dayStr, intervalEndDate);
 	});
@@ -1717,6 +1753,22 @@ export async function loadEffectiveContractsBatch(
 						eq(workPolicyAssignment.assignmentType, "employee"),
 						eq(workPolicyAssignment.sourceKind, "employment_terms"),
 						inArray(workPolicyAssignment.employeeId, uniqueEmployeeIds),
+					),
+					// Astra #9: Include deactivated retired legacy prior-evening instant windows so
+					// scheduling a successor on retirement day never erases historical prior-evening lookups.
+					and(
+						eq(workPolicyAssignment.sourceKind, "legacy"),
+						sql`${workPolicyAssignment.effectiveFrom} IS NOT NULL`,
+						sql`${workPolicyAssignment.effectiveUntil} IS NOT NULL`,
+						sql`${workPolicyAssignment.effectiveUntilDate} = ${workPolicyAssignment.effectiveFromDate} + 1`,
+						or(
+							eq(workPolicyAssignment.assignmentType, "organization"),
+							eq(workPolicyAssignment.assignmentType, "team"),
+							and(
+								eq(workPolicyAssignment.assignmentType, "employee"),
+								inArray(workPolicyAssignment.employeeId, uniqueEmployeeIds),
+							),
+						),
 					),
 				),
 			),

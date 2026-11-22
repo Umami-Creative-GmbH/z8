@@ -519,7 +519,13 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					assignment.policy_id as "assignmentPolicyId", assignment.priority,
 					case
 						when assignment.source_kind = 'legacy' and assignment.effective_until is not null
-						then to_char((assignment.effective_until at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone", 'YYYY-MM-DD')
+						then case
+							when extract(hour from assignment.effective_until) = 0
+								and extract(minute from assignment.effective_until) = 0
+								and extract(second from assignment.effective_until) = 0
+							then to_char(assignment.effective_until::date, 'YYYY-MM-DD')
+							else to_char((assignment.effective_until at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone", 'YYYY-MM-DD')
+						end
 						else to_char(assignment.effective_until_date, 'YYYY-MM-DD')
 					end as "assignmentEffectiveUntilDate",
 					case
@@ -540,7 +546,18 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				join work_policy_assignment assignment
 					on assignment.organization_id = employee_row."organizationId"
 				where assignment.organization_id = ${input.organizationId}
-					and assignment.is_active = true
+					and (
+						assignment.is_active = true
+						or (
+							assignment.source_kind = 'legacy'
+							and assignment.effective_from is not null
+							and assignment.effective_until is not null
+							and assignment.effective_from < assignment.effective_until
+							and assignment.effective_from_date is not null
+							and assignment.effective_until_date = assignment.effective_from_date + 1
+							and ((assignment.effective_from at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone")::date < assignment.effective_from_date
+						)
+					)
 					and not (
 						assignment.assignment_type = 'employee'
 						and period."employmentPeriodId" is not null

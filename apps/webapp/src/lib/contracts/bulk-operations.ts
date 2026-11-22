@@ -948,6 +948,30 @@ export async function submitBulkContractAction(
 								targetMatchesPersisted =
 									currentIds.length === persistedEmployeeIds.length &&
 									currentIds.every((id, idx) => id === persistedEmployeeIds[idx]);
+								// Astra #12: A completed `adopt_default` with `onlyLegacyTerms: true` flips
+								// `migratedLegacyTerms` to `false` on the employees it updated. Allow identical
+								// retries when every persisted employee still matches the non-legacy target
+								// filters and no additional still-legacy employee outside the persisted set matches.
+								if (
+									!targetMatchesPersisted &&
+									onlyLegacyTerms &&
+									(existing.status === "completed" || existing.completedItems > 0)
+								) {
+									const nonLegacyMatched = await resolveTargetEmployees(
+										db,
+										input.organizationId,
+										{ ...input.target, onlyLegacyTerms: false },
+										false,
+										parsedEffectiveFromDate,
+									);
+									const nonLegacyIds = new Set(nonLegacyMatched.map((e) => e.id));
+									const persistedSet = new Set(persistedEmployeeIds);
+									const allPersistedMatchNonLegacy = persistedEmployeeIds.every((id) =>
+										nonLegacyIds.has(id),
+									);
+									const noExtraStillLegacy = currentIds.every((id) => persistedSet.has(id));
+									targetMatchesPersisted = allPersistedMatchNonLegacy && noExtraStillLegacy;
+								}
 							}
 						}
 						const fingerprintMatches =

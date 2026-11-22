@@ -1365,6 +1365,97 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			},
 		]);
 
+		// Astra #4 & F11-3: Retiring a policy pinned on (a) an already-superseded unscoped legacy
+		// confirmed row (with a newer higher-wage row already in force) must NOT clone the old wage
+		// forward, AND (b) must clear work_policy_id on draft/pending terms rows.
+		const a4Pol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "A4 Superseded Wage Pin Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+		});
+		const a4UserId = `a4-user-${randomUUID()}`;
+		await siblingPool.query(
+			`INSERT INTO "user" (id, name, email, email_verified, created_at, updated_at)
+			 VALUES ($1, 'A4 User', $2, true, now(), now())`,
+			[a4UserId, `${a4UserId}@example.com`],
+		);
+		const {
+			rows: [a4Emp],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO employee (user_id, organization_id, role, is_active, created_at, updated_at)
+			 VALUES ($1, $2, 'employee', true, now(), now()) RETURNING id`,
+			[a4UserId, ORG_ID],
+		);
+		// Open-ended old unscoped row (€15, pinned to a4Pol) + newer confirmed row (€22, unpinned) + draft row pinned to a4Pol
+		await siblingPool.query(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, valid_from, valid_from_date,
+				status, review_state, contract_type, hourly_rate, currency, work_policy_id,
+				created_by, updated_at
+			) VALUES
+				($1, $2, '2026-01-01T00:00:00Z', '2026-01-01', 'active', 'confirmed', 'hourly', '15.00', 'EUR', $3, $4, now()),
+				($1, $2, '2026-03-01T00:00:00Z', '2026-03-01', 'active', 'confirmed', 'hourly', '22.00', 'EUR', NULL, $4, now()),
+				($1, $2, '2026-07-01T00:00:00Z', '2026-07-01', 'active', 'draft', 'hourly', '25.00', 'EUR', $3, $4, now())`,
+			[ORG_ID, a4Emp!.id, a4Pol.policy.id, USER_ID],
+		);
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: a4Pol.policy.id,
+			now, // 2026-06-01
+			data: { isActive: false },
+		});
+		const { rows: a4Rows } = await siblingPool.query<{
+			valid_from_date: string;
+			valid_until_date: string | null;
+			review_state: string;
+			hourly_rate: string | null;
+			work_policy_id: string | null;
+		}>(
+			`SELECT to_char(valid_from_date, 'YYYY-MM-DD') AS valid_from_date,
+				to_char(valid_until_date, 'YYYY-MM-DD') AS valid_until_date,
+				review_state, hourly_rate, work_policy_id
+			 FROM employee_employment_history
+			 WHERE organization_id = $1 AND employee_id = $2
+			 ORDER BY valid_from_date ASC`,
+			[ORG_ID, a4Emp!.id],
+		);
+		expect(a4Rows).toEqual([
+			{
+				valid_from_date: "2026-01-01",
+				valid_until_date: "2026-03-01",
+				review_state: "confirmed",
+				hourly_rate: "15.00",
+				work_policy_id: a4Pol.policy.id,
+			},
+			{
+				valid_from_date: "2026-03-01",
+				valid_until_date: null,
+				review_state: "confirmed",
+				hourly_rate: "22.00",
+				work_policy_id: null,
+			},
+			{
+				valid_from_date: "2026-07-01",
+				valid_until_date: null,
+				review_state: "draft",
+				hourly_rate: "25.00",
+				work_policy_id: null,
+			},
+		]);
+
 		// M5: Legacy UTC-midnight assignment starting 2026-06-10 00:00Z (June 9 20:00 America/New_York)
 		// keeps its prior-evening hours both with no preceding row (shifts back to 2026-06-09) AND
 		// when a preceding row occupies 2026-06-09 (keeps 2026-06-10..2026-06-11 date range with 04:00Z instant)!

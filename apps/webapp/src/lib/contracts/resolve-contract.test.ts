@@ -1026,5 +1026,100 @@ describe("contracts pure helpers & resolver", () => {
 		);
 		expect(crossTzRehireRes.employmentPeriodId).toBe("period-2");
 		expect(crossTzRehireRes.workPolicy).toBeNull();
+
+		// F11-1 / Astra #8: Legacy assignment ending at exact UTC midnight (2026-06-10T00:00:00Z)
+		// in a west-of-UTC org (America/New_York) MUST still cover June 9 in date-only resolution!
+		const nyLegacyPol: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-ny-utc-midnight-end",
+			name: "NY Legacy UTC Midnight Policy",
+		};
+		const nyDateOnlyRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-09"),
+				employeeCalendarTimezone: "America/New_York",
+				organizationTimezone: "America/New_York",
+				policiesById: new Map([[nyLegacyPol.id, nyLegacyPol]]),
+				contractDefaults: [],
+				confirmedTerms: [],
+				policyAssignments: [
+					{
+						id: "asgn-ny-legacy-utc-midnight",
+						policyId: nyLegacyPol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "legacy",
+						sourceEmploymentHistoryId: null,
+						isActive: true,
+						effectiveFrom: new Date("2026-01-01T00:00:00Z"),
+						effectiveUntil: new Date("2026-06-10T00:00:00Z"),
+						effectiveFromDate: "2026-01-01",
+						effectiveUntilDate: "2026-06-10",
+						priority: 2,
+						createdAt: new Date("2026-01-01T00:00:00Z"),
+					},
+				],
+			}),
+		);
+		expect(nyDateOnlyRes.workPolicy?.policyId).toBe(nyLegacyPol.id);
+
+		// Astra #10: Zero-width [D, D) unscoped confirmed terms row MUST NOT trigger inEndedTermsGap
+		// and suppress a valid active employee policy assignment!
+		const emptyUnscopedRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-15"),
+				policiesById: new Map([[nyLegacyPol.id, nyLegacyPol]]),
+				contractDefaults: [],
+				confirmedTerms: [
+					{
+						id: "terms-empty-unscoped",
+						employeeId: "emp-1",
+						employmentPeriodId: null,
+						validFrom: new Date("2026-03-01T00:00:00Z"),
+						validUntil: new Date("2026-03-01T00:00:00Z"),
+						validFromDate: "2026-03-01",
+						validUntilDate: "2026-03-01",
+						contractType: "fixed",
+						hourlyRate: null,
+						currency: "EUR",
+						weeklyContractMinutes: 2400,
+						workModel: "onsite",
+						workPolicyId: null,
+						scheduleMode: "policy",
+						presenceOverride: "inherit",
+						balanceMode: "tracked",
+						scheduleSource: "policy",
+						employmentProfile: "regular",
+						arbzgScope: "standard",
+						onCallHoursKind: null,
+						onCallWeeklyMinutes: null,
+						onCallDailyMinutes: null,
+						migratedLegacyTerms: false,
+						createdAt: new Date("2026-03-01T00:00:00Z"),
+						customDays: [],
+					},
+				],
+				policyAssignments: [
+					{
+						id: "asgn-after-empty-unscoped",
+						policyId: nyLegacyPol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "manager_assignment",
+						sourceEmploymentHistoryId: null,
+						isActive: true,
+						effectiveFrom: new Date("2026-01-01T00:00:00Z"),
+						effectiveUntil: null,
+						effectiveFromDate: "2026-01-01",
+						effectiveUntilDate: null,
+						priority: 2,
+						createdAt: new Date("2026-01-01T00:00:00Z"),
+					},
+				],
+			}),
+		);
+		expect(emptyUnscopedRes.workPolicy?.policyId).toBe(nyLegacyPol.id);
 	});
 });

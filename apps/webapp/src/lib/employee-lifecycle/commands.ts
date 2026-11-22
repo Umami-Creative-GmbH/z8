@@ -1,7 +1,13 @@
 import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { auditLog, employee, employeeEmploymentHistory, employeeManagers } from "@/db/schema";
+import {
+	auditLog,
+	employee,
+	employeeEmploymentHistory,
+	employeeEmploymentHistoryDay,
+	employeeManagers,
+} from "@/db/schema";
 import {
 	employeeDeparture,
 	employeeDepartureEvent,
@@ -12,8 +18,11 @@ import {
 import { AuditAction } from "@/lib/audit-logger";
 import {
 	type CappedPolicyAssignmentRecord,
+	findInterveningPolicyRetirementForTermsInTx,
+	lockEmployeeActivePolicyAssignmentsInTx,
 	reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx,
 	replacePolicyAssignmentWindowInTx,
+	verifyActiveWorkPolicyForShareInTx,
 } from "@/lib/contracts/policy-assignment-intervals";
 import {
 	type Clock,
@@ -34,7 +43,7 @@ import { departureCutoff, retrospectiveDepartureCutoff } from "./cutoff";
 import { queueDataExportReminder } from "./data-export-reminder";
 import { runDepartureTransaction } from "./departure-transaction";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
-import { assertReadCommitted, lockLifecycleScope } from "./locks";
+import { assertReadCommitted, lockEmployeeRow, lockLifecycleScope } from "./locks";
 import { enqueueReviewNotifications } from "./notifications";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { readReceipt as readLedgerReceipt, requestFingerprint, writeReceipt } from "./receipts";
@@ -813,7 +822,14 @@ async function correctPastDepartureDate(
 	return deps.db.transaction(async (tx) => {
 		const now = deps.clock.nowInstant();
 		const nowDate = dateFromInstant(now);
+		// Astra #2: Acquire (0) org policy advisory lock SHARED BEFORE beginCommand's (1.5)
+		// organization FOR UPDATE, then lock (2) employee FOR UPDATE and (3) active employee policy
+		// assignments ORDER BY id FOR UPDATE to strictly match universal lock order.
+		const orgLockKey = `contract_default_org:${actor.organizationId}`;
+		await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
 		const target = await beginCommand(tx, actor, input.employeeId);
+		await lockEmployeeRow(tx, { organizationId: actor.organizationId, employeeId: target.id });
+		await lockEmployeeActivePolicyAssignmentsInTx(tx, actor.organizationId, target.id);
 		const replay = await readReceipt<CorrectPastDepartureDateResult>(
 			tx,
 			actor,
@@ -966,12 +982,13 @@ async function correctPastDepartureDate(
 
 		// Keep the stint's closing confirmed employment terms aligned with the corrected date.
 		if (newCutoffDate.getTime() > previousCutoff.getTime()) {
-			const [finalTerm] = await tx
+			const [finalTermRow] = await tx
 				.select({
-					id: employeeEmploymentHistory.id,
-					validFrom: employeeEmploymentHistory.validFrom,
-					validUntil: employeeEmploymentHistory.validUntil,
-					validUntilDate: employeeEmploymentHistory.validUntilDate,
+					row: employeeEmploymentHistory,
+					validFromDateIso: sql<string>`to_char(${employeeEmploymentHistory.validFromDate}, 'YYYY-MM-DD')`,
+					validUntilDateIso: sql<
+						string | null
+					>`to_char(${employeeEmploymentHistory.validUntilDate}, 'YYYY-MM-DD')`,
 				})
 				.from(employeeEmploymentHistory)
 				.where(
@@ -985,20 +1002,113 @@ async function correctPastDepartureDate(
 				)
 				.orderBy(desc(employeeEmploymentHistory.validFrom))
 				.limit(1);
+			const finalTerm = finalTermRow?.row;
 			if (
 				finalTerm &&
 				(finalTerm.validUntil === null ||
 					finalTerm.validUntil.getTime() === previousCutoff.getTime() ||
-					finalTerm.validUntilDate === previousCutoffLocalDate)
+					finalTermRow.validUntilDateIso === previousCutoffLocalDate)
 			) {
-				await tx.execute(sql`
-					UPDATE employee_employment_history
-					SET valid_until = ${newCutoffDate},
-						valid_until_date = GREATEST(valid_from_date, ${nextCutoff.cutoffLocalDate}::date),
-						updated_at = ${nowDate}
-					WHERE organization_id = ${actor.organizationId}
-						AND id = ${finalTerm.id}::uuid
-				`);
+				// Astra #5: If the closing terms row carries an unlinked policy pin whose policy was
+				// retired between the old and new cutoffs, cap the pinned row at the retirement date
+				// and emit a continuation row with `workPolicyId = null` so the retired pin never revives!
+				const interveningRetirementDate = finalTerm.workPolicyId
+					? await findInterveningPolicyRetirementForTermsInTx(tx, {
+							organizationId: actor.organizationId,
+							policyId: finalTerm.workPolicyId,
+							effectiveFromDate: finalTermRow.validFromDateIso,
+							createdAt: finalTerm.createdAt,
+							previousCutoffLocalDate,
+							nextCutoffLocalDate: nextCutoff.cutoffLocalDate,
+						})
+					: null;
+
+				if (interveningRetirementDate !== null) {
+					const retirementUtcMidnight = utcMidnight(parsePlainDate(interveningRetirementDate));
+					if (interveningRetirementDate > previousCutoffLocalDate) {
+						await tx.execute(sql`
+							UPDATE employee_employment_history
+							SET valid_until = ${retirementUtcMidnight},
+								valid_until_date = GREATEST(valid_from_date, ${interveningRetirementDate}::date),
+								updated_at = ${nowDate}
+							WHERE organization_id = ${actor.organizationId}
+								AND id = ${finalTerm.id}::uuid
+						`);
+					}
+					if (interveningRetirementDate < nextCutoff.cutoffLocalDate) {
+						const [continuation] = await tx
+							.insert(employeeEmploymentHistory)
+							.values({
+								employeeId: finalTerm.employeeId,
+								organizationId: finalTerm.organizationId,
+								employmentPeriodId: finalTerm.employmentPeriodId,
+								validFrom: retirementUtcMidnight,
+								validUntil: newCutoffDate,
+								validFromDate: interveningRetirementDate,
+								validUntilDate: nextCutoff.cutoffLocalDate,
+								status: finalTerm.status,
+								contractType: finalTerm.contractType,
+								weeklyContractMinutes: finalTerm.weeklyContractMinutes,
+								probationStartsOn: finalTerm.probationStartsOn,
+								probationEndsOn: finalTerm.probationEndsOn,
+								workModel: finalTerm.workModel,
+								workPolicyId: null,
+								scheduleMode: finalTerm.scheduleMode,
+								presenceOverride: finalTerm.presenceOverride,
+								balanceMode: finalTerm.balanceMode,
+								scheduleSource: finalTerm.scheduleSource,
+								sourceTemplateVersionId: finalTerm.sourceTemplateVersionId,
+								sourceBatchItemId: null,
+								employmentProfile: finalTerm.employmentProfile,
+								arbzgScope: finalTerm.arbzgScope,
+								onCallHoursKind: finalTerm.onCallHoursKind,
+								onCallWeeklyMinutes: finalTerm.onCallWeeklyMinutes,
+								onCallDailyMinutes: finalTerm.onCallDailyMinutes,
+								migratedLegacyTerms: finalTerm.migratedLegacyTerms,
+								hourlyRate: finalTerm.hourlyRate,
+								currency: finalTerm.currency,
+								reviewState: finalTerm.reviewState,
+								changeReason: finalTerm.changeReason,
+								createdBy: actor.userId,
+								createdAt: nowDate,
+								updatedBy: actor.userId,
+								updatedAt: nowDate,
+							})
+							.returning({ id: employeeEmploymentHistory.id });
+						if (continuation) {
+							const customDays = await tx
+								.select()
+								.from(employeeEmploymentHistoryDay)
+								.where(
+									and(
+										eq(employeeEmploymentHistoryDay.organizationId, actor.organizationId),
+										eq(employeeEmploymentHistoryDay.employmentHistoryId, finalTerm.id),
+									),
+								);
+							if (customDays.length > 0) {
+								await tx.insert(employeeEmploymentHistoryDay).values(
+									customDays.map((d) => ({
+										organizationId: actor.organizationId,
+										employmentHistoryId: continuation.id,
+										dayOfWeek: d.dayOfWeek,
+										minutesPerDay: d.minutesPerDay,
+										isWorkDay: d.isWorkDay,
+										latestClockIn: d.latestClockIn,
+									})),
+								);
+							}
+						}
+					}
+				} else {
+					await tx.execute(sql`
+						UPDATE employee_employment_history
+						SET valid_until = ${newCutoffDate},
+							valid_until_date = GREATEST(valid_from_date, ${nextCutoff.cutoffLocalDate}::date),
+							updated_at = ${nowDate}
+						WHERE organization_id = ${actor.organizationId}
+							AND id = ${finalTerm.id}::uuid
+					`);
+				}
 			}
 		} else if (newCutoffDate.getTime() < previousCutoff.getTime()) {
 			await tx.execute(sql`
@@ -1173,7 +1283,14 @@ async function recordHistoricalDepartureDate(
 	return deps.db.transaction(async (tx) => {
 		const now = deps.clock.nowInstant();
 		const nowDate = dateFromInstant(now);
+		// Astra #2: Acquire (0) org policy advisory lock SHARED BEFORE beginCommand's (1.5)
+		// organization FOR UPDATE, then lock (2) employee FOR UPDATE and (3) active employee policy
+		// assignments ORDER BY id FOR UPDATE to strictly match universal lock order.
+		const orgLockKey = `contract_default_org:${actor.organizationId}`;
+		await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
 		const target = await beginCommand(tx, actor, input.employeeId);
+		await lockEmployeeRow(tx, { organizationId: actor.organizationId, employeeId: target.id });
+		await lockEmployeeActivePolicyAssignmentsInTx(tx, actor.organizationId, target.id);
 		const replay = await readReceipt<RecordHistoricalDepartureDateResult>(
 			tx,
 			actor,
@@ -1451,7 +1568,14 @@ async function rehireEmployee(
 	return deps.db.transaction(async (tx) => {
 		const now = deps.clock.nowInstant();
 		const nowDate = dateFromInstant(now);
+		// Astra #2: Acquire (0) org policy advisory lock SHARED BEFORE beginCommand's (1.5)
+		// organization FOR UPDATE, then lock (2) employee FOR UPDATE and (3) active employee policy
+		// assignments ORDER BY id FOR UPDATE to strictly match universal lock order.
+		const orgLockKey = `contract_default_org:${actor.organizationId}`;
+		await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
 		const target = await beginCommand(tx, actor, input.employeeId);
+		await lockEmployeeRow(tx, { organizationId: actor.organizationId, employeeId: target.id });
+		await lockEmployeeActivePolicyAssignmentsInTx(tx, actor.organizationId, target.id);
 		const replay = await readReceipt<RehireResult>(tx, actor, input.requestId, fingerprint);
 		if (replay) return replay;
 
@@ -1644,16 +1768,20 @@ async function assertRehireTermsBelongToOrganization(
 	if (input.contractType === "hourly" && !input.hourlyRate) {
 		throw new DepartureCommandError("rehire_terms_invalid");
 	}
+	// Astra #3: Require an ACTIVE organization-owned work policy locked FOR SHARE (level 4).
+	const policyActive = await verifyActiveWorkPolicyForShareInTx(
+		tx,
+		organizationId,
+		input.workPolicyId,
+	);
+	if (!policyActive) {
+		throw new DepartureCommandError("rehire_terms_invalid");
+	}
 	const facts = await tx.execute<{
-		policy_ok: boolean;
 		team_ok: boolean;
 		manager_ok: boolean;
 	}>(sql`
 		SELECT
-			EXISTS (
-				SELECT 1 FROM work_policy
-				WHERE id = ${input.workPolicyId}::uuid AND organization_id = ${organizationId}
-			) AS policy_ok,
 			(${input.teamId}::uuid IS NULL OR EXISTS (
 				SELECT 1 FROM team WHERE id = ${input.teamId}::uuid AND organization_id = ${organizationId}
 			)) AS team_ok,
@@ -1664,7 +1792,7 @@ async function assertRehireTermsBelongToOrganization(
 			)) AS manager_ok
 	`);
 	const checks = facts.rows[0];
-	if (!checks?.policy_ok || !checks.team_ok || !checks.manager_ok) {
+	if (!checks?.team_ok || !checks.manager_ok) {
 		throw new DepartureCommandError("rehire_terms_invalid");
 	}
 }

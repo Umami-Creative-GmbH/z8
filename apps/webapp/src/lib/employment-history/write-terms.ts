@@ -5,7 +5,6 @@ import {
 	employee,
 	employeeEmploymentHistory,
 	employeeEmploymentHistoryDay,
-	workPolicy,
 } from "@/db/schema";
 import type {
 	ArbzgScope,
@@ -140,21 +139,46 @@ async function requireTermsEmploymentPeriod(
 	}
 }
 
+async function lockOrgPolicyShared(tx: TermsWriteClient, organizationId: string) {
+	// F11-3 / Astra #3: Align terms writes with universal lock order
+	// (0 org policy advisory SHARED -> 1.5 organization FOR KEY SHARE -> 2 employee -> 4 work_policy FOR SHARE).
+	const orgLockKey = `contract_default_org:${organizationId}`;
+	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${organizationId}
+		FOR KEY SHARE
+	`);
+}
+
 async function requireOrganizationWorkPolicy(
 	tx: TermsWriteClient,
 	organizationId: string,
 	workPolicyId: string,
+	requireActive = true,
 ) {
-	const [policy] = await tx
-		.select({ id: workPolicy.id })
-		.from(workPolicy)
-		.where(and(eq(workPolicy.id, workPolicyId), eq(workPolicy.organizationId, organizationId)))
-		.limit(1);
+	const result = await tx.execute<{ id: string; is_active: boolean }>(sql`
+		SELECT id, is_active
+		FROM work_policy
+		WHERE id = ${workPolicyId}::uuid
+			AND organization_id = ${organizationId}
+		LIMIT 1
+		FOR SHARE
+	`);
+	const policy = result.rows[0];
 	if (!policy) {
 		throw new NotFoundError({
 			message: "Work policy not found",
 			entityType: "work_policy",
 			entityId: workPolicyId,
+		});
+	}
+	if (requireActive && !policy.is_active) {
+		throw new ValidationError({
+			message: "Inactive work policies cannot be assigned to employment terms.",
+			field: "workPolicyId",
+			refusal: "work_policy_inactive",
 		});
 	}
 }
@@ -315,6 +339,9 @@ export async function writeEmploymentTerms(
 	input: TermsWriteScope & { terms: EmploymentTermsInput },
 ): Promise<EmployeeEmploymentHistory> {
 	const scope = { ...input, now: input.now ?? currentTimestamp() };
+	if (input.terms.workPolicyId) {
+		await lockOrgPolicyShared(tx, scope.organizationId);
+	}
 	await lockEmployee(tx, scope);
 	return insertTerms(tx, scope, input.terms);
 }
@@ -325,6 +352,7 @@ export async function confirmEmploymentTerms(
 	input: TermsWriteScope & { termsId: string },
 ): Promise<EmployeeEmploymentHistory> {
 	const scope = { ...input, now: input.now ?? currentTimestamp() };
+	await lockOrgPolicyShared(tx, scope.organizationId);
 	await lockEmployee(tx, scope);
 
 	const existing = await tx
@@ -413,6 +441,7 @@ export async function changeHourlyWage(
 	},
 ): Promise<EmployeeEmploymentHistory> {
 	const scope = { ...input, now: input.now ?? currentTimestamp() };
+	await lockOrgPolicyShared(tx, scope.organizationId);
 	await lockEmployee(tx, scope);
 
 	const inForce = await loadTermsInForceOn(tx, {

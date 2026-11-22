@@ -354,9 +354,11 @@ async function validateReactivationPresenceLocationsInTx(
 }
 
 /**
- * Acquires the organization-wide contract-default advisory lock in EXCLUSIVE mode BEFORE
- * locking policy assignments or `work_policy`, serializing policy retirement against ALL
- * concurrent default schedulers (including brand-new scopes) without deadlocking (H8 / F9-1 / M3).
+ * Acquires the organization-wide contract-default advisory lock in EXCLUSIVE mode (level 0)
+ * and `organization FOR KEY SHARE` (level 1.5) BEFORE locking employees (level 2), policy
+ * assignments (level 3), or `work_policy` (level 4), serializing policy retirement against ALL
+ * concurrent default schedulers, employee policy writers, and lifecycle commands without
+ * deadlocking on `organization` FK checks (H8 / F9-1 / M3 / Astra #2).
  */
 export async function lockContractDefaultsOrgExclusiveInTx(
 	tx: PolicyTransaction,
@@ -364,6 +366,12 @@ export async function lockContractDefaultsOrgExclusiveInTx(
 ): Promise<void> {
 	const orgLockKey = `contract_default_org:${organizationId}`;
 	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${orgLockKey}))`);
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${organizationId}
+		FOR KEY SHARE
+	`);
 }
 
 /**
@@ -377,8 +385,8 @@ export async function lockPolicyAssignmentsForRetirementInTx(
 	organizationId: string,
 	policyId: string,
 ): Promise<void> {
-	// Level (2): Pre-lock every employee with a confirmed terms pin to this policy FOR KEY SHARE
-	// before locking assignments so Step 1d's continuation-row FK insert never inverts (2) <-> (3).
+	// Level (2): Pre-lock every employee with any terms pin (confirmed, draft, or pending) to this
+	// policy FOR KEY SHARE before locking assignments so Step 1d never inverts (2) <-> (3) (F11-3).
 	await tx.execute(sql`
 		SELECT e.id
 		FROM employee e
@@ -389,7 +397,6 @@ export async function lockPolicyAssignmentsForRetirementInTx(
 				WHERE h.organization_id = e.organization_id
 					AND h.employee_id = e.id
 					AND h.work_policy_id = ${policyId}::uuid
-					AND h.review_state = 'confirmed'
 			)
 		ORDER BY e.id
 		FOR KEY SHARE
@@ -544,11 +551,21 @@ export async function retirePolicyReferencesInTx(
 			)
 	`);
 
-	// 1d. H5 / F10-1 / Astra #1 & #3: Split or clear unlinked confirmed `employee_employment_history`
+	// 1d-drafts (F11-3 / Astra #3): Clear retired policy pins from unconfirmed (draft/pending)
+	// employment-history rows so confirming a stale draft later can never revive a retired policy.
+	await tx.execute(sql`
+		UPDATE employee_employment_history
+		SET work_policy_id = NULL, updated_at = ${now}
+		WHERE organization_id = ${organizationId}
+			AND work_policy_id = ${policyId}::uuid
+			AND review_state IN ('draft', 'pending')
+	`);
+
+	// 1d. H5 / F10-1 / Astra #1, #3, #4: Split or clear unlinked confirmed `employee_employment_history`
 	//     terms pins referencing this policy (just like `contract_default` below) so historical dates
 	//     before `orgTodayDate` keep resolving this policy (even when overlapping another manager
 	//     assignment), today and future dates stop applying it, later reactivation never revives it,
-	//     and `work_policy_assignment` provenance/exclusion constraints are never violated.
+	//     and already-superseded overlapping legacy rows are capped WITHOUT cloning stale wages (Astra #4).
 	const unlinkedTerms = await tx
 		.select({
 			row: employeeEmploymentHistory,
@@ -596,6 +613,108 @@ export async function retirePolicyReferencesInTx(
 			continue;
 		}
 
+		// Astra #4: Check whether a newer non-empty confirmed terms row already supersedes `term`
+		// on or before `orgTodayDate` (possible for legacy `employment_period_id IS NULL` rows).
+		// If already superseded, cap `term` without inserting a continuation row so stale wages/terms
+		// can never overtake the newer winning row!
+		const supersedingRes = await tx.execute(sql`
+			SELECT
+				MIN(to_char(newer.valid_from_date, 'YYYY-MM-DD')) FILTER (
+					WHERE (
+						(${term.employmentPeriodId !== null} AND newer.employment_period_id = ${term.employmentPeriodId}::uuid)
+						OR (${term.employmentPeriodId === null} AND newer.employment_period_id IS NULL)
+					)
+					AND (
+						newer.valid_from_date > ${fromDate}::date
+						OR (
+							newer.valid_from_date = ${fromDate}::date
+							AND (
+								newer.created_at > ${term.createdAt}
+								OR (newer.created_at = ${term.createdAt} AND newer.id > ${term.id}::uuid)
+							)
+						)
+					)
+				) AS "sameScopeSupersedingFromDate",
+				EXISTS (
+					SELECT 1
+					FROM employee_employment_period open_p
+					JOIN employee_employment_history ps
+						ON ps.organization_id = open_p.organization_id
+						AND ps.employee_id = open_p.employee_id
+						AND ps.employment_period_id = open_p.id
+					WHERE open_p.organization_id = ${organizationId}
+						AND open_p.employee_id = ${term.employeeId}::uuid
+						AND open_p.status = 'open'
+						AND ps.review_state = 'confirmed'
+						AND (ps.valid_until_date IS NULL OR ps.valid_until_date > ps.valid_from_date)
+				) AS "hasOpenPeriodScopedTerms"
+			FROM employee_employment_history newer
+			WHERE newer.organization_id = ${organizationId}
+				AND newer.employee_id = ${term.employeeId}::uuid
+				AND newer.review_state = 'confirmed'
+				AND newer.id <> ${term.id}::uuid
+				AND (newer.valid_until_date IS NULL OR newer.valid_until_date > newer.valid_from_date)
+		`);
+		const supRow = toRows(supersedingRes)[0] as
+			| {
+					sameScopeSupersedingFromDate: string | null;
+					hasOpenPeriodScopedTerms: boolean;
+			  }
+			| undefined;
+		const supersedingFromDate = supRow?.sameScopeSupersedingFromDate ?? null;
+		const supersededByPeriodScoped =
+			term.employmentPeriodId === null && Boolean(supRow?.hasOpenPeriodScopedTerms);
+
+		if (supersedingFromDate !== null && supersedingFromDate <= orgTodayDate) {
+			if (supersedingFromDate <= fromDate) {
+				await tx
+					.update(employeeEmploymentHistory)
+					.set({ workPolicyId: null, updatedAt: now })
+					.where(
+						and(
+							eq(employeeEmploymentHistory.id, term.id),
+							eq(employeeEmploymentHistory.organizationId, organizationId),
+						),
+					);
+			} else {
+				const capDate =
+					validUntilDateIso !== null && validUntilDateIso < supersedingFromDate
+						? validUntilDateIso
+						: supersedingFromDate;
+				await tx
+					.update(employeeEmploymentHistory)
+					.set({
+						validUntilDate: capDate,
+						validUntil: utcMidnight(parsePlainDate(capDate)),
+						updatedAt: now,
+					})
+					.where(
+						and(
+							eq(employeeEmploymentHistory.id, term.id),
+							eq(employeeEmploymentHistory.organizationId, organizationId),
+						),
+					);
+			}
+			continue;
+		}
+
+		if (supersededByPeriodScoped) {
+			await tx
+				.update(employeeEmploymentHistory)
+				.set({
+					validUntilDate: orgTodayDate,
+					validUntil: orgTodayMidnight,
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(employeeEmploymentHistory.id, term.id),
+						eq(employeeEmploymentHistory.organizationId, organizationId),
+					),
+				);
+			continue;
+		}
+
 		// Cap historical terms segment at orgTodayDate and insert continuation without the retired policy.
 		await tx
 			.update(employeeEmploymentHistory)
@@ -611,6 +730,18 @@ export async function retirePolicyReferencesInTx(
 				),
 			);
 
+		const continuationUntilDate =
+			supersedingFromDate !== null &&
+			(validUntilDateIso === null || supersedingFromDate < validUntilDateIso)
+				? supersedingFromDate
+				: validUntilDateIso;
+		const continuationUntilTs =
+			continuationUntilDate !== null
+				? continuationUntilDate === validUntilDateIso && term.validUntil !== null
+					? term.validUntil
+					: utcMidnight(parsePlainDate(continuationUntilDate))
+				: null;
+
 		const [continuation] = await tx
 			.insert(employeeEmploymentHistory)
 			.values({
@@ -618,9 +749,9 @@ export async function retirePolicyReferencesInTx(
 				organizationId: term.organizationId,
 				employmentPeriodId: term.employmentPeriodId,
 				validFrom: orgTodayMidnight,
-				validUntil: term.validUntil,
+				validUntil: continuationUntilTs,
 				validFromDate: orgTodayDate,
-				validUntilDate: validUntilDateIso,
+				validUntilDate: continuationUntilDate,
 				status: term.status,
 				contractType: term.contractType,
 				weeklyContractMinutes: term.weeklyContractMinutes,
