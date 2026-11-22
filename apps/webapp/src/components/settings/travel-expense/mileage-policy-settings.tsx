@@ -20,18 +20,19 @@ import {
 	policySourceLabel,
 	vehicleLabel,
 } from "@/components/travel-expenses/report/mileage-labels";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -156,7 +157,7 @@ export function MileagePolicySettingsCard() {
 				)}
 				{data && <MileagePolicyContent data={data} onOpen={setTarget} />}
 			</CardContent>
-			<MileagePolicyVersionDialog
+			<MileagePolicyVersionPanel
 				key={target ? JSON.stringify(target) : "closed"}
 				target={target}
 				onClose={() => setTarget(null)}
@@ -487,7 +488,7 @@ function ReplaceMileageVersionAlert({ effectiveFrom }: { effectiveFrom: string }
 	);
 }
 
-function MileagePolicyVersionDialog({
+function MileagePolicyVersionPanel({
 	target,
 	onClose,
 }: {
@@ -598,101 +599,130 @@ function MileagePolicyVersionDialog({
 	});
 
 	return (
-		<Dialog open={target !== null} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel
+			open={target !== null}
+			onOpenChange={(open) => !open && !form.state.isSubmitting && onClose()}
+		>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isDefault
 							? t("settings.travelExpenses.mileage.adoptTitle", "Adopt the German statutory rates")
 							: t("settings.travelExpenses.mileage.addTitle", "Add a mileage rate version")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.travelExpenses.mileage.dialogDescription",
 							"The version applies from its start date until the next version starts. Earlier versions and submitted reports are not changed.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					noValidate
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (form.state.isSubmitting) return;
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="effectiveFrom" validators={validators("effectiveFrom")}>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.travelExpenses.mileage.validFrom", "Valid from")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<DatePicker
-										name="effectiveFrom"
-										value={field.state.value}
-										onChange={(value) => {
-											field.handleChange(value);
-											setReplaceVersionId(null);
-										}}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					{target?.source === "statutory_default" ? (
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.travelExpenses.mileage.adoptDescription",
-								"Rates and source are taken from the verified catalog: {reference} ({version}).",
-								{ reference: target.entry.reference, version: target.entry.version },
+					<ActionPanelBody className="space-y-4">
+						<form.Field name="effectiveFrom" validators={validators("effectiveFrom")}>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.travelExpenses.mileage.validFrom", "Valid from")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<DatePicker
+											name="effectiveFrom"
+											value={field.state.value}
+											onChange={(value) => {
+												field.handleChange(value);
+												setReplaceVersionId(null);
+											}}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
 							)}
-						</p>
-					) : (
-						<>
-							<form.Field name="currency" validators={validators("currency")}>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("settings.travelExpenses.mileage.currency", "Currency")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<CurrencySelect
-												value={field.state.value}
-												onValueChange={field.handleChange}
-												onBlur={field.handleBlur}
-												accepts={isSupportedCurrency}
-												aria-invalid={fieldHasError(field)}
-											/>
-										</TFormControl>
-										<TFormDescription>
-											{t(
-												"settings.travelExpenses.mileage.currencyDescription",
-												"Must match the reimbursement currency of reports; mileage is never converted.",
-											)}
-										</TFormDescription>
-										<TFormMessage field={field} />
-									</TFormItem>
+						</form.Field>
+
+						{target?.source === "statutory_default" ? (
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.travelExpenses.mileage.adoptDescription",
+									"Rates and source are taken from the verified catalog: {reference} ({version}).",
+									{ reference: target.entry.reference, version: target.entry.version },
 								)}
-							</form.Field>
-							{MILEAGE_VEHICLES.map((vehicle) => (
-								<form.Field key={vehicle} name={vehicle} validators={validators(vehicle)}>
+							</p>
+						) : (
+							<>
+								<form.Field name="currency" validators={validators("currency")}>
 									{(field) => (
 										<TFormItem>
 											<TFormLabel hasError={fieldHasError(field)}>
-												{t("settings.travelExpenses.mileage.rateFor", "Rate per km: {vehicle}", {
-													vehicle: vehicleLabel(t, vehicle) ?? vehicle,
-												})}
+												{t("settings.travelExpenses.mileage.currency", "Currency")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<CurrencySelect
+													value={field.state.value}
+													onValueChange={field.handleChange}
+													onBlur={field.handleBlur}
+													accepts={isSupportedCurrency}
+													aria-invalid={fieldHasError(field)}
+												/>
+											</TFormControl>
+											<TFormDescription>
+												{t(
+													"settings.travelExpenses.mileage.currencyDescription",
+													"Must match the reimbursement currency of reports; mileage is never converted.",
+												)}
+											</TFormDescription>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+								{MILEAGE_VEHICLES.map((vehicle) => (
+									<form.Field key={vehicle} name={vehicle} validators={validators(vehicle)}>
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={fieldHasError(field)}>
+													{t("settings.travelExpenses.mileage.rateFor", "Rate per km: {vehicle}", {
+														vehicle: vehicleLabel(t, vehicle) ?? vehicle,
+													})}
+												</TFormLabel>
+												<TFormControl hasError={fieldHasError(field)}>
+													<Input
+														name={vehicle}
+														inputMode="decimal"
+														autoComplete="off"
+														placeholder="0.30"
+														value={field.state.value}
+														onChange={(event) => field.handleChange(event.target.value)}
+														onBlur={field.handleBlur}
+													/>
+												</TFormControl>
+												<TFormMessage field={field} />
+											</TFormItem>
+										)}
+									</form.Field>
+								))}
+								<form.Field name="sourceReference" validators={validators("sourceReference")}>
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>
+												{t("settings.travelExpenses.mileage.sourceReference", "Source")}
 											</TFormLabel>
 											<TFormControl hasError={fieldHasError(field)}>
 												<Input
-													name={vehicle}
-													inputMode="decimal"
+													name="sourceReference"
 													autoComplete="off"
-													placeholder="0.30"
+													placeholder={t(
+														"settings.travelExpenses.mileage.sourceReferencePlaceholder",
+														"e.g. Travel policy, works agreement 3/2026",
+													)}
 													value={field.state.value}
 													onChange={(event) => field.handleChange(event.target.value)}
 													onBlur={field.handleBlur}
@@ -702,76 +732,55 @@ function MileagePolicyVersionDialog({
 										</TFormItem>
 									)}
 								</form.Field>
-							))}
-							<form.Field name="sourceReference" validators={validators("sourceReference")}>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("settings.travelExpenses.mileage.sourceReference", "Source")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												name="sourceReference"
-												autoComplete="off"
-												placeholder={t(
-													"settings.travelExpenses.mileage.sourceReferencePlaceholder",
-													"e.g. Travel policy, works agreement 3/2026",
-												)}
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												onBlur={field.handleBlur}
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-						</>
-					)}
-
-					<form.Field name="note" validators={validators("note")}>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.travelExpenses.mileage.note", "Note (optional)")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Input
-										name="note"
-										autoComplete="off"
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
+							</>
 						)}
-					</form.Field>
 
-					{replaceVersionId && (
-						<ReplaceMileageVersionAlert effectiveFrom={form.state.values.effectiveFrom} />
-					)}
+						<form.Field name="note" validators={validators("note")}>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.travelExpenses.mileage.note", "Note (optional)")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Input
+											name="note"
+											autoComplete="off"
+											value={field.state.value}
+											onChange={(event) => field.handleChange(event.target.value)}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
 
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onClose}>
-							{t("common.cancel", "Cancel")}
-						</Button>
+						{replaceVersionId && (
+							<ReplaceMileageVersionAlert effectiveFrom={form.state.values.effectiveFrom} />
+						)}
+					</ActionPanelBody>
+
+					<ActionPanelFooter>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
-								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting && (
-										<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-									)}
-									{replaceVersionId
-										? t("settings.travelExpenses.mileage.replaceConfirm", "Replace version")
-										: t("settings.travelExpenses.mileage.activate", "Activate version")}
-								</Button>
+								<>
+									<Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>
+										{t("common.cancel", "Cancel")}
+									</Button>
+									<Button type="submit" disabled={isSubmitting}>
+										{isSubmitting && (
+											<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+										)}
+										{replaceVersionId
+											? t("settings.travelExpenses.mileage.replaceConfirm", "Replace version")
+											: t("settings.travelExpenses.mileage.activate", "Activate version")}
+									</Button>
+								</>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

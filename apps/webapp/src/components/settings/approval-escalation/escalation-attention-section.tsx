@@ -14,23 +14,18 @@ import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { listApprovalEscalationCandidates } from "@/app/[locale]/(app)/settings/approval-policies/escalation-actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,35 +52,19 @@ import {
 
 function formatEvidenceValue(value: unknown): string {
 	if (value === null || value === undefined) return "—";
-	if (
-		typeof value === "string" ||
-		typeof value === "number" ||
-		typeof value === "boolean"
-	) {
+	if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
 		return String(value);
 	}
 	return JSON.stringify(value);
 }
 
-function AttentionFacts({
-	item,
-	t,
-}: {
-	item: EscalationAttentionView;
-	t: EscalationTranslate;
-}) {
+function AttentionFacts({ item, t }: { item: EscalationAttentionView; t: EscalationTranslate }) {
 	const displayContext = useDisplayContext();
 	const facts: Array<[string, string]> = [
 		[
-			t(
-				"settings.approvalEscalation.attention.currentApprover",
-				"Current assignment",
-			),
+			t("settings.approvalEscalation.attention.currentApprover", "Current assignment"),
 			item.currentApprover?.name ??
-				t(
-					"settings.approvalEscalation.attention.unknownApprover",
-					"Not recorded",
-				),
+				t("settings.approvalEscalation.attention.unknownApprover", "Not recorded"),
 		],
 		[
 			t("settings.approvalEscalation.attention.approvalType", "Approval"),
@@ -97,14 +76,10 @@ function AttentionFacts({
 		],
 		[
 			t("settings.approvalEscalation.attention.lastObserved", "Last observed"),
-			t(
-				"settings.approvalEscalation.attention.lastObservedValue",
-				"{date} ({count}×)",
-				{
-					date: formatEscalationInstant(item.lastObservedAt, displayContext),
-					count: item.observationCount,
-				},
-			),
+			t("settings.approvalEscalation.attention.lastObservedValue", "{date} ({count}×)", {
+				date: formatEscalationInstant(item.lastObservedAt, displayContext),
+				count: item.observationCount,
+			}),
 		],
 	];
 	if (item.deliveryChannel) {
@@ -115,10 +90,7 @@ function AttentionFacts({
 	}
 	if (item.policyRevision !== null) {
 		facts.push([
-			t(
-				"settings.approvalEscalation.attention.policyRevision",
-				"Policy revision",
-			),
+			t("settings.approvalEscalation.attention.policyRevision", "Policy revision"),
 			String(item.policyRevision),
 		]);
 	}
@@ -170,16 +142,8 @@ function CopyTechnicalValueButton({
 			onClick={handleCopy}
 			aria-label={
 				copied
-					? t(
-							"settings.approvalEscalation.attention.technical.copied",
-							"{label} copied",
-							{ label },
-						)
-					: t(
-							"settings.approvalEscalation.attention.technical.copy",
-							"Copy {label}",
-							{ label },
-						)
+					? t("settings.approvalEscalation.attention.technical.copied", "{label} copied", { label })
+					: t("settings.approvalEscalation.attention.technical.copy", "Copy {label}", { label })
 			}
 		>
 			{copied ? (
@@ -201,62 +165,40 @@ function AttentionTechnicalDetails({
 }) {
 	const rows: Array<[string, string]> = [
 		[
-			t(
-				"settings.approvalEscalation.attention.technical.attentionId",
-				"Attention item ID",
-			),
+			t("settings.approvalEscalation.attention.technical.attentionId", "Attention item ID"),
 			item.id,
 		],
 	];
 	if (item.approvalRequestId) {
 		rows.push([
-			t(
-				"settings.approvalEscalation.attention.technical.approvalRequestId",
-				"Approval request ID",
-			),
+			t("settings.approvalEscalation.attention.technical.approvalRequestId", "Approval request ID"),
 			item.approvalRequestId,
 		]);
 	}
 	if (item.workflowId) {
 		rows.push([
-			t(
-				"settings.approvalEscalation.attention.technical.workflowId",
-				"Workflow ID",
-			),
+			t("settings.approvalEscalation.attention.technical.workflowId", "Workflow ID"),
 			item.workflowId,
 		]);
 	}
 	if (item.assignmentId) {
 		rows.push([
-			t(
-				"settings.approvalEscalation.attention.technical.assignmentId",
-				"Assignment ID",
-			),
+			t("settings.approvalEscalation.attention.technical.assignmentId", "Assignment ID"),
 			item.assignmentId,
 		]);
 	}
 	if (item.approvalType) {
 		rows.push([
-			t(
-				"settings.approvalEscalation.attention.technical.approvalType",
-				"Approval type code",
-			),
+			t("settings.approvalEscalation.attention.technical.approvalType", "Approval type code"),
 			item.approvalType,
 		]);
 	}
 	const references = [
-		...new Set(
-			item.attempts.flatMap((attempt) =>
-				attempt.reference ? [attempt.reference] : [],
-			),
-		),
+		...new Set(item.attempts.flatMap((attempt) => (attempt.reference ? [attempt.reference] : []))),
 	];
 	for (const reference of references) {
 		rows.push([
-			t(
-				"settings.approvalEscalation.attention.technical.attemptReference",
-				"Attempt reference",
-			),
+			t("settings.approvalEscalation.attention.technical.attemptReference", "Attempt reference"),
 			reference,
 		]);
 	}
@@ -264,22 +206,14 @@ function AttentionTechnicalDetails({
 	return (
 		<details className="group/technical">
 			<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-				{t(
-					"settings.approvalEscalation.attention.technical.title",
-					"Technical details",
-				)}
+				{t("settings.approvalEscalation.attention.technical.title", "Technical details")}
 			</summary>
 			<dl className="mt-2 space-y-1">
 				{rows.map(([label, value]) => (
-					<div
-						key={`${label}-${value}`}
-						className="flex min-w-0 flex-wrap items-center gap-x-2"
-					>
+					<div key={`${label}-${value}`} className="flex min-w-0 flex-wrap items-center gap-x-2">
 						<dt className="text-muted-foreground">{label}</dt>
 						<dd className="flex min-w-0 items-center gap-1">
-							<span className="min-w-0 break-all font-mono text-xs leading-5">
-								{value}
-							</span>
+							<span className="min-w-0 break-all font-mono text-xs leading-5">{value}</span>
 							<CopyTechnicalValueButton label={label} value={value} t={t} />
 						</dd>
 					</div>
@@ -289,23 +223,14 @@ function AttentionTechnicalDetails({
 	);
 }
 
-function AttentionDetails({
-	item,
-	t,
-}: {
-	item: EscalationAttentionView;
-	t: EscalationTranslate;
-}) {
+function AttentionDetails({ item, t }: { item: EscalationAttentionView; t: EscalationTranslate }) {
 	const displayContext = useDisplayContext();
 	const evidence = Object.entries(item.evidence);
 
 	return (
 		<details className="group text-sm">
 			<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-				{t(
-					"settings.approvalEscalation.attention.details",
-					"Evidence, attempts and history",
-				)}
+				{t("settings.approvalEscalation.attention.details", "Evidence, attempts and history")}
 			</summary>
 			<div className="mt-3 space-y-4">
 				<section className="space-y-1">
@@ -318,9 +243,7 @@ function AttentionDetails({
 						<dl className="space-y-1">
 							{evidence.map(([key, value]) => (
 								<div key={key} className="flex min-w-0 flex-wrap gap-x-2">
-									<dt className="text-muted-foreground">
-										{evidenceKeyLabel(key, t)}
-									</dt>
+									<dt className="text-muted-foreground">{evidenceKeyLabel(key, t)}</dt>
 									<dd className="min-w-0 break-all font-mono text-xs leading-5">
 										{formatEvidenceValue(value)}
 									</dd>
@@ -349,8 +272,8 @@ function AttentionDetails({
 								>
 									{formatEscalationInstant(attempt.at, displayContext)} ·{" "}
 									{attemptKindLabel(attempt.kind, t)}
-									{attempt.channel ? ` · ${channelLabel(attempt.channel)}` : ""}{" "}
-									· {attemptOutcomeLabel(attempt.outcome, t)}
+									{attempt.channel ? ` · ${channelLabel(attempt.channel)}` : ""} ·{" "}
+									{attemptOutcomeLabel(attempt.outcome, t)}
 								</li>
 							))}
 						</ul>
@@ -362,10 +285,7 @@ function AttentionDetails({
 					</h4>
 					<ol className="space-y-1">
 						{item.events.map((event) => (
-							<li
-								key={`${event.createdAt}-${event.eventType}`}
-								className="break-words"
-							>
+							<li key={`${event.createdAt}-${event.eventType}`} className="break-words">
 								{formatEscalationInstant(event.createdAt, displayContext)} ·{" "}
 								{attentionEventLabel(event.eventType, t)}
 								{event.actorName ? ` · ${event.actorName}` : ""}
@@ -379,7 +299,7 @@ function AttentionDetails({
 	);
 }
 
-function DisposeAttentionDialog({
+function DisposeAttentionPanel({
 	item,
 	isSubmitting,
 	onClose,
@@ -403,7 +323,7 @@ function DisposeAttentionDialog({
 	});
 
 	return (
-		<Dialog
+		<ActionPanel
 			open={item !== null}
 			onOpenChange={(open) => {
 				if (!open && !isSubmitting) {
@@ -412,95 +332,91 @@ function DisposeAttentionDialog({
 				}
 			}}
 		>
-			<DialogContent>
+			<ActionPanelContent
+				size="compact"
+				showCloseButton={!isSubmitting}
+				onEscapeKeyDown={(event) => {
+					if (isSubmitting) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (isSubmitting) event.preventDefault();
+				}}
+			>
 				<form
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
-						form.handleSubmit();
+						if (isSubmitting) return;
+						void form.handleSubmit();
 					}}
 				>
-					<DialogHeader>
-						<DialogTitle>
-							{t(
-								"settings.approvalEscalation.dispose.title",
-								"Close attention item",
-							)}
-						</DialogTitle>
-						<DialogDescription>
+					<ActionPanelHeader>
+						<ActionPanelTitle>
+							{t("settings.approvalEscalation.dispose.title", "Close attention item")}
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"settings.approvalEscalation.dispose.description",
 								"Closing records your decision in the audit log. It does not reassign the approval or allow another automatic escalation.",
 							)}
-						</DialogDescription>
-					</DialogHeader>
-					<form.Field
-						name="note"
-						validators={{
-							onSubmit: ({ value }) =>
-								value.trim()
-									? undefined
-									: t(
-											"settings.approvalEscalation.dispose.noteRequired",
-											"Enter a disposition note.",
-										),
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="attention-disposition-note">
-									{t(
-										"settings.approvalEscalation.dispose.noteLabel",
-										"Disposition note",
-									)}
-								</Label>
-								<Textarea
-									id="attention-disposition-note"
-									name="note"
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									maxLength={2000}
-									rows={4}
-									disabled={isSubmitting}
-									aria-invalid={field.state.meta.errors.length > 0}
-								/>
-								{field.state.meta.errors.length > 0 ? (
-									<p className="text-sm text-destructive" role="alert">
-										{field.state.meta.errors.join(" ")}
-									</p>
-								) : null}
-							</div>
-						)}
-					</form.Field>
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onClose}
-							disabled={isSubmitting}
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelBody className="space-y-4">
+						<form.Field
+							name="note"
+							validators={{
+								onSubmit: ({ value }) =>
+									value.trim()
+										? undefined
+										: t(
+												"settings.approvalEscalation.dispose.noteRequired",
+												"Enter a disposition note.",
+											),
+							}}
 						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="attention-disposition-note">
+										{t("settings.approvalEscalation.dispose.noteLabel", "Disposition note")}
+									</Label>
+									<Textarea
+										id="attention-disposition-note"
+										name="note"
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										maxLength={2000}
+										rows={4}
+										disabled={isSubmitting}
+										aria-invalid={field.state.meta.errors.length > 0}
+									/>
+									{field.state.meta.errors.length > 0 ? (
+										<p className="text-sm text-destructive" role="alert">
+											{field.state.meta.errors.join(" ")}
+										</p>
+									) : null}
+								</div>
+							)}
+						</form.Field>
+					</ActionPanelBody>
+					<ActionPanelFooter>
+						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting ? (
-								<IconLoader2
-									className="mr-2 size-4 motion-safe:animate-spin"
-									aria-hidden="true"
-								/>
+								<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
 							) : null}
 							{t("settings.approvalEscalation.dispose.confirm", "Close item")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
 /** A canonical workflow assignment, or a legacy-authoritative request (#299). */
-export type EscalationTransferTarget =
-	| { assignmentId: string }
-	| { approvalRequestId: string };
+export type EscalationTransferTarget = { assignmentId: string } | { approvalRequestId: string };
 
 export type EscalationTransferRequest = EscalationTransferTarget & {
 	recipientEmployeeId: string;
@@ -519,9 +435,7 @@ const TRANSFERABLE_REASONS = new Set<EscalationAttentionView["reason"]>([
  * Canonical incidents name their assignment; legacy-authoritative incidents
  * have none and name the approval request instead.
  */
-function transferTarget(
-	item: EscalationAttentionView | null,
-): EscalationTransferTarget | null {
+function transferTarget(item: EscalationAttentionView | null): EscalationTransferTarget | null {
 	if (item?.assignmentId) return { assignmentId: item.assignmentId };
 	if (item?.approvalRequestId) {
 		return { approvalRequestId: item.approvalRequestId };
@@ -553,17 +467,12 @@ function TransferAssignmentForm({
 	currentApproverName: string;
 	isSubmitting: boolean;
 	onCancel: () => void;
-	onSubmit: (values: {
-		recipientEmployeeId: string;
-		reason: string;
-	}) => Promise<void>;
+	onSubmit: (values: { recipientEmployeeId: string; reason: string }) => Promise<void>;
 }) {
 	const { t } = useTranslate();
 	const form = useForm({
 		defaultValues: {
-			recipientEmployeeId:
-				candidates.find((candidate) => candidate.recommended)?.employeeId ??
-				"",
+			recipientEmployeeId: candidates.find((candidate) => candidate.recommended)?.employeeId ?? "",
 			reason: "",
 		},
 		onSubmit: async ({ value }) => onSubmit(value),
@@ -571,126 +480,109 @@ function TransferAssignmentForm({
 
 	return (
 		<form
-			className="space-y-4"
+			className="flex min-h-0 flex-1 flex-col"
 			onSubmit={(event) => {
 				event.preventDefault();
-				form.handleSubmit();
+				if (isSubmitting) return;
+				void form.handleSubmit();
 			}}
 		>
-			<p className="text-sm">
-				{t(
-					"settings.approvalEscalation.transfer.currentApprover",
-					"Currently assigned to {name}.",
-					{ name: currentApproverName },
-				)}
-			</p>
-			<form.Field
-				name="recipientEmployeeId"
-				validators={{
-					onSubmit: ({ value }) =>
-						value
-							? undefined
-							: t(
-									"settings.approvalEscalation.transfer.recipientRequired",
-									"Choose a backup manager.",
-								),
-				}}
-			>
-				{(field) => (
-					<fieldset className="space-y-2">
-						<legend className="text-sm font-medium">
-							{t(
-								"settings.approvalEscalation.transfer.recipientLabel",
-								"Transfer to",
-							)}
-						</legend>
-						<RadioGroup
-							value={field.state.value}
-							onValueChange={(value) => field.handleChange(value)}
-							disabled={isSubmitting}
-							aria-invalid={field.state.meta.errors.length > 0}
-						>
-							{candidates.map((candidate) => {
-								const id = `escalation-recipient-${candidate.employeeId}`;
-								return (
-									<div key={candidate.employeeId} className="flex items-center gap-2">
-										<RadioGroupItem value={candidate.employeeId} id={id} />
-										<Label htmlFor={id} className="flex flex-wrap items-center gap-2">
-											{candidate.name}
-											{candidate.isPrimary ? (
-												<Badge variant="secondary">
-													{t(
-														"settings.approvalEscalation.transfer.primary",
-														"Primary manager",
-													)}
-												</Badge>
-											) : null}
-											{candidate.recommended ? (
-												<Badge variant="outline">
-													{t(
-														"settings.approvalEscalation.transfer.recommended",
-														"Next in order",
-													)}
-												</Badge>
-											) : null}
-										</Label>
-									</div>
-								);
-							})}
-						</RadioGroup>
-						{field.state.meta.errors.length > 0 ? (
-							<p className="text-sm text-destructive" role="alert">
-								{field.state.meta.errors.join(" ")}
-							</p>
-						) : null}
-					</fieldset>
-				)}
-			</form.Field>
-			<form.Field name="reason">
-				{(field) => (
-					<div className="space-y-2">
-						<Label htmlFor="escalation-transfer-reason">
-							{t(
-								"settings.approvalEscalation.transfer.reasonLabel",
-								"Reason (optional)",
-							)}
-						</Label>
-						<Textarea
-							id="escalation-transfer-reason"
-							name="reason"
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-							maxLength={500}
-							rows={3}
-							disabled={isSubmitting}
-						/>
-					</div>
-				)}
-			</form.Field>
-			<DialogFooter>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={onCancel}
-					disabled={isSubmitting}
+			<ActionPanelBody className="space-y-4">
+				<p className="text-sm">
+					{t(
+						"settings.approvalEscalation.transfer.currentApprover",
+						"Currently assigned to {name}.",
+						{ name: currentApproverName },
+					)}
+				</p>
+				<form.Field
+					name="recipientEmployeeId"
+					validators={{
+						onSubmit: ({ value }) =>
+							value
+								? undefined
+								: t(
+										"settings.approvalEscalation.transfer.recipientRequired",
+										"Choose a backup manager.",
+									),
+					}}
 				>
+					{(field) => (
+						<fieldset className="space-y-2">
+							<legend className="text-sm font-medium">
+								{t("settings.approvalEscalation.transfer.recipientLabel", "Transfer to")}
+							</legend>
+							<RadioGroup
+								value={field.state.value}
+								onValueChange={(value) => field.handleChange(value)}
+								disabled={isSubmitting}
+								aria-invalid={field.state.meta.errors.length > 0}
+							>
+								{candidates.map((candidate) => {
+									const id = `escalation-recipient-${candidate.employeeId}`;
+									return (
+										<div key={candidate.employeeId} className="flex items-center gap-2">
+											<RadioGroupItem value={candidate.employeeId} id={id} />
+											<Label htmlFor={id} className="flex flex-wrap items-center gap-2">
+												{candidate.name}
+												{candidate.isPrimary ? (
+													<Badge variant="secondary">
+														{t("settings.approvalEscalation.transfer.primary", "Primary manager")}
+													</Badge>
+												) : null}
+												{candidate.recommended ? (
+													<Badge variant="outline">
+														{t("settings.approvalEscalation.transfer.recommended", "Next in order")}
+													</Badge>
+												) : null}
+											</Label>
+										</div>
+									);
+								})}
+							</RadioGroup>
+							{field.state.meta.errors.length > 0 ? (
+								<p className="text-sm text-destructive" role="alert">
+									{field.state.meta.errors.join(" ")}
+								</p>
+							) : null}
+						</fieldset>
+					)}
+				</form.Field>
+				<form.Field name="reason">
+					{(field) => (
+						<div className="space-y-2">
+							<Label htmlFor="escalation-transfer-reason">
+								{t("settings.approvalEscalation.transfer.reasonLabel", "Reason (optional)")}
+							</Label>
+							<Textarea
+								id="escalation-transfer-reason"
+								name="reason"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								maxLength={500}
+								rows={3}
+								disabled={isSubmitting}
+							/>
+						</div>
+					)}
+				</form.Field>
+			</ActionPanelBody>
+			<ActionPanelFooter>
+				<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
 					{t("common.cancel", "Cancel")}
 				</Button>
 				<Button type="submit" disabled={isSubmitting}>
 					{isSubmitting ? (
-						<IconLoader2
-							className="mr-2 size-4 motion-safe:animate-spin"
-							aria-hidden="true"
-						/>
+						<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
 					) : null}
 					{t("settings.approvalEscalation.transfer.confirm", "Transfer")}
 				</Button>
-			</DialogFooter>
+			</ActionPanelFooter>
 		</form>
 	);
 }
 
-function TransferAssignmentDialog({
+function TransferAssignmentPanel({
 	item,
 	isSubmitting,
 	onClose,
@@ -709,12 +601,11 @@ function TransferAssignmentDialog({
 			: target.approvalRequestId
 		: null;
 	// One key per submitted request: an uncertain retry reuses it; a changed
-	// request or a reopened dialog gets a new one.
+	// request or a reopened panel gets a new one.
 	const submission = useRef<{ key: string; fingerprint: string } | null>(null);
 	const candidates = useQuery({
 		queryKey: ["approval-escalation-candidates", targetKey],
-		queryFn: () =>
-			listApprovalEscalationCandidates(target ?? { assignmentId: "" }),
+		queryFn: () => listApprovalEscalationCandidates(target ?? { assignmentId: "" }),
 		enabled: target !== null,
 		staleTime: 0,
 	});
@@ -724,52 +615,57 @@ function TransferAssignmentDialog({
 	};
 
 	return (
-		<Dialog
+		<ActionPanel
 			open={item !== null}
 			onOpenChange={(open) => {
 				if (!open && !isSubmitting) close();
 			}}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>
-						{t(
-							"settings.approvalEscalation.transfer.title",
-							"Transfer approval assignment",
-						)}
-					</DialogTitle>
-					<DialogDescription>
+			<ActionPanelContent
+				showCloseButton={!isSubmitting}
+				onEscapeKeyDown={(event) => {
+					if (isSubmitting) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (isSubmitting) event.preventDefault();
+				}}
+			>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
+						{t("settings.approvalEscalation.transfer.title", "Transfer approval assignment")}
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.approvalEscalation.transfer.description",
 							"The current approver loses this assignment and the selected backup manager can decide it from their approvals inbox. The approval stays pending, other assignments are unchanged, and the transfer is recorded in the audit log.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				{candidates.isLoading ? (
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<IconLoader2
-							className="size-4 motion-safe:animate-spin"
-							aria-hidden="true"
-						/>
-						{t(
-							"settings.approvalEscalation.transfer.loading",
-							"Loading eligible managers…",
-						)}
-					</div>
+					<ActionPanelBody>
+						<div className="flex items-center gap-2 text-sm text-muted-foreground">
+							<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+							{t("settings.approvalEscalation.transfer.loading", "Loading eligible managers…")}
+						</div>
+					</ActionPanelBody>
 				) : !candidates.data?.success ? (
-					<p className="text-sm text-destructive" role="alert">
-						{actionErrorMessage(t, candidates.data, {}, [
-							"settings.approvalEscalation.transfer.loadFailed",
-							"Eligible managers could not be loaded.",
-						])}
-					</p>
+					<ActionPanelBody>
+						<p className="text-sm text-destructive" role="alert">
+							{actionErrorMessage(t, candidates.data, {}, [
+								"settings.approvalEscalation.transfer.loadFailed",
+								"Eligible managers could not be loaded.",
+							])}
+						</p>
+					</ActionPanelBody>
 				) : candidates.data.data.candidates.length === 0 ? (
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.approvalEscalation.transfer.noCandidates",
-							"No eligible backup manager is available. Only active managers of the requester with approvals inbox access can take over.",
-						)}
-					</p>
+					<ActionPanelBody>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.approvalEscalation.transfer.noCandidates",
+								"No eligible backup manager is available. Only active managers of the requester with approvals inbox access can take over.",
+							)}
+						</p>
+					</ActionPanelBody>
 				) : (
 					<TransferAssignmentForm
 						key={targetKey}
@@ -780,10 +676,7 @@ function TransferAssignmentDialog({
 						onSubmit={async (values) => {
 							if (!target) return;
 							const reason = values.reason.trim() || undefined;
-							const fingerprint = JSON.stringify([
-								values.recipientEmployeeId,
-								reason ?? null,
-							]);
+							const fingerprint = JSON.stringify([values.recipientEmployeeId, reason ?? null]);
 							if (submission.current?.fingerprint !== fingerprint) {
 								submission.current = {
 									key: globalThis.crypto.randomUUID(),
@@ -800,16 +693,15 @@ function TransferAssignmentDialog({
 						}}
 					/>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
 /** Delivery incidents recorded by the approval delivery owner (#291). */
 function canRetryDelivery(item: EscalationAttentionView): boolean {
 	return (
-		(item.reason === "delivery_exhausted" ||
-			item.reason === "delivery_unavailable") &&
+		(item.reason === "delivery_exhausted" || item.reason === "delivery_unavailable") &&
 		typeof item.evidence.workId === "string"
 	);
 }
@@ -839,11 +731,8 @@ export function EscalationAttentionCard({
 }) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
-	const [disposing, setDisposing] = useState<EscalationAttentionView | null>(
-		null,
-	);
-	const [transferring, setTransferring] =
-		useState<EscalationAttentionView | null>(null);
+	const [disposing, setDisposing] = useState<EscalationAttentionView | null>(null);
+	const [transferring, setTransferring] = useState<EscalationAttentionView | null>(null);
 
 	return (
 		<Card>
@@ -851,10 +740,7 @@ export function EscalationAttentionCard({
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0 space-y-1.5">
 						<CardTitle>
-							{t(
-								"settings.approvalEscalation.attention.title",
-								"Needs attention",
-							)}
+							{t("settings.approvalEscalation.attention.title", "Needs attention")}
 							{openAttention.length > 0 ? (
 								<Badge variant="destructive" className="ml-2 align-middle">
 									{openAttention.length}
@@ -868,17 +754,9 @@ export function EscalationAttentionCard({
 							)}
 						</CardDescription>
 					</div>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onRecheck}
-						disabled={isRechecking}
-					>
+					<Button variant="outline" size="sm" onClick={onRecheck} disabled={isRechecking}>
 						{isRechecking ? (
-							<IconLoader2
-								className="mr-2 size-4 motion-safe:animate-spin"
-								aria-hidden="true"
-							/>
+							<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
 						) : (
 							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 						)}
@@ -889,10 +767,7 @@ export function EscalationAttentionCard({
 			<CardContent className="space-y-4">
 				{openAttention.length === 0 ? (
 					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.approvalEscalation.attention.empty",
-							"Nothing needs attention.",
-						)}
+						{t("settings.approvalEscalation.attention.empty", "Nothing needs attention.")}
 					</p>
 				) : (
 					<ul className="space-y-3">
@@ -900,19 +775,14 @@ export function EscalationAttentionCard({
 							<li key={item.id} className="space-y-3 rounded-lg border p-4">
 								<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 									<div className="min-w-0 space-y-1">
-										<h3 className="font-medium">
-											{attentionReasonLabel(item.reason, t)}
-										</h3>
+										<h3 className="font-medium">{attentionReasonLabel(item.reason, t)}</h3>
 										{item.adminAlertedAt ? (
 											<p className="text-xs text-muted-foreground">
 												{t(
 													"settings.approvalEscalation.attention.alertedAt",
 													"Admins alerted {date}",
 													{
-														date: formatEscalationInstant(
-															item.adminAlertedAt,
-															displayContext,
-														),
+														date: formatEscalationInstant(item.adminAlertedAt, displayContext),
 													},
 												)}
 											</p>
@@ -927,49 +797,23 @@ export function EscalationAttentionCard({
 												onClick={() => onRetryDelivery(item.id)}
 											>
 												<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-												{t(
-													"settings.approvalEscalation.attention.retryDelivery",
-													"Retry delivery",
-												)}
+												{t("settings.approvalEscalation.attention.retryDelivery", "Retry delivery")}
 											</Button>
 										) : null}
 										{canTransfer(item) ? (
-											<Button
-												size="sm"
-												variant="outline"
-												onClick={() => setTransferring(item)}
-											>
-												<IconArrowForwardUp
-													className="mr-2 size-4"
-													aria-hidden="true"
-												/>
-												{t(
-													"settings.approvalEscalation.attention.transfer",
-													"Transfer…",
-												)}
+											<Button size="sm" variant="outline" onClick={() => setTransferring(item)}>
+												<IconArrowForwardUp className="mr-2 size-4" aria-hidden="true" />
+												{t("settings.approvalEscalation.attention.transfer", "Transfer…")}
 											</Button>
 										) : null}
 										<Button asChild variant="outline" size="sm">
 											<Link href={item.approvalHref}>
-												<IconExternalLink
-													className="mr-2 size-4"
-													aria-hidden="true"
-												/>
-												{t(
-													"settings.approvalEscalation.attention.openApproval",
-													"Open approvals",
-												)}
+												<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
+												{t("settings.approvalEscalation.attention.openApproval", "Open approvals")}
 											</Link>
 										</Button>
-										<Button
-											size="sm"
-											variant="secondary"
-											onClick={() => setDisposing(item)}
-										>
-											{t(
-												"settings.approvalEscalation.attention.dispose",
-												"Close…",
-											)}
+										<Button size="sm" variant="secondary" onClick={() => setDisposing(item)}>
+											{t("settings.approvalEscalation.attention.dispose", "Close…")}
 										</Button>
 									</div>
 								</div>
@@ -995,19 +839,11 @@ export function EscalationAttentionCard({
 							{closedAttention.map((item) => (
 								<li key={item.id} className="rounded-md border p-3">
 									<div className="flex flex-wrap items-center gap-2">
-										<span className="font-medium">
-											{attentionReasonLabel(item.reason, t)}
-										</span>
+										<span className="font-medium">{attentionReasonLabel(item.reason, t)}</span>
 										<Badge variant="secondary">
 											{item.status === "disposed"
-												? t(
-														"settings.approvalEscalation.attention.disposed",
-														"Closed by manager",
-													)
-												: t(
-														"settings.approvalEscalation.attention.resolved",
-														"Resolved",
-													)}
+												? t("settings.approvalEscalation.attention.disposed", "Closed by manager")
+												: t("settings.approvalEscalation.attention.resolved", "Resolved")}
 										</Badge>
 										{item.closedAt ? (
 											<span className="text-muted-foreground">
@@ -1027,13 +863,13 @@ export function EscalationAttentionCard({
 				) : null}
 			</CardContent>
 
-			<DisposeAttentionDialog
+			<DisposeAttentionPanel
 				item={disposing}
 				isSubmitting={isDisposing}
 				onClose={() => setDisposing(null)}
 				onDispose={onDispose}
 			/>
-			<TransferAssignmentDialog
+			<TransferAssignmentPanel
 				item={transferring}
 				isSubmitting={isTransferring}
 				onClose={() => setTransferring(null)}

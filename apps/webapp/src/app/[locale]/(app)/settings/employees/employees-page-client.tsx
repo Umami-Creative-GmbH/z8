@@ -21,8 +21,8 @@ import type {
 	InvitationWithInviter,
 	MemberWithUserAndEmployee,
 } from "@/components/organization/people-management-types";
-import { EmploymentDateUploadDialog } from "@/components/settings/employment-date-upload-dialog";
-import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
+import { EmploymentDateUploadPanel } from "@/components/settings/employment-date-upload-panel";
+import { OpeningBalanceUploadPanel } from "@/components/settings/work-balance/opening-balance-upload-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -157,8 +157,8 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 				actions={
 					shouldShowPeopleTabs ? (
 						<>
-							<EmploymentDateUploadDialog />
-							<OpeningBalanceUploadDialog />
+							<EmploymentDateUploadPanel />
+							<OpeningBalanceUploadPanel />
 							<Button onClick={() => setInviteDialogOpen(true)}>
 								<IconPlus className="size-4" aria-hidden="true" />
 								{t("organization.invite.title", "Invite Member")}
