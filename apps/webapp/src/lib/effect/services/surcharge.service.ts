@@ -153,20 +153,18 @@ function ruleAppliesToMinute(
 
 		case "date_based": {
 			const minuteDate = minute.toPlainDate();
-			const timezone = minute.timeZoneId;
+			// Rule calendar dates are stored at UTC midnight (matching surcharge-rule-fields
+			// and policy-clock-out-surcharge-snapshot); read them in UTC so organizations
+			// west of UTC do not shift the calendar day back by one.
 			if (rule.specificDate) {
-				const ruleDate = instantFromDate(rule.specificDate)
-					.toZonedDateTimeISO(timezone)
-					.toPlainDate();
+				const ruleDate = instantFromDate(rule.specificDate).toZonedDateTimeISO("UTC").toPlainDate();
 				return minuteDate.equals(ruleDate);
 			}
 			if (rule.dateRangeStart && rule.dateRangeEnd) {
 				const rangeStart = instantFromDate(rule.dateRangeStart)
-					.toZonedDateTimeISO(timezone)
+					.toZonedDateTimeISO("UTC")
 					.toPlainDate();
-				const rangeEnd = instantFromDate(rule.dateRangeEnd)
-					.toZonedDateTimeISO(timezone)
-					.toPlainDate();
+				const rangeEnd = instantFromDate(rule.dateRangeEnd).toZonedDateTimeISO("UTC").toPlainDate();
 				return (
 					comparePlainDates(minuteDate, rangeStart) >= 0 &&
 					comparePlainDates(minuteDate, rangeEnd) <= 0
@@ -184,7 +182,7 @@ function ruleAppliesToMinute(
  * Calculate surcharges for a work period using "max wins" overlap policy.
  * For each minute, the highest applicable percentage wins.
  */
-function calculateSurchargesInternal(
+export function calculateSurchargesInternal(
 	startTime: Date,
 	endTime: Date,
 	rules: EffectiveSurchargeModel["rules"],

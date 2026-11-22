@@ -55,8 +55,6 @@ const SCHEDULE_X_GLOBAL_POLYFILL_ALLOWLIST = new Set([
 const TEMPORAL_GLOBAL_IMPORT =
 	/(?:import\s+["']temporal-polyfill\/global["']|from\s+["']temporal-polyfill\/global["'])/;
 const CHAMPION_POLYFILL = /["']@js-temporal\/polyfill(?:\/[^"']*)?["']/;
-const LUXON_IMPORT =
-	/(?:from\s+["']luxon["']|import\s*\(\s*["']luxon["']\s*\)|import\s+["']luxon["']|require\s*\(\s*["']luxon["']\s*\))/;
 const LUXON_OR_UTILS_IMPORT =
 	/(?:from\s+["']luxon["']|import\s*\(\s*["']luxon["']\s*\)|import\s+["']luxon["']|require\s*\(\s*["']luxon["']\s*\)|["'](?:[^"']*\/|\.\.?\/)luxon-utils["'])/;
 const TEMPORAL_IMPORT_OR_SYMBOL =
@@ -91,6 +89,7 @@ const PURE_LUXON_LEGACY_ALLOWLIST = [
 	"components/header-timezone-control-utils.ts",
 	"components/header-timezone-control.tsx",
 	"components/nav-user-preferences.tsx",
+	"components/organization/members-table.tsx",
 	"components/organization/organization-danger-zone-card.tsx",
 	"components/organization/organization-deletion-banner.tsx",
 	"components/time-tracking/project-selector.tsx",
@@ -129,6 +128,9 @@ const PURE_LUXON_LEGACY_ALLOWLIST = [
 	"lib/platform-analytics/range.ts",
 	"lib/platform-analytics/service.ts",
 	"lib/platform-diagnostics/collector.ts",
+	"lib/reporting/audit-report.ts",
+	"lib/reports/exporters/csv-exporter.ts",
+	"lib/reports/exporters/excel-exporter.ts",
 	"lib/slack/formatters.ts",
 	"lib/slack/jobs/daily-digest.ts",
 	"lib/slack/jobs/escalation-checker.ts",
@@ -231,7 +233,7 @@ describe("Temporal source guard", () => {
 
 	it("keeps migrated foundation modules free of Luxon and native Date calendar math", () => {
 		const luxonOffenders = FOUNDATION_SOURCE_FILES.filter((filePath) =>
-			LUXON_IMPORT.test(source(filePath)),
+			LUXON_OR_UTILS_IMPORT.test(source(filePath)),
 		);
 		const nativeDateOffenders = FOUNDATION_SOURCE_FILES.filter((filePath) =>
 			NATIVE_DATE_CALENDAR_OR_TIMEZONE_MATH.test(source(filePath)),
@@ -300,7 +302,7 @@ describe("Temporal source guard", () => {
 	it("enforces a shrinking allowlist of remaining legacy pure-Luxon production modules", () => {
 		const productionFiles = collectProductionSourceFiles(SOURCE_ROOT);
 		const actualLuxonFiles = productionFiles.filter((relativePath) =>
-			LUXON_IMPORT.test(source(relativePath)),
+			LUXON_OR_UTILS_IMPORT.test(source(relativePath)),
 		);
 		const allowlistSet = new Set<string>(PURE_LUXON_LEGACY_ALLOWLIST);
 		const actualSet = new Set(actualLuxonFiles);
