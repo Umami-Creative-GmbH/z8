@@ -5,32 +5,26 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 async function SurchargeSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext) {
-		return redirectWithLocale("/settings");
-	}
-
-	const { authContext, accessTier } = settingsRouteContext;
-	const organizationId = authContext.session.activeOrganizationId;
-
-	if (accessTier === "member" || !organizationId) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
 	const org = await db.query.organization.findFirst({
-		where: eq(organization.id, organizationId),
+		where: eq(organization.id, caller.organizationId),
 		columns: { timezone: true },
 	});
 
 	return (
 		<SurchargeManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
+			organizationId={caller.organizationId}
+			canManage={meetsSettingsAccess(caller.settingsAccess, "orgAdmin")}
 			organizationTimezone={org?.timezone || "UTC"}
 		/>
 	);

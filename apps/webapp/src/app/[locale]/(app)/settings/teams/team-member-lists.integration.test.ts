@@ -77,9 +77,10 @@ describe("team settings member lists on PostgreSQL (#1438)", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
-		await fixture.pool.query(`update organization set timezone = 'Pacific/Auckland' where id = $1`, [
-			fixture.organizationId,
-		]);
+		await fixture.pool.query(
+			`update organization set timezone = 'Pacific/Auckland' where id = $1`,
+			[fixture.organizationId],
+		);
 		// Seeded inactive: deactivated before the instant was stored, so not recorded.
 		deactivated = await fixture.seedEmployee({ isActive: false });
 		due = await fixture.seedEmployee();
@@ -140,7 +141,7 @@ describe("team settings member lists on PostgreSQL (#1438)", () => {
 	it("marks former employees among the organization's members on the teams page", async () => {
 		const { scopedMembers } = await loadTeamSettingsPageData({
 			organizationId: fixture.organizationId,
-			settingsRouteContext: { accessTier: "orgAdmin" },
+			settingsAccess: "orgAdmin",
 			principalContext: { permissions: { orgWide: null, byTeamId: new Map() } },
 		});
 

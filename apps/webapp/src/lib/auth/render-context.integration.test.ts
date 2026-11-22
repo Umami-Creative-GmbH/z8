@@ -46,7 +46,6 @@ vi.mock("@/db", async () =>
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import {
 	getRenderAuthContext as getAuthContext,
-	getRenderSettingsAccessTier as getCurrentSettingsAccessTier,
 	getRenderOnboardingStatus as getOnboardingStatus,
 	getRenderPendingInvitationId as getPendingInvitationId,
 	getRenderOrganizationDisplayContext,
@@ -129,15 +128,13 @@ async function LayoutIdentity() {
 }
 
 async function SidebarIdentity() {
-	const [context, tier, settingsAccess, organizations] = await Promise.all([
+	const [context, settingsAccess, organizations] = await Promise.all([
 		getAuthContext(),
-		getCurrentSettingsAccessTier(),
 		getRenderSettingsAccess(),
 		getUserOrganizations(),
 	]);
 	return createElement("aside", {
 		"data-employee": context?.employee?.id,
-		"data-tier": tier,
 		"data-settings-access": settingsAccess ?? "none",
 		"data-organizations": organizations.map((org) => org.id).join(","),
 	});
@@ -299,7 +296,6 @@ describe("render-local authenticated identity", () => {
 			expect(first).toContain('"data-settings-access":"orgAdmin"');
 			expect(first).not.toContain(switchedEmployeeId);
 			expect(second).toContain(`"data-employee":"${switchedEmployeeId}"`);
-			expect(second).toContain('"data-tier":"member"');
 			expect(second).toContain('"data-settings-access":"member"');
 			expect(second).not.toContain(employeeId);
 			expect(boundary.reads).toBe(2);
@@ -339,7 +335,6 @@ describe("render-local authenticated identity", () => {
 				}
 				const reduced = await render(subject);
 				expect(reduced).not.toContain(employeeId);
-				expect(reduced).toContain('"data-tier":"member"');
 				expect(reduced).toContain('"data-settings-access":"none"');
 				expect(boundary.reads).toBe(2);
 			} finally {
@@ -365,7 +360,6 @@ describe("render-local authenticated identity", () => {
 			session: { ...subject.session, activeOrganizationId: null },
 		});
 		expect(output).not.toContain(employeeId);
-		expect(output).toContain('"data-tier":"member"');
 		expect(output).toContain('"data-settings-access":"none"');
 		expect(output).toContain('"data-settings-org":"none"');
 	});
@@ -380,7 +374,6 @@ describe("render-local authenticated identity", () => {
 					: { mfaRequired: { organizationId, deadline: null } }),
 			});
 			expect(output).not.toContain(employeeId);
-			expect(output).toContain('"data-tier":"member"');
 			expect(output).toContain('"data-settings-access":"none"');
 		},
 	);

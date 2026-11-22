@@ -9,10 +9,10 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
+	meetsSettingsAccess,
+	type SettingsAccess,
+	settingsAccessOf,
+} from "@/lib/organization-action/settings-access";
 
 const settingsAccessLogger = createLogger("EmployeeSettingsAccess");
 
@@ -39,7 +39,7 @@ export function getEmployeeSettingsActorContext(options?: {
 				| "insufficient_role",
 			membershipRecord: { role: string; status?: string | null } | null,
 			employeeRecord: Pick<typeof employee.$inferSelect, "id" | "role" | "isActive"> | null,
-			accessTier: SettingsAccessTier | null = null,
+			settingsAccess: SettingsAccess | null = null,
 			membershipLookupFailed = false,
 		) =>
 			Effect.sync(() => {
@@ -58,7 +58,7 @@ export function getEmployeeSettingsActorContext(options?: {
 						employeeId: employeeRecord?.id ?? null,
 						employeeRole: employeeRecord?.role ?? null,
 						employeeIsActive: employeeRecord?.isActive ?? null,
-						accessTier,
+						settingsAccess,
 					},
 					"[DEBUG-employee-settings-access] Authorization denied",
 				);
@@ -145,16 +145,24 @@ export function getEmployeeSettingsActorContext(options?: {
 			);
 		}
 
-		const accessTier = resolveSettingsAccessTier({
-			activeOrganizationId: organizationId,
-			membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
-				? membershipRecord.role
+		const settingsAccess = settingsAccessOf({
+			membershipRole: membershipRecord.role,
+			employee: employeeRecord
+				? {
+						id: employeeRecord.id,
+						role: employeeRecord.role,
+						former: false,
+					}
 				: null,
-			employeeRole: employeeRecord?.role ?? null,
 		});
 
-		if (accessTier === "member") {
-			yield* logDenial("insufficient_role", membershipRecord, employeeRecord ?? null, accessTier);
+		if (!settingsAccess || !meetsSettingsAccess(settingsAccess, "scopedManager")) {
+			yield* logDenial(
+				"insufficient_role",
+				membershipRecord,
+				employeeRecord ?? null,
+				settingsAccess,
+			);
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "You do not have access to employee settings",
@@ -169,7 +177,7 @@ export function getEmployeeSettingsActorContext(options?: {
 			session,
 			dbService,
 			organizationId,
-			accessTier,
+			settingsAccess,
 			currentEmployee: employeeRecord ? (employeeRecord as typeof employee.$inferSelect) : null,
 		};
 	});

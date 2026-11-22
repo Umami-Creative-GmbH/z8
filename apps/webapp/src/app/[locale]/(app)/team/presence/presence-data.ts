@@ -1,7 +1,8 @@
 import "server-only";
 
 import { db } from "@/db";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import {
 	findWhoIsInLocation,
 	listManagedEmployeeIds,
@@ -24,20 +25,21 @@ import { isUuid } from "@/lib/validations/uuid";
 export type WhoIsInViewer = { organizationId: string; userId: string; scope: WhoIsInScope };
 
 export async function getWhoIsInViewer(): Promise<WhoIsInViewer | null> {
-	const context = await getCurrentSettingsRouteContext();
-	const organizationId = context?.authContext.session.activeOrganizationId;
-	if (!context || !organizationId) return null;
-	const currentEmployee = context.authContext.employee;
+	const caller = await getCurrentSettingsAccess();
+	if (!caller?.settingsAccess) return null;
+	const { organizationId, userId, settingsAccess, employee: currentEmployee } = caller;
 	const managedEmployeeIds =
-		context.accessTier === "manager" && currentEmployee?.organizationId === organizationId
+		!meetsSettingsAccess(settingsAccess, "orgAdmin") &&
+		meetsSettingsAccess(settingsAccess, "scopedManager") &&
+		currentEmployee
 			? await listManagedEmployeeIds(db, {
 					organizationId,
 					managerEmployeeId: currentEmployee.id,
 				})
 			: [];
-	const scope = whoIsInScopeFor({ accessTier: context.accessTier, managedEmployeeIds });
+	const scope = whoIsInScopeFor({ settingsAccess, managedEmployeeIds });
 	if (scope.kind === "none") return null;
-	return { organizationId, userId: context.authContext.user.id, scope };
+	return { organizationId, userId, scope };
 }
 
 export type WhoIsInLocationsResult =

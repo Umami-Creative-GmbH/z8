@@ -96,11 +96,6 @@ type TeamWithMemberRelations = typeof team.$inferSelect & {
 	>;
 };
 
-/** The team-scope helpers' tier: an org admin, or a scoped manager. */
-function accessTierOf(actor: OrganizationActor): "orgAdmin" | "manager" {
-	return meetsSettingsAccess(actor.settingsAccess, "orgAdmin") ? "orgAdmin" : "manager";
-}
-
 /** The id team permissions are checked and recorded against: the employee, else the user. */
 function actorIdOf(actor: OrganizationActor) {
 	return actor.employee?.id ?? actor.userId;
@@ -278,7 +273,7 @@ function holdsTeamPermission(
 	teamId: string,
 ) {
 	return Effect.gen(function* () {
-		if (accessTierOf(actor) === "orgAdmin") return true;
+		if (meetsSettingsAccess(actor.settingsAccess, "orgAdmin")) return true;
 		const permissionsService = yield* PermissionsService;
 		return yield* permissionsService.hasTeamPermission(actorIdOf(actor), permission, teamId);
 	});
@@ -325,7 +320,11 @@ function authorizeTeamMemberChange(
 			);
 		}
 
-		if (kind === "add" && targetEmployee && accessTierOf(actor) !== "orgAdmin") {
+		if (
+			kind === "add" &&
+			targetEmployee &&
+			!meetsSettingsAccess(actor.settingsAccess, "orgAdmin")
+		) {
 			const scopedPermissions = yield* loadActorScopedPermissions(dbService, actor, organizationId);
 			const targetEmployeeMemberships = yield* dbService.query(
 				"team.getTargetEmployeeMemberships",
@@ -386,7 +385,10 @@ function authorizeTeamDeletion(actor: OrganizationActor, organizationId: string,
 
 /** How much of a driving licence warning the actor may see (owners/admins: names and classes). */
 function drivingLicenceViewer(actor: OrganizationActor): DrivingLicenceChangeViewer {
-	return { userId: actor.userId, organizationAdmin: accessTierOf(actor) === "orgAdmin" };
+	return {
+		userId: actor.userId,
+		organizationAdmin: meetsSettingsAccess(actor.settingsAccess, "orgAdmin"),
+	};
 }
 
 /** The confirmed driving licence warning a team save takes (#1425). */
@@ -651,16 +653,15 @@ export const getTeam = organizationAction(
 					),
 				);
 
-			const accessTier = accessTierOf(actor);
 			const scopedPermissions = yield* loadActorScopedPermissions(dbService, actor, organizationId);
 			const scopedFlags = getScopedTeamFlags({
-				accessTier,
+				settingsAccess: actor.settingsAccess,
 				permissions: scopedPermissions,
 				teamId,
 			});
 
 			if (
-				accessTier !== "orgAdmin" &&
+				!meetsSettingsAccess(actor.settingsAccess, "orgAdmin") &&
 				!scopedFlags.canManageMembers &&
 				!scopedFlags.canManageSettings
 			) {
@@ -733,7 +734,7 @@ export const listTeams = organizationAction(
 			const scopedPermissions = yield* loadActorScopedPermissions(dbService, actor, organizationId);
 
 			return buildTeamSettingsSurface({
-				accessTier: accessTierOf(actor),
+				settingsAccess: actor.settingsAccess,
 				teams: (teams as TeamWithMemberRelations[]).map(withMembershipEmployees),
 				permissions: scopedPermissions,
 			}).teams;

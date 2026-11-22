@@ -42,7 +42,6 @@ import {
 } from "@/lib/organization-action/settings-access-level";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { createEmployeeColumns } from "./columns";
 import {
@@ -64,7 +63,6 @@ export interface EmployeesPagePeopleProps {
 }
 
 interface EmployeeAdministrationProps {
-	accessTier: SettingsAccessTier;
 	organizationId: string;
 	currentUserId: string;
 	currentEmployee: { id: string; role: "admin" | "manager" | "employee" } | null;
@@ -151,10 +149,7 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 	};
 
 	return (
-		<div
-			data-testid="employees-content"
-			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
-		>
+		<div data-testid="employees-content" className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("settings.employees.title", "Employees")}
 				description={t("settings.employees.description", "Manage employees, members, and invites")}
@@ -194,7 +189,6 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 
 						<TabsContent value="employees" className="space-y-4" keepMounted>
 							<EmployeeDirectoryTab
-								accessTier={props.accessTier}
 								organizationId={props.organizationId}
 								currentUserId={props.currentUserId}
 								settingsAccess={props.settingsAccess}
@@ -336,7 +330,6 @@ function EmployeeDirectoryFilters({
 }
 
 function EmployeeDirectoryTab(props: {
-	accessTier: SettingsAccessTier;
 	organizationId: string;
 	currentUserId: string;
 	settingsAccess: SettingsAccess | null;
@@ -361,7 +354,7 @@ function EmployeeDirectoryTab(props: {
 		pageCount,
 		refresh,
 	} = useEmployees({
-		accessTier: props.accessTier,
+		settingsAccess: props.settingsAccess,
 		organizationId: props.organizationId,
 	});
 	const presence = useEmployeeClockStatuses(
@@ -529,9 +522,9 @@ function EmployeeDirectoryTab(props: {
 											<TableCell colSpan={columns.length} className="h-24 text-center">
 												<div className="flex flex-col items-center justify-center">
 													<IconUser
-													className="mb-2 size-8 text-muted-foreground"
-													aria-hidden="true"
-												/>
+														className="mb-2 size-8 text-muted-foreground"
+														aria-hidden="true"
+													/>
 													<p className="text-sm text-muted-foreground">
 														{t("settings.employees.directory.emptyState", "No employees found")}
 													</p>

@@ -115,7 +115,7 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "effect-current-time",
 		reason:
 			"Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.",
-		operation: "const [t, result, accessTier] = await Promise.all([",
+		operation: "const [t, result, settingsAccessCaller] = await Promise.all([",
 	},
 	{
 		file: "src/app/[locale]/(app)/payroll/page.tsx",

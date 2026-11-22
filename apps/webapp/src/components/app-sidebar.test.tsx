@@ -499,7 +499,6 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -617,7 +616,6 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -816,7 +814,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -864,7 +861,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -912,7 +908,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -954,7 +949,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1070,7 +1064,6 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1165,7 +1158,6 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1285,7 +1277,6 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1495,7 +1486,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1598,7 +1588,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1656,7 +1645,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1713,7 +1701,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1767,7 +1754,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
@@ -1818,7 +1804,6 @@ describe("app sidebar compliance navigation", () => {
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getRenderSettingsAccessMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({

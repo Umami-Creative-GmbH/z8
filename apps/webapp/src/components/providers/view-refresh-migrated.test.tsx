@@ -86,7 +86,7 @@ function Layout({ stamp }: { stamp: number }) {
 function Employee({ stamp, name }: { stamp: number; name: string }) {
 	const employee = useEmployee({
 		employeeId: "target-a",
-		accessTier: "orgAdmin",
+		settingsAccess: "orgAdmin",
 		userId: scope.userId,
 		organizationId: scope.organizationId,
 		initialSnapshot: {

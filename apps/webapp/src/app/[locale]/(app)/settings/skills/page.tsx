@@ -3,25 +3,20 @@ import { SkillCatalogManagement } from "@/components/settings/skill-catalog-mana
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { loadSkillReminderLeadDays } from "@/lib/scheduling/skill-reminder-store";
 
 async function SkillsSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	const canManageCatalog = settingsRouteContext.accessTier === "orgAdmin";
+	const { organizationId, settingsAccess } = caller;
+	const canManageCatalog = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	// Owners and admins edit the skill reminder lead time next to the catalog (#1143).
 	const reminderLeadDays = canManageCatalog
 		? await loadSkillReminderLeadDays(db, organizationId)

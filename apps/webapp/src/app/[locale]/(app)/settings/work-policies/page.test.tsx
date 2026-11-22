@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 	loadOrganizationTimezone: vi.fn(),
 }));
 vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: mocks.context,
+	getCurrentSettingsAccess: mocks.context,
 }));
 vi.mock("@/db", () => ({ db: { marker: "db" } }));
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
@@ -29,10 +29,16 @@ vi.mock("@/components/settings/work-policy/work-policy-settings-tabs", () => ({
 
 import WorkPoliciesPage from "./page";
 
-function context(accessTier: string, organizationId: string | null = "org-1") {
+function caller(
+	settingsAccess: "member" | "scopedManager" | "orgAdmin" | "owner" | null,
+	organizationId = "org-1",
+) {
 	return {
-		accessTier,
-		authContext: { session: { activeOrganizationId: organizationId } },
+		userId: "user-1",
+		organizationId,
+		settingsAccess,
+		membershipRole: settingsAccess ? "admin" : null,
+		employee: null,
 	};
 }
 async function content(page: ReturnType<typeof WorkPoliciesPage>) {
@@ -40,7 +46,7 @@ async function content(page: ReturnType<typeof WorkPoliciesPage>) {
 }
 beforeEach(() => {
 	vi.clearAllMocks();
-	mocks.context.mockResolvedValue(context("orgAdmin"));
+	mocks.context.mockResolvedValue(caller("orgAdmin"));
 	mocks.loadOrganizationTimezone.mockResolvedValue("Europe/Berlin");
 });
 describe("combined Work Policies page", () => {
@@ -48,7 +54,7 @@ describe("combined Work Policies page", () => {
 		const page = await content(WorkPoliciesPage());
 		expect(page.props.panels.work.props).toMatchObject({
 			organizationId: "org-1",
-			accessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			organizationTimezone: "Europe/Berlin",
 		});
 		expect(mocks.loadOrganizationTimezone).toHaveBeenCalledWith({ marker: "db" }, "org-1");
@@ -59,13 +65,13 @@ describe("combined Work Policies page", () => {
 		expect(page.key).toBe("org-1");
 	});
 	it("preserves manager access without granting policy editing", async () => {
-		mocks.context.mockResolvedValue(context("manager"));
+		mocks.context.mockResolvedValue(caller("scopedManager"));
 		const page = await content(WorkPoliciesPage());
-		expect(page.props.panels.work.props.accessTier).toBe("manager");
+		expect(page.props.panels.work.props.settingsAccess).toBe("scopedManager");
 		expect(page.props.panels.changes.props.canManage).toBe(false);
 	});
-	it.each([null, context("member"), context("orgAdmin", null)])(
-		"rejects missing organization or manager access",
+	it.each([null, caller("member"), caller(null)])(
+		"rejects missing organization or scoped-manager access",
 		async (routeContext) => {
 			mocks.context.mockResolvedValue(routeContext);
 			await expect(content(WorkPoliciesPage())).rejects.toThrow("redirect:/settings");

@@ -11,27 +11,29 @@ import { EmployeeGroupManagement } from "@/components/settings/employee-group-ma
 import { db } from "@/db";
 import { loadApprovalSettings } from "@/lib/approvals/approval-settings";
 import { getEffectiveApprovalTriagePolicy } from "@/lib/approvals/triage-policy";
-import { getAbility, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getRenderOrganizationAbility } from "@/lib/auth/render-context";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { ApprovalSettingsLoading } from "./approval-settings-loading";
 
 async function ApprovalPoliciesSettingsContent() {
-	const [context, ability] = await Promise.all([
-		getCurrentSettingsRouteContext(),
-		getAbility(),
+	const [caller, ability] = await Promise.all([
+		getCurrentSettingsAccess(),
+		getRenderOrganizationAbility(),
 	]);
-	const organizationId = context?.authContext.session.activeOrganizationId;
-	const canConfigurePolicies = context?.accessTier === "orgAdmin";
-	const canManageEscalation = ability?.can("manage", "Approval") ?? false;
+	const organizationId = caller?.organizationId ?? null;
+	const settingsAccess = caller?.settingsAccess ?? null;
+	const canConfigurePolicies = meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const canManageEscalation =
+		settingsAccess !== null && (ability?.can("manage", "Approval") ?? false);
 	if (!organizationId || (!canConfigurePolicies && !canManageEscalation)) {
 		return redirectWithLocale("/settings");
 	}
 
 	const panels: Partial<Record<ApprovalSettingsTab, ReactNode>> = {};
 	if (canConfigurePolicies) {
-		panels.policies = (
-			<ApprovalPolicyManagement organizationId={organizationId} />
-		);
+		panels.policies = <ApprovalPolicyManagement organizationId={organizationId} />;
 		panels.groups = <EmployeeGroupManagement organizationId={organizationId} />;
 		const triagePolicy = await getEffectiveApprovalTriagePolicy({
 			organizationId,
@@ -47,30 +49,18 @@ async function ApprovalPoliciesSettingsContent() {
 		const settings = await loadApprovalSettings(db, organizationId);
 		panels.escalation = (
 			<div className="space-y-4">
-				<ApprovalEscalationManagement
-					organizationId={organizationId}
-					section="escalation"
-				/>
+				<ApprovalEscalationManagement organizationId={organizationId} section="escalation" />
 				<DeputyDecisionsSetting enabled={settings.deputyDecisionsEnabled} />
 			</div>
 		);
 		panels.attention = (
-			<ApprovalEscalationManagement
-				organizationId={organizationId}
-				section="attention"
-			/>
+			<ApprovalEscalationManagement organizationId={organizationId} section="attention" />
 		);
 		panels.channels = (
-			<ApprovalEscalationManagement
-				organizationId={organizationId}
-				section="channels"
-			/>
+			<ApprovalEscalationManagement organizationId={organizationId} section="channels" />
 		);
 		panels.history = (
-			<ApprovalEscalationManagement
-				organizationId={organizationId}
-				section="history"
-			/>
+			<ApprovalEscalationManagement organizationId={organizationId} section="history" />
 		);
 	}
 	return <ApprovalSettingsTabs key={organizationId} panels={panels} />;
