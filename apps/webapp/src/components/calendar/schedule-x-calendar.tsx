@@ -19,12 +19,16 @@ import "@schedule-x/theme-default/dist/index.css";
 // Schedule-X CSS customizations must load after the default theme.
 import "./schedule-x-calendar.css";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Temporal } from "temporal-polyfill";
 import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
-import { addCalendarDateKey, todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import {
+	addCalendarDateKey,
+	calendarWeekDateKeyRange,
+	todayCalendarDateKey,
+} from "@/lib/calendar/date-keys";
 import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
@@ -33,7 +37,7 @@ import {
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { formatTimeHours } from "@/lib/calendar/work-hours-summary";
-import { getWeekBounds } from "@/lib/user-preferences/week-start";
+import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { calendarEventComponents } from "./calendar-event-components";
 import { runningClockOutLabels, runningWorkPeriodTitle } from "./running-work-period-labels";
 import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
@@ -111,7 +115,7 @@ export function ScheduleXCalendarWrapper({
 		setPreviousInitialDateKey(nextInitialDateKey);
 		setCurrentDateKey(nextInitialDateKey);
 	}
-	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
+	const currentDate = parsePlainDate(currentDateKey);
 	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
@@ -200,14 +204,21 @@ export function ScheduleXCalendarWrapper({
 		calendarControls.setDate(Temporal.PlainDate.from(today));
 	};
 
-	const dateRangeDisplay = formatDateRange(currentDate, locale, viewMode, weekStartDay);
-	const mobileDateRangeDisplay = formatMobileDateRange(currentDate, locale, viewMode, weekStartDay);
+	const dateRangeDisplay = formatDateRange(currentDate, timeZone, locale, viewMode, weekStartDay);
+	const mobileDateRangeDisplay = formatMobileDateRange(
+		currentDate,
+		timeZone,
+		locale,
+		viewMode,
+		weekStartDay,
+	);
 
 	const visibleRequirementDates = (() => {
-		if (viewMode === "day") return [currentDate.startOf("day")];
+		if (viewMode === "day") return [currentDate];
 		if (viewMode === "week") {
-			const { start } = getWeekBounds(currentDate, weekStartDay);
-			return Array.from({ length: 7 }, (_, index) => start.plus({ days: index }));
+			const { startDateKey } = calendarWeekDateKeyRange(currentDateKey, weekStartDay);
+			const start = parsePlainDate(startDateKey);
+			return Array.from({ length: 7 }, (_, index) => start.add({ days: index }));
 		}
 		return [];
 	})();
@@ -311,6 +322,7 @@ export function ScheduleXCalendarWrapper({
 		isLoading,
 		viewMode,
 		timeZone,
+		locale,
 		visibleRequirementDates,
 		workHoursData,
 		isSummaryLoading,
@@ -356,7 +368,8 @@ export function ScheduleXCalendarWrapper({
  * English everywhere. Dates are read in the calendar's zone.
  */
 function formatPeriod(
-	currentDate: DateTime,
+	currentDate: PlainDate,
+	timeZone: string,
 	locale: string,
 	viewMode: ViewMode,
 	weekStartDay: "monday" | "sunday",
@@ -365,9 +378,10 @@ function formatPeriod(
 	const format = (options: Intl.DateTimeFormatOptions) =>
 		new Intl.DateTimeFormat(locale, {
 			...options,
-			timeZone: currentDate.zoneName ?? undefined,
+			timeZone,
 		});
-	const date = currentDate.toJSDate();
+	const toDate = (day: PlainDate) => dateFromInstant(day.toZonedDateTime(timeZone).toInstant());
+	const date = toDate(currentDate);
 	switch (viewMode) {
 		case "day":
 			return format({
@@ -377,14 +391,19 @@ function formatPeriod(
 				year: "numeric",
 			}).format(date);
 		case "week": {
-			const { start, end } = getWeekBounds(currentDate, weekStartDay);
+			const { startDateKey, endDateKey } = calendarWeekDateKeyRange(
+				currentDate.toString(),
+				weekStartDay,
+			);
+			const start = parsePlainDate(startDateKey);
+			const end = parsePlainDate(endDateKey);
 			// The compact (phone) range names the year only when the week crosses into another.
 			const withYear = month === "long" || start.year !== end.year;
 			return format({
 				day: "numeric",
 				month,
 				...(withYear ? { year: "numeric" as const } : {}),
-			}).formatRange(start.toJSDate(), end.toJSDate());
+			}).formatRange(toDate(start), toDate(end));
 		}
 		case "month":
 			return format({ month, year: "numeric" }).format(date);
@@ -394,21 +413,23 @@ function formatPeriod(
 }
 
 function formatDateRange(
-	currentDate: DateTime,
+	currentDate: PlainDate,
+	timeZone: string,
 	locale: string,
 	viewMode: ViewMode,
 	weekStartDay: "monday" | "sunday",
 ) {
-	return formatPeriod(currentDate, locale, viewMode, weekStartDay, "long");
+	return formatPeriod(currentDate, timeZone, locale, viewMode, weekStartDay, "long");
 }
 
 function formatMobileDateRange(
-	currentDate: DateTime,
+	currentDate: PlainDate,
+	timeZone: string,
 	locale: string,
 	viewMode: ViewMode,
 	weekStartDay: "monday" | "sunday",
 ) {
-	return formatPeriod(currentDate, locale, viewMode, weekStartDay, "short");
+	return formatPeriod(currentDate, timeZone, locale, viewMode, weekStartDay, "short");
 }
 
 function ScheduleXCalendarLoading({ t }: { t: ReturnType<typeof useTranslate>["t"] }) {

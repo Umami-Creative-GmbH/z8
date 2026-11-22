@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { DateTime } from "luxon";
 import { DynamicServerError } from "next/dist/client/components/hooks-server-context";
 import { makeUntrackedHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { notFound, redirect, unstable_rethrow } from "next/navigation";
 import { Children, isValidElement, type ReactElement, type ReactNode, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
@@ -131,8 +131,8 @@ const timelineResult = {
 		previousDateKey: "2026-10-01",
 		nextDateKey: "2026-10-03",
 		label: "October 2",
-		startUtc: DateTime.utc(2026, 10, 2),
-		endUtc: DateTime.utc(2026, 10, 3),
+		startUtc: parseInstant("2026-10-02T00:00:00Z"),
+		endUtc: parseInstant("2026-10-03T00:00:00Z"),
 	},
 	error: "Timeline unavailable",
 };

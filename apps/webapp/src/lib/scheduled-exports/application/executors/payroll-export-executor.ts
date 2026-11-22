@@ -41,8 +41,8 @@ export class PayrollExportExecutor implements IReportExecutor {
 				organizationId,
 				formatId: config.formatId,
 				dateRange: {
-					start: dateRange.start.toISODate(),
-					end: dateRange.end.toISODate(),
+					start: dateRange.start.toPlainDate().toString(),
+					end: dateRange.end.toPlainDate().toString(),
 				},
 			},
 			"Executing payroll export",
@@ -80,10 +80,8 @@ export class PayrollExportExecutor implements IReportExecutor {
 				requestedById: requester.id,
 				filters: {
 					dateRange: {
-						start: parsePayrollLogicalDate(
-							dateRange.start.toISODate() ?? dateRange.start.toISO() ?? "",
-						),
-						end: parsePayrollLogicalDate(dateRange.end.toISODate() ?? dateRange.end.toISO() ?? ""),
+						start: parsePayrollLogicalDate(dateRange.start.toPlainDate().toString()),
+						end: parsePayrollLogicalDate(dateRange.end.toPlainDate().toString()),
 					},
 					employeeIds: filters?.employeeIds,
 					teamIds: filters?.teamIds,

@@ -4,7 +4,7 @@
  * Core type definitions for the scheduled exports feature.
  * These types are used across all layers of the application.
  */
-import type { DateTime } from "luxon";
+import type { Temporal } from "temporal-polyfill";
 import type { Instant } from "@/lib/datetime/temporal-core";
 
 // ============================================
@@ -59,8 +59,8 @@ export interface DateRangeConfig {
  * Calculated date range result
  */
 export interface CalculatedDateRange {
-	start: DateTime;
-	end: DateTime;
+	start: Temporal.ZonedDateTime;
+	end: Temporal.ZonedDateTime;
 }
 
 // ============================================
@@ -160,9 +160,9 @@ export interface ScheduledExportDefinition {
 	dateRange: DateRangeConfig;
 	delivery: DeliveryConfig;
 	isActive: boolean;
-	lastExecutionAt?: DateTime;
-	nextExecutionAt?: DateTime;
-	createdAt: DateTime;
+	lastExecutionAt?: Instant;
+	nextExecutionAt?: Instant;
+	createdAt: Instant;
 	createdBy: string;
 }
 

@@ -22,8 +22,8 @@ import {
 } from "@/lib/absences/vacation-accrual";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
-import { format } from "@/lib/datetime/luxon-utils";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
 import {
 	getEmployeesWithExpiringCarryover,
 	getPendingVacationRequests,
@@ -55,9 +55,7 @@ export interface IndividualBalanceReport {
 	utilizationRate: number | null;
 }
 
-function configurationLabel(
-	configuration: VacationBalanceConfiguration | null,
-): string {
+function configurationLabel(configuration: VacationBalanceConfiguration | null): string {
 	switch (configuration?.status) {
 		case "resolved":
 			return "Resolved";
@@ -76,19 +74,10 @@ function reportTotals(reports: IndividualBalanceReport[]) {
 	const available = reports.filter((report) => report.totalAllowance !== null);
 	return {
 		unavailable: reports.length - available.length,
-		totalAllowance: available.reduce(
-			(sum, report) => sum + (report.totalAllowance ?? 0),
-			0,
-		),
+		totalAllowance: available.reduce((sum, report) => sum + (report.totalAllowance ?? 0), 0),
 		totalUsed: available.reduce((sum, report) => sum + (report.used ?? 0), 0),
-		totalPending: available.reduce(
-			(sum, report) => sum + (report.pending ?? 0),
-			0,
-		),
-		totalRemaining: available.reduce(
-			(sum, report) => sum + (report.remaining ?? 0),
-			0,
-		),
+		totalPending: available.reduce((sum, report) => sum + (report.pending ?? 0), 0),
+		totalRemaining: available.reduce((sum, report) => sum + (report.remaining ?? 0), 0),
 	};
 }
 
@@ -207,11 +196,7 @@ export async function generateExpirationReport(
 	year: number,
 	daysAhead: number = 90,
 ): Promise<ExpirationReport[]> {
-	const expiring = await getEmployeesWithExpiringCarryover(
-		organizationId,
-		year,
-		daysAhead,
-	);
+	const expiring = await getEmployeesWithExpiringCarryover(organizationId, year, daysAhead);
 
 	return expiring.map((emp) => ({
 		employeeId: emp.employeeId,
@@ -220,12 +205,7 @@ export async function generateExpirationReport(
 		expiresAt: emp.expiresAt,
 		timezone: emp.timezone,
 		daysUntilExpiry: emp.daysUntilExpiry,
-		urgency:
-			emp.daysUntilExpiry <= 7
-				? "critical"
-				: emp.daysUntilExpiry <= 30
-					? "warning"
-					: "info",
+		urgency: emp.daysUntilExpiry <= 7 ? "critical" : emp.daysUntilExpiry <= 30 ? "warning" : "info",
 	}));
 }
 
@@ -237,9 +217,7 @@ export async function generateAccrualProjection(
 	year: number,
 	organizationId: string,
 ): Promise<AccrualProjection[]> {
-	return (
-		await generateAccrualProjectionResult(employeeId, year, organizationId)
-	).projections;
+	return (await generateAccrualProjectionResult(employeeId, year, organizationId)).projections;
 }
 
 /** A policy gap or conflict remains visible to callers that display projection availability. */
@@ -281,10 +259,7 @@ export async function generateAccrualProjectionResult(
 					year,
 				}),
 			])
-		: [
-				new Map<string, EmployeeEmployments>(),
-				new Map<string, EmployeeVacationOverride>(),
-			];
+		: [new Map<string, EmployeeEmployments>(), new Map<string, EmployeeVacationOverride>()];
 	const employment = employments.get(employeeId);
 	const stints = employment ? accruingEmployments(employment) : [];
 	const customAnnualDays = overrides.get(employeeId)?.customAnnualDays;
@@ -330,11 +305,26 @@ export async function generateAccrualProjectionResult(
 			accrued,
 			cumulativeAccrued: Math.round(cumulativeAccrued * 10) / 10,
 			projectedUsed: Math.round(projectedUsed * 10) / 10,
-			projectedBalance:
-				Math.round((cumulativeAccrued - projectedUsed) * 10) / 10,
+			projectedBalance: Math.round((cumulativeAccrued - projectedUsed) * 10) / 10,
 		});
 	}
 	return { configuration, projections };
+}
+
+function formatReportGeneratedTimestamp(instant = systemClock.nowInstant()): string {
+	const { date, time } = getInstantLocalMinuteFields(instant, "UTC");
+	return `${date} ${time}`;
+}
+
+function formatReportGeneratedDisplay(instant = systemClock.nowInstant()): string {
+	const zoned = instant.toZonedDateTimeISO("UTC");
+	const dateLabel = zoned.toPlainDate().toLocaleString("en-US", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	});
+	const { time } = getInstantLocalMinuteFields(instant, "UTC");
+	return `${dateLabel} at ${time}`;
 }
 
 /**
@@ -348,7 +338,7 @@ export function exportVacationBalanceAsCsv(
 
 	// Header
 	lines.push(`Vacation Balance Report - ${year}`);
-	lines.push(`Generated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`);
+	lines.push(`Generated: ${formatReportGeneratedTimestamp()}`);
 	lines.push("");
 
 	// Column headers
@@ -373,18 +363,12 @@ export function exportVacationBalanceAsCsv(
 	// Summary
 	lines.push("");
 	lines.push("Summary");
-	const {
-		totalAllowance,
-		totalUsed,
-		totalPending,
-		totalRemaining,
-		unavailable,
-	} = reportTotals(reports);
+	const { totalAllowance, totalUsed, totalPending, totalRemaining, unavailable } =
+		reportTotals(reports);
 
 	lines.push(`Total Employees,${reports.length}`);
 	lines.push(`Employees Requiring Policy Review,${unavailable}`);
-	if (unavailable > 0)
-		lines.push("Totals include employees with resolved balances only");
+	if (unavailable > 0) lines.push("Totals include employees with resolved balances only");
 	lines.push(`Total Allowance,${totalAllowance.toFixed(1)}`);
 	lines.push(`Total Used,${totalUsed.toFixed(1)}`);
 	lines.push(`Total Pending,${totalPending.toFixed(1)}`);
@@ -399,14 +383,12 @@ export function exportVacationBalanceAsCsv(
 /**
  * Export expiration report as CSV
  */
-export function exportExpirationReportAsCsv(
-	reports: ExpirationReport[],
-): string {
+export function exportExpirationReportAsCsv(reports: ExpirationReport[]): string {
 	const lines: string[] = [];
 
 	// Header
 	lines.push("Carryover Expiration Report");
-	lines.push(`Generated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`);
+	lines.push(`Generated: ${formatReportGeneratedTimestamp()}`);
 	lines.push("");
 
 	// Column headers
@@ -431,12 +413,8 @@ export function exportExpirationReportAsCsv(
 	lines.push(
 		`Total Days Expiring,${reports.reduce((sum, r) => sum + r.carryoverDays, 0).toFixed(1)}`,
 	);
-	lines.push(
-		`Critical (7 days or less),${reports.filter((r) => r.urgency === "critical").length}`,
-	);
-	lines.push(
-		`Warning (30 days or less),${reports.filter((r) => r.urgency === "warning").length}`,
-	);
+	lines.push(`Critical (7 days or less),${reports.filter((r) => r.urgency === "critical").length}`);
+	lines.push(`Warning (30 days or less),${reports.filter((r) => r.urgency === "warning").length}`);
 
 	return lines.join("\n");
 }
@@ -449,17 +427,10 @@ export function formatVacationBalanceAsHtml(
 	year: number,
 	organizationName: string,
 ): string {
-	const {
-		totalAllowance,
-		totalUsed,
-		totalPending,
-		totalRemaining,
-		unavailable,
-	} = reportTotals(reports);
+	const { totalAllowance, totalUsed, totalPending, totalRemaining, unavailable } =
+		reportTotals(reports);
 	const avgUtilization =
-		totalAllowance > 0
-			? ((totalUsed + totalPending) / totalAllowance) * 100
-			: 0;
+		totalAllowance > 0 ? ((totalUsed + totalPending) / totalAllowance) * 100 : 0;
 
 	let html = `
 <!DOCTYPE html>
@@ -483,7 +454,7 @@ export function formatVacationBalanceAsHtml(
 <body>
   <h1>Vacation Balance Report</h1>
   <p><strong>${htmlText(organizationName)}</strong> - Year ${year}</p>
-  <p>Generated: ${format(new Date(), "MMMM d, yyyy 'at' HH:mm")}</p>
+  <p>Generated: ${formatReportGeneratedDisplay()}</p>
 
   <div class="summary">
     <div class="stat-card">
@@ -523,8 +494,7 @@ export function formatVacationBalanceAsHtml(
     </tr>`;
 
 	for (const report of reports) {
-		const rowClass =
-			report.remaining !== null && report.remaining <= 2 ? "low-balance" : "";
+		const rowClass = report.remaining !== null && report.remaining <= 2 ? "low-balance" : "";
 
 		html += `
     <tr class="${rowClass}">

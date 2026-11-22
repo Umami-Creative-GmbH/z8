@@ -1,14 +1,8 @@
 import { and, eq, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import type { db } from "@/db";
-import {
-	absenceEntry,
-	approvalRequest,
-	timeRecord,
-	timeRecordAbsence,
-} from "@/db/schema";
+import { absenceEntry, approvalRequest, timeRecord, timeRecordAbsence } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { dateRangesOverlap } from "./date-utils";
+import { comparePlainDates, dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DayPeriod } from "./types";
 
 /** The rejection reason of a vacation request a sick absence overrode: the system's, not an approver's. */
@@ -40,7 +34,14 @@ type CanonicalAbsenceRangeInput = {
 };
 
 function isoDatePlusDays(date: string, days: number): string {
-	return DateTime.fromISO(date).plus({ days }).toISODate() ?? date;
+	return parsePlainDate(date).add({ days }).toString();
+}
+
+function isoDateRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+	return (
+		comparePlainDates(parsePlainDate(start1), parsePlainDate(end2)) <= 0 &&
+		comparePlainDates(parsePlainDate(start2), parsePlainDate(end1)) <= 0
+	);
 }
 
 function mapAbsenceRangeToCanonicalTimestamps(input: {
@@ -49,21 +50,18 @@ function mapAbsenceRangeToCanonicalTimestamps(input: {
 	startPeriod: DayPeriod;
 	endPeriod: DayPeriod;
 }): { startAt: Date; endAt: Date } {
-	const startOfStartDate = DateTime.fromISO(input.startDate, {
-		zone: "utc",
-	}).startOf("day");
-	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf(
-		"day",
-	);
+	const startOfStartDate = parsePlainDate(input.startDate).toZonedDateTime("UTC").toInstant();
+	const endOfEndDate = parsePlainDate(input.endDate)
+		.add({ days: 1 })
+		.toZonedDateTime("UTC")
+		.toInstant()
+		.subtract({ milliseconds: 1 });
 
 	const startAt =
-		input.startPeriod === "pm"
-			? startOfStartDate.plus({ hours: 12 })
-			: startOfStartDate;
-	const endAt =
-		input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+		input.startPeriod === "pm" ? startOfStartDate.add({ hours: 12 }) : startOfStartDate;
+	const endAt = input.endPeriod === "am" ? endOfEndDate.subtract({ hours: 12 }) : endOfEndDate;
 
-	return { startAt: startAt.toJSDate(), endAt: endAt.toJSDate() };
+	return { startAt: dateFromInstant(startAt), endAt: dateFromInstant(endAt) };
 }
 
 async function updateCanonicalAbsenceRangeInTransaction(
@@ -79,10 +77,7 @@ async function updateCanonicalAbsenceRangeInTransaction(
 		.set({
 			startAt,
 			endAt,
-			durationMinutes: Math.max(
-				0,
-				Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
-			),
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
 			updatedAt: currentTimestamp(),
 			updatedBy: input.updatedBy,
 		})
@@ -168,13 +163,8 @@ async function createCanonicalAbsenceInTransaction(
 			recordKind: "absence",
 			startAt,
 			endAt,
-			durationMinutes: Math.max(
-				0,
-				Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
-			),
-			approvalState:
-				input.approvalState ??
-				(input.requiresApproval ? "pending" : "approved"),
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			approvalState: input.approvalState ?? (input.requiresApproval ? "pending" : "approved"),
 			origin: "manual",
 			createdBy: input.createdBy,
 			updatedBy: input.createdBy,
@@ -200,13 +190,8 @@ export function splitVacationAroundSickRange(input: {
 	sickStartDate: string;
 	sickEndDate: string;
 }): VacationSegment[] {
-	if (
-		input.sickEndDate < input.vacationStartDate ||
-		input.sickStartDate > input.vacationEndDate
-	) {
-		return [
-			{ startDate: input.vacationStartDate, endDate: input.vacationEndDate },
-		];
+	if (input.sickEndDate < input.vacationStartDate || input.sickStartDate > input.vacationEndDate) {
+		return [{ startDate: input.vacationStartDate, endDate: input.vacationEndDate }];
 	}
 
 	const segments: VacationSegment[] = [];
@@ -266,10 +251,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 		where: and(
 			eq(absenceEntry.employeeId, input.employeeId),
 			eq(absenceEntry.organizationId, input.organizationId),
-			or(
-				eq(absenceEntry.status, "pending"),
-				eq(absenceEntry.status, "approved"),
-			),
+			or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
 		),
 		with: { category: true },
 	});
@@ -283,16 +265,11 @@ export async function adjustVacationAbsencesForSickness(input: {
 			deletedAbsenceIds: [],
 		};
 
-		if (vacation.status !== "pending" && vacation.status !== "approved")
-			return summary;
+		if (vacation.status !== "pending" && vacation.status !== "approved") return summary;
 		if (!vacation.category.countsAgainstVacation) return summary;
+		if (vacation.startPeriod !== "full_day" || vacation.endPeriod !== "full_day") return summary;
 		if (
-			vacation.startPeriod !== "full_day" ||
-			vacation.endPeriod !== "full_day"
-		)
-			return summary;
-		if (
-			!dateRangesOverlap(
+			!isoDateRangesOverlap(
 				input.sickStartDate,
 				input.sickEndDate,
 				vacation.startDate,
@@ -378,22 +355,19 @@ export async function adjustVacationAbsencesForSickness(input: {
 		summary.updatedAbsenceIds.push(vacation.id);
 
 		if (secondSegment) {
-			const canonicalRecordId = await createCanonicalAbsenceInTransaction(
-				input.tx,
-				{
-					organizationId: input.organizationId,
-					employeeId: vacation.employeeId,
-					absenceCategoryId: vacation.categoryId,
-					startDate: secondSegment.startDate,
-					startPeriod: "full_day",
-					endDate: secondSegment.endDate,
-					endPeriod: "full_day",
-					countsAgainstVacation: vacation.category.countsAgainstVacation,
-					requiresApproval: vacation.category.requiresApproval,
-					approvalState: vacation.status,
-					createdBy: input.updatedBy,
-				},
-			);
+			const canonicalRecordId = await createCanonicalAbsenceInTransaction(input.tx, {
+				organizationId: input.organizationId,
+				employeeId: vacation.employeeId,
+				absenceCategoryId: vacation.categoryId,
+				startDate: secondSegment.startDate,
+				startPeriod: "full_day",
+				endDate: secondSegment.endDate,
+				endPeriod: "full_day",
+				countsAgainstVacation: vacation.category.countsAgainstVacation,
+				requiresApproval: vacation.category.requiresApproval,
+				approvalState: vacation.status,
+				createdBy: input.updatedBy,
+			});
 			const [created] = await input.tx
 				.insert(absenceEntry)
 				.values({
@@ -417,14 +391,13 @@ export async function adjustVacationAbsencesForSickness(input: {
 			summary.createdAbsenceIds.push(created.id);
 
 			if (vacation.status === "pending") {
-				const existingApproval =
-					await input.tx.query.approvalRequest.findFirst({
-						where: and(
-							eq(approvalRequest.organizationId, input.organizationId),
-							eq(approvalRequest.entityType, "absence_entry"),
-							eq(approvalRequest.entityId, vacation.id),
-						),
-					});
+				const existingApproval = await input.tx.query.approvalRequest.findFirst({
+					where: and(
+						eq(approvalRequest.organizationId, input.organizationId),
+						eq(approvalRequest.entityType, "absence_entry"),
+						eq(approvalRequest.entityId, vacation.id),
+					),
+				});
 
 				if (existingApproval) {
 					await input.tx.insert(approvalRequest).values({
@@ -455,18 +428,9 @@ export async function adjustVacationAbsencesForSickness(input: {
 
 	return summaries.reduce<VacationOverrideSummary>(
 		(summary, vacationSummary) => ({
-			updatedAbsenceIds: [
-				...summary.updatedAbsenceIds,
-				...vacationSummary.updatedAbsenceIds,
-			],
-			createdAbsenceIds: [
-				...summary.createdAbsenceIds,
-				...vacationSummary.createdAbsenceIds,
-			],
-			deletedAbsenceIds: [
-				...summary.deletedAbsenceIds,
-				...vacationSummary.deletedAbsenceIds,
-			],
+			updatedAbsenceIds: [...summary.updatedAbsenceIds, ...vacationSummary.updatedAbsenceIds],
+			createdAbsenceIds: [...summary.createdAbsenceIds, ...vacationSummary.createdAbsenceIds],
+			deletedAbsenceIds: [...summary.deletedAbsenceIds, ...vacationSummary.deletedAbsenceIds],
 			overriddenApprovedAbsenceIds: [
 				...(summary.overriddenApprovedAbsenceIds ?? []),
 				...(vacationSummary.overriddenApprovedAbsenceIds ?? []),
