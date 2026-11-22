@@ -1,5 +1,7 @@
-import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+/* @vitest-environment jsdom */
+
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	getCurrentSettingsAccess: vi.fn(),
@@ -24,18 +26,44 @@ vi.mock("@/lib/projects/project-task-permission", () => ({
 	loadProjectTaskManager: mocks.loadProjectTaskManager,
 	listProjectsWithManageableTasks: mocks.listProjectsWithManageableTasks,
 }));
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: async () => (_key: string, fallback: string) => fallback,
+}));
+vi.mock("next/navigation", async () => {
+	const { useSyncExternalStore } = await import("react");
+	const listeners = new Set<() => void>();
+	const replaceState = window.history.replaceState.bind(window.history);
+	window.history.replaceState = (...args: Parameters<History["replaceState"]>) => {
+		replaceState(...args);
+		for (const listener of listeners) listener();
+	};
+	return {
+		useSearchParams: () =>
+			new URLSearchParams(
+				useSyncExternalStore(
+					(listener) => {
+						listeners.add(listener);
+						return () => {
+							listeners.delete(listener);
+						};
+					},
+					() => window.location.search,
+				),
+			),
+	};
+});
 vi.mock("@/components/settings/project-management", () => ({
 	ProjectManagement: ({ organizationId }: { organizationId: string }) => (
-		<div data-testid="project-management">{organizationId}</div>
-	),
-}));
-vi.mock("@/components/settings/project-settings-tabs", () => ({
-	ProjectSettingsTabs: ({ projects }: { projects: React.ReactNode }) => (
-		<div data-testid="project-settings-tabs">{projects}</div>
+		<div data-testid="project-management">
+			<span>{organizationId}</span>
+			<input aria-label="Project filter" defaultValue="" />
+		</div>
 	),
 }));
 vi.mock("@/components/settings/project-template-management", () => ({
-	ProjectTemplateManagement: () => <div data-testid="project-templates" />,
+	ProjectTemplateManagement: ({ organizationId }: { organizationId: string }) => (
+		<div data-testid="project-templates">{organizationId} templates</div>
+	),
 }));
 vi.mock("@/components/settings/project-task-management", () => ({
 	ProjectTaskManagement: () => <div data-testid="project-task-management" />,
@@ -47,9 +75,10 @@ async function renderContent() {
 	return ProjectSettingsPage().props.children.type();
 }
 
-describe("ProjectSettingsPage feature-flag guard", () => {
+describe("ProjectSettingsPage feature-flag guard and SettingsTabbedPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		window.history.replaceState(null, "", "/en/settings/projects");
 		mocks.getCurrentSettingsAccess.mockResolvedValue({
 			userId: "user-1",
 			organizationId: "org-1",
@@ -62,14 +91,59 @@ describe("ProjectSettingsPage feature-flag guard", () => {
 		mocks.listProjectsWithManageableTasks.mockResolvedValue([]);
 	});
 
-	it("renders project settings tabs for org admins when projectsEnabled is on", async () => {
-		const html = renderToStaticMarkup(await renderContent());
+	afterEach(() => {
+		cleanup();
+	});
+
+	it("renders Projects and Templates via SettingsTabbedPage for org admins when projectsEnabled is on", async () => {
+		const { container } = render(await renderContent());
 
 		expect(mocks.requireOrganizationFeatureEnabled).toHaveBeenCalledWith(
 			"org-1",
 			"projectsEnabled",
 		);
-		expect(html).toContain("project-settings-tabs");
+		expect(container.firstElementChild?.className).toContain("page-frame");
+		expect(container.querySelector(".page-measure")).toBeNull();
+		const tablist = screen.getByRole("tablist", { name: "Projects" });
+		expect(tablist.parentElement?.className).toContain("max-w-full");
+		expect(tablist.parentElement?.className).toContain("overflow-x-auto");
+		expect(screen.getByRole("tab", { name: "Projects" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(screen.getByTestId("project-management")).toBeTruthy();
+		expect(screen.queryByTestId("project-templates")).toBeNull();
+	});
+
+	it("supports ?tab=templates deep links, unknown-tab fallback, URL sync, and keepMounted state", async () => {
+		window.history.replaceState(null, "", "/en/settings/projects?tab=templates");
+		render(await renderContent());
+		expect(screen.getByRole("tab", { name: "Templates" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(screen.getByTestId("project-templates")).toBeTruthy();
+		expect(screen.queryByTestId("project-management")).toBeNull();
+
+		cleanup();
+		window.history.replaceState(null, "", "/de/settings/projects?tab=unknown&from=nav#list");
+		render(await renderContent());
+		expect(screen.getByRole("tab", { name: "Projects" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		fireEvent.change(screen.getByLabelText("Project filter"), {
+			target: { value: "Apollo" },
+		});
+
+		fireEvent.click(screen.getByRole("tab", { name: "Templates" }));
+		await waitFor(() => expect(screen.getByTestId("project-templates")).toBeTruthy());
+		expect(window.location.pathname).toBe("/de/settings/projects");
+		expect(window.location.hash).toBe("#list");
+		expect(new URLSearchParams(window.location.search).get("from")).toBe("nav");
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe("templates");
+
+		fireEvent.click(screen.getByRole("tab", { name: "Projects" }));
+		await waitFor(() =>
+			expect(screen.getByRole("tabpanel").querySelector("input")?.value).toBe("Apollo"),
+		);
 	});
 
 	it("returns notFound for org admins and managers when projectsEnabled is off", async () => {
@@ -102,12 +176,12 @@ describe("ProjectSettingsPage feature-flag guard", () => {
 		mocks.loadProjectTaskManager.mockResolvedValue({ employeeId: "emp-3" });
 		mocks.listProjectsWithManageableTasks.mockResolvedValue([{ id: "proj-1", name: "Alpha" }]);
 
-		const html = renderToStaticMarkup(await renderContent());
+		render(await renderContent());
 		expect(mocks.requireOrganizationFeatureEnabled).toHaveBeenCalledWith(
 			"org-1",
 			"projectsEnabled",
 		);
-		expect(html).toContain("project-task-management");
+		expect(screen.getByTestId("project-task-management")).toBeTruthy();
 
 		mocks.requireOrganizationFeatureEnabled.mockRejectedValue(new Error("NEXT_NOT_FOUND"));
 		await expect(renderContent()).rejects.toThrow("NEXT_NOT_FOUND");

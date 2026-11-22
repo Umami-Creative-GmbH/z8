@@ -1,17 +1,16 @@
 import { Suspense } from "react";
 import { SettingsLoadError } from "@/components/settings/settings-load-error";
+import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import {
 	VehicleUseAssignments,
 	VehicleUseSwitch,
 } from "@/components/settings/vehicle-use/vehicle-use-settings";
 import { VehicleSettings } from "@/components/settings/vehicles/vehicle-settings";
-import { VehicleSettingsTabs } from "@/components/settings/vehicles/vehicle-settings-tabs";
-import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getVehicleUseAdminDataAction } from "./vehicle-use-actions";
 import { getVehicleSettings } from "./actions";
+import { getVehicleUseAdminDataAction } from "./vehicle-use-actions";
 
 async function VehicleSettingsPageContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
@@ -30,45 +29,46 @@ async function VehicleSettingsPageContent() {
 	);
 
 	return (
-		<div className="page-frame">
-			<div className="page-measure min-w-0 space-y-6">
-				<PageHeader
-					title={t("settings.vehicles.title", "Vehicles")}
-					description={t(
-						"settings.vehicles.description",
-						"Vehicles your employees drive for work, and their assigned drivers",
-					)}
-				/>
-				<VehicleSettingsTabs
-					key={organizationId}
-					panels={{
-						vehicles: result.success ? (
-							<VehicleSettings initialData={result.data} />
-						) : (
-							<SettingsLoadError
-								message={t(
-									"settings.vehicles.loadFailed",
-									"Vehicles could not be loaded.",
-								)}
-							/>
-						),
-						use: useResult.success ? (
-							<VehicleUseSwitch
-								key={String(useResult.data.settings.enabled)}
-								initialEnabled={useResult.data.settings.enabled}
-							/>
-						) : (
-							useError
-						),
-						assignments: useResult.success ? (
-							<VehicleUseAssignments data={useResult.data} />
-						) : (
-							useError
-						),
-					}}
-				/>
-			</div>
-		</div>
+		<SettingsTabbedPage
+			key={organizationId}
+			title={t("settings.vehicles.title", "Vehicles")}
+			description={t(
+				"settings.vehicles.description",
+				"Vehicles your employees drive for work, and their assigned drivers",
+			)}
+			measure
+			defaultTab="vehicles"
+			tabs={[
+				{
+					value: "vehicles",
+					label: t("settings.vehicles.title", "Vehicles"),
+					panel: result.success ? (
+						<VehicleSettings initialData={result.data} />
+					) : (
+						<SettingsLoadError
+							message={t("settings.vehicles.loadFailed", "Vehicles could not be loaded.")}
+						/>
+					),
+				},
+				{
+					value: "use",
+					label: t("settings.vehicleUse.title", "Vehicle use"),
+					panel: useResult.success ? (
+						<VehicleUseSwitch
+							key={String(useResult.data.settings.enabled)}
+							initialEnabled={useResult.data.settings.enabled}
+						/>
+					) : (
+						useError
+					),
+				},
+				{
+					value: "assignments",
+					label: t("settings.workPolicies.tab.assignments", "Assignments"),
+					panel: useResult.success ? <VehicleUseAssignments data={useResult.data} /> : useError,
+				},
+			]}
+		/>
 	);
 }
 
