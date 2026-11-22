@@ -4,6 +4,7 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 async function CustomerSettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -12,12 +13,13 @@ async function CustomerSettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		return redirectWithLocale("/settings");
 	}
+
+	await requireOrganizationFeatureEnabled(organizationId, "projectsEnabled");
 
 	return (
 		<CustomerManagement

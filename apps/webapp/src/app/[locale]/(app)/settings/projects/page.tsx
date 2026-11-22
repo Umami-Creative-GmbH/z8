@@ -11,6 +11,7 @@ import {
 	listProjectsWithManageableTasks,
 	loadProjectTaskManager,
 } from "@/lib/projects/project-task-permission";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 /**
  * Project managers without project settings access manage only the tasks of
@@ -28,8 +29,7 @@ async function ProjectSettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		return redirectWithLocale("/settings");
@@ -43,8 +43,11 @@ async function ProjectSettingsPageContent() {
 		if (projects.length === 0) {
 			return redirectWithLocale("/settings");
 		}
+		await requireOrganizationFeatureEnabled(organizationId, "projectsEnabled");
 		return <ProjectTaskManagement projects={projects} />;
 	}
+
+	await requireOrganizationFeatureEnabled(organizationId, "projectsEnabled");
 
 	if (settingsRouteContext.accessTier !== "orgAdmin") {
 		return (

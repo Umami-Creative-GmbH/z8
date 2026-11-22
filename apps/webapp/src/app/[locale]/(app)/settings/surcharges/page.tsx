@@ -4,6 +4,7 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 async function SurchargeSettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -19,11 +20,10 @@ async function SurchargeSettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
+	await requireOrganizationFeatureEnabled(organizationId, "surchargesEnabled");
+
 	return (
-		<SurchargeManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<SurchargeManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
 	);
 }
 

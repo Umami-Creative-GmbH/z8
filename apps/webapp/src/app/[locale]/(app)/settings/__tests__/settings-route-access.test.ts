@@ -638,6 +638,46 @@ describe("org-admin settings route access", () => {
 		);
 	});
 
+	it.each([
+		["compliance/works-council/page.tsx", "worksCouncilEnabled"],
+		["customers/page.tsx", "projectsEnabled"],
+		["projects/page.tsx", "projectsEnabled"],
+		["surcharges/page.tsx", "surchargesEnabled"],
+		["shifts/page.tsx", "shiftsEnabled"],
+	] as const)(
+		"guards direct access to %s with the shared %s feature-flag guard (#1961)",
+		(pagePath, feature) => {
+			const source = stripComments(readTestText(join(SETTINGS_ROOT, pagePath), "utf8"));
+
+			expect(source).toContain("requireOrganizationFeatureEnabled(");
+			expect(source).toContain(`"${feature}"`);
+		},
+	);
+
+	it("keeps works council settings updates in an exported organizationAction without inline server actions (#1961)", () => {
+		const pageSource = stripComments(
+			readTestText(join(SETTINGS_ROOT, "compliance/works-council/page.tsx"), "utf8"),
+		);
+		const actionsSource = stripComments(
+			readTestText(join(SETTINGS_ROOT, "compliance/works-council/actions.ts"), "utf8"),
+		);
+
+		expect(pageSource).not.toContain('"use server"');
+		expect(pageSource).not.toContain("'use server'");
+		expect(actionsSource).toContain("organizationAction(");
+		expect(actionsSource).toContain('requires: "orgAdmin"');
+	});
+
+	it("keeps report-share-links accessible with a Projects-disabled notice instead of notFound (#1961)", () => {
+		const source = stripComments(
+			readTestText(join(SETTINGS_ROOT, "report-share-links/page.tsx"), "utf8"),
+		);
+
+		expect(source).toContain("requireOrgAdminSettingsAccess(");
+		expect(source).toContain('isOrganizationFeatureEnabled(organizationId, "projectsEnabled")');
+		expect(source).not.toContain("requireOrganizationFeatureEnabled(");
+	});
+
 	it("gates the Billable Time settings pages on org admins and the module flag", () => {
 		for (const page of [
 			"billable-time/page.tsx",

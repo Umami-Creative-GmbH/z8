@@ -3387,6 +3387,10 @@
     "reportShareLinks": {
       "description": "Alle Links einsehen und widerrufen, über die ein Projekt- oder Kundenbericht geteilt wird",
       "pageDescription": "Links, die Personen außerhalb von Z8 einen statischen Snapshot eines Projekt- oder Kundenberichts anzeigen. Das Widerrufen eines Links deaktiviert ihn sofort und löscht seinen Snapshot.",
+      "projectsDisabledNotice": {
+        "description": "Projekte sind für diese Organisation derzeit deaktiviert, sodass keine neuen Berichtsfreigabe-Links erstellt werden können. Bestehende Links können Sie hier weiterhin einsehen und widerrufen.",
+        "title": "Projekte sind deaktiviert"
+      },
       "title": "Berichtsfreigabe-Links"
     },
     "search": {

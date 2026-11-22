@@ -126,9 +126,10 @@ it("names the link in the revoke confirmation and keeps it open while pending an
 		}),
 	);
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const onRevoked = vi.fn();
 	render(
 		<QueryClientProvider client={client}>
-			<ReportShareLinkList showReport />
+			<ReportShareLinkList showReport onRevoked={onRevoked} />
 		</QueryClientProvider>,
 	);
 
@@ -160,6 +161,7 @@ it("names the link in the revoke confirmation and keeps it open while pending an
 	);
 	await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
 	expect(mocks.toastSuccess).toHaveBeenCalledWith("Link revoked");
+	expect(onRevoked).toHaveBeenCalledTimes(1);
 });
 
 it("does not fetch or expose cached links while organization scope is unresolved", () => {
