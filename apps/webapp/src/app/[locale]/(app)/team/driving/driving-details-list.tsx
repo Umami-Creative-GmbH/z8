@@ -4,6 +4,7 @@ import { IconCalendar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useId, useTransition } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
@@ -127,27 +128,19 @@ export function DrivingDetailsList({
 						<label htmlFor={employeePickerId} className="text-sm font-medium">
 							{t("team.driving.filters.employee", "Employee")}
 						</label>
-						<Select
+						<EmployeeSingleSelect
+							id={employeePickerId}
+							className="space-y-0"
 							disabled={pending}
-							value={filters.employeeId ?? ALL}
-							onValueChange={(value) =>
-								navigate({ teamId: filters.teamId, employeeId: value === ALL ? null : value })
-							}
-						>
-							<SelectTrigger id={employeePickerId}>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value={ALL}>
-									{t("team.driving.filters.allEmployees", "All employees")}
-								</SelectItem>
-								{employeeChoices.map((person) => (
-									<SelectItem key={person.id} value={person.id}>
-										{person.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+							value={filters.employeeId}
+							onChange={(value) => navigate({ teamId: filters.teamId, employeeId: value })}
+							allowClear
+							clearLabel={t("team.driving.filters.allEmployees", "All employees")}
+							placeholder={t("team.driving.filters.allEmployees", "All employees")}
+							employees={employeeChoices.map((person) =>
+								toSelectableEmployee({ id: person.id, name: person.name }),
+							)}
+						/>
 					</div>
 				</div>
 				{filtered ? (

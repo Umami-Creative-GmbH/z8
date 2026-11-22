@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { EquipmentDepartureSummary } from "@/components/equipment/equipment-departure-summary";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
@@ -17,13 +18,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	TFormControl,
 	TFormDescription,
@@ -378,23 +372,23 @@ function DeparturePreviewFields({
 						<TFormLabel hasError={fieldHasError(field)}>
 							{t("settings.employees.offboarding.replacement", "Replacement for approvals")}
 						</TFormLabel>
-						<Select value={field.state.value} onValueChange={field.handleChange}>
-							<TFormControl hasError={fieldHasError(field)}>
-								<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-									<SelectValue />
-								</SelectTrigger>
-							</TFormControl>
-							<SelectContent>
-								<SelectItem value={NO_REPLACEMENT}>
-									{t("settings.employees.offboarding.noReplacement", "No replacement")}
-								</SelectItem>
-								{data?.replacementOptions.map((option) => (
-									<SelectItem key={option.employeeId} value={option.employeeId}>
-										{option.name || option.employeeId}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<TFormControl hasError={fieldHasError(field)}>
+							<EmployeeSingleSelect
+								className="space-y-0"
+								value={field.state.value === NO_REPLACEMENT ? null : field.state.value}
+								onChange={(value) => field.handleChange(value ?? NO_REPLACEMENT)}
+								onBlur={field.handleBlur}
+								placeholder={t("settings.employees.offboarding.noReplacement", "No replacement")}
+								allowClear
+								clearLabel={t("settings.employees.offboarding.noReplacement", "No replacement")}
+								employees={(data?.replacementOptions ?? []).map((option) =>
+									toSelectableEmployee({
+										id: option.employeeId,
+										name: option.name || option.employeeId,
+									}),
+								)}
+							/>
+						</TFormControl>
 						<TFormDescription>
 							{t(
 								"settings.employees.offboarding.replacementHelp",

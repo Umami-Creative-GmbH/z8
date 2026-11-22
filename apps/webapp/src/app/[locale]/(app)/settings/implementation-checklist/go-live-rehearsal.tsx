@@ -10,9 +10,9 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { createContext, type ReactNode, useContext, useState, useTransition } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
 	Sheet,
 	SheetContent,
@@ -173,17 +173,19 @@ export function GoLiveRehearsalPicker() {
 				</p>
 			) : (
 				<div className="flex flex-col gap-2 sm:flex-row">
-					<SearchableSelect
+					<EmployeeSingleSelect
 						aria-label={t("settings.implementationChecklist.rehearsal.person", "Person")}
-						emptyText={t(
+						emptyMessage={t(
 							"settings.implementationChecklist.rehearsal.noMatch",
 							"Nobody in the go-live group matches.",
 						)}
-						onValueChange={setMemberKey}
-						options={controls.candidates.map((candidate) => ({
-							code: candidate.key,
-							name: candidate.displayName,
-						}))}
+						onChange={(next) => setMemberKey(next ?? "")}
+						employees={controls.candidates.map((candidate) =>
+							toSelectableEmployee({
+								id: candidate.key,
+								name: candidate.displayName,
+							}),
+						)}
 						placeholder={t(
 							"settings.implementationChecklist.rehearsal.choosePerson",
 							"Choose a person",
@@ -192,7 +194,7 @@ export function GoLiveRehearsalPicker() {
 							"settings.implementationChecklist.rehearsal.searchPerson",
 							"Search the go-live group",
 						)}
-						value={memberKey}
+						value={memberKey || null}
 					/>
 					<Button
 						disabled={!memberKey}

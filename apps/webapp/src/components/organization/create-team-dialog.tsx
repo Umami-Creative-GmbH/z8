@@ -6,6 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -18,13 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
@@ -150,39 +144,42 @@ export function CreateTeamDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="primary-manager">
-								{t(
+							<EmployeeSingleSelect
+								id="primary-manager"
+								label={t(
 									"settings.organization.teams.createDialog.fallbackManagerLabel",
 									"Fallback Manager",
 								)}
-							</Label>
-							<Select
-								value={formData.primaryManagerId}
-								onValueChange={(primaryManagerId) => setFormData({ ...formData, primaryManagerId })}
-							>
-								<SelectTrigger id="primary-manager">
-									<SelectValue
-										placeholder={t(
-											"settings.organization.teams.createDialog.fallbackManagerPlaceholder",
-											"Select a fallback manager",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={NO_MANAGER_VALUE}>
-										{t(
-											"settings.organization.teams.createDialog.noFallbackManager",
-											"No fallback manager",
-										)}
-									</SelectItem>
-									{managerOptions.map((manager) => (
-										<SelectItem key={manager.employeeId} value={manager.employeeId}>
-											{manager.name}
-											{manager.position ? ` (${manager.position})` : ""}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+								placeholder={t(
+									"settings.organization.teams.createDialog.noFallbackManager",
+									"No fallback manager",
+								)}
+								allowClear
+								clearLabel={t(
+									"settings.organization.teams.createDialog.noFallbackManager",
+									"No fallback manager",
+								)}
+								value={
+									formData.primaryManagerId === NO_MANAGER_VALUE
+										? null
+										: formData.primaryManagerId
+								}
+								onChange={(primaryManagerId) =>
+									setFormData({
+										...formData,
+										primaryManagerId: primaryManagerId ?? NO_MANAGER_VALUE,
+									})
+								}
+								employees={managerOptions.map((manager) =>
+									toSelectableEmployee({
+										id: manager.employeeId,
+										name: manager.name,
+										email: manager.email,
+										position: manager.position,
+										role: "manager",
+									}),
+								)}
+							/>
 							<p className="text-xs text-muted-foreground">
 								{t(
 									"settings.organization.teams.createDialog.fallbackManagerHelp",

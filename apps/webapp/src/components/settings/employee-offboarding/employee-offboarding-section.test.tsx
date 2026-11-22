@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 
 const hook = vi.hoisted(() => ({
@@ -110,6 +110,14 @@ function section(employeeId: string) {
 		</QueryClientProvider>
 	);
 }
+
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
 
 describe("EmployeeOffboardingSection", () => {
 	beforeEach(() => {
@@ -258,7 +266,10 @@ describe("EmployeeOffboardingSection", () => {
 			screen.getByText("Approval duties need a replacement").closest("li") as HTMLElement,
 		);
 		await user.click(review.getByRole("combobox", { name: "Replacement for approvals" }));
-		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
+		await user.click(await screen.findByRole("option", { name: /Robin Admin/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: /Robin Admin/ })).toBeNull(),
+		);
 		await user.click(review.getByRole("button", { name: "Assign replacement" }));
 
 		await waitFor(() =>

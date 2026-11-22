@@ -14,6 +14,7 @@ import {
 	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
+import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -287,10 +288,9 @@ export function ExportForm({
 					employeeIds={selectedEmployeeIds}
 					teamIds={selectedTeamIds}
 					projectIds={selectedProjectIds}
-					onToggleEmployee={(id) => toggle(setSelectedEmployeeIds, id)}
+					onEmployeesChange={setSelectedEmployeeIds}
 					onToggleTeam={(id) => toggle(setSelectedTeamIds, id)}
 					onToggleProject={(id) => toggle(setSelectedProjectIds, id)}
-					onClearEmployees={() => setSelectedEmployeeIds([])}
 					onClearTeams={() => setSelectedTeamIds([])}
 					onClearProjects={() => setSelectedProjectIds([])}
 					t={t}
@@ -564,10 +564,9 @@ function FiltersSection({
 	employeeIds,
 	teamIds,
 	projectIds,
-	onToggleEmployee,
+	onEmployeesChange,
 	onToggleTeam,
 	onToggleProject,
-	onClearEmployees,
 	onClearTeams,
 	onClearProjects,
 	t,
@@ -576,27 +575,34 @@ function FiltersSection({
 	employeeIds: string[];
 	teamIds: string[];
 	projectIds: string[];
-	onToggleEmployee: (id: string) => void;
+	onEmployeesChange: (ids: string[]) => void;
 	onToggleTeam: (id: string) => void;
 	onToggleProject: (id: string) => void;
-	onClearEmployees: () => void;
 	onClearTeams: () => void;
 	onClearProjects: () => void;
 	t: Translate;
 }) {
+	const selectableEmployees = (options?.employees ?? []).map(
+		({ id, firstName, lastName, employeeNumber }) =>
+			toSelectableEmployee({
+				id,
+				firstName,
+				lastName,
+				employeeNumber,
+			}),
+	);
 	return (
 		<div className="space-y-4">
 			<Label>
 				{t("settings.payrollExport.export.filters", "Filters (Optional)")}
 			</Label>
 			<div className="grid gap-4 md:grid-cols-3">
-				<FilterPopover
-					kind="employees"
-					items={options?.employees ?? []}
-					selectedIds={employeeIds}
-					onToggle={onToggleEmployee}
-					onClear={onClearEmployees}
-					t={t}
+				<EmployeeMultiSelect
+					label={t("settings.payrollExport.export.employees", "Employees")}
+					placeholder={t("settings.payrollExport.export.allEmployees", "All Employees")}
+					value={employeeIds}
+					onChange={onEmployeesChange}
+					employees={selectableEmployees}
 				/>
 				<FilterPopover
 					kind="teams"
@@ -620,15 +626,6 @@ function FiltersSection({
 }
 
 const FILTER_TEXT = {
-	employees: {
-		label: { key: "settings.payrollExport.export.employees", fallback: "Employees" },
-		all: { key: "settings.payrollExport.export.allEmployees", fallback: "All Employees" },
-		selected: {
-			key: "settings.payrollExport.export.employeesSelected",
-			fallback: "{count} selected",
-		},
-		idPrefix: "emp",
-	},
 	teams: {
 		label: { key: "settings.payrollExport.export.teams", fallback: "Teams" },
 		all: { key: "settings.payrollExport.export.allTeams", fallback: "All Teams" },
@@ -654,13 +651,10 @@ function FilterPopover({
 	onClear,
 	t,
 }: {
-	kind: "employees" | "teams" | "projects";
+	kind: "teams" | "projects";
 	items: Array<{
 		id: string;
-		name?: string;
-		firstName?: string | null;
-		lastName?: string | null;
-		employeeNumber?: string | null;
+		name: string;
 	}>;
 	selectedIds: string[];
 	onToggle: (id: string) => void;
@@ -695,17 +689,7 @@ function FilterPopover({
 									htmlFor={`${text.idPrefix}-${item.id}`}
 									className="cursor-pointer text-sm"
 								>
-									{item.name ?? (
-										<>
-											{item.firstName} {item.lastName}
-										</>
-									)}
-									{item.employeeNumber ? (
-										<span className="text-muted-foreground">
-											{" "}
-											({item.employeeNumber})
-										</span>
-									) : null}
+									{item.name}
 								</label>
 							</div>
 						))}

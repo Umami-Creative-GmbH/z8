@@ -64,6 +64,11 @@ function renderForm() {
 describe("PayrollSettleForm", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		globalThis.ResizeObserver = class ResizeObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		};
 		actions.previewSettlePayrollDaysAction.mockResolvedValue({ success: true, data: counts });
 		actions.settlePayrollDaysAction.mockResolvedValue({ success: true, data: counts });
 	});
@@ -102,11 +107,14 @@ describe("PayrollSettleForm", () => {
 		fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-11-09" } });
 		fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-11-15" } });
 		fireEvent.click(screen.getByRole("checkbox", { name: "All 2 employees in the current scope" }));
-		fireEvent.change(screen.getByRole("searchbox", { name: "Search employees" }), {
+		fireEvent.click(screen.getByRole("combobox", { name: "Employees" }));
+		fireEvent.change(screen.getByPlaceholderText("Search employees"), {
 			target: { value: "beck" },
 		});
-		expect(screen.queryByRole("checkbox", { name: "Anna Arendt" })).toBeNull();
-		fireEvent.click(screen.getByRole("checkbox", { name: "Ben Becker" }));
+		expect(screen.queryByRole("option", { name: /Anna Arendt/i })).toBeNull();
+		fireEvent.click(screen.getByRole("option", { name: /Ben Becker/i }));
+		fireEvent.click(screen.getByRole("button", { name: "Confirm (1)" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 		fireEvent.click(
 			screen.getByRole("checkbox", { name: "Skip days in months that are not closed" }),
 		);
@@ -140,14 +148,12 @@ describe("PayrollSettleForm", () => {
 		renderForm();
 
 		fireEvent.click(screen.getByRole("checkbox", { name: "All 2 employees in the current scope" }));
-		const search = screen.getByRole("searchbox", { name: "Search employees" });
+		fireEvent.click(screen.getByRole("combobox", { name: "Employees" }));
+		const search = screen.getByPlaceholderText("Search employees");
 		fireEvent.change(search, { target: { value: "beck" } });
+		fireEvent.keyDown(search, { key: "Enter" });
 
-		// fireEvent returns false when the handler cancelled the event's default action,
-		// here the form's implicit submission.
-		expect(fireEvent.keyDown(search, { key: "Enter" })).toBe(false);
-		expect(fireEvent.keyDown(search, { key: "a" })).toBe(true);
-		expect(screen.getByRole("checkbox", { name: "Ben Becker" })).toBeTruthy();
+		expect(screen.getByRole("option", { name: /Ben Becker/i })).toBeTruthy();
 		expect(actions.previewSettlePayrollDaysAction).not.toHaveBeenCalled();
 	});
 

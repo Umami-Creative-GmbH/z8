@@ -3,6 +3,7 @@
 import { IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ export interface ManagerOrAssignmentItem {
  * marked when it has left or no longer exists, with a picker to add one.
  */
 export function ManagerOrAssignmentField({
+	pickerKind = "default",
 	title,
 	pickerLabel,
 	placeholder,
@@ -41,6 +43,7 @@ export function ManagerOrAssignmentField({
 	options,
 	onAdd,
 }: {
+	pickerKind?: "default" | "employee";
 	title: string;
 	pickerLabel: string;
 	placeholder: string;
@@ -100,23 +103,38 @@ export function ManagerOrAssignmentField({
 					))}
 				</ul>
 			)}
-			<Select
-				value=""
-				onValueChange={(value) => {
-					if (value) onAdd(value);
-				}}
-			>
-				<SelectTrigger aria-label={pickerLabel}>
-					<SelectValue placeholder={placeholder} />
-				</SelectTrigger>
-				<SelectContent>
-					{options.map((option) => (
-						<SelectItem key={option.id} value={option.id}>
-							{option.name}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+			{pickerKind === "employee" ? (
+				<EmployeeSingleSelect
+					className="space-y-0"
+					aria-label={pickerLabel}
+					placeholder={placeholder}
+					value={null}
+					onChange={(value) => {
+						if (value) onAdd(value);
+					}}
+					employees={options.map((option) =>
+						toSelectableEmployee({ id: option.id, name: option.name }),
+					)}
+				/>
+			) : (
+				<Select
+					value=""
+					onValueChange={(value) => {
+						if (value) onAdd(value);
+					}}
+				>
+					<SelectTrigger aria-label={pickerLabel}>
+						<SelectValue placeholder={placeholder} />
+					</SelectTrigger>
+					<SelectContent>
+						{options.map((option) => (
+							<SelectItem key={option.id} value={option.id}>
+								{option.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			)}
 		</section>
 	);
 }

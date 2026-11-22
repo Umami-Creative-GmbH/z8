@@ -3,7 +3,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -80,6 +80,14 @@ function renderForm(overrides: Partial<RehireFormProps> = {}) {
 	return props;
 }
 
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 describe("RehireForm", () => {
 	it("asks for a new invitation before any access can be restored", () => {
 		renderForm({ membershipApproved: false });
@@ -106,7 +114,11 @@ describe("RehireForm", () => {
 
 		await user.click(screen.getByRole("option", { name: "Manager" }));
 		await user.click(screen.getByRole("option", { name: "Operations" }));
-		await user.click(screen.getByRole("option", { name: "Morgan Manager" }));
+		await user.click(screen.getByRole("combobox", { name: /Primary manager/i }));
+		await user.click(await screen.findByRole("option", { name: /Morgan Manager/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: /Select Employee/i })).toBeNull(),
+		);
 		await user.click(screen.getByRole("option", { name: "Standard week" }));
 		await user.clear(screen.getByRole("textbox", { name: /Weekly Hours/ }));
 		await user.type(screen.getByRole("textbox", { name: /Weekly Hours/ }), "32,5");

@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { type ComponentProps, useState } from "react";
 import { z } from "zod";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/skill-warning-alert";
 import { ActionPanelFooter } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
@@ -407,53 +408,39 @@ function ShiftEmployeeField({
 }) {
 	const { t } = useTranslate();
 
+	const openShiftLabel = t("scheduling:scheduling.shiftDialog.openShift", "Open Shift");
+	const selectableEmployees = employees.map((employee) =>
+		toSelectableEmployee({
+			id: employee.id,
+			name: buildAuthUserDisplayName(employee.user) || employee.id,
+		}),
+	);
+
 	return (
 		<form.Field name="employeeId">
 			{(field) => (
-				<div className="gap-y-2">
-					<Label htmlFor="shift-dialog-assignee">
-						<span className="flex items-center gap-2">
-							<IconUsers className="size-4" aria-hidden="true" />
-							{t("scheduling:scheduling.shiftDialog.assignTo", "Assign To")}
-						</span>
-					</Label>
-					<Select
-						onValueChange={(value) => field.handleChange(value === "open" ? null : value)}
-						value={field.state.value || "open"}
-					>
-						<SelectTrigger id="shift-dialog-assignee">
-							<SelectValue
-								placeholder={t(
-									"scheduling:scheduling.shiftDialog.selectEmployee",
-									"Select an employee",
-								)}
-							/>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="open">
-								<span className="flex items-center gap-2">
-									<Badge variant="secondary">
-										{t("scheduling:scheduling.shiftDialog.openShift", "Open Shift")}
-									</Badge>
-									<span className="text-muted-foreground">
-										{t("scheduling:scheduling.shiftDialog.anyoneCanPickUp", "Anyone can pick up")}
-									</span>
-								</span>
-							</SelectItem>
-							{employees.map((employee) => (
-								<SelectItem key={employee.id} value={employee.id}>
-									<span className="flex items-center gap-2">
-										{buildAuthUserDisplayName(employee.user) || employee.id}
-										{field.state.value === employee.id &&
-											skillValidation &&
-											!skillValidation.isQualified && (
-												<SkillWarningBadge validation={skillValidation} />
-											)}
-									</span>
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+				<div className="space-y-2">
+					<div className="flex items-center justify-between gap-2">
+						<Label htmlFor="shift-dialog-assignee">
+							<span className="flex items-center gap-2">
+								<IconUsers className="size-4" aria-hidden="true" />
+								{t("scheduling:scheduling.shiftDialog.assignTo", "Assign To")}
+							</span>
+						</Label>
+						{field.state.value && skillValidation && !skillValidation.isQualified && (
+							<SkillWarningBadge validation={skillValidation} />
+						)}
+					</div>
+					<EmployeeSingleSelect
+						id="shift-dialog-assignee"
+						className="space-y-0"
+						value={field.state.value}
+						onChange={(value) => field.handleChange(value)}
+						placeholder={openShiftLabel}
+						allowClear
+						clearLabel={`${openShiftLabel} — ${t("scheduling:scheduling.shiftDialog.anyoneCanPickUp", "Anyone can pick up")}`}
+						employees={selectableEmployees}
+					/>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"scheduling:scheduling.shiftDialog.openShiftHelp",

@@ -37,6 +37,10 @@ export interface SelectableEmployee {
 		id: string;
 		name: string;
 	} | null;
+	/** Optional extra metadata shown on the subtitle line (e.g. personnel number, away dates). */
+	secondaryText?: string | null;
+	/** Optional additional search keywords matched in pre-filtered client-side search. */
+	searchKeywords?: string[];
 }
 
 /**
@@ -79,6 +83,10 @@ export interface SingleSelectProps {
 	mode: "single";
 	value: string | null;
 	onChange: (value: string | null) => void;
+	/** Allow clearing the selection back to `null` (shows a clear option in the modal). */
+	allowClear?: boolean;
+	/** Label for the clear option in single-select mode (e.g. "All employees", "No manager"). */
+	clearLabel?: string;
 }
 
 /**
@@ -89,12 +97,16 @@ export interface MultiSelectProps {
 	value: string[];
 	onChange: (value: string[]) => void;
 	maxSelections?: number;
+	/** Whether to render selected employee chips below the trigger (default: true). */
+	showChips?: boolean;
 }
 
 /**
  * Common props shared by both modes
  */
 export interface EmployeeSelectCommonProps {
+	/** Optional explicit trigger id (for external <Label htmlFor> or <TFormControl>). */
+	id?: string;
 	/** IDs to exclude from the list (e.g., already assigned employees) */
 	excludeIds?: string[];
 	/** Pre-applied filters */
@@ -111,18 +123,42 @@ export interface EmployeeSelectCommonProps {
 	label?: string;
 	/** Placeholder text for the trigger button */
 	placeholder?: string;
+	/** Custom search input placeholder inside the modal */
+	searchPlaceholder?: string;
+	/** Custom message when no employees match */
+	emptyMessage?: string;
+	/** Optional modal title override (screen-reader / header title) */
+	modalTitle?: string;
+	/** Optional modal description override */
+	modalDescription?: string;
+	/** Optional external search handler when using pre-filtered employees with custom server search */
+	onSearchChange?: (search: string) => void;
+	/** Optional loading state when using pre-filtered employees with external fetching */
+	isLoading?: boolean;
 	/** Whether the field is disabled */
 	disabled?: boolean;
 	/** Error message to display */
 	error?: string;
-	/** Additional class names for the trigger button */
+	/** Additional class names for the field wrapper */
 	className?: string;
+	/** Additional class names for the trigger button */
+	triggerClassName?: string;
+	/** Called when the trigger blurs or the selection modal closes */
+	onBlur?: () => void;
+	/** Accessible label when no visible label is rendered */
+	"aria-label"?: string;
+	"aria-labelledby"?: string;
+	"aria-describedby"?: string;
+	"aria-invalid"?: boolean;
+	"aria-required"?: boolean;
 	/**
 	 * Pre-filtered employee list (optional).
 	 * When provided, skips server-side fetching and uses this list directly.
 	 * Useful for permission-filtered lists or when data is already loaded.
 	 */
 	employees?: SelectableEmployee[];
+	/** Optional IDs pinned at the top of the pre-filtered list (e.g. suggested matches). */
+	pinnedIds?: string[];
 }
 
 /**
@@ -145,6 +181,12 @@ export interface EmployeeSelectTriggerProps {
 	error?: string;
 	className?: string;
 	onClick: () => void;
+	onBlur?: () => void;
+	"aria-label"?: string;
+	"aria-labelledby"?: string;
+	"aria-describedby"?: string;
+	"aria-invalid"?: boolean;
+	"aria-required"?: boolean;
 }
 
 /**
@@ -159,6 +201,14 @@ export interface EmployeeSelectModalProps {
 	onSelect: (employee: SelectableEmployee) => void;
 	onDeselect: (employeeId: string) => void;
 	onConfirm: (selectedIds?: string[], selectedEmployees?: SelectableEmployee[]) => void;
+	allowClear?: boolean;
+	clearLabel?: string;
+	searchPlaceholder?: string;
+	emptyMessage?: string;
+	title?: string;
+	description?: string;
+	onSearchChange?: (search: string) => void;
+	isLoading?: boolean;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFilters;
 	/** Also offer former employees, labelled (#1438); see `EmployeeSelectCommonProps`. */
@@ -170,6 +220,8 @@ export interface EmployeeSelectModalProps {
 	 * When provided, uses this list instead of server-side fetching.
 	 */
 	employees?: SelectableEmployee[];
+	/** Optional IDs pinned at the top of the list. */
+	pinnedIds?: string[];
 }
 
 /**
@@ -192,6 +244,11 @@ export interface EmployeeSelectListProps {
 	mode: "single" | "multiple";
 	onSelect: (employee: SelectableEmployee) => void;
 	onDeselect: (employeeId: string) => void;
+	allowClear?: boolean;
+	clearLabel?: string;
+	onClear?: () => void;
+	pinnedIds?: string[];
+	emptyMessage?: string;
 	isLoading: boolean;
 	hasMore: boolean;
 	onLoadMore: () => void;

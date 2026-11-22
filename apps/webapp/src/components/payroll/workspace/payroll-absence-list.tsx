@@ -3,6 +3,7 @@
 import { IconArrowDown, IconArrowUp, IconArrowsSort, IconHourglassHigh } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { CategoryBadge } from "@/components/absences/category-badge";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,7 +61,8 @@ export function PayrollAbsenceList({
 		() =>
 			[...new Set(absences.map((absence) => absence.employeeId))]
 				.map((id) => ({ id, name: employeeNames.get(id) ?? id }))
-				.toSorted((left, right) => left.name.localeCompare(right.name)),
+				.toSorted((left, right) => left.name.localeCompare(right.name))
+				.map((option) => toSelectableEmployee(option)),
 		[absences, employeeNames],
 	);
 	const categoryOptions = useMemo(
@@ -124,21 +126,16 @@ export function PayrollAbsenceList({
 					<Label htmlFor="payroll-absence-employee-filter">
 						{t("payroll.absences.filter.employee", "Employee")}
 					</Label>
-					<Select value={employeeFilter} onValueChange={(value) => setEmployeeFilter(value ?? ALL)}>
-						<SelectTrigger id="payroll-absence-employee-filter" className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value={ALL}>
-								{t("payroll.absences.filter.allEmployees", "All employees")}
-							</SelectItem>
-							{employeeOptions.map((option) => (
-								<SelectItem key={option.id} value={option.id}>
-									{option.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+					<EmployeeSingleSelect
+						id="payroll-absence-employee-filter"
+						className="space-y-0"
+						value={employeeFilter === ALL ? null : employeeFilter}
+						onChange={(value) => setEmployeeFilter(value ?? ALL)}
+						employees={employeeOptions}
+						allowClear
+						clearLabel={t("payroll.absences.filter.allEmployees", "All employees")}
+						placeholder={t("payroll.absences.filter.allEmployees", "All employees")}
+					/>
 				</div>
 				<div className="flex min-w-0 flex-col gap-1.5">
 					<Label htmlFor="payroll-absence-category-filter">

@@ -85,7 +85,10 @@ it("validates the selected scope in the action panel and submits a revisioned gr
 	await user.click(
 		within(panel).getByRole("combobox", { name: "Equipment officer" }),
 	);
-	await user.click(await screen.findByRole("option", { name: "Alex Officer" }));
+	await user.click(await screen.findByRole("option", { name: /Alex Officer/ }));
+	await waitFor(() =>
+		expect(screen.queryByRole("option", { name: /Alex Officer/ })).toBeNull(),
+	);
 	await user.click(
 		within(panel).getByRole("combobox", { name: "Responsibility scope" }),
 	);
@@ -184,7 +187,12 @@ it("edits an active grant with its current scope and revision", async () => {
 			.getByRole("checkbox", { name: "Operations" })
 			.getAttribute("aria-checked"),
 	).toBe("true");
-	await user.click(within(panel).getByRole("checkbox", { name: "Sam Field" }));
+	await user.click(within(panel).getByRole("combobox", { name: "Employees" }));
+	await user.click(await screen.findByRole("option", { name: /Sam Field/ }));
+	await user.click(screen.getByRole("button", { name: /Confirm/ }));
+	await waitFor(() =>
+		expect(screen.queryByRole("option", { name: /Sam Field/ })).toBeNull(),
+	);
 	await user.click(
 		within(panel).getByRole("button", { name: "Save responsibility" }),
 	);
@@ -315,7 +323,10 @@ it("offers a re-grant of a revoked officer from its stored revision", async () =
 	await user.click(
 		within(panel).getByRole("combobox", { name: "Equipment officer" }),
 	);
-	await user.click(await screen.findByRole("option", { name: "Alex Officer" }));
+	await user.click(await screen.findByRole("option", { name: /Alex Officer/ }));
+	await waitFor(() =>
+		expect(screen.queryByRole("option", { name: /Alex Officer/ })).toBeNull(),
+	);
 	await user.click(
 		within(panel).getByRole("button", { name: "Save responsibility" }),
 	);

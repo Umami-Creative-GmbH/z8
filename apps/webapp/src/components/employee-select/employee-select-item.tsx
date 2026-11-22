@@ -44,6 +44,11 @@ export function EmployeeSelectItem({
 	const pronouns = normalizePronouns(employee.pronouns);
 	const displayName = pronouns ? `${name} (${pronouns})` : name;
 	const isFormer = isFormerSelectableEmployee(employee);
+	const detailParts = [
+		{ key: "email", value: employee.user.email },
+		{ key: "position", value: employee.position },
+		{ key: "secondary", value: employee.secondaryText },
+	].filter((part): part is { key: string; value: string } => Boolean(part.value?.trim()));
 
 	return (
 		<div
@@ -96,15 +101,16 @@ export function EmployeeSelectItem({
 					<span className="font-medium truncate">{displayName}</span>
 					{isFormer && <FormerEmployeeBadge since={employee.formerSince} />}
 				</div>
-				<div className="flex items-center gap-2 text-sm text-muted-foreground">
-					<span className="truncate">{employee.user.email}</span>
-					{employee.position && (
-						<>
-							<span className="text-muted-foreground/50">·</span>
-							<span className="truncate">{employee.position}</span>
-						</>
-					)}
-				</div>
+				{detailParts.length > 0 && (
+					<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						{detailParts.map((part, index) => (
+							<span key={part.key} className="contents">
+								{index > 0 && <span className="text-muted-foreground/50">·</span>}
+								<span className="truncate">{part.value}</span>
+							</span>
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Role badge */}

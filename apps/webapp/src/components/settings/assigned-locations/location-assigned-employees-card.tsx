@@ -4,6 +4,7 @@ import { IconUsersGroup } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { getLocationAssignedEmployeesAction } from "@/app/[locale]/(app)/settings/locations/assigned-location-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { AssignmentListCard } from "./assignment-list-card";
 import {
 	ASSIGNED_LOCATIONS_QUERY_KEY,
@@ -57,6 +58,23 @@ export function LocationAssignedEmployeesCard({ locationId }: { locationId: stri
 				label: option.name,
 				detail: option.email,
 			}))}
+			renderPicker={({ value, onChange, disabled }) => (
+				<EmployeeSingleSelect
+					className="space-y-0"
+					aria-label={t("settings.assignedLocations.employeeLabel", "Employee")}
+					placeholder={t("settings.assignedLocations.employeePlaceholder", "Select an employee")}
+					value={value || null}
+					onChange={(next) => onChange(next ?? "")}
+					disabled={disabled}
+					employees={(data?.available ?? []).map((option) =>
+						toSelectableEmployee({
+							id: option.employeeId,
+							name: option.name,
+							email: option.email,
+						}),
+					)}
+				/>
+			)}
 			isLoading={isLoading}
 			isMutating={mutations.isMutating}
 			onAdd={(employeeId) => mutations.add({ employeeId, locationId })}

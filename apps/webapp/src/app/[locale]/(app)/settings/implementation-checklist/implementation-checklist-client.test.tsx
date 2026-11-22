@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const markComplete = vi.fn();
 const markIncomplete = vi.fn();
@@ -240,10 +240,18 @@ const firstWorkflowsItem = {
 } as const;
 
 describe("ImplementationChecklistClient", () => {
+	beforeAll(async () => {
+		await import("./implementation-checklist-client");
+	}, 15_000);
+
 	beforeEach(() => {
 		markComplete.mockReset();
 		markIncomplete.mockReset();
 		toastError.mockReset();
+	});
+
+	afterEach(() => {
+		cleanup();
 	});
 
 	it("renders checklist summary, task links, status, and manual completion controls", async () => {

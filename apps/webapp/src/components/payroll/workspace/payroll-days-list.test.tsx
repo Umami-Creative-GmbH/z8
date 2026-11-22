@@ -8,11 +8,15 @@ import { settleableGroups } from "./payroll-day-selection";
 import type { PayrollDayPicking } from "./payroll-days-grid";
 import { PayrollDaysList } from "./payroll-days-list";
 
-const t = (_key: string, fallback: string, params?: Record<string, string | number>) =>
-	Object.entries(params ?? {}).reduce(
-		(message, [name, value]) => message.replaceAll(`{${name}}`, String(value)),
-		fallback,
-	);
+const t = vi.hoisted(
+	() => (_key: string, fallback: string, params?: Record<string, string | number>) =>
+		Object.entries(params ?? {}).reduce(
+			(message, [name, value]) => message.replaceAll(`{${name}}`, String(value)),
+			fallback,
+		),
+);
+
+vi.mock("@tolgee/react", () => ({ useTranslate: () => ({ t }) }));
 
 function day(date: string, kind: "work" | "empty" | "settled"): PayrollPeriodDay {
 	return {

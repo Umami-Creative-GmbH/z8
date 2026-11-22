@@ -10,15 +10,9 @@ import {
 	saveTravelExpenseApprover,
 	type TravelExpenseApproverSettings,
 } from "@/app/[locale]/(app)/settings/travel-expenses/approver-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	TFormControl,
@@ -72,26 +66,20 @@ function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings })
 						<TFormLabel>
 							{t("settings.travelExpenses.approver.label", "Expense approver")}
 						</TFormLabel>
-						<Select
-							value={field.state.value}
-							onValueChange={(value) => field.handleChange(value ?? NONE)}
-						>
-							<TFormControl>
-								<SelectTrigger className="w-full sm:w-80">
-									<SelectValue />
-								</SelectTrigger>
-							</TFormControl>
-							<SelectContent>
-								<SelectItem value={NONE}>
-									{t("settings.travelExpenses.approver.none", "No expense approver")}
-								</SelectItem>
-								{settings.candidates.map((candidate) => (
-									<SelectItem key={candidate.id} value={candidate.id}>
-										{candidate.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<TFormControl>
+							<EmployeeSingleSelect
+								className="w-full sm:w-80 space-y-0"
+								value={field.state.value === NONE ? null : field.state.value}
+								onChange={(value) => field.handleChange(value ?? NONE)}
+								onBlur={field.handleBlur}
+								placeholder={t("settings.travelExpenses.approver.none", "No expense approver")}
+								allowClear
+								clearLabel={t("settings.travelExpenses.approver.none", "No expense approver")}
+								employees={settings.candidates.map((candidate) =>
+									toSelectableEmployee({ id: candidate.id, name: candidate.name }),
+								)}
+							/>
+						</TFormControl>
 						<TFormDescription>
 							{t(
 								"settings.travelExpenses.approver.description",
