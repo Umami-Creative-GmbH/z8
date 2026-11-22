@@ -137,7 +137,7 @@ export function PlatformAdminUserFilters({
 								type="button"
 								variant="ghost"
 								size="icon"
-								className="size-4 rounded-full p-0 hover:bg-transparent"
+								className="size-6 rounded-full p-0 hover:bg-transparent"
 								onClick={onClearOrganization}
 								aria-label={t(
 									"admin:admin.users.filters.clearOrganization",

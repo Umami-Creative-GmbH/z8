@@ -156,6 +156,12 @@ describe("org-admin settings route access", () => {
 			"/settings/equipment",
 			"/settings/driving-licence",
 			"/settings/vehicle-use",
+			"/settings/vacation/employees",
+			"/settings/compliance/works-council",
+			"/settings/billable-time/rates",
+			"/settings/billable-time/cost-rates",
+			"/settings/billable-time/accounting",
+			"/settings/billable-time/hand-off",
 		]);
 	});
 

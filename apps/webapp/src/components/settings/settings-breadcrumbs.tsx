@@ -47,9 +47,12 @@ function buildSettingsBreadcrumbs(
 	let currentPath = "/settings";
 	for (let i = 0; i < segments.length; i++) {
 		const segment = segments[i];
+		// Skip non-routable intermediate segments ("enterprise", "export/history", and
+		// "compliance/*" parent so subpages don't link to the orphaned ArbZG queue).
 		if (
 			segment === "enterprise" ||
-			(segment === "compliance" && segments[i + 1] === "works-council")
+			(segment === "compliance" && i < segments.length - 1) ||
+			(segment === "history" && segments[i - 1] === "export")
 		) {
 			currentPath += `/${segment}`;
 			continue;

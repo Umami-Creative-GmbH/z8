@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { pushMock, useQueryMock, invalidateQueriesMock } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -140,7 +140,6 @@ import UsersPage from "./page";
 
 describe("Platform admin users page", () => {
 	beforeEach(() => {
-		vi.useRealTimers();
 		vi.clearAllMocks();
 		window.history.replaceState(null, "", "/platform-admin/users");
 		useQueryMock.mockReturnValue({
@@ -285,5 +284,9 @@ describe("Platform admin users page", () => {
 		});
 
 		expect(pushMock).not.toHaveBeenCalled();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 });

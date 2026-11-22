@@ -124,22 +124,6 @@ describe("statistics route access", () => {
 			canResolvedTierAccessRoute("orgAdmin", "/settings/scheduled-exports"),
 		).toBe(true);
 	});
-
-	it("includes org-admin routes that previously drifted out of ORG_ADMIN_SETTINGS_ROUTES", () => {
-		for (const route of [
-			"/settings/closed-months",
-			"/settings/vacation/employees",
-			"/settings/approval-policies",
-			"/settings/compliance/works-council",
-			"/settings/billable-time/rates",
-			"/settings/billable-time/cost-rates",
-			"/settings/billable-time/accounting",
-			"/settings/billable-time/hand-off",
-		]) {
-			expect(canResolvedTierAccessRoute("manager", route)).toBe(false);
-			expect(canResolvedTierAccessRoute("orgAdmin", route)).toBe(true);
-		}
-	});
 });
 
 describe("isSettingsAccessMembershipRole", () => {

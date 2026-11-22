@@ -37,14 +37,32 @@ describe("SettingsBreadcrumbs", () => {
 		expect(screen.queryByText("Employees")).toBeNull();
 	});
 
-	it("skips the orphaned compliance segment on /settings/compliance/works-council", () => {
+	it("skips the intermediate compliance segment on any /settings/compliance/* child", () => {
 		pathnameMock.mockReturnValue("/settings/compliance/works-council");
 
-		render(<SettingsBreadcrumbs />);
+		const { unmount } = render(<SettingsBreadcrumbs />);
 
 		expect(screen.getByRole("link", { name: "Settings" }).getAttribute("href")).toBe("/settings");
 		expect(screen.getByText("Works Council Mode")).toBeTruthy();
 		expect(screen.queryByRole("link", { name: "Compliance" })).toBeNull();
+		unmount();
+
+		pathnameMock.mockReturnValue("/settings/compliance/other");
+		render(<SettingsBreadcrumbs />);
+		expect(screen.queryByRole("link", { name: "Compliance" })).toBeNull();
+		expect(screen.getByText("Other")).toBeTruthy();
+	});
+
+	it("skips the non-routable /settings/export/history intermediate segment", () => {
+		pathnameMock.mockReturnValue("/settings/export/history/11111111-1111-4111-8111-111111111111");
+
+		render(<SettingsBreadcrumbs />);
+
+		expect(screen.getByRole("link", { name: "Data Export" }).getAttribute("href")).toBe(
+			"/settings/export",
+		);
+		expect(screen.queryByRole("link", { name: "History" })).toBeNull();
+		expect(screen.getByText("Details")).toBeTruthy();
 	});
 
 	it("renders contextual labels for UUID detail pages and billable-time subpages", () => {

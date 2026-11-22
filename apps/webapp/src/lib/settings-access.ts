@@ -45,9 +45,9 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/equipment",
 	"/settings/driving-licence",
 	"/settings/vehicle-use",
-	"/settings/closed-months",
+	// Note: /settings/closed-months and /settings/approval-policies admit non-orgAdmin
+	// callers via custom-role / CASL ability checks, so they stay out of this org-admin-only list.
 	"/settings/vacation/employees",
-	"/settings/approval-policies",
 	"/settings/compliance/works-council",
 	"/settings/billable-time/rates",
 	"/settings/billable-time/cost-rates",

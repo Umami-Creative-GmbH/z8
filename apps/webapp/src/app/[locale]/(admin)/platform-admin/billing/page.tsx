@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { and, count, desc, eq, inArray, like, notLike } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -161,6 +162,9 @@ function StatCard({
 }
 
 async function BillingStats() {
+	// Resolve current request time before evaluating ended trials.
+	await connection();
+	const now = new Date();
 	// Get all subscriptions
 	const [t, allSubscriptions] = await Promise.all([
 		getTranslate(),
@@ -204,8 +208,8 @@ async function BillingStats() {
 	const activeCount = allSubscriptions.filter(
 		(s) => s.status === "active",
 	).length;
-	// Trial conversion rate across all tracked subscriptions (including canceled/expired trials)
-	const conversionRate = computeTrialConversionRate(allSubscriptions);
+	// Trial conversion rate across resolved trials (ended, converted early, or canceled)
+	const conversionRate = computeTrialConversionRate(allSubscriptions, now);
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

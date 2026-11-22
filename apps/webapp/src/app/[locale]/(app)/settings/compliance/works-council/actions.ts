@@ -14,7 +14,7 @@ const worksCouncilSettingsSchema = z.object({
 	identityVisibility: z.enum(["aggregated", "pseudonymized", "named"]),
 	absenceVisibility: z.enum(["hidden", "grouped", "category"]),
 	exportEnabled: z.boolean(),
-	minimumAggregationThreshold: z.number().int().min(5),
+	minimumAggregationThreshold: z.number().int().min(5).max(10_000),
 	visibleTeamIds: z.array(z.string()),
 	visibleLocationIds: z.array(z.string()),
 }) satisfies z.ZodType<WorksCouncilSettingsFormValues>;
