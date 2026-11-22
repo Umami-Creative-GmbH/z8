@@ -9,9 +9,7 @@ import { SettingsContentLoading } from "@/components/shells/settings-content-loa
 
 // Translation acquisition/lifecycle is exercised with real Tolgee in route-boundary.test.tsx.
 vi.mock("@/tolgee/route-boundary", () => ({
-	RouteTranslationBoundary: ({ children }: { children: React.ReactNode }) => (
-		<>{children}</>
-	),
+	RouteTranslationBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -34,22 +32,18 @@ vi.mock("@/env", () => ({
 	env: { BILLING_ENABLED: "false" },
 }));
 
-vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: vi.fn(async () => ({
-		accessTier: "orgAdmin",
-		authContext: {
-			user: { id: "user-1" },
-			session: { activeOrganizationId: "org-1" },
-		},
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderSettingsAccess: vi.fn(async () => "orgAdmin"),
+}));
+
+vi.mock("@/lib/settings/capabilities.server", () => ({
+	getRenderSettingsCapabilities: vi.fn(async () => ({
+		canAccessClosedMonths: true,
+		canManageApprovalEscalation: false,
+		canManageProjects: true,
+		canManageDrivingLicence: true,
+		hasActiveReportShareLinks: false,
 	})),
-}));
-
-vi.mock("@/lib/projects/project-manager-settings-access", () => ({
-	managesProjectBelowManagerTier: vi.fn(async () => true),
-}));
-
-vi.mock("@/lib/organization/driving-licence/visibility", () => ({
-	loadDrivingLicenceSettingsVisible: vi.fn(async () => true),
 }));
 
 vi.mock("next/server", () => ({
@@ -91,14 +85,10 @@ describe("SettingsLayout", () => {
 
 		expect(navigationBoundary.type).toBe(Suspense);
 		expect(breadcrumbsBoundary.type).toBe(Suspense);
-		expect(breadcrumbsBoundary.props.children.type.name).toBe(
-			"SettingsBreadcrumbs",
-		);
+		expect(breadcrumbsBoundary.props.children.type.name).toBe("SettingsBreadcrumbs");
 		expect(contentBoundary.type).toBe(Suspense);
 		expect(contentBoundary.props.fallback.type).toBe(SettingsContentLoading);
-		expect(contentBoundary.props.children.props.children.type).toBe(
-			PendingContent,
-		);
+		expect(contentBoundary.props.children.props.children.type).toBe(PendingContent);
 	});
 
 	it("shows the content fallback without hiding breadcrumbs while children wait", () => {
@@ -111,9 +101,7 @@ describe("SettingsLayout", () => {
 			</>,
 		);
 
-		expect(
-			screen.getByRole("navigation", { name: "Settings breadcrumbs" }),
-		).toBeTruthy();
+		expect(screen.getByRole("navigation", { name: "Settings breadcrumbs" })).toBeTruthy();
 		expect(screen.getByLabelText("Loading settings")).toBeTruthy();
 		expect(screen.queryByText("Settings content")).toBeNull();
 	});
@@ -127,9 +115,7 @@ describe("SettingsLayout", () => {
 		const { container } = render(mobileNavigationBoundary.props.fallback);
 		expect(container.firstElementChild?.className).toContain("md:hidden");
 		expect(container.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
-		expect(mobileNavigationBoundary.props.children.type.name).toBe(
-			"SettingsMobileNavigation",
-		);
+		expect(mobileNavigationBoundary.props.children.type.name).toBe("SettingsMobileNavigation");
 	});
 
 	it("renders the same server-computed navigation in the sidebar and the mobile drawer", async () => {
@@ -142,10 +128,15 @@ describe("SettingsLayout", () => {
 			children: ReactElement;
 		}>;
 		const expectedProps = {
-			accessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: false,
-			managesProject: true,
-			drivingLicenceSettingsVisible: true,
+			settingsCapabilities: {
+				canAccessClosedMonths: true,
+				canManageApprovalEscalation: false,
+				canManageProjects: true,
+				canManageDrivingLicence: true,
+				hasActiveReportShareLinks: false,
+			},
 		};
 
 		expect(sidebar.props.className).toContain("hidden md:block");

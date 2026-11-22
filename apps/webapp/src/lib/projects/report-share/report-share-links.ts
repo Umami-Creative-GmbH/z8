@@ -11,7 +11,7 @@
 
 import "server-only";
 
-import { and, count, desc, eq, inArray, isNull, lte, max, type SQL, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, isNull, lte, max, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
@@ -216,6 +216,29 @@ export async function liveShareLinksOfCreator(
 		.from(reportShareLink)
 		.where(liveLinksOfCreator(input))
 		.orderBy(reportShareLink.createdAt, reportShareLink.id);
+}
+
+/**
+ * True when the organization still has at least one unrevoked, unexpired report
+ * share link, so org admins keep access to Report Share Links in navigation
+ * even after Projects is disabled (ADR 0003).
+ */
+export async function hasActiveOrganizationShareLinks(
+	client: Pick<Transaction, "select">,
+	input: { organizationId: string; now: Temporal.Instant },
+): Promise<boolean> {
+	const [row] = await client
+		.select({ id: reportShareLink.id })
+		.from(reportShareLink)
+		.where(
+			and(
+				eq(reportShareLink.organizationId, input.organizationId),
+				isNull(reportShareLink.revokedAt),
+				gt(reportShareLink.expiresAt, dateFromInstant(input.now)),
+			),
+		)
+		.limit(1);
+	return row !== undefined;
 }
 
 /**

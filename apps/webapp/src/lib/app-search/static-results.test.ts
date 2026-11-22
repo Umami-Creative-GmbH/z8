@@ -11,32 +11,109 @@ const enabledFeatures = {
 };
 
 describe("buildStaticAppSearchResults", () => {
-	it("shows personal pages and member settings for employees", () => {
+	it("shows personal pages and member settings for org members", () => {
 		const results = buildStaticAppSearchResults({
 			t,
 			employeeRole: "employee",
-			settingsAccessTier: "member",
+			settingsAccess: "member",
 			billingEnabled: true,
 			showComplianceNav: false,
 			featureFlags: enabledFeatures,
 		});
 
 		expect(results.map((result) => result.href)).toEqual(
-			expect.arrayContaining(["/", "/time-tracking", "/settings/profile", "/settings/security"]),
+			expect.arrayContaining([
+				"/",
+				"/time-tracking",
+				"/settings/profile",
+				"/settings/security",
+				"/settings/position-stamps",
+				"/settings/my-data",
+			]),
 		);
 		expect(results.some((result) => result.href === "/settings/employees")).toBe(false);
 		expect(results.some((result) => result.href === "/settings/organization")).toBe(false);
+		expect(results.some((result) => result.href === "/settings/closed-months")).toBe(false);
+		expect(results.some((result) => result.href === "/settings/approval-policies")).toBe(false);
 		expect(results.some((result) => result.href === "/team")).toBe(false);
 		expect(results.some((result) => result.href === "/team/absences")).toBe(false);
 		const settingsResult = results.find((result) => result.href === "/settings/profile");
 		expect(settingsResult).toMatchObject({ type: "setting", title: "Profile" });
 	});
 
+	it("shows only account-only settings when settingsAccess is null (former employee or unapproved/missing membership)", () => {
+		const results = buildStaticAppSearchResults({
+			t,
+			employeeRole: null,
+			settingsAccess: null,
+			billingEnabled: true,
+			showComplianceNav: false,
+			featureFlags: enabledFeatures,
+			settingsCapabilities: {
+				canAccessClosedMonths: true,
+				canManageApprovalEscalation: true,
+				canManageProjects: true,
+				canManageDrivingLicence: true,
+				hasActiveReportShareLinks: true,
+			},
+		});
+
+		const settingHrefs = results
+			.filter((result) => result.type === "setting")
+			.map((result) => result.href);
+		expect(settingHrefs).toEqual([
+			"/settings/profile",
+			"/settings/security",
+			"/settings/notifications",
+			"/settings/wellness",
+		]);
+	});
+
+	it("shows Closed months in app search for an org member with canAccessClosedMonths", () => {
+		const results = buildStaticAppSearchResults({
+			t,
+			employeeRole: "employee",
+			settingsAccess: "member",
+			billingEnabled: true,
+			showComplianceNav: false,
+			featureFlags: enabledFeatures,
+			settingsCapabilities: { canAccessClosedMonths: true },
+		});
+
+		expect(results.find((result) => result.href === "/settings/closed-months")).toMatchObject({
+			type: "setting",
+			title: "Closed months",
+		});
+		expect(results.some((result) => result.href === "/settings/organization")).toBe(false);
+	});
+
+	it("shows Approval in app search for a member or scopedManager with canManageApprovalEscalation", () => {
+		for (const settingsAccess of ["member", "scopedManager"] as const) {
+			const results = buildStaticAppSearchResults({
+				t,
+				employeeRole: settingsAccess === "member" ? "employee" : "manager",
+				settingsAccess,
+				billingEnabled: true,
+				showComplianceNav: false,
+				featureFlags: enabledFeatures,
+				settingsCapabilities: { canManageApprovalEscalation: true },
+			});
+
+			expect(results.find((result) => result.href === "/settings/approval-policies")).toMatchObject(
+				{
+					type: "setting",
+					title: "Approval",
+				},
+			);
+			expect(results.some((result) => result.href === "/settings/organization")).toBe(false);
+		}
+	});
+
 	it("finds the employee's own schedule only while shifts are on (#977)", () => {
 		const input = {
 			t,
 			employeeRole: "employee" as const,
-			settingsAccessTier: "member" as const,
+			settingsAccess: "member" as const,
 			billingEnabled: true,
 			showComplianceNav: false,
 		};
@@ -54,24 +131,27 @@ describe("buildStaticAppSearchResults", () => {
 		).toBe(false);
 	});
 
-	it("finds the Projects setting for an employee who manages a project (#928)", () => {
+	it("finds the Projects setting for an employee who manages a project (canManageProjects)", () => {
 		const input = {
 			t,
 			employeeRole: "employee" as const,
-			settingsAccessTier: "member" as const,
+			settingsAccess: "member" as const,
 			billingEnabled: true,
 			showComplianceNav: false,
 			featureFlags: enabledFeatures,
 		};
-		const settingHrefs = (managesProject: boolean) =>
-			buildStaticAppSearchResults({ ...input, managesProject })
+		const settingHrefs = (canManageProjects: boolean) =>
+			buildStaticAppSearchResults({
+				...input,
+				settingsCapabilities: { canManageProjects },
+			})
 				.filter((result) => result.type === "setting")
 				.map((result) => result.href);
 
 		expect(settingHrefs(true)).toEqual([...settingHrefs(false), "/settings/projects"]);
 	});
 
-	it("shows manager navigation and manager settings without org-admin settings", () => {
+	it("shows manager navigation and scopedManager settings without org-admin settings", () => {
 		const results = buildStaticAppSearchResults({
 			t: (key, defaultValue) =>
 				key === "appSearch.teamAbsences.description"
@@ -80,7 +160,7 @@ describe("buildStaticAppSearchResults", () => {
 						? "abwesenheit"
 						: t(key, defaultValue),
 			employeeRole: "manager",
-			settingsAccessTier: "manager",
+			settingsAccess: "scopedManager",
 			billingEnabled: true,
 			showComplianceNav: false,
 			featureFlags: enabledFeatures,
@@ -101,27 +181,44 @@ describe("buildStaticAppSearchResults", () => {
 		expect(results.some((result) => result.href === "/compliance")).toBe(false);
 	});
 
-	it("shows org-admin-only destinations when allowed", () => {
+	it("shows org-admin-only destinations for both orgAdmin and owner", () => {
+		for (const settingsAccess of ["orgAdmin", "owner"] as const) {
+			const results = buildStaticAppSearchResults({
+				t,
+				employeeRole: "admin",
+				settingsAccess,
+				billingEnabled: true,
+				showComplianceNav: true,
+				featureFlags: enabledFeatures,
+			});
+
+			expect(results.some((result) => result.href === "/compliance")).toBe(true);
+			expect(results.some((result) => result.href === "/settings/organization")).toBe(true);
+			expect(results.some((result) => result.href === "/settings/billing")).toBe(true);
+			expect(results.some((result) => result.href === "/settings/roles")).toBe(true);
+		}
+	});
+
+	it("keeps Report Share Links searchable when Projects is off and active share links exist", () => {
 		const results = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "owner",
 			billingEnabled: true,
 			showComplianceNav: true,
-			featureFlags: enabledFeatures,
+			featureFlags: { ...enabledFeatures, projectsEnabled: false },
+			settingsCapabilities: { hasActiveReportShareLinks: true },
 		});
 
-		expect(results.some((result) => result.href === "/compliance")).toBe(true);
-		expect(results.some((result) => result.href === "/settings/organization")).toBe(true);
-		expect(results.some((result) => result.href === "/settings/billing")).toBe(true);
-		expect(results.some((result) => result.href === "/settings/roles")).toBe(true);
+		expect(results.some((result) => result.href === "/settings/report-share-links")).toBe(true);
+		expect(results.some((result) => result.href === "/settings/projects")).toBe(false);
 	});
 
 	it("honors billing and feature flags", () => {
 		const results = buildStaticAppSearchResults({
 			t,
 			employeeRole: "manager",
-			settingsAccessTier: "manager",
+			settingsAccess: "scopedManager",
 			billingEnabled: false,
 			showComplianceNav: false,
 			featureFlags: {
@@ -143,7 +240,7 @@ describe("buildStaticAppSearchResults", () => {
 		const results = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: true,
 			showComplianceNav: true,
 			featureFlags: enabledFeatures,
@@ -153,11 +250,11 @@ describe("buildStaticAppSearchResults", () => {
 		expect(new Set(keys).size).toBe(keys.length);
 	});
 
-	it("finds Driving licence pages only where the visibility reader shows them (#1420, #1937)", () => {
+	it("finds Driving licence pages only where the visibility reader and capabilities show them", () => {
 		const input = {
 			t,
 			employeeRole: "employee" as const,
-			settingsAccessTier: "orgAdmin" as const,
+			settingsAccess: "orgAdmin" as const,
 			billingEnabled: true,
 			showComplianceNav: true,
 			featureFlags: enabledFeatures,
@@ -165,8 +262,17 @@ describe("buildStaticAppSearchResults", () => {
 		const results = (extra: {
 			showMyDrivingLicenceNav?: boolean;
 			showTeamDrivingLicenceNav?: boolean;
-			drivingLicenceSettingsVisible?: boolean;
-		}) => buildStaticAppSearchResults({ ...input, ...extra });
+			canManageDrivingLicence?: boolean;
+		}) =>
+			buildStaticAppSearchResults({
+				...input,
+				showMyDrivingLicenceNav: extra.showMyDrivingLicenceNav,
+				showTeamDrivingLicenceNav: extra.showTeamDrivingLicenceNav,
+				settingsCapabilities:
+					extra.canManageDrivingLicence === undefined
+						? undefined
+						: { canManageDrivingLicence: extra.canManageDrivingLicence },
+			});
 		const hrefs = (extra: Parameters<typeof results>[0]) =>
 			results(extra).map((result) => result.href);
 
@@ -193,14 +299,14 @@ describe("buildStaticAppSearchResults", () => {
 			id: "page:team-driving-licence",
 			title: "Driving licences",
 		});
-		expect(hrefs({ drivingLicenceSettingsVisible: true })).toContain("/settings/driving-licence");
+		expect(hrefs({ canManageDrivingLicence: true })).toContain("/settings/driving-licence");
 	});
 
 	it("returns globally unique result ids", () => {
 		const results = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: true,
 			showComplianceNav: true,
 			featureFlags: enabledFeatures,

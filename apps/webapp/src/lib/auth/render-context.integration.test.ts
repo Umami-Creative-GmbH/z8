@@ -4,15 +4,7 @@ import { createRequire, registerHooks } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement, type ReactNode } from "react";
-import {
-	afterAll,
-	beforeAll,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 // Resolve the actual React server build for this test worker and its installed
@@ -22,10 +14,7 @@ vi.mock("react", async () => {
 	const { dirname, join } = await import("node:path");
 	const require = createRequire(import.meta.url);
 	return require(
-		join(
-			dirname(require.resolve("react/package.json")),
-			"cjs/react.react-server.production.js",
-		),
+		join(dirname(require.resolve("react/package.json")), "cjs/react.react-server.production.js"),
 	);
 });
 
@@ -47,9 +36,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("@/db", async () =>
 	(await import("@/test/integration-database")).integrationDbModule({
 		logQuery: (query) => boundary.queries.push(query),
@@ -63,6 +50,7 @@ import {
 	getRenderOnboardingStatus as getOnboardingStatus,
 	getRenderPendingInvitationId as getPendingInvitationId,
 	getRenderOrganizationDisplayContext,
+	getRenderSettingsAccess,
 	getRenderUserOrganizations as getUserOrganizations,
 } from "./render-context";
 import { getRenderSession } from "./render-session";
@@ -74,10 +62,7 @@ const serverReact = join(
 );
 const hook = registerHooks({
 	resolve(specifier, context, nextResolve) {
-		if (
-			specifier === "react" &&
-			context.parentURL?.includes("react-server-dom-webpack")
-		) {
+		if (specifier === "react" && context.parentURL?.includes("react-server-dom-webpack")) {
 			return { url: pathToFileURL(serverReact).href, shortCircuit: true };
 		}
 		return nextResolve(specifier, context);
@@ -85,10 +70,7 @@ const hook = registerHooks({
 });
 const { renderToReadableStream } =
 	require("next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-server.node.production.js") as {
-		renderToReadableStream: (
-			children: ReactNode,
-			manifest: object,
-		) => ReadableStream;
+		renderToReadableStream: (children: ReactNode, manifest: object) => ReadableStream;
 	};
 hook.deregister();
 
@@ -147,14 +129,16 @@ async function LayoutIdentity() {
 }
 
 async function SidebarIdentity() {
-	const [context, tier, organizations] = await Promise.all([
+	const [context, tier, settingsAccess, organizations] = await Promise.all([
 		getAuthContext(),
 		getCurrentSettingsAccessTier(),
+		getRenderSettingsAccess(),
 		getUserOrganizations(),
 	]);
 	return createElement("aside", {
 		"data-employee": context?.employee?.id,
 		"data-tier": tier,
+		"data-settings-access": settingsAccess ?? "none",
 		"data-organizations": organizations.map((org) => org.id).join(","),
 	});
 }
@@ -244,9 +228,7 @@ describe("render-local authenticated identity", () => {
 		const pool = integrationAdminPool();
 		await pool.query(`delete from organization where id=$1`, [organizationId]);
 		await pool.query(`delete from "user" where id=$1`, [userId]);
-		await pool.query(`delete from organization where id=$1`, [
-			other.session.activeOrganizationId,
-		]);
+		await pool.query(`delete from organization where id=$1`, [other.session.activeOrganizationId]);
 		await pool.query(`delete from "user" where id=$1`, [other.user.id]);
 	});
 
@@ -257,18 +239,12 @@ describe("render-local authenticated identity", () => {
 		expect(output).toContain("Europe/Berlin");
 		expect(boundary.reads).toBe(1);
 		expect(
-			boundary.queries.filter((query) =>
-				/from "member" inner join "organization"/.test(query),
-			),
+			boundary.queries.filter((query) => /from "member" inner join "organization"/.test(query)),
 		).toHaveLength(1);
-		expect(
-			boundary.queries.filter((query) => query.includes('from "employee"')),
-		).toHaveLength(1);
-		expect(
-			boundary.queries.filter((query) =>
-				query.includes('from "user_settings"'),
-			),
-		).toHaveLength(1);
+		expect(boundary.queries.filter((query) => query.includes('from "employee"'))).toHaveLength(1);
+		expect(boundary.queries.filter((query) => query.includes('from "user_settings"'))).toHaveLength(
+			1,
+		);
 	});
 
 	it("projects only display identity and settings into the client bootstrap", async () => {
@@ -318,25 +294,24 @@ describe("render-local authenticated identity", () => {
 					activeOrganizationId: other.session.activeOrganizationId,
 				},
 			};
-			const [first, second] = await Promise.all([
-				render(subject),
-				render(switched),
-			]);
+			const [first, second] = await Promise.all([render(subject), render(switched)]);
 			expect(first).toContain(`"data-employee":"${employeeId}"`);
+			expect(first).toContain('"data-settings-access":"orgAdmin"');
 			expect(first).not.toContain(switchedEmployeeId);
 			expect(second).toContain(`"data-employee":"${switchedEmployeeId}"`);
 			expect(second).toContain('"data-tier":"member"');
+			expect(second).toContain('"data-settings-access":"member"');
 			expect(second).not.toContain(employeeId);
 			expect(boundary.reads).toBe(2);
 		} finally {
-			await pool.query(
-				`delete from employee where id=$1 and organization_id=$2`,
-				[switchedEmployeeId, other.session.activeOrganizationId],
-			);
-			await pool.query(
-				`delete from member where user_id=$1 and organization_id=$2`,
-				[userId, other.session.activeOrganizationId],
-			);
+			await pool.query(`delete from employee where id=$1 and organization_id=$2`, [
+				switchedEmployeeId,
+				other.session.activeOrganizationId,
+			]);
+			await pool.query(`delete from member where user_id=$1 and organization_id=$2`, [
+				userId,
+				other.session.activeOrganizationId,
+			]);
 		}
 	});
 
@@ -359,32 +334,27 @@ describe("render-local authenticated identity", () => {
 				} else {
 					await pool.query(
 						`insert into employee_departure (id, organization_id, employee_id, employment_period_id, mode, timezone, cutoff_at, created_by, request_id, request_fingerprint, revision, status) values ($1, $2, $3, $4, 'immediate', 'UTC', '2025-10-01T00:00:00Z', $5, gen_random_uuid(), 'render-fixture', 1, 'pending')`,
-						[
-							departureId,
-							organizationId,
-							employeeId,
-							employmentPeriodId,
-							userId,
-						],
+						[departureId, organizationId, employeeId, employmentPeriodId, userId],
 					);
 				}
 				const reduced = await render(subject);
 				expect(reduced).not.toContain(employeeId);
 				expect(reduced).toContain('"data-tier":"member"');
+				expect(reduced).toContain('"data-settings-access":"none"');
 				expect(boundary.reads).toBe(2);
 			} finally {
-				await pool.query(
-					`delete from employee_departure where id=$1 and organization_id=$2`,
-					[departureId, organizationId],
-				);
+				await pool.query(`delete from employee_departure where id=$1 and organization_id=$2`, [
+					departureId,
+					organizationId,
+				]);
 				await pool.query(
 					`update member set status='approved' where user_id=$1 and organization_id=$2`,
 					[userId, organizationId],
 				);
-				await pool.query(
-					`update employee set is_active=true where id=$1 and organization_id=$2`,
-					[employeeId, organizationId],
-				);
+				await pool.query(`update employee set is_active=true where id=$1 and organization_id=$2`, [
+					employeeId,
+					organizationId,
+				]);
 			}
 		},
 	);
@@ -396,6 +366,7 @@ describe("render-local authenticated identity", () => {
 		});
 		expect(output).not.toContain(employeeId);
 		expect(output).toContain('"data-tier":"member"');
+		expect(output).toContain('"data-settings-access":"none"');
 		expect(output).toContain('"data-settings-org":"none"');
 	});
 
@@ -410,6 +381,7 @@ describe("render-local authenticated identity", () => {
 			});
 			expect(output).not.toContain(employeeId);
 			expect(output).toContain('"data-tier":"member"');
+			expect(output).toContain('"data-settings-access":"none"');
 		},
 	);
 });

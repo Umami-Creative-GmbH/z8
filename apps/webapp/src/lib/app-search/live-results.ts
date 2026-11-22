@@ -2,7 +2,10 @@ import { and, asc, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import type { AppSearchResult, LiveAppSearchResults } from "./types";
 
 const LIVE_RESULT_LIMIT = 6;
@@ -37,7 +40,7 @@ export interface TeamSearchPermission {
 
 export interface SearchLiveAppResultsInput {
 	query: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	organizationId: string | null;
 	currentEmployeeId: string | null;
 	permissionsByTeamId: Map<string, TeamSearchPermission>;
@@ -92,21 +95,21 @@ export function mapTeamSearchRow(row: TeamSearchRow): AppSearchResult {
 }
 
 export function buildEmployeeSearchConditions({
-	accessTier,
+	settingsAccess,
 	organizationId,
 	currentEmployeeId,
 }: {
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	organizationId: string;
 	currentEmployeeId: string | null;
 }): SQL[] | null {
-	if (accessTier === "member") {
+	if (!meetsSettingsAccess(settingsAccess, "scopedManager")) {
 		return null;
 	}
 
 	const organizationCondition = eq(employee.organizationId, organizationId);
 
-	if (accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return [organizationCondition];
 	}
 
@@ -121,19 +124,19 @@ export function buildEmployeeSearchConditions({
 }
 
 export function getSearchableTeamIds({
-	accessTier,
+	settingsAccess,
 	teams,
 	permissionsByTeamId,
 }: {
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	teams: Array<{ id: string }>;
 	permissionsByTeamId: Map<string, TeamSearchPermission>;
 }): string[] {
-	if (accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return teams.map((currentTeam) => currentTeam.id);
 	}
 
-	if (accessTier !== "manager") {
+	if (settingsAccess !== "scopedManager") {
 		return [];
 	}
 
@@ -152,22 +155,23 @@ export async function searchLiveAppResults(
 	const normalizedQuery = normalizeAppSearchQuery(input.query);
 	const organizationId = input.organizationId;
 
-	if (!normalizedQuery || !organizationId) {
+	if (!normalizedQuery || !organizationId || !input.settingsAccess) {
 		return EMPTY_LIVE_APP_SEARCH_RESULTS;
 	}
 
+	const isOrgAdmin = meetsSettingsAccess(input.settingsAccess, "orgAdmin");
 	const searchPattern = `%${normalizedQuery}%`;
 	const employeeConditions = buildEmployeeSearchConditions({
-		accessTier: input.accessTier,
+		settingsAccess: input.settingsAccess,
 		organizationId,
 		currentEmployeeId: input.currentEmployeeId,
 	});
 	const searchablePermissionTeamIds = getSearchableTeamIds({
-		accessTier: input.accessTier,
+		settingsAccess: input.settingsAccess,
 		teams: [...input.permissionsByTeamId.keys()].map((id) => ({ id })),
 		permissionsByTeamId: input.permissionsByTeamId,
 	});
-	const canSearchTeams = input.accessTier === "orgAdmin" || searchablePermissionTeamIds.length > 0;
+	const canSearchTeams = isOrgAdmin || searchablePermissionTeamIds.length > 0;
 
 	const [employeeRows, teamRows] = await Promise.all([
 		employeeConditions
@@ -214,7 +218,7 @@ export async function searchLiveAppResults(
 					.where(
 						and(
 							eq(team.organizationId, organizationId),
-							input.accessTier === "manager"
+							input.settingsAccess === "scopedManager"
 								? inArray(team.id, searchablePermissionTeamIds)
 								: undefined,
 							or(ilike(team.name, searchPattern), ilike(team.description, searchPattern)),
@@ -227,7 +231,7 @@ export async function searchLiveAppResults(
 
 	const searchableTeamIds = new Set(
 		getSearchableTeamIds({
-			accessTier: input.accessTier,
+			settingsAccess: input.settingsAccess,
 			teams: teamRows.map((row) => ({ id: row.teamId })),
 			permissionsByTeamId: input.permissionsByTeamId,
 		}),
@@ -236,9 +240,7 @@ export async function searchLiveAppResults(
 	return {
 		employees: employeeRows.map(mapEmployeeSearchRow),
 		teams: teamRows.flatMap((row) =>
-			input.accessTier === "orgAdmin" || searchableTeamIds.has(row.teamId)
-				? [mapTeamSearchRow(row)]
-				: [],
+			isOrgAdmin || searchableTeamIds.has(row.teamId) ? [mapTeamSearchRow(row)] : [],
 		),
 	};
 }

@@ -1,4 +1,4 @@
-import { hasSettingsAccessTier } from "@/lib/settings-access";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { AppSearchResult, StaticAppSearchInput } from "./types";
 
 export type StaticAppCommandInput = StaticAppSearchInput;
@@ -173,14 +173,14 @@ function isManagerOrAdmin(employeeRole: StaticAppCommandInput["employeeRole"]): 
 
 function isVisibleCommand(
 	command: StaticAppCommandDefinition,
-	{ employeeRole, settingsAccessTier, featureFlags, showPayrollNav }: StaticAppCommandInput,
+	{ employeeRole, settingsAccess, featureFlags, showPayrollNav }: StaticAppCommandInput,
 ): boolean {
 	if (command.requiresProjectsEnabled && !featureFlags?.projectsEnabled) {
 		return false;
 	}
 
 	if (command.visibleFor === "orgAdmin") {
-		return hasSettingsAccessTier(settingsAccessTier, "orgAdmin");
+		return meetsSettingsAccess(settingsAccess, "orgAdmin");
 	}
 
 	if (command.visibleFor === "payroll") {

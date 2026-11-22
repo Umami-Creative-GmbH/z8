@@ -312,7 +312,7 @@ export async function loadGoLiveViewer(
 	return {
 		asOf: goLiveAsOf(instant, timezone),
 		fixLink: goLiveFixLinks({
-			accessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: env.BILLING_ENABLED === "true",
 			featureFlags,
 		}),
