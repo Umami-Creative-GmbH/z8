@@ -27,7 +27,6 @@ vi.mock("@/components/settings/work-policy/work-policy-settings-tabs", () => ({
 	WorkPolicySettingsTabs: () => null,
 }));
 
-import LegacyChangePoliciesPage from "../change-policies/page";
 import WorkPoliciesPage from "./page";
 
 function context(accessTier: string, organizationId: string | null = "org-1") {
@@ -69,22 +68,7 @@ describe("combined Work Policies page", () => {
 		"rejects missing organization or manager access",
 		async (routeContext) => {
 			mocks.context.mockResolvedValue(routeContext);
-			await expect(content(WorkPoliciesPage())).rejects.toThrow(
-				"redirect:/settings",
-			);
+			await expect(content(WorkPoliciesPage())).rejects.toThrow("redirect:/settings");
 		},
 	);
-	it("redirects the old Change Policies URL to the correct tab", async () => {
-		mocks.context.mockResolvedValue(context("manager"));
-		await expect(content(LegacyChangePoliciesPage())).rejects.toThrow(
-			"redirect:/settings/work-policies?tab=changes",
-		);
-	});
-	it("keeps members out of the old Change Policies URL", async () => {
-		mocks.context.mockResolvedValue(context("member"));
-		await expect(content(LegacyChangePoliciesPage())).rejects.toThrow(
-			"redirect:/settings",
-		);
-		expect(mocks.redirect).toHaveBeenCalledWith("/settings");
-	});
 });

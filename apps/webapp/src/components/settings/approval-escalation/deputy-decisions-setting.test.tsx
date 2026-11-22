@@ -4,14 +4,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { saveDeputyDecisionsEnabledAction } from "@/app/[locale]/(app)/settings/approval-escalation/deputy-decisions-actions";
+import { saveDeputyDecisionsEnabledAction } from "@/app/[locale]/(app)/settings/approval-policies/deputy-decisions-actions";
 import { DeputyDecisionsSetting } from "./deputy-decisions-setting";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/app/[locale]/(app)/settings/approval-escalation/deputy-decisions-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/approval-policies/deputy-decisions-actions", () => ({
 	saveDeputyDecisionsEnabledAction: vi.fn(),
 }));
 

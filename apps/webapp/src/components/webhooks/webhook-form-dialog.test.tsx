@@ -32,7 +32,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions", () => ({
 	createWebhook: mocks.createWebhook,
 	updateWebhook: mocks.updateWebhook,
 }));

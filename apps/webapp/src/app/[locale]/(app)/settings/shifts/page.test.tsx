@@ -24,7 +24,6 @@ vi.mock("@/components/settings/coverage-rules-management", () => ({
 	CoverageRulesManagement: () => null,
 }));
 
-import LegacyCoveragePage from "../coverage-rules/page";
 import PlanningPage from "./page";
 
 const renderPage = () => PlanningPage().props.children.type();
@@ -56,9 +55,7 @@ describe("merged Shift Planning permissions", () => {
 			organizationId: "org-1",
 			manageableSubareaIds: new Set(["coverage-area"]),
 		});
-		expect(page.props.tabs[0].panel.props.manageableSubareaIds).toEqual([
-			"template-area",
-		]);
+		expect(page.props.tabs[0].panel.props.manageableSubareaIds).toEqual(["template-area"]);
 		expect(page.props.tabs[1].panel.props).toMatchObject({
 			organizationId: "org-1",
 			manageableSubareaIds: ["coverage-area"],
@@ -75,9 +72,7 @@ describe("merged Shift Planning permissions", () => {
 		});
 		const page = await renderPage();
 		expect(page.props.defaultTab).toBe("coverage");
-		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual([
-			"coverage",
-		]);
+		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual(["coverage"]);
 		expect(mocks.locations).toHaveBeenCalledTimes(1);
 	});
 	it("keeps coverage hidden from a template-only actor", async () => {
@@ -88,26 +83,15 @@ describe("merged Shift Planning permissions", () => {
 			manageableShiftTemplateSubareaIds: new Set(["template-area"]),
 		});
 		const page = await renderPage();
-		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual([
-			"templates",
-		]);
+		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual(["templates"]);
 		expect(mocks.locations).toHaveBeenCalledTimes(1);
 	});
-	it.each([
-		null,
-		{ canAccessShiftTemplates: false, canAccessCoverageRules: false },
-	])("rejects actors without either planning permission", async (access) => {
-		mocks.access.mockResolvedValue(access);
-		await expect(renderPage()).rejects.toThrow("redirect:/settings");
-		expect(mocks.locations).not.toHaveBeenCalled();
-	});
-	it("redirects the legacy coverage route to its tab with its original guard", async () => {
-		await expect(LegacyCoveragePage().props.children.type()).rejects.toThrow(
-			"redirect:/settings/shifts?tab=coverage",
-		);
-		mocks.access.mockResolvedValue({ canAccessCoverageRules: false });
-		await expect(LegacyCoveragePage().props.children.type()).rejects.toThrow(
-			"redirect:/settings",
-		);
-	});
+	it.each([null, { canAccessShiftTemplates: false, canAccessCoverageRules: false }])(
+		"rejects actors without either planning permission",
+		async (access) => {
+			mocks.access.mockResolvedValue(access);
+			await expect(renderPage()).rejects.toThrow("redirect:/settings");
+			expect(mocks.locations).not.toHaveBeenCalled();
+		},
+	);
 });

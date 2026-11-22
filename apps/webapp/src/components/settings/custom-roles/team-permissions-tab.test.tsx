@@ -31,7 +31,7 @@ vi.mock("sonner", () => ({
 	},
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/permissions/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/roles/team-permission-actions", () => ({
 	loadPermissionsPageData: mocks.loadPermissionsPageData,
 	grantTeamPermissions: mocks.grantTeamPermissions,
 	revokeTeamPermissions: mocks.revokeTeamPermissions,

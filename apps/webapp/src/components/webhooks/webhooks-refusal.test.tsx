@@ -9,7 +9,7 @@ import {
 	readApiKeysForView,
 	readWebhooksForView,
 } from "@/app/[locale]/(app)/settings/enterprise/api-keys/view-actions";
-import { createWebhook } from "@/app/[locale]/(app)/settings/webhooks/actions";
+import { createWebhook } from "@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions";
 import { HeaderRefreshButton } from "@/components/header-refresh-button";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { ViewRefreshProvider } from "@/components/providers/view-refresh-provider";
@@ -38,7 +38,7 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/actions", () => ({
 	updateApiKey: vi.fn(),
 	deleteApiKey: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions", () => ({
 	createWebhook: vi.fn(),
 	updateWebhook: vi.fn(),
 	deleteWebhook: vi.fn(),

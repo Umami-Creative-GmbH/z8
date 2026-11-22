@@ -48,7 +48,7 @@ export function deriveAccessControlsSection(input: {
 			occurredAt: event.timestamp,
 			primaryLink: {
 				label: text("compliance.commandCenter.links.inspectInAuditLog"),
-				href: "/settings/enterprise/audit-log",
+				href: "/settings/audit-export?tab=activity",
 			},
 		}),
 	);
@@ -86,7 +86,7 @@ export function deriveAccessControlsSection(input: {
 			updatedAt: systemClock.nowInstant().toString(),
 			primaryLink: {
 				label: text("compliance.commandCenter.links.openAuditLog"),
-				href: "/settings/enterprise/audit-log",
+				href: "/settings/audit-export?tab=activity",
 			},
 		},
 		recentCriticalEvents: recentCriticalEvents

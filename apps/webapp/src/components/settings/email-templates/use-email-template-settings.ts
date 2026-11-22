@@ -7,7 +7,7 @@ import {
 	resetEmailTemplate,
 	saveEmailTemplate,
 	sendEmailTemplateTest,
-} from "@/app/[locale]/(app)/settings/email-templates/actions";
+} from "@/app/[locale]/(app)/settings/enterprise/email/template-actions";
 import type {
 	EmailTemplateEditorDocument,
 	EmailTemplateKey,

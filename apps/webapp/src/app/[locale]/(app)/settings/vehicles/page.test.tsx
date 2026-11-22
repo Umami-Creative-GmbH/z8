@@ -17,7 +17,7 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("./actions", () => ({ getVehicleSettings: mocks.vehicles }));
-vi.mock("../vehicle-use/actions", () => ({
+vi.mock("./vehicle-use-actions", () => ({
 	getVehicleUseAdminDataAction: mocks.use,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
@@ -31,13 +31,7 @@ vi.mock("@/components/settings/vehicle-use/vehicle-use-settings", () => ({
 	VehicleUseAssignments: () => <p>Assignments loaded</p>,
 }));
 vi.mock("@/components/settings/settings-load-error", () => ({
-	SettingsLoadError: ({
-		message,
-		onRetry,
-	}: {
-		message: string;
-		onRetry?: () => void;
-	}) => (
+	SettingsLoadError: ({ message, onRetry }: { message: string; onRetry?: () => void }) => (
 		<div role="alert">
 			{message}
 			<button type="button" data-retry={onRetry ? "custom" : "route-refresh"}>
@@ -52,7 +46,6 @@ vi.mock("@/components/settings/vehicles/vehicle-settings-tabs", () => ({
 	),
 }));
 
-import LegacyVehicleUsePage from "../vehicle-use/page";
 import VehiclesPage from "./page";
 
 async function content(page: ReturnType<typeof VehiclesPage>) {
@@ -103,15 +96,5 @@ describe("combined Vehicles page", () => {
 		await expect(content(VehiclesPage())).rejects.toThrow("forbidden");
 		expect(mocks.vehicles).not.toHaveBeenCalled();
 		expect(mocks.use).not.toHaveBeenCalled();
-	});
-	it("redirects the old Vehicle use URL to its matching tab", async () => {
-		await expect(content(LegacyVehicleUsePage())).rejects.toThrow(
-			"redirect:/settings/vehicles?tab=use",
-		);
-	});
-	it("keeps the admin guard on the old URL", async () => {
-		mocks.requireAdmin.mockRejectedValue(new Error("forbidden"));
-		await expect(content(LegacyVehicleUsePage())).rejects.toThrow("forbidden");
-		expect(mocks.redirect).not.toHaveBeenCalled();
 	});
 });

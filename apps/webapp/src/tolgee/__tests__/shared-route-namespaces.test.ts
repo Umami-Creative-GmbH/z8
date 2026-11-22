@@ -63,10 +63,11 @@ describe("route namespaces", () => {
 		]);
 	});
 
-	it("loads webhooks translations only for webhook settings routes", () => {
-		expect(getNamespacesForRoute("/settings/webhooks")).toEqual([
+	it("loads webhooks translations for enterprise developer access routes", () => {
+		expect(getNamespacesForRoute("/settings/enterprise/api-keys")).toEqual([
 			"common",
 			"settings/generic",
+			"settings/enterprise",
 			"webhooks",
 		]);
 	});
@@ -83,10 +84,13 @@ describe("route namespaces", () => {
 			"settings/enterprise",
 			"webhooks",
 		]);
-		expect(getNamespacesForRoute("/settings/holidays")).toEqual([
+		expect(getNamespacesForRoute("/settings/vacation")).toEqual([
 			"common",
 			"settings/generic",
+			"settings/vacation",
 			"settings/holidays",
+			"settings/rules",
+			"settings/people",
 		]);
 	});
 

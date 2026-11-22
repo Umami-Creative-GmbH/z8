@@ -42,7 +42,7 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/actions", () => ({
 	updateApiKey: vi.fn(),
 	deleteApiKey: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions", () => ({
 	createWebhook: vi.fn(),
 	updateWebhook: vi.fn(),
 	deleteWebhook: vi.fn(),

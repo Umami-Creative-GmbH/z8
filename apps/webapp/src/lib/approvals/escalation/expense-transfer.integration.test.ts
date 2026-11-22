@@ -123,7 +123,7 @@ const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 await import("@/lib/approvals/init");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { listApprovalEscalationCandidates, transferApprovalEscalationAssignment } = await import(
-	"@/app/[locale]/(app)/settings/approval-escalation/actions"
+	"@/app/[locale]/(app)/settings/approval-policies/escalation-actions"
 );
 const { processDueEscalations } = await import("./transfer");
 const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");

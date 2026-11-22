@@ -129,7 +129,7 @@ const { addTeamMember, deleteTeam } = await import(
 const { assignRoleToEmployee, deleteCustomRole, setRolePermissions } =
 	await import("../../settings/roles/actions");
 const { grantTeamPermissions } = await import(
-	"../../settings/permissions/actions"
+	"../../settings/roles/team-permission-actions"
 );
 const { createProductionDepartureCommands } = await import(
 	"@/lib/employee-lifecycle/runtime"
