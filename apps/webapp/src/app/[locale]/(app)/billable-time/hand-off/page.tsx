@@ -19,14 +19,14 @@ async function BillableHandOffPageContent() {
 				<PageHeader
 					title={t("nav.billable-hand-off", "Billable Hand-off")}
 					description={t(
-						"billableTime.handOff.description",
+						"settings.billableTime.handOff.description",
 						"Create invoice drafts from billable work, check tool status, download timesheets, and resolve post-invoicing changes.",
 					)}
 					actions={
 						<Button variant="outline" asChild>
 							<Link href="/settings/billable-time">
 								<IconSettings aria-hidden="true" className="mr-2 size-4" />
-								{t("billableTime.handOff.configureSettings", "Billable Time settings")}
+								{t("settings.billableTime.handOff.configureSettings", "Billable Time settings")}
 							</Link>
 						</Button>
 					}
