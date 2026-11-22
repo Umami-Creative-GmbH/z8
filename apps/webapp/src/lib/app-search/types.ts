@@ -1,4 +1,5 @@
 import type { FeatureFlagState } from "@/components/settings/settings-config";
+import type { NavigationCapabilities } from "@/lib/navigation/navigation-manifest";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export type AppSearchResultType = "page" | "setting" | "employee" | "team" | "action";
@@ -35,6 +36,8 @@ export interface StaticAppSearchInput {
 	showTeamDrivingLicenceNav?: boolean;
 	/** The driving licence visibility reader offers its settings (#1420). */
 	drivingLicenceSettingsVisible?: boolean;
+	/** Full server-resolved navigation capabilities for manifest-driven Cmd+K gating (#1952). */
+	navigationCapabilities?: NavigationCapabilities;
 }
 
 export interface LiveAppSearchResults {

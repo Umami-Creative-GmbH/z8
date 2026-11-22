@@ -1,20 +1,12 @@
 "use client";
 
 import {
-	IconBeach,
-	IconCalendar,
-	IconClipboardCheck,
-	IconClock,
-	IconDashboard,
 	IconFileDescription,
 	IconHierarchy,
 	IconReceipt,
-	IconReport,
-	IconLicense,
 	IconSearch,
 	IconSettings,
 	IconShieldCheck,
-	IconSteeringWheel,
 	IconUsers,
 } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
@@ -38,10 +30,8 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UserAvatar } from "@/components/user-avatar";
-import type {
-	AppSearchResult,
-	LiveAppSearchResults,
-} from "@/lib/app-search/types";
+import type { AppSearchResult, LiveAppSearchResults } from "@/lib/app-search/types";
+import { getNavigationIconForHref } from "@/lib/navigation/navigation-manifest";
 import { useRouter } from "@/navigation";
 
 const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
@@ -56,42 +46,24 @@ const EMPTY_STATIC_COMMANDS: AppSearchResult[] = [];
 
 type SearchIcon = typeof IconSearch;
 
-const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
-	"/": IconDashboard,
-	"/absences": IconBeach,
-	"/approvals/inbox": IconClipboardCheck,
-	"/calendar": IconCalendar,
-	"/compliance": IconShieldCheck,
-	"/my-requests": IconFileDescription,
-	"/organization": IconHierarchy,
-	"/reports": IconReport,
-	"/settings": IconSettings,
+const SETTING_ICON_BY_HREF: Record<string, SearchIcon> = {
 	"/settings/employees": IconUsers,
 	"/settings/organization": IconHierarchy,
 	"/settings/payroll-readiness": IconReceipt,
 	"/settings/projects": IconFileDescription,
 	"/settings/security": IconShieldCheck,
 	"/settings/teams": IconUsers,
-	"/team": IconUsers,
-	"/team/absences": IconBeach,
-	"/team/driving": IconSteeringWheel,
-	"/team/driving-licence": IconLicense,
-	"/driving-licence": IconSteeringWheel,
-	"/time-tracking": IconClock,
-	"/travel-expenses": IconReceipt,
 };
 
 function getResultIcon(result: AppSearchResult): SearchIcon {
 	return (
-		RESULT_ICON_BY_HREF[result.href] ??
+		getNavigationIconForHref(result.href, result.id) ??
+		SETTING_ICON_BY_HREF[result.href] ??
 		(result.type === "setting" ? IconSettings : IconFileDescription)
 	);
 }
 
-function getGroupLabel(
-	type: AppSearchResult["type"],
-	t: ReturnType<typeof useTranslate>["t"],
-) {
+function getGroupLabel(type: AppSearchResult["type"], t: ReturnType<typeof useTranslate>["t"]) {
 	switch (type) {
 		case "action":
 			return t("appSearch.groups.actions", "Actions");
@@ -173,9 +145,7 @@ function ResultGroup({
 						<div className="flex min-w-0 flex-col gap-0.5">
 							<span className="truncate font-medium">{result.title}</span>
 							{result.subtitle ? (
-								<span className="truncate text-muted-foreground text-xs">
-									{result.subtitle}
-								</span>
+								<span className="truncate text-muted-foreground text-xs">{result.subtitle}</span>
 							) : null}
 						</div>
 					</CommandItem>
@@ -202,12 +172,8 @@ export function AppSearch({
 	}>({ results: EMPTY_LIVE_RESULTS, error: null });
 	const trimmedQuery = query.trim();
 	const shouldSearchLiveRecords = open && trimmedQuery.length >= 2;
-	const visibleLiveResults = shouldSearchLiveRecords
-		? liveSearchState.results
-		: EMPTY_LIVE_RESULTS;
-	const visibleLiveError = shouldSearchLiveRecords
-		? liveSearchState.error
-		: null;
+	const visibleLiveResults = shouldSearchLiveRecords ? liveSearchState.results : EMPTY_LIVE_RESULTS;
+	const visibleLiveError = shouldSearchLiveRecords ? liveSearchState.error : null;
 
 	const searchShortcutLabel = useSyncExternalStore(
 		subscribeShortcutLabel,
@@ -249,18 +215,11 @@ export function AppSearch({
 		};
 	}, [shouldSearchLiveRecords, trimmedQuery]);
 
-	const actionResults = staticCommands.filter(
-		(result) => result.type === "action",
-	);
+	const actionResults = staticCommands.filter((result) => result.type === "action");
 	const pageResults = staticResults.filter((result) => result.type === "page");
-	const settingResults = staticResults.filter(
-		(result) => result.type === "setting",
-	);
+	const settingResults = staticResults.filter((result) => result.type === "setting");
 	const searchLabel = t("appSearch.search", "Search");
-	const searchOrRunCommandLabel = t(
-		"appSearch.searchOrRunCommand",
-		"Search or run command",
-	);
+	const searchOrRunCommandLabel = t("appSearch.searchOrRunCommand", "Search or run command");
 
 	function handleSelect(result: AppSearchResult) {
 		setOpen(false);
@@ -288,10 +247,7 @@ export function AppSearch({
 								tooltip={searchOrRunCommandLabel}
 								type="button"
 							>
-								<IconSearch
-									aria-hidden="true"
-									className="text-muted-foreground"
-								/>
+								<IconSearch aria-hidden="true" className="text-muted-foreground" />
 								<span className="font-normal text-sm">{searchLabel}</span>
 								<Kbd
 									aria-hidden="true"
@@ -326,9 +282,7 @@ export function AppSearch({
 					value={query}
 				/>
 				<CommandList>
-					<CommandEmpty>
-						{t("appSearch.empty", "No results found.")}
-					</CommandEmpty>
+					<CommandEmpty>{t("appSearch.empty", "No results found.")}</CommandEmpty>
 					<ResultGroup
 						label={getGroupLabel("action", t)}
 						onSelect={handleSelect}
@@ -355,10 +309,7 @@ export function AppSearch({
 						results={settingResults}
 					/>
 					{visibleLiveError ? (
-						<p
-							aria-live="polite"
-							className="px-3 py-2 text-destructive text-sm"
-						>
+						<p aria-live="polite" className="px-3 py-2 text-destructive text-sm">
 							{visibleLiveError}
 						</p>
 					) : null}

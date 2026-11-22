@@ -124,22 +124,14 @@ export function AppSidebar({
 		featureFlags,
 		managesProject,
 		showMyDrivingLicenceNav: navigationCapabilities.myDrivingLicence ?? false,
-		showTeamDrivingLicenceNav:
-			navigationCapabilities.teamDrivingLicence ?? false,
+		showTeamDrivingLicenceNav: navigationCapabilities.teamDrivingLicence ?? false,
 		drivingLicenceSettingsVisible,
+		navigationCapabilities,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
-	const navPersonal = buildPersonalNav(
-		translate,
-		navigationCapabilities,
-		employeeRole,
-	);
-	const navTeam = buildTeamNav(
-		translate,
-		navigationCapabilities,
-		employeeRole,
-	);
+	const navPersonal = buildPersonalNav(translate, navigationCapabilities, employeeRole);
+	const navTeam = buildTeamNav(translate, navigationCapabilities, employeeRole);
 	const navSecondary = buildSecondaryNav(translate, navigationCapabilities);
 
 	return (
@@ -153,15 +145,9 @@ export function AppSidebar({
 			</SidebarHeader>
 			{capabilitiesUnavailable ? <SidebarCapabilityNotice /> : null}
 			<SidebarContent className="gap-3 group-data-[collapsible=icon]:overflow-y-auto">
-				<AppSearch
-					staticCommands={staticCommands}
-					staticResults={staticSearchResults}
-				/>
+				<AppSearch staticCommands={staticCommands} staticResults={staticSearchResults} />
 				<Suspense fallback={<SidebarNavigationLoading rows={8} />}>
-					<NavMain
-						items={navPersonal}
-						label={t("nav.workplace-label", "Workplace")}
-					/>
+					<NavMain items={navPersonal} label={t("nav.workplace-label", "Workplace")} />
 				</Suspense>
 				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
 					{navTeam.length > 0 && <NavTeam items={navTeam} />}

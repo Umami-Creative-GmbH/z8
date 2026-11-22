@@ -183,7 +183,7 @@ export function DrivingDetailsList({
 					<div className="overflow-x-auto rounded-lg border bg-card">
 						<Table
 							mobileLayout="stacked"
-							aria-label={t("team.driving.title", "Driving details missing")}
+							aria-label={t("nav.missing-vehicle-logs", "Missing vehicle logs")}
 						>
 							<TableHeader>
 								<TableRow>

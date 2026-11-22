@@ -27,11 +27,10 @@ import { loadFinanceActorForIdentity } from "@/lib/travel-expenses/finance-acces
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
-interface ServerAppSidebarProps
-	extends Omit<
-		React.ComponentProps<typeof AppSidebar>,
-		"navigationCapabilities"
-	> {
+interface ServerAppSidebarProps extends Omit<
+	React.ComponentProps<typeof AppSidebar>,
+	"navigationCapabilities"
+> {
 	showWorksCouncilNav?: boolean;
 }
 
@@ -92,10 +91,7 @@ export async function ServerAppSidebar({
 				// My documents (#865): the employee's own shared documents, while the feature is on.
 				myDocuments:
 					featureFlags.personnelFilesEnabled &&
-					Boolean(
-						activeEmployee &&
-							activeEmployee.organizationId === activeOrganizationId,
-					),
+					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
 				myEquipment: equipmentAccess.personal,
 				equipment: equipmentAccess.staff,
 				personnelFiles: showPersonnelFilesNav,
@@ -103,6 +99,14 @@ export async function ServerAppSidebar({
 				teamPresence: showTeamPresenceNav,
 				myDrivingLicence: showMyDrivingLicenceNav,
 				teamDrivingLicence: showTeamDrivingLicenceNav,
+				analytics: activeEmployee?.role === "admin" || activeEmployee?.role === "manager",
+				projectReports:
+					featureFlags.projectsEnabled &&
+					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId) &&
+					(settingsAccessTier === "orgAdmin" ||
+						activeEmployee?.role === "admin" ||
+						activeEmployee?.role === "manager" ||
+						managesProject),
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}
@@ -122,22 +126,19 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		getCurrentSettingsAccessTier(),
 	]);
 
-	const activeOrganizationId =
-		authContext?.session.activeOrganizationId ?? null;
+	const activeOrganizationId = authContext?.session.activeOrganizationId ?? null;
 	const currentOrganization = activeOrganizationId
 		? organizations.find((org) => org.id === activeOrganizationId) || null
 		: null;
 	const activeEmployee = authContext?.employee ?? null;
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
-		authContext?.user.canCreateOrganizations ||
-			authContext?.user.role === "admin",
+		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
 	);
 	const featureFlags = getOrganizationFeatureFlags(currentOrganization);
 	const identity = await getRenderOrganizationIdentity();
 	const hasEmployee = !!identity?.employee;
 	const canSeeTeamNavigation =
-		!!identity &&
-		(activeEmployee?.role === "admin" || activeEmployee?.role === "manager");
+		!!identity && (activeEmployee?.role === "admin" || activeEmployee?.role === "manager");
 	let capabilitiesUnavailable = false;
 	const capability = <T,>(read: PromiseLike<T> | T, fallback: T): Promise<T> =>
 		Promise.resolve(read).catch(() => {
@@ -160,11 +161,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 				? getRenderAbility().then(
 						(ability) =>
 							!!ability &&
-							canViewWorksCouncilPortal(
-								ability,
-								identity.organizationId,
-								identity.organizationId,
-							),
+							canViewWorksCouncilPortal(ability, identity.organizationId, identity.organizationId),
 					)
 				: false,
 			false,
@@ -180,9 +177,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		),
 		capability(
 			hasEmployee
-				? getRenderAbility().then((ability) =>
-						loadFinanceActorForIdentity(authContext, ability),
-					)
+				? getRenderAbility().then((ability) => loadFinanceActorForIdentity(authContext, ability))
 				: null,
 			null,
 		),
@@ -217,10 +212,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		),
 		capability(
 			featureFlags.projectsEnabled && identity
-				? managesProjectBelowManagerTierForIdentity(
-						settingsAccessTier,
-						identity,
-					)
+				? managesProjectBelowManagerTierForIdentity(settingsAccessTier, identity)
 				: false,
 			false,
 		),
@@ -232,17 +224,10 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		),
 	]);
 	const showFinanceNav = financeActor?.canRead ?? false;
-	const showPersonnelFilesNav =
-		!!personnelFileAccess && managesAnyDocuments(personnelFileAccess);
-	const showMyDrivingLicenceNav = showsMyDrivingLicence(
-		drivingLicenceVisibility,
-	);
-	const showTeamDrivingLicenceNav = showsTeamDrivingLicence(
-		drivingLicenceVisibility,
-	);
-	const drivingLicenceSettingsVisible = showsDrivingLicenceSettings(
-		drivingLicenceVisibility,
-	);
+	const showPersonnelFilesNav = !!personnelFileAccess && managesAnyDocuments(personnelFileAccess);
+	const showMyDrivingLicenceNav = showsMyDrivingLicence(drivingLicenceVisibility);
+	const showTeamDrivingLicenceNav = showsTeamDrivingLicence(drivingLicenceVisibility);
+	const drivingLicenceSettingsVisible = showsDrivingLicenceSettings(drivingLicenceVisibility);
 	return {
 		organizations,
 		currentOrganization,

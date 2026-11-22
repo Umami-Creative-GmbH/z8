@@ -1,85 +1,11 @@
 import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
 import {
-	APP_ROUTE_METADATA,
-	type AppRouteMetadata,
-} from "@/lib/navigation/route-metadata";
+	getCmdKManifestEntries,
+	type NavigationAccessContext,
+	type NavigationCapabilities,
+	type NavigationSearchKeyword,
+} from "@/lib/navigation/navigation-manifest";
 import type { AppSearchResult, StaticAppSearchInput } from "./types";
-
-type SearchKeywordDefinition = {
-	key: string;
-	defaultValue: string;
-};
-
-function routeMetadata(id: string): AppRouteMetadata {
-	const route = APP_ROUTE_METADATA.find((entry) => entry.id === id);
-	if (!route) throw new Error(`Missing route metadata for ${id}`);
-	return route;
-}
-
-const PERSONAL_PAGE_DESTINATIONS = [
-	"dashboard",
-	"time-tracking",
-	"my-requests",
-	"calendar",
-	"org-explorer",
-	"absences",
-	"travel-expenses",
-	"reports",
-].map(routeMetadata);
-
-const TEAM_PAGE_DESTINATIONS = [
-	{
-		id: "team",
-		titleKey: "nav.team",
-		titleDefault: "Team",
-		href: "/team",
-	},
-	{
-		id: "team-absences",
-		titleKey: "nav.teamAbsences",
-		titleDefault: "Team Absences",
-		href: "/team/absences",
-		descriptionKey: "appSearch.teamAbsences.description",
-		descriptionDefault: "Review employee absence metrics and record absences",
-		keywords: [
-			{ key: "appSearch.teamAbsences.keywords.team", defaultValue: "team" },
-			{
-				key: "appSearch.teamAbsences.keywords.absence",
-				defaultValue: "absence",
-			},
-			{ key: "appSearch.teamAbsences.keywords.sick", defaultValue: "sick" },
-			{
-				key: "appSearch.teamAbsences.keywords.vacation",
-				defaultValue: "vacation",
-			},
-			{
-				key: "appSearch.teamAbsences.keywords.manager",
-				defaultValue: "manager",
-			},
-		] satisfies SearchKeywordDefinition[],
-	},
-	{
-		id: "approvals",
-		titleKey: "nav.approvals",
-		titleDefault: "Approvals",
-		href: "/approvals/inbox",
-	},
-] as const;
-
-const PAYROLL_PAGE_DESTINATION = routeMetadata("payroll");
-
-const SETTINGS_PAGE_DESTINATION = routeMetadata("settings");
-
-const MY_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata("driving-licence");
-const TEAM_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata(
-	"team-driving-licence",
-);
-
-function isManagerOrAdmin(
-	employeeRole: StaticAppSearchInput["employeeRole"],
-): boolean {
-	return employeeRole === "admin" || employeeRole === "manager";
-}
 
 function dedupeResults(results: AppSearchResult[]): AppSearchResult[] {
 	const seen = new Set<string>();
@@ -96,124 +22,69 @@ function dedupeResults(results: AppSearchResult[]): AppSearchResult[] {
 }
 
 function translateKeywords(
-	keywords: readonly SearchKeywordDefinition[],
+	keywords: readonly NavigationSearchKeyword[],
 	t: StaticAppSearchInput["t"],
 ): string[] {
 	return keywords.map((keyword) => t(keyword.key, keyword.defaultValue));
 }
 
-export function buildStaticAppSearchResults({
-	t,
-	employeeRole,
-	settingsAccessTier,
-	billingEnabled,
-	showComplianceNav,
-	showPayrollNav,
-	featureFlags,
-	managesProject,
-	showMyDrivingLicenceNav,
-	showTeamDrivingLicenceNav,
-	drivingLicenceSettingsVisible,
-}: StaticAppSearchInput): AppSearchResult[] {
-	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
-		(destination) => ({
-			type: "page",
-			id: `page:${destination.id}`,
-			title: t(destination.titleKey, destination.titleDefault),
-			href: destination.href,
-		}),
-	);
+function toNavigationAccessContext(input: StaticAppSearchInput): NavigationAccessContext {
+	const capabilities: NavigationCapabilities = {
+		scheduling:
+			input.navigationCapabilities?.scheduling ?? Boolean(input.featureFlags?.shiftsEnabled),
+		compliance: input.navigationCapabilities?.compliance ?? input.showComplianceNav,
+		payroll: input.navigationCapabilities?.payroll ?? Boolean(input.showPayrollNav),
+		finance: input.navigationCapabilities?.finance ?? false,
+		worksCouncil: input.navigationCapabilities?.worksCouncil ?? false,
+		myDocuments: input.navigationCapabilities?.myDocuments,
+		myEquipment: input.navigationCapabilities?.myEquipment,
+		equipment: input.navigationCapabilities?.equipment,
+		personnelFiles: input.navigationCapabilities?.personnelFiles,
+		periodSubmissions: input.navigationCapabilities?.periodSubmissions,
+		teamPresence: input.navigationCapabilities?.teamPresence,
+		myDrivingLicence:
+			input.navigationCapabilities?.myDrivingLicence ?? input.showMyDrivingLicenceNav,
+		teamDrivingLicence:
+			input.navigationCapabilities?.teamDrivingLicence ?? input.showTeamDrivingLicenceNav,
+		analytics: input.navigationCapabilities?.analytics,
+		projectReports: input.navigationCapabilities?.projectReports,
+		billableHandOff: input.navigationCapabilities?.billableHandOff,
+		platformAdmin: input.navigationCapabilities?.platformAdmin ?? false,
+	};
 
-	if (isManagerOrAdmin(employeeRole)) {
-		pageResults.push(
-			...TEAM_PAGE_DESTINATIONS.map((destination) => {
-				const result = {
-					type: "page" as const,
-					id: `page:${destination.id}`,
-					title: t(destination.titleKey, destination.titleDefault),
-					href: destination.href,
-				};
+	return {
+		employeeRole: input.employeeRole,
+		settingsAccessTier: input.settingsAccessTier,
+		navigationCapabilities: capabilities,
+		featureFlags: input.featureFlags,
+		managesProject: input.managesProject,
+	};
+}
 
-				if (!("descriptionDefault" in destination)) {
-					return result;
-				}
+export function buildStaticAppSearchResults(input: StaticAppSearchInput): AppSearchResult[] {
+	const {
+		t,
+		settingsAccessTier,
+		billingEnabled,
+		featureFlags,
+		managesProject,
+		drivingLicenceSettingsVisible,
+	} = input;
 
-				return {
-					...result,
-					subtitle: t(
-						destination.descriptionKey,
-						destination.descriptionDefault,
-					),
-					keywords: translateKeywords(destination.keywords, t),
-				};
-			}),
-		);
-
-		if (featureFlags?.shiftsEnabled) {
-			pageResults.push({
-				type: "page",
-				id: "page:scheduling",
-				title: t("nav.scheduling", "Scheduling"),
-				href: "/scheduling",
-			});
-		}
-	} else if (employeeRole === "employee" && featureFlags?.shiftsEnabled) {
-		pageResults.push({
-			type: "page",
-			id: "page:my-schedule",
-			title: t("nav.my-schedule", "My Schedule"),
-			href: "/scheduling",
-		});
-	}
-
-	// Named like the sidebar items, which the visibility reader also decides (#1937).
-	if (showMyDrivingLicenceNav) {
-		pageResults.push({
-			type: "page",
-			id: `page:${MY_DRIVING_LICENCE_PAGE_DESTINATION.id}`,
-			title: t("nav.my-driving-licence", "My driving licence"),
-			href: MY_DRIVING_LICENCE_PAGE_DESTINATION.href,
-		});
-	}
-	if (showTeamDrivingLicenceNav) {
-		pageResults.push({
-			type: "page",
-			id: `page:${TEAM_DRIVING_LICENCE_PAGE_DESTINATION.id}`,
-			title: t("nav.team-driving-licences", "Driving licences"),
-			href: TEAM_DRIVING_LICENCE_PAGE_DESTINATION.href,
-		});
-	}
-
-	if (showComplianceNav) {
-		pageResults.push({
-			type: "page",
-			id: "page:compliance",
-			title: t("nav.compliance", "Compliance"),
-			href: "/compliance",
-		});
-	}
-
-	if (showPayrollNav) {
-		pageResults.push({
-			type: "page",
-			id: `page:${PAYROLL_PAGE_DESTINATION.id}`,
-			title: t(
-				PAYROLL_PAGE_DESTINATION.titleKey,
-				PAYROLL_PAGE_DESTINATION.titleDefault,
-			),
-			href: PAYROLL_PAGE_DESTINATION.href,
-		});
-	}
-
-	pageResults.push({
+	const pageResults: AppSearchResult[] = getCmdKManifestEntries(
+		toNavigationAccessContext(input),
+	).map((entry) => ({
 		type: "page",
-		id: `page:${SETTINGS_PAGE_DESTINATION.id}`,
-		title: t(
-			SETTINGS_PAGE_DESTINATION.titleKey,
-			SETTINGS_PAGE_DESTINATION.titleDefault,
-		),
-		href: SETTINGS_PAGE_DESTINATION.href,
-	});
+		id: `page:${entry.id}`,
+		title: t(entry.titleKey, entry.titleDefault),
+		href: entry.href,
+		...(entry.cmdK.descriptionKey && entry.cmdK.descriptionDefault
+			? {
+					subtitle: t(entry.cmdK.descriptionKey, entry.cmdK.descriptionDefault),
+				}
+			: {}),
+		...(entry.cmdK.keywords ? { keywords: translateKeywords(entry.cmdK.keywords, t) } : {}),
+	}));
 
 	const { visibleSettings } = getResolvedSettingsVisibility({
 		accessTier: settingsAccessTier,

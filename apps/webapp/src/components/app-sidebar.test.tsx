@@ -1287,9 +1287,9 @@ describe("app sidebar compliance navigation", () => {
 		expect(navTeamSpy).not.toHaveBeenCalled();
 	});
 
-	it("renders the Finance item after Travel Expenses, with its count, only when enabled (#753)", () => {
+	it("renders the Expense Finance item after Travel Expenses, with its count, only when enabled (#753, #1952)", () => {
 		const { rerender } = render(<AppSidebar employeeRole="employee" />);
-		expect(screen.queryByRole("link", { name: "Finance" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Expense Finance" })).toBeNull();
 
 		rerender(
 			<AppSidebar
@@ -1305,7 +1305,7 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 		expect(
-			screen.getByRole("link", { name: "Finance" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Expense Finance" }).getAttribute("href"),
 		).toBe("/travel-expenses/finance");
 		const items = navMainSpy.mock.lastCall?.[0] ?? [];
 		expect(items.map((item: { url: string }) => item.url).slice(4, 6)).toEqual([
