@@ -272,6 +272,42 @@ describe("DiscordChannelSettings", () => {
 		expect(mocks.refresh).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		["application_id_mismatch", "Application ID does not match the provided bot token."],
+		["public_key_mismatch", "Public key does not match the Discord application."],
+	] as const)(
+		"shows localized refusal error for %s while preserving entered values",
+		async (refusal, expectedMessage) => {
+			const connectAction = vi.fn().mockResolvedValue({
+				success: false,
+				code: "ValidationError",
+				refusal,
+				error: "Raw server mismatch error",
+			});
+
+			renderWithQueryClient(
+				<DiscordChannelSettings
+					config={null}
+					updateAction={vi.fn()}
+					connectAction={connectAction}
+					disconnectAction={vi.fn()}
+				/>,
+			);
+
+			fillConnectForm();
+			fireEvent.click(screen.getByRole("button", { name: /Connect Discord Bot/i }));
+
+			expect(await screen.findByText(expectedMessage)).toBeTruthy();
+			expect(screen.queryByText(/Raw server mismatch error/i)).toBeNull();
+			expect((screen.getByLabelText(/Application ID/i) as HTMLInputElement).value).toBe(
+				VALID_APP_ID,
+			);
+			expect((screen.getByLabelText(/Public Key/i) as HTMLInputElement).value).toBe(
+				VALID_PUBLIC_KEY,
+			);
+		},
+	);
+
 	it("displays the interaction URL and supports confirmed disconnect when already connected", async () => {
 		const disconnectAction = vi.fn().mockResolvedValue({ success: true, data: undefined });
 

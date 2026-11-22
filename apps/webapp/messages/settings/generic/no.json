@@ -2847,8 +2847,7 @@
       "description": "Velg hvordan og når du vil bli varslet",
       "digestTime": "Tidspunkt for sammendrag",
       "discord": {
-        "description": "Konfigurer Discord-varsler for organisasjonen din.",
-        "setupInstructions": "Tilkobling av Discord fra denne siden er ikke tilgjengelig ennå. Tilkoblingen krever Discord-applikasjonens bot-token, applikasjons-ID og offentlige nøkkel."
+        "description": "Konfigurer Discord-varsler for organisasjonen din."
       },
       "escalations": "Eskaleringer",
       "escalationsDescription": "Eskaler ubesvarte godkjenningsforespørsler etter det konfigurerte tidsavbruddet.",

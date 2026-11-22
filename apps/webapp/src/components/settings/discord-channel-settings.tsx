@@ -13,7 +13,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
 	DiscordConnectFormValues,
@@ -49,7 +49,17 @@ const DISCORD_CONNECT_REFUSALS = {
 		"settings.discord.errors.invalidBotToken",
 		"Invalid bot token. Check your Discord bot credentials and try again.",
 	],
-} satisfies RefusalMessages<"invalid_bot_token">;
+	application_id_mismatch: [
+		"settings.discord.errors.applicationIdMismatch",
+		"Application ID does not match the provided bot token.",
+	],
+	public_key_mismatch: [
+		"settings.discord.errors.publicKeyMismatch",
+		"Public key does not match the Discord application.",
+	],
+} satisfies RefusalMessages<
+	"invalid_bot_token" | "application_id_mismatch" | "public_key_mismatch"
+>;
 
 const DEFAULT_DISCORD_FEATURES: NotificationChannelSettingsFormValues = {
 	enableApprovals: true,
@@ -119,7 +129,7 @@ function DiscordConnectForm({
 					toast.warning(
 						t(
 							"settings.discord.commandsRegistrationFailed",
-							"Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions and reconnect to retry.",
+							"Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions, then disconnect and connect the bot again to retry.",
 						),
 					);
 				}
@@ -331,7 +341,16 @@ function DiscordConnectedDetails({
 }) {
 	const { t } = useTranslate();
 	const [copied, setCopied] = useState(false);
+	const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const disconnection = useConfirmedAction<"bot">();
+
+	useEffect(() => {
+		return () => {
+			if (copyResetTimerRef.current !== null) {
+				clearTimeout(copyResetTimerRef.current);
+			}
+		};
+	}, []);
 
 	const disconnectMutation = useMutation({
 		mutationFn: async () => {
@@ -366,7 +385,13 @@ function DiscordConnectedDetails({
 		}
 		setCopied(true);
 		toast.success(t("settings.discord.interactionUrlCopied", "Interaction Endpoint URL copied"));
-		setTimeout(() => setCopied(false), 2000);
+		if (copyResetTimerRef.current !== null) {
+			clearTimeout(copyResetTimerRef.current);
+		}
+		copyResetTimerRef.current = setTimeout(() => {
+			setCopied(false);
+			copyResetTimerRef.current = null;
+		}, 2000);
 	};
 
 	return (
@@ -380,7 +405,7 @@ function DiscordConnectedDetails({
 					<p>
 						{t(
 							"settings.discord.commandsRegistrationFailed",
-							"Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions and reconnect to retry.",
+							"Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions, then disconnect and connect the bot again to retry.",
 						)}
 					</p>
 				</div>

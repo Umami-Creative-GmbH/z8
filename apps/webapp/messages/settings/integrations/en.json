@@ -207,7 +207,7 @@
       "applicationId": "Application ID",
       "botToken": "Bot Token",
       "botTokenHelp": "Stored encrypted in Vault and used to validate and operate your bot.",
-      "commandsRegistrationFailed": "Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions and reconnect to retry.",
+      "commandsRegistrationFailed": "Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions, then disconnect and connect the bot again to retry.",
       "connect": "Connect Discord Bot",
       "connectDescription": "Enter the credentials from your Discord application in the Discord Developer Portal.",
       "connected": "Discord bot connected successfully",
@@ -224,7 +224,9 @@
       "disconnected": "Discord bot disconnected",
       "disconnectError": "Failed to disconnect Discord bot",
       "errors": {
-        "invalidBotToken": "Invalid bot token. Check your Discord bot credentials and try again."
+        "applicationIdMismatch": "Application ID does not match the provided bot token.",
+        "invalidBotToken": "Invalid bot token. Check your Discord bot credentials and try again.",
+        "publicKeyMismatch": "Public key does not match the Discord application."
       },
       "interactionEndpointHelp": "Paste this URL into the Interactions Endpoint URL field in your Discord Developer Portal application.",
       "interactionEndpointUrl": "Interaction Endpoint URL",

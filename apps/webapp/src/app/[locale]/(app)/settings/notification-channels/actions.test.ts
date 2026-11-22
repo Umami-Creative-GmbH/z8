@@ -12,8 +12,9 @@ const mocks = vi.hoisted(() => ({
 	slackFindFirst: vi.fn(),
 	discordFindFirst: vi.fn(),
 	teamsFindFirst: vi.fn(),
-	getApplicationInfo: vi.fn(),
+	verifyBotApplication: vi.fn(),
 	registerDiscordSlashCommands: vi.fn(),
+	getOrgSecret: vi.fn(),
 	storeOrgSecret: vi.fn(),
 	deleteOrgSecret: vi.fn(),
 }));
@@ -34,7 +35,7 @@ vi.mock("@/env", async (importOriginal) => {
 });
 
 vi.mock("@/lib/discord", () => ({
-	getApplicationInfo: mocks.getApplicationInfo,
+	verifyBotApplication: mocks.verifyBotApplication,
 	registerDiscordSlashCommands: mocks.registerDiscordSlashCommands,
 }));
 
@@ -43,11 +44,14 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/vault", () => ({
+	getOrgSecret: mocks.getOrgSecret,
 	storeOrgSecret: mocks.storeOrgSecret,
 	deleteOrgSecret: mocks.deleteOrgSecret,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect } = await import("effect");
+	const { DatabaseError } = await import("@/lib/effect/errors");
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
 	const { organizationActionStubLayer } = await import("@/test/organization-action");
 	return runtimeModuleOver(
@@ -61,6 +65,16 @@ vi.mock("@/lib/effect/runtime", async () => {
 					teamsTenantConfig: { findFirst: mocks.teamsFindFirst },
 				},
 			},
+			query: (name, fn) =>
+				Effect.tryPromise({
+					try: fn,
+					catch: (cause) =>
+						new DatabaseError({
+							message: `Database error during ${name}`,
+							operation: name,
+							cause,
+						}),
+				}),
 		}),
 	);
 });
@@ -120,8 +134,9 @@ describe("notification channel settings actions", () => {
 		mocks.slackFindFirst.mockReset();
 		mocks.discordFindFirst.mockReset();
 		mocks.teamsFindFirst.mockReset();
-		mocks.getApplicationInfo.mockReset();
+		mocks.verifyBotApplication.mockReset();
 		mocks.registerDiscordSlashCommands.mockReset();
+		mocks.getOrgSecret.mockReset();
 		mocks.storeOrgSecret.mockReset();
 		mocks.deleteOrgSecret.mockReset();
 
@@ -130,12 +145,16 @@ describe("notification channel settings actions", () => {
 		mocks.update.mockReturnValue({ set: mocks.set });
 		mocks.values.mockResolvedValue(undefined);
 		mocks.insert.mockReturnValue({ values: mocks.values });
-		mocks.getApplicationInfo.mockResolvedValue({
-			id: validDiscordCredentials.applicationId,
-			name: "Z8 Bot",
-			verifyKey: validDiscordCredentials.publicKey,
+		mocks.verifyBotApplication.mockResolvedValue({
+			kind: "ok",
+			application: {
+				id: validDiscordCredentials.applicationId,
+				name: "Z8 Bot",
+				verifyKey: validDiscordCredentials.publicKey,
+			},
 		});
 		mocks.registerDiscordSlashCommands.mockResolvedValue(true);
+		mocks.getOrgSecret.mockResolvedValue(null);
 		mocks.storeOrgSecret.mockResolvedValue(undefined);
 		mocks.deleteOrgSecret.mockResolvedValue(undefined);
 	});
@@ -311,8 +330,9 @@ describe("Discord bot connect and disconnect actions", () => {
 		mocks.insert.mockReset();
 		mocks.values.mockReset();
 		mocks.discordFindFirst.mockReset();
-		mocks.getApplicationInfo.mockReset();
+		mocks.verifyBotApplication.mockReset();
 		mocks.registerDiscordSlashCommands.mockReset();
+		mocks.getOrgSecret.mockReset();
 		mocks.storeOrgSecret.mockReset();
 		mocks.deleteOrgSecret.mockReset();
 
@@ -322,12 +342,16 @@ describe("Discord bot connect and disconnect actions", () => {
 		mocks.values.mockResolvedValue(undefined);
 		mocks.insert.mockReturnValue({ values: mocks.values });
 		mocks.discordFindFirst.mockResolvedValue(undefined);
-		mocks.getApplicationInfo.mockResolvedValue({
-			id: validDiscordCredentials.applicationId,
-			name: "Z8 Bot",
-			verifyKey: validDiscordCredentials.publicKey,
+		mocks.verifyBotApplication.mockResolvedValue({
+			kind: "ok",
+			application: {
+				id: validDiscordCredentials.applicationId,
+				name: "Z8 Bot",
+				verifyKey: validDiscordCredentials.publicKey,
+			},
 		});
 		mocks.registerDiscordSlashCommands.mockResolvedValue(true);
+		mocks.getOrgSecret.mockResolvedValue(null);
 		mocks.storeOrgSecret.mockResolvedValue(undefined);
 		mocks.deleteOrgSecret.mockResolvedValue(undefined);
 	});
@@ -358,7 +382,7 @@ describe("Discord bot connect and disconnect actions", () => {
 			const result = await connectDiscordBot(validDiscordCredentials);
 
 			expect(result).toMatchObject({ success: false, code: expectedCode });
-			expect(mocks.getApplicationInfo).not.toHaveBeenCalled();
+			expect(mocks.verifyBotApplication).not.toHaveBeenCalled();
 			expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
 			expect(mocks.insert).not.toHaveBeenCalled();
 			expect(mocks.update).not.toHaveBeenCalled();
@@ -422,12 +446,12 @@ describe("Discord bot connect and disconnect actions", () => {
 			code: "ValidationError",
 			error: expectedError,
 		});
-		expect(mocks.getApplicationInfo).not.toHaveBeenCalled();
+		expect(mocks.verifyBotApplication).not.toHaveBeenCalled();
 		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
 	});
 
 	it("rejects an invalid bot token with refusal code and stores nothing", async () => {
-		mocks.getApplicationInfo.mockResolvedValueOnce(null);
+		mocks.verifyBotApplication.mockResolvedValueOnce({ kind: "unauthorized", status: 401 });
 
 		const result = await connectDiscordBot(validDiscordCredentials);
 
@@ -439,6 +463,77 @@ describe("Discord bot connect and disconnect actions", () => {
 		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
 		expect(mocks.insert).not.toHaveBeenCalled();
 		expect(mocks.update).not.toHaveBeenCalled();
+	});
+
+	it("returns ExternalServiceError when Discord is rate-limited or unavailable", async () => {
+		mocks.verifyBotApplication.mockResolvedValueOnce({ kind: "error", status: 503 });
+
+		const result = await connectDiscordBot(validDiscordCredentials);
+
+		expect(result).toEqual({
+			success: false,
+			code: "ExternalServiceError",
+			error: "Failed to connect Discord bot",
+		});
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects an application ID that does not match the Discord application for the token", async () => {
+		mocks.verifyBotApplication.mockResolvedValueOnce({
+			kind: "ok",
+			application: {
+				id: "999999999999999999",
+				name: "Other Bot",
+				verifyKey: validDiscordCredentials.publicKey,
+			},
+		});
+
+		const result = await connectDiscordBot(validDiscordCredentials);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "application_id_mismatch",
+		});
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects a public key that does not match the Discord application verify key", async () => {
+		mocks.verifyBotApplication.mockResolvedValueOnce({
+			kind: "ok",
+			application: {
+				id: validDiscordCredentials.applicationId,
+				name: "Z8 Bot",
+				verifyKey: "f".repeat(64),
+			},
+		});
+
+		const result = await connectDiscordBot(validDiscordCredentials);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "public_key_mismatch",
+		});
+		expect(mocks.storeOrgSecret).not.toHaveBeenCalled();
+		expect(mocks.insert).not.toHaveBeenCalled();
+	});
+
+	it("matches public keys case-insensitively against Discord verify_key", async () => {
+		mocks.verifyBotApplication.mockResolvedValueOnce({
+			kind: "ok",
+			application: {
+				id: validDiscordCredentials.applicationId,
+				name: "Z8 Bot",
+				verifyKey: validDiscordCredentials.publicKey.toUpperCase(),
+			},
+		});
+
+		const result = await connectDiscordBot(validDiscordCredentials);
+
+		expect(result.success).toBe(true);
 	});
 
 	it("connects a new Discord bot, stores the token in Vault, registers commands, and returns the interaction URL", async () => {
@@ -457,7 +552,7 @@ describe("Discord bot connect and disconnect actions", () => {
 			/^https:\/\/app\.example\.com\/api\/discord\/interactions\/[0-9a-f]{64}$/,
 		);
 
-		expect(mocks.getApplicationInfo).toHaveBeenCalledWith(validDiscordCredentials.botToken);
+		expect(mocks.verifyBotApplication).toHaveBeenCalledWith(validDiscordCredentials.botToken);
 		expect(mocks.storeOrgSecret).toHaveBeenCalledWith(
 			"org-1",
 			"discord/bot_token",
@@ -470,6 +565,7 @@ describe("Discord bot connect and disconnect actions", () => {
 				botToken: "vault:managed",
 				applicationId: validDiscordCredentials.applicationId,
 				publicKey: validDiscordCredentials.publicKey,
+				interactionEndpointConfigured: false,
 				setupStatus: "active",
 				configuredByUserId: "user-admin",
 			}),
@@ -478,11 +574,10 @@ describe("Discord bot connect and disconnect actions", () => {
 			validDiscordCredentials.botToken,
 			validDiscordCredentials.applicationId,
 		);
-		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/discord");
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/notification-channels");
 	});
 
-	it("updates an existing Discord bot configuration when reconnecting", async () => {
+	it("updates an existing Discord bot configuration and resets interactionEndpointConfigured when reconnecting", async () => {
 		mocks.discordFindFirst.mockResolvedValueOnce({
 			id: "discord-cfg-1",
 			organizationId: "org-1",
@@ -499,10 +594,52 @@ describe("Discord bot connect and disconnect actions", () => {
 				botToken: "vault:managed",
 				applicationId: validDiscordCredentials.applicationId,
 				publicKey: validDiscordCredentials.publicKey,
+				interactionEndpointConfigured: false,
 				setupStatus: "active",
 				configuredByUserId: "user-admin",
 			}),
 		);
+	});
+
+	it("deletes the stored Vault secret if inserting a new Discord config fails", async () => {
+		mocks.values.mockRejectedValueOnce(new Error("DB write failed"));
+
+		const result = await connectDiscordBot(validDiscordCredentials);
+
+		expect(result).toMatchObject({ success: false, code: "DatabaseError" });
+		expect(mocks.storeOrgSecret).toHaveBeenCalledWith(
+			"org-1",
+			"discord/bot_token",
+			validDiscordCredentials.botToken,
+		);
+		expect(mocks.deleteOrgSecret).toHaveBeenCalledWith("org-1", "discord/bot_token");
+	});
+
+	it("restores the previous Vault secret if updating an active Discord config fails", async () => {
+		mocks.discordFindFirst.mockResolvedValueOnce({
+			id: "discord-cfg-1",
+			organizationId: "org-1",
+			setupStatus: "active",
+		});
+		mocks.getOrgSecret.mockResolvedValueOnce("previous-working-token");
+		mocks.where.mockRejectedValueOnce(new Error("DB update failed"));
+
+		const result = await connectDiscordBot(validDiscordCredentials);
+
+		expect(result).toMatchObject({ success: false, code: "DatabaseError" });
+		expect(mocks.storeOrgSecret).toHaveBeenNthCalledWith(
+			1,
+			"org-1",
+			"discord/bot_token",
+			validDiscordCredentials.botToken,
+		);
+		expect(mocks.storeOrgSecret).toHaveBeenNthCalledWith(
+			2,
+			"org-1",
+			"discord/bot_token",
+			"previous-working-token",
+		);
+		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -541,7 +678,21 @@ describe("Discord bot connect and disconnect actions", () => {
 		expect(mocks.update).not.toHaveBeenCalled();
 	});
 
-	it("returns ExternalServiceError without leaking internal details when Vault deletion fails during disconnect", async () => {
+	it("does not delete the Vault secret when marking the Discord config disconnected fails", async () => {
+		mocks.discordFindFirst.mockResolvedValueOnce({
+			id: "discord-cfg-1",
+			organizationId: "org-1",
+			setupStatus: "active",
+		});
+		mocks.where.mockRejectedValueOnce(new Error("DB unavailable"));
+
+		const result = await disconnectDiscordBot();
+
+		expect(result).toMatchObject({ success: false, code: "DatabaseError" });
+		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
+	});
+
+	it("marks the config disconnected before attempting Vault deletion when Vault deletion fails", async () => {
 		mocks.discordFindFirst.mockResolvedValueOnce({
 			id: "discord-cfg-1",
 			organizationId: "org-1",
@@ -556,26 +707,37 @@ describe("Discord bot connect and disconnect actions", () => {
 			code: "ExternalServiceError",
 			error: "Failed to disconnect Discord bot",
 		});
-		expect(mocks.update).not.toHaveBeenCalled();
+		expect(mocks.update).toHaveBeenCalledWith(discordBotConfig);
+		expect(mocks.set).toHaveBeenCalledWith({
+			setupStatus: "disconnected",
+			interactionEndpointConfigured: false,
+		});
 	});
 
-	it("disconnects Discord by deleting the Vault secret and marking the config disconnected", async () => {
+	it("disconnects Discord by marking the config disconnected before deleting the Vault secret", async () => {
+		const order: string[] = [];
 		mocks.discordFindFirst.mockResolvedValueOnce({
 			id: "discord-cfg-1",
 			organizationId: "org-1",
 			setupStatus: "active",
 		});
+		mocks.where.mockImplementationOnce(async () => {
+			order.push("db-update");
+		});
+		mocks.deleteOrgSecret.mockImplementationOnce(async () => {
+			order.push("vault-delete");
+		});
 
 		const result = await disconnectDiscordBot();
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(order).toEqual(["db-update", "vault-delete"]);
 		expect(mocks.deleteOrgSecret).toHaveBeenCalledWith("org-1", "discord/bot_token");
 		expect(mocks.update).toHaveBeenCalledWith(discordBotConfig);
 		expect(mocks.set).toHaveBeenCalledWith({
 			setupStatus: "disconnected",
 			interactionEndpointConfigured: false,
 		});
-		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/discord");
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/notification-channels");
 	});
 
@@ -587,7 +749,6 @@ describe("Discord bot connect and disconnect actions", () => {
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
 		expect(mocks.update).not.toHaveBeenCalled();
-		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/discord");
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/notification-channels");
 	});
 });

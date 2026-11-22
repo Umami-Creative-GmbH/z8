@@ -2847,8 +2847,7 @@
       "description": "Odaberite kako i kada želite primati obavijesti",
       "digestTime": "Vrijeme sažetka",
       "discord": {
-        "description": "Konfigurirajte Discord obavijesti za svoju organizaciju.",
-        "setupInstructions": "Povezivanje Discorda s ove stranice još nije dostupno. Za povezivanje su potrebni token bota vaše Discord aplikacije, ID aplikacije i javni ključ."
+        "description": "Konfigurirajte Discord obavijesti za svoju organizaciju."
       },
       "escalations": "Eskalacije",
       "escalationsDescription": "Eskalirajte neodgovorene zahtjeve za odobrenje nakon isteka konfiguriranog vremena.",

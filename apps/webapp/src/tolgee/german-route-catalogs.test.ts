@@ -81,6 +81,16 @@ describe("German route catalogs", () => {
 			"settings.discord.errors.invalidBotToken",
 			"Ungültiges Bot-Token. Prüfen Sie Ihre Discord-Bot-Zugangsdaten und versuchen Sie es erneut.",
 		],
+		[
+			"/settings/notification-channels",
+			"settings.discord.errors.applicationIdMismatch",
+			"Die Anwendungs-ID stimmt nicht mit dem angegebenen Bot-Token überein.",
+		],
+		[
+			"/settings/notification-channels",
+			"settings.discord.errors.publicKeyMismatch",
+			"Der öffentliche Schlüssel stimmt nicht mit der Discord-Anwendung überein.",
+		],
 	])("provides German copy for %s: %s", async (route, key, expected) => {
 		const namespaces = getRouteCatalogScope(route)?.namespaces;
 		if (!namespaces) throw new Error(`No catalog scope for ${route}`);

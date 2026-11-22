@@ -2847,8 +2847,7 @@
       "description": "Wählen Sie, wie und wann Sie benachrichtigt werden möchten",
       "digestTime": "Zeitpunkt der Zusammenfassung",
       "discord": {
-        "description": "Konfigurieren Sie Discord-Benachrichtigungen für Ihre Organisation.",
-        "setupInstructions": "Die Verbindung mit Discord ist über diese Seite noch nicht verfügbar. Für die Verbindung werden das Bot-Token, die Anwendungs-ID und der öffentliche Schlüssel Ihrer Discord-Anwendung benötigt."
+        "description": "Konfigurieren Sie Discord-Benachrichtigungen für Ihre Organisation."
       },
       "escalations": "Eskalationen",
       "escalationsDescription": "Nicht beantwortete Genehmigungsanfragen nach Ablauf des konfigurierten Timeouts eskalieren.",

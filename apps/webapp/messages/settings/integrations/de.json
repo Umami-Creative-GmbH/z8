@@ -207,7 +207,7 @@
       "applicationId": "Anwendungs-ID",
       "botToken": "Bot-Token",
       "botTokenHelp": "Wird verschlüsselt im Vault gespeichert und zum Validieren und Betreiben Ihres Bots verwendet.",
-      "commandsRegistrationFailed": "Discord-Bot verbunden, aber Slash-Befehle konnten nicht automatisch registriert werden. Prüfen Sie Ihre Bot-Berechtigungen und verbinden Sie ihn erneut, um es noch einmal zu versuchen.",
+      "commandsRegistrationFailed": "Discord-Bot verbunden, aber Slash-Befehle konnten nicht automatisch registriert werden. Prüfen Sie Ihre Bot-Berechtigungen und trennen und verbinden Sie den Bot anschließend erneut, um es noch einmal zu versuchen.",
       "connect": "Discord-Bot verbinden",
       "connectDescription": "Geben Sie die Zugangsdaten Ihrer Discord-Anwendung aus dem Discord Developer Portal ein.",
       "connected": "Discord-Bot erfolgreich verbunden",
@@ -224,7 +224,9 @@
       "disconnected": "Discord-Bot getrennt",
       "disconnectError": "Trennen des Discord-Bots fehlgeschlagen",
       "errors": {
-        "invalidBotToken": "Ungültiges Bot-Token. Prüfen Sie Ihre Discord-Bot-Zugangsdaten und versuchen Sie es erneut."
+        "applicationIdMismatch": "Die Anwendungs-ID stimmt nicht mit dem angegebenen Bot-Token überein.",
+        "invalidBotToken": "Ungültiges Bot-Token. Prüfen Sie Ihre Discord-Bot-Zugangsdaten und versuchen Sie es erneut.",
+        "publicKeyMismatch": "Der öffentliche Schlüssel stimmt nicht mit der Discord-Anwendung überein."
       },
       "interactionEndpointHelp": "Fügen Sie diese URL im Discord Developer Portal in das Feld „Interactions Endpoint URL“ Ihrer Anwendung ein.",
       "interactionEndpointUrl": "Interaktions-Endpunkt-URL",

@@ -2847,8 +2847,7 @@
       "description": "Choose how and when you want to be notified",
       "digestTime": "Digest time",
       "discord": {
-        "description": "Configure Discord notifications for your organization.",
-        "setupInstructions": "Connecting Discord from this page is not available yet. The connection needs your Discord application's bot token, application ID and public key."
+        "description": "Configure Discord notifications for your organization."
       },
       "escalations": "Escalations",
       "escalationsDescription": "Escalate unanswered approval requests after the configured timeout.",

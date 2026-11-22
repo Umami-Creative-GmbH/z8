@@ -12,7 +12,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
-import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("NotificationChannelSettings");
 
@@ -184,16 +184,16 @@ export const connectDiscordBot = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const { getApplicationInfo, registerDiscordSlashCommands } = yield* Effect.promise(
+			const { registerDiscordSlashCommands, verifyBotApplication } = yield* Effect.promise(
 				() => import("@/lib/discord"),
 			);
 
-			const appInfo = yield* discordServiceCall(
-				"getApplicationInfo",
+			const verification = yield* discordServiceCall(
+				"verifyBotApplication",
 				"Failed to connect Discord bot",
-				() => getApplicationInfo(input.botToken),
+				() => verifyBotApplication(input.botToken),
 			);
-			if (!appInfo) {
+			if (verification.kind === "unauthorized") {
 				return yield* Effect.fail(
 					new ValidationError({
 						message: "Invalid bot token. Please check your Discord bot credentials.",
@@ -202,6 +202,49 @@ export const connectDiscordBot = organizationAction(
 					}),
 				);
 			}
+			if (verification.kind === "error") {
+				return yield* Effect.fail(
+					new ExternalServiceError({
+						message: "Failed to connect Discord bot",
+						service: "discord",
+						operation: "verifyBotApplication",
+						cause: { status: verification.status },
+					}),
+				);
+			}
+
+			if (verification.application.id !== input.applicationId) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Application ID does not match the provided bot token.",
+						field: "applicationId",
+						refusal: "application_id_mismatch",
+					}),
+				);
+			}
+
+			if (verification.application.verifyKey.toLowerCase() !== input.publicKey.toLowerCase()) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Public key does not match the Discord application.",
+						field: "publicKey",
+						refusal: "public_key_mismatch",
+					}),
+				);
+			}
+
+			const existing = yield* dbService.query("notificationChannels.getDiscordConfig", () =>
+				dbService.db.query.discordBotConfig.findFirst({
+					where: eq(discordBotConfig.organizationId, organizationId),
+				}),
+			);
+
+			const previousToken =
+				existing && existing.setupStatus !== "disconnected"
+					? yield* discordServiceCall("readPreviousBotToken", "Failed to connect Discord bot", () =>
+							getOrgSecret(organizationId, "discord/bot_token"),
+						)
+					: null;
 
 			const webhookSecret = randomBytes(32).toString("hex");
 
@@ -214,33 +257,53 @@ export const connectDiscordBot = organizationAction(
 				applicationId: input.applicationId,
 				publicKey: input.publicKey,
 				webhookSecret,
+				interactionEndpointConfigured: false,
 				setupStatus: "active",
 				configuredByUserId: actor.userId,
 				configuredAt: new Date(),
 			};
 
-			yield* dbService.query("notificationChannels.saveDiscordBotConfig", async () => {
-				const existing = await dbService.db.query.discordBotConfig.findFirst({
-					where: eq(discordBotConfig.organizationId, organizationId),
-				});
-
-				if (existing) {
-					await dbService.db
-						.update(discordBotConfig)
-						.set(configured)
-						.where(
-							and(
-								eq(discordBotConfig.id, existing.id),
-								eq(discordBotConfig.organizationId, organizationId),
-							),
-						);
-				} else {
-					await dbService.db.insert(discordBotConfig).values({
-						organizationId,
-						...configured,
-					});
-				}
-			});
+			yield* dbService
+				.query("notificationChannels.saveDiscordBotConfig", async () => {
+					if (existing) {
+						await dbService.db
+							.update(discordBotConfig)
+							.set(configured)
+							.where(
+								and(
+									eq(discordBotConfig.id, existing.id),
+									eq(discordBotConfig.organizationId, organizationId),
+								),
+							);
+					} else {
+						await dbService.db.insert(discordBotConfig).values({
+							organizationId,
+							...configured,
+						});
+					}
+				})
+				.pipe(
+					Effect.catchCause((dbCause) =>
+						Effect.gen(function* () {
+							yield* Effect.tryPromise({
+								try: () =>
+									previousToken
+										? storeOrgSecret(organizationId, "discord/bot_token", previousToken)
+										: deleteOrgSecret(organizationId, "discord/bot_token"),
+								catch: (rollbackError) => rollbackError,
+							}).pipe(
+								Effect.catch((rollbackError) => {
+									logger.error(
+										{ rollbackError, organizationId },
+										"Failed to compensate Discord bot token in Vault after DB failure",
+									);
+									return Effect.void;
+								}),
+							);
+							return yield* Effect.failCause(dbCause);
+						}),
+					),
+				);
 
 			const commandsRegistered = yield* Effect.tryPromise({
 				try: () => registerDiscordSlashCommands(input.botToken, input.applicationId),
@@ -254,7 +317,6 @@ export const connectDiscordBot = organizationAction(
 
 			const interactionUrl = buildDiscordInteractionUrl(webhookSecret);
 
-			revalidatePath("/settings/discord");
 			revalidatePath("/settings/notification-channels");
 
 			logger.info(
@@ -286,10 +348,6 @@ export const disconnectDiscordBot = organizationAction(
 			);
 
 			if (config) {
-				yield* discordServiceCall("deleteBotToken", "Failed to disconnect Discord bot", () =>
-					deleteOrgSecret(organizationId, "discord/bot_token"),
-				);
-
 				yield* dbService.query("notificationChannels.markDiscordDisconnected", () =>
 					dbService.db
 						.update(discordBotConfig)
@@ -304,9 +362,12 @@ export const disconnectDiscordBot = organizationAction(
 							),
 						),
 				);
+
+				yield* discordServiceCall("deleteBotToken", "Failed to disconnect Discord bot", () =>
+					deleteOrgSecret(organizationId, "discord/bot_token"),
+				);
 			}
 
-			revalidatePath("/settings/discord");
 			revalidatePath("/settings/notification-channels");
 
 			logger.info({ organizationId }, "Discord bot disconnected via settings");
