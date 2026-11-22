@@ -311,42 +311,53 @@ function DisposeAttentionPanel({
 	onDispose: (attentionId: string, note: string) => Promise<boolean>;
 }) {
 	const { t } = useTranslate();
+	const submittingRef = useRef(false);
 	const form = useForm({
 		defaultValues: { note: "" },
 		onSubmit: async ({ value, formApi }) => {
-			if (!item) return;
-			if (await onDispose(item.id, value.note)) {
-				formApi.reset();
-				onClose();
-			}
+			if (!item || submittingRef.current) return;
+			submittingRef.current = true;
+			const run = async () => {
+				if (await onDispose(item.id, value.note)) {
+					formApi.reset();
+					onClose();
+				}
+			};
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await run().finally(() => {
+				submittingRef.current = false;
+			});
 		},
 	});
+	const handleClose = () => {
+		if (isSubmitting || submittingRef.current) return;
+		form.reset();
+		onClose();
+	};
 
 	return (
 		<ActionPanel
 			open={item !== null}
 			onOpenChange={(open) => {
-				if (!open && !isSubmitting) {
-					form.reset();
-					onClose();
-				}
+				if (!open) handleClose();
 			}}
 		>
 			<ActionPanelContent
 				size="compact"
 				showCloseButton={!isSubmitting}
 				onEscapeKeyDown={(event) => {
-					if (isSubmitting) event.preventDefault();
+					if (isSubmitting || submittingRef.current) event.preventDefault();
 				}}
 				onInteractOutside={(event) => {
-					if (isSubmitting) event.preventDefault();
+					if (isSubmitting || submittingRef.current) event.preventDefault();
 				}}
 			>
 				<form
 					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
-						if (isSubmitting) return;
+						if (isSubmitting || submittingRef.current) return;
 						void form.handleSubmit();
 					}}
 				>
@@ -399,7 +410,7 @@ function DisposeAttentionPanel({
 						</form.Field>
 					</ActionPanelBody>
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+						<Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
@@ -864,6 +875,7 @@ export function EscalationAttentionCard({
 			</CardContent>
 
 			<DisposeAttentionPanel
+				key={disposing?.id ?? "closed"}
 				item={disposing}
 				isSubmitting={isDisposing}
 				onClose={() => setDisposing(null)}

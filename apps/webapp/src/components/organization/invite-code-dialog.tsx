@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import {
@@ -366,6 +366,8 @@ function InviteCodeFormFields({
 	);
 }
 
+let nextGeneratedCodeSession = 0;
+
 export function InviteCodeDialog(props: InviteCodeDialogProps) {
 	const key = `${String(props.open)}:${props.inviteCode?.id ?? "new"}`;
 	return <InviteCodeDialogContent key={key} {...props} />;
@@ -383,6 +385,7 @@ function InviteCodeDialogContent({
 	const isEditing = !!inviteCode;
 	const submittingRef = useRef(false);
 	const codeEditedRef = useRef(false);
+	const [generatedCodeSession] = useState(() => ++nextGeneratedCodeSession);
 
 	// Fetch teams for team selection
 	const { data: teamsResult } = useQuery({
@@ -394,7 +397,7 @@ function InviteCodeDialogContent({
 	const teams = teamsResult?.success ? teamsResult.data : [];
 
 	const generatedCodeQuery = useQuery({
-		queryKey: ["invite-code", "generated", `${open}:${inviteCode?.id ?? "new"}`],
+		queryKey: ["invite-code", "generated", generatedCodeSession],
 		queryFn: async () => {
 			const result = await generateRandomCode();
 			if (!result.success) {
@@ -403,6 +406,8 @@ function InviteCodeDialogContent({
 			return result.data;
 		},
 		enabled: open && !isEditing,
+		staleTime: 0,
+		gcTime: 0,
 	});
 
 	// Create mutation

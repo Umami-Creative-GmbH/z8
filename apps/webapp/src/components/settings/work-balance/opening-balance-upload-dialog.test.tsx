@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { Activity } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
-import { OpeningBalanceUploadDialog } from "./opening-balance-upload-dialog";
+import { OpeningBalanceUploadPanel } from "./opening-balance-upload-panel";
 
 const harness = vi.hoisted(() => ({
 	preview: vi.fn(),
@@ -69,7 +69,7 @@ it("unlocks a discarded preview that finishes while its cached view is hidden", 
 				finish = resolve;
 			}),
 	);
-	const content = <OpeningBalanceUploadDialog />;
+	const content = <OpeningBalanceUploadPanel />;
 	const view = render(<Activity mode="visible">{content}</Activity>);
 	await open();
 	fireEvent.change(screen.getByLabelText("CSV file"), {
@@ -95,7 +95,7 @@ it("discards a preview from an earlier cached visit and accepts a fresh file aft
 				finish = resolve;
 			}),
 	);
-	const content = <OpeningBalanceUploadDialog />;
+	const content = <OpeningBalanceUploadPanel />;
 	const view = render(<Activity mode="visible">{content}</Activity>);
 	await open();
 	fireEvent.change(screen.getByLabelText("CSV file"), {
@@ -135,7 +135,7 @@ it.each([false, true])(
 					}),
 			)
 			.mockResolvedValue(committed);
-		const content = <OpeningBalanceUploadDialog />;
+		const content = <OpeningBalanceUploadPanel />;
 		const view = render(<Activity mode="visible">{content}</Activity>);
 		await open();
 		fireEvent.change(screen.getByLabelText("CSV file"), {
@@ -184,7 +184,7 @@ it("keeps the returned dialog open when an earlier commit's cache refresh finish
 				finish = resolve;
 			}),
 	);
-	const content = <OpeningBalanceUploadDialog />;
+	const content = <OpeningBalanceUploadPanel />;
 	const view = render(<Activity mode="visible">{content}</Activity>);
 	await open();
 	fireEvent.change(screen.getByLabelText("CSV file"), {
@@ -212,7 +212,7 @@ it("locks selection before file reading, prevents duplicates and keeps pending d
 				resolve = r;
 			}),
 	);
-	render(<OpeningBalanceUploadDialog />);
+	render(<OpeningBalanceUploadPanel />);
 	const user = await open();
 	const describedBy = screen.getByLabelText("CSV file").getAttribute("aria-describedby");
 	expect(describedBy).toBeTruthy();
@@ -232,7 +232,7 @@ it("locks selection before file reading, prevents duplicates and keeps pending d
 
 it("retains a failed preview for inline retry, and blocks native duplicate commits with recoverable input", async () => {
 	harness.preview.mockRejectedValueOnce(Error("transport detail must stay private"));
-	render(<OpeningBalanceUploadDialog />);
+	render(<OpeningBalanceUploadPanel />);
 	const user = await open();
 	fireEvent.change(screen.getByLabelText("CSV file"), {
 		target: { files: [file(async () => "CSV")] },
@@ -267,17 +267,17 @@ it("discards A's pending draft across A to B to A and ignores its late result", 
 				resolve = r;
 			}),
 	);
-	const view = render(<OpeningBalanceUploadDialog />);
+	const view = render(<OpeningBalanceUploadPanel />);
 	await open();
 	fireEvent.change(screen.getByLabelText("CSV file"), {
 		target: { files: [file(async () => "CSV-A")] },
 	});
 	await waitFor(() => expect(harness.preview).toHaveBeenCalledTimes(1));
 	harness.scope = { userId: "actor", activeOrganizationId: "B" };
-	view.rerender(<OpeningBalanceUploadDialog />);
+	view.rerender(<OpeningBalanceUploadPanel />);
 	expect(screen.queryByRole("dialog")).toBeNull();
 	harness.scope = { userId: "actor", activeOrganizationId: "A" };
-	view.rerender(<OpeningBalanceUploadDialog />);
+	view.rerender(<OpeningBalanceUploadPanel />);
 	await open();
 	await act(async () => resolve(ready));
 	expect(screen.queryByText("Covered former employee")).toBeNull();
@@ -292,7 +292,7 @@ it("does not announce or invalidate a late successful commit after the actor cha
 				resolve = r;
 			}),
 	);
-	const view = render(<OpeningBalanceUploadDialog />);
+	const view = render(<OpeningBalanceUploadPanel />);
 	await open();
 	fireEvent.change(screen.getByLabelText("CSV file"), {
 		target: { files: [file(async () => "CSV-A")] },
@@ -301,7 +301,7 @@ it("does not announce or invalidate a late successful commit after the actor cha
 	fireEvent.submit(screen.getByLabelText("CSV file").closest("form") as HTMLFormElement);
 	await waitFor(() => expect(harness.commit).toHaveBeenCalledTimes(1));
 	harness.scope = { userId: "new-actor", activeOrganizationId: "A" };
-	view.rerender(<OpeningBalanceUploadDialog />);
+	view.rerender(<OpeningBalanceUploadPanel />);
 	await act(async () =>
 		resolve({ success: true, data: { status: "committed", rows: [row], created: 1 } }),
 	);

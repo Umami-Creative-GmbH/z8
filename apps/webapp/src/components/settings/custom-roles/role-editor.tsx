@@ -100,6 +100,7 @@ interface RoleEditorProps {
 	role?: CustomRoleWithPermissions;
 	onSaved: () => void;
 	onCancel: () => void;
+	onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 type BaseTier = "admin" | "manager" | "employee";
@@ -128,7 +129,12 @@ function toggleKey(keys: string[], key: string): string[] {
 	return keys.includes(key) ? keys.filter((item) => item !== key) : [...keys, key];
 }
 
-export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
+export function RoleEditor({
+	role,
+	onSaved,
+	onCancel,
+	onSubmittingChange,
+}: RoleEditorProps) {
 	const { t } = useTranslate();
 	const isEditing = !!role;
 	const submittingRef = useRef(false);
@@ -153,6 +159,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 		onSubmit: async ({ value }) => {
 			if (submittingRef.current) return;
 			submittingRef.current = true;
+			onSubmittingChange?.(true);
 
 			const run = async () => {
 				let roleId = createdRoleIdRef.current;
@@ -233,6 +240,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			// compile try statements without a catch clause.
 			await run().finally(() => {
 				submittingRef.current = false;
+				onSubmittingChange?.(false);
 			});
 		},
 	});

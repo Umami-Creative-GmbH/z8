@@ -145,4 +145,57 @@ describe("InviteCodeDialog", () => {
 		);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
+
+	it("generates a fresh invite code each time the create panel reopens", async () => {
+		vi.mocked(generateRandomCode)
+			.mockResolvedValueOnce({ success: true, data: "FIRST-1111" } as never)
+			.mockResolvedValueOnce({ success: true, data: "SECOND-2222" } as never);
+
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+		});
+		const onOpenChange = vi.fn();
+
+		const { rerender } = render(
+			<QueryClientProvider client={queryClient}>
+				<InviteCodeDialog
+					organizationId="org-1"
+					minExpiryDate="2026-11-23"
+					open
+					onOpenChange={onOpenChange}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() =>
+			expect((screen.getByLabelText("Code") as HTMLInputElement).value).toBe("FIRST-1111"),
+		);
+
+		rerender(
+			<QueryClientProvider client={queryClient}>
+				<InviteCodeDialog
+					organizationId="org-1"
+					minExpiryDate="2026-11-23"
+					open={false}
+					onOpenChange={onOpenChange}
+				/>
+			</QueryClientProvider>,
+		);
+
+		rerender(
+			<QueryClientProvider client={queryClient}>
+				<InviteCodeDialog
+					organizationId="org-1"
+					minExpiryDate="2026-11-23"
+					open
+					onOpenChange={onOpenChange}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() =>
+			expect((screen.getByLabelText("Code") as HTMLInputElement).value).toBe("SECOND-2222"),
+		);
+		expect(generateRandomCode).toHaveBeenCalledTimes(2);
+	});
 });

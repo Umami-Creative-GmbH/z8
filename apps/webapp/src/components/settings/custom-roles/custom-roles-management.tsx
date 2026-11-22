@@ -51,6 +51,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 	const queryClient = useQueryClient();
 	const [editingRole, setEditingRole] = useState<CustomRoleWithPermissions | null>(null);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [isRoleSaving, setIsRoleSaving] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<CustomRoleWithPermissions | null>(null);
 
 	const {
@@ -154,8 +155,23 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			)}
 
 			{/* Create ActionPanel */}
-			<ActionPanel open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<ActionPanelContent size="wide">
+			<ActionPanel
+				open={isCreateOpen}
+				onOpenChange={(open) => {
+					if (!open && isRoleSaving) return;
+					setIsCreateOpen(open);
+				}}
+			>
+				<ActionPanelContent
+					size="wide"
+					showCloseButton={!isRoleSaving}
+					onEscapeKeyDown={(event) => {
+						if (isRoleSaving) event.preventDefault();
+					}}
+					onInteractOutside={(event) => {
+						if (isRoleSaving) event.preventDefault();
+					}}
+				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{t("settings.roles.createPanel.title", "Create Custom Role")}
@@ -168,14 +184,34 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody>
-						<RoleEditor onSaved={handleSaved} onCancel={() => setIsCreateOpen(false)} />
+						<RoleEditor
+							onSaved={handleSaved}
+							onCancel={() => {
+								if (!isRoleSaving) setIsCreateOpen(false);
+							}}
+							onSubmittingChange={setIsRoleSaving}
+						/>
 					</ActionPanelBody>
 				</ActionPanelContent>
 			</ActionPanel>
 
 			{/* Edit ActionPanel */}
-			<ActionPanel open={!!editingRole} onOpenChange={(open) => !open && setEditingRole(null)}>
-				<ActionPanelContent size="wide">
+			<ActionPanel
+				open={!!editingRole}
+				onOpenChange={(open) => {
+					if (!open && !isRoleSaving) setEditingRole(null);
+				}}
+			>
+				<ActionPanelContent
+					size="wide"
+					showCloseButton={!isRoleSaving}
+					onEscapeKeyDown={(event) => {
+						if (isRoleSaving) event.preventDefault();
+					}}
+					onInteractOutside={(event) => {
+						if (isRoleSaving) event.preventDefault();
+					}}
+				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{t("settings.roles.editPanel.title", "Edit Custom Role")}
@@ -190,9 +226,13 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 					<ActionPanelBody>
 						{editingRole && (
 							<RoleEditor
+								key={editingRole.id}
 								role={editingRole}
 								onSaved={handleSaved}
-								onCancel={() => setEditingRole(null)}
+								onCancel={() => {
+									if (!isRoleSaving) setEditingRole(null);
+								}}
+								onSubmittingChange={setIsRoleSaving}
 							/>
 						)}
 					</ActionPanelBody>

@@ -55,7 +55,7 @@
 	"components/organization/members-table.tsx": 1,
 	"components/personnel-file/sick-leave-overview.tsx": 1,
 	"components/settings/employment-date-upload-review.tsx": 1,
-	"components/settings/vehicles/vehicle-dialog.tsx": 2,
+	"components/settings/vehicles/vehicle-panel.tsx": 2,
 	"components/settings/work-balance/opening-balance-upload-table.tsx": 1,
 	"db/schema/identity.ts": 1,
 	"lib/absences/historical-vacation.ts": 1,
