@@ -1,13 +1,20 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { discordBotConfig, slackWorkspaceConfig, teamsTenantConfig } from "@/db/schema";
+import { env } from "@/env";
+import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { createLogger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
+
+const logger = createLogger("NotificationChannelSettings");
 
 export interface NotificationChannelSettingsFormValues {
 	enableApprovals: boolean;
@@ -31,6 +38,22 @@ export interface NotificationChannelConfig {
 	escalationTimeoutHours: number;
 }
 
+export interface DiscordNotificationChannelConfig extends NotificationChannelConfig {
+	interactionUrl: string | null;
+}
+
+export interface DiscordConnectFormValues {
+	botToken: string;
+	applicationId: string;
+	publicKey: string;
+}
+
+export interface DiscordConnectResult {
+	applicationId: string;
+	commandsRegistered: boolean;
+	interactionUrl: string;
+}
+
 const notificationChannelSettingsSchema = z.object(
 	{
 		enableApprovals: z.boolean({ error: "Enable approvals must be a boolean" }),
@@ -52,6 +75,41 @@ const notificationChannelSettingsSchema = z.object(
 	},
 	"Settings are required",
 ) satisfies z.ZodType<NotificationChannelSettingsFormValues>;
+
+const connectDiscordSchema = z.strictObject(
+	{
+		botToken: z.string({ error: "Bot token is required" }).trim().min(1, "Bot token is required"),
+		applicationId: z
+			.string({ error: "Application ID is required" })
+			.trim()
+			.min(1, "Application ID is required")
+			.regex(/^\d+$/, "Application ID must be a numeric Discord ID"),
+		publicKey: z
+			.string({ error: "Public key is required" })
+			.trim()
+			.min(1, "Public key is required")
+			.regex(/^[0-9a-fA-F]{64}$/, "Public key must be a 64-character hex string"),
+	},
+	"Discord credentials are required",
+) satisfies z.ZodType<DiscordConnectFormValues>;
+
+function discordServiceCall<T>(operation: string, message: string, run: () => Promise<T>) {
+	return Effect.tryPromise({
+		try: run,
+		catch: (cause) =>
+			new ExternalServiceError({
+				message,
+				service: "discord",
+				operation,
+				cause,
+			}),
+	});
+}
+
+function buildDiscordInteractionUrl(webhookSecret: string): string {
+	const appUrl = (env.APP_URL || "https://z8-time.app").replace(/\/+$/, "");
+	return `${appUrl}/api/discord/interactions/${webhookSecret}`;
+}
 
 function mapConfig(
 	config:
@@ -102,7 +160,157 @@ export const getDiscordNotificationChannelConfig = organizationAction(
 					where: eq(discordBotConfig.organizationId, organizationId),
 				}),
 			);
-			return mapConfig(config, config?.applicationId);
+			const base = mapConfig(config, config?.applicationId);
+			if (!base) {
+				return null;
+			}
+			const interactionUrl =
+				config && config.setupStatus !== "disconnected" && config.webhookSecret
+					? buildDiscordInteractionUrl(config.webhookSecret)
+					: null;
+			return {
+				...base,
+				interactionUrl,
+			} satisfies DiscordNotificationChannelConfig;
+		}),
+);
+
+export const connectDiscordBot = organizationAction(
+	{
+		name: "notificationChannels.connectDiscord",
+		requires: "orgAdmin",
+		schema: connectDiscordSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const { getApplicationInfo, registerDiscordSlashCommands } = yield* Effect.promise(
+				() => import("@/lib/discord"),
+			);
+
+			const appInfo = yield* discordServiceCall(
+				"getApplicationInfo",
+				"Failed to connect Discord bot",
+				() => getApplicationInfo(input.botToken),
+			);
+			if (!appInfo) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Invalid bot token. Please check your Discord bot credentials.",
+						field: "botToken",
+						refusal: "invalid_bot_token",
+					}),
+				);
+			}
+
+			const webhookSecret = randomBytes(32).toString("hex");
+
+			yield* discordServiceCall("storeBotToken", "Failed to connect Discord bot", () =>
+				storeOrgSecret(organizationId, "discord/bot_token", input.botToken),
+			);
+
+			const configured = {
+				botToken: "vault:managed",
+				applicationId: input.applicationId,
+				publicKey: input.publicKey,
+				webhookSecret,
+				setupStatus: "active",
+				configuredByUserId: actor.userId,
+				configuredAt: new Date(),
+			};
+
+			yield* dbService.query("notificationChannels.saveDiscordBotConfig", async () => {
+				const existing = await dbService.db.query.discordBotConfig.findFirst({
+					where: eq(discordBotConfig.organizationId, organizationId),
+				});
+
+				if (existing) {
+					await dbService.db
+						.update(discordBotConfig)
+						.set(configured)
+						.where(
+							and(
+								eq(discordBotConfig.id, existing.id),
+								eq(discordBotConfig.organizationId, organizationId),
+							),
+						);
+				} else {
+					await dbService.db.insert(discordBotConfig).values({
+						organizationId,
+						...configured,
+					});
+				}
+			});
+
+			const commandsRegistered = yield* Effect.tryPromise({
+				try: () => registerDiscordSlashCommands(input.botToken, input.applicationId),
+				catch: (error) => error,
+			}).pipe(
+				Effect.catch((error) => {
+					logger.warn({ error, organizationId }, "Failed to register Discord slash commands");
+					return Effect.succeed(false);
+				}),
+			);
+
+			const interactionUrl = buildDiscordInteractionUrl(webhookSecret);
+
+			revalidatePath("/settings/discord");
+			revalidatePath("/settings/notification-channels");
+
+			logger.info(
+				{ organizationId, applicationId: input.applicationId, commandsRegistered },
+				"Discord bot configured via settings",
+			);
+
+			return {
+				applicationId: input.applicationId,
+				commandsRegistered,
+				interactionUrl,
+			} satisfies DiscordConnectResult;
+		}),
+);
+
+export const disconnectDiscordBot = organizationAction(
+	{
+		name: "notificationChannels.disconnectDiscord",
+		requires: "orgAdmin",
+		schema: noInput,
+	},
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const config = yield* dbService.query("notificationChannels.getDiscordConfig", () =>
+				dbService.db.query.discordBotConfig.findFirst({
+					where: eq(discordBotConfig.organizationId, organizationId),
+				}),
+			);
+
+			if (config) {
+				yield* discordServiceCall("deleteBotToken", "Failed to disconnect Discord bot", () =>
+					deleteOrgSecret(organizationId, "discord/bot_token"),
+				);
+
+				yield* dbService.query("notificationChannels.markDiscordDisconnected", () =>
+					dbService.db
+						.update(discordBotConfig)
+						.set({
+							setupStatus: "disconnected",
+							interactionEndpointConfigured: false,
+						})
+						.where(
+							and(
+								eq(discordBotConfig.id, config.id),
+								eq(discordBotConfig.organizationId, organizationId),
+							),
+						),
+				);
+			}
+
+			revalidatePath("/settings/discord");
+			revalidatePath("/settings/notification-channels");
+
+			logger.info({ organizationId }, "Discord bot disconnected via settings");
+			return undefined;
 		}),
 );
 

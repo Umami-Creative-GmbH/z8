@@ -84,6 +84,8 @@ vi.mock("../notification-channels/actions", () => ({
 	updateSlackNotificationChannelSettings: vi.fn(),
 	updateTeamsNotificationChannelSettings: vi.fn(),
 	updateDiscordNotificationChannelSettings: vi.fn(),
+	connectDiscordBot: vi.fn(),
+	disconnectDiscordBot: vi.fn(),
 }));
 vi.mock("../notification-channels/telegram-panel", () => ({
 	TelegramPanel: () => null,
@@ -103,15 +105,17 @@ vi.mock("@/lib/time-tracking/period-submissions/settings", () => ({
 vi.mock("@/components/settings/settings-tabbed-page", () => ({
 	SettingsTabbedPage: () => null,
 }));
-vi.mock(
-	"@/components/settings/email-templates/email-template-settings-client",
-	() => ({ EmailTemplateSettingsClient: () => null }),
-);
+vi.mock("@/components/settings/email-templates/email-template-settings-client", () => ({
+	EmailTemplateSettingsClient: () => null,
+}));
 vi.mock("@/components/settings/enterprise/email-config-form", () => ({
 	EmailConfigForm: () => null,
 }));
 vi.mock("@/components/settings/notification-channel-settings", () => ({
 	NotificationChannelSettings: () => null,
+}));
+vi.mock("@/components/settings/discord-channel-settings", () => ({
+	DiscordChannelSettings: () => null,
 }));
 vi.mock("@/components/enterprise/api-key-page-client", () => ({
 	ApiKeyPageClient: () => null,
@@ -146,14 +150,12 @@ vi.mock("@/components/settings/enterprise/social-oauth-management", () => ({
 vi.mock("@/components/organization/organization-auto-clock-out-card", () => ({
 	OrganizationAutoClockOutCard: () => null,
 }));
-vi.mock(
-	"@/components/organization/organization-clocking-reminders-card",
-	() => ({ OrganizationClockingRemindersCard: () => null }),
-);
-vi.mock(
-	"@/components/organization/organization-period-submissions-card",
-	() => ({ OrganizationPeriodSubmissionsCard: () => null }),
-);
+vi.mock("@/components/organization/organization-clocking-reminders-card", () => ({
+	OrganizationClockingRemindersCard: () => null,
+}));
+vi.mock("@/components/organization/organization-period-submissions-card", () => ({
+	OrganizationPeriodSubmissionsCard: () => null,
+}));
 vi.mock("@/components/organization/organization-tracking-card", () => ({
 	OrganizationTrackingCard: () => null,
 }));
@@ -181,14 +183,7 @@ import LegacyTeamsPage from "../teams-notifications/page";
 import LegacyTelegramPage from "../telegram/page";
 import LegacyWebhooksPage from "../webhooks/page";
 
-const mergedPages = [
-	EmailPage,
-	DeveloperPage,
-	AuditPage,
-	IdentityPage,
-	ChatPage,
-	ClockingPage,
-];
+const mergedPages = [EmailPage, DeveloperPage, AuditPage, IdentityPage, ChatPage, ClockingPage];
 async function content(page: (typeof mergedPages)[number]) {
 	return page().props.children.type();
 }
@@ -226,12 +221,7 @@ beforeEach(() => {
 		timezone: "Europe/Berlin",
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 	});
-	for (const loader of [
-		mocks.tracking,
-		mocks.autoClockOut,
-		mocks.reminders,
-		mocks.submissions,
-	])
+	for (const loader of [mocks.tracking, mocks.autoClockOut, mocks.reminders, mocks.submissions])
 		loader.mockResolvedValue({});
 });
 describe("merged organization settings", () => {
@@ -296,11 +286,7 @@ describe("merged organization settings", () => {
 	});
 	it("keeps signing keys unavailable until audit configuration exists", async () => {
 		mocks.auditConfig.mockResolvedValue({ success: true, data: null });
-		expect(tabs(await content(AuditPage))).toEqual([
-			"activity",
-			"config",
-			"packages",
-		]);
+		expect(tabs(await content(AuditPage))).toEqual(["activity", "config", "packages"]);
 	});
 	it("puts guided identity setup, SSO and social login together using the organization callback origin", async () => {
 		const page = await content(IdentityPage);
@@ -317,12 +303,7 @@ describe("merged organization settings", () => {
 	});
 	it("loads moved clocking settings for the active organization", async () => {
 		const page = await content(ClockingPage);
-		expect(tabs(page)).toEqual([
-			"tracking",
-			"automatic-clock-out",
-			"reminders",
-			"submissions",
-		]);
+		expect(tabs(page)).toEqual(["tracking", "automatic-clock-out", "reminders", "submissions"]);
 		for (const loader of [mocks.tracking, mocks.autoClockOut, mocks.reminders])
 			expect(loader).toHaveBeenCalledWith(expect.anything(), "org-1");
 		expect(mocks.submissions).toHaveBeenCalledWith(
@@ -366,9 +347,7 @@ describe("merged organization settings", () => {
 				DomainsPage({
 					searchParams: Promise.resolve({ tab }),
 				}).props.children.type({ searchParams: Promise.resolve({ tab }) }),
-			).rejects.toThrow(
-				`redirect:/settings/enterprise/identity-setup?tab=${tab}`,
-			);
+			).rejects.toThrow(`redirect:/settings/enterprise/identity-setup?tab=${tab}`);
 			expect(mocks.domains).not.toHaveBeenCalled();
 			expect(mocks.providers).not.toHaveBeenCalled();
 		},
