@@ -15,6 +15,7 @@ import {
 	workPolicyAssignment,
 	workPolicySchedule,
 	workPolicyScheduleDay,
+	workPolicyVersion,
 } from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
@@ -84,11 +85,26 @@ describe("absence days resolved from work policies and holidays", () => {
 				createdBy: fixture.ownerUserId,
 			})
 			.returning();
+		const [version] = await fixture.db
+			.insert(workPolicyVersion)
+			.values({
+				policyId: policy.id,
+				organizationId,
+				versionNumber: 1,
+				effectiveFromDate: "1970-01-01",
+				scheduleEnabled: options.scheduleEnabled ?? schedule !== null,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				isLegacyBaseline: true,
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
 		if (schedule) {
 			const [row] = await fixture.db
 				.insert(workPolicySchedule)
 				.values({
 					policyId: policy.id,
+					policyVersionId: version.id,
 					scheduleType: schedule.scheduleType,
 					workingDaysPreset: schedule.workingDaysPreset ?? "weekdays",
 					scheduleCycle: schedule.scheduleCycle ?? "weekly",
@@ -98,6 +114,7 @@ describe("absence days resolved from work policies and holidays", () => {
 				await fixture.db.insert(workPolicyScheduleDay).values(
 					ALL_WEEKDAYS.map((dayOfWeek) => ({
 						scheduleId: row.id,
+						policyVersionId: version.id,
 						dayOfWeek,
 						hoursPerDay: "8",
 						isWorkDay: schedule.workDays?.includes(dayOfWeek) ?? false,
@@ -124,6 +141,12 @@ describe("absence days resolved from work policies and holidays", () => {
 			priority: { organization: 0, team: 1, employee: 2 }[target.assignmentType],
 			effectiveFrom: window.effectiveFrom ?? null,
 			effectiveUntil: window.effectiveUntil ?? null,
+			effectiveFromDate: window.effectiveFrom
+				? window.effectiveFrom.toISOString().slice(0, 10)
+				: "1970-01-01",
+			effectiveUntilDate: window.effectiveUntil
+				? window.effectiveUntil.toISOString().slice(0, 10)
+				: null,
 			createdBy: fixture.ownerUserId,
 		});
 	}
@@ -305,8 +328,12 @@ describe("absence days resolved from work policies and holidays", () => {
 			scheduleType: "simple",
 			workingDaysPreset: "all_days",
 		});
-		// Even an assignment row in this organization pointing at the foreign policy is ignored.
-		await assign(organizationId, foreignPolicy, { assignmentType: "employee", employeeId });
+		// Migration 0322 enforces tenant isolation directly on work_policy_assignment.
+		await expect(
+			assign(organizationId, foreignPolicy, { assignmentType: "employee", employeeId }),
+		).rejects.toThrow();
+		// A valid org-wide assignment in the foreign organization does not affect this organization.
+		await assign(foreignOrganization, foreignPolicy, { assignmentType: "organization" });
 
 		expect(
 			await getAbsenceDays(db, {

@@ -204,7 +204,9 @@ function isDynamicKey(keyName) {
  * (often into the unnamespaced root catalog) and let `sync` treat them as real usage.
  */
 function isTestFile(fileName) {
-	return /(?:\.test\.[cm]?[jt]sx?|\.fixture\.[cm]?[jt]sx?)$|[\\/]__tests__[\\/]/.test(fileName ?? "");
+	return /(?:\.test\.[cm]?[jt]sx?|\.fixture\.[cm]?[jt]sx?)$|[\\/]__tests__[\\/]/.test(
+		fileName ?? "",
+	);
 }
 
 export default function extractor(code, fileName) {

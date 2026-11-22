@@ -845,24 +845,91 @@ organization-local date. Read them through `readEmployeeLeftOn`,
 
 `EMPLOYEE_OFFBOARDING_RELEASE_READY` in
 `apps/webapp/src/lib/employee-lifecycle/release.ts` controls whether new
-departure and rehire commands (and the preview) are accepted and whether the
-maintenance job runs. Review resolution, replacement assignment and retries stay
-available regardless.
+departure, past-departure correction/backfill, and rehire commands (and previews)
+are accepted and whether the maintenance job runs. Review resolution,
+replacement assignment and retries stay available regardless.
 
-**Status: closed.** Activation waits for the browser verification required by
-#341 task 3.7: apply migrations 0071–0077 to the target database, flip the gate,
-and click through schedule, edit, cancel, offboard now, the follow-up list
-(resolve, retry, assign replacement), the directory links and rehire, in both
-English and German.
+**Status: open.** Verified under #1931 (completing #341 task 3.7 and Spec #1921
+release-gate verification) against a real PostgreSQL 16 database migrated via
+`runBoundaryAwareMigrations` through `0327` and a production Next.js build
+(`WORK_POLICY_VERSIONING_ENABLED=true`):
 
-- **Disabling new commands does not undo effective departures.** Access and seat
-  decisions for existing departures are enforced by the database regardless of
-  the gate, and due departures still deny access at their cutoff.
+- Automated release gates passed: complete unit suite, Docker migration target
+  runtime tests, static contract-read boundary guard, Tolgee EN/DE catalogs,
+  organization action coverage, current-roster surfaces, complete PostgreSQL
+  integration suite (including `acceptance.integration.test.ts`,
+  `billable-seat-count.integration.test.ts`, `final-payout.integration.test.ts`,
+  `employee-departures.integration.test.ts`, Drain Gate 1 & 2 matrix, and
+  10k-employee + 1,000+-policy latency benchmarks), `oxlint`, `oxfmt`,
+  `tsc --noEmit`, and `CI=true pnpm --filter webapp build`.
+- Live headless Chromium browser verification passed in both English (`/en/...`)
+  and German (`/de/...`) with zero console errors, zero uncaught page errors,
+  and zero HTTP 500s across:
+  - **Settings -> Contracts** (`Defaults`, `Templates`, `Work Policies`,
+    `Bulk & CSV`, `Reviews & Conflicts`): 1-step org default setup, primary
+    team default override + preview, immutable template creation + previewed
+    apply, future-dated work policy version + same-day replacement warning,
+    CSV dry-run validation, and legacy-terms adoption/conflicts queue.
+  - **Employee Detail & Offboarding** (`#employment-history`, `#offboarding`,
+    `?review=<id>`, `/settings/employees`, `/settings/organization`): as-of
+    date switcher, Term / Value / Source table, stint-grouped timeline,
+    Remote -> Presence exempt preview & override, 4-kind § 12 TzBfG On-Call
+    statutory copy, fixed-term agreement & extension + departure sync,
+    team-move operational preview, Will Leave + searchable
+    `ReplacementEmployeeSelect`, edit/reschedule, cancel, Offboard Now, Rehire
+    (opening a second employment period), Has Left across closed payroll month
+    + settled day + post-cutoff work (leaving closed/settled rows untouched and
+    opening durable `payroll_reconciliation` + `work_after_cutoff` reviews),
+    date-only correction keeping `status = 'effective'`, legacy former-employee
+    backfill, and scoped-manager isolation (redirected from
+    `/settings/contracts`, zero wages/terms/defaults/leaving dates on Employee
+    Detail, wage-free policy-only assignment preserved).
+
+### Spec #1921 operator rollout runbook
+
+Deploy the unified contracts, versioned work policies, and leaving-date release
+in strict drain-gate order:
+
+1. **Drain Gate 0 (Prerequisite — #1922):** Deploy the ArbZG 7-column atomic
+   work-policy update fix before any Spec #1921 migration so no running pod
+   emits partial regulation writes.
+2. **Phase 1 — Expand (`0318`–`0321`):** Run the migration target
+   (`runBoundaryAwareMigrations` with `DB_ALLOW_CONTRACT_CONSTRAINTS` and
+   `DB_ALLOW_POLICY_V1_SEAL` unset/`false`). Adds additive contract, policy
+   version, review, and bulk-batch tables/columns, backfills legacy data, and
+   installs concurrent indexes without blocking legacy writers.
+3. **Roll out application pods (dual-compatible writers):** Deploy the new
+   webapp/worker image (`WORK_POLICY_VERSIONING_ENABLED=false` initially if
+   staging incrementally) and drain all pre-#1921 pods.
+4. **Drain Gate 1 — Contract constraints (`0322`–`0326`):** Once zero legacy
+   pods remain, run migrations with `DB_ALLOW_CONTRACT_CONSTRAINTS=true`.
+   Validates and enforces NOT NULL, FK, overlap exclusion, and date-boundary
+   constraints on contract/employment tables.
+5. **Drain Gate 2 — Policy v1 seal (`0327`):** Once all running pods use the
+   versioned policy writer, run migrations with
+   `DB_ALLOW_CONTRACT_CONSTRAINTS=true` and `DB_ALLOW_POLICY_V1_SEAL=true`.
+   Seals v1 policy snapshots and activates child-table immutability triggers.
+6. **Feature & release activation:** Set `WORK_POLICY_VERSIONING_ENABLED=true`
+   to enable future-dated policy version scheduling in the UI.
+   `EMPLOYEE_OFFBOARDING_RELEASE_READY` is `true` in `release.ts` to accept
+   departure, past-date correction/backfill, and rehire commands and run
+   `cron:employee-departures`.
+
+### Rollback boundaries
+
+- **Disabling new commands (`EMPLOYEE_OFFBOARDING_RELEASE_READY = false`) does
+  not undo effective departures.** Access and seat decisions for existing
+  departures are enforced by the database regardless of the gate, and due
+  departures still deny access at their cutoff. Review resolution, replacement
+  assignment, retries, and `employee_deactivation` follow-up remain active.
 - With the gate closed the maintenance job does not materialize or deliver;
   re-open it (or run the job) to finish pending follow-up.
-- **Rolling back the schema after activation is unsupported**: migrations 0071–0073,
-  0076 and 0077 hold departures, periods, reviews, seat delivery and audit that
-  other tables and access checks depend on.
+- Setting `WORK_POLICY_VERSIONING_ENABLED=false` hides future-dated policy
+  version scheduling in the UI while preserving all already-published versions.
+- **Rolling back the schema after activation is unsupported**: migrations
+  0071–0073, 0076, 0077, and 0318–0327 hold departures, periods, reviews,
+  contracts, versioned policies, seat delivery and audit that other tables and
+  access checks depend on.
 
 ## Operational checks
 

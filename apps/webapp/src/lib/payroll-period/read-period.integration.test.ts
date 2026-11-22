@@ -156,10 +156,18 @@ describe("readPeriod on PostgreSQL", () => {
 			 values (gen_random_uuid(), $1, '40 hour week', true, false, 't1893-owner', now()) returning id`,
 			[ORG],
 		);
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, 't1893-owner') returning id`,
+			[policy[0].id, ORG],
+		);
 		await admin.query(
-			`insert into work_policy_schedule (id, policy_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, updated_at)
-			 values (gen_random_uuid(), $1, 'weekly', 'simple', 'weekdays', '40.00', now())`,
-			[policy[0].id],
+			`insert into work_policy_schedule (id, policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, updated_at)
+			 values (gen_random_uuid(), $1, $2, 'weekly', 'simple', 'weekdays', '40.00', now())`,
+			[policy[0].id, policyVersion.id],
 		);
 		await admin.query(
 			`insert into work_policy_assignment (policy_id, organization_id, assignment_type, employee_id, priority, created_by, updated_at)

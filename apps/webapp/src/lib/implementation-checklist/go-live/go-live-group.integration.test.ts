@@ -87,11 +87,18 @@ describe("go-live group (PostgreSQL)", () => {
 			 values ($1, $2, $3, now()) returning id`,
 			[organizationId, name, fixture.ownerUserId],
 		);
+		const policyId = rows[0]?.id;
+		if (!policyId) throw new Error("work policy insert returned no row");
+		await fixture.pool.query(
+			`insert into work_policy_version (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3)`,
+			[policyId, organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
 			`insert into work_policy_assignment
 			 (policy_id, organization_id, assignment_type, team_id, priority, created_by, updated_at)
 			 values ($1, $2, 'team', $3, 1, $4, now())`,
-			[rows[0]?.id, organizationId, teamId, fixture.ownerUserId],
+			[policyId, organizationId, teamId, fixture.ownerUserId],
 		);
 	}
 

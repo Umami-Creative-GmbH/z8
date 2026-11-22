@@ -3,6 +3,7 @@ import { ContractsHubClient } from "@/components/settings/contracts/contracts-hu
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
+import { env } from "@/env";
 import { getCurrentSettingsAccess, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
@@ -31,7 +32,7 @@ async function ContractsPageContent() {
 	}
 
 	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
-	const workPolicyVersioningEnabled = process.env.WORK_POLICY_VERSIONING_ENABLED === "true";
+	const workPolicyVersioningEnabled = env.WORK_POLICY_VERSIONING_ENABLED === "true";
 
 	return (
 		<ContractsHubClient

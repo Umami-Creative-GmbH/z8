@@ -433,7 +433,7 @@ async function insertScheduleForVersionInTx(
 		.returning();
 
 	const days = schedule.days;
-	if (schedule.scheduleType === "detailed" && days && days.length > 0) {
+	if (days && days.length > 0) {
 		await tx.insert(workPolicyScheduleDay).values(
 			days.map((day) => ({
 				scheduleId: created.id,

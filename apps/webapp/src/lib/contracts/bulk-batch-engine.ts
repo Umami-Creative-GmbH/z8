@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
 import {
 	type ContractChangeBatch,
 	type ContractChangeBatchItem,
@@ -28,12 +29,10 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import { createDepartureClockOut } from "@/lib/employee-lifecycle/clock-out";
-import { createDepartureCommands, DepartureCommandError } from "@/lib/employee-lifecycle/commands";
+import type { createDepartureCommands } from "@/lib/employee-lifecycle/commands";
 import type { DepartureClockOutPort, LifecycleActor } from "@/lib/employee-lifecycle/types";
 import { createLogger } from "@/lib/logger";
 import type { ContractType } from "@/lib/validations/employee";
-import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
 import { adoptContractDefaultInTx, commitContractChangeInTx } from "./commit-contract-change";
 import { type ContractWriteTx, parseIsoCalendarDate } from "./contract-validation";
 import { resolveEffectiveContractOnDay } from "./resolve-contract";
@@ -1081,7 +1080,12 @@ function buildTemplateChanges(
 }
 
 function extractErrorDetails(error: unknown): { code: string; message: string } {
-	if (error instanceof DepartureCommandError) {
+	if (
+		error instanceof Error &&
+		error.name === "DepartureCommandError" &&
+		"code" in error &&
+		typeof error.code === "string"
+	) {
 		return { code: error.code, message: error.message };
 	}
 	if (error instanceof ValidationError) {
@@ -1248,13 +1252,20 @@ export async function runContractChangeBatch(
 
 	let departureCommands: ReturnType<typeof createDepartureCommands> | null = null;
 	if (claimedBatch.operationKind === "csv_departure_import") {
-		departureCommands =
-			input.departureCommands ??
-			createDepartureCommands({
+		if (input.departureCommands) {
+			departureCommands = input.departureCommands;
+		} else {
+			const [{ createDepartureClockOut }, { createDepartureCommands: makeDepartureCommands }] =
+				await Promise.all([
+					import("@/lib/employee-lifecycle/clock-out"),
+					import("@/lib/employee-lifecycle/commands"),
+				]);
+			departureCommands = makeDepartureCommands({
 				db,
 				clock: systemClock,
 				clockOut: input.departureClockOut ?? createDepartureClockOut(),
 			});
+		}
 	}
 
 	let processedInThisRun = 0;
@@ -1661,6 +1672,7 @@ export async function runContractChangeBatch(
 
 	if (anyContractMutationCompleted && !input.skipBalanceDirtyNotification) {
 		try {
+			const { markOrganizationWorkBalancesDirty } = await import("@/lib/work-balance/service");
 			await markOrganizationWorkBalancesDirty({ organizationId: input.organizationId });
 		} catch {
 			// Best-effort post-commit work balance invalidation.
@@ -1892,8 +1904,8 @@ export async function getContractChangeBatch(
 		db
 			.select({
 				item: contractChangeBatchItem,
-				employeeFirstName: employee.firstName,
-				employeeLastName: employee.lastName,
+				employeeFirstName: user.firstName,
+				employeeLastName: user.lastName,
 				employeeNumber: employee.employeeNumber,
 			})
 			.from(contractChangeBatchItem)
@@ -1904,6 +1916,7 @@ export async function getContractChangeBatch(
 					eq(employee.organizationId, contractChangeBatchItem.organizationId),
 				),
 			)
+			.leftJoin(user, eq(user.id, employee.userId))
 			.where(and(...itemConditions))
 			.orderBy(asc(contractChangeBatchItem.itemIndex))
 			.limit(limit)

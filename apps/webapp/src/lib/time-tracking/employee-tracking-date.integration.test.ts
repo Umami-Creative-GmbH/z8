@@ -46,16 +46,13 @@ vi.mock("@/lib/email/email-service", async (original) =>
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
-const actions = await import(
-	"@/app/[locale]/(app)/settings/employees/employee-tracking-date-actions"
-);
-const organizationActions = await import(
-	"@/app/[locale]/(app)/settings/organization/tracking-date-actions"
-);
+const actions =
+	await import("@/app/[locale]/(app)/settings/employees/employee-tracking-date-actions");
+const organizationActions =
+	await import("@/app/[locale]/(app)/settings/organization/tracking-date-actions");
 const monthActions = await import("@/app/[locale]/(app)/settings/closed-months/actions");
-const adjustmentActions = await import(
-	"@/app/[locale]/(app)/settings/employees/work-balance-actions"
-);
+const adjustmentActions =
+	await import("@/app/[locale]/(app)/settings/employees/work-balance-actions");
 const { loadVacationBalances } = await import("@/lib/absences/vacation-balance-store");
 const balances = await import("@/lib/work-balance/service");
 describe("reviewed employee tracking exceptions through public actions", () => {
@@ -80,14 +77,20 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 			`insert into work_policy (id,organization_id,name,schedule_enabled,regulation_enabled,created_by,updated_at) values ($1,$2,'Monday hour',true,false,$3,now())`,
 			[policy, fixture.organizationId, fixture.ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policy, fixture.organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (id,policy_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,'weekly','detailed','custom',now())`,
-			[schedule, policy],
+			`insert into work_policy_schedule (id,policy_id,policy_version_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,$3,'weekly','detailed','custom',now())`,
+			[schedule, policy, policyVersion.id],
 		);
 		// One working day a week converts the 30-day allowance to 6 (Absences ADR 0003).
 		await fixture.pool.query(
-			`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,'monday','1.00',true)`,
-			[schedule],
+			`insert into work_policy_schedule_day (schedule_id,policy_version_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,'monday','1.00',true)`,
+			[schedule, policyVersion.id],
 		);
 		await fixture.pool.query(
 			`insert into work_policy_assignment (policy_id,organization_id,assignment_type,employee_id,priority,created_by,updated_at) values ($1,$2,'employee',$3,2,$4,now())`,

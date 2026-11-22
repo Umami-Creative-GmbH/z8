@@ -2,9 +2,15 @@ import "server-only";
 
 import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import { Effect } from "effect";
-import { absenceCategory, absenceEntry, shift } from "@/db/schema";
+import {
+	absenceCategory,
+	absenceEntry,
+	employeeDeparture,
+	employeeEmploymentPeriod,
+	shift,
+} from "@/db/schema";
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
-import { loadEffectiveContractsBatch } from "@/lib/contracts";
+import { type EmploymentPeriodSnapshot, loadEffectiveContractsBatch } from "@/lib/contracts";
 import {
 	comparePlainDates,
 	dateFromInstant,
@@ -15,7 +21,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
-import { loadEmploymentCoverageByEmployee } from "@/lib/employee-lifecycle/employment-periods";
+import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
 import type { EmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { resolvedPolicyVersionToEffectiveWorkPolicy } from "@/lib/work-policy/effective-work-policies";
@@ -69,18 +75,91 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 		const latest = latestDate.toString();
 
 		const orgTimezone = resolveEffectiveTimezone(null, people[0]?.organization.timezone);
-		const todayDate = plainDateAt(systemClock.nowInstant(), orgTimezone);
+		const nowInstant = systemClock.nowInstant();
+		const todayDate = plainDateAt(nowInstant, orgTimezone);
 		const datesToResolve = enumeratePlainDates(earliestDate, latestDate);
 		if (!datesToResolve.some((d) => comparePlainDates(d, todayDate) === 0)) {
 			datesToResolve.push(todayDate);
 		}
 
-		const [contractsByEmployee, absences, shifts, coverage, holidays] = yield* Effect.all([
+		// Load employment periods + effective departures once and share across both
+		// employment coverage clipping and the unified contract batch resolver.
+		const periodCoverageRows = yield* database.query("calendar.rangeEmploymentCoverage", () =>
+			database.db
+				.select({
+					id: employeeEmploymentPeriod.id,
+					employeeId: employeeEmploymentPeriod.employeeId,
+					status: employeeEmploymentPeriod.status,
+					startedAt: employeeEmploymentPeriod.startedAt,
+					startProvenance: employeeEmploymentPeriod.startProvenance,
+					endedAt: employeeEmploymentPeriod.endedAt,
+					createdAt: employeeEmploymentPeriod.createdAt,
+					departureId: employeeDeparture.id,
+				})
+				.from(employeeEmploymentPeriod)
+				.leftJoin(
+					employeeDeparture,
+					and(
+						eq(employeeDeparture.organizationId, employeeEmploymentPeriod.organizationId),
+						eq(employeeDeparture.employmentPeriodId, employeeEmploymentPeriod.id),
+						eq(employeeDeparture.status, "effective"),
+					),
+				)
+				.where(
+					and(
+						eq(employeeEmploymentPeriod.organizationId, input.organizationId),
+						inArray(employeeEmploymentPeriod.employeeId, scopedIds),
+					),
+				),
+		);
+
+		const coverage = new Map<string, EmploymentInterval[] | null>();
+		const periodsByEmployee = Map.groupBy(periodCoverageRows, (row) => row.employeeId);
+		const preloadedPeriods: EmploymentPeriodSnapshot[] = [];
+		const seenPeriodIds = new Set<string>();
+		for (const row of periodCoverageRows) {
+			if (seenPeriodIds.has(row.id)) continue;
+			seenPeriodIds.add(row.id);
+			preloadedPeriods.push({
+				id: row.id,
+				employeeId: row.employeeId,
+				status: row.status,
+				startedAt: row.startedAt ? instantFromDate(row.startedAt) : null,
+				startProvenance: row.startProvenance,
+				endedAt: row.endedAt ? instantFromDate(row.endedAt) : null,
+				createdAt: instantFromDate(row.createdAt),
+			});
+		}
+		for (const employeeId of scopedIds) {
+			const rows = periodsByEmployee.get(employeeId) ?? [];
+			const intervals = rows.map((period) => ({
+				startedAt:
+					period.startProvenance === "recorded" && period.startedAt
+						? instantFromDate(period.startedAt)
+						: null,
+				endedAt: period.departureId && period.endedAt ? instantFromDate(period.endedAt) : null,
+			}));
+			const hasLifecycleEvidence = intervals.some(
+				(interval) => interval.startedAt !== null || interval.endedAt !== null,
+			);
+			coverage.set(employeeId, hasLifecycleEvidence ? intervals : null);
+		}
+
+		const [contractsByEmployee, absences, shifts, holidays] = yield* Effect.all([
 			database.query("calendar.rangeContracts", () =>
 				loadEffectiveContractsBatch(database.db, {
 					organizationId: input.organizationId,
 					employeeIds: scopedIds,
 					dates: datesToResolve,
+					organizationTimezone: orgTimezone,
+					preloadedEmployees: people.map((person) => ({
+						id: person.id,
+						contractType: person.contractType,
+						teamId: person.teamId,
+						userTimezone: person.userSettings?.timezone ?? null,
+					})),
+					preloadedPeriods,
+					at: nowInstant,
 				}),
 			),
 			database.query("calendar.rangeApprovedAbsences", () =>
@@ -124,12 +203,6 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 							lt(shift.date, dateFromInstant(end.add({ hours: 48 }))),
 						),
 					),
-			),
-			database.query("calendar.rangeEmploymentCoverage", () =>
-				loadEmploymentCoverageByEmployee(database.db, {
-					organizationId: input.organizationId,
-					employeeIds: scopedIds,
-				}),
 			),
 			database.query("calendar.rangeAssignedHolidays", () =>
 				getAssignedHolidaysForEmployees({

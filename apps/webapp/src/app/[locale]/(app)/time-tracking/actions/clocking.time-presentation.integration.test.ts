@@ -486,16 +486,25 @@ describe("time approval presentation, bound decisions and review (PostgreSQL)", 
 			 values ($1, $2, 'T325 break', false, true, true, $3, $4)`,
 			[ids.policy, ids.organization, ids.managerUser, timestamp],
 		);
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+			 returning id`,
+			[ids.policy, ids.organization, ids.managerUser],
+		);
 		await admin.query(
-			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
-			 values ($1, $2, 360, $3)`,
-			[ids.regulation, ids.policy, timestamp],
+			`insert into work_policy_regulation (id, policy_id, policy_version_id, max_uninterrupted_minutes, updated_at)
+			 values ($1, $2, $3, 360, $4)`,
+			[ids.regulation, ids.policy, policyVersion.id, timestamp],
 		);
 		await admin.query(
 			`insert into work_policy_break_rule
-			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-			 values ($1, $2, 360, 30, $3)`,
-			[ids.breakRule, ids.regulation, timestamp],
+			 (id, regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+			 values ($1, $2, $3, 360, 30, $4)`,
+			[ids.breakRule, ids.regulation, policyVersion.id, timestamp],
 		);
 		await admin.query(
 			`insert into work_policy_assignment

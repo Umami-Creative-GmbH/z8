@@ -1,13 +1,5 @@
 import { randomUUID } from "node:crypto";
-import {
-	afterAll,
-	beforeAll,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -21,17 +13,14 @@ const harness = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
-	const original =
-		await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
+	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
 	return {
 		...original,
 		systemClock: { nowInstant: () => original.parseInstant(harness.now) },
 	};
 });
 
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -64,9 +53,7 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 const { getQuickStats, updateWidgetOrder } = await import("./actions");
-const { readDashboardWidget, readDashboardLayout } = await import(
-	"./dashboard-reads"
-);
+const { readDashboardWidget, readDashboardLayout } = await import("./dashboard-reads");
 
 describe("dashboard quick stats use the explicit tracking window", () => {
 	vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
@@ -86,10 +73,9 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 		});
 		employeeId = subject.employeeId;
 		subjectUserId = subject.userId;
-		await fixture.pool.query(
-			`update organization set timezone = 'Europe/Berlin' where id = $1`,
-			[organizationId],
-		);
+		await fixture.pool.query(`update organization set timezone = 'Europe/Berlin' where id = $1`, [
+			organizationId,
+		]);
 		await fixture.pool.query(
 			`update "user" set created_at = '2026-06-01T00:00:00Z' where id = $1`,
 			[subjectUserId],
@@ -135,17 +121,13 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 			"update user_settings set dashboard_widget_order = $1::jsonb where user_id = $2",
 			[JSON.stringify(layout), subjectUserId],
 		);
-		expect(
-			(await readDashboardLayout(scope)).settings.dashboardWidgetOrder,
-		).toEqual(layout);
+		expect((await readDashboardLayout(scope)).settings.dashboardWidgetOrder).toEqual(layout);
 		const rejectedMutation = await updateWidgetOrder(
 			{ order: ["manager-today"], hidden: [] },
 			{ ...scope, organizationId: "replaced-org" },
 		);
 		expect(rejectedMutation.success).toBe(false);
-		expect(
-			(await readDashboardLayout(scope)).settings.dashboardWidgetOrder,
-		).toEqual(layout);
+		expect((await readDashboardLayout(scope)).settings.dashboardWidgetOrder).toEqual(layout);
 		const otherOrganizationId = await fixture.createOrganization();
 		const refused = await readDashboardWidget("quick-stats", {
 			...scope,
@@ -161,20 +143,22 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 			`insert into work_policy (id,organization_id,name,schedule_enabled,regulation_enabled,created_by,updated_at) values ($1,$2,'40 hour week',true,false,$3,now())`,
 			[policyId, organizationId, fixture.ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policyId, organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (id,policy_id,schedule_cycle,schedule_type,working_days_preset,hours_per_cycle,updated_at) values ($1,$2,'weekly','simple','weekdays','40.00',now())`,
-			[scheduleId, policyId],
+			`insert into work_policy_schedule (id,policy_id,policy_version_id,schedule_cycle,schedule_type,working_days_preset,hours_per_cycle,updated_at) values ($1,$2,$3,'weekly','simple','weekdays','40.00',now())`,
+			[scheduleId, policyId, policyVersion.id],
 		);
 		await fixture.pool.query(
 			`insert into work_policy_assignment (policy_id,organization_id,assignment_type,employee_id,priority,created_by,updated_at) values ($1,$2,'employee',$3,2,$4,now())`,
 			[policyId, organizationId, employeeId, fixture.ownerUserId],
 		);
 	}
-	async function seedWork(
-		startTime: string,
-		endTime: string | null,
-		minutes: number | null,
-	) {
+	async function seedWork(startTime: string, endTime: string | null, minutes: number | null) {
 		return withCanonicalRecords(fixture.pool, async (client) => {
 			const clockInId = randomUUID();
 			const clockOutId = endTime ? randomUUID() : null;
@@ -184,15 +168,7 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 			]) {
 				await client.query(
 					`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$2,$3,$4,$5,0,'UTC','user_setting',$7,$6)`,
-					[
-						entryId,
-						employeeId,
-						organizationId,
-						type,
-						timestamp,
-						subjectUserId,
-						entryId,
-					],
+					[entryId, employeeId, organizationId, type, timestamp, subjectUserId, entryId],
 				);
 			}
 			const result = await client.query<{ id: string }>(
@@ -231,10 +207,10 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 				},
 			});
 		} finally {
-			await fixture.pool.query(
-				`delete from work_period where id = $1 and organization_id = $2`,
-				[liveId, organizationId],
-			);
+			await fixture.pool.query(`delete from work_period where id = $1 and organization_id = $2`, [
+				liveId,
+				organizationId,
+			]);
 		}
 	});
 	it("selects the active organization's own employee when the user belongs to another organization", async () => {
@@ -284,10 +260,10 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 				},
 			});
 		} finally {
-			await fixture.pool.query(
-				`delete from work_period where id = $1 and organization_id = $2`,
-				[liveId, organizationId],
-			);
+			await fixture.pool.query(`delete from work_period where id = $1 and organization_id = $2`, [
+				liveId,
+				organizationId,
+			]);
 		}
 	});
 	it("counts a live interval through the employee's repeated DST hour without changing calendar targets", async () => {
@@ -303,10 +279,10 @@ describe("dashboard quick stats use the explicit tracking window", () => {
 				},
 			});
 		} finally {
-			await fixture.pool.query(
-				`delete from work_period where id = $1 and organization_id = $2`,
-				[liveId, organizationId],
-			);
+			await fixture.pool.query(`delete from work_period where id = $1 and organization_id = $2`, [
+				liveId,
+				organizationId,
+			]);
 		}
 	});
 	it("retains legacy progress until an organization activates its chosen tracking date", async () => {

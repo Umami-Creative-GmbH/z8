@@ -150,9 +150,9 @@ describe("wage changes on PostgreSQL", () => {
 		);
 		await fixture.pool.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
 			  weekly_contract_minutes, work_model, hourly_rate, currency, review_state, created_by, updated_at)
-			 values ($1, $2, $3, '2026-01-01 00:00:00', 'hourly', 1800, 'hybrid', 25.00, 'CHF',
+			 values ($1, $2, $3, '2026-01-01 00:00:00', '2026-01-01', 'hourly', 1800, 'hybrid', 25.00, 'CHF',
 			         'confirmed', $4, now())`,
 			[
 				fixture.employeeId,
@@ -326,16 +326,16 @@ describe("wage changes on PostgreSQL", () => {
 			fixture.employeeId,
 		]);
 		await fixture.pool.query(
-			"update employee_employment_history set valid_until = $2 where employee_id = $1",
+			"update employee_employment_history set valid_until = $2, valid_until_date = $2::timestamp::date where employee_id = $1",
 			[fixture.employeeId, future.toString()],
 		);
 		const {
 			rows: [change],
 		} = await fixture.pool.query<{ id: string }>(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
 			  weekly_contract_minutes, review_state, created_by, updated_at)
-			 values ($1, $2, $3, $4, 'fixed', 2400, 'confirmed', $5, now()) returning id`,
+			 values ($1, $2, $3, $4, $4::timestamp::date, 'fixed', 2400, 'confirmed', $5, now()) returning id`,
 			[
 				fixture.employeeId,
 				fixture.organizationId,

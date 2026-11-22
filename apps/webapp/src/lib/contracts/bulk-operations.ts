@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, eq, exists, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
 import {
 	contractTemplate,
 	contractTemplateVersion,
@@ -176,12 +177,13 @@ async function resolveTargetEmployees(
 	return db
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			firstName: user.firstName,
+			lastName: user.lastName,
 			employeeNumber: employee.employeeNumber,
 			contractType: employee.contractType,
 		})
 		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
 		.where(and(...conditions))
 		.orderBy(asc(employee.id));
 }

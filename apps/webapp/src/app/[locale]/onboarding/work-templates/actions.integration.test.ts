@@ -72,13 +72,11 @@ describe("organization work-template production action and scoped PostgreSQL rec
 		expect(await checkIsAdmin()).toMatchObject({ success: true, data: true });
 		expect(await createWorkTemplateOnboarding(input)).toEqual({ success: true, data: undefined });
 		const policies = (
-			await pool.query("SELECT id,name,is_default FROM work_policy WHERE organization_id=$1", [
+			await pool.query("SELECT id,name FROM work_policy WHERE organization_id=$1", [
 				actor.organizationId,
 			])
 		).rows;
-		expect(policies).toEqual([
-			{ id: expect.any(String), name: "Four-day template", is_default: true },
-		]);
+		expect(policies).toEqual([{ id: expect.any(String), name: "Four-day template" }]);
 		const schedules = (
 			await pool.query(
 				"SELECT id,schedule_cycle,schedule_type,hours_per_cycle FROM work_policy_schedule WHERE policy_id=$1",

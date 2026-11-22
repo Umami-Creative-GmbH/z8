@@ -8,9 +8,7 @@ import {
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const queries = vi.hoisted(() => [] as string[]);
-const statements = vi.hoisted(
-	() => [] as { text: string; params: unknown[] }[],
-);
+const statements = vi.hoisted(() => [] as { text: string; params: unknown[] }[]);
 const caller = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
@@ -25,9 +23,7 @@ vi.mock("@/env", async (original) => {
 		}),
 	};
 });
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -61,12 +57,10 @@ vi.mock("@/db", async () =>
 	}),
 );
 const { db } = await import("@/db");
-const { DatabaseService, makeDatabaseService } = await import(
-	"@/lib/effect/services/database.service"
-);
-const { getTeamPerformanceData, getWorkHoursAnalyticsData } = await import(
-	"@/app/[locale]/(app)/analytics/actions"
-);
+const { DatabaseService, makeDatabaseService } =
+	await import("@/lib/effect/services/database.service");
+const { getTeamPerformanceData, getWorkHoursAnalyticsData } =
+	await import("@/app/[locale]/(app)/analytics/actions");
 const range = {
 	start: new Date("2026-03-02T00:00:00Z"),
 	end: new Date("2026-03-08T23:59:59.999Z"),
@@ -90,24 +84,24 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			`insert into work_policy (id,organization_id,name,regulation_enabled,schedule_enabled,created_by,updated_at) values ($1,$2,'Team weekdays',false,true,$3,now())`,
 			[policyId, fixture.organizationId, fixture.ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policyId, fixture.organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (policy_id,schedule_type,hours_per_cycle,updated_at) values ($1,'simple',40,now())`,
-			[policyId],
+			`insert into work_policy_schedule (policy_id,policy_version_id,schedule_type,hours_per_cycle,updated_at) values ($1,$2,'simple',40,now())`,
+			[policyId, policyVersion.id],
 		);
 		const schedule = await fixture.pool.query(
 			`select id from work_policy_schedule where policy_id=$1`,
 			[policyId],
 		);
-		for (const day of [
-			"monday",
-			"tuesday",
-			"wednesday",
-			"thursday",
-			"friday",
-		]) {
+		for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
 			await fixture.pool.query(
-				`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,8,true)`,
-				[schedule.rows[0].id, day],
+				`insert into work_policy_schedule_day (schedule_id,policy_version_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,$3,8,true)`,
+				[schedule.rows[0].id, policyVersion.id, day],
 			);
 		}
 		await fixture.pool.query(
@@ -118,13 +112,8 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			const person = await fixture.seedEmployee();
 			people.push(person.employeeId);
 			await fixture.pool.query(
-				`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z',2400,'confirmed',$4,now())`,
-				[
-					person.employeeId,
-					fixture.organizationId,
-					person.employmentPeriodId,
-					fixture.ownerUserId,
-				],
+				`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z','2026-01-01',2400,'confirmed',$4,now())`,
+				[person.employeeId, fixture.organizationId, person.employmentPeriodId, fixture.ownerUserId],
 			);
 			for (const day of ["02", "03", "04", "05", "06"]) {
 				await addWork(
@@ -162,16 +151,8 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 					end,
 					startOffset,
 					endOffset,
-					startOffset > 0
-						? "Europe/Berlin"
-						: startOffset < 0
-							? "America/New_York"
-							: "UTC",
-					endOffset > 0
-						? "Europe/Berlin"
-						: endOffset < 0
-							? "America/New_York"
-							: "UTC",
+					startOffset > 0 ? "Europe/Berlin" : startOffset < 0 ? "America/New_York" : "UTC",
+					endOffset > 0 ? "Europe/Berlin" : endOffset < 0 ? "America/New_York" : "UTC",
 				],
 			);
 			await client.query(
@@ -195,18 +176,13 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			success: true,
 			data: { organizationTotal: 45 },
 		});
-		await fixture.pool.query(
-			`update member set status='rejected' where id=$1`,
-			[manager.memberId],
-		);
+		await fixture.pool.query(`update member set status='rejected' where id=$1`, [manager.memberId]);
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
-		expect(queries.some((text) => text.includes('from "work_period"'))).toBe(
-			false,
-		);
+		expect(queries.some((text) => text.includes('from "work_period"'))).toBe(false);
 	});
 	it("rechecks enabled billing before analytics lookup and never provisions a trial on reads", async () => {
 		caller.userId = fixture.ownerUserId;
@@ -221,10 +197,9 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			expect(await getTeamPerformanceData(range)).toMatchObject({
 				success: true,
 			});
-			await fixture.pool.query(
-				`update subscription set status='past_due' where id=$1`,
-				[subscriptionId],
-			);
+			await fixture.pool.query(`update subscription set status='past_due' where id=$1`, [
+				subscriptionId,
+			]);
 			queries.length = 0;
 			expect(await getTeamPerformanceData(range)).toMatchObject({
 				success: false,
@@ -233,21 +208,16 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			expect(
 				queries.some(
 					(text) =>
-						text.includes("with visible as materialized") ||
-						text.includes('from "work_period"'),
+						text.includes("with visible as materialized") || text.includes('from "work_period"'),
 				),
 			).toBe(false);
-			await fixture.pool.query(`delete from subscription where id=$1`, [
-				subscriptionId,
-			]);
+			await fixture.pool.query(`delete from subscription where id=$1`, [subscriptionId]);
 			queries.length = 0;
 			expect(await getTeamPerformanceData(range)).toMatchObject({
 				success: false,
 				code: "BillingError",
 			});
-			expect(queries.some((text) => /^\s*(insert|update)/i.test(text))).toBe(
-				false,
-			);
+			expect(queries.some((text) => /^\s*(insert|update)/i.test(text))).toBe(false);
 			expect(
 				(
 					await fixture.pool.query(
@@ -258,9 +228,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			).toBe(0);
 		} finally {
 			billing.enabled = "false";
-			await fixture.pool.query(`delete from subscription where id=$1`, [
-				subscriptionId,
-			]);
+			await fixture.pool.query(`delete from subscription where id=$1`, [subscriptionId]);
 		}
 	});
 	it("denies an inactive or due-departure actor before analytics lookup", async () => {
@@ -275,12 +243,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		});
 		await fixture.pool.query(
 			`insert into employee_departure (organization_id,employee_id,employment_period_id,mode,last_working_day,timezone,cutoff_at,created_by,request_id,request_fingerprint,revision,status) values ($1,$2,$3,'scheduled','2026-01-01','UTC','2026-01-02T00:00:00Z',$4,gen_random_uuid(),'test',1,'pending')`,
-			[
-				fixture.organizationId,
-				manager.employeeId,
-				manager.employmentPeriodId,
-				fixture.ownerUserId,
-			],
+			[fixture.organizationId, manager.employeeId, manager.employmentPeriodId, fixture.ownerUserId],
 		);
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
@@ -290,70 +253,50 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		expect(
 			queries.some(
 				(text) =>
-					text.includes("with visible as materialized") ||
-					text.includes('from "work_period"'),
+					text.includes("with visible as materialized") || text.includes('from "work_period"'),
 			),
 		).toBe(false);
-		await fixture.pool.query(
-			`delete from employee_departure where employee_id=$1`,
-			[manager.employeeId],
-		);
-		await fixture.pool.query(
-			`update employee set is_active=false where id=$1`,
-			[manager.employeeId],
-		);
+		await fixture.pool.query(`delete from employee_departure where employee_id=$1`, [
+			manager.employeeId,
+		]);
+		await fixture.pool.query(`update employee set is_active=false where id=$1`, [
+			manager.employeeId,
+		]);
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
 			code: "NotFoundError",
 		});
-		expect(
-			queries.some((text) => text.includes("with visible as materialized")),
-		).toBe(false);
+		expect(queries.some((text) => text.includes("with visible as materialized"))).toBe(false);
 	});
 	it("preserves viewed historical work for a due departure and an explicitly selected inactive employee", async () => {
 		const person = await fixture.seedEmployee();
 		caller.userId = fixture.ownerUserId;
 		caller.organizationId = fixture.organizationId;
-		await addWork(
-			person.employeeId,
-			"2026-03-02T08:00:00Z",
-			"2026-03-02T09:00:00Z",
-			60,
-		);
+		await addWork(person.employeeId, "2026-03-02T08:00:00Z", "2026-03-02T09:00:00Z", 60);
 		const before = await getTeamPerformanceData(range);
 		expect(before.success).toBe(true);
 		if (!before.success) throw new Error("Historical fixture must be readable");
 		await fixture.pool.query(
 			`insert into employee_departure (organization_id,employee_id,employment_period_id,mode,last_working_day,timezone,cutoff_at,created_by,request_id,request_fingerprint,revision,status) values ($1,$2,$3,'scheduled','2026-04-01','UTC','2026-04-02T00:00:00Z',$4,gen_random_uuid(),'historical-selection',1,'pending')`,
-			[
-				fixture.organizationId,
-				person.employeeId,
-				person.employmentPeriodId,
-				fixture.ownerUserId,
-			],
+			[fixture.organizationId, person.employeeId, person.employmentPeriodId, fixture.ownerUserId],
 		);
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: true,
 			data: { organizationTotal: before.data.organizationTotal },
 		});
-		expect(
-			await getWorkHoursAnalyticsData(range, person.employeeId),
-		).toMatchObject({
+		expect(await getWorkHoursAnalyticsData(range, person.employeeId)).toMatchObject({
 			success: true,
 			data: { summary: { totalHours: 1 } },
 		});
-		await fixture.pool.query(
-			`update employee set is_active=false where id=$1`,
-			[person.employeeId],
-		);
+		await fixture.pool.query(`update employee set is_active=false where id=$1`, [
+			person.employeeId,
+		]);
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: true,
 			data: { organizationTotal: before.data.organizationTotal - 1 },
 		});
-		expect(
-			await getWorkHoursAnalyticsData(range, person.employeeId),
-		).toMatchObject({
+		expect(await getWorkHoursAnalyticsData(range, person.employeeId)).toMatchObject({
 			success: true,
 			data: { summary: { totalHours: 1 } },
 		});
@@ -362,9 +305,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		employeeId = people[0],
 		client: Parameters<typeof makeDatabaseService>[0] = db,
 	) {
-		const { loadRecentAnalyticsIdentity } = await import(
-			"@/lib/analytics/recent-identity"
-		);
+		const { loadRecentAnalyticsIdentity } = await import("@/lib/analytics/recent-identity");
 		return Effect.runPromise(
 			loadRecentAnalyticsIdentity(
 				{
@@ -374,11 +315,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 					role: "admin",
 				},
 				{ kind: "work-hours", dateRange: range, employeeId },
-			).pipe(
-				Effect.provide(
-					Layer.succeed(DatabaseService, makeDatabaseService(client)),
-				),
-			),
+			).pipe(Effect.provide(Layer.succeed(DatabaseService, makeDatabaseService(client)))),
 		);
 	}
 	it("bypasses missing or deleted markers and never resurrects their old cache keys after rebuild or recreation", async () => {
@@ -460,9 +397,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			[absence],
 		);
 		await changed();
-		await fixture.pool.query(`delete from absence_entry where id=$1`, [
-			absence,
-		]);
+		await fixture.pool.query(`delete from absence_entry where id=$1`, [absence]);
 		await changed();
 	});
 	it("versions holiday/preset membership and deletion without invalidating another organization", async () => {
@@ -471,9 +406,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			organizationId: other,
 			role: "admin",
 		});
-		const { loadRecentAnalyticsIdentity } = await import(
-			"@/lib/analytics/recent-identity"
-		);
+		const { loadRecentAnalyticsIdentity } = await import("@/lib/analytics/recent-identity");
 		async function otherIdentity() {
 			return Effect.runPromise(
 				loadRecentAnalyticsIdentity(
@@ -484,11 +417,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 						role: "admin",
 					},
 					{ kind: "team", dateRange: range },
-				).pipe(
-					Effect.provide(
-						Layer.succeed(DatabaseService, makeDatabaseService(db)),
-					),
-				),
+				).pipe(Effect.provide(Layer.succeed(DatabaseService, makeDatabaseService(db)))),
 			);
 		}
 		const untouched = (await otherIdentity()).identity.revision;
@@ -517,18 +446,10 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		await changed();
 		await fixture.pool.query(
 			`insert into holiday_assignment (id,holiday_id,organization_id,assignment_type,employee_id,created_by,updated_at) values ($1,$2,$3,'employee',$4,$5,now())`,
-			[
-				assignment,
-				holiday,
-				fixture.organizationId,
-				people[0],
-				fixture.ownerUserId,
-			],
+			[assignment, holiday, fixture.organizationId, people[0], fixture.ownerUserId],
 		);
 		await changed();
-		await fixture.pool.query(`delete from holiday_assignment where id=$1`, [
-			assignment,
-		]);
+		await fixture.pool.query(`delete from holiday_assignment where id=$1`, [assignment]);
 		await changed();
 		await fixture.pool.query(`delete from holiday where id=$1`, [holiday]);
 		await changed();
@@ -544,23 +465,14 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		await changed();
 		await fixture.pool.query(
 			`insert into holiday_preset_assignment (id,preset_id,organization_id,assignment_type,employee_id,created_by,updated_at) values ($1,$2,$3,'employee',$4,$5,now())`,
-			[
-				presetAssignment,
-				preset,
-				fixture.organizationId,
-				people[0],
-				fixture.ownerUserId,
-			],
+			[presetAssignment, preset, fixture.organizationId, people[0], fixture.ownerUserId],
 		);
 		await changed();
-		await fixture.pool.query(`delete from holiday_preset_holiday where id=$1`, [
-			presetDay,
+		await fixture.pool.query(`delete from holiday_preset_holiday where id=$1`, [presetDay]);
+		await changed();
+		await fixture.pool.query(`delete from holiday_preset_assignment where id=$1`, [
+			presetAssignment,
 		]);
-		await changed();
-		await fixture.pool.query(
-			`delete from holiday_preset_assignment where id=$1`,
-			[presetAssignment],
-		);
 		await changed();
 	});
 	it("keeps transaction-local revisions out of subsequent committed identities", async () => {
@@ -571,9 +483,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 				await tx.execute(
 					sql`update employee_employment_history set weekly_contract_minutes=600 where employee_id=${people[0]} and review_state='confirmed'`,
 				);
-				expect((await identity(people[0], tx)).identity.revision).not.toBe(
-					before,
-				);
+				expect((await identity(people[0], tx)).identity.revision).not.toBe(before);
 				throw new Error("rollback cache source fixture");
 			}),
 		).rejects.toThrow("rollback cache source fixture");
@@ -588,9 +498,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			`insert into employee_managers (employee_id,manager_id,assigned_by) values ($1,$2,$3),($4,$2,$3)`,
 			[people[0], manager.employeeId, fixture.ownerUserId, people[1]],
 		);
-		const { loadRecentAnalyticsIdentity } = await import(
-			"@/lib/analytics/recent-identity"
-		);
+		const { loadRecentAnalyticsIdentity } = await import("@/lib/analytics/recent-identity");
 		const actor = {
 			id: manager.employeeId,
 			userId: manager.userId,
@@ -605,16 +513,12 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		) {
 			return Effect.runPromise(
 				loadRecentAnalyticsIdentity(actor, request).pipe(
-					Effect.provide(
-						Layer.succeed(DatabaseService, makeDatabaseService(db)),
-					),
+					Effect.provide(Layer.succeed(DatabaseService, makeDatabaseService(db))),
 				),
 			);
 		}
 		const initial = await prepared();
-		expect(initial.identity.visibleEmployeeIds).toEqual(
-			[people[0], people[1]].sort(),
-		);
+		expect(initial.identity.visibleEmployeeIds).toEqual([people[0], people[1]].sort());
 		expect(
 			(
 				await prepared({
@@ -647,21 +551,17 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		const granted = await prepared();
 		expect(granted.identity.revision).not.toBe(reduced.identity.revision);
 		expect(granted.identity.visibleEmployeeIds).toEqual([people[0]]);
-		await fixture.pool.query(
-			`delete from custom_role_permission where custom_role_id=$1`,
-			[customRole],
-		);
-		expect((await prepared()).identity.revision).not.toBe(
-			granted.identity.revision,
-		);
+		await fixture.pool.query(`delete from custom_role_permission where custom_role_id=$1`, [
+			customRole,
+		]);
+		expect((await prepared()).identity.revision).not.toBe(granted.identity.revision);
 		await fixture.pool.query(
 			`insert into custom_role_permission (custom_role_id,action,subject) values ($1,'read','Report')`,
 			[customRole],
 		);
-		await fixture.pool.query(
-			`update employee set role='employee' where id=$1`,
-			[manager.employeeId],
-		);
+		await fixture.pool.query(`update employee set role='employee' where id=$1`, [
+			manager.employeeId,
+		]);
 		caller.userId = manager.userId;
 		caller.organizationId = fixture.organizationId;
 		queries.length = 0;
@@ -669,9 +569,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			success: false,
 			code: "AuthorizationError",
 		});
-		expect(
-			queries.some((text) => text.includes("with visible as materialized")),
-		).toBe(false);
+		expect(queries.some((text) => text.includes("with visible as materialized"))).toBe(false);
 	});
 	it("reads stable scoped revision metadata without retrieving work periods or making employee-sized query queues", async () => {
 		const samples = [];
@@ -684,9 +582,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			if (last) expect(value.identity).toEqual(last);
 			last = value.identity;
 			expect(queries).toHaveLength(2);
-			expect(queries.some((text) => text.includes('from "work_period"'))).toBe(
-				false,
-			);
+			expect(queries.some((text) => text.includes('from "work_period"'))).toBe(false);
 		}
 		samples.sort((a, b) => a - b);
 		console.info(
@@ -712,12 +608,10 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			`select id from work_period where organization_id=$1 and employee_id=$2 and start_time='2026-03-02T08:00:00Z'`,
 			[fixture.organizationId, people[0]],
 		);
-		const { withCompletedWorkTransaction } = await import(
-			"@/lib/time-tracking/completed-work-transaction"
-		);
-		const { readWorkRecord, applyWorkRecordChange } = await import(
-			"@/lib/time-tracking/work-records"
-		);
+		const { withCompletedWorkTransaction } =
+			await import("@/lib/time-tracking/completed-work-transaction");
+		const { readWorkRecord, applyWorkRecordChange } =
+			await import("@/lib/time-tracking/work-records");
 		const { parseInstant } = await import("@/lib/datetime/temporal-core");
 		const key = {
 			organizationId: fixture.organizationId,

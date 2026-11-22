@@ -18,9 +18,9 @@ describe("current contract type reads", () => {
 		]);
 		await fixture.pool.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
 			  weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
-			 values ($1, $2, $3, '2026-03-10 00:00:00', 'hourly', 2400, 25, 'EUR',
+			 values ($1, $2, $3, '2026-03-10 00:00:00', '2026-03-10', 'hourly', 2400, 25, 'EUR',
 			         'confirmed', $4, now())`,
 			[fixture.employeeId, fixture.organizationId, fixture.employmentPeriodId, fixture.ownerUserId],
 		);

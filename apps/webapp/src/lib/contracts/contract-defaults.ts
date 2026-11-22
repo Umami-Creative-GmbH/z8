@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { organization } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import {
 	contractDefault,
 	contractTemplate,
@@ -694,14 +694,15 @@ export async function previewContractDefaultChange(
 	const employeeRows = await db
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			firstName: user.firstName,
+			lastName: user.lastName,
 			teamId: employee.teamId,
 			userId: employee.userId,
 			contractType: employee.contractType,
 			userTimezone: userSettings.timezone,
 		})
 		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
 		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 		.where(
 			and(

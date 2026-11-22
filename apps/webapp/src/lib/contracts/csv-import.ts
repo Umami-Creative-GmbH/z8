@@ -214,8 +214,8 @@ async function resolveEmployeesByIdentifiers(
 	const selectShape = {
 		id: employee.id,
 		userId: employee.userId,
-		firstName: employee.firstName,
-		lastName: employee.lastName,
+		firstName: user.firstName,
+		lastName: user.lastName,
 		employeeNumber: employee.employeeNumber,
 		email: user.email,
 		role: employee.role,
