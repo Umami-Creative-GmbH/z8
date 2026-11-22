@@ -16,8 +16,7 @@ async function WorkPoliciesPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		return redirectWithLocale("/settings");
@@ -25,6 +24,7 @@ async function WorkPoliciesPageContent() {
 
 	// Violation instants are shown on the organization's calendar, not the viewer's.
 	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
+	const workPolicyVersioningEnabled = process.env.WORK_POLICY_VERSIONING_ENABLED === "true";
 
 	return (
 		<WorkPolicySettingsTabs
@@ -35,6 +35,7 @@ async function WorkPoliciesPageContent() {
 						organizationId={organizationId}
 						accessTier={settingsRouteContext.accessTier}
 						organizationTimezone={organizationTimezone}
+						workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 					/>
 				),
 				changes: (

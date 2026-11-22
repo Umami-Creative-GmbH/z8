@@ -3,7 +3,7 @@
 import { IconCoin, IconReceipt2 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, use } from "react";
+import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
@@ -13,6 +13,8 @@ import { EmployeeLifecycleActions } from "@/components/organization/employee-lif
 import { ReactivationChecklistCard } from "@/components/organization/reactivation-checklist";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
+import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
+import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
@@ -20,6 +22,7 @@ import { EmploymentLifecycleEvents } from "@/components/settings/employee-employ
 import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
+import { LeavingDatePanel } from "@/components/settings/employee-offboarding/leaving-date-panel";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { EmployeeTrackingDateCard } from "@/components/settings/employee-tracking-date-card";
 import { EmploymentDateCorrectionCard } from "@/components/settings/employment-date-correction-card";
@@ -47,13 +50,43 @@ import { useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
 import type { EmployeeTeamOption } from "./employee-edit-form-card";
-import {
-	EmployeeDetailHeader,
-	EmployeeEditFormCard,
-	EmployeeOverviewCard,
-} from "./page-sections";
+import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
 import type { EmployeeDetailFormApi } from "./page-utils";
 import { useEmployeeDetailForm } from "./use-employee-detail-form";
+
+export type EmployeeDetailTab =
+	| "overview"
+	| "contract"
+	| "time-balance"
+	| "assignments"
+	| "offboarding"
+	| "personnel-file";
+
+/** Resolves the initial tab from `#employment-history`, `#offboarding`, and `?review=<id>` deep links. */
+export function resolveEmployeeDetailTabFromDeepLink(input: {
+	hash: string;
+	highlightedReviewId: string | null;
+	hasPersonnelFile: boolean;
+}): EmployeeDetailTab {
+	if (input.highlightedReviewId) return "offboarding";
+	const normalized = input.hash.toLowerCase();
+	if (normalized === "#offboarding" || normalized.startsWith("#offboarding-")) {
+		return "offboarding";
+	}
+	if (normalized === "#employment-history" || normalized === "#contract") {
+		return "contract";
+	}
+	if (normalized === "#time-balance") {
+		return "time-balance";
+	}
+	if (normalized === "#assignments") {
+		return "assignments";
+	}
+	if (normalized === "#personnel-file" && input.hasPersonnelFile) {
+		return "personnel-file";
+	}
+	return "overview";
+}
 
 function EmployeeDetailLifecycleActions({
 	employee,
@@ -76,14 +109,9 @@ function EmployeeDetailLifecycleActions({
 	) => {
 		if (employee.id !== targetEmployeeId) return;
 		queryClient.setQueryData<EmployeeReadSnapshot<"detail">>(
-			queryKeys.employees.detailFor(
-				currentUserId,
-				employee.organizationId,
-				targetEmployeeId,
-			),
+			queryKeys.employees.detailFor(currentUserId, employee.organizationId, targetEmployeeId),
 			(current) =>
-				current?.data.kind === "employee" &&
-				current.data.id === targetEmployeeId
+				current?.data.kind === "employee" && current.data.id === targetEmployeeId
 					? // The former mark follows at once (#1438); the date arrives with the next read.
 						{
 							...current,
@@ -162,6 +190,46 @@ export function EmployeeDetailPageClient({
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
 	const { push } = useRouter();
+	const queryClient = useQueryClient();
+
+	const hasPersonnelFile = Boolean(personnelFile);
+	const [activeTab, setActiveTab] = useState<EmployeeDetailTab>(() =>
+		resolveEmployeeDetailTabFromDeepLink({
+			hash: typeof window !== "undefined" ? window.location.hash : "",
+			highlightedReviewId,
+			hasPersonnelFile,
+		}),
+	);
+
+	// React to hash navigation (`#employment-history`, `#offboarding`, etc.) and `?review=<id>`.
+	useEffect(() => {
+		const syncFromLocation = () => {
+			const hash = window.location.hash;
+			const resolved = resolveEmployeeDetailTabFromDeepLink({
+				hash,
+				highlightedReviewId,
+				hasPersonnelFile,
+			});
+			if (hash || highlightedReviewId) {
+				setActiveTab(resolved);
+				const targetId = highlightedReviewId
+					? `offboarding-review-${highlightedReviewId}`
+					: hash.slice(1);
+				if (targetId) {
+					requestAnimationFrame(() => {
+						const el = document.getElementById(targetId);
+						if (el && typeof el.scrollIntoView === "function") {
+							el.scrollIntoView({ behavior: "smooth", block: "start" });
+						}
+					});
+				}
+			}
+		};
+
+		syncFromLocation();
+		window.addEventListener("hashchange", syncFromLocation);
+		return () => window.removeEventListener("hashchange", syncFromLocation);
+	}, [highlightedReviewId, hasPersonnelFile]);
 
 	const employeeData = useEmployee({
 		employeeId,
@@ -170,16 +238,13 @@ export function EmployeeDetailPageClient({
 		organizationId,
 		initialSnapshot,
 	});
-	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } =
-		employeeData;
+	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
 		recordId: employeeId,
 		enabled: employee?.kind === "employee",
-		readScope: organizationId
-			? { userId: currentUserId, organizationId }
-			: undefined,
+		readScope: organizationId ? { userId: currentUserId, organizationId } : undefined,
 	});
 	const { form, teamOptions, drivingLicenceWarning } = useEmployeeDetailForm({
 		employeeId,
@@ -200,30 +265,41 @@ export function EmployeeDetailPageClient({
 		return <EmployeeDetailLoading />;
 	}
 
-	const canShowRealEmployeeSections = employee.kind !== "invitationDraft";
+	const isDraft = employee.kind === "invitationDraft";
+	const canShowRealEmployeeSections = !isDraft;
+	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
+	const isOrgAdmin = accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const { availableManagers, workPolicies } = employeeData;
 
-	const overview = (
-		<EmployeeDetailOverview
+	const handleWorkBalanceRecalculation = async () => {
+		const result = await employeeData.requestWorkBalanceRecalculation().catch(() => null);
+
+		if (result?.success) {
+			toast.success(
+				t("settings.workBalanceRecalculation.requestSuccess", "Work balance recalculation queued"),
+			);
+			return;
+		}
+
+		toast.error(
+			result?.error ||
+				t(
+					"settings.workBalanceRecalculation.requestError",
+					"Failed to queue work balance recalculation",
+				),
+		);
+	};
+
+	const editForm = (
+		<EmployeeDetailEditCard
+			form={form}
 			employee={employee}
-			employeeId={employeeId}
-			data={employeeData}
 			accessTier={accessTier}
-			currentUserId={currentUserId}
-			settingsAccess={settingsAccess}
-			organizationId={organizationId}
-			highlightedReviewId={highlightedReviewId}
-			equipment={equipment}
-			editForm={
-				<EmployeeDetailEditCard
-					form={form}
-					employee={employee}
-					accessTier={accessTier}
-					isUpdating={isUpdating}
-					teamOptions={teamOptions}
-					customFields={customFields}
-					onCancel={() => push("/settings/employees")}
-				/>
-			}
+			isUpdating={isUpdating}
+			teamOptions={teamOptions}
+			customFields={customFields}
+			onCancel={() => push("/settings/employees")}
 		/>
 	);
 
@@ -243,25 +319,219 @@ export function EmployeeDetailPageClient({
 					}
 				/>
 
-				{personnelFile && canShowRealEmployeeSections ? (
-					<Tabs defaultValue="overview" className="gap-4">
-						<TabsList>
-							<TabsTrigger value="overview">
-								{t("settings.employees.detailView.tabs.overview", "Overview")}
-							</TabsTrigger>
-							<TabsTrigger value="personnel-file">
-								{t("settings.personnelFiles.panel.tab", "Personnel file")}
-							</TabsTrigger>
-						</TabsList>
+				{canShowRealEmployeeSections ? (
+					<Tabs
+						value={activeTab}
+						onValueChange={(value) => setActiveTab(value as EmployeeDetailTab)}
+						className="min-w-0 gap-4"
+					>
+						<div className="max-w-full overflow-x-auto">
+							<TabsList
+								aria-label={t(
+									"settings.employees.detailView.tabsAriaLabel",
+									"Employee detail sections",
+								)}
+							>
+								<TabsTrigger value="overview">
+									{t("settings.employees.detailView.tabs.overview", "Overview")}
+								</TabsTrigger>
+								<TabsTrigger value="contract">
+									{isOrgAdmin
+										? t("settings.employees.detailView.tabs.contract", "Contract")
+										: t("settings.employees.detailView.tabs.workPolicy", "Work policy")}
+								</TabsTrigger>
+								<TabsTrigger value="time-balance">
+									{t("settings.employees.detailView.tabs.timeBalance", "Time & Balance")}
+								</TabsTrigger>
+								<TabsTrigger value="assignments">
+									{t("settings.employees.detailView.tabs.assignments", "Access & Roles")}
+								</TabsTrigger>
+								<TabsTrigger value="offboarding">
+									{t("settings.employees.detailView.tabs.leavingDate", "Leaving Date")}
+								</TabsTrigger>
+								{personnelFile && (
+									<TabsTrigger value="personnel-file">
+										{t("settings.personnelFiles.panel.tab", "Personnel file")}
+									</TabsTrigger>
+								)}
+							</TabsList>
+						</div>
+
+						{/* Tab 1: Overview */}
 						<TabsContent value="overview" className="flex flex-col gap-4">
-							{overview}
+							<EmployeeReadNotices data={employeeData} />
+							<div className="grid gap-4 lg:grid-cols-3">
+								<EmployeeOverviewCard employee={employee} schedule={employeeData.schedule} t={t} />
+								{canEditDraftDetails && editForm}
+							</div>
+							{isOrgAdmin && <ReactivationChecklistCard employeeId={employeeId} />}
+							{equipment ? (
+								<EmployeeEquipment
+									key={`${organizationId}:${employeeId}`}
+									data={equipment}
+									employeeId={employeeId}
+								/>
+							) : null}
 						</TabsContent>
-						<TabsContent value="personnel-file">
-							<PersonnelFilePanel capability={personnelFile} />
+
+						{/* Tab 2: Contract (Org Admin) or Wage-Free Work Policy (Scoped Manager A1) */}
+						<TabsContent value="contract" className="flex flex-col gap-4">
+							{isOrgAdmin ? (
+								<>
+									<EmployeeContractTab
+										organizationId={employee.organizationId}
+										employeeId={employeeId}
+										workPolicies={workPolicies}
+										employmentHistory={employeeData.employmentHistory}
+										onContractMutated={() => void employeeData.refetch()}
+									/>
+									<EmploymentDateCorrectionCard
+										key={employeeId}
+										employeeId={employeeId}
+										employmentStartDate={
+											employee.startDate
+												? new Date(employee.startDate).toISOString().slice(0, 10)
+												: null
+										}
+										onSaved={async () => {
+											await Promise.all([
+												employeeData.refetch(),
+												queryClient.invalidateQueries({
+													queryKey: ["employee-tracking-date", employeeId],
+												}),
+												queryClient.invalidateQueries({
+													queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId],
+												}),
+											]);
+										}}
+									/>
+									<EmployeeEmploymentHistoryCard
+										history={employeeData.employmentHistory}
+										canManage={isOrgAdmin}
+										onCreate={employeeData.createEmploymentHistory}
+										onConfirm={employeeData.confirmEmploymentHistory}
+										onCancel={employeeData.cancelEmploymentHistory}
+										isCreating={employeeData.isCreatingEmploymentHistory}
+										isMutating={
+											employeeData.isConfirmingEmploymentHistory ||
+											employeeData.isCancelingEmploymentHistory
+										}
+										workPolicies={workPolicies}
+										notice={<WageHistoryMergeNote employeeId={employeeId} />}
+										lifecycleEvents={<EmploymentLifecycleEvents employeeId={employeeId} />}
+										changeWage={
+											employee.contractTypeToday === "hourly"
+												? {
+														onSubmit: employeeData.changeWage,
+														isPending: employeeData.isChangingWage,
+													}
+												: undefined
+										}
+									/>
+									<EmployeeRateSections employeeId={employeeId} accessTier={accessTier} />
+								</>
+							) : (
+								<ScopedManagerPolicyCard
+									employeeId={employeeId}
+									workPolicies={workPolicies}
+									onAssigned={() => void employeeData.refetch()}
+								/>
+							)}
 						</TabsContent>
+
+						{/* Tab 3: Time & Balance */}
+						<TabsContent value="time-balance" className="flex flex-col gap-4">
+							{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
+							{isOrgAdminOrManager && <EmployeeWorkBalanceSection employeeId={employeeId} />}
+							{isOrgAdmin && (
+								<WorkBalanceRecalculationCard
+									employeeName={buildAuthUserDisplayName(employee.user) || employee.id}
+									isPending={employeeData.isRequestingWorkBalanceRecalculation}
+									onRecalculate={handleWorkBalanceRecalculation}
+									t={t}
+								/>
+							)}
+						</TabsContent>
+
+						{/* Tab 4: Access & Roles */}
+						<TabsContent value="assignments" className="flex flex-col gap-4">
+							{isOrgAdmin && availableManagers.length > 0 && (
+								<ManagerAssignment
+									employeeId={employeeId}
+									currentManagers={employee.managers || []}
+									availableManagers={availableManagers}
+									onSuccess={employeeData.refetch}
+								/>
+							)}
+							{isOrgAdmin && <EmployeeAssignedLocationsCard employeeId={employeeId} />}
+							{isOrgAdmin && (
+								<EmployeeCustomRolesCard
+									employeeId={employeeId}
+									organizationId={employee.organizationId}
+									isAdmin={isOrgAdmin}
+								/>
+							)}
+							<EmployeeSkillsCard
+								employeeId={employeeId}
+								organizationId={employee.organizationId}
+								canManageSkills={isOrgAdminOrManager}
+							/>
+							<EmployeeKioskCard employeeId={employeeId} />
+						</TabsContent>
+
+						{/* Tab 5: Leaving Date & Offboarding */}
+						<TabsContent value="offboarding" className="flex flex-col gap-4">
+							{isOrgAdmin && (
+								<LeavingDatePanel
+									organizationId={employee.organizationId}
+									employeeId={employeeId}
+								/>
+							)}
+							{isOrgAdminOrManager && (
+								<EmployeeOffboardingSection
+									organizationId={employee.organizationId}
+									employeeId={employeeId}
+									highlightedReviewId={highlightedReviewId}
+									managers={availableManagers.map((manager) => ({
+										id: manager.id,
+										name: buildAuthUserDisplayName(manager.user) || manager.id,
+									}))}
+									workPolicies={workPolicies.map((policy) => ({
+										id: policy.id,
+										name: policy.name,
+									}))}
+								/>
+							)}
+							{/* Admin export (#1166): org admins only, never for their own record. */}
+							{isOrgAdmin && (
+								<EmployeePersonalDataExportCard
+									organizationId={employee.organizationId}
+									employeeId={employeeId}
+									isOwnRecord={employee.userId === currentUserId}
+								/>
+							)}
+						</TabsContent>
+
+						{/* Tab 6: Personnel File (server-capability gated) */}
+						{personnelFile && (
+							<TabsContent value="personnel-file">
+								<PersonnelFilePanel capability={personnelFile} />
+							</TabsContent>
+						)}
 					</Tabs>
 				) : (
-					<div className="flex flex-col gap-4">{overview}</div>
+					<div className="flex flex-col gap-4">
+						<EmployeeReadNotices data={employeeData} />
+						<div className="grid gap-4 lg:grid-cols-3">
+							<EmployeeOverviewCard employee={employee} schedule={employeeData.schedule} t={t} />
+							{canEditDraftDetails && editForm}
+						</div>
+						<EmployeeInvitationActions
+							employee={employee}
+							accessTier={accessTier}
+							settingsAccess={settingsAccess}
+						/>
+					</div>
 				)}
 			</div>
 		</div>
@@ -276,21 +546,14 @@ function EmployeeDetailMissing() {
 				<EmployeeDetailHeader t={t} />
 				<NoEmployeeError
 					className="w-full max-w-xl"
-					feature={t(
-						"settings.employees.detailView.manageEmployees",
-						"manage employees",
-					)}
+					feature={t("settings.employees.detailView.manageEmployees", "manage employees")}
 				/>
 			</div>
 		</div>
 	);
 }
 
-function EmployeeDetailLoadError({
-	data,
-}: {
-	data: ReturnType<typeof useEmployee>;
-}) {
+function EmployeeDetailLoadError({ data }: { data: ReturnType<typeof useEmployee> }) {
 	const { t } = useTranslate();
 	return (
 		<div className="page-frame">
@@ -302,16 +565,9 @@ function EmployeeDetailLoadError({
 				>
 					<p className="text-sm">
 						{data.error?.message ||
-							t(
-								"settings.employees.detailView.loadFailed",
-								"Employee data could not be loaded",
-							)}
+							t("settings.employees.detailView.loadFailed", "Employee data could not be loaded")}
 					</p>
-					<Button
-						variant="outline"
-						onClick={() => void data.refetch()}
-						disabled={data.isFetching}
-					>
+					<Button variant="outline" onClick={() => void data.refetch()} disabled={data.isFetching}>
 						{t("common.retry", "Try again")}
 					</Button>
 				</div>
@@ -327,10 +583,7 @@ function EmployeeDetailLoading() {
 		<div className="page-frame">
 			<output
 				className="page-measure block space-y-6"
-				aria-label={t(
-					"settings.employees.detailView.loadingEmployeeData",
-					"Loading employee data",
-				)}
+				aria-label={t("settings.employees.detailView.loadingEmployeeData", "Loading employee data")}
 			>
 				<div className="space-y-2" aria-hidden="true">
 					<Skeleton className="h-4 w-36" />
@@ -346,82 +599,8 @@ function EmployeeDetailLoading() {
 	);
 }
 
-/** The overview tab: the employee's details and edit form, then the record's sections. */
-function EmployeeDetailOverview({
-	employee,
-	employeeId,
-	data,
-	accessTier,
-	currentUserId,
-	settingsAccess,
-	organizationId,
-	highlightedReviewId,
-	equipment,
-	editForm,
-}: {
-	employee: EmployeeDetail;
-	employeeId: string;
-	data: ReturnType<typeof useEmployee>;
-	accessTier: SettingsAccessTier;
-	currentUserId: string;
-	/** The viewer's settings access, worked out on the server (ADR 0002). */
-	settingsAccess: SettingsAccess | null;
-	organizationId?: string;
-	highlightedReviewId: string | null;
-	equipment: EquipmentView | null;
-	/** Shown unless the invitation draft already became an employee. */
-	editForm: ReactNode;
-}) {
-	const { t } = useTranslate();
-	const isDraft = employee.kind === "invitationDraft";
-	const canShowRealEmployeeSections = !isDraft;
-	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
-
-	return (
-		<>
-			<EmployeeReadNotices data={data} />
-			<div className="grid gap-4 lg:grid-cols-3">
-				<EmployeeOverviewCard
-					employee={employee}
-					schedule={data.schedule}
-					t={t}
-				/>
-				{canEditDraftDetails && editForm}
-			</div>
-
-			<EmployeeInvitationActions
-				employee={employee}
-				accessTier={accessTier}
-				settingsAccess={settingsAccess}
-			/>
-			{equipment && canShowRealEmployeeSections ? (
-				<EmployeeEquipment
-					key={`${organizationId}:${employeeId}`}
-					data={equipment}
-					employeeId={employeeId}
-				/>
-			) : null}
-
-			{canShowRealEmployeeSections && (
-				<EmployeeRecordSections
-					employee={employee}
-					employeeId={employeeId}
-					accessTier={accessTier}
-					currentUserId={currentUserId}
-					highlightedReviewId={highlightedReviewId}
-					data={data}
-				/>
-			)}
-		</>
-	);
-}
-
 /** What did not load beside the employee, and the work schedule still loading. */
-function EmployeeReadNotices({
-	data,
-}: {
-	data: ReturnType<typeof useEmployee>;
-}) {
+function EmployeeReadNotices({ data }: { data: ReturnType<typeof useEmployee> }) {
 	const { t } = useTranslate();
 	return (
 		<>
@@ -433,21 +612,14 @@ function EmployeeReadNotices({
 							"Some employee information could not be loaded. Your edits have been kept.",
 						)}
 					</p>
-					<Button
-						variant="outline"
-						onClick={() => void data.refetch()}
-						disabled={data.isFetching}
-					>
+					<Button variant="outline" onClick={() => void data.refetch()} disabled={data.isFetching}>
 						{t("common.retry", "Try again")}
 					</Button>
 				</div>
 			) : null}
 			{data.isLoadingSchedule ? (
 				<p role="status">
-					{t(
-						"settings.employees.detailView.loadingSchedule",
-						"Loading work schedule…",
-					)}
+					{t("settings.employees.detailView.loadingSchedule", "Loading work schedule…")}
 				</p>
 			) : null}
 		</>
@@ -497,6 +669,7 @@ function EmployeeDetailEditCard({
 			team={
 				teamOptions
 					? {
+							employeeId: employee.kind === "employee" ? employee.id : undefined,
 							currentTeam: employee.team
 								? { id: employee.team.id, name: employee.team.name }
 								: null,
@@ -506,221 +679,9 @@ function EmployeeDetailEditCard({
 			}
 			hasCustomFieldChanges={customFields.isDirty}
 			customFields={
-				isDraft ? null : (
-					<CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
-				)
+				isDraft ? null : <CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
 			}
 		/>
-	);
-}
-
-/** Sections that exist only for a real employee record, not an invitation draft. */
-function EmployeeRecordSections({
-	employee,
-	employeeId,
-	accessTier,
-	currentUserId,
-	highlightedReviewId,
-	data,
-}: {
-	employee: EmployeeDetail;
-	employeeId: string;
-	accessTier: SettingsAccessTier;
-	currentUserId: string;
-	highlightedReviewId: string | null;
-	data: ReturnType<typeof useEmployee>;
-}) {
-	const { t } = useTranslate();
-	const isOrgAdmin = accessTier === "orgAdmin";
-	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
-	const { availableManagers, workPolicies } = data;
-
-	const handleWorkBalanceRecalculation = async () => {
-		const result = await data
-			.requestWorkBalanceRecalculation()
-			.catch(() => null);
-
-		if (result?.success) {
-			toast.success(
-				t(
-					"settings.workBalanceRecalculation.requestSuccess",
-					"Work balance recalculation queued",
-				),
-			);
-			return;
-		}
-
-		toast.error(
-			result?.error ||
-				t(
-					"settings.workBalanceRecalculation.requestError",
-					"Failed to queue work balance recalculation",
-				),
-		);
-	};
-
-	return (
-		<>
-			{/* What the last deactivation ended, after Reactivate, until dismissed (#1441). */}
-			{isOrgAdmin && employee.kind === "employee" && (
-				<ReactivationChecklistCard employeeId={employeeId} />
-			)}
-
-			{isOrgAdmin && availableManagers.length > 0 && (
-				<ManagerAssignment
-					employeeId={employeeId}
-					currentManagers={employee.managers || []}
-					availableManagers={availableManagers}
-					onSuccess={data.refetch}
-				/>
-			)}
-
-			{isOrgAdmin && <EmployeeAssignedLocationsCard employeeId={employeeId} />}
-
-			{isOrgAdmin && (
-				<EmployeeCustomRolesCard
-					employeeId={employeeId}
-					organizationId={employee.organizationId}
-					isAdmin={isOrgAdmin}
-				/>
-			)}
-
-			<EmployeeSkillsCard
-				employeeId={employeeId}
-				organizationId={employee.organizationId}
-				canManageSkills={isOrgAdminOrManager}
-			/>
-
-			<EmployeeKioskCard employeeId={employeeId} />
-
-			{isOrgAdminOrManager && (
-				<EmployeeOffboardingSection
-					organizationId={employee.organizationId}
-					employeeId={employeeId}
-					highlightedReviewId={highlightedReviewId}
-					managers={availableManagers.map((manager) => ({
-						id: manager.id,
-						name: buildAuthUserDisplayName(manager.user) || manager.id,
-					}))}
-					workPolicies={workPolicies.map((policy) => ({
-						id: policy.id,
-						name: policy.name,
-					}))}
-				/>
-			)}
-
-			{/* Admin export (#1166): org admins only, never for their own record. */}
-			{isOrgAdmin && employee.kind === "employee" && (
-				<EmployeePersonalDataExportCard
-					organizationId={employee.organizationId}
-					employeeId={employeeId}
-					isOwnRecord={employee.userId === currentUserId}
-				/>
-			)}
-
-			<EmployeeEmploymentSections
-				employee={employee}
-				employeeId={employeeId}
-				accessTier={accessTier}
-				data={data}
-			/>
-
-			{/* Managers see it read-only for employees they manage (#996); the server decides. */}
-			{isOrgAdminOrManager && (
-				<EmployeeWorkBalanceSection employeeId={employeeId} />
-			)}
-
-			{isOrgAdmin && (
-				<WorkBalanceRecalculationCard
-					employeeName={buildAuthUserDisplayName(employee.user) || employee.id}
-					isPending={data.isRequestingWorkBalanceRecalculation}
-					onRecalculate={handleWorkBalanceRecalculation}
-					t={t}
-				/>
-			)}
-
-			<EmployeeRateSections employeeId={employeeId} accessTier={accessTier} />
-		</>
-	);
-}
-
-/** Employment dates and terms share the same refresh after a date correction. */
-function EmployeeEmploymentSections({
-	employee,
-	employeeId,
-	accessTier,
-	data,
-}: {
-	employee: EmployeeDetail;
-	employeeId: string;
-	accessTier: SettingsAccessTier;
-	data: ReturnType<typeof useEmployee>;
-}) {
-	const queryClient = useQueryClient();
-	const isOrgAdmin = accessTier === "orgAdmin";
-	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
-	const { workPolicies } = data;
-
-	return (
-		<>
-			{isOrgAdminOrManager && (
-				<EmployeeTrackingDateCard employeeId={employeeId} />
-			)}
-
-			{isOrgAdmin && employee.kind === "employee" ? (
-				<EmploymentDateCorrectionCard
-					key={employeeId}
-					employeeId={employeeId}
-					employmentStartDate={
-						employee.startDate
-							? new Date(employee.startDate).toISOString().slice(0, 10)
-							: null
-					}
-					onSaved={async () => {
-						await Promise.all([
-							data.refetch(),
-							queryClient.invalidateQueries({
-								queryKey: ["employee-tracking-date", employeeId],
-							}),
-							queryClient.invalidateQueries({
-								queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId],
-							}),
-						]);
-					}}
-				/>
-			) : null}
-
-			<EmployeeEmploymentHistoryCard
-				history={data.employmentHistory}
-				canManage={isOrgAdmin}
-				onCreate={data.createEmploymentHistory}
-				onConfirm={data.confirmEmploymentHistory}
-				onCancel={data.cancelEmploymentHistory}
-				isCreating={data.isCreatingEmploymentHistory}
-				isMutating={
-					data.isConfirmingEmploymentHistory ||
-					data.isCancelingEmploymentHistory
-				}
-				workPolicies={workPolicies}
-				notice={
-					isOrgAdmin ? (
-						<WageHistoryMergeNote employeeId={employeeId} />
-					) : undefined
-				}
-				lifecycleEvents={
-					employee.kind === "employee" ? (
-						<EmploymentLifecycleEvents employeeId={employeeId} />
-					) : undefined
-				}
-				changeWage={
-					isOrgAdmin &&
-					employee.kind === "employee" &&
-					employee.contractTypeToday === "hourly"
-						? { onSubmit: data.changeWage, isPending: data.isChangingWage }
-						: undefined
-				}
-			/>
-		</>
 	);
 }
 
@@ -743,10 +704,7 @@ function EmployeeRateSections({
 				title={
 					<>
 						<IconCoin aria-hidden="true" className="size-5" />
-						{t(
-							"settings.billableTime.rates.employeeRateTitle",
-							"Billable rate",
-						)}
+						{t("settings.billableTime.rates.employeeRateTitle", "Billable rate")}
 					</>
 				}
 				description={t(
@@ -784,8 +742,7 @@ function EmployeeInvitationActions({
 }) {
 	const canManageDraftActions =
 		accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
-	if (employee.kind !== "invitationDraft" || !canManageDraftActions)
-		return null;
+	if (employee.kind !== "invitationDraft" || !canManageDraftActions) return null;
 	return (
 		<EmployeeDraftActions
 			organizationId={employee.organizationId}

@@ -15,6 +15,7 @@ import {
 	getContractDefaults,
 	getContractTemplate,
 	listContractMigrationConflicts,
+	listContractsReviewQueue,
 	listContractTemplates,
 	listEmploymentTermAgreements,
 	previewContractDefaultChange,
@@ -644,6 +645,22 @@ export const listContractMigrationConflictsAction = organizationAction(
 	({ organizationId, input }) =>
 		storeStep("contracts.listMigrationConflicts", (db) =>
 			listContractMigrationConflicts(db, organizationId, input ?? {}),
+		),
+);
+
+export const listContractsReviewQueueAction = organizationAction(
+	{
+		name: "contracts.listReviewQueue",
+		requires: "orgAdmin",
+		schema: z
+			.strictObject({
+				includeResolved: z.boolean().optional(),
+			})
+			.optional(),
+	},
+	({ organizationId, input }) =>
+		storeStep("contracts.listReviewQueue", (db) =>
+			listContractsReviewQueue(db, organizationId, input ?? {}),
 		),
 );
 

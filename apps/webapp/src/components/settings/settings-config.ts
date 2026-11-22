@@ -1,7 +1,4 @@
-import {
-	hasSettingsAccessTier,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
+import { hasSettingsAccessTier, type SettingsAccessTier } from "@/lib/settings-access";
 
 export type SettingsGroup =
 	| "account"
@@ -260,8 +257,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.myData.title",
 		titleDefault: "My data",
 		descriptionKey: "settings.myData.description",
-		descriptionDefault:
-			"Download a copy of the personal data this organization keeps about you",
+		descriptionDefault: "Download a copy of the personal data this organization keeps about you",
 		href: "/settings/my-data",
 		icon: "database-export",
 		minimumTier: "member",
@@ -294,8 +290,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.teams.title",
 		titleDefault: "Teams",
 		descriptionKey: "settings.teams.description",
-		descriptionDefault:
-			"Organize employees into teams and manage team assignments",
+		descriptionDefault: "Organize employees into teams and manage team assignments",
 		href: "/settings/teams",
 		icon: "users-group",
 		minimumTier: "manager",
@@ -317,8 +312,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.navigation.identityAccess.title",
 		titleDefault: "Identity & Access",
 		descriptionKey: "settings.navigation.identityAccess.description",
-		descriptionDefault:
-			"Configure SSO, social login, provisioning and organization access",
+		descriptionDefault: "Configure SSO, social login, provisioning and organization access",
 		href: "/settings/enterprise/identity-setup",
 		icon: "key",
 		minimumTier: "orgAdmin",
@@ -329,8 +323,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.customDomains.title",
 		titleDefault: "Domain & Branding",
 		descriptionKey: "settings.navigation.domainBranding.description",
-		descriptionDefault:
-			"Configure your organization’s custom domain and branding",
+		descriptionDefault: "Configure your organization’s custom domain and branding",
 		href: "/settings/enterprise/domains",
 		icon: "world",
 		minimumTier: "orgAdmin",
@@ -364,8 +357,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.vehicles.title",
 		titleDefault: "Vehicles",
 		descriptionKey: "settings.vehicles.description",
-		descriptionDefault:
-			"Vehicles your employees drive for work, and their assigned drivers",
+		descriptionDefault: "Vehicles your employees drive for work, and their assigned drivers",
 		href: "/settings/vehicles",
 		icon: "car",
 		minimumTier: "orgAdmin",
@@ -388,8 +380,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.personnelFiles.settings.title",
 		titleDefault: "Personnel Files",
 		descriptionKey: "settings.navigation.personnel-files.description",
-		descriptionDefault:
-			"Manage personnel file access, expiry reminders and document retention",
+		descriptionDefault: "Manage personnel file access, expiry reminders and document retention",
 		href: "/settings/personnel-files",
 		icon: "file-text",
 		minimumTier: "orgAdmin",
@@ -424,8 +415,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.billing.title",
 		titleDefault: "Billing & Subscription",
 		descriptionKey: "settings.billing.description",
-		descriptionDefault:
-			"Manage your subscription, payment methods, and invoices",
+		descriptionDefault: "Manage your subscription, payment methods, and invoices",
 		href: "/settings/billing",
 		icon: "credit-card",
 		minimumTier: "orgAdmin",
@@ -433,12 +423,23 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		requiresBilling: true,
 	},
 	{
+		id: "contracts",
+		titleKey: "settings.contracts.title",
+		titleDefault: "Contracts",
+		descriptionKey: "settings.contracts.description",
+		descriptionDefault:
+			"Manage default contracts, templates, work policy versions, bulk updates, and review queues",
+		href: "/settings/contracts",
+		icon: "file-text",
+		minimumTier: "orgAdmin",
+		group: "policies",
+	},
+	{
 		id: "work-policies",
 		titleKey: "settings.workPolicies.title",
 		titleDefault: "Work Policies",
 		descriptionKey: "settings.workPolicies.description",
-		descriptionDefault:
-			"Configure work schedules, time limits, and break requirements",
+		descriptionDefault: "Configure work schedules, time limits, and break requirements",
 		href: "/settings/work-policies",
 		icon: "gavel",
 		minimumTier: "manager",
@@ -460,8 +461,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.vacation.employees.title",
 		titleDefault: "Employee Allowances",
 		descriptionKey: "settings.vacation.employees.description",
-		descriptionDefault:
-			"Configure custom vacation allowances for individual employees",
+		descriptionDefault: "Configure custom vacation allowances for individual employees",
 		href: "/settings/vacation/employees",
 		icon: "beach",
 		minimumTier: "orgAdmin",
@@ -484,8 +484,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.navigation.approval.title",
 		titleDefault: "Approval",
 		descriptionKey: "settings.approvalPolicies.description",
-		descriptionDefault:
-			"Configure sequential approval chains for operational workflows",
+		descriptionDefault: "Configure sequential approval chains for operational workflows",
 		href: "/settings/approval-policies",
 		icon: "git-branch",
 		minimumTier: "orgAdmin",
@@ -496,8 +495,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.navigation.clocking.title",
 		titleDefault: "Clocking",
 		descriptionKey: "settings.navigation.clocking.description",
-		descriptionDefault:
-			"Configure tracking, automatic clock-out, reminders and period submissions",
+		descriptionDefault: "Configure tracking, automatic clock-out, reminders and period submissions",
 		href: "/settings/clocking",
 		icon: "clock",
 		minimumTier: "orgAdmin",
@@ -508,8 +506,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workCategories.title",
 		titleDefault: "Work Categories",
 		descriptionKey: "settings.workCategories.description",
-		descriptionDefault:
-			"Define work categories with time factors for effective time calculation",
+		descriptionDefault: "Define work categories with time factors for effective time calculation",
 		href: "/settings/work-categories",
 		icon: "tag",
 		minimumTier: "manager",
@@ -520,8 +517,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.positionCapture.title",
 		titleDefault: "Position capture",
 		descriptionKey: "settings.positionCapture.description",
-		descriptionDefault:
-			"Record positions with employees' own clock events, with their consent",
+		descriptionDefault: "Record positions with employees' own clock events, with their consent",
 		href: "/settings/position-capture",
 		icon: "map-pin",
 		minimumTier: "orgAdmin",
@@ -532,8 +528,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.kiosks.title",
 		titleDefault: "Kiosks",
 		descriptionKey: "settings.kiosks.description",
-		descriptionDefault:
-			"Shared devices at a location where employees clock with their kiosk PIN",
+		descriptionDefault: "Shared devices at a location where employees clock with their kiosk PIN",
 		href: "/settings/kiosks",
 		icon: "device-tablet",
 		minimumTier: "orgAdmin",
@@ -544,8 +539,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workDiagnostics.title",
 		titleDefault: "Work Diagnostics",
 		descriptionKey: "settings.workDiagnostics.description",
-		descriptionDefault:
-			"Find missing or conflicting time records and time entry chain issues",
+		descriptionDefault: "Find missing or conflicting time records and time entry chain issues",
 		href: "/settings/work-diagnostics",
 		icon: "shield-check",
 		minimumTier: "orgAdmin",
@@ -556,8 +550,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.skills.title",
 		titleDefault: "Skills & Qualifications",
 		descriptionKey: "settings.skills.description",
-		descriptionDefault:
-			"Manage skill catalog, certifications, and employee qualifications",
+		descriptionDefault: "Manage skill catalog, certifications, and employee qualifications",
 		href: "/settings/skills",
 		icon: "certificate",
 		minimumTier: "manager",
@@ -592,8 +585,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.projects.title",
 		titleDefault: "Projects",
 		descriptionKey: "settings.projects.description",
-		descriptionDefault:
-			"Manage projects, budgets, deadlines, and time assignments",
+		descriptionDefault: "Manage projects, budgets, deadlines, and time assignments",
 		href: "/settings/projects",
 		icon: "briefcase",
 		minimumTier: "manager",
@@ -607,8 +599,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.billableTime.title",
 		titleDefault: "Billable Time",
 		descriptionKey: "settings.billableTime.description",
-		descriptionDefault:
-			"Billable currency and what your organization charges customers for work",
+		descriptionDefault: "Billable currency and what your organization charges customers for work",
 		href: "/settings/billable-time",
 		icon: "receipt",
 		minimumTier: "orgAdmin",
@@ -620,8 +611,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.reportShareLinks.title",
 		titleDefault: "Report Share Links",
 		descriptionKey: "settings.reportShareLinks.description",
-		descriptionDefault:
-			"See and revoke every link that shares a project or customer report",
+		descriptionDefault: "See and revoke every link that shares a project or customer report",
 		href: "/settings/report-share-links",
 		icon: "share",
 		minimumTier: "orgAdmin",
@@ -645,8 +635,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.surcharges.title",
 		titleDefault: "Surcharges",
 		descriptionKey: "settings.surcharges.description",
-		descriptionDefault:
-			"Configure time surcharges for overtime, night work, and holidays",
+		descriptionDefault: "Configure time surcharges for overtime, night work, and holidays",
 		href: "/settings/surcharges",
 		icon: "percentage",
 		minimumTier: "manager",
@@ -692,8 +681,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.navigation.email.title",
 		titleDefault: "Email",
 		descriptionKey: "settings.navigation.email.description",
-		descriptionDefault:
-			"Configure email delivery and customize message templates",
+		descriptionDefault: "Configure email delivery and customize message templates",
 		href: "/settings/enterprise/email",
 		icon: "mail",
 		minimumTier: "orgAdmin",
@@ -704,8 +692,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.navigation.chat-integrations.title",
 		titleDefault: "Chat Integrations",
 		descriptionKey: "settings.navigation.chat-integrations.description",
-		descriptionDefault:
-			"Configure Slack, Microsoft Teams, Telegram and Discord",
+		descriptionDefault: "Configure Slack, Microsoft Teams, Telegram and Discord",
 		href: "/settings/notification-channels",
 		icon: "messages",
 		minimumTier: "orgAdmin",
@@ -716,8 +703,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.calendar.title",
 		titleDefault: "Calendar Sync",
 		descriptionKey: "settings.calendar.description",
-		descriptionDefault:
-			"Configure calendar providers, ICS feeds, and sync settings",
+		descriptionDefault: "Configure calendar providers, ICS feeds, and sync settings",
 		href: "/settings/calendar",
 		icon: "calendar-sync",
 		minimumTier: "manager",
@@ -739,8 +725,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.worksCouncil.title",
 		titleDefault: "Works Council Mode",
 		descriptionKey: "settings.worksCouncil.description",
-		descriptionDefault:
-			"Configure privacy-safe Betriebsrat access and review exports",
+		descriptionDefault: "Configure privacy-safe Betriebsrat access and review exports",
 		href: "/settings/compliance/works-council",
 		icon: "gavel",
 		minimumTier: "orgAdmin",
@@ -763,8 +748,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.avv.title",
 		titleDefault: "Data Processing Agreement",
 		descriptionKey: "settings.avv.description",
-		descriptionDefault:
-			"Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
+		descriptionDefault: "Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
 		href: "/settings/avv",
 		icon: "file-text",
 		minimumTier: "orgAdmin",
@@ -776,8 +760,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.import.title",
 		titleDefault: "Import Data",
 		descriptionKey: "settings.import.description",
-		descriptionDefault:
-			"Import data from supported providers like Clockodo and Clockin",
+		descriptionDefault: "Import data from supported providers like Clockodo and Clockin",
 		href: "/settings/import",
 		icon: "database-import",
 		minimumTier: "orgAdmin",
@@ -832,8 +815,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.demoData.title",
 		titleDefault: "Demo Data",
 		descriptionKey: "settings.demoData.description",
-		descriptionDefault:
-			"Generate sample data for testing or clear all time-related data",
+		descriptionDefault: "Generate sample data for testing or clear all time-related data",
 		href: "/settings/demo",
 		icon: "test-pipe",
 		minimumTier: "orgAdmin",
@@ -849,12 +831,8 @@ export function getVisibleSettings(
 	drivingLicenceSettingsVisible = false,
 ): SettingsEntry[] {
 	return SETTINGS_ENTRIES.filter((entry) => {
-		const projectManagerAccess =
-			managesProject && entry.visibleToProjectManagers === true;
-		if (
-			!hasSettingsAccessTier(accessTier, entry.minimumTier) &&
-			!projectManagerAccess
-		) {
+		const projectManagerAccess = managesProject && entry.visibleToProjectManagers === true;
+		if (!hasSettingsAccessTier(accessTier, entry.minimumTier) && !projectManagerAccess) {
 			return false;
 		}
 		if (entry.requiresBilling && !billingEnabled) return false;
@@ -863,9 +841,7 @@ export function getVisibleSettings(
 	});
 }
 
-export function getVisibleGroups(
-	entries: SettingsEntry[],
-): SettingsGroupConfig[] {
+export function getVisibleGroups(entries: SettingsEntry[]): SettingsGroupConfig[] {
 	const visibleGroupIds = new Set(entries.map((entry) => entry.group));
 
 	return SETTINGS_GROUPS.filter((group) => visibleGroupIds.has(group.id));
@@ -882,10 +858,7 @@ export function filterSettingsByFeatureFlags(
 		}
 		if (entry.requiredFeature === "billableTimeEnabled") {
 			// Billable Time needs projects; never show it on a stale flag without them.
-			return (
-				(featureFlags.billableTimeEnabled ?? false) &&
-				(featureFlags.projectsEnabled ?? false)
-			);
+			return (featureFlags.billableTimeEnabled ?? false) && (featureFlags.projectsEnabled ?? false);
 		}
 
 		return featureFlags[entry.requiredFeature] ?? false;
@@ -926,9 +899,6 @@ export function getResolvedSettingsVisibility({
 	};
 }
 
-export function getEntriesByGroup(
-	entries: SettingsEntry[],
-	group: SettingsGroup,
-): SettingsEntry[] {
+export function getEntriesByGroup(entries: SettingsEntry[], group: SettingsGroup): SettingsEntry[] {
 	return entries.filter((entry) => entry.group === group);
 }

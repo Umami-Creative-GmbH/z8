@@ -168,9 +168,7 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 	},
 	// Equipment's and Approval's new titles still need Tolgee sync. Until then the
 	// shell uses their catalog-backed Settings ancestor; the page/nav have dedicated defaults.
-	...SETTINGS_ENTRIES.filter(
-		(entry) => entry.id !== "equipment" && entry.id !== "approval",
-	).map(
+	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment" && entry.id !== "approval").map(
 		(entry) => ({
 			id: `settings-${entry.id}`,
 			href: entry.href,
@@ -194,12 +192,8 @@ export const UNKNOWN_ROUTE_METADATA: AppRouteMetadata = {
 };
 
 export function normalizeAppPath(pathname: string): string {
-	const [firstSegment, ...remainingSegments] = pathname
-		.split("/")
-		.filter(Boolean);
-	const segments = ALL_LANGUAGES.includes(
-		firstSegment as (typeof ALL_LANGUAGES)[number],
-	)
+	const [firstSegment, ...remainingSegments] = pathname.split("/").filter(Boolean);
+	const segments = ALL_LANGUAGES.includes(firstSegment as (typeof ALL_LANGUAGES)[number])
 		? remainingSegments
 		: [firstSegment, ...remainingSegments].filter(Boolean);
 	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
@@ -227,6 +221,7 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/custom-fields",
 	"/settings/customers",
 	"/settings/demo",
+	"/settings/contracts",
 	"/settings/driving-licence",
 	"/settings/employees",
 	"/settings/enterprise/api-keys",
@@ -359,7 +354,6 @@ export function resolveAppRouteMetadata(pathname: string): AppRouteMetadata {
 	return (
 		[...APP_ROUTE_METADATA]
 			.sort((left, right) => right.href.length - left.href.length)
-			.find((route) => routeMatches(normalizedPath, route.href)) ??
-		UNKNOWN_ROUTE_METADATA
+			.find((route) => routeMatches(normalizedPath, route.href)) ?? UNKNOWN_ROUTE_METADATA
 	);
 }

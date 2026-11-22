@@ -77,10 +77,7 @@ export const APP_NAMESPACES = [
 export const MAILER_NAMESPACES = ["emails"] as const;
 
 /** Every catalog under `messages/`: the app's namespaces and the mailer's. */
-export const CATALOG_NAMESPACES = [
-	...APP_NAMESPACES,
-	...MAILER_NAMESPACES,
-] as const;
+export const CATALOG_NAMESPACES = [...APP_NAMESPACES, ...MAILER_NAMESPACES] as const;
 
 export type Namespace = (typeof CATALOG_NAMESPACES)[number];
 
@@ -138,43 +135,33 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/billing": ["common", "settings/generic", "billing"],
 	"/settings/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings": ["common", "settings/generic"],
-	"/settings/approval-escalation": [
-		"common",
-		"settings/generic",
-		"settings/rules",
-	],
+	"/settings/approval-escalation": ["common", "settings/generic", "settings/rules"],
 	"/settings/approval-policies": [
 		"common",
 		"settings/generic",
 		"settings/rules",
 		"settings/people",
 	],
-	"/settings/audit-export": [
-		"common",
-		"settings/generic",
-		"settings/auditExport",
-	],
+	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/audit-log": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/calendar": ["common", "settings/generic", "settings/integrations"],
 	"/settings/change-policies": ["common", "settings/generic", "settings/rules"],
-	"/settings/clockodo-import": [
+	"/settings/clockodo-import": ["common", "settings/generic", "settings/integrations"],
+	"/settings/contracts": [
 		"common",
 		"settings/generic",
-		"settings/integrations",
+		"settings/workPolicies",
+		"settings/rules",
+		"settings/people",
 	],
 	"/settings/coverage-rules": ["common", "settings/generic", "settings/rules"],
 	"/settings/demo": ["common", "settings/generic", "settings/demo"],
 	"/settings/discord": ["common", "settings/generic", "settings/integrations"],
-	"/settings/employees": ["common", "settings/generic", "settings/people"],
+	"/settings/employees": ["common", "settings/generic", "settings/people", "settings/workPolicies"],
 	// One boundary (enterprise/layout.tsx) serves every enterprise page; nested
 	// scopes would ship the enterprise catalog twice. webhooks: the API key pages
 	// embed the webhook management client.
-	"/settings/enterprise": [
-		"common",
-		"settings/generic",
-		"settings/enterprise",
-		"webhooks",
-	],
+	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise", "webhooks"],
 	// organization: the tracking-date, period-submission, reminder and automatic
 	// clock-out panels moved here from the organization page.
 	"/settings/clocking": [
@@ -184,51 +171,22 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 		"settings/workPolicies",
 		"organization",
 	],
-	"/settings/notification-channels": [
-		"common",
-		"settings/generic",
-		"settings/integrations",
-	],
+	"/settings/notification-channels": ["common", "settings/generic", "settings/integrations"],
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
 	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.
-	"/settings/payroll-export": [
-		"common",
-		"settings/generic",
-		"settings/payrollExport",
-		"payroll",
-	],
-	"/settings/personnel-files": [
-		"common",
-		"settings/generic",
-		"settings/people",
-	],
-	"/settings/payroll-readiness": [
-		"common",
-		"settings/generic",
-		"settings/payrollExport",
-	],
-	"/settings/work-diagnostics": [
-		"common",
-		"settings/generic",
-		"settings/payrollExport",
-	],
+	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport", "payroll"],
+	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
+	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/report-share-links": ["common", "settings/generic", "reports"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],
-	"/settings/scheduled-exports": [
-		"common",
-		"settings/generic",
-		"settings/scheduledExports",
-	],
+	"/settings/scheduled-exports": ["common", "settings/generic", "settings/scheduledExports"],
 	"/settings/shifts": ["common", "settings/generic", "settings/rules"],
 	"/settings/slack": ["common", "settings/generic", "settings/integrations"],
 	"/settings/surcharges": ["common", "settings/generic", "settings/rules"],
 	"/settings/teams": ["common", "settings/generic", "settings/people"],
-	"/settings/teams-notifications": [
-		"common",
-		"settings/generic",
-		"settings/integrations",
-	],
+	"/settings/teams-notifications": ["common", "settings/generic", "settings/integrations"],
 	"/settings/telegram": ["common", "settings/generic", "settings/integrations"],
 	"/settings/travel-expenses": ["common", "settings/generic", "travelExpenses"],
 	"/settings/vacation": [
@@ -243,22 +201,10 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/settings/work-categories": ["common", "settings/generic", "settings/rules"],
 	"/settings/vehicles": ["common", "settings/generic", "settings/workPolicies"],
 	"/settings/equipment": ["common", "settings/generic"],
-	"/settings/vehicle-use": [
-		"common",
-		"settings/generic",
-		"settings/workPolicies",
-	],
+	"/settings/vehicle-use": ["common", "settings/generic", "settings/workPolicies"],
 	// settings/workPolicies: the intended-driver assignment cards (#1423).
-	"/settings/driving-licence": [
-		"common",
-		"settings/generic",
-		"settings/workPolicies",
-	],
-	"/settings/position-capture": [
-		"common",
-		"settings/generic",
-		"settings/workPolicies",
-	],
+	"/settings/driving-licence": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/position-capture": ["common", "settings/generic", "settings/workPolicies"],
 	"/settings/work-policies": [
 		"common",
 		"settings/generic",
@@ -284,8 +230,7 @@ export function getNamespacesForRoute(pathname: string): AppNamespace[] {
 		.sort(([a], [b]) => b.length - a.length);
 
 	for (const [route, namespaces] of prefixRoutes) {
-		const isSegmentBoundaryMatch =
-			pathname === route || pathname.startsWith(`${route}/`);
+		const isSegmentBoundaryMatch = pathname === route || pathname.startsWith(`${route}/`);
 		if (isSegmentBoundaryMatch) {
 			return namespaces;
 		}
@@ -312,10 +257,7 @@ export function mergeTreeTranslations(
 	return merged;
 }
 
-function mergeTreeTranslationInto(
-	target: TreeTranslationsData,
-	source: TreeTranslationsData,
-) {
+function mergeTreeTranslationInto(target: TreeTranslationsData, source: TreeTranslationsData) {
 	for (const [key, value] of Object.entries(source)) {
 		const targetValue = target[key];
 		if (isTreeTranslationsData(targetValue) && isTreeTranslationsData(value)) {

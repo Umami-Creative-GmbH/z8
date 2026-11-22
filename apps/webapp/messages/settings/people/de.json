@@ -95,7 +95,12 @@
 				"systemRole": "Systemrolle",
 				"systemRoleDescription": "Bestimmt die Zugriffsberechtigung im System",
 				"tabs": {
-					"overview": "Übersicht"
+					"overview": "Übersicht",
+					"contract": "Vertrag",
+					"workPolicy": "Arbeitsrichtlinie",
+					"timeBalance": "Zeit & Saldo",
+					"assignments": "Zugriff & Rollen",
+					"leavingDate": "Austrittsdatum"
 				},
 				"team": "Team",
 				"teamClearNotice": "Durch das Speichern wird die Mitgliedschaft dieses Mitarbeiters im Team {currentTeam} beendet. Eine etwaige weitere Teammitgliedschaft wird zu seinem primären Team.",
@@ -105,7 +110,8 @@
 				"updateFailed": "Mitarbeiter konnte nicht aktualisiert werden",
 				"updateSuccess": "Mitarbeiter erfolgreich aktualisiert",
 				"viewDescription": "Mitarbeiterdetails anzeigen",
-				"workSchedule": "Arbeitszeitplan"
+				"workSchedule": "Arbeitszeitplan",
+				"tabsAriaLabel": "Bereiche der Mitarbeiterdetails"
 			},
 			"directory": {
 				"actions": {
@@ -723,6 +729,31 @@
 					"template": "Vorlage herunterladen",
 					"title": "Anfangssalden hochladen"
 				}
+			},
+			"leavingDate": {
+				"saved": "Austrittsdatum aktualisiert",
+				"title": "Austrittsdatum",
+				"description": "Planen Sie einen zukünftigen Austritt, führen Sie ein sofortiges Offboarding durch, erfassen Sie ein rückwirkendes Austrittsdatum, korrigieren Sie ein vergangenes Datum oder tragen Sie historische Austrittsdaten nach.",
+				"modeLegend": "Austrittsaktion",
+				"willLeave": "Tritt aus (zukünftiges Datum)",
+				"offboardNow": "Sofortiges Offboarding",
+				"hasLeft": "Ist ausgetreten (vergangenes Datum)",
+				"correctPastDate": "Vergangenes Austrittsdatum korrigieren",
+				"historicalBackfill": "Historisches Austrittsdatum nachtragen",
+				"dateOnlyTitle": "Reine Datumskorrektur",
+				"dateOnlyDescription": "Die Korrektur eines vergangenen Austrittsdatums passt ausschließlich das erfasste Datum an, ohne den wirksamen Austritt wieder aufzuheben. Nutzen Sie „Wiedereinstellen“ für eine neue Beschäftigungsperiode.",
+				"loadingPastPreview": "Prüfe Arbeitszeiten nach dem Stichtag sowie geschlossene oder abgerechnete Lohnzeiträume…",
+				"postCutoffWorkCount": "{count} Arbeitszeiten nach dem Austrittsdatum",
+				"closedMonthsCount": "{count} betroffene abgeschlossene Monate",
+				"settledDaysCount": "{count} betroffene abgerechnete Lohntage",
+				"payrollUntouchedNotice": "Abgeschlossene Monate und abgerechnete Lohntage bleiben unverändert; es wird eine dauerhafte Prüfaufgabe zur Lohnabstimmung angelegt.",
+				"workAfterCutoffNotice": "Nach dem Austrittsdatum existieren erfasste Arbeitszeiten; es wird eine dauerhafte Prüfaufgabe angelegt.",
+				"ackDuties": "Administratoren übernehmen offene Genehmigungsaufgaben, falls keine Vertretung gewählt wird.",
+				"reasonLabel": "Prüfvermerk (optional)",
+				"submitWillLeave": "Austrittsdatum planen",
+				"submitHasLeft": "Rückwirkenden Austritt erfassen",
+				"submitCorrectDate": "Vergangenes Datum korrigieren",
+				"submitHistorical": "Historisches Datum speichern"
 			}
 		},
 		"employmentHistory": {

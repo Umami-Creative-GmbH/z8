@@ -20,12 +20,15 @@ interface WorkPolicyManagementProps {
 	accessTier: SettingsAccessTier;
 	/** The organization's resolved IANA timezone (UTC when unset). */
 	organizationTimezone: string;
+	/** Enables future-dated work policy version publishing when true. */
+	workPolicyVersioningEnabled?: boolean;
 }
 
 export function WorkPolicyManagement({
 	organizationId,
 	accessTier,
 	organizationTimezone,
+	workPolicyVersioningEnabled = false,
 }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -161,6 +164,7 @@ export function WorkPolicyManagement({
 					onOpenChange={setPolicyDialogOpen}
 					organizationId={organizationId}
 					editingPolicy={editingPolicy}
+					workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 					onSuccess={handlePolicySuccess}
 				/>
 			) : null}
