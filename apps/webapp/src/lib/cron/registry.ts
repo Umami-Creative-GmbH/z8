@@ -19,6 +19,7 @@ import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-categor
 import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
+import type { ContractChangeBatchRecoveryResult } from "@/lib/jobs/contract-change-batches";
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
@@ -418,6 +419,19 @@ export const CRON_JOBS = {
 				"@/lib/jobs/employee-departures"
 			);
 			return runEmployeeDepartureMaintenance();
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
+	"cron:contract-batch-recovery": {
+		schedule: "* * * * *", // Every minute
+		description:
+			"Recover stalled pending (>10s) and lease-expired contract change batches across inline and async modes",
+		processor: async (): Promise<ContractChangeBatchRecoveryResult> => {
+			const { runContractChangeBatchRecoveryJob } = await import(
+				"@/lib/jobs/contract-change-batches"
+			);
+			return runContractChangeBatchRecoveryJob();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},
