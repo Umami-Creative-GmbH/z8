@@ -73,13 +73,14 @@ const SHELL_SOURCES = [
 	"lib/navigation/navigation-manifest.ts",
 	"lib/navigation/route-metadata.ts",
 ];
-/** Navigation manifest route titles awaiting Tolgee sync (#1944, #1952); remove each key once synced. */
+/** Route titles awaiting Tolgee sync (#1944, #1952, #1958); remove each key once synced. */
 const ROUTE_TITLES_AWAITING_SYNC = new Set([
 	"nav.my-driving-licence",
 	"nav.team-driving-licences",
 	"nav.expense-finance",
 	"nav.missing-vehicle-logs",
 	"nav.billable-hand-off",
+	"settings.payrollExport.connectorsTitle",
 ]);
 function getPath(value: unknown, path: readonly string[]): unknown {
 	return path.reduce<unknown>(

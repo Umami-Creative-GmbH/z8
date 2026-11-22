@@ -209,4 +209,22 @@ describe("buildStaticAppSearchResults", () => {
 		const ids = results.map((result) => result.id);
 		expect(new Set(ids).size).toBe(ids.length);
 	});
+
+	it("indexes /settings/payroll-export as Payroll Connectors & Wage Types and omits removed payroll settings (#1957, #1958)", () => {
+		const results = buildStaticAppSearchResults({
+			t,
+			employeeRole: "admin",
+			settingsAccessTier: "orgAdmin",
+			billingEnabled: true,
+			featureFlags: enabledFeatures,
+		});
+
+		expect(results.find((result) => result.href === "/settings/payroll-export")).toMatchObject({
+			type: "setting",
+			id: "setting:payroll-export",
+			title: "Payroll Connectors & Wage Types",
+		});
+		expect(results.some((result) => result.href === "/settings/payroll-readiness")).toBe(false);
+		expect(results.some((result) => result.href === "/settings/closed-months")).toBe(false);
+	});
 });

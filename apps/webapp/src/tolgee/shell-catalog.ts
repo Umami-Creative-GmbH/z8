@@ -241,8 +241,6 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.group.administration",
 		"settings.group.data",
 		"settings.group.enterprise",
-		"settings.group.integrations",
-		"settings.group.notifications",
 		"settings.group.organization",
 		"settings.implementationChecklist.entryDescription",
 		"settings.implementationChecklist.title",

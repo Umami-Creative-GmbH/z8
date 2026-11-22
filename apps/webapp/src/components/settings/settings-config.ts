@@ -11,8 +11,7 @@ export type SettingsGroup =
 	| "policies"
 	| "projects"
 	| "payroll"
-	| "notifications"
-	| "integrations"
+	| "integrations-channels"
 	| "compliance"
 	| "data";
 
@@ -177,14 +176,9 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		labelDefault: "Payroll",
 	},
 	{
-		id: "notifications",
-		labelKey: "settings.group.notifications",
-		labelDefault: "Notifications",
-	},
-	{
-		id: "integrations",
-		labelKey: "settings.group.integrations",
-		labelDefault: "Integrations",
+		id: "integrations-channels",
+		labelKey: "settings.group.integrationsChannels",
+		labelDefault: "Integrations & Channels",
 	},
 	{
 		id: "compliance",
@@ -655,10 +649,10 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	},
 	{
 		id: "payroll-export",
-		titleKey: "settings.payrollExport.title",
-		titleDefault: "Payroll Export",
-		descriptionKey: "settings.payrollExport.description",
-		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
+		titleKey: "settings.payrollExport.connectorsTitle",
+		titleDefault: "Payroll Connectors & Wage Types",
+		descriptionKey: "settings.payrollExport.connectorsDescription",
+		descriptionDefault: "Configure payroll export connectors and wage type mappings",
 		href: "/settings/payroll-export",
 		icon: "database-export",
 		minimumTier: "orgAdmin",
@@ -674,7 +668,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/enterprise/email",
 		icon: "mail",
 		minimumTier: "orgAdmin",
-		group: "notifications",
+		group: "integrations-channels",
 	},
 	{
 		id: "chat-integrations",
@@ -686,7 +680,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/notification-channels",
 		icon: "messages",
 		minimumTier: "orgAdmin",
-		group: "notifications",
+		group: "integrations-channels",
 	},
 	{
 		id: "calendar",
@@ -698,7 +692,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/calendar",
 		icon: "calendar-sync",
 		minimumTier: "manager",
-		group: "integrations",
+		group: "integrations-channels",
 	},
 	{
 		id: "developer-access",
@@ -709,7 +703,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/enterprise/api-keys",
 		icon: "key",
 		minimumTier: "orgAdmin",
-		group: "integrations",
+		group: "integrations-channels",
 	},
 	{
 		id: "works-council",

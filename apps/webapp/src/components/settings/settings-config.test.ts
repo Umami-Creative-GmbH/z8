@@ -375,9 +375,9 @@ describe("settings visibility tiers", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		expect(
 			entries
-				.filter((entry) => entry.group === "notifications")
+				.filter((entry) => entry.group === "integrations-channels")
 				.map((entry) => entry.id),
-		).toEqual(["email", "chat-integrations"]);
+		).toEqual(["email", "chat-integrations", "calendar", "developer-access"]);
 		expect(entries.find((entry) => entry.id === "notifications")).toMatchObject(
 			{
 				group: "account",
@@ -388,7 +388,7 @@ describe("settings visibility tiers", () => {
 		for (const tier of ["member", "manager"] as const)
 			expect(
 				getVisibleSettings(tier, true).some(
-					(entry) => entry.group === "notifications",
+					(entry) => entry.id === "email" || entry.id === "chat-integrations",
 				),
 			).toBe(false);
 	});
@@ -402,9 +402,9 @@ describe("settings visibility tiers", () => {
 		);
 		expect(
 			entries
-				.filter((entry) => entry.group === "integrations")
+				.filter((entry) => entry.group === "integrations-channels")
 				.map((entry) => entry.id),
-		).toEqual(["calendar", "developer-access"]);
+		).toEqual(["email", "chat-integrations", "calendar", "developer-access"]);
 		const personnel = entries.find((entry) => entry.id === "personnel-files");
 		expect(personnel).toMatchObject({
 			group: "organization",
@@ -465,7 +465,7 @@ describe("settings visibility tiers", () => {
 			"scheduling",
 			"projects",
 			"payroll",
-			"integrations",
+			"integrations-channels",
 		]);
 	});
 
@@ -802,6 +802,58 @@ describe("settings visibility tiers", () => {
 		it("never shows the admin entry below the org admin tier", () => {
 			expect(visibleIds("manager", true)).not.toContain("driving-licence");
 			expect(visibleIds("member", true)).not.toContain("driving-licence");
+		});
+	});
+
+	describe("Settings group consolidation & Payroll Connectors rename (#1957, #1958)", () => {
+		it("merges Notifications and Integrations into Integrations & Channels for 10 groups total", async () => {
+			const { SETTINGS_GROUPS } = await import("@/components/settings/settings-config");
+			expect(SETTINGS_GROUPS.map((group) => group.id)).toEqual([
+				"account",
+				"organization",
+				"policies",
+				"time-tracking",
+				"scheduling",
+				"projects",
+				"payroll",
+				"integrations-channels",
+				"compliance",
+				"data",
+			]);
+			expect(SETTINGS_GROUPS).toHaveLength(10);
+			expect(
+				SETTINGS_GROUPS.find((group) => group.id === "integrations-channels"),
+			).toMatchObject({
+				labelKey: "settings.group.integrationsChannels",
+				labelDefault: "Integrations & Channels",
+			});
+
+			const mergedEntries = SETTINGS_ENTRIES.filter(
+				(entry) => entry.group === "integrations-channels",
+			);
+			expect(mergedEntries.map((entry) => entry.id)).toEqual([
+				"email",
+				"chat-integrations",
+				"calendar",
+				"developer-access",
+			]);
+		});
+
+		it("re-titles /settings/payroll-export to Payroll Connectors & Wage Types and keeps core settings entries", () => {
+			const payrollExport = SETTINGS_ENTRIES.find((entry) => entry.id === "payroll-export");
+			expect(payrollExport).toMatchObject({
+				titleKey: "settings.payrollExport.connectorsTitle",
+				titleDefault: "Payroll Connectors & Wage Types",
+				href: "/settings/payroll-export",
+				group: "payroll",
+				minimumTier: "orgAdmin",
+			});
+
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "payroll-readiness")).toBe(false);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "closed-months")).toBe(false);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "employees")).toBe(true);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "work-diagnostics")).toBe(true);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "export-operations")).toBe(true);
 		});
 	});
 });

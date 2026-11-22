@@ -82,4 +82,13 @@ describe("SettingsBreadcrumbs", () => {
 		);
 		expect(screen.getByText("Billable rates")).toBeTruthy();
 	});
+
+	it("names /settings/payroll-export as Payroll Connectors & Wage Types (#1958)", () => {
+		pathnameMock.mockReturnValue("/settings/payroll-export");
+
+		render(<SettingsBreadcrumbs />);
+
+		expect(screen.getByRole("link", { name: "Settings" }).getAttribute("href")).toBe("/settings");
+		expect(screen.getByText("Payroll Connectors & Wage Types")).toBeTruthy();
+	});
 });
