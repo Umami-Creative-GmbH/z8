@@ -30,7 +30,7 @@ export function NavOrganization({
 	const { t } = useTranslate();
 	const pathname = usePathname();
 	const activeUrl = activeNavHref(pathname, allNavHrefs ?? items.map((item) => item.url));
-	const label = t("nav.organization-label", "Organization");
+	const label = t("settings.group.organization", "Organization");
 
 	return (
 		<SidebarGroup>

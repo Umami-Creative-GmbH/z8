@@ -32,7 +32,7 @@ export interface StaticAppSearchInput {
 	managesProject?: boolean;
 	/** The driving licence visibility reader shows My driving licence (#1937). */
 	showMyDrivingLicenceNav?: boolean;
-	/** The driving licence visibility reader shows Team & organization → Driving licences (#1937). */
+	/** The driving licence visibility reader shows Organization → Driving licences (#1937, #1953). */
 	showTeamDrivingLicenceNav?: boolean;
 	/** The driving licence visibility reader offers its settings (#1420). */
 	drivingLicenceSettingsVisible?: boolean;

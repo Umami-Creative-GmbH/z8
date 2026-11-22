@@ -27,7 +27,7 @@ export function NavTeam({
 	const { t } = useTranslate();
 	const pathname = usePathname();
 	const activeUrl = activeNavHref(pathname, allNavHrefs ?? items.map((item) => item.url));
-	const label = t("nav.team-label", "Team");
+	const label = t("nav.team", "Team");
 
 	return (
 		<SidebarGroup>

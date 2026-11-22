@@ -17,13 +17,11 @@ interface DrivingLicenceCheckPageProps {
 }
 
 /**
- * One employee's driving licence check (#1429), under Team & organization since #1937.
+ * One employee's driving licence check (#1429), under Organization since #1953.
  * Reminders, tasks and the Checks table link here. Not found while the feature is off,
  * without a current verifier grant covering the employee, and for the viewer's own check.
  */
-async function DrivingLicenceCheckContent({
-	params,
-}: DrivingLicenceCheckPageProps) {
+async function DrivingLicenceCheckContent({ params }: DrivingLicenceCheckPageProps) {
 	const [{ employee }, t] = await Promise.all([params, getTranslate()]);
 	const { actor, subject } = await requireDrivingLicenceCheckPage(employee);
 	return (
@@ -43,13 +41,9 @@ async function DrivingLicenceCheckContent({
 							{t("drivingLicence.checkPage.back", "Checks")}
 						</Link>
 					}
-					title={t(
-						"drivingLicence.checkPage.title",
-						"Driving licence check for {name}",
-						{
-							name: subject.name,
-						},
-					)}
+					title={t("drivingLicence.checkPage.title", "Driving licence check for {name}", {
+						name: subject.name,
+					})}
 					description={
 						subject.canVerify ? undefined : (
 							<div className="flex flex-wrap items-center gap-2">
@@ -77,9 +71,7 @@ async function DrivingLicenceCheckContent({
 	);
 }
 
-export default function DrivingLicenceCheckPage(
-	props: DrivingLicenceCheckPageProps,
-) {
+export default function DrivingLicenceCheckPage(props: DrivingLicenceCheckPageProps) {
 	return (
 		<Suspense fallback={<DrivingLicencePageLoading kind="team" />}>
 			<DrivingLicenceCheckContent {...props} />

@@ -11,7 +11,7 @@ import { VerifierResponsibility } from "@/components/driving-licence/verifier-se
 import { requireTeamDrivingLicencePage } from "@/lib/organization/driving-licence/page-guards";
 
 /**
- * Team & organization → Driving licences (#1937): the verifier's Checks and the planner's
+ * Organization → Driving licences (#1937, #1953): the verifier's Checks and the planner's
  * Planning, one tab per role held. Not found while the feature is off or without either role;
  * administering the settings grants neither.
  */

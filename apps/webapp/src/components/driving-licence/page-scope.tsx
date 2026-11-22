@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { useSession } from "@/lib/auth-client";
 
-/** `my`: My driving licence. `team`: the Team & organization page and its check pages (#1937). */
+/** `my`: My driving licence. `team`: the Organization Driving licences page and its check pages (#1937, #1953). */
 export type DrivingLicencePageKind = "my" | "team";
 
 export function DrivingLicencePageTitle({ kind }: { kind: DrivingLicencePageKind }) {
@@ -42,10 +42,7 @@ export function DrivingLicencePageScope({
 	children: ReactNode;
 }) {
 	const { data: session } = useSession();
-	if (
-		session?.session.activeOrganizationId !== organizationId ||
-		session.user.id !== userId
-	) {
+	if (session?.session.activeOrganizationId !== organizationId || session.user.id !== userId) {
 		return <DrivingLicencePageLoading kind={kind} />;
 	}
 	return children;

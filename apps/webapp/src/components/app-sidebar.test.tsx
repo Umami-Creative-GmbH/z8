@@ -1913,6 +1913,27 @@ describe("app sidebar compliance navigation", () => {
 			],
 		},
 		{
+			persona: "org admin with employee record and payroll grant",
+			role: "admin" as const,
+			tier: "orgAdmin" as const,
+			grants: {
+				payroll: true,
+				finance: true,
+				personnelFiles: true,
+				equipment: true,
+				worksCouncil: true,
+			},
+			expectedTeam: ["/today", "/team", "/team/absences", "/approvals/inbox"],
+			expectedOrg: [
+				"/payroll",
+				"/travel-expenses/finance",
+				"/personnel-files",
+				"/equipment",
+				"/compliance",
+				"/works-council",
+			],
+		},
+		{
 			persona: "org admin without employee record",
 			role: null,
 			tier: "orgAdmin" as const,
